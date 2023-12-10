@@ -15,12 +15,13 @@ from functools import lru_cache
 from inspect import signature
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from urllib.parse import urlsplit
 
 import ray
 from packaging import version
 from ray import train, tune
 from ray.air.config import CheckpointConfig, FailureConfig, RunConfig
-from ray.train._checkpoint import Checkpoint
+from ray.train import Checkpoint
 from ray.tune import ExperimentAnalysis, register_trainable, Stopper, TuneConfig
 from ray.tune.execution.placement_groups import PlacementGroupFactory
 from ray.tune.schedulers.resource_changing_scheduler import DistributeResources, ResourceChangingScheduler
@@ -82,6 +83,17 @@ except ImportError as e:
         return False
 
 
+def is_uri(path: str) -> bool:
+    """Check if a path is a URI."""
+    try:
+        # Split the path into scheme, netloc, path, query, and fragment
+        result = urlsplit(path)
+        # Check if the scheme and netloc components are not empty
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False
+
+
 def identity(x):
     return x
 
@@ -124,8 +136,8 @@ def checkpoint(progress_tracker, save_path):
     def ignore_dot_files(src, files):
         return [f for f in files if f.startswith(".")]
 
-    with tune.checkpoint_dir(step=progress_tracker.tune_checkpoint_num) as checkpoint_dir:
-        checkpoint_model = os.path.join(checkpoint_dir, "model")
+    with tempfile.TemporaryDirectory() as temp_checkpoint_dir:
+        checkpoint_model = os.path.join(temp_checkpoint_dir, "model")
         # Atomic copying of the checkpoints
         if not os.path.isdir(checkpoint_model):
             copy_id = uuid.uuid4()
@@ -385,8 +397,9 @@ class RayTuneExecutor:
             logger.warning("No best model found")
             yield None
 
-        ckpt_type, ckpt_path = checkpoint.get_internal_representation()
-        if ckpt_type == "uri":
+        ckpt_path = checkpoint.path
+        ckpt_is_uri = is_uri(ckpt_path)
+        if ckpt_is_uri:
             # Read remote URIs using Ludwig's internal remote file loading APIs, as
             # Ray's do not handle custom credentials at the moment.
             with tempfile.TemporaryDirectory() as tmpdir:
@@ -463,8 +476,8 @@ class RayTuneExecutor:
         if "mlflow" in config:
             del config["mlflow"]
 
-        trial_id = tune.get_trial_id()
-        trial_dir = Path(tune.get_trial_dir())
+        trial_id = ray.train.get_context().get_trial_id()
+        trial_dir = Path(ray.train.get_context().get_trial_dir())
 
         modified_config = substitute_parameters(copy.deepcopy(hyperopt_dict["config"]), config)
 
@@ -495,13 +508,16 @@ class RayTuneExecutor:
             }
 
             metric_score = tune_executor.get_metric_score(train_stats, split)
-            tune.report(
-                parameters=json.dumps(config, cls=NumpyEncoder),
-                metric_score=metric_score,
-                training_stats=json.dumps(train_stats, cls=NumpyEncoder),
-                eval_stats="{}",
-                trial_id=tune.get_trial_id(),
-                trial_dir=tune.get_trial_dir(),
+            train.report(
+                {
+                    "parameters": json.dumps(config, cls=NumpyEncoder),
+                    "metric_score": metric_score,
+                    "training_stats": json.dumps(train_stats, cls=NumpyEncoder),
+                    "eval_stats": "{}",
+                    "trial_id": ray.train.get_context().get_trial_id(),
+                    "trial_dir": ray.train.get_context().get_trial_dir(),
+                },
+                checkpoint=Checkpoint.from_directory(ray.train.get_context().get_trial_dir()),
             )
 
         class RayTuneReportCallback(Callback):
@@ -657,13 +673,16 @@ class RayTuneExecutor:
         train_stats, eval_stats = stats.pop()
 
         metric_score = self.get_metric_score(train_stats, hyperopt_dict["eval_split"])
-        tune.report(
-            parameters=json.dumps(config, cls=NumpyEncoder),
-            metric_score=metric_score,
-            training_stats=json.dumps(train_stats, cls=NumpyEncoder),
-            eval_stats=json.dumps(eval_stats, cls=NumpyEncoder),
-            trial_id=tune.get_trial_id(),
-            trial_dir=tune.get_trial_dir(),
+        train.report(
+            {
+                "parameters": json.dumps(config, cls=NumpyEncoder),
+                "metric_score": metric_score,
+                "training_stats": json.dumps(train_stats, cls=NumpyEncoder),
+                "eval_stats": "{}",
+                "trial_id": ray.train.get_context().get_trial_id(),
+                "trial_dir": ray.train.get_context().get_trial_dir(),
+            },
+            checkpoint=Checkpoint.from_directory(ray.train.get_context().get_trial_dir()),
         )
 
     def execute(
@@ -883,7 +902,7 @@ class RayTuneExecutor:
                     ),
                     run_config=RunConfig(
                         name=experiment_name,
-                        local_dir=output_directory,
+                        local_dir=str(output_directory),
                         stop=CallbackStopper(callbacks),
                         callbacks=tune_callbacks,
                         failure_config=FailureConfig(
