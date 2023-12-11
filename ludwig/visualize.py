@@ -1480,7 +1480,16 @@ def compare_performance(
     compare_performance([a_evaluation_stats, b_evaluation_stats], model_names=["A", "B"])
     ```
     """
-    ignore_names = ["overall_stats", "confusion_matrix", "per_class_stats", "predictions", "probabilities"]
+    ignore_names = {
+        "overall_stats",
+        "confusion_matrix",
+        "per_class_stats",
+        "predictions",
+        "probabilities",
+        "roc_curve",
+        "precision_recall_curve",
+        LOSS,
+    }
 
     filename_template = "compare_performance_{}." + file_format
     filename_template_path = generate_filename_template_path(output_directory, filename_template)
@@ -1494,10 +1503,7 @@ def compare_performance(
         metric_names = metric_names_sets[0]
         for metric_names_set in metric_names_sets:
             metric_names = metric_names.intersection(metric_names_set)
-        metric_names.remove(LOSS)
-        for name in ignore_names:
-            if name in metric_names:
-                metric_names.remove(name)
+        metric_names = metric_names - ignore_names
         metrics_dict = {name: [] for name in metric_names}
 
         for test_stats_per_model in test_stats_per_model_list:

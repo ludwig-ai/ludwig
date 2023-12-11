@@ -21,6 +21,7 @@ from io import BytesIO
 from typing import Callable, List, Optional, Tuple, Union
 
 import numpy as np
+import tifffile
 import torch
 import torchvision.transforms.functional as F
 from torchvision.io import decode_image, ImageReadMode
@@ -47,7 +48,7 @@ class TVModelVariant:
 
 logger = logging.getLogger(__name__)
 
-IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".gif")
+IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".tiff", ".tif", ".bmp", ".gif")
 
 
 @DeveloperAPI
@@ -92,10 +93,8 @@ def is_bytes_image(bytes_obj) -> bool:
 
 
 @DeveloperAPI
-def is_image_score(img_entry):
-    if isinstance(img_entry, str) and any(ext for ext in IMAGE_EXTENSIONS if ext in img_entry.lower()):
-        return 1
-    return 0
+def is_image_score(path):
+    return int(isinstance(path, str) and path.lower().endswith(IMAGE_EXTENSIONS))
 
 
 @DeveloperAPI
@@ -153,20 +152,22 @@ def read_image_from_bytes_obj(
 
     If the path is not decodable as a PNG, attempts to read as a numpy file. If neither of these work, returns None.
     """
+    if bytes_obj is None:
+        return None
     mode = get_image_read_mode_from_num_channels(num_channels)
 
     image = read_image_as_png(bytes_obj, mode)
     if image is None:
         image = read_image_as_numpy(bytes_obj)
     if image is None:
+        image = read_image_as_tif(bytes_obj)
+    if image is None:
         warnings.warn("Unable to read image from bytes object.")
     return image
 
 
 @DeveloperAPI
-def read_image_as_png(
-    bytes_obj: Optional[bytes] = None, mode: ImageReadMode = ImageReadMode.UNCHANGED
-) -> Optional[torch.Tensor]:
+def read_image_as_png(bytes_obj: bytes, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> Optional[torch.Tensor]:
     """Reads image from bytes object from a PNG file."""
     try:
         with BytesIO(bytes_obj) as buffer:
@@ -183,7 +184,7 @@ def read_image_as_png(
 
 
 @DeveloperAPI
-def read_image_as_numpy(bytes_obj: Optional[bytes] = None) -> Optional[torch.Tensor]:
+def read_image_as_numpy(bytes_obj: bytes) -> Optional[torch.Tensor]:
     """Reads image from bytes object from a numpy file."""
     try:
         with BytesIO(bytes_obj) as buffer:
@@ -191,6 +192,23 @@ def read_image_as_numpy(bytes_obj: Optional[bytes] = None) -> Optional[torch.Ten
             return torch.from_numpy(image)
     except Exception as e:
         warnings.warn(f"Failed to read image from numpy file. Original exception: {e}")
+        return None
+
+
+@DeveloperAPI
+def read_image_as_tif(bytes_obj: bytes) -> Optional[torch.Tensor]:
+    """Reads image from bytes object from a tif file."""
+    try:
+        with BytesIO(bytes_obj) as buffer:
+            image = tifffile.imread(buffer)
+            if image.dtype == np.uint16:
+                image = image.astype(np.int32)
+            image = torch.from_numpy(image)
+            if len(image.shape) == 2:
+                image = torch.unsqueeze(image, dim=0)
+            return image
+    except Exception as e:
+        warnings.warn(f"Failed to read image from tif file. Original exception: {e}")
         return None
 
 

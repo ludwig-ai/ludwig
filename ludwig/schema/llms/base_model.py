@@ -14,24 +14,42 @@ from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
 # replaced with the full slash-delimited HF path using this map, after JSON validation but before config object
 # initialization.
 MODEL_PRESETS = {
+    # Bloom
+    "bloomz-3b": "bigscience/bloomz-3b",
+    "bloomz-7b1": "bigscience/bloomz-7b1",
+    # CodeLlama
+    "codellama-7b": "codellama/CodeLlama-7b-hf",
+    "codellama-13b": "codellama/CodeLlama-13b-hf",
+    "codellama-34b": "codellama/CodeLlama-34b-hf",
+    "codellama-7b-instruct": "codellama/CodeLlama-7b-instruct-hf",
+    "codellama-13b-instruct": "codellama/CodeLlama-13b-instruct-hf",
+    "codellama-34b-instruct": "codellama/CodeLlama-34b-instruct-hf",
+    # GPT Neo and GPT J
+    "gpt-neo-2.7B": "EleutherAI/gpt-neo-2.7B",
+    "gpt-j-6b": "EleutherAI/gpt-j-6b",
+    # LLama-2
     "llama-2-7b": "meta-llama/Llama-2-7b-hf",
     "llama-2-13b": "meta-llama/Llama-2-13b-hf",
     "llama-2-70b": "meta-llama/Llama-2-70b-hf",
     "llama-2-7b-chat": "meta-llama/Llama-2-7b-chat-hf",
     "llama-2-13b-chat": "meta-llama/Llama-2-13b-chat-hf",
     "llama-2-70b-chat": "meta-llama/Llama-2-70b-chat-hf",
-    "vicuna-7b": "lmsys/vicuna-7b-v1.3",
-    "vicuna-13b": "lmsys/vicuna-13b-v1.3",
-    "bloomz-3b": "bigscience/bloomz-3b",
-    "bloomz-7b1": "bigscience/bloomz-7b1",
+    # Mistral
+    "mistral-7b": "mistralai/Mistral-7B-v0.1",
+    "mistral-7b-instruct": "mistralai/Mistral-7B-Instruct-v0.1",
+    # OPT
     "opt-350m": "facebook/opt-350m",
     "opt-1.3b": "facebook/opt-1.3b",
     "opt-6.7b": "facebook/opt-6.7b",
-    "gpt-neo-2.7B": "EleutherAI/gpt-neo-2.7B",
-    "gpt-j-6b": "EleutherAI/gpt-j-6b",
+    # Pythia
     "pythia-2.8b": "EleutherAI/pythia-2.8b",
     "pythia-12b": "EleutherAI/pythia-12b",
-    "mistral-7b": "mistralai/Mistral-7B-v0.1",
+    # Vicuna
+    "vicuna-7b": "lmsys/vicuna-7b-v1.3",
+    "vicuna-13b": "lmsys/vicuna-13b-v1.3",
+    # Zephyr
+    "zephyr-7b-alpha": "HuggingFaceH4/zephyr-7b-alpha",
+    "zephyr-7b-beta": "HuggingFaceH4/zephyr-7b-beta",
 }
 
 
