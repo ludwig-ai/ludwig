@@ -11,7 +11,14 @@ from ludwig.utils.upload_utils import HuggingFaceHub
 logger = logging.getLogger(__name__)
 
 
-def _build_tmp_model_repo(destination_directory: str, file_names: list[str]) -> None:
+def _build_fake_model_repo(
+    destination_directory: str,
+    experiment_name: str,
+    file_names: list[str],
+    *,
+    model_directory_name: str = "model",
+    model_weights_directory_name: str = "model_weights",
+) -> None:
     """This utility function accepts the "destination_directory" and list of file names on input.
 
     It then makes directory hierarchy "my_simple_experiment_run" / "model" / "model_weights" under
@@ -19,8 +26,8 @@ def _build_tmp_model_repo(destination_directory: str, file_names: list[str]) -> 
     names must be leaf file names, not paths).
     """
     # Create a temporary folder designating training output directory.
-    model_directory: str = pathlib.Path(destination_directory) / "my_simple_experiment_run" / "model"
-    model_weights_directory: str = model_directory / "model_weights"
+    model_directory: str = pathlib.Path(destination_directory) / experiment_name / model_directory_name
+    model_weights_directory: str = model_directory / model_weights_directory_name
     model_weights_directory.mkdir(parents=True, exist_ok=True)
 
     # Create files within the "model_weights" subdirectory.
@@ -139,7 +146,9 @@ def test_upload_to_hf_hub__validate_upload_parameters(
     presence/absence of errors.
     """
     output_directory: str = output_directory_manager
-    _build_tmp_model_repo(destination_directory=output_directory, file_names=file_names)
+    _build_fake_model_repo(
+        destination_directory=output_directory, experiment_name="my_simple_experiment_run", file_names=file_names
+    )
 
     model_path: pathlib.Path = pathlib.Path(output_directory) / "my_simple_experiment_run"
     model_weights_path: pathlib.Path = pathlib.Path(model_path / "model" / "model_weights")
