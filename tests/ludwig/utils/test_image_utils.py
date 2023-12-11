@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Uber Technologies, Inc.
+# Copyright (c) 2023 Predibase, Inc., 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,8 +22,10 @@ from ludwig.utils.image_utils import (
     crop,
     crop_or_pad,
     grayscale,
+    is_image_score,
     num_channels_in_image,
     pad,
+    read_image_as_tif,
     resize_image,
     ResizeChannels,
 )
@@ -252,3 +254,29 @@ def test_ResizeChannels_module_with_batch_dim(image_shape, num_channels_expected
     image = torch.randint(0, 1, image_shape)
     fn = ResizeChannels(num_channels_expected)
     assert fn(image).shape == tuple([image_shape[0], num_channels_expected] + list(image_shape[2:]))
+
+
+def test_read_image_as_tif():
+    img_bytes = b"II*\x00\x0c\x00\x00\x00\x05 \x8c\xe5\x10\x00\x00\x01\x03\x00\x01\x00\x00\x00\x02\x00\x00\x00\x01\x01\x03\x00\x01\x00\x00\x00\x02\x00\x00\x00\x02\x01\x03\x00\x01\x00\x00\x00\x08\x00\x00\x00\x03\x01\x03\x00\x01\x00\x00\x00\x01\x00\x00\x00\x06\x01\x03\x00\x01\x00\x00\x00\x01\x00\x00\x00\x11\x01\x04\x00\x01\x00\x00\x00\x08\x00\x00\x00\x12\x01\x03\x00\x01\x00\x00\x00\x01\x00\x00\x00\x15\x01\x03\x00\x01\x00\x00\x00\x01\x00\x00\x00\x16\x01\x03\x00\x01\x00\x00\x00\x80\x00\x00\x00\x17\x01\x04\x00\x01\x00\x00\x00\x04\x00\x00\x00\x1a\x01\x05\x00\x01\x00\x00\x00\xd2\x00\x00\x00\x1b\x01\x05\x00\x01\x00\x00\x00\xda\x00\x00\x00\x1c\x01\x03\x00\x01\x00\x00\x00\x01\x00\x00\x00\x1d\x01\x02\x00\x07\x00\x00\x00\xe2\x00\x00\x00(\x01\x03\x00\x01\x00\x00\x00\x02\x00\x00\x00S\x01\x03\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00H\x00\x00\x00\x01\x00\x00\x00H\x00\x00\x00\x01\x00\x00\x004.tiff\x00"  # noqa: E501
+    tensor = read_image_as_tif(img_bytes)
+    assert tensor is not None
+    assert tensor.equal(torch.tensor([[[5, 32], [140, 229]]], dtype=torch.uint8))
+
+
+@pytest.mark.parametrize(
+    "extension, score",
+    [
+        ("data.png", 1),
+        ("/home/peter/data.jpg", 1),
+        ("./data/file.jpeg", 1),
+        ("new.tiff", 1),
+        ("b.tif", 1),
+        (".bmp", 1),
+        ("a.gif", 1),
+        ("b.tif", 1),
+        ("audio.wav", 0),
+        (".png/video.mp4", 0),
+    ],
+)
+def test_is_image_score(extension: str, score: int):
+    assert is_image_score(extension) == score

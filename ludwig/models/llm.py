@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, GenerationConfig, PreTrainedModel
+from transformers import AutoConfig, AutoModelForCausalLM, GenerationConfig, PreTrainedModel
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, MODEL_LLM, PREDICTIONS, TEXT
 from ludwig.features.base_feature import ModuleWrapper, OutputFeature
@@ -14,11 +14,13 @@ from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.features.text_feature import TextOutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
+from ludwig.modules.training_hooks import NEFTuneHook
 from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollection
 from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.error_handling_utils import default_retry
+from ludwig.utils.llm_quantization_utils import convert_quantized_linear_to_linear
 from ludwig.utils.llm_utils import (
     add_left_padding,
     generate_merged_ids,
@@ -26,10 +28,10 @@ from ludwig.utils.llm_utils import (
     get_realigned_target_and_prediction_tensors_for_inference,
     pad_target_tensor_for_fine_tuning,
     remove_left_padding,
-    set_pad_token,
 )
 from ludwig.utils.logging_utils import log_once
 from ludwig.utils.output_feature_utils import set_output_feature_tensor
+from ludwig.utils.tokenizers import HFTokenizer
 from ludwig.utils.torch_utils import reg_loss
 
 logger = logging.getLogger(__name__)
@@ -144,8 +146,7 @@ class LLM(BaseModel):
             self.global_max_sequence_length = self.context_len
 
         # Initialize tokenizer
-        self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.base_model)
-        set_pad_token(self.tokenizer)
+        self.tokenizer = HFTokenizer(self.config_obj.base_model).tokenizer
 
         self._set_generation_config(self.config_obj.generation.to_dict())
 
@@ -675,6 +676,48 @@ class LLM(BaseModel):
         else:
             logger.info("Skipped saving LLM without weight adjustments.")
 
+    def save_dequantized_base_model(self, save_path: str) -> None:
+        """Upscales quantized weights of a model to fp16 and saves the result in a folder specified by save_path.
+
+        Args:
+            save_path (str): The path to the folder where the upscaled model weights will be saved.
+
+        Returns:
+            None
+        """
+        from peft import PeftModel
+
+        if isinstance(self.model, PeftModel):
+            # Get the base model back by removing all the adapter modules without merging.
+            logger.warning(
+                "LLM model is currently wrapped in a PeftModel. Removing the adapter layers and saving the base model."
+                "Reload the model via LudwigModel.load() to use your trained adapter layers for inference."
+            )
+            self.model = self.model.unload()
+
+        # Dequantize the model weights and cast them to fp16 - replace quantized layers with appropriate
+        # linear layers in-place.
+        logger.info("Upscaling quantized weights to fp16...")
+        convert_quantized_linear_to_linear(self.model)
+        logger.info("Done.")
+
+        # Override properties of the model to indicate that it is no longer quantized.
+        # This is also necessary to ensure that the model can be saved, otherwise it will raise an error like
+        # "You are calling `save_pretrained` on a 4-bit converted model. This is currently not supported"
+        # See: https://github.com/huggingface/transformers/blob/0ad4e7e6dad670a7151aaceb1af3c272a3bf73a8/src/transformers/modeling_utils.py#L2054 # noqa
+        self.model.is_loaded_in_4bit = False
+        self.model.is_loaded_in_8bit = False
+
+        # Save the model
+        logger.info(f"Saving upscaled model to {save_path}")
+        self.model.save_pretrained(save_path)
+        logger.info("Done.")
+
+        # Save the tokenizer
+        logger.info(f"Saving tokenizer to {save_path}")
+        self.tokenizer.save_pretrained(save_path)
+        logger.info("Done.")
+
     def load(self, save_path):
         """Loads the model from the given path."""
         weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
@@ -756,6 +799,22 @@ class LLM(BaseModel):
         _targets = pad_target_tensor_for_fine_tuning(targets, predictions, self.model_inputs, of_name)
 
         return _targets
+
+    def _activate_forward_hooks(self):
+        """Activates/registers forward hooks for the model."""
+        if not self.config_obj.model_parameters:
+            return
+
+        # Initialize forward hook handles
+        if self.config_obj.model_parameters.neftune_noise_alpha:
+            self._forward_hook_handles.append(
+                NEFTuneHook(neftune_noise_alpha=self.config_obj.model_parameters.neftune_noise_alpha)
+            )
+
+        # Activate forward hooks iteratively
+        for hook in self._forward_hook_handles:
+            # Update the model with the forward hooks in place
+            self.model = hook.activate_hook(self.model)
 
     @staticmethod
     def get_augmentation_pipelines() -> AugmentationPipelines:

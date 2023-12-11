@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Copyright (c) 2019 Uber Technologies, Inc.
+# Copyright (c) 2023 Predibase, Inc., 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 # ==============================================================================
 """This module contains the class and auxiliary methods of a model."""
 import contextlib
+import csv
 import logging
 import math
 import os
@@ -27,6 +28,7 @@ import time
 from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
+import pandas as pd
 import psutil
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -68,6 +70,7 @@ from ludwig.utils.trainer_utils import (
     get_final_steps_per_checkpoint,
     get_latest_metrics_dict,
     get_new_progress_tracker,
+    get_total_expected_checkpoints,
     get_total_steps,
     ProgressTracker,
 )
@@ -223,6 +226,9 @@ class Trainer(BaseTrainer):
 
         # We may need to replace the embedding layer when using 8-bit optimizers from bitsandbytes.
         update_embedding_layer(self.compiled_model, self.config)
+
+        # Register any post forward hooks for the model
+        self.compiled_model._activate_forward_hooks()
 
         # Enable gradient checkpointing if configured
         if self.config.enable_gradient_checkpointing:
@@ -688,6 +694,16 @@ class Trainer(BaseTrainer):
                 progress_tracker,
             )
 
+            llm_eval_examples = progress_tracker.llm_eval_examples
+            dict_save_dir = os.path.join(os.path.dirname(checkpoint_manager.directory), "llm_eval_examples")
+            os.makedirs(dict_save_dir, exist_ok=True)
+            dict_save_path = os.path.join(dict_save_dir, f"{progress_tracker.checkpoint_number}.csv")
+            llm_eval_examples = pd.DataFrame(llm_eval_examples).to_dict(orient="records")
+            with open(dict_save_path, "w") as outfile:
+                writer = csv.DictWriter(outfile, fieldnames=["inputs", "targets", "outputs"])
+                writer.writeheader()
+                writer.writerows(llm_eval_examples)
+
             self.write_eval_summary(
                 summary_writer=validation_summary_writer,
                 metrics=progress_tracker.validation_metrics,
@@ -996,7 +1012,6 @@ class Trainer(BaseTrainer):
                         early_stopping_steps,
                         profiler,
                     )
-
                     if self.is_coordinator():
                         # ========== Save training progress ==========
                         logger.debug(
@@ -1026,6 +1041,9 @@ class Trainer(BaseTrainer):
                 lambda c: c.on_trainer_train_teardown(self, progress_tracker, save_path, self.is_coordinator()),
                 coordinator_only=False,
             )
+
+            # Deactivate any forward hooks for the model used at training time.
+            self.compiled_model._deactivate_forward_hooks()
 
             # Stop the profiler.
             if profiler:

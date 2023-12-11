@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Copyright (c) 2019 Uber Technologies, Inc.
+# Copyright (c) 2023 Predibase, Inc., 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -280,6 +280,7 @@ LUDWIG_VERSION = "ludwig_version"
 PREPROCESSOR = "preprocessor"
 PREDICTOR = "predictor"
 POSTPROCESSOR = "postprocessor"
+TARGET_MODULES = "target_modules"
 
 GENERATION = "generation"
 PROMPT = "prompt"

@@ -109,6 +109,7 @@ class ProgressTracker:
         best_eval_train_metrics: Dict[str, Dict[str, float]],
         best_eval_validation_metrics: Dict[str, Dict[str, float]],
         best_eval_test_metrics: Dict[str, Dict[str, float]],
+        llm_eval_examples: Dict[str, List[str]] = None,
     ):
         """JSON-serializable holder object that stores information related to training progress.
 
@@ -180,6 +181,11 @@ class ProgressTracker:
         self.validation_metrics = validation_metrics
         self.test_metrics = test_metrics
 
+        # This should be an dictionary whose keys are "inputs", "targets", and "outputs" and whose values are dicts.
+        # The keys of each subdict are the names of the input/target/output features and the values are lists of
+        # example tensors. This is only set for LLM fine-tuning.
+        self.llm_eval_examples = llm_eval_examples
+
         # Best metrics.
         self.best_eval_train_metrics = best_eval_train_metrics
         self.best_eval_validation_metrics = best_eval_validation_metrics
@@ -211,6 +217,14 @@ class ProgressTracker:
             "num_reductions_lr": self.num_reductions_learning_rate,
             "num_increases_bs": self.num_increases_batch_size,
         }
+
+        # This is a non-numerical metric that is only for LLM fine-tuning
+        # This should be an dictionary whose keys are "inputs", "targets", and "outputs" and whose values are dicts.
+        # The keys of each subdict are the names of the input/target/output features and the values are lists of
+        # example tensors.
+        if self.llm_eval_examples:
+            log_metrics["llm_eval_examples"] = self.llm_eval_examples
+
         for metrics_dict_name in [
             "train_metrics",
             "validation_metrics",

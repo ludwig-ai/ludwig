@@ -382,6 +382,22 @@ ecd:
             through the dataset to converge while others converge before a single epoch
             through the data.
         ui_display_name: Train Steps
+    eval_steps:
+        default_value_reasoning:
+            The default value is None because we do not want to lower the number of evaluation steps
+            by default, and we do not know the size of an arbitrary dataset.
+            By setting the default to None, we simply evaluate on the full evaluation set.
+        description_implications:
+            The smaller this value of this parameter, the less time evaluation will take.
+        expected_impact: 2
+        suggested_values: Depends on data size and prioritization of quality vs. speed
+        suggested_values_reasoning:
+            Normally, evaluation should use the entire evaluation set, and this is
+            recommended to achieve the highest quality evaluation. However, using
+            the full evaluation set can be slow, so the value of this parameter should
+            be set depending on which is more important for the task at hand -- quality
+            or speed.
+        ui_display_name: Evaluation Steps
     use_mixed_precision:
         default_value_reasoning:
             Speed up training by using float16 parameters where it
