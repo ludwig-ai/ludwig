@@ -26,7 +26,7 @@ def to_device(
     device: Union[str, torch.DeviceObjType],
     config_obj: LLMModelConfig,
     curr_device: torch.DeviceObjType,
-) -> PreTrainedModel:
+) -> Tuple[PreTrainedModel, torch.DeviceObjType]:
     """Move an LLM to the requested device, accounting for sharding and adapters.
 
     Args:
@@ -41,7 +41,7 @@ def to_device(
 
     if device.type == curr_device.type:
         log_once(f"Model already on device'{device}'.")
-        return model
+        return model, device
     else:
         log_once(f"Moving LLM from '{curr_device}' to '{device}'.")
 
@@ -86,7 +86,7 @@ def to_device(
     else:
         model = model.to(device)
 
-    return model
+    return model, device
 
 
 def initialize_adapter(model: PreTrainedModel, config_obj: LLMModelConfig) -> Union[PeftModel, PreTrainedModel]:
