@@ -637,10 +637,10 @@ def check_llm_text_encoder_is_not_used_with_ecd(config: "ModelConfig") -> None:
     if config.model_type != MODEL_ECD:
         return
 
-    if config.output_features[0].type != TEXT:
+    if config.input_features[0].type != TEXT:
         return
 
-    if config.input_features[0].type != TEXT:
+    if config.output_features[0].type != TEXT:
         return
 
     if (
