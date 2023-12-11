@@ -906,6 +906,9 @@ class Trainer(BaseTrainer):
                 # ================ Training Loop ================
                 self.steps_per_epoch = batcher.steps_per_epoch
                 self.total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)
+                # NOTE(geoffrey): this ensures that the total number of epochs coincides with the number of 
+                # times `batcher.set_epoch` is called.
+                self.epochs = math.ceil(self.total_steps / self.steps_per_epoch)
 
                 # Get the terminal steps per checkpoint.
                 final_steps_per_checkpoint = get_final_steps_per_checkpoint(
