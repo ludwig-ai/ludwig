@@ -10,7 +10,6 @@ from peft import get_peft_model, MODEL_TYPE_TO_PEFT_MODEL_MAPPING, PeftConfig, P
 from transformers import AutoConfig, AutoModelForCausalLM, PreTrainedModel, PreTrainedTokenizer
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, PREDICTIONS, PROBABILITIES
-from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.schema.trainer import LLMTrainerConfig
 from ludwig.utils.logging_utils import log_once
 from ludwig.utils.model_utils import find_embedding_layer_with_path
@@ -24,7 +23,7 @@ FALLBACK_CONTEXT_LEN = 2048
 def to_device(
     model: PreTrainedModel,
     device: Union[str, torch.DeviceObjType],
-    config_obj: LLMModelConfig,
+    config_obj: "LLMModelConfig",  # noqa F821
     curr_device: torch.DeviceObjType,
 ) -> Tuple[PreTrainedModel, torch.DeviceObjType]:
     """Move an LLM to the requested device, accounting for sharding and adapters.
@@ -89,7 +88,9 @@ def to_device(
     return model, device
 
 
-def initialize_adapter(model: PreTrainedModel, config_obj: LLMModelConfig) -> Union[PeftModel, PreTrainedModel]:
+def initialize_adapter(
+    model: PreTrainedModel, config_obj: "LLMModelConfig"  # noqa F821
+) -> Union[PeftModel, PreTrainedModel]:
     """Wrap a pretrained model with a PEFT model for fine-tuning.
 
     Args:
