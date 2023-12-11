@@ -69,7 +69,6 @@ from ludwig.utils.trainer_utils import (
     get_latest_metrics_dict,
     get_new_progress_tracker,
     get_total_steps,
-    get_total_expected_checkpoints,
     ProgressTracker,
 )
 
@@ -906,7 +905,7 @@ class Trainer(BaseTrainer):
                 # ================ Training Loop ================
                 self.steps_per_epoch = batcher.steps_per_epoch
                 self.total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)
-                # NOTE(geoffrey): this ensures that the total number of epochs coincides with the number of 
+                # NOTE(geoffrey): this ensures that the total number of epochs coincides with the number of
                 # times `batcher.set_epoch` is called.
                 old_epochs = self.epochs
                 self.epochs = math.ceil(self.total_steps / self.steps_per_epoch)
