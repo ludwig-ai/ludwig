@@ -134,7 +134,7 @@ def test_upload_to_hf_hub__validate_upload_parameters(
 
     /content/results/api_experiment_run`.
 
-    Eeach test case consists of: 1) Populating the temporary output directory ("training_results_output) with zero or
+    Each test case consists of: 1) Populating the temporary output directory ("training_results_output) with zero or
     more test model weights file; 2) Executing "HuggingFaceHub._validate_upload_parameters()"; and 3) Asserting on
     presence/absence of errors.
     """
