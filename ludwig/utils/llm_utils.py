@@ -1,13 +1,15 @@
 import copy
 import logging
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Union
 
 import torch
 import torch.nn.functional as F
 from bitsandbytes.nn.modules import Embedding
-from transformers import AutoConfig, AutoModelForCausalLM, PreTrainedTokenizer
+from peft import get_peft_model, MODEL_TYPE_TO_PEFT_MODEL_MAPPING, PeftConfig, PeftModel, TaskType
+from transformers import AutoConfig, AutoModelForCausalLM, PreTrainedModel, PreTrainedTokenizer
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, PREDICTIONS, PROBABILITIES
+from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.schema.trainer import LLMTrainerConfig
 from ludwig.utils.model_utils import find_embedding_layer_with_path
 
@@ -15,6 +17,38 @@ logger = logging.getLogger(__name__)
 
 
 FALLBACK_CONTEXT_LEN = 2048
+
+
+def initialize_adapter(model: PreTrainedModel, config_obj: LLMModelConfig) -> Union[PeftModel, PreTrainedModel]:
+    """Wrap a pretrained model with a PEFT model for fine-tuning.
+
+    Args:
+         model: Pretrained model to fine-tune with an adapter.
+         config_obj: LLM config
+
+    Returns:
+        `model` wrapped in a PEFT model if an adapter config was provided, otherwise `model`.
+    """
+    # Only load a PEFT model if the config specifies an adapter, otherwise return the model unaltered.
+    if config_obj.adapter:
+        if config_obj.adapter.pretrained_adapter_weights:
+            # Load pretrained adapter weights if specified.
+            logger.info(f"Using pretrained adapter weights: {config_obj.adapter.pretrained_adapter_weights}")
+
+            peft_config = PeftConfig.from_pretrained(config_obj.adapter.pretrained_adapter_weights)
+
+            model = MODEL_TYPE_TO_PEFT_MODEL_MAPPING[peft_config.task_type].from_pretrained(
+                model, config_obj.adapter.pretrained_adapter_weights
+            )
+        else:
+            # If no pretrained adapter is provided, we want to load untrained weights into the model
+            peft_config = config_obj.adapter.to_config(
+                task_type=TaskType.CAUSAL_LM, tokenizer_name_or_path=config_obj.base_model
+            )
+
+            model = get_peft_model(model, peft_config)
+
+    return model
 
 
 def get_context_len(model_config: AutoConfig):
