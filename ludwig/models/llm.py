@@ -26,6 +26,7 @@ from ludwig.utils.llm_utils import (
     generate_merged_ids,
     get_context_len,
     get_realigned_target_and_prediction_tensors_for_inference,
+    initialize_adapter,
     pad_target_tensor_for_fine_tuning,
     remove_left_padding,
 )
@@ -227,27 +228,7 @@ class LLM(BaseModel):
                     "`finetune` or remove the adapter config."
                 )
 
-            from peft import get_peft_model
-
-            if self.config_obj.adapter.pretrained_adapter_weights:
-                logger.info(f"Using pretrained adapter weights: {self.config_obj.adapter.pretrained_adapter_weights}")
-                # If pretrained adapter weights are provided, we want to load them into the model
-                from peft import MODEL_TYPE_TO_PEFT_MODEL_MAPPING, PeftConfig
-
-                peft_config = PeftConfig.from_pretrained(self.config_obj.adapter.pretrained_adapter_weights)
-
-                self.model = MODEL_TYPE_TO_PEFT_MODEL_MAPPING[peft_config.task_type].from_pretrained(
-                    self.model, self.config_obj.adapter.pretrained_adapter_weights
-                )
-            else:
-                # If no pretrained adapter is provided, we want to load untrained weights into the model
-                from peft import TaskType
-
-                peft_config = self.config_obj.adapter.to_config(
-                    task_type=TaskType.CAUSAL_LM, tokenizer_name_or_path=self.model_name
-                )
-
-                self.model = get_peft_model(self.model, peft_config)
+            self.model = initialize_adapter(self.model, self.config_obj)
 
             logger.info("==================================================")
             logger.info("Trainable Parameter Summary For Fine-Tuning")
