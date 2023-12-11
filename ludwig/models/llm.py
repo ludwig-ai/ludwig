@@ -248,7 +248,7 @@ class LLM(BaseModel):
         self.model = prepare_model_for_kbit_training(self.model, use_gradient_checkpointing=False)
 
     def to_device(self, device):
-        self.model = to_device(self.model, self.config_obj, self.curr_device)
+        self.model = to_device(self.model, device, self.config_obj, self.curr_device)
         self.curr_device = torch.device(device)
         return self
 
