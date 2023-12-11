@@ -1,7 +1,6 @@
 import contextlib
 import logging
 import os
-import tempfile
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -29,6 +28,7 @@ from ludwig.utils.llm_utils import (
     initialize_adapter,
     pad_target_tensor_for_fine_tuning,
     remove_left_padding,
+    to_device,
 )
 from ludwig.utils.logging_utils import log_once
 from ludwig.utils.output_feature_utils import set_output_feature_tensor
@@ -248,59 +248,8 @@ class LLM(BaseModel):
         self.model = prepare_model_for_kbit_training(self.model, use_gradient_checkpointing=False)
 
     def to_device(self, device):
-        device = torch.device(device)
-
-        if device.type == self.curr_device.type:
-            log_once(f"Model already on device'{device}'.")
-            return self
-        else:
-            log_once(f"Moving LLM from '{self.curr_device}' to '{device}'.")
-
-        model_kwargs = {}
-        num_gpus = torch.cuda.device_count()
-        if device == torch.device("cuda") and num_gpus > 1:
-            # TODO: make this configurable in the future. These parameters are from FastChat:
-            # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L90  # noqa
-            # TODO: Wrap device_map="auto" in a try-except block since it may not be supported for all models (E.g. BertLMHead)  # noqa
-            # We don't add quantization here (float16 or bfloat16) since we may not always want to quantize. We should
-            # make quantization configurable in the future via the trainer config.
-            model_kwargs.update(
-                dict(
-                    low_cpu_mem_usage=True,
-                    device_map="auto",
-                    max_memory={i: "13GiB" for i in range(num_gpus)},
-                )
-            )
-
-            if self.config_obj.quantization:
-                model_kwargs["quantization_config"] = self.config_obj.quantization.to_bitsandbytes()
-
-            # we save and reload the weights to ensure that they can be sharded across the GPUs using `from_pretrained`
-            with tempfile.TemporaryDirectory() as tmpdir:
-                self.model.save_pretrained(tmpdir)
-
-                if self.config_obj.adapter:
-                    from peft import PeftModel
-
-                    self.model = AutoModelForCausalLM.from_pretrained(
-                        self.model_name,
-                        **model_kwargs,
-                    )
-                    self.model = PeftModel.from_pretrained(
-                        self.model,
-                        tmpdir,
-                        torch_dtype=torch.float16,
-                    )
-                else:
-                    self.model = AutoModelForCausalLM.from_pretrained(
-                        tmpdir,
-                        **model_kwargs,
-                    )
-
-        else:
-            self.model = self.model.to(device)
-
-        self.curr_device = device
+        self.model = to_device(self.model, self.config_obj, self.curr_device)
+        self.curr_device = torch.device(device)
         return self
 
     @classmethod
