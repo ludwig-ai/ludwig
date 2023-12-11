@@ -11,7 +11,7 @@ from ludwig.utils.upload_utils import HuggingFaceHub
 logger = logging.getLogger(__name__)
 
 
-def _build_dummy_tmp_model_repo(destination_directory: str, file_names: list[str]) -> None:
+def _build_tmp_model_repo(destination_directory: str, file_names: list[str]) -> None:
     """This utility function accepts the "destination_directory" and list of file names on input.
 
     It then makes directory hierarchy "my_simple_experiment_run" / "model" / "model_weights" under
@@ -139,12 +139,12 @@ def test_upload_to_hf_hub__validate_upload_parameters(
     presence/absence of errors.
     """
     output_directory: str = output_directory_manager
-    _build_dummy_tmp_model_repo(destination_directory=output_directory, file_names=file_names)
+    _build_tmp_model_repo(destination_directory=output_directory, file_names=file_names)
 
     model_path: pathlib.Path = pathlib.Path(output_directory) / "my_simple_experiment_run"
     model_weights_path: pathlib.Path = pathlib.Path(model_path / "model" / "model_weights")
 
-    repo_id: str = "dummy_account/dummy_repo"
+    repo_id: str = "test_account/test_repo"
     model_path: str = str(model_path)
     if error_raised:
         error_class: type  # noqa [F842]  # incorrect flagging of "local variable is annotated but never used
