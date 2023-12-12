@@ -60,10 +60,7 @@ class OnnxExporter(BaseModelExporter):
             datatype: datatype to convert to
                 -Default is 'qint8.'
         Returns:
-            quantized model
-        Notes:
-            Second parameter of quantize_dynamic specifies specific layers to be quantized.
-            If you want all layers to be quantized, comment that line out.
+            quantized ludwig model for onnx export
         """
         quantized_model = torch.quantization.quantize_dynamic(model, {torch.nn.Conv2d, torch.nn.Linear}, dtype=datatype)
         return quantized_model
