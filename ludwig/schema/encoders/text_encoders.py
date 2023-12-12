@@ -3178,7 +3178,7 @@ class TfIdfEncoderConfig(SequenceEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("llm", TEXT, model_types=[MODEL_ECD])
 @ludwig_dataclass
-class LLMEncoder(HFEncoderConfig):
+class LLMEncoderConfig(HFEncoderConfig):
     type: str = schema_utils.ProtectedString("llm")
     base_model: str = BaseModelDataclassField()
     adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
