@@ -632,7 +632,7 @@ class LLM(BaseModel):
         logger.info("Done.")
 
         # Remove the quantization configuration from the model
-        self.model.config.quantization_config = None
+        self.model.config.quantization_config = {}
 
         # Override properties of the model to indicate that it is no longer quantized.
         # This is also necessary to ensure that the model can be saved, otherwise it will raise an error like
