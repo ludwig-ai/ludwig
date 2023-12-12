@@ -2459,8 +2459,11 @@ class LLMEncoder(Encoder):
         # This is called by `torch.nn.Module.state_dict()` under the hood. `state_dict()` does additional work to
         # prep the dictionary, get submodule state, and run hooks. Overriding this method only impacts the
         # contents of the stat_dict.
-        # get_peft_model_state_dict geneates a state dict that only contains the adapter weights
-        from peft.utils.save_and_load import get_peft_model_state_dict
+        if self.encoder_config.adapter:
+            # get_peft_model_state_dict geneates a state dict that only contains the adapter weights
+            from peft.utils.save_and_load import get_peft_model_state_dict
 
-        sd = get_peft_model_state_dict(self.model)
-        destination.update(sd)
+            sd = get_peft_model_state_dict(self.model)
+            destination.update(sd)
+        else:
+            super()._save_to_state_dict(destination, prefix=prefix, keep_vars=keep_vars)
