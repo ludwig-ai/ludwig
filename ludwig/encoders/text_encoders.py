@@ -42,6 +42,7 @@ from ludwig.schema.encoders.text_encoders import (
     FlauBERTConfig,
     GPT2Config,
     GPTConfig,
+    LLMEncoderConfig,
     LongformerConfig,
     MT5Config,
     RoBERTaConfig,
@@ -2383,7 +2384,7 @@ class TfIdfEncoder(Encoder):
 @DeveloperAPI
 @register_encoder("llm", [TEXT])
 class LLMEncoder(Encoder):
-    def __init__(self, max_sequence_length: int, encoder_config=None, **kwargs):
+    def __init__(self, max_sequence_length: int, encoder_config: LLMEncoderConfig = None, **kwargs):
         self.encoder_config = encoder_config
 
         self.model_name = self.encoder_config.base_model
@@ -2413,6 +2414,21 @@ class LLMEncoder(Encoder):
         self.attention_masks = None
 
         clear_data_cache()
+
+    @staticmethod
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
+        return LLMEncoderConfig
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    def get_embedding_layer(self) -> nn.Module:
+        return self
 
     def prepare_for_training(self):
         pass
