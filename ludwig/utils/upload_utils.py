@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import logging
 import os
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from huggingface_hub import HfApi, login
 
@@ -33,12 +34,12 @@ class BaseModelUpload(ABC):
         self,
         repo_id: str,
         model_path: str,
-        repo_type: Optional[str] = None,
-        private: Optional[bool] = False,
-        commit_message: Optional[str] = None,
-        commit_description: Optional[str] = None,
-        dataset_file: Optional[str] = None,
-        dataset_name: Optional[str] = None,
+        repo_type: str | None = None,
+        private: bool | None = False,
+        commit_message: str | None = None,
+        commit_description: str | None = None,
+        dataset_file: str | None = None,
+        dataset_name: str | None = None,
     ) -> bool:
         """Abstract method to upload trained model artifacts to the target repository.
 
@@ -59,10 +60,10 @@ class BaseModelUpload(ABC):
     def _validate_upload_parameters(
         repo_id: str,
         model_path: str,
-        repo_type: Optional[str] = None,
-        private: Optional[bool] = False,
-        commit_message: Optional[str] = None,
-        commit_description: Optional[str] = None,
+        repo_type: str | None = None,
+        private: bool | None = False,
+        commit_message: str | None = None,
+        commit_description: str | None = None,
     ):
         """Validate parameters before uploading trained model artifacts.
 
@@ -87,7 +88,8 @@ class BaseModelUpload(ABC):
         Raises:
             FileNotFoundError: If the model_path does not exist.
             Exception: If the trained model artifacts are not found at the expected location within model_path, or
-                if the artifacts are not in the required format (i.e., 'pytorch_model.bin' or 'adapter_model.bin').
+                if the artifacts are not in the required format (i.e., 'pytorch_model.bin'; or 'adapter_model.bin' or
+                'adapter_model.safetensors').
         """
         # Make sure the model's save path is actually a valid path
         if not os.path.exists(model_path):
@@ -134,10 +136,10 @@ class HuggingFaceHub(BaseModelUpload):
     def _validate_upload_parameters(
         repo_id: str,
         model_path: str,
-        repo_type: Optional[str] = None,
-        private: Optional[bool] = False,
-        commit_message: Optional[str] = None,
-        commit_description: Optional[str] = None,
+        repo_type: str | None = None,
+        private: bool | None = False,
+        commit_message: str | None = None,
+        commit_description: str | None = None,
     ):
         """Validate parameters before uploading trained model artifacts.
 
@@ -181,25 +183,36 @@ class HuggingFaceHub(BaseModelUpload):
         )
 
         trained_model_artifacts_path = os.path.join(model_path, "model", "model_weights")
-        # Make sure the model's saved artifacts either contain:
-        # 1. pytorch_model.bin -> regular model training, such as ECD or for LLMs
-        # 2. adapter_model.bin -> LLM fine-tuning using PEFT
+        """
+        Make sure the model's saved artifacts either contain:
+        1. pytorch_model.bin -> regular model training, such as ECD or for LLMs
+        2. adapter_model.bin or adapter_model.safetensors -> LLM fine-tuning using PEFT
+           <Alex(12/10/2023): TODO>
+                As of PEFT version "0.7.0", "adapter_model" storage format was changed from ".bin" to ".safetensors".
+                For backward compatibility, both formats will be supported, until depracating ".bin" format formally.
+           </Alex(12/10/2023): TODO>
+        """
         files = set(os.listdir(trained_model_artifacts_path))
-        if "pytorch_model.bin" not in files and "adapter_model.bin" not in files:
-            raise Exception(
+        acceptable_model_artifact_file_nanes: set[str] = {
+            "pytorch_model.bin",
+            "adapter_model.bin",  # Delete per formal deprecation policy TBD (per above comment).
+            "adapter_model.safetensors",  # New format as of PEFT version "0.7.0" (per above comment).
+        }
+        if not (files & acceptable_model_artifact_file_nanes):
+            raise ValueError(
                 f"Can't find model weights at {trained_model_artifacts_path}. Trained model weights should "
                 "either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`"
-                "if using parameter efficient fine-tuning methods like LoRA."
+                "or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA."
             )
 
     def upload(
         self,
         repo_id: str,
         model_path: str,
-        repo_type: Optional[str] = None,
-        private: Optional[bool] = False,
-        commit_message: Optional[str] = None,
-        commit_description: Optional[str] = None,
+        repo_type: str | None = None,
+        private: bool | None = False,
+        commit_message: str | None = None,
+        commit_description: str | None = None,
         **kwargs,
     ) -> bool:
         """Create an empty repo on the HuggingFace Hub and upload trained model artifacts to that repo.
@@ -291,10 +304,10 @@ class Predibase(BaseModelUpload):
     def _validate_upload_parameters(
         repo_id: str,
         model_path: str,
-        repo_type: Optional[str] = None,
-        private: Optional[bool] = False,
-        commit_message: Optional[str] = None,
-        commit_description: Optional[str] = None,
+        repo_type: str | None = None,
+        private: bool | None = False,
+        commit_message: str | None = None,
+        commit_description: str | None = None,
     ):
         """Validate parameters before uploading trained model artifacts.
 
@@ -335,9 +348,9 @@ class Predibase(BaseModelUpload):
         self,
         repo_id: str,
         model_path: str,
-        commit_description: Optional[str] = None,
-        dataset_file: Optional[str] = None,
-        dataset_name: Optional[str] = None,
+        commit_description: str | None = None,
+        dataset_file: str | None = None,
+        dataset_name: str | None = None,
         **kwargs,
     ) -> bool:
         """Create an empty repo in Predibase and upload trained model artifacts to that repo.
