@@ -631,6 +631,9 @@ class LLM(BaseModel):
         convert_quantized_linear_to_linear(self.model)
         logger.info("Done.")
 
+        # Remove the quantization configuration from the model
+        self.model.config.quantization_config = None
+
         # Override properties of the model to indicate that it is no longer quantized.
         # This is also necessary to ensure that the model can be saved, otherwise it will raise an error like
         # "You are calling `save_pretrained` on a 4-bit converted model. This is currently not supported"
