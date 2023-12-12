@@ -6,7 +6,6 @@ from typing import Dict, Tuple, Union
 import torch
 import torch.nn.functional as F
 from bitsandbytes.nn.modules import Embedding
-from peft import get_peft_model, MODEL_TYPE_TO_PEFT_MODEL_MAPPING, PeftConfig, PeftModel, TaskType
 from transformers import AutoConfig, AutoModelForCausalLM, PreTrainedModel, PreTrainedTokenizer
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, PREDICTIONS, PROBABILITIES
@@ -72,6 +71,10 @@ def to_device(
                     config_obj.base_model,
                     **model_kwargs,
                 )
+
+                # Leave this import inline to support a minimal install of Ludwig
+                from peft import PeftModel  # noqa
+
                 model = PeftModel.from_pretrained(
                     model,
                     tmpdir,
@@ -90,7 +93,7 @@ def to_device(
 
 def initialize_adapter(
     model: PreTrainedModel, config_obj: "LLMModelConfig"  # noqa F821
-) -> Union[PeftModel, PreTrainedModel]:
+) -> Union["PeftModel", PreTrainedModel]:  # noqa F821
     """Wrap a pretrained model with a PEFT model for fine-tuning.
 
     Args:
@@ -106,12 +109,18 @@ def initialize_adapter(
             # Load pretrained adapter weights if specified.
             logger.info(f"Using pretrained adapter weights: {config_obj.adapter.pretrained_adapter_weights}")
 
+            # Leave this import inline to support a minimal install of Ludwig
+            from peft import MODEL_TYPE_TO_PEFT_MODEL_MAPPING, PeftConfig  # noqa
+
             peft_config = PeftConfig.from_pretrained(config_obj.adapter.pretrained_adapter_weights)
 
             model = MODEL_TYPE_TO_PEFT_MODEL_MAPPING[peft_config.task_type].from_pretrained(
                 model, config_obj.adapter.pretrained_adapter_weights
             )
         else:
+            # Leave this import inline to support a minimal install of Ludwig
+            from peft import get_peft_model, TaskType  # noqa
+
             # If no pretrained adapter is provided, we want to load untrained weights into the model
             peft_config = config_obj.adapter.to_config(
                 task_type=TaskType.CAUSAL_LM, tokenizer_name_or_path=config_obj.base_model
