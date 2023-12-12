@@ -1,7 +1,7 @@
 import copy
 import logging
 import tempfile
-from typing import Dict, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 import torch
 import torch.nn.functional as F
@@ -9,7 +9,10 @@ from bitsandbytes.nn.modules import Embedding
 from transformers import AutoConfig, AutoModelForCausalLM, PreTrainedModel, PreTrainedTokenizer
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, PREDICTIONS, PROBABILITIES
+from ludwig.schema.encoders.text_encoders import LLMEncoderConfig
+from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.schema.trainer import LLMTrainerConfig
+from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.logging_utils import log_once
 from ludwig.utils.model_utils import find_embedding_layer_with_path
 
@@ -17,6 +20,38 @@ logger = logging.getLogger(__name__)
 
 
 FALLBACK_CONTEXT_LEN = 2048
+
+
+@default_retry(tries=8)
+def load_pretrained_from_config(
+    config_obj: Union[LLMModelConfig, LLMEncoderConfig],
+    model_config: Optional[AutoConfig] = None,
+    weights_save_path: Optional[str] = None,
+) -> PreTrainedModel:
+    load_kwargs = {}
+    if config_obj.quantization:
+        # Apply quantization configuration at model load time
+        load_kwargs["torch_dtype"] = getattr(torch, config_obj.quantization.bnb_4bit_compute_dtype)
+        load_kwargs["quantization_config"] = config_obj.quantization.to_bitsandbytes()
+        load_kwargs["device_map"] = "auto"
+
+    if config_obj.model_parameters:
+        # Add any model specific parameters to the load kwargs
+        for param_name, param_value in config_obj.model_parameters.to_dict().items():
+            # Not all parameters are supported by all models, so we only add the parameter to the load kwargs
+            # if it is supported by the model.
+            if param_value is None:
+                continue
+
+            if hasattr(model_config, param_name):
+                load_kwargs[param_name] = param_value
+            else:
+                logger.warning(f"Parameter {param_name} is not supported by {config_obj.base_model}. Skipping.")
+
+    logger.info("Loading large language model...")
+    pretrained_model_name_or_path = weights_save_path or config_obj.base_model
+    model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path, **load_kwargs)
+    return model
 
 
 def to_device(
