@@ -20,6 +20,7 @@ from typing import Any, Callable, Dict, List, Optional, Type, TYPE_CHECKING, Typ
 import numpy as np
 import torch
 from torch import nn
+from transformers import AutoConfig
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import ENCODER_OUTPUT, TEXT
@@ -52,7 +53,10 @@ from ludwig.schema.encoders.text_encoders import (
     XLNetConfig,
 )
 from ludwig.schema.llms.peft import BaseAdapterConfig
+from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.hf_utils import load_pretrained_hf_model_with_hub_fallback
+from ludwig.utils.llm_utils import get_context_len, load_pretrained_from_config
+from ludwig.utils.tokenizers import HFTokenizer
 from ludwig.utils.torch_utils import FreezeModule
 
 if TYPE_CHECKING:
@@ -2374,3 +2378,50 @@ class TfIdfEncoder(Encoder):
 
     def get_embedding_layer(self) -> nn.Module:
         return self
+
+
+@DeveloperAPI
+@register_encoder("llm", [TEXT])
+class LLMEncoder(Encoder):
+    def __init__(self, max_sequence_length: int, encoder_config=None, **kwargs):
+        self.encoder_config = encoder_config
+
+        self.model_name = self.encoder_config.base_model
+        self.model_config = AutoConfig.from_pretrained(self.encoder_config.base_model)
+
+        self.model = load_pretrained_from_config(self.encoder_config, model_config=self.model_config)
+        self.curr_device = next(self.model.parameters()).device
+        logger.info("Done.")
+
+        self.context_len = get_context_len(self.model_config)
+
+        # TODO(Arnav): This needs be more flexible to account for RoPE Scaling
+        # When merging input IDs and target IDs for LLM fine-tuning, we want to make sure that the merged tensor is
+        # not longer than the global maximum sequence length. This is provided in the preprocessing config. We never
+        # want to exceed the maximum possible context length so we also check for that.
+        if self.encoder_config.preprocessing.global_max_sequence_length:
+            global_max_sequence_length = self.encoder_config.preprocessing.global_max_sequence_length
+            self.global_max_sequence_length = (
+                global_max_sequence_length if global_max_sequence_length <= self.context_len else self.context_len
+            )
+        else:
+            self.global_max_sequence_length = self.context_len
+
+        # Initialize tokenizer
+        self.tokenizer = HFTokenizer(self.encoder_config.base_model).tokenizer
+
+        self.attention_masks = None
+
+        clear_data_cache()
+
+    def prepare_for_training(self):
+        pass
+
+    def prepare_for_quantized_training(self):
+        pass
+
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
+        pass
+
+    def save(self):
+        pass
