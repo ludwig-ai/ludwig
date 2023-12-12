@@ -56,7 +56,7 @@ from ludwig.schema.encoders.text_encoders import (
 from ludwig.schema.llms.peft import BaseAdapterConfig
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.hf_utils import load_pretrained_hf_model_with_hub_fallback
-from ludwig.utils.llm_utils import get_context_len, load_pretrained_from_config
+from ludwig.utils.llm_utils import get_context_len, initialize_adapter, load_pretrained_from_config
 from ludwig.utils.tokenizers import HFTokenizer
 from ludwig.utils.torch_utils import FreezeModule
 
@@ -2430,11 +2430,27 @@ class LLMEncoder(Encoder):
     def get_embedding_layer(self) -> nn.Module:
         return self
 
+    def initialize_adapter(self):
+        """If an adapter config is provided, we want to wrap the model with a PEFT model for fine-tuning."""
+        if self.encoder_config.adapter:
+            self.model = initialize_adapter(self.model, self.encoder_config)
+
+            logger.info("==================================================")
+            logger.info("Trainable Parameter Summary For LLM Encoder Fine-Tuning")
+            logger.info(f"Fine-tuning with adapter: {self.encoder_config.adapter.type}")
+            self.model.print_trainable_parameters()
+            logger.info("==================================================")
+
     def prepare_for_training(self):
-        pass
+        # TODO: this implementation will not work if resuming from a previous checkpoint. Need to fix this.
+        if self.encoder_config.quantization:
+            self.prepare_for_quantized_training()
+        self.initialize_adapter()
 
     def prepare_for_quantized_training(self):
-        pass
+        from peft import prepare_model_for_kbit_training
+
+        self.model = prepare_model_for_kbit_training(self.model, use_gradient_checkpointing=False)
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
         pass
