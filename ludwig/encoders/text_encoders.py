@@ -2461,14 +2461,17 @@ class LLMEncoder(Encoder):
         with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False) if (
             torch.cuda.is_available() and self.curr_device.type == "cuda"
         ) else contextlib.nullcontext():
-            # TODO (jeffkinnison): Determine why the 8-bit `SCB` and `CB` matrices are deleted in the forward pass
-            model_outputs = self.model(input_ids=inputs, return_dict=True, output_hidden_states=True).hidden_states[-1]
+            # Get the hidden state of the last layer and return it as the text encoding
+            model_outputs = self.model(input_ids=inputs, output_hidden_states=True).hidden_states[-1]
+
         return {ENCODER_OUTPUT: model_outputs}
 
     def _save_to_state_dict(self, destination: Dict, prefix: str, keep_vars: bool):
         # This is called by `torch.nn.Module.state_dict()` under the hood. `state_dict()` does additional work to
         # prep the dictionary, get submodule state, and run hooks. Overriding this method only impacts the
-        # contents of the stat_dict.
+        # contents of the state_dict.
+        # The three args to this method are supplied by Module.state_dict
+        # https://github.com/pytorch/pytorch/blob/8739d1e3f9b08f4282fe79fc8dacd781d16913ff/torch/nn/modules/module.py#L1824
         if self.config.adapter:
             # get_peft_model_state_dict geneates a state dict that only contains the adapter weights
             from peft.utils.save_and_load import get_peft_model_state_dict
