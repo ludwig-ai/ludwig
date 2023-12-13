@@ -2408,7 +2408,6 @@ class LLMEncoder(Encoder):
         #        max_sequence_length if max_sequence_length <= self.context_len else self.context_len
         #     )
         # else:
-        print(f"CONTEXT LENGTH: {self.context_len}")
         self.max_sequence_length = self.context_len
 
         # Initialize tokenizer
