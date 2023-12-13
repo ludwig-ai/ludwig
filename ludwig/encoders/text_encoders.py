@@ -2453,7 +2453,17 @@ class LLMEncoder(Encoder):
         self.model = prepare_model_for_kbit_training(self.model, use_gradient_checkpointing=False)
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
-        pass
+        import contextlib
+
+        from ludwig.constants import LOGITS
+
+        # Wrap with flash attention backend for faster generation
+        with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False) if (
+            torch.cuda.is_available() and self.curr_device.type == "cuda"
+        ) else contextlib.nullcontext():
+            # TODO (jeffkinnison): Determine why the 8-bit `SCB` and `CB` matrices are deleted in the forward pass
+            model_outputs = self.model(input_ids=self.model_inputs, attention_mask=self.attention_masks).get(LOGITS)
+        return model_outputs
 
     def _save_to_state_dict(self, destination: Dict, prefix: str, keep_vars: bool):
         # This is called by `torch.nn.Module.state_dict()` under the hood. `state_dict()` does additional work to
