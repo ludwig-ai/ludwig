@@ -3178,9 +3178,10 @@ class TfIdfEncoderConfig(SequenceEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("llm", TEXT, model_types=[MODEL_ECD])
 @ludwig_dataclass
-class LLMEncoderConfig(HFEncoderConfig):
+class LLMEncoderConfig(SequenceEncoderConfig):
     type: str = schema_utils.ProtectedString("llm")
     base_model: str = BaseModelDataclassField()
+    max_sequence_length: int = schema_utils.Integer(default=None, allow_none=True, parameter_metadata=INTERNAL_ONLY)
     adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
     quantization: Optional[QuantizationConfig] = QuantizationConfigField().get_default_field()
     model_parameters: Optional[ModelParametersConfig] = ModelParametersConfigField().get_default_field()
