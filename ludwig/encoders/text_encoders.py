@@ -2415,6 +2415,8 @@ class LLMEncoder(Encoder):
 
         self.attention_masks = None
 
+        self.prepare_for_training()
+
         clear_data_cache()
 
     @staticmethod
