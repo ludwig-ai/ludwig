@@ -15,10 +15,12 @@ from ludwig.constants import (
     BACKEND,
     BASE_MODEL,
     BATCH_SIZE,
+    COMBINER,
     EPOCHS,
     GENERATION,
     INPUT_FEATURES,
     MERGE_ADAPTER_INTO_BASE_MODEL,
+    MODEL_ECD,
     MODEL_LLM,
     MODEL_TYPE,
     OUTPUT_FEATURES,
@@ -1190,3 +1192,25 @@ def test_llm_finetuning_with_embedding_noise(
     preds = convert_preds(preds)
 
     assert preds
+
+
+def test_llm_encoding(tmpdir):
+    dataset_path = os.path.join(tmpdir, "llm_classification_data.csv")
+
+    encoder_config = {
+        TYPE: "llm",
+        BASE_MODEL: "HuggingFaceH4/tiny-random-LlamaForCausalLM",
+    }
+
+    config = {
+        MODEL_TYPE: MODEL_ECD,
+        INPUT_FEATURES: [text_feature(name="input", encoder=encoder_config)],
+        OUTPUT_FEATURES: [category_feature(name="output")],
+        COMBINER: {TYPE: "sequence"},
+        TRAINER: {EPOCHS: 1},
+    }
+
+    generate_data(input_features=config[INPUT_FEATURES], output_features=config[OUTPUT_FEATURES], filename=dataset_path)
+
+    model = LudwigModel(config)
+    model.train(dataset=dataset_path)
