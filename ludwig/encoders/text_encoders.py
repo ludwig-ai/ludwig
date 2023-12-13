@@ -2385,6 +2385,10 @@ class TfIdfEncoder(Encoder):
 @DeveloperAPI
 @register_encoder("llm", [TEXT])
 class LLMEncoder(Encoder):
+    # Per-adapter type prefixes for parameter names in the state dict, taken from
+    # https://github.com/huggingface/peft/blob/0f1e9091cc975eb5458cc163bf1843a34fb42b76/src/peft/utils/save_and_load.py#L173C9-L180
+    ADAPTER_PARAM_NAME_PREFIX = {"lora": "lora_", "adalora": "lora_"}
+
     def __init__(self, encoder_config: LLMEncoderConfig = None, **kwargs):
         super().__init__()
         self.config = encoder_config
@@ -2480,3 +2484,29 @@ class LLMEncoder(Encoder):
             destination.update(sd)
         else:
             super()._save_to_state_dict(destination, prefix=prefix, keep_vars=keep_vars)
+
+    def _load_from_state_dict(
+        self, state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
+    ):
+        # Call this first to make sure torch can do its usual load. In the adapter case, this should essentially be a
+        # no-op, but the adapter weights will be collected in `unexpected_keys` because PEFT changes the parameter
+        # names under the hood.
+        super()._load_from_state_dict(
+            state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
+        )
+
+        if self.config.adapter:
+            # When using an adapter, only the adapter weights are saved, and so we only want to load those weights.
+            # Under the hood, PEFT alters the names of the parameters, which leads to an "unexpected keys" error when
+            # using strict mode. This block uses PEFT's version of `load_state_dict` to handle loading in weights.
+            from peft.utils.save_and_load import set_peft_model_state_dict
+
+            adapter_type_prefix = self.ADAPTER_PARAM_NAME_PREFIX[self.config.adapter.type]
+            peft_model_state_dict = {k: v for k, v in state_dict.items() if adapter_type_prefix in k}
+            set_peft_model_state_dict(self.model, peft_model_state_dict)
+
+            if strict:
+                for k in peft_model_state_dict.keys():
+                    sanitized = k.replace(f"{prefix}model.", "")  # `unexpected_keys` doesn't record the prefix
+                    sanitized = sanitized.replace("default.", "")  # By default, PEFT adds a "default." to param names
+                    unexpected_keys.remove(sanitized)
