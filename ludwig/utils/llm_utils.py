@@ -1,7 +1,7 @@
 import copy
 import logging
 import tempfile
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple, TYPE_CHECKING, Union
 
 import torch
 import torch.nn.functional as F
@@ -9,12 +9,15 @@ from bitsandbytes.nn.modules import Embedding
 from transformers import AutoConfig, AutoModelForCausalLM, PreTrainedModel, PreTrainedTokenizer
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, PREDICTIONS, PROBABILITIES
-from ludwig.schema.encoders.text_encoders import LLMEncoderConfig
-from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.schema.trainer import LLMTrainerConfig
 from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.logging_utils import log_once
 from ludwig.utils.model_utils import find_embedding_layer_with_path
+
+if TYPE_CHECKING:
+    from ludwig.schema.encoders.text_encoders import LLMEncoderConfig
+    from ludwig.schema.model_types.llm import LLMModelConfig
+
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +27,7 @@ FALLBACK_CONTEXT_LEN = 2048
 
 @default_retry(tries=8)
 def load_pretrained_from_config(
-    config_obj: Union[LLMModelConfig, LLMEncoderConfig],
+    config_obj: Union["LLMModelConfig", "LLMEncoderConfig"],
     model_config: Optional[AutoConfig] = None,
     weights_save_path: Optional[str] = None,
 ) -> PreTrainedModel:
