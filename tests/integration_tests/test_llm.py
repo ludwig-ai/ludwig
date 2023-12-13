@@ -1208,10 +1208,16 @@ def llm_encoder_config() -> dict[str, Any]:
 
 @pytest.mark.parametrize(
     "adapter,quantization",
-    [(None, None), ("lora", None), ("lora", 4), ("lora", 8)],
+    [(None, None), ("lora", None), ("lora", {"bits": 4}), ("lora", {"bits": 8})],
     ids=["FFT", "LoRA", "LoRA 4-bit", "LoRA 8-bit"],
 )
 def test_llm_encoding(llm_encoder_config, adapter, quantization, tmpdir):
+    if (
+        _finetune_strategy_requires_cuda(finetune_strategy_name=adapter, quantization_args=quantization)
+        and not (torch.cuda.is_available() and torch.cuda.device_count()) > 0
+    ):
+        pytest.skip("Skip: quantization requires GPU and none are available.")
+
     dataset_path = os.path.join(tmpdir, "llm_classification_data.csv")
 
     config = {
@@ -1226,7 +1232,7 @@ def test_llm_encoding(llm_encoder_config, adapter, quantization, tmpdir):
     if adapter:
         encoder_config[ADAPTER] = {TYPE: adapter}
     if quantization:
-        encoder_config[QUANTIZATION] = {"bits": quantization}
+        encoder_config[QUANTIZATION] = quantization
         config[BACKEND] = LOCAL_BACKEND
 
     config[INPUT_FEATURES] = [text_feature(name="input", encoder=encoder_config)]
