@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import copy
 import os
 import pathlib
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -1194,23 +1196,42 @@ def test_llm_finetuning_with_embedding_noise(
     assert preds
 
 
-def test_llm_encoding(tmpdir):
-    dataset_path = os.path.join(tmpdir, "llm_classification_data.csv")
-
+@pytest.fixture()
+def llm_encoder_config() -> dict[str, Any]:
     encoder_config = {
         TYPE: "llm",
         BASE_MODEL: "HuggingFaceH4/tiny-random-LlamaForCausalLM",
     }
 
+    return encoder_config
+
+
+@pytest.mark.parametrize(
+    "adapter,quantization",
+    [(None, None), ("lora", None), ("lora", 4), ("lora", 8)],
+    ids=["FFT", "LoRA", "LoRA 4-bit", "LoRA 8-bit"],
+)
+def test_llm_encoding(llm_encoder_config, adapter, quantization, tmpdir):
+    dataset_path = os.path.join(tmpdir, "llm_classification_data.csv")
+
     config = {
         MODEL_TYPE: MODEL_ECD,
-        INPUT_FEATURES: [text_feature(name="input", encoder=encoder_config)],
         OUTPUT_FEATURES: [category_feature(name="output")],
         COMBINER: {TYPE: "sequence"},
         TRAINER: {EPOCHS: 1},
     }
 
+    encoder_config = copy.deepcopy(llm_encoder_config)
+
+    if adapter:
+        encoder_config[ADAPTER] = {TYPE: adapter}
+    if quantization:
+        encoder_config[QUANTIZATION] = {"bits": quantization}
+        config[BACKEND] = LOCAL_BACKEND
+
+    config[INPUT_FEATURES] = [text_feature(name="input", encoder=encoder_config)]
+
     generate_data(input_features=config[INPUT_FEATURES], output_features=config[OUTPUT_FEATURES], filename=dataset_path)
 
     model = LudwigModel(config)
-    model.train(dataset=dataset_path)
+    model.train(dataset=dataset_path, output_directory=str(tmpdir))
