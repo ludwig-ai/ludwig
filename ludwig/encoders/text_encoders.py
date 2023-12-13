@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import contextlib
 import inspect
 import logging
 from typing import Any, Callable, Dict, List, Optional, Type, TYPE_CHECKING, TypeVar, Union
@@ -2384,13 +2385,14 @@ class TfIdfEncoder(Encoder):
 @DeveloperAPI
 @register_encoder("llm", [TEXT])
 class LLMEncoder(Encoder):
-    def __init__(self, max_sequence_length: int, encoder_config: LLMEncoderConfig = None, **kwargs):
-        self.encoder_config = encoder_config
+    def __init__(self, encoder_config: LLMEncoderConfig = None, **kwargs):
+        super().__init__()
+        self.config = encoder_config
 
-        self.model_name = self.encoder_config.base_model
-        self.model_config = AutoConfig.from_pretrained(self.encoder_config.base_model)
+        self.model_name = self.config.base_model
+        self.model_config = AutoConfig.from_pretrained(self.config.base_model)
 
-        self.model = load_pretrained_from_config(self.encoder_config, model_config=self.model_config)
+        self.model = load_pretrained_from_config(self.config, model_config=self.model_config)
         self.curr_device = next(self.model.parameters()).device
         logger.info("Done.")
 
@@ -2400,16 +2402,17 @@ class LLMEncoder(Encoder):
         # When merging input IDs and target IDs for LLM fine-tuning, we want to make sure that the merged tensor is
         # not longer than the global maximum sequence length. This is provided in the preprocessing config. We never
         # want to exceed the maximum possible context length so we also check for that.
-        if self.encoder_config.preprocessing.global_max_sequence_length:
-            global_max_sequence_length = self.encoder_config.preprocessing.global_max_sequence_length
-            self.global_max_sequence_length = (
-                global_max_sequence_length if global_max_sequence_length <= self.context_len else self.context_len
-            )
-        else:
-            self.global_max_sequence_length = self.context_len
+        # if self.encoder_config.max_sequence_length:
+        #     max_sequence_length = self.encoder_config.max_sequence_length
+        #     self.max_sequence_length = (
+        #        max_sequence_length if max_sequence_length <= self.context_len else self.context_len
+        #     )
+        # else:
+        print(f"CONTEXT LENGTH: {self.context_len}")
+        self.max_sequence_length = self.context_len
 
         # Initialize tokenizer
-        self.tokenizer = HFTokenizer(self.encoder_config.base_model).tokenizer
+        self.tokenizer = HFTokenizer(self.config.base_model).tokenizer
 
         self.attention_masks = None
 
@@ -2425,25 +2428,25 @@ class LLMEncoder(Encoder):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.max_sequence_length])
+        return torch.Size([self.max_sequence_length, self.model_config.hidden_size])
 
     def get_embedding_layer(self) -> nn.Module:
         return self
 
     def initialize_adapter(self):
         """If an adapter config is provided, we want to wrap the model with a PEFT model for fine-tuning."""
-        if self.encoder_config.adapter:
-            self.model = initialize_adapter(self.model, self.encoder_config)
+        if self.config.adapter:
+            self.model = initialize_adapter(self.model, self.config)
 
             logger.info("==================================================")
             logger.info("Trainable Parameter Summary For LLM Encoder Fine-Tuning")
-            logger.info(f"Fine-tuning with adapter: {self.encoder_config.adapter.type}")
+            logger.info(f"Fine-tuning with adapter: {self.config.adapter.type}")
             self.model.print_trainable_parameters()
             logger.info("==================================================")
 
     def prepare_for_training(self):
         # TODO: this implementation will not work if resuming from a previous checkpoint. Need to fix this.
-        if self.encoder_config.quantization:
+        if self.config.quantization:
             self.prepare_for_quantized_training()
         self.initialize_adapter()
 
@@ -2453,23 +2456,19 @@ class LLMEncoder(Encoder):
         self.model = prepare_model_for_kbit_training(self.model, use_gradient_checkpointing=False)
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
-        import contextlib
-
-        from ludwig.constants import LOGITS
-
         # Wrap with flash attention backend for faster generation
         with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False) if (
             torch.cuda.is_available() and self.curr_device.type == "cuda"
         ) else contextlib.nullcontext():
             # TODO (jeffkinnison): Determine why the 8-bit `SCB` and `CB` matrices are deleted in the forward pass
-            model_outputs = self.model(input_ids=self.model_inputs, attention_mask=self.attention_masks).get(LOGITS)
-        return model_outputs
+            model_outputs = self.model(input_ids=inputs, return_dict=True, output_hidden_states=True).hidden_states[-1]
+        return {ENCODER_OUTPUT: model_outputs}
 
     def _save_to_state_dict(self, destination: Dict, prefix: str, keep_vars: bool):
         # This is called by `torch.nn.Module.state_dict()` under the hood. `state_dict()` does additional work to
         # prep the dictionary, get submodule state, and run hooks. Overriding this method only impacts the
         # contents of the stat_dict.
-        if self.encoder_config.adapter:
+        if self.config.adapter:
             # get_peft_model_state_dict geneates a state dict that only contains the adapter weights
             from peft.utils.save_and_load import get_peft_model_state_dict
 
