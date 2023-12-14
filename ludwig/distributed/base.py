@@ -222,17 +222,14 @@ class LocalStrategy(DistributedStrategy):
     def eval(self, model):
         # HACK(geoffrey): use vanilla model.eval()
         # when https://github.com/huggingface/transformers/issues/28023 is resolved.
-        # prev_model_training_mode = model.training  # store previous model training mode
-        # model.eval()  # set model to eval mode
         for module_name, module in model.named_modules():
             self.module_name_to_prev_training_mode[module_name] = module.training
             module.eval()
     
     def train(self, model, prev_model_training_mode=None):
         """If mode is None, restore previous training mode. Else, set to mode."""
-        # HACK(geoffrey): use vanilla model.eval()
+        # HACK(geoffrey): use vanilla model.train(prev_model_training_mode)
         # when https://github.com/huggingface/transformers/issues/28023 is resolved.
-        # model.train(prev_model_training_mode)  # restore previous model training mode
         # This hack ignores module.training updates if the model is already in training mode 
         # (to avoid touching LoRA configuration). Otherwise, the model was in eval mode, so we
         # restore the previous training mode. We do not use prev_model_training_mode because we store the history
