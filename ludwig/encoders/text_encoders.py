@@ -2406,13 +2406,13 @@ class LLMEncoder(Encoder):
         # When merging input IDs and target IDs for LLM fine-tuning, we want to make sure that the merged tensor is
         # not longer than the global maximum sequence length. This is provided in the preprocessing config. We never
         # want to exceed the maximum possible context length so we also check for that.
-        # if self.encoder_config.max_sequence_length:
-        #     max_sequence_length = self.encoder_config.max_sequence_length
-        #     self.max_sequence_length = (
-        #        max_sequence_length if max_sequence_length <= self.context_len else self.context_len
-        #     )
-        # else:
-        self.max_sequence_length = self.context_len
+        if self.config.max_sequence_length:
+            max_sequence_length = self.config.max_sequence_length
+            self.max_sequence_length = (
+                max_sequence_length if max_sequence_length <= self.context_len else self.context_len
+            )
+        else:
+            self.max_sequence_length = self.context_len
 
         # Initialize tokenizer
         self.tokenizer = HFTokenizer(self.config.base_model).tokenizer
@@ -2482,8 +2482,21 @@ class LLMEncoder(Encoder):
 
             sd = get_peft_model_state_dict(self.model)
             destination.update(sd)
+
         else:
             super()._save_to_state_dict(destination, prefix=prefix, keep_vars=keep_vars)
+
+    def state_dict(self, *args, destination=None, prefix="", keep_vars=False):
+        destination = super().state_dict(destination, prefix=prefix, keep_vars=keep_vars)
+
+        if self.config.adapter:
+            adapter_type_prefix = self.ADAPTER_PARAM_NAME_PREFIX[self.config.adapter.type]
+            exclude_model_keys = [k for k in destination.keys() if adapter_type_prefix not in k]
+
+            for k in exclude_model_keys:
+                del destination[k]
+
+        return destination
 
     def _load_from_state_dict(
         self, state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
