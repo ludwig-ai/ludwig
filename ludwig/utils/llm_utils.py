@@ -20,7 +20,7 @@ FALLBACK_CONTEXT_LEN = 2048
 
 # The official microsoft phi models don't work out of the box because the weights aren't compatiable with HF
 # See https://github.com/huggingface/transformers/issues/28049 for more context.
-_PHI_MODEL_MAPPING = {
+_PHI_BASE_MODEL_MAPPING = {
     "microsoft/phi-1": "susnato/phi-1_dev",
     "microsoft/phi-1.5": "susnato/phi-1_5_dev",
 }
