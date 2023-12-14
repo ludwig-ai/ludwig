@@ -126,7 +126,7 @@ class Predictor(BasePredictor):
     def batch_predict(self, dataset: Dataset, dataset_name: str = None, collect_logits: bool = False):
         self.dist_model = self._distributed.to_device(self.dist_model)
         prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        
+
         # HACK(geoffrey): remove when https://github.com/huggingface/transformers/issues/28023 is resolved.
         module_name_to_training_mode = {}
         for module_name, module in self.dist_model.named_modules():
@@ -166,7 +166,7 @@ class Predictor(BasePredictor):
 
     def predict_single(self, batch, collect_logits: bool = False):
         prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        
+
         # HACK(geoffrey): remove when https://github.com/huggingface/transformers/issues/28023 is resolved.
         module_name_to_training_mode = {}
         for module_name, module in self.dist_model.named_modules():
@@ -235,7 +235,7 @@ class Predictor(BasePredictor):
         """
         self.dist_model = self._distributed.to_device(self.dist_model)
         prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        
+
         # HACK(geoffrey): remove when https://github.com/huggingface/transformers/issues/28023 is resolved.
         module_name_to_training_mode = {}
         for module_name, module in self.dist_model.named_modules():
