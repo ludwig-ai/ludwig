@@ -1,12 +1,12 @@
 import contextlib
 import logging
 import os
-from packaging import version
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
 import transformers
+from packaging import version
 from transformers import AutoConfig, AutoModelForCausalLM, GenerationConfig, PreTrainedModel
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, MODEL_LLM, PREDICTIONS, TEXT
