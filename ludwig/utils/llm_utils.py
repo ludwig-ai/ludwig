@@ -5,7 +5,9 @@ from typing import Dict, Optional, Tuple, TYPE_CHECKING, Union
 
 import torch
 import torch.nn.functional as F
+import transformers
 from bitsandbytes.nn.modules import Embedding
+from packaging import version
 from transformers import AutoConfig, AutoModelForCausalLM, PreTrainedModel, PreTrainedTokenizer
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, PREDICTIONS, PROBABILITIES
@@ -23,6 +25,8 @@ logger = logging.getLogger(__name__)
 
 
 FALLBACK_CONTEXT_LEN = 2048
+
+transformers_436 = version.parse(transformers.__version__) >= version.parse("4.36.0")
 
 # The official microsoft phi models don't work out of the box because the weights aren't compatiable with HF
 # See https://github.com/huggingface/transformers/issues/28049 for more context.
@@ -48,6 +52,9 @@ def load_pretrained_from_config(
         load_kwargs["quantization_config"] = config_obj.quantization.to_bitsandbytes()
         if config_obj.base_model not in _MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION:
             load_kwargs["device_map"] = "auto"
+
+        if transformers_436:
+            load_kwargs["attn_implementation"] = "eager"
 
     if config_obj.model_parameters:
         # Add any model specific parameters to the load kwargs
