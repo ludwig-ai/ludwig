@@ -2421,6 +2421,10 @@ class LLMEncoder(Encoder):
 
         self.prepare_for_training()
 
+        if not self.config.adapter:
+            out_module = list(self.model.modules())[-1]
+            out_module.requires_grad_(requires_grad=False)
+
         clear_data_cache()
 
     @staticmethod
