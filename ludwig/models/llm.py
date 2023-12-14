@@ -20,6 +20,7 @@ from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.llm_quantization_utils import convert_quantized_linear_to_linear
 from ludwig.utils.llm_utils import (
+    _MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION,
     add_left_padding,
     generate_merged_ids,
     get_context_len,
@@ -598,6 +599,12 @@ class LLM(BaseModel):
         logger.info("Upscaling quantized weights to fp16...")
         convert_quantized_linear_to_linear(self.model)
         logger.info("Done.")
+
+        # Remove the quantization configuration from the model
+        # The reason we can't delete the quantization config is because it is a property of the model and
+        # HF does some weird serialization of the config that causes an error when trying to access `self.model.config`
+        # after you try and delete a key from the config: TypeError: Object of type dtype is not JSON serializable.
+        self.model.config.quantization_config = {}
 
         # Override properties of the model to indicate that it is no longer quantized.
         # This is also necessary to ensure that the model can be saved, otherwise it will raise an error like
