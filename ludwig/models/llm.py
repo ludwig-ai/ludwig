@@ -20,7 +20,6 @@ from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.llm_quantization_utils import convert_quantized_linear_to_linear
 from ludwig.utils.llm_utils import (
-    _MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION,
     add_left_padding,
     generate_merged_ids,
     get_context_len,
