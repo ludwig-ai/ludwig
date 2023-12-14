@@ -987,8 +987,7 @@ class Trainer(BaseTrainer):
                     # epoch init
                     start_time = time.time()
 
-                    if not self.dist_model.training:
-                        self.dist_model.train()  # Sets model to training mode.
+                    self.distributed.train(self.dist_model)
                     self.model.reset_metrics()
 
                     self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))

@@ -125,13 +125,8 @@ class Predictor(BasePredictor):
 
     def batch_predict(self, dataset: Dataset, dataset_name: str = None, collect_logits: bool = False):
         self.dist_model = self._distributed.to_device(self.dist_model)
-        # prev_model_training_mode = self.dist_model.training  # store previous model training mode
-
-        # HACK(geoffrey): remove when https://github.com/huggingface/transformers/issues/28023 is resolved.
-        module_name_to_training_mode = {}
-        for module_name, module in self.dist_model.named_modules():
-            module_name_to_training_mode[module_name] = module.training
-        self.dist_model.eval()  # set model to eval mode
+        prev_model_training_mode = self.dist_model.training
+        self._distributed.eval(self.dist_model)
 
         with torch.no_grad():
             with dataset.initialize_batcher(self._batch_size, should_shuffle=False) as batcher:
@@ -156,22 +151,13 @@ class Predictor(BasePredictor):
         # consolidate predictions from each batch to a single tensor
         self._concat_preds(predictions)
 
-        # HACK(geoffrey): restore model training mode for individual modules until
-        # https://github.com/huggingface/transformers/issues/28023 is resolved.
-        # self.dist_model.train(prev_model_training_mode, module_name_to_training_mode)
-        for module_name, module in self.dist_model.named_modules():
-            module.training = module_name_to_training_mode[module_name]
+        self._distributed.train(self.dist_model, prev_model_training_mode)
 
         return from_numpy_dataset(predictions)
 
     def predict_single(self, batch, collect_logits: bool = False):
-        # prev_model_training_mode = self.dist_model.training  # store previous model training mode
-
-        # HACK(geoffrey): remove when https://github.com/huggingface/transformers/issues/28023 is resolved.
-        module_name_to_training_mode = {}
-        for module_name, module in self.dist_model.named_modules():
-            module_name_to_training_mode[module_name] = module.training
-        self.dist_model.eval()  # set model to eval mode
+        prev_model_training_mode = self.dist_model.training
+        self._distributed.eval(self.dist_model)
 
         with torch.no_grad():
             predictions = defaultdict(list)
@@ -181,11 +167,8 @@ class Predictor(BasePredictor):
             )
             self._concat_preds(predictions)
 
-        # HACK(geoffrey): restore model training mode for individual modules until
-        # https://github.com/huggingface/transformers/issues/28023 is resolved.
-        # self.dist_model.train(prev_model_training_mode, module_name_to_training_mode)
-        for module_name, module in self.dist_model.named_modules():
-            module.training = module_name_to_training_mode[module_name]
+        self._distributed.train(self.dist_model, prev_model_training_mode)
+
         return from_numpy_dataset(predictions)
 
     def _predict(self, batch: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
@@ -234,13 +217,8 @@ class Predictor(BasePredictor):
             collect_predictions, collect_logits.
         """
         self.dist_model = self._distributed.to_device(self.dist_model)
-        # prev_model_training_mode = self.dist_model.training  # store previous model training mode
-
-        # HACK(geoffrey): remove when https://github.com/huggingface/transformers/issues/28023 is resolved.
-        module_name_to_training_mode = {}
-        for module_name, module in self.dist_model.named_modules():
-            module_name_to_training_mode[module_name] = module.training
-        self.dist_model.eval()  # set model to eval mode
+        prev_model_training_mode = self.dist_model.training
+        self._distributed.eval(self.dist_model)
 
         with torch.no_grad():
             with dataset.initialize_batcher(
@@ -311,24 +289,16 @@ class Predictor(BasePredictor):
             metrics = self.model.get_metrics()
             self.model.reset_metrics()
 
-            # HACK(geoffrey): restore model training mode for individual modules until
-            # https://github.com/huggingface/transformers/issues/28023 is resolved.
-            # self.dist_model.train(prev_model_training_mode, module_name_to_training_mode)
-            for module_name, module in self.dist_model.named_modules():
-                module.training = module_name_to_training_mode[module_name]
+            self._distributed.train(self.dist_model, prev_model_training_mode)
 
             return metrics, from_numpy_dataset(predictions)
 
     def batch_collect_activations(self, layer_names, dataset, bucketing_field=None):
         if bucketing_field:
             raise ValueError("BucketedBatcher is not supported yet")
-
-        # prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        # HACK(geoffrey): remove when https://github.com/huggingface/transformers/issues/28023 is resolved.
-        module_name_to_training_mode = {}
-        for module_name, module in self.dist_model.named_modules():
-            module_name_to_training_mode[module_name] = module.training
-        self.dist_model.eval()  # set model to eval mode
+        
+        prev_model_training_mode = self.dist_model.training
+        self._distributed.eval(self.dist_model)
 
         with torch.no_grad():
             with dataset.initialize_batcher(
@@ -358,11 +328,7 @@ class Predictor(BasePredictor):
 
                 progress_bar.close()
 
-        # HACK(geoffrey): restore model training mode for individual modules until
-        # https://github.com/huggingface/transformers/issues/28023 is resolved.
-        # self.dist_model.train(prev_model_training_mode, module_name_to_training_mode)
-        for module_name, module in self.dist_model.named_modules():
-            module.training = module_name_to_training_mode[module_name]
+        self._distributed.train(self.dist_model, prev_model_training_mode)
 
         return collected_tensors
 
@@ -395,12 +361,9 @@ class LlmFineTunePredictor(Predictor):
             dictionary are "inputs", "targets", and "outputs". The values of each of these keys are dictionaries of
             feature names to lists of tensors. The tensors are the inputs, targets, and outputs for each batch.
         """
-        # prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        # HACK(geoffrey): remove when https://github.com/huggingface/transformers/issues/28023 is resolved.
-        module_name_to_training_mode = {}
-        for module_name, module in self.dist_model.named_modules():
-            module_name_to_training_mode[module_name] = module.training
-        self.dist_model.eval()  # set model to eval modeet model to eval mode
+        prev_model_training_mode = self.dist_model.training
+        self._distributed.eval(self.dist_model)
+
         example_inputs = defaultdict(list)
         example_targets = defaultdict(list)
         example_outputs = defaultdict(list)
@@ -492,11 +455,8 @@ class LlmFineTunePredictor(Predictor):
                 "outputs": example_outputs,
             }
 
-            # HACK(geoffrey): restore model training mode for individual modules until
-            # https://github.com/huggingface/transformers/issues/28023 is resolved.
-            # self.dist_model.train(prev_model_training_mode, module_name_to_training_mode)
-            for module_name, module in self.dist_model.named_modules():
-                module.training = module_name_to_training_mode[module_name]
+            self._distributed.train(self.dist_model, prev_model_training_mode)
+
             return metrics, from_numpy_dataset(predictions), input_target_output_dict
 
 
