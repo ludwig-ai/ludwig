@@ -50,8 +50,8 @@ class DistributedStrategy(ABC):
 
     def eval(self, model: nn.Module):
         model.eval()
-    
-    def train(self, model: nn.Module, prev_model_training_mode: bool=None):
+
+    def train(self, model: nn.Module, prev_model_training_mode: bool = None):
         if prev_model_training_mode is not None:
             model.train(prev_model_training_mode)
         else:
@@ -210,7 +210,7 @@ class LocalStrategy(DistributedStrategy):
     def __init__(self):
         super().__init__()
         self.module_name_to_prev_training_mode = {}
-    
+
     def prepare(
         self,
         model: nn.Module,
@@ -218,7 +218,7 @@ class LocalStrategy(DistributedStrategy):
         base_learning_rate: float,
     ) -> tuple[nn.Module, Optimizer]:
         return model, create_optimizer(model, trainer_config.optimizer, base_learning_rate)
-    
+
     def eval(self, model):
         # HACK(geoffrey): use vanilla model.eval()
         # when https://github.com/huggingface/transformers/issues/28023 is resolved.
@@ -227,13 +227,16 @@ class LocalStrategy(DistributedStrategy):
         for module_name, module in model.named_modules():
             self.module_name_to_prev_training_mode[module_name] = module.training
             module.eval()
-    
+
     def train(self, model, prev_model_training_mode=None):
-        """If mode is None, restore previous training mode. Else, set to mode."""
+        """If mode is None, restore previous training mode.
+
+        Else, set to mode.
+        """
         # HACK(geoffrey): use vanilla model.eval()
         # when https://github.com/huggingface/transformers/issues/28023 is resolved.
         # model.train(prev_model_training_mode)  # restore previous model training mode
-        # This hack ignores module.training updates if the model is already in training mode 
+        # This hack ignores module.training updates if the model is already in training mode
         # (to avoid touching LoRA configuration). Otherwise, the model was in eval mode, so we
         # restore the previous training mode. We do not use prev_model_training_mode because we store the history
         # as a dictionary mapping to training mode to each module.

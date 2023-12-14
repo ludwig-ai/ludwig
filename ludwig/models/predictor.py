@@ -296,7 +296,7 @@ class Predictor(BasePredictor):
     def batch_collect_activations(self, layer_names, dataset, bucketing_field=None):
         if bucketing_field:
             raise ValueError("BucketedBatcher is not supported yet")
-        
+
         prev_model_training_mode = self.dist_model.training
         self._distributed.eval(self.dist_model)
 
