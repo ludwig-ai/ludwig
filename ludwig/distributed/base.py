@@ -238,7 +238,8 @@ class LocalStrategy(DistributedStrategy):
             return
 
         for module_name, module in model.named_modules():
-            module.train(self.module_name_to_prev_training_mode[module_name])
+            if module_name in self.module_name_to_prev_training_mode:
+                module.train(self.module_name_to_prev_training_mode[module_name])
 
     def size(self) -> int:
         return 1
