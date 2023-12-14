@@ -21,6 +21,7 @@ from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.llm_quantization_utils import convert_quantized_linear_to_linear
 from ludwig.utils.llm_utils import (
+    _MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION,
     add_left_padding,
     generate_merged_ids,
     get_context_len,
@@ -87,7 +88,8 @@ def load_pretrained_from_config(
         # Apply quanitzation configuration at model load time
         load_kwargs["torch_dtype"] = getattr(torch, config_obj.quantization.bnb_4bit_compute_dtype)
         load_kwargs["quantization_config"] = config_obj.quantization.to_bitsandbytes()
-        load_kwargs["device_map"] = "auto"
+        if config_obj.base_model not in _MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION:
+            load_kwargs["device_map"] = "auto"
 
     if config_obj.model_parameters:
         # Add any model specific parameters to the load kwargs

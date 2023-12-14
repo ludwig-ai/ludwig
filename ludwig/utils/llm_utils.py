@@ -18,6 +18,9 @@ logger = logging.getLogger(__name__)
 
 FALLBACK_CONTEXT_LEN = 2048
 
+# Phi models as of Transformers 4.36.1 don't support "device_map='auto'" at model load time.
+_MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION = {"susnato/phi-1_dev", "susnato/phi-1_5_dev"}
+
 
 def to_device(
     model: PreTrainedModel,
@@ -54,10 +57,12 @@ def to_device(
         model_kwargs.update(
             dict(
                 low_cpu_mem_usage=True,
-                device_map="auto",
                 max_memory={i: "13GiB" for i in range(num_gpus)},
             )
         )
+
+        if config_obj.base_model not in _MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION:
+            model_kwargs["device_map"] = "auto"
 
         if config_obj.quantization:
             model_kwargs["quantization_config"] = config_obj.quantization.to_bitsandbytes()
