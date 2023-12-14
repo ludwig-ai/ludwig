@@ -125,7 +125,7 @@ class Predictor(BasePredictor):
 
     def batch_predict(self, dataset: Dataset, dataset_name: str = None, collect_logits: bool = False):
         self.dist_model = self._distributed.to_device(self.dist_model)
-        prev_model_training_mode = self.dist_model.training  # store previous model training mode
+        # prev_model_training_mode = self.dist_model.training  # store previous model training mode
 
         # HACK(geoffrey): remove when https://github.com/huggingface/transformers/issues/28023 is resolved.
         module_name_to_training_mode = {}
@@ -165,7 +165,7 @@ class Predictor(BasePredictor):
         return from_numpy_dataset(predictions)
 
     def predict_single(self, batch, collect_logits: bool = False):
-        prev_model_training_mode = self.dist_model.training  # store previous model training mode
+        # prev_model_training_mode = self.dist_model.training  # store previous model training mode
 
         # HACK(geoffrey): remove when https://github.com/huggingface/transformers/issues/28023 is resolved.
         module_name_to_training_mode = {}
@@ -234,7 +234,7 @@ class Predictor(BasePredictor):
             collect_predictions, collect_logits.
         """
         self.dist_model = self._distributed.to_device(self.dist_model)
-        prev_model_training_mode = self.dist_model.training  # store previous model training mode
+        # prev_model_training_mode = self.dist_model.training  # store previous model training mode
 
         # HACK(geoffrey): remove when https://github.com/huggingface/transformers/issues/28023 is resolved.
         module_name_to_training_mode = {}
@@ -323,7 +323,7 @@ class Predictor(BasePredictor):
         if bucketing_field:
             raise ValueError("BucketedBatcher is not supported yet")
 
-        prev_model_training_mode = self.dist_model.training  # store previous model training mode
+        # prev_model_training_mode = self.dist_model.training  # store previous model training mode
         # HACK(geoffrey): remove when https://github.com/huggingface/transformers/issues/28023 is resolved.
         module_name_to_training_mode = {}
         for module_name, module in self.dist_model.named_modules():
@@ -395,7 +395,7 @@ class LlmFineTunePredictor(Predictor):
             dictionary are "inputs", "targets", and "outputs". The values of each of these keys are dictionaries of
             feature names to lists of tensors. The tensors are the inputs, targets, and outputs for each batch.
         """
-        prev_model_training_mode = self.dist_model.training  # store previous model training mode
+        # prev_model_training_mode = self.dist_model.training  # store previous model training mode
         # HACK(geoffrey): remove when https://github.com/huggingface/transformers/issues/28023 is resolved.
         module_name_to_training_mode = {}
         for module_name, module in self.dist_model.named_modules():
