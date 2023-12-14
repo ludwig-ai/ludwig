@@ -2421,10 +2421,6 @@ class LLMEncoder(Encoder):
 
         self.prepare_for_training()
 
-        if not self.config.adapter:
-            out_module = list(self.model.modules())[-1]
-            out_module.requires_grad_(requires_grad=False)
-
         clear_data_cache()
 
     @staticmethod
@@ -2458,6 +2454,13 @@ class LLMEncoder(Encoder):
         if self.config.quantization:
             self.prepare_for_quantized_training()
         self.initialize_adapter()
+
+        # Because we use the last hidden state as encoder output rather than the logits, the final module of the model
+        # has input pass through but no gradient update in the backward pass. This can lead to a DDP error. Freezing
+        # the module prevents this from happening.
+        if not self.config.adapter:
+            out_module = list(self.model.modules())[-1]
+            out_module.requires_grad_(requires_grad=False)
 
     def prepare_for_quantized_training(self):
         from peft import prepare_model_for_kbit_training
