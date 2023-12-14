@@ -88,6 +88,7 @@ def load_pretrained_from_config(
         load_kwargs["torch_dtype"] = getattr(torch, config_obj.quantization.bnb_4bit_compute_dtype)
         load_kwargs["quantization_config"] = config_obj.quantization.to_bitsandbytes()
         load_kwargs["device_map"] = "auto"
+        load_kwargs["attn_implementation"] = "eager"
 
     if config_obj.model_parameters:
         # Add any model specific parameters to the load kwargs
