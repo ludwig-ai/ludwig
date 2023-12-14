@@ -46,7 +46,8 @@ def load_pretrained_from_config(
         # Apply quantization configuration at model load time
         load_kwargs["torch_dtype"] = getattr(torch, config_obj.quantization.bnb_4bit_compute_dtype)
         load_kwargs["quantization_config"] = config_obj.quantization.to_bitsandbytes()
-        load_kwargs["device_map"] = "auto"
+        if config_obj.base_model not in _MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION:
+            load_kwargs["device_map"] = "auto"
 
     if config_obj.model_parameters:
         # Add any model specific parameters to the load kwargs
