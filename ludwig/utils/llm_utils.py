@@ -1,22 +1,32 @@
 import copy
 import logging
 import tempfile
-from typing import Dict, Tuple, Union
+from typing import Dict, Optional, Tuple, TYPE_CHECKING, Union
 
 import torch
 import torch.nn.functional as F
+import transformers
 from bitsandbytes.nn.modules import Embedding
+from packaging import version
 from transformers import AutoConfig, AutoModelForCausalLM, PreTrainedModel, PreTrainedTokenizer
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, PREDICTIONS, PROBABILITIES
 from ludwig.schema.trainer import LLMTrainerConfig
+from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.logging_utils import log_once
 from ludwig.utils.model_utils import find_embedding_layer_with_path
+
+if TYPE_CHECKING:
+    from ludwig.schema.encoders.text_encoders import LLMEncoderConfig
+    from ludwig.schema.model_types.llm import LLMModelConfig
+
 
 logger = logging.getLogger(__name__)
 
 
 FALLBACK_CONTEXT_LEN = 2048
+
+transformers_436 = version.parse(transformers.__version__) >= version.parse("4.36.0")
 
 # The official microsoft phi models don't work out of the box because the weights aren't compatiable with HF
 # See https://github.com/huggingface/transformers/issues/28049 for more context.
@@ -27,6 +37,42 @@ _PHI_BASE_MODEL_MAPPING = {
 
 # The susnato Phi models as of Transformers 4.36.1 don't support "device_map='auto'" at model load time.
 _MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION = {"susnato/phi-1_dev", "susnato/phi-1_5_dev"}
+
+
+@default_retry(tries=8)
+def load_pretrained_from_config(
+    config_obj: Union["LLMModelConfig", "LLMEncoderConfig"],
+    model_config: Optional[AutoConfig] = None,
+    weights_save_path: Optional[str] = None,
+) -> PreTrainedModel:
+    load_kwargs = {}
+    if config_obj.quantization:
+        # Apply quantization configuration at model load time
+        load_kwargs["torch_dtype"] = getattr(torch, config_obj.quantization.bnb_4bit_compute_dtype)
+        load_kwargs["quantization_config"] = config_obj.quantization.to_bitsandbytes()
+        if config_obj.base_model not in _MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION:
+            load_kwargs["device_map"] = "auto"
+
+        if transformers_436:
+            load_kwargs["attn_implementation"] = "eager"
+
+    if config_obj.model_parameters:
+        # Add any model specific parameters to the load kwargs
+        for param_name, param_value in config_obj.model_parameters.to_dict().items():
+            # Not all parameters are supported by all models, so we only add the parameter to the load kwargs
+            # if it is supported by the model.
+            if param_value is None:
+                continue
+
+            if hasattr(model_config, param_name):
+                load_kwargs[param_name] = param_value
+            else:
+                logger.warning(f"Parameter {param_name} is not supported by {config_obj.base_model}. Skipping.")
+
+    logger.info("Loading large language model...")
+    pretrained_model_name_or_path = weights_save_path or config_obj.base_model
+    model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path, **load_kwargs)
+    return model
 
 
 def to_device(
