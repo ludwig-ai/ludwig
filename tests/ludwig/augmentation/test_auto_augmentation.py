@@ -23,4 +23,5 @@ def test_auto_augmentation(test_image, augmentation_type, augmentation_params):
     aug_config = get_augmentation_cls(IMAGE, augmentation_type).from_dict(augmentation_params)
     augmentation_op_cls = get_augmentation_op(IMAGE, augmentation_type)
     augmentation_op = augmentation_op_cls(aug_config)
-    augmentation_op(test_image)
+    augmented_image = augmentation_op(test_image)
+    assert augmented_image.shape == (5, 3, 256, 256)

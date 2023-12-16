@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Copyright (c) 2019 Uber Technologies, Inc.
+# Copyright (c) 2023 Predibase, Inc., 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import contextlib
 import inspect
 import logging
 from typing import Any, Callable, Dict, List, Optional, Type, TYPE_CHECKING, TypeVar, Union
@@ -20,6 +21,7 @@ from typing import Any, Callable, Dict, List, Optional, Type, TYPE_CHECKING, Typ
 import numpy as np
 import torch
 from torch import nn
+from transformers import AutoConfig
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import ENCODER_OUTPUT, TEXT
@@ -41,6 +43,7 @@ from ludwig.schema.encoders.text_encoders import (
     FlauBERTConfig,
     GPT2Config,
     GPTConfig,
+    LLMEncoderConfig,
     LongformerConfig,
     MT5Config,
     RoBERTaConfig,
@@ -52,7 +55,10 @@ from ludwig.schema.encoders.text_encoders import (
     XLNetConfig,
 )
 from ludwig.schema.llms.peft import BaseAdapterConfig
+from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.hf_utils import load_pretrained_hf_model_with_hub_fallback
+from ludwig.utils.llm_utils import get_context_len, initialize_adapter, load_pretrained_from_config
+from ludwig.utils.tokenizers import HFTokenizer
 from ludwig.utils.torch_utils import FreezeModule
 
 if TYPE_CHECKING:
@@ -2374,3 +2380,153 @@ class TfIdfEncoder(Encoder):
 
     def get_embedding_layer(self) -> nn.Module:
         return self
+
+
+@DeveloperAPI
+@register_encoder("llm", [TEXT])
+class LLMEncoder(Encoder):
+    # Per-adapter type prefixes for parameter names in the state dict, taken from
+    # https://github.com/huggingface/peft/blob/0f1e9091cc975eb5458cc163bf1843a34fb42b76/src/peft/utils/save_and_load.py#L173C9-L180
+    ADAPTER_PARAM_NAME_PREFIX = {"lora": "lora_", "adalora": "lora_"}
+
+    def __init__(self, encoder_config: LLMEncoderConfig = None, **kwargs):
+        super().__init__()
+        self.config = encoder_config
+
+        self.model_name = self.config.base_model
+        self.model_config = AutoConfig.from_pretrained(self.config.base_model)
+
+        self.model = load_pretrained_from_config(self.config, model_config=self.model_config)
+        self.curr_device = next(self.model.parameters()).device
+        logger.info("Done.")
+
+        self.context_len = get_context_len(self.model_config)
+
+        # TODO(Arnav): This needs be more flexible to account for RoPE Scaling
+        # When merging input IDs and target IDs for LLM fine-tuning, we want to make sure that the merged tensor is
+        # not longer than the global maximum sequence length. This is provided in the preprocessing config. We never
+        # want to exceed the maximum possible context length so we also check for that.
+        if self.config.max_sequence_length:
+            max_sequence_length = self.config.max_sequence_length
+            self.max_sequence_length = (
+                max_sequence_length if max_sequence_length <= self.context_len else self.context_len
+            )
+        else:
+            self.max_sequence_length = self.context_len
+
+        # Initialize tokenizer
+        self.tokenizer = HFTokenizer(self.config.base_model).tokenizer
+
+        self.attention_masks = None
+
+        self.prepare_for_training()
+
+        clear_data_cache()
+
+    @staticmethod
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
+        return LLMEncoderConfig
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length, self.model_config.hidden_size])
+
+    def get_embedding_layer(self) -> nn.Module:
+        return self
+
+    def initialize_adapter(self):
+        """If an adapter config is provided, we want to wrap the model with a PEFT model for fine-tuning."""
+        if self.config.adapter:
+            self.model = initialize_adapter(self.model, self.config)
+
+            logger.info("==================================================")
+            logger.info("Trainable Parameter Summary For LLM Encoder Fine-Tuning")
+            logger.info(f"Fine-tuning with adapter: {self.config.adapter.type}")
+            self.model.print_trainable_parameters()
+            logger.info("==================================================")
+
+    def prepare_for_training(self):
+        # TODO: this implementation will not work if resuming from a previous checkpoint. Need to fix this.
+        if self.config.quantization:
+            self.prepare_for_quantized_training()
+        self.initialize_adapter()
+
+        # Because we use the last hidden state as encoder output rather than the logits, the final module of the model
+        # has input pass through but no gradient update in the backward pass. This can lead to a DDP error. Freezing
+        # the module prevents this from happening.
+        if not self.config.adapter:
+            out_module = list(self.model.modules())[-1]
+            out_module.requires_grad_(requires_grad=False)
+
+    def prepare_for_quantized_training(self):
+        from peft import prepare_model_for_kbit_training
+
+        self.model = prepare_model_for_kbit_training(self.model, use_gradient_checkpointing=False)
+
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
+        # Wrap with flash attention backend for faster generation
+        with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False) if (
+            torch.cuda.is_available() and self.curr_device.type == "cuda"
+        ) else contextlib.nullcontext():
+            # Get the hidden state of the last layer and return it as the text encoding
+            model_outputs = self.model(input_ids=inputs, output_hidden_states=True).hidden_states[-1]
+
+        return {ENCODER_OUTPUT: model_outputs}
+
+    def _save_to_state_dict(self, destination: Dict, prefix: str, keep_vars: bool):
+        # This is called by `torch.nn.Module.state_dict()` under the hood. `state_dict()` does additional work to
+        # prep the dictionary, get submodule state, and run hooks. Overriding this method only impacts the
+        # contents of the state_dict.
+        # The three args to this method are supplied by Module.state_dict
+        # https://github.com/pytorch/pytorch/blob/8739d1e3f9b08f4282fe79fc8dacd781d16913ff/torch/nn/modules/module.py#L1824
+        if self.config.adapter:
+            # get_peft_model_state_dict geneates a state dict that only contains the adapter weights
+            from peft.utils.save_and_load import get_peft_model_state_dict
+
+            sd = get_peft_model_state_dict(self.model)
+            destination.update(sd)
+
+        else:
+            super()._save_to_state_dict(destination, prefix=prefix, keep_vars=keep_vars)
+
+    def state_dict(self, *args, destination=None, prefix="", keep_vars=False):
+        destination = super().state_dict(destination, prefix=prefix, keep_vars=keep_vars)
+
+        if self.config.adapter:
+            adapter_type_prefix = self.ADAPTER_PARAM_NAME_PREFIX[self.config.adapter.type]
+            exclude_model_keys = [k for k in destination.keys() if adapter_type_prefix not in k]
+
+            for k in exclude_model_keys:
+                del destination[k]
+
+        return destination
+
+    def _load_from_state_dict(
+        self, state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
+    ):
+        # Call this first to make sure torch can do its usual load. In the adapter case, this should essentially be a
+        # no-op, but the adapter weights will be collected in `unexpected_keys` because PEFT changes the parameter
+        # names under the hood.
+        super()._load_from_state_dict(
+            state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
+        )
+
+        if self.config.adapter:
+            # When using an adapter, only the adapter weights are saved, and so we only want to load those weights.
+            # Under the hood, PEFT alters the names of the parameters, which leads to an "unexpected keys" error when
+            # using strict mode. This block uses PEFT's version of `load_state_dict` to handle loading in weights.
+            from peft.utils.save_and_load import set_peft_model_state_dict
+
+            adapter_type_prefix = self.ADAPTER_PARAM_NAME_PREFIX[self.config.adapter.type]
+            peft_model_state_dict = {k: v for k, v in state_dict.items() if adapter_type_prefix in k}
+            set_peft_model_state_dict(self.model, peft_model_state_dict)
+
+            if strict:
+                for k in peft_model_state_dict.keys():
+                    sanitized = k.replace(f"{prefix}model.", "")  # `unexpected_keys` doesn't record the prefix
+                    sanitized = sanitized.replace("default.", "")  # By default, PEFT adds a "default." to param names
+                    unexpected_keys.remove(sanitized)

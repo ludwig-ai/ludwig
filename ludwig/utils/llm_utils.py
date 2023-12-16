@@ -1,65 +1,192 @@
 import copy
 import logging
-from typing import Dict, Tuple
+import tempfile
+from typing import Dict, Optional, Tuple, TYPE_CHECKING, Union
 
 import torch
 import torch.nn.functional as F
+import transformers
 from bitsandbytes.nn.modules import Embedding
-from transformers import (
-    AutoConfig,
-    AutoModelForCausalLM,
-    CodeLlamaTokenizer,
-    CodeLlamaTokenizerFast,
-    GPT2Tokenizer,
-    GPT2TokenizerFast,
-    LlamaTokenizer,
-    LlamaTokenizerFast,
-    PreTrainedTokenizer,
-)
+from packaging import version
+from transformers import AutoConfig, AutoModelForCausalLM, PreTrainedModel, PreTrainedTokenizer
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, PREDICTIONS, PROBABILITIES
 from ludwig.schema.trainer import LLMTrainerConfig
+from ludwig.utils.error_handling_utils import default_retry
+from ludwig.utils.logging_utils import log_once
 from ludwig.utils.model_utils import find_embedding_layer_with_path
+
+if TYPE_CHECKING:
+    from ludwig.schema.encoders.text_encoders import LLMEncoderConfig
+    from ludwig.schema.model_types.llm import LLMModelConfig
+
 
 logger = logging.getLogger(__name__)
 
 
 FALLBACK_CONTEXT_LEN = 2048
 
+transformers_436 = version.parse(transformers.__version__) >= version.parse("4.36.0")
 
-def set_pad_token(tokenizer: PreTrainedTokenizer):
-    """Sets the pad token for the tokenizer if it is not already set.
+# The official microsoft phi models don't work out of the box because the weights aren't compatiable with HF
+# See https://github.com/huggingface/transformers/issues/28049 for more context.
+_PHI_BASE_MODEL_MAPPING = {
+    "microsoft/phi-1": "susnato/phi-1_dev",
+    "microsoft/phi-1.5": "susnato/phi-1_5_dev",
+}
+
+# The susnato Phi models as of Transformers 4.36.1 don't support "device_map='auto'" at model load time.
+_MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION = {"susnato/phi-1_dev", "susnato/phi-1_5_dev"}
+
+
+@default_retry(tries=8)
+def load_pretrained_from_config(
+    config_obj: Union["LLMModelConfig", "LLMEncoderConfig"],
+    model_config: Optional[AutoConfig] = None,
+    weights_save_path: Optional[str] = None,
+) -> PreTrainedModel:
+    load_kwargs = {}
+    if config_obj.quantization:
+        # Apply quantization configuration at model load time
+        load_kwargs["torch_dtype"] = getattr(torch, config_obj.quantization.bnb_4bit_compute_dtype)
+        load_kwargs["quantization_config"] = config_obj.quantization.to_bitsandbytes()
+        if config_obj.base_model not in _MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION:
+            load_kwargs["device_map"] = "auto"
+
+        if transformers_436:
+            load_kwargs["attn_implementation"] = "eager"
+
+    if config_obj.model_parameters:
+        # Add any model specific parameters to the load kwargs
+        for param_name, param_value in config_obj.model_parameters.to_dict().items():
+            # Not all parameters are supported by all models, so we only add the parameter to the load kwargs
+            # if it is supported by the model.
+            if param_value is None:
+                continue
+
+            if hasattr(model_config, param_name):
+                load_kwargs[param_name] = param_value
+            else:
+                logger.warning(f"Parameter {param_name} is not supported by {config_obj.base_model}. Skipping.")
+
+    logger.info("Loading large language model...")
+    pretrained_model_name_or_path = weights_save_path or config_obj.base_model
+    model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path, **load_kwargs)
+    return model
+
+
+def to_device(
+    model: PreTrainedModel,
+    device: Union[str, torch.DeviceObjType],
+    config_obj: "LLMModelConfig",  # noqa F821
+    curr_device: torch.DeviceObjType,
+) -> Tuple[PreTrainedModel, torch.DeviceObjType]:
+    """Move an LLM to the requested device, accounting for sharding and adapters.
 
     Args:
-        tokenizer (PreTrainedTokenizer): The tokenizer.
+        model: Pretrained model to put on device
+        config_obj: LLM config
+        curr_device: The current device that the model is on
 
-    Example:
-        >>> from transformers import GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast # noqa
-        >>> tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
-        >>> set_pad_token(tokenizer)
+    Returns:
+        `model` moved to `device`
     """
-    # Tokenizers might have the pad token id attribute since they tend to use the same base class, but
-    # it can be set to None so we check for this explicitly.
-    if hasattr(tokenizer, "pad_token_id") and tokenizer.pad_token_id is not None:
-        return
+    device = torch.device(device)
 
-    # HACK(Arnav): gpt, gpt2 and llama tokenizers had no pad tokens.
-    # These recommend using eos tokens instead
-    # https://github.com/huggingface/transformers/issues/2648#issuecomment-616177044
-    # https://github.com/huggingface/transformers/issues/2630#issuecomment-1290809338
-    if any(
-        isinstance(tokenizer, t)
-        for t in [
-            GPT2Tokenizer,
-            GPT2TokenizerFast,
-            LlamaTokenizer,
-            LlamaTokenizerFast,
-            CodeLlamaTokenizer,
-            CodeLlamaTokenizerFast,
-        ]
-    ):
-        tokenizer.pad_token = tokenizer.eos_token
-        tokenizer.pad_token_id = tokenizer.eos_token_id
+    if device.type == curr_device.type:
+        log_once(f"Model already on device'{device}'.")
+        return model, device
+    else:
+        log_once(f"Moving LLM from '{curr_device}' to '{device}'.")
+
+    model_kwargs = {}
+    num_gpus = torch.cuda.device_count()
+    if device == torch.device("cuda") and num_gpus > 1:
+        # TODO: make this configurable in the future. These parameters are from FastChat:
+        # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L90  # noqa
+        # TODO: Wrap device_map="auto" in a try-except block since it may not be supported for all models (E.g. BertLMHead)  # noqa
+        # We don't add quantization here (float16 or bfloat16) since we may not always want to quantize. We should
+        # make quantization configurable in the future via the trainer config.
+        model_kwargs.update(
+            dict(
+                low_cpu_mem_usage=True,
+                max_memory={i: "13GiB" for i in range(num_gpus)},
+            )
+        )
+
+        if config_obj.base_model not in _MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION:
+            model_kwargs["device_map"] = "auto"
+
+        if config_obj.quantization:
+            model_kwargs["quantization_config"] = config_obj.quantization.to_bitsandbytes()
+
+        # we save and reload the weights to ensure that they can be sharded across the GPUs using `from_pretrained`
+        with tempfile.TemporaryDirectory() as tmpdir:
+            model.save_pretrained(tmpdir)
+
+            if config_obj.adapter:
+                model = AutoModelForCausalLM.from_pretrained(
+                    config_obj.base_model,
+                    **model_kwargs,
+                )
+
+                # Leave this import inline to support a minimal install of Ludwig
+                from peft import PeftModel  # noqa
+
+                model = PeftModel.from_pretrained(
+                    model,
+                    tmpdir,
+                    torch_dtype=torch.float16,
+                )
+            else:
+                model = AutoModelForCausalLM.from_pretrained(
+                    tmpdir,
+                    **model_kwargs,
+                )
+    else:
+        model = model.to(device)
+
+    return model, device
+
+
+def initialize_adapter(
+    model: PreTrainedModel, config_obj: "LLMModelConfig"  # noqa F821
+) -> Union["PeftModel", PreTrainedModel]:  # noqa F821
+    """Wrap a pretrained model with a PEFT model for fine-tuning.
+
+    Args:
+         model: Pretrained model to fine-tune with an adapter.
+         config_obj: LLM config
+
+    Returns:
+        `model` wrapped in a PEFT model if an adapter config was provided, otherwise `model`.
+    """
+    # Only load a PEFT model if the config specifies an adapter, otherwise return the model unaltered.
+    if config_obj.adapter:
+        if config_obj.adapter.pretrained_adapter_weights:
+            # Load pretrained adapter weights if specified.
+            logger.info(f"Using pretrained adapter weights: {config_obj.adapter.pretrained_adapter_weights}")
+
+            # Leave this import inline to support a minimal install of Ludwig
+            from peft import MODEL_TYPE_TO_PEFT_MODEL_MAPPING, PeftConfig  # noqa
+
+            peft_config = PeftConfig.from_pretrained(config_obj.adapter.pretrained_adapter_weights)
+
+            model = MODEL_TYPE_TO_PEFT_MODEL_MAPPING[peft_config.task_type].from_pretrained(
+                model, config_obj.adapter.pretrained_adapter_weights
+            )
+        else:
+            # Leave this import inline to support a minimal install of Ludwig
+            from peft import get_peft_model, TaskType  # noqa
+
+            # If no pretrained adapter is provided, we want to load untrained weights into the model
+            peft_config = config_obj.adapter.to_config(
+                task_type=TaskType.CAUSAL_LM, tokenizer_name_or_path=config_obj.base_model
+            )
+
+            model = get_peft_model(model, peft_config)
+
+    return model
 
 
 def get_context_len(model_config: AutoConfig):

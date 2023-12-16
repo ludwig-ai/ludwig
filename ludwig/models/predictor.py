@@ -125,8 +125,8 @@ class Predictor(BasePredictor):
 
     def batch_predict(self, dataset: Dataset, dataset_name: str = None, collect_logits: bool = False):
         self.dist_model = self._distributed.to_device(self.dist_model)
-        prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        self.dist_model.eval()  # set model to eval mode
+        prev_model_training_mode = self.dist_model.training
+        self._distributed.eval(self.dist_model)
 
         with torch.no_grad():
             with dataset.initialize_batcher(self._batch_size, should_shuffle=False) as batcher:
@@ -151,13 +151,13 @@ class Predictor(BasePredictor):
         # consolidate predictions from each batch to a single tensor
         self._concat_preds(predictions)
 
-        self.dist_model.train(prev_model_training_mode)
+        self._distributed.train(self.dist_model, prev_model_training_mode)
 
         return from_numpy_dataset(predictions)
 
     def predict_single(self, batch, collect_logits: bool = False):
-        prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        self.dist_model.eval()  # set model to eval mode
+        prev_model_training_mode = self.dist_model.training
+        self._distributed.eval(self.dist_model)
 
         with torch.no_grad():
             predictions = defaultdict(list)
@@ -167,8 +167,8 @@ class Predictor(BasePredictor):
             )
             self._concat_preds(predictions)
 
-        # reset model to its original training mode
-        self.dist_model.train(prev_model_training_mode)
+        self._distributed.train(self.dist_model, prev_model_training_mode)
+
         return from_numpy_dataset(predictions)
 
     def _predict(self, batch: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
@@ -217,8 +217,8 @@ class Predictor(BasePredictor):
             collect_predictions, collect_logits.
         """
         self.dist_model = self._distributed.to_device(self.dist_model)
-        prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        self.dist_model.eval()  # set model to eval mode
+        prev_model_training_mode = self.dist_model.training
+        self._distributed.eval(self.dist_model)
 
         with torch.no_grad():
             with dataset.initialize_batcher(
@@ -234,7 +234,17 @@ class Predictor(BasePredictor):
                 progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, self.is_coordinator())
 
                 predictions = defaultdict(list)
+                eval_steps = (
+                    self.dist_model.config_obj.trainer.eval_steps
+                    if hasattr(self.dist_model, "config_obj")
+                    and hasattr(self.dist_model.config_obj.trainer, "eval_steps")
+                    else None
+                )
+                eval_steps_counter = 0
                 while not batcher.last_batch():
+                    if eval_steps and eval_steps_counter >= eval_steps:
+                        logger.info(f"Reached evaluation step {eval_steps}. Ending evaluation.")
+                        break
                     batch = batcher.next_batch()
                     logger.debug(
                         f"evaluation for {dataset_name}: obtained next batch "
@@ -264,12 +274,12 @@ class Predictor(BasePredictor):
                         )
 
                     progress_bar.update(1)
+                    eval_steps_counter += 1
                     if self.is_coordinator():
                         logger.debug(
                             f"evaluation for {dataset_name}: completed batch {progress_bar.total_steps} "
                             f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                         )
-
                 progress_bar.close()
 
             # consolidate predictions from each batch to a single tensor
@@ -279,7 +289,7 @@ class Predictor(BasePredictor):
             metrics = self.model.get_metrics()
             self.model.reset_metrics()
 
-            self.dist_model.train(prev_model_training_mode)  # Restores previous model training mode.
+            self._distributed.train(self.dist_model, prev_model_training_mode)
 
             return metrics, from_numpy_dataset(predictions)
 
@@ -287,8 +297,8 @@ class Predictor(BasePredictor):
         if bucketing_field:
             raise ValueError("BucketedBatcher is not supported yet")
 
-        prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        self.dist_model.eval()  # set model to eval mode
+        prev_model_training_mode = self.dist_model.training
+        self._distributed.eval(self.dist_model)
 
         with torch.no_grad():
             with dataset.initialize_batcher(
@@ -318,7 +328,7 @@ class Predictor(BasePredictor):
 
                 progress_bar.close()
 
-        self.dist_model.train(prev_model_training_mode)  # Restores previous model training mode.
+        self._distributed.train(self.dist_model, prev_model_training_mode)
 
         return collected_tensors
 
@@ -345,13 +355,18 @@ class LlmFineTunePredictor(Predictor):
             collect_logits: Return model logits and final layer activations.
 
         Returns:
-            Tuple of dictionaries of (metrics, predictions). The keys of metrics are determined by the metrics in the
-            model config. The keys of the predictions dictionary depend on which values are requested by the caller:
-            collect_predictions, collect_logits.
+            Tuple of dictionaries of (metrics, predictions, input/target/output dictionary). The keys of metrics are
+            determined by the metrics in the model config. The keys of the predictions dictionary depend on which values
+            are requested by the caller: collect_predictions, collect_logits. The keys of the input/target/output
+            dictionary are "inputs", "targets", and "outputs". The values of each of these keys are dictionaries of
+            feature names to lists of tensors. The tensors are the inputs, targets, and outputs for each batch.
         """
-        prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        self.dist_model.eval()  # set model to eval mode
+        prev_model_training_mode = self.dist_model.training
+        self._distributed.eval(self.dist_model)
 
+        example_inputs = defaultdict(list)
+        example_targets = defaultdict(list)
+        example_outputs = defaultdict(list)
         with torch.no_grad():
             with dataset.initialize_batcher(
                 self._batch_size, should_shuffle=False, distributed=self._distributed
@@ -366,7 +381,17 @@ class LlmFineTunePredictor(Predictor):
                 progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, self.is_coordinator())
 
                 predictions = defaultdict(list)
+                eval_steps = (
+                    self.dist_model.config_obj.trainer.eval_steps
+                    if hasattr(self.dist_model, "config_obj")
+                    and hasattr(self.dist_model.config_obj.trainer, "eval_steps")
+                    else None
+                )
+                eval_steps_counter = 0
                 while not batcher.last_batch():
+                    if eval_steps and eval_steps_counter >= eval_steps:
+                        logger.info(f"Reached evaluation step {eval_steps}. Ending evaluation.")
+                        break
                     batch = batcher.next_batch()
                     logger.debug(
                         f"evaluation for {dataset_name}: obtained next batch "
@@ -388,6 +413,13 @@ class LlmFineTunePredictor(Predictor):
                     outputs = self._predict_on_inputs((inputs, targets))
                     preds = self.model.outputs_to_predictions(outputs)
 
+                    for key in inputs:
+                        example_inputs[key].extend(inputs[key])
+                    for key in targets:
+                        example_targets[key].extend(targets[key])
+                    for key in preds:
+                        example_outputs[key].extend(preds[key]["predictions"])
+
                     # Need to pass through a custom fine-tune metric function because we need to transform
                     # the targets into the right format for loss calculation (requires padding with -100s to the left)
                     # and other tensor alignment.
@@ -400,6 +432,7 @@ class LlmFineTunePredictor(Predictor):
                         )
 
                     progress_bar.update(1)
+                    eval_steps_counter += 1
                     if self.is_coordinator():
                         logger.debug(
                             f"evaluation for {dataset_name}: completed batch {progress_bar.total_steps} "
@@ -416,9 +449,15 @@ class LlmFineTunePredictor(Predictor):
             metrics = self.model.get_metrics()
             self.model.reset_metrics()
 
-            self.dist_model.train(prev_model_training_mode)  # Restores previous model training mode.
+            input_target_output_dict = {
+                "inputs": example_inputs,
+                "targets": example_targets,
+                "outputs": example_outputs,
+            }
 
-            return metrics, from_numpy_dataset(predictions)
+            self._distributed.train(self.dist_model, prev_model_training_mode)
+
+            return metrics, from_numpy_dataset(predictions), input_target_output_dict
 
 
 def calculate_overall_stats(output_features, predictions, dataset, training_set_metadata):

@@ -390,7 +390,7 @@ class file_lock(contextlib.AbstractContextManager):
 
 @DeveloperAPI
 def list_file_names_in_directory(directory_name: str) -> List[str]:
-    file_path: pathlib.Path  # noqa [F842]  # incorrect flagging of "local variable is annotated but never used
+    file_path: pathlib.Path  # noqa [F842]  # incorrect flagging of "local variable is annotated but never used"
     file_names: List[str] = [
         file_path.name for file_path in pathlib.Path(directory_name).iterdir() if file_path.is_file()
     ]

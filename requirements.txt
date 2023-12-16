@@ -11,14 +11,17 @@ torchaudio
 torchtext
 torchvision
 pydantic<2.0
-transformers>=4.33.2
+huggingface-hub>=0.19.0
+transformers @ git+https://github.com/huggingface/transformers@73de5108e172112bc620cfc0ceebfd27730dba11
+tifffile
+imagecodecs
 tokenizers>=0.13.3
 spacy>=2.3
 PyYAML>=3.12,<6.0.1,!=5.4.* #Exlude PyYAML 5.4.* due to incompatibility with awscli
 absl-py
 kaggle
 requests
-fsspec[http]<2023.10.0
+fsspec[http]<=2023.10.0
 dataclasses-json
 jsonschema>=4.5.0,<4.7
 marshmallow

@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Uber Technologies, Inc.
+# Copyright (c) 2023 Predibase, Inc., 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ from typing import Any, Callable, Generator, Optional, Type
 
 import torch
 from torch import Tensor, tensor
-from torchmetrics import CharErrorRate, MeanAbsoluteError, MeanAbsolutePercentageError
+from torchmetrics import MeanAbsoluteError, MeanAbsolutePercentageError
 from torchmetrics import MeanMetric as _MeanMetric
 from torchmetrics import MeanSquaredError, Metric
 from torchmetrics.classification import (
@@ -33,7 +33,7 @@ from torchmetrics.classification import (
 )
 from torchmetrics.functional.regression.r2 import _r2_score_compute, _r2_score_update
 from torchmetrics.metric import jit_distributed_available
-from torchmetrics.text import BLEUScore, WordErrorRate
+from torchmetrics.text import BLEUScore, CharErrorRate, WordErrorRate
 from torchmetrics.text.perplexity import Perplexity
 from torchmetrics.text.rouge import ROUGEScore
 

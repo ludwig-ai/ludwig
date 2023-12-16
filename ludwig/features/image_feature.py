@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Copyright (c) 2019 Uber Technologies, Inc.
+# Copyright (c) 2023 Predibase, Inc., 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -102,19 +102,18 @@ class AutoAugment(torch.nn.Module):
     def get_augmentation_method(self):
         if self.auto_augmentation_method == "trivial_augment":
             return transforms.TrivialAugmentWide()
-        elif self.auto_augmentation_method == "auto_augment":
+        if self.auto_augmentation_method == "auto_augment":
             return transforms.AutoAugment()
-        elif self.auto_augmentation_method == "rand_augment":
+        if self.auto_augmentation_method == "rand_augment":
             return transforms.RandAugment()
-        else:
-            raise ValueError(f"Unsupported auto-augmentation method: {self.auto_augmentation_method}")
+        raise ValueError(f"Unsupported auto-augmentation method: {self.auto_augmentation_method}")
 
-    def forward(self, imgs):
+    def forward(self, imgs: torch.Tensor) -> torch.Tensor:
         method = self.augmentation_method
-        for i in range(imgs.size(0)):
-            img = imgs[i].to(torch.uint8)
-            imgs[i] = method(img)
-        return imgs
+        uint8imgs = imgs.to(torch.uint8)
+        augmented_imgs = method(uint8imgs)
+
+        return augmented_imgs.to(torch.float32)
 
 
 @register_augmentation_op(name="random_vertical_flip", features=IMAGE)
@@ -405,7 +404,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def _read_image_if_bytes_obj_and_resize(
-        img_entry: Union[bytes, torch.Tensor, np.ndarray],
+        img_entry: Union[bytes, torch.Tensor, np.ndarray, str],
         img_width: int,
         img_height: int,
         should_resize: bool,
@@ -415,7 +414,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         standardize_image: str,
     ) -> Optional[np.ndarray]:
         """
-        :param img_entry Union[bytes, torch.Tensor, np.ndarray]: if str file path to the
+        :param img_entry Union[bytes, torch.Tensor, np.ndarray, str]: if str file path to the
             image else torch.Tensor of the image itself
         :param img_width: expected width of the image
         :param img_height: expected height of the image
