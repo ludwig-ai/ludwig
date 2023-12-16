@@ -84,6 +84,5 @@ class OnnxExporter(BaseModelExporter):
         Returns:
             None
         """
-
         # TODO -> implement post training static quantization which generally performs better for CNNs
         quantize_dynamic(model_path, export_path)
