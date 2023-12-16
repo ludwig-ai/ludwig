@@ -59,38 +59,6 @@ def export_torchscript(
     logger.info(f"Saved to: {output_path}")
 
 
-def export_onnx(model_path: str, output_path: Optional[str] = None, model_name="onnx_model", **kwargs) -> None:
-    """Exports a model to ONNX.
-
-    # Inputs
-
-    :param model_path: (str) filepath to pre-trained model.
-    :param output_path: (str) directory to store ONNX model. If 'None', defaults to model_path.
-
-    # Return
-    :returns: (`None`)
-    """
-    logger.info(f"Model path: {model_path}")
-    logger.info(f"Output path: {output_path}")
-    logger.info(f"Model name: {model_name}")
-    logger.info("\n")
-
-    if output_path is None:
-        logger.info("output_path is None, defaulting to model_path")
-        output_path = model_path
-    logger.info(f"Output path: {output_path}")
-    logger.info("\n")
-
-    os.makedirs(output_path, exist_ok=True)
-
-    from ludwig.model_export.onnx_exporter import OnnxExporter
-
-    onnx_exporter = OnnxExporter()
-    onnx_exporter.export(model_path, output_path, model_name)
-
-    logger.info(f"Saved to: {output_path}")
-
-
 def export_triton(model_path, output_path="model_repository", model_name="ludwig_model", model_version=1, **kwargs):
     """Exports a model in torchscript format with config for Triton serving.
 
@@ -237,52 +205,6 @@ def cli_export_torchscript(sys_argv):
     print_ludwig("Export Torchscript", LUDWIG_VERSION)
 
     export_torchscript(**vars(args))
-
-
-def cli_export_onnx(sys_argv):
-    parser = argparse.ArgumentParser(
-        description="This script loads a pretrained model " "and saves it as an ONNX model.",
-        prog="ludwig export_onnx",
-        usage="%(prog)s [options]",
-    )
-
-    # ----------------
-    # Model parameters
-    # ----------------
-    parser.add_argument("-m", "--model_path", help="model to load", required=True)
-    parser.add_argument("-mn", "--model_name", help="model name", default="ludwig_model")
-
-    # -----------------
-    # Output parameters
-    # -----------------
-    parser.add_argument("-op", "--output_path", type=str, help="path where to save the export model", required=True)
-
-    # ------------------
-    # Runtime parameters
-    # ------------------
-    parser.add_argument(
-        "-l",
-        "--logging_level",
-        default="info",
-        help="the level of logging to use",
-        choices=["critical", "error", "warning", "info", "debug", "notset"],
-    )
-
-    add_contrib_callback_args(parser)
-    args = parser.parse_args(sys_argv)
-
-    args.callbacks = args.callbacks or []
-    for callback in args.callbacks:
-        callback.on_cmdline("export_onnx", *sys_argv)
-
-    args.logging_level = get_logging_level_registry()[args.logging_level]
-    logging.getLogger("ludwig").setLevel(args.logging_level)
-    global logger
-    logger = logging.getLogger("ludwig.export")
-
-    print_ludwig("Export ONNX", LUDWIG_VERSION)
-
-    export_onnx(**vars(args))
 
 
 def cli_export_triton(sys_argv):
@@ -440,8 +362,6 @@ if __name__ == "__main__":
             cli_export_triton(sys.argv[2:])
         elif sys.argv[1] == "neuropod":
             cli_export_neuropod(sys.argv[2:])
-        elif sys.argv[1] == "onnx":
-            cli_export_onnx(sys.argv[2:])
         else:
             print("Unrecognized command")
     else:

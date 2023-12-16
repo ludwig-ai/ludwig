@@ -51,7 +51,6 @@ Available sub-commands:
    export_triton         Exports Ludwig models to Triton
    export_neuropod       Exports Ludwig models to Neuropod
    export_mlflow         Exports Ludwig models to MLflow
-   export_onnx           Exports Ludwig models to ONNX
    preprocess            Preprocess data and saves it into HDF5 and JSON format
    synthesize_dataset    Creates synthetic data for testing purposes
    init_config           Initialize a user config from a dataset and targets
@@ -135,11 +134,6 @@ Available sub-commands:
         from ludwig import export
 
         export.cli_export_torchscript(sys.argv[2:])
-
-    def export_onnx(self):
-        from ludwig import export
-
-        export.cli_export_onnx(sys.argv[2:])
 
     def export_triton(self):
         from ludwig import export
