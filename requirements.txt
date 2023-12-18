@@ -11,8 +11,7 @@ torchaudio
 torchtext
 torchvision
 pydantic<2.0
-huggingface-hub>=0.19.0
-transformers @ git+https://github.com/huggingface/transformers@73de5108e172112bc620cfc0ceebfd27730dba11
+transformers
 tifffile
 imagecodecs
 tokenizers>=0.13.3
