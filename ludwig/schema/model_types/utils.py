@@ -34,7 +34,7 @@ from ludwig.schema.llms.generation import LLMGenerationConfig
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.types import HyperoptConfigDict, ModelConfigDict
 from ludwig.utils.data_utils import get_sanitized_feature_name
-from ludwig.utils.llm_utils import _PHI_BASE_MODEL_MAPPING, get_context_len
+from ludwig.utils.llm_utils import get_context_len
 
 if TYPE_CHECKING:
     from ludwig.schema.model_types.base import ModelConfig
@@ -307,27 +307,11 @@ def set_llm_parameters(config: "ModelConfig") -> None:
     if config.model_type != MODEL_LLM:
         return
 
-    # Do an in-place replacement for Phi models since they don't work well out of the box
-    _replace_phi_model_with_supported_model(config)
-
     # Set preprocessing parameters for text features for LLM model type
     _set_llm_tokenizers(config)
 
     # Set max_new_tokens in generation config to the max sequence length of the output features
     _set_generation_max_new_tokens(config)
-
-
-def _replace_phi_model_with_supported_model(config: "ModelConfig") -> None:
-    """Replaces the phi model with a supported model that is compatible with the LLM model type."""
-    if config.base_model not in _PHI_BASE_MODEL_MAPPING:
-        return
-
-    logger.warning(
-        f"{config.base_model} does not work correctly out of the box since it requires running remote code."
-        f"Replacing {config.base_model} with {_PHI_BASE_MODEL_MAPPING[config.base_model]} as the base LLM model."
-    )
-
-    config.base_model = _PHI_BASE_MODEL_MAPPING[config.base_model]
 
 
 def _set_llm_tokenizers(config: "ModelConfig") -> None:
