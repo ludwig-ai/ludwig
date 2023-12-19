@@ -2529,6 +2529,17 @@ class LLMEncoder(Encoder):
             set_peft_model_state_dict(self.model, peft_model_state_dict)
 
     def remove_missing_non_adapter_keys(self, module, incompatible_keys):
+        """Update the missing and unexpected keys lists to reflect custom adapter state load logic.
+
+        This method should never return anything unless the underlying torch hook logic is updated. Any changes to the
+        lists in `incompatible_keys` must be made in-place.
+
+        Args:
+            module: The torch modulewith newly loaded state
+            incompatible_keys: A tuple with the lists of missing and unexpected keys that were recorded while loading
+        """
+        # If no adapter was used, `LLMEncoder.load_state_dict` should use the default `torch.Module.load_state_dict`
+        # code path to load weights and no modification should be necessary.
         if self.config.adapter:
             adapter_type_prefix = self.ADAPTER_PARAM_NAME_PREFIX[self.config.adapter.type]
             missing_keys, unexpected_keys = incompatible_keys
