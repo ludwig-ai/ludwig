@@ -2,18 +2,25 @@ import copy
 
 import pytest
 import torch
+import torch.nn as nn
 from transformers import AutoConfig, PreTrainedModel
 
 from ludwig.encoders.text_encoders import LLMEncoder
 from ludwig.schema.encoders.text_encoders import LLMEncoderConfig
-from ludwig.schema.llms.peft import LoraConfig
+from ludwig.schema.llms.peft import BaseAdapterConfig, LoraConfig
 from ludwig.utils.llm_utils import get_context_len
 
-# import os
+# Mapping of adapter types to test against and their respective config objects.
+ADAPTER_CONFIG_MAP = {"lora": LoraConfig}
 
 
 @pytest.fixture()
 def encoder_config() -> LLMEncoderConfig:
+    """Create a baseline LLMEncoderConfig.
+
+    Returns:
+        A baseline LLMEncoderConfig with a small model, no adapter, and no quantization
+    """
     return LLMEncoderConfig(
         type="llm",
         max_sequence_length=256,
@@ -24,36 +31,40 @@ def encoder_config() -> LLMEncoderConfig:
 
 
 @pytest.fixture()
-def encoder_config_with_adapter(encoder_config) -> LLMEncoderConfig:
-    config = copy.deepcopy(encoder_config)
-    config.adapter = LoraConfig()
-    return config
-
-
-@pytest.fixture()
 def model_config(encoder_config):
     return AutoConfig.from_pretrained(encoder_config.base_model)
 
 
+class WrapperModule(nn.Module):
+    def __init__(self, encoder: LLMEncoder):
+        super().__init__()
+        self.encoder = encoder
+
+
 class TestLLMEncoder:
-    def test_init(self, encoder_config: LLMEncoderConfig, encoder_config_with_adapter: LLMEncoderConfig, model_config):
+    def create_encoder_config_with_adapter(
+        self, encoder_config: LLMEncoderConfig, adapter: str, **kwargs
+    ) -> BaseAdapterConfig:
+        """Create a config for the requested adapter.
+
+        Args:
+            adapter: name of the adapter
+
+        Returns:
+            A config object for the requested adapter. If any keyword args are passed, they will be used to initialize
+            the config.
+        """
+        new_config = copy.deepcopy(encoder_config)
+        new_config.adapter = ADAPTER_CONFIG_MAP[adapter](**kwargs)
+        return new_config
+
+    def test_init(self, encoder_config: LLMEncoderConfig, model_config):
         # Test initializing without an adapter
         encoder = LLMEncoder(encoder_config=encoder_config)
 
         assert encoder.model_name == encoder_config.base_model
         assert isinstance(encoder.model, PreTrainedModel)
         assert all(map(lambda k: "lora_" not in k, encoder.state_dict().keys()))  # Check adapter was not initialized
-        assert encoder.input_shape == torch.Size([encoder_config.max_sequence_length])
-        assert encoder.output_shape == torch.Size([encoder_config.max_sequence_length, model_config.hidden_size])
-
-        # Test initializing with an adapter
-        from peft import PeftModel
-
-        encoder = LLMEncoder(encoder_config=encoder_config_with_adapter)
-
-        assert encoder.model_name == encoder_config.base_model
-        assert isinstance(encoder.model, PeftModel)
-        assert any(map(lambda k: "lora_" in k, encoder.state_dict().keys()))  # Check adapter was initialized
         assert encoder.input_shape == torch.Size([encoder_config.max_sequence_length])
         assert encoder.output_shape == torch.Size([encoder_config.max_sequence_length, model_config.hidden_size])
 
@@ -70,17 +81,35 @@ class TestLLMEncoder:
         assert encoder.input_shape == torch.Size([context_len])
         assert encoder.output_shape == torch.Size([context_len, model_config.hidden_size])
 
+    @pytest.mark.parametrize("adapter", list(ADAPTER_CONFIG_MAP.keys()))
+    def test_init_with_adapter(self, encoder_config: LLMEncoderConfig, adapter: str, model_config):
+        encoder_config_with_adapter = self.create_encoder_config_with_adapter(encoder_config, adapter)
+
+        # Test initializing with an adapter
+        from peft import PeftModel
+
+        encoder = LLMEncoder(encoder_config=encoder_config_with_adapter)
+
+        assert encoder.model_name == encoder_config.base_model
+        assert isinstance(encoder.model, PeftModel)
+        assert any(map(lambda k: "lora_" in k, encoder.state_dict().keys()))  # Check adapter was initialized
+        assert encoder.input_shape == torch.Size([encoder_config.max_sequence_length])
+        assert encoder.output_shape == torch.Size([encoder_config.max_sequence_length, model_config.hidden_size])
+
     def test_save_to_state_dict(self, encoder_config: LLMEncoderConfig, tmpdir):
         # With no adapter, the state dict should only contain the model parameters
         encoder = LLMEncoder(encoder_config=encoder_config)
         assert all(map(lambda k: "lora_" not in k, encoder.state_dict().keys()))
 
-    def test_save_to_state_dict_adapter(self, encoder_config_with_adapter: LLMEncoderConfig, tmpdir):
+    @pytest.mark.parametrize("adapter", list(ADAPTER_CONFIG_MAP.keys()))
+    def test_save_to_state_dict_adapter(self, encoder_config: LLMEncoderConfig, adapter: str, tmpdir):
         # With an adapter, the state dict should only contain adapter parameters
+        encoder_config_with_adapter = self.create_encoder_config_with_adapter(encoder_config, adapter)
         encoder = LLMEncoder(encoder_config=encoder_config_with_adapter)
         assert all(map(lambda k: "lora_" in k, encoder.state_dict().keys()))
 
-    def test_load_from_state_dict(self, encoder_config: LLMEncoderConfig):
+    @pytest.mark.parametrize("wrap", [False, True], ids=["no_wrapper", "with_wrapper"])
+    def test_load_from_state_dict(self, encoder_config: LLMEncoderConfig, wrap: bool):
         def weights_init(m):
             """Reinitialize the weights of a torch module."""
             if hasattr(m, "weight") and m.weight.ndim > 1:
@@ -89,6 +118,10 @@ class TestLLMEncoder:
         # Create two encoders from the same config
         encoder1 = LLMEncoder(encoder_config=encoder_config)
         encoder2 = LLMEncoder(encoder_config=encoder_config)
+
+        if wrap:
+            encoder1 = WrapperModule(encoder1)
+            encoder2 = WrapperModule(encoder2)
 
         # Reinitialize the weights of one encoder so the two are not identical
         encoder2.apply(weights_init)
@@ -103,15 +136,24 @@ class TestLLMEncoder:
         encoder2_sd = encoder2.state_dict()
         assert all(map(lambda k: torch.equal(encoder1_sd[k], encoder2_sd[k]), encoder1_sd.keys()))
 
-    def test_load_from_state_dict_adapter(self, encoder_config_with_adapter: LLMEncoderConfig):
+    @pytest.mark.parametrize("wrap", [False, True], ids=["no_wrapper", "with_wrapper"])
+    @pytest.mark.parametrize("adapter", list(ADAPTER_CONFIG_MAP.keys()))
+    def test_load_from_state_dict_adapter(self, encoder_config: LLMEncoderConfig, adapter: str, wrap: bool):
         def weights_init(m):
             """Reinitialize the weights of a torch module."""
             if hasattr(m, "weight") and m.weight.ndim > 1:
                 torch.nn.init.xavier_uniform_(m.weight.data)
 
+        # Update the config with an adapter
+        encoder_config_with_adapter = self.create_encoder_config_with_adapter(encoder_config, adapter)
+
         # Create two encoders from the same config
         encoder1 = LLMEncoder(encoder_config=encoder_config_with_adapter)
         encoder2 = LLMEncoder(encoder_config=encoder_config_with_adapter)
+
+        if wrap:
+            encoder1 = WrapperModule(encoder1)
+            encoder2 = WrapperModule(encoder2)
 
         encoder2.apply(weights_init)
 
