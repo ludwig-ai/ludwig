@@ -2552,7 +2552,7 @@ class LLMEncoder(Encoder):
             for k in missing_keys:
                 # Exclude any adapter weight--those should not be missing. Let torch handle that downstream.
                 if adapter_type_prefix not in k:
-                    sample_model_keys = [p for p in self.named_parameters() if p in k]
+                    sample_model_keys = [p for p, _ in self.named_parameters() if p in k]
                     if sample_model_keys:
                         sample_model_key = sample_model_keys[0]
                         sample_missing_key = k
