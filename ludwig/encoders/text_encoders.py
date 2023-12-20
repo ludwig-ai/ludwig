@@ -2544,12 +2544,19 @@ class LLMEncoder(Encoder):
             adapter_type_prefix = self.ADAPTER_PARAM_NAME_PREFIX[self.config.adapter.type]
             missing_keys, unexpected_keys = incompatible_keys
 
+            # The state dict uses fully qualified parameter names, but this function does not have access to the
+            # fully qualified names or a prefix to recreate them. Iterate over the missing keys and greedily select the
+            # first non-adapter key that shares a suffix with a model parameter name.
+            sample_missing_key = ""
             sample_model_key = ""
-            for k, _ in self.named_parameters():
+            for k in missing_keys:
+                # Exclude any adapter weight--those should not be missing. Let torch handle that downstream.
                 if adapter_type_prefix not in k:
-                    sample_model_key = k
-                    break
-            sample_missing_key = [k for k in missing_keys if sample_model_key in k][0]
+                    sample_model_keys = [p for p in self.named_parameters() if p in k]
+                    if sample_model_keys:
+                        sample_model_key = sample_model_keys[0]
+                        sample_missing_key = k
+                        break
             sd_prefix = sample_missing_key.replace(sample_model_key, "")
 
             # When loading the adapter weights in strict mode, torch will register the base model weights as missing
