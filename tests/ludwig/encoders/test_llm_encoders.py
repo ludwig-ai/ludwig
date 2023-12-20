@@ -103,35 +103,35 @@ class TestLLMEncoder:
         encoder2_sd = encoder2.state_dict()
         assert all(map(lambda k: torch.equal(encoder1_sd[k], encoder2_sd[k]), encoder1_sd.keys()))
 
-    # def test_load_from_state_dict_adapter(self, encoder_config_with_adapter: LLMEncoderConfig):
-    #     def weights_init(m):
-    #         """Reinitialize the weights of a torch module."""
-    #         if hasattr(m, "weight") and m.weight.ndim > 1:
-    #             torch.nn.init.xavier_uniform_(m.weight.data)
+    def test_load_from_state_dict_adapter(self, encoder_config_with_adapter: LLMEncoderConfig):
+        def weights_init(m):
+            """Reinitialize the weights of a torch module."""
+            if hasattr(m, "weight") and m.weight.ndim > 1:
+                torch.nn.init.xavier_uniform_(m.weight.data)
 
-    #     # Create two encoders from the same config
-    #     encoder1 = LLMEncoder(encoder_config=encoder_config_with_adapter)
-    #     encoder2 = LLMEncoder(encoder_config=encoder_config_with_adapter)
+        # Create two encoders from the same config
+        encoder1 = LLMEncoder(encoder_config=encoder_config_with_adapter)
+        encoder2 = LLMEncoder(encoder_config=encoder_config_with_adapter)
 
-    #     encoder2.apply(weights_init)
+        encoder2.apply(weights_init)
 
-    #     encoder1_sd = encoder1.state_dict()
-    #     encoder2_sd = encoder2.state_dict()
-    #     adapter_keys = [k for k in encoder1_sd.keys() if "lora_" in k and "weight" in k]
-    #     model_keys = [k for k in encoder1_sd.keys() if "lora_" not in k]
+        encoder1_sd = encoder1.state_dict()
+        encoder2_sd = encoder2.state_dict()
+        adapter_keys = [k for k in encoder1_sd.keys() if "lora_" in k and "weight" in k]
+        model_keys = [k for k in encoder1_sd.keys() if "lora_" not in k]
 
-    #     # The LoRA weights should no longer be equal
-    #     assert all(map(lambda k: not torch.equal(encoder1_sd[k], encoder2_sd[k]), adapter_keys))
+        # The LoRA weights should no longer be equal
+        assert all(map(lambda k: not torch.equal(encoder1_sd[k], encoder2_sd[k]), adapter_keys))
 
-    #     # The remaining weights should also no longer be equal
-    #     assert all(map(lambda k: not torch.equal(encoder1_sd[k], encoder2_sd[k]), model_keys))
+        # The remaining weights should also no longer be equal
+        assert all(map(lambda k: not torch.equal(encoder1_sd[k], encoder2_sd[k]), model_keys))
 
-    #     # Load the weights of encoder1 back into encoder2
-    #     encoder2.load_state_dict(encoder1_sd)
-    #     encoder2_sd = encoder2.state_dict()
+        # Load the weights of encoder1 back into encoder2
+        encoder2.load_state_dict(encoder1_sd)
+        encoder2_sd = encoder2.state_dict()
 
-    #     # The LoRA weights should now be equal again
-    #     assert all(map(lambda k: torch.equal(encoder1_sd[k], encoder2_sd[k]), adapter_keys))
+        # The LoRA weights should now be equal again
+        assert all(map(lambda k: torch.equal(encoder1_sd[k], encoder2_sd[k]), adapter_keys))
 
-    #     # The remaining weights should still be unequal
-    #     assert all(map(lambda k: not torch.equal(encoder1_sd[k], encoder2_sd[k]), model_keys))
+        # The remaining weights should still be unequal
+        assert all(map(lambda k: not torch.equal(encoder1_sd[k], encoder2_sd[k]), model_keys))
