@@ -150,7 +150,7 @@ adapter:
     type:
       long_description: |
         [Infused Adapter by Inhibiting and Amplifying Inner Activations](https://arxiv.org/pdf/2205.05638.pdf), or IA3,
-        is a method that adds three learned vectors l_k, l_v, and l_ff, to rescale the keys and values of the self-attention and encoder-decoder attention layers, and the intermediate activation of the position-wise feed-forward network respectively.
+        is a method that adds three learned vectors `l_k``, `l_v``, and `l_ff`, to rescale the keys and values of the self-attention and encoder-decoder attention layers, and the intermediate activation of the position-wise feed-forward network respectively. These learned vectors are the only trainable parameters during fine-tuning, and thus the original weights remain frozen. Dealing with learned vectors (as opposed to learned low-rank updates to a weight matrix like LoRA) keeps the number of trainable parameters much smaller.
     target_modules:
       ui_display_name: Target Modules
       expected_impact: 3
