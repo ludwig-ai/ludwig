@@ -2544,12 +2544,21 @@ class LLMEncoder(Encoder):
             adapter_type_prefix = self.ADAPTER_PARAM_NAME_PREFIX[self.config.adapter.type]
             missing_keys, unexpected_keys = incompatible_keys
 
+            sample_model_key = ""
+            for k, _ in self.named_parameters():
+                if adapter_type_prefix not in k:
+                    sample_model_key = k
+                    break
+            sample_missing_key = [k for k in missing_keys if sample_model_key in k][0]
+            sd_prefix = sample_missing_key.replace(sample_model_key, "")
+
             # When loading the adapter weights in strict mode, torch will register the base model weights as missing
             # from the state dict and raise an exception. The base model weights are intended to be excluded, so the
             # missing_keys list is updated post-load to avoid the error.
             for k, _ in self.named_parameters():
-                if k in missing_keys and adapter_type_prefix not in k:
-                    missing_keys.remove(k)
+                full_name = f"{sd_prefix}{k}"
+                if full_name in missing_keys and adapter_type_prefix not in full_name:
+                    missing_keys.remove(full_name)
 
             # peft changes the adapter parameter names under the hood to include the adapter name. When retreiving the
             # adapter state dict, however, the name is not included. This causes the adpater weights to be recorded as
