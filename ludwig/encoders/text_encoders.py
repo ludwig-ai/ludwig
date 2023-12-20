@@ -2535,7 +2535,7 @@ class LLMEncoder(Encoder):
         lists in `incompatible_keys` must be made in-place.
 
         Args:
-            module: The torch modulewith newly loaded state
+            module: The torch module with newly loaded state
             incompatible_keys: A tuple with the lists of missing and unexpected keys that were recorded while loading
         """
         # If no adapter was used, `LLMEncoder.load_state_dict` should use the default `torch.Module.load_state_dict`
