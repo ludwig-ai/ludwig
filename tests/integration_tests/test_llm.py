@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import copy
 import os
 import pathlib
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -15,10 +17,12 @@ from ludwig.constants import (
     BACKEND,
     BASE_MODEL,
     BATCH_SIZE,
+    COMBINER,
     EPOCHS,
     GENERATION,
     INPUT_FEATURES,
     MERGE_ADAPTER_INTO_BASE_MODEL,
+    MODEL_ECD,
     MODEL_LLM,
     MODEL_TYPE,
     OUTPUT_FEATURES,
@@ -534,6 +538,16 @@ def _verify_lm_lora_finetuning_layers(
             "adaption_prompt",
             {"adapter_len": 6, "adapter_layers": 1},
             id="adaption_prompt-modified-defaults",
+        ),
+        pytest.param(
+            "ia3",
+            {},
+            id="ia3-defaults",
+        ),
+        pytest.param(
+            "ia3",
+            {"init_ia3_weights": False},
+            id="ia3-modified-defaults",
         ),
         # pytest.param(
         #     "prompt_tuning",
@@ -1180,3 +1194,50 @@ def test_llm_finetuning_with_embedding_noise(
     preds = convert_preds(preds)
 
     assert preds
+
+
+@pytest.fixture()
+def llm_encoder_config() -> dict[str, Any]:
+    encoder_config = {
+        TYPE: "llm",
+        BASE_MODEL: "HuggingFaceH4/tiny-random-LlamaForCausalLM",
+    }
+
+    return encoder_config
+
+
+@pytest.mark.parametrize(
+    "adapter,quantization",
+    [(None, None), ("lora", None), ("lora", {"bits": 4}), ("lora", {"bits": 8})],
+    ids=["FFT", "LoRA", "LoRA 4-bit", "LoRA 8-bit"],
+)
+def test_llm_encoding(llm_encoder_config, adapter, quantization, tmpdir):
+    if (
+        _finetune_strategy_requires_cuda(finetune_strategy_name=adapter, quantization_args=quantization)
+        and not (torch.cuda.is_available() and torch.cuda.device_count()) > 0
+    ):
+        pytest.skip("Skip: quantization requires GPU and none are available.")
+
+    dataset_path = os.path.join(tmpdir, "llm_classification_data.csv")
+
+    config = {
+        MODEL_TYPE: MODEL_ECD,
+        OUTPUT_FEATURES: [category_feature(name="output")],
+        COMBINER: {TYPE: "sequence"},
+        TRAINER: {EPOCHS: 1},
+    }
+
+    encoder_config = copy.deepcopy(llm_encoder_config)
+
+    if adapter:
+        encoder_config[ADAPTER] = {TYPE: adapter}
+    if quantization:
+        encoder_config[QUANTIZATION] = quantization
+        config[BACKEND] = LOCAL_BACKEND
+
+    config[INPUT_FEATURES] = [text_feature(name="input", encoder=encoder_config)]
+
+    generate_data(input_features=config[INPUT_FEATURES], output_features=config[OUTPUT_FEATURES], filename=dataset_path)
+
+    model = LudwigModel(config)
+    model.train(dataset=dataset_path, output_directory=str(tmpdir))

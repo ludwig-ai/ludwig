@@ -461,6 +461,79 @@ class AdaptionPromptConfig(BaseAdapterConfig):
 
 
 @DeveloperAPI
+@register_adapter("ia3")
+@ludwig_dataclass
+class IA3Config(BaseAdapterConfig):
+    type: str = schema_utils.ProtectedString(
+        "ia3",
+        description=LLM_METADATA["adapter"]["ia3"]["type"].long_description,
+    )
+
+    target_modules: Optional[List[str]] = schema_utils.List(
+        default=None,
+        allow_none=True,
+        description="The names of the modules to apply (IA)^3 to.",
+        parameter_metadata=LLM_METADATA["adapter"]["ia3"]["target_modules"],
+    )
+
+    feedforward_modules: Optional[List[str]] = schema_utils.List(
+        default=None,
+        allow_none=True,
+        description=(
+            "The names of the modules to be treated as feedforward modules, as in the original paper. These modules "
+            "will have (IA)^3 vectors multiplied to the input, instead of the output. feedforward_modules must be a "
+            "name or a subset of names present in target_modules."
+        ),
+        parameter_metadata=LLM_METADATA["adapter"]["ia3"]["feedforward_modules"],
+    )
+
+    fan_in_fan_out: bool = schema_utils.Boolean(
+        default=False,
+        description=(
+            "Set this to True if the layer to replace stores weight like (fan_in, fan_out). For example, gpt-2 uses "
+            "Conv1D which stores weights like (fan_in, fan_out) and hence this should be set to True. "
+        ),
+        parameter_metadata=LLM_METADATA["adapter"]["ia3"]["fan_in_fan_out"],
+    )
+
+    modules_to_save: Optional[List[str]] = schema_utils.List(
+        list_type=str,
+        default=None,
+        allow_none=True,
+        description=(
+            "List of modules apart from (IA)^3 layers to be set as trainable and saved in the final checkpoint."
+        ),
+        parameter_metadata=LLM_METADATA["adapter"]["ia3"]["modules_to_save"],
+    )
+
+    init_ia3_weights: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether to initialize the vectors in the (IA)^3 layers, defaults to True.",
+        parameter_metadata=LLM_METADATA["adapter"]["ia3"]["init_ia3_weights"],
+    )
+
+    def to_config(self, task_type: str = None, **kwargs) -> "PeftConfig":
+        from peft import IA3Config as _IA3Config
+
+        return _IA3Config(
+            target_modules=self.target_modules,
+            feedforward_modules=self.feedforward_modules,
+            fan_in_fan_out=self.fan_in_fan_out,
+            modules_to_save=self.modules_to_save,
+            init_ia3_weights=self.init_ia3_weights,
+            task_type=task_type,
+        )
+
+    @classmethod
+    def name(cls) -> str:
+        return "IA3"
+
+    @classmethod
+    def description(cls) -> str:
+        return LLM_METADATA["adapter"]["ia3"]["type"].long_description
+
+
+@DeveloperAPI
 def get_adapter_conds():
     conds = []
     for adapter_type, adapter_cls in adapter_registry.items():

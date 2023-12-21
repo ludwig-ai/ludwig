@@ -214,7 +214,7 @@ class MultiNodeCheckpoint(Checkpoint):
 
         # Remove frozen parameter weights from state_dict for adapters and pretrained models
         for n, p in self.model.named_parameters():
-            if not p.requires_grad:
+            if n in state and not p.requires_grad:
                 del state[n]
 
         return state
