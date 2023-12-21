@@ -15,10 +15,10 @@ from functools import lru_cache
 from inspect import signature
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
-from urllib.parse import urlsplit
 
 import ray
 from packaging import version
+from pyarrow.fs import FileSystem
 from ray import train, tune
 from ray.air.config import CheckpointConfig, FailureConfig, RunConfig
 from ray.train import Checkpoint
@@ -80,17 +80,6 @@ except ImportError as e:
         pass
 
     def _is_ray_backend(backend) -> bool:
-        return False
-
-
-def is_uri(path: str) -> bool:
-    """Check if a path is a URI."""
-    try:
-        # Split the path into scheme, netloc, path, query, and fragment
-        result = urlsplit(path)
-        # Check if the scheme and netloc components are not empty
-        return all([result.scheme, result.netloc])
-    except ValueError:
         return False
 
 
@@ -398,14 +387,16 @@ class RayTuneExecutor:
             yield None
 
         ckpt_path = checkpoint.path
-        ckpt_is_uri = is_uri(ckpt_path)
-        if ckpt_is_uri:
+        # The filesystem used by the checkpoint should be a pyarrow filesystem object
+        assert isinstance(checkpoint.filesystem, FileSystem)
+
+        if checkpoint.filesystem.type_name == "local":
+            yield ckpt_path
+        else:
             # Read remote URIs using Ludwig's internal remote file loading APIs, as
             # Ray's do not handle custom credentials at the moment.
             with tempfile.TemporaryDirectory() as tmpdir:
                 yield _download_local_tmpdir(ckpt_path, tmpdir, creds)
-        else:
-            yield ckpt_path
 
     @staticmethod
     def _evaluate_best_model(
