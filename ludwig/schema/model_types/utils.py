@@ -313,6 +313,10 @@ def set_llm_parameters(config: "ModelConfig") -> None:
     # Set max_new_tokens in generation config to the max sequence length of the output features
     _set_generation_max_new_tokens(config)
 
+    # HACK(Arnav): Set Mixtral target modules when using LoRA
+    # GitHub issue:
+    _set_mixtral_target_modules(config)
+
 
 def _set_llm_tokenizers(config: "ModelConfig") -> None:
     """Sets the tokenizers for the LLM model to the pretrained model name or path. This ensures that they use the
@@ -403,6 +407,23 @@ def _set_generation_max_new_tokens(config: "ModelConfig") -> None:
         "`generation.max_new_tokens` to a different value in your Ludwig config."
     )
     config.generation.max_new_tokens = max_possible_sequence_length
+
+
+def _set_mixtral_target_modules(config: "ModelConfig") -> None:
+    """If the base model is Mixtral 7x8, LoRA is enabled and the target modules are not set, set the target modules
+    to q_proj and v_proj."""
+    if config.base_model not in {"mistralai/Mixtral-8x7B-v0.1", "mistralai/Mixtral-8x7B-Instruct-v0.1"}:
+        return
+
+    if not config.adapter:
+        return
+
+    if config.adapter.type != "lora" or config.adapter.target_modules:
+        return
+
+    logger.info("Setting adapter target modules to ['q_proj', 'v_proj'] for Mixtral 7x8 base model with LoRA adapter.")
+
+    config.adapter.target_modules = ["q_proj", "v_proj"]
 
 
 @DeveloperAPI
