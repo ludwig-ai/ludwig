@@ -314,7 +314,7 @@ def set_llm_parameters(config: "ModelConfig") -> None:
     _set_generation_max_new_tokens(config)
 
     # HACK(Arnav): Set Mixtral target modules when using LoRA
-    # GitHub issue:
+    # GitHub issue: https://github.com/ludwig-ai/ludwig/issues/3853
     _set_mixtral_target_modules(config)
 
 
