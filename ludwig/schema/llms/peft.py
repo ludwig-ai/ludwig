@@ -524,6 +524,14 @@ class IA3Config(BaseAdapterConfig):
             task_type=task_type,
         )
 
+    @classmethod
+    def name(cls) -> str:
+        return "IA3"
+
+    @classmethod
+    def description(cls) -> str:
+        return LLM_METADATA["adapter"]["ia3"]["type"].long_description
+
 
 @DeveloperAPI
 def get_adapter_conds():

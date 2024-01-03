@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-from transformers import AutoConfig, AutoModelForCausalLM, GenerationConfig, PreTrainedModel
+from transformers import AutoConfig, GenerationConfig
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, MODEL_LLM, PREDICTIONS, TEXT
 from ludwig.features.base_feature import ModuleWrapper, OutputFeature
@@ -18,7 +18,6 @@ from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollecti
 from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
-from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.llm_quantization_utils import convert_quantized_linear_to_linear
 from ludwig.utils.llm_utils import (
     add_left_padding,
@@ -26,6 +25,7 @@ from ludwig.utils.llm_utils import (
     get_context_len,
     get_realigned_target_and_prediction_tensors_for_inference,
     initialize_adapter,
+    load_pretrained_from_config,
     pad_target_tensor_for_fine_tuning,
     remove_left_padding,
     to_device,
@@ -74,38 +74,6 @@ class DictWrapper:
 
     def update(self, modules: Dict[str, torch.nn.Module]) -> None:
         self.obj.update(modules)
-
-
-@default_retry(tries=8)
-def load_pretrained_from_config(
-    config_obj: LLMModelConfig,
-    model_config: Optional[AutoConfig] = None,
-    weights_save_path: Optional[str] = None,
-) -> PreTrainedModel:
-    load_kwargs = {}
-    if config_obj.quantization:
-        # Apply quanitzation configuration at model load time
-        load_kwargs["torch_dtype"] = getattr(torch, config_obj.quantization.bnb_4bit_compute_dtype)
-        load_kwargs["quantization_config"] = config_obj.quantization.to_bitsandbytes()
-        load_kwargs["device_map"] = "auto"
-
-    if config_obj.model_parameters:
-        # Add any model specific parameters to the load kwargs
-        for param_name, param_value in config_obj.model_parameters.to_dict().items():
-            # Not all parameters are supported by all models, so we only add the parameter to the load kwargs
-            # if it is supported by the model.
-            if param_value is None:
-                continue
-
-            if hasattr(model_config, param_name):
-                load_kwargs[param_name] = param_value
-            else:
-                logger.warning(f"Parameter {param_name} is not supported by {config_obj.base_model}. Skipping.")
-
-    logger.info("Loading large language model...")
-    pretrained_model_name_or_path = weights_save_path or config_obj.base_model
-    model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path, **load_kwargs)
-    return model
 
 
 class LLM(BaseModel):

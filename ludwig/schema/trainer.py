@@ -815,7 +815,7 @@ class LLMTrainerConfig(BaseTrainerConfig):
     """Base class for all LLM trainer configs."""
 
     learning_rate: Union[float, str] = schema_utils.OneOfOptionsField(
-        default=0.0001,
+        default=0.0002,
         allow_none=False,
         description=(
             "Controls how much to change the model in response to the estimated error each time the model weights are "
@@ -830,7 +830,7 @@ class LLMTrainerConfig(BaseTrainerConfig):
     )
 
     batch_size: int = schema_utils.PositiveInteger(
-        default=2,
+        default=1,
         description="Batch size used for training in the LLM trainer.",
     )
 
@@ -845,7 +845,7 @@ class LLMTrainerConfig(BaseTrainerConfig):
     )
 
     epochs: int = schema_utils.PositiveInteger(
-        default=1,
+        default=3,
         description="Number of epochs to train in the LLM trainer.",
     )
 
@@ -881,7 +881,7 @@ class LLMTrainerConfig(BaseTrainerConfig):
     )
 
     eval_batch_size: int = schema_utils.PositiveInteger(
-        default=1,
+        default=2,
         description="Batch size used for evaluation in the LLM trainer.",
     )
 
