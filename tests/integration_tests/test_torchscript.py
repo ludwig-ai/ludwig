@@ -417,7 +417,7 @@ def test_torchscript_e2e_text_hf_tokenizer(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     input_features = [text_feature(encoder={"vocab_size": 3, "type": "bert"})]
     output_features = [
-        text_feature(decoder={"vocab_size": 3}),
+        category_feature(),
     ]
     backend = LocalTestBackend()
     config = {
@@ -439,7 +439,7 @@ def test_torchscript_e2e_text_hf_tokenizer_truncated_sequence(tmpdir, csv_filena
     data_csv_path = os.path.join(tmpdir, csv_filename)
     input_features = [text_feature(encoder={"vocab_size": 3, "type": "bert"}, preprocessing={"max_sequence_length": 3})]
     output_features = [
-        text_feature(decoder={"vocab_size": 3}),
+        category_feature(),
     ]
     backend = LocalTestBackend()
     config = {
