@@ -11,7 +11,7 @@ torchaudio
 torchtext
 torchvision
 pydantic<2.0
-transformers
+transformers>=4.36.0
 tifffile
 imagecodecs
 tokenizers>=0.13.3
