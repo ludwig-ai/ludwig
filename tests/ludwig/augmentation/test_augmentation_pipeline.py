@@ -260,6 +260,7 @@ def test_ray_model_training_with_augmentation_pipeline(
         False,
         True,
         [
+            {"type": "auto_augmentation"},
             {"type": "random_horizontal_flip"},
             {"type": "random_vertical_flip"},
             {"type": "random_rotate"},

@@ -7,7 +7,10 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.sequence_encoders import SequenceEncoderConfig
 from ludwig.schema.encoders.text.hf_model_params import DebertaModelParams
 from ludwig.schema.encoders.utils import register_encoder_config
+from ludwig.schema.llms.base_model import BaseModelDataclassField
+from ludwig.schema.llms.model_parameters import ModelParametersConfig, ModelParametersConfigField
 from ludwig.schema.llms.peft import AdapterDataclassField, BaseAdapterConfig
+from ludwig.schema.llms.quantization import QuantizationConfig, QuantizationConfigField
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY, ParameterMetadata
 from ludwig.schema.utils import ludwig_dataclass
@@ -3170,3 +3173,15 @@ class TfIdfEncoderConfig(SequenceEncoderConfig):
 
     def can_cache_embeddings(self) -> bool:
         return True
+
+
+@DeveloperAPI
+@register_encoder_config("llm", TEXT, model_types=[MODEL_ECD])
+@ludwig_dataclass
+class LLMEncoderConfig(SequenceEncoderConfig):
+    type: str = schema_utils.ProtectedString("llm")
+    base_model: str = BaseModelDataclassField()
+    max_sequence_length: int = schema_utils.Integer(default=None, allow_none=True, parameter_metadata=INTERNAL_ONLY)
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+    quantization: Optional[QuantizationConfig] = QuantizationConfigField().get_default_field()
+    model_parameters: Optional[ModelParametersConfig] = ModelParametersConfigField().get_default_field()

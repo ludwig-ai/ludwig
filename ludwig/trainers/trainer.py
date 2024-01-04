@@ -15,6 +15,7 @@
 # ==============================================================================
 """This module contains the class and auxiliary methods of a model."""
 import contextlib
+import csv
 import logging
 import math
 import os
@@ -27,6 +28,7 @@ import time
 from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
+import pandas as pd
 import psutil
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -69,6 +71,7 @@ from ludwig.utils.trainer_utils import (
     get_final_steps_per_checkpoint,
     get_latest_metrics_dict,
     get_new_progress_tracker,
+    get_total_expected_checkpoints,
     get_total_steps,
     ProgressTracker,
 )
@@ -692,6 +695,16 @@ class Trainer(BaseTrainer):
                 progress_tracker,
             )
 
+            llm_eval_examples = progress_tracker.llm_eval_examples
+            dict_save_dir = os.path.join(os.path.dirname(checkpoint_manager.directory), "llm_eval_examples")
+            os.makedirs(dict_save_dir, exist_ok=True)
+            dict_save_path = os.path.join(dict_save_dir, f"{progress_tracker.checkpoint_number}.csv")
+            llm_eval_examples = pd.DataFrame(llm_eval_examples).to_dict(orient="records")
+            with open(dict_save_path, "w") as outfile:
+                writer = csv.DictWriter(outfile, fieldnames=["inputs", "targets", "outputs"])
+                writer.writeheader()
+                writer.writerows(llm_eval_examples)
+
             self.write_eval_summary(
                 summary_writer=validation_summary_writer,
                 metrics=progress_tracker.validation_metrics,
@@ -909,6 +922,15 @@ class Trainer(BaseTrainer):
                 # ================ Training Loop ================
                 self.steps_per_epoch = batcher.steps_per_epoch
                 self.total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)
+                # NOTE(geoffrey): this ensures that the total number of epochs coincides with the number of
+                # times `batcher.set_epoch` is called.
+                old_epochs = self.epochs
+                self.epochs = math.ceil(self.total_steps / self.steps_per_epoch)
+                if old_epochs != self.epochs:
+                    logger.warning(
+                        f"The number of epochs has been adjusted from config-specified {old_epochs} "
+                        f"to {self.epochs} to match the total number of steps."
+                    )
 
                 # Get the terminal steps per checkpoint.
                 final_steps_per_checkpoint = get_final_steps_per_checkpoint(
@@ -920,7 +942,9 @@ class Trainer(BaseTrainer):
                 final_steps_per_checkpoint = min(final_steps_per_checkpoint, self.total_steps)
                 early_stopping_steps = final_steps_per_checkpoint * self.early_stop
                 if not self.skip_save_progress:
-                    self.total_expected_checkpoints = self.total_steps // final_steps_per_checkpoint + self.epochs
+                    self.total_expected_checkpoints = get_total_expected_checkpoints(
+                        self.total_steps, final_steps_per_checkpoint, self.epochs
+                    )
 
                 # Initialize the learning rate scheduler.
                 self.scheduler = LRScheduler(
@@ -964,8 +988,7 @@ class Trainer(BaseTrainer):
                     # epoch init
                     start_time = time.time()
 
-                    # Reset the metrics at the start of the next epoch
-                    self.dist_model.train()  # Sets model to training mode.
+                    self.distributed.train(self.dist_model)
                     self.model.reset_metrics()
 
                     self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))

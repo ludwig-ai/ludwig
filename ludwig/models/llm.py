@@ -1,12 +1,11 @@
 import contextlib
 import logging
 import os
-import tempfile
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-from transformers import AutoConfig, AutoModelForCausalLM, GenerationConfig, PreTrainedModel
+from transformers import AutoConfig, GenerationConfig
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, MODEL_LLM, PREDICTIONS, TEXT
 from ludwig.features.base_feature import ModuleWrapper, OutputFeature
@@ -19,14 +18,17 @@ from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollecti
 from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
-from ludwig.utils.error_handling_utils import default_retry
+from ludwig.utils.llm_quantization_utils import convert_quantized_linear_to_linear
 from ludwig.utils.llm_utils import (
     add_left_padding,
     generate_merged_ids,
     get_context_len,
     get_realigned_target_and_prediction_tensors_for_inference,
+    initialize_adapter,
+    load_pretrained_from_config,
     pad_target_tensor_for_fine_tuning,
     remove_left_padding,
+    to_device,
 )
 from ludwig.utils.logging_utils import log_once
 from ludwig.utils.output_feature_utils import set_output_feature_tensor
@@ -72,38 +74,6 @@ class DictWrapper:
 
     def update(self, modules: Dict[str, torch.nn.Module]) -> None:
         self.obj.update(modules)
-
-
-@default_retry(tries=8)
-def load_pretrained_from_config(
-    config_obj: LLMModelConfig,
-    model_config: Optional[AutoConfig] = None,
-    weights_save_path: Optional[str] = None,
-) -> PreTrainedModel:
-    load_kwargs = {}
-    if config_obj.quantization:
-        # Apply quanitzation configuration at model load time
-        load_kwargs["torch_dtype"] = getattr(torch, config_obj.quantization.bnb_4bit_compute_dtype)
-        load_kwargs["quantization_config"] = config_obj.quantization.to_bitsandbytes()
-        load_kwargs["device_map"] = "auto"
-
-    if config_obj.model_parameters:
-        # Add any model specific parameters to the load kwargs
-        for param_name, param_value in config_obj.model_parameters.to_dict().items():
-            # Not all parameters are supported by all models, so we only add the parameter to the load kwargs
-            # if it is supported by the model.
-            if param_value is None:
-                continue
-
-            if hasattr(model_config, param_name):
-                load_kwargs[param_name] = param_value
-            else:
-                logger.warning(f"Parameter {param_name} is not supported by {config_obj.base_model}. Skipping.")
-
-    logger.info("Loading large language model...")
-    pretrained_model_name_or_path = weights_save_path or config_obj.base_model
-    model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path, **load_kwargs)
-    return model
 
 
 class LLM(BaseModel):
@@ -226,27 +196,7 @@ class LLM(BaseModel):
                     "`finetune` or remove the adapter config."
                 )
 
-            from peft import get_peft_model
-
-            if self.config_obj.adapter.pretrained_adapter_weights:
-                logger.info(f"Using pretrained adapter weights: {self.config_obj.adapter.pretrained_adapter_weights}")
-                # If pretrained adapter weights are provided, we want to load them into the model
-                from peft import MODEL_TYPE_TO_PEFT_MODEL_MAPPING, PeftConfig
-
-                peft_config = PeftConfig.from_pretrained(self.config_obj.adapter.pretrained_adapter_weights)
-
-                self.model = MODEL_TYPE_TO_PEFT_MODEL_MAPPING[peft_config.task_type].from_pretrained(
-                    self.model, self.config_obj.adapter.pretrained_adapter_weights
-                )
-            else:
-                # If no pretrained adapter is provided, we want to load untrained weights into the model
-                from peft import TaskType
-
-                peft_config = self.config_obj.adapter.to_config(
-                    task_type=TaskType.CAUSAL_LM, tokenizer_name_or_path=self.model_name
-                )
-
-                self.model = get_peft_model(self.model, peft_config)
+            self.model = initialize_adapter(self.model, self.config_obj)
 
             logger.info("==================================================")
             logger.info("Trainable Parameter Summary For Fine-Tuning")
@@ -266,58 +216,7 @@ class LLM(BaseModel):
         self.model = prepare_model_for_kbit_training(self.model, use_gradient_checkpointing=False)
 
     def to_device(self, device):
-        device = torch.device(device)
-
-        if device.type == self.curr_device.type:
-            log_once(f"Model already on device'{device}'.")
-            return self
-        else:
-            log_once(f"Moving LLM from '{self.curr_device}' to '{device}'.")
-
-        model_kwargs = {}
-        num_gpus = torch.cuda.device_count()
-        if device == torch.device("cuda") and num_gpus > 1:
-            # TODO: make this configurable in the future. These parameters are from FastChat:
-            # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L90  # noqa
-            # TODO: Wrap device_map="auto" in a try-except block since it may not be supported for all models (E.g. BertLMHead)  # noqa
-            # We don't add quantization here (float16 or bfloat16) since we may not always want to quantize. We should
-            # make quantization configurable in the future via the trainer config.
-            model_kwargs.update(
-                dict(
-                    low_cpu_mem_usage=True,
-                    device_map="auto",
-                    max_memory={i: "13GiB" for i in range(num_gpus)},
-                )
-            )
-
-            if self.config_obj.quantization:
-                model_kwargs["quantization_config"] = self.config_obj.quantization.to_bitsandbytes()
-
-            # we save and reload the weights to ensure that they can be sharded across the GPUs using `from_pretrained`
-            with tempfile.TemporaryDirectory() as tmpdir:
-                self.model.save_pretrained(tmpdir)
-
-                if self.config_obj.adapter:
-                    from peft import PeftModel
-
-                    self.model = AutoModelForCausalLM.from_pretrained(
-                        self.model_name,
-                        **model_kwargs,
-                    )
-                    self.model = PeftModel.from_pretrained(
-                        self.model,
-                        tmpdir,
-                        torch_dtype=torch.float16,
-                    )
-                else:
-                    self.model = AutoModelForCausalLM.from_pretrained(
-                        tmpdir,
-                        **model_kwargs,
-                    )
-
-        else:
-            self.model = self.model.to(device)
-
+        self.model, device = to_device(self.model, device, self.config_obj, self.curr_device)
         self.curr_device = device
         return self
 
@@ -674,6 +573,54 @@ class LLM(BaseModel):
             self.tokenizer.save_pretrained(weights_save_path)
         else:
             logger.info("Skipped saving LLM without weight adjustments.")
+
+    def save_dequantized_base_model(self, save_path: str) -> None:
+        """Upscales quantized weights of a model to fp16 and saves the result in a folder specified by save_path.
+
+        Args:
+            save_path (str): The path to the folder where the upscaled model weights will be saved.
+
+        Returns:
+            None
+        """
+        from peft import PeftModel
+
+        if isinstance(self.model, PeftModel):
+            # Get the base model back by removing all the adapter modules without merging.
+            logger.warning(
+                "LLM model is currently wrapped in a PeftModel. Removing the adapter layers and saving the base model."
+                "Reload the model via LudwigModel.load() to use your trained adapter layers for inference."
+            )
+            self.model = self.model.unload()
+
+        # Dequantize the model weights and cast them to fp16 - replace quantized layers with appropriate
+        # linear layers in-place.
+        logger.info("Upscaling quantized weights to fp16...")
+        convert_quantized_linear_to_linear(self.model)
+        logger.info("Done.")
+
+        # Remove the quantization configuration from the model
+        # The reason we can't delete the quantization config is because it is a property of the model and
+        # HF does some weird serialization of the config that causes an error when trying to access `self.model.config`
+        # after you try and delete a key from the config: TypeError: Object of type dtype is not JSON serializable.
+        self.model.config.quantization_config = {}
+
+        # Override properties of the model to indicate that it is no longer quantized.
+        # This is also necessary to ensure that the model can be saved, otherwise it will raise an error like
+        # "You are calling `save_pretrained` on a 4-bit converted model. This is currently not supported"
+        # See: https://github.com/huggingface/transformers/blob/0ad4e7e6dad670a7151aaceb1af3c272a3bf73a8/src/transformers/modeling_utils.py#L2054 # noqa
+        self.model.is_loaded_in_4bit = False
+        self.model.is_loaded_in_8bit = False
+
+        # Save the model
+        logger.info(f"Saving upscaled model to {save_path}")
+        self.model.save_pretrained(save_path)
+        logger.info("Done.")
+
+        # Save the tokenizer
+        logger.info(f"Saving tokenizer to {save_path}")
+        self.tokenizer.save_pretrained(save_path)
+        logger.info("Done.")
 
     def load(self, save_path):
         """Loads the model from the given path."""

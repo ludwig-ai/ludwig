@@ -914,6 +914,54 @@ class LudwigModel:
         trainer.eval_batch_size = self.config_obj.trainer.eval_batch_size
         trainer.gradient_accumulation_steps = self.config_obj.trainer.gradient_accumulation_steps
 
+    def save_dequantized_base_model(self, save_path: str) -> None:
+        """Upscales quantized weights of a model to fp16 and saves the result in a specified folder.
+
+        Args:
+            save_path (str): The path to the folder where the upscaled model weights will be saved.
+
+        Raises:
+            ValueError:
+                If the model type is not 'llm' or if quantization is not enabled or the number of bits is not 4 or 8.
+            RuntimeError:
+                If no GPU is available, as GPU is required for quantized models.
+
+        Returns:
+            None
+        """
+        if self.config_obj.model_type != MODEL_LLM:
+            raise ValueError(
+                f"Model type {self.config_obj.model_type} is not supported by this method. Only `llm` model type is "
+                "supported."
+            )
+
+        if not self.config_obj.quantization:
+            raise ValueError(
+                "Quantization is not enabled in your Ludwig model config. "
+                "To enable quantization, set `quantization` to `{'bits': 4}` or `{'bits': 8}` in your model config."
+            )
+
+        if self.config_obj.quantization.bits != 4:
+            raise ValueError(
+                "This method only works with quantized models with 4 bits. "
+                "Support for 8-bit quantized models will be added in a future release."
+            )
+
+        if not torch.cuda.is_available():
+            raise RuntimeError("GPU is required for quantized models but no GPU found.")
+
+        # Create the LLM model class instance with the loaded LLM if it hasn't been initialized yet.
+        if not self.model:
+            self.model = LudwigModel.create_model(self.config_obj)
+
+        self.model.save_dequantized_base_model(save_path)
+
+        logger.info(
+            "If you want to upload this model to huggingface.co, run the following Python commands: \n"
+            "from ludwig.utils.hf_utils import upload_model_to_hfhub; \n"
+            f"upload_folder_to_hfhub(repo_id='desired/huggingface/repo/name', folder_path='{save_path}')"
+        )
+
     def generate(
         self,
         input_strings: Union[str, List[str]],

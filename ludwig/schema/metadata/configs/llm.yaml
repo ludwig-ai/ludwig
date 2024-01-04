@@ -104,9 +104,12 @@ adapter:
       expected_impact: 3
     alpha:
       ui_display_name: Alpha
-      expected_impact: 2
+      expected_impact: 1
     dropout:
       ui_display_name: Dropout
+      expected_impact: 2
+    target_modules:
+      ui_display_name: Target Modules
       expected_impact: 2
   adalora:
     type:
@@ -142,6 +145,26 @@ adapter:
       expected_impact: 3
     adapter_layers:
       ui_display_name: Adapter Layers
+      expected_impact: 3
+  ia3:
+    type:
+      long_description: |
+        [Infused Adapter by Inhibiting and Amplifying Inner Activations](https://arxiv.org/pdf/2205.05638.pdf), or IA3,
+        is a method that adds three learned vectors `l_k``, `l_v``, and `l_ff`, to rescale the keys and values of the self-attention and encoder-decoder attention layers, and the intermediate activation of the position-wise feed-forward network respectively. These learned vectors are the only trainable parameters during fine-tuning, and thus the original weights remain frozen. Dealing with learned vectors (as opposed to learned low-rank updates to a weight matrix like LoRA) keeps the number of trainable parameters much smaller.
+    target_modules:
+      ui_display_name: Target Modules
+      expected_impact: 3
+    feedforward_modules:
+      ui_display_name: Feedforward Modules
+      expected_impact: 3
+    fan_in_fan_out:
+      ui_display_name: Fan In Fan Out
+      expected_impact: 3
+    modules_to_save:
+      ui_display_name: Modules to Save
+      expected_impact: 3
+    init_ia3_weights:
+      ui_display_name: Init IA3 Weights
       expected_impact: 3
 quantization:
   _oneOf:
