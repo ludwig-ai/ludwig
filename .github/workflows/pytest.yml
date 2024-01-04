@@ -126,8 +126,6 @@ jobs:
 
           if [ "$PYTORCH" == "nightly" ]; then
             extra_index_url=https://download.pytorch.org/whl/nightly/cpu
-            # Temporary Fix - remove torchdata once https://github.com/pytorch/text/pull/2218 lands.
-            pip install torchdata --extra-index-url https://download.pytorch.org/whl/cpu
             pip install --pre torch torchdata torchtext torchvision torchaudio --index-url $extra_index_url
 
           else
