@@ -11,10 +11,10 @@ torchaudio
 torchtext
 torchvision
 pydantic<2.0
-transformers>=4.36.0
+transformers>=4.36.2
 tifffile
 imagecodecs
-tokenizers>=0.13.3
+tokenizers>=0.15
 spacy>=2.3
 PyYAML>=3.12,<6.0.1,!=5.4.* #Exlude PyYAML 5.4.* due to incompatibility with awscli
 absl-py
