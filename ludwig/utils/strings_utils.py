@@ -250,6 +250,21 @@ class Vocabulary:
     """
 
 
+def _get_vocab_from_dict(vocab: Dict[str, int]) -> List[str]:
+    """Returns a vocab in list format from a vocab token=>idx dictionary."""
+    vocab_values = list(vocab.values())
+    if len(set(vocab_values)) != len(vocab_values):
+        raise ValueError("Vocabulary has duplicate mappings in its vocabulary. This should never happen.")
+
+    # construct a vocab that is a list that reflects the token=>index mapping in HF's vocab
+    # pre-allocate a list to make sure each index is inited to prevent OBO errors caused by missing indices
+    max_idx = max(vocab_values)
+    vocab_list = [None for _ in range(max_idx + 1)]
+    for token, idx in vocab.items():
+        vocab_list[idx] = token
+    return vocab_list
+
+
 def _get_vocabulary(
     tokenizer_type: str,
     tokenizer,
@@ -274,8 +289,7 @@ def _get_vocabulary(
     # Pre-trained huggingface tokenizer. Use the pre-existing vocabulary and special symbols.
     if tokenizer_type == "hf_tokenizer":
         try:
-            vocab = tokenizer.get_vocab()
-            return list(vocab.keys())
+            return _get_vocab_from_dict(tokenizer.get_vocab())
         except NotImplementedError:
             logger.warning(
                 "HuggingFace tokenizer does not have a get_vocab() method. "
@@ -290,8 +304,7 @@ def _get_vocabulary(
 
     # The tokenizer has a preset vocabulary.
     if hasattr(tokenizer, "get_vocab"):
-        vocab = tokenizer.get_vocab()
-        return list(vocab.keys())
+        return _get_vocab_from_dict(tokenizer.get_vocab())
 
     # Load the vocabulary from the vocab file.
     if vocab_file is not None:

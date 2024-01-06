@@ -194,6 +194,51 @@ def test_build_sequence_matrix():
     ).any()
 
 
+@pytest.mark.parametrize("pretrained_model_name_or_path", [
+    "bert-base-uncased", 
+    # "gpt2",  # fails. transformers.GPT2Tokenizer.pad_token is None and we handle it incorrectly in tokenizers.py
+    "HuggingFaceH4/zephyr-7b-beta",
+])
+def test_get_vocabulary_hf(pretrained_model_name_or_path):
+    tokenizer_type = "hf_tokenizer"
+    vocab_file = None
+    data = pd.DataFrame(["Hello, I'm a single sentence!", "And another sentence", "And the very very last one"])
+    column = data[0]
+    preprocessing_parameters = TextPreprocessingConfig().from_dict({
+        "tokenizer": tokenizer_type,
+        "vocab_file": vocab_file,
+        "pretrained_model_name_or_path": pretrained_model_name_or_path,
+    }).to_dict()
+
+    vocabulary = strings_utils.create_vocabulary(
+        column,
+        tokenizer_type=preprocessing_parameters["tokenizer"],
+        num_most_frequent=preprocessing_parameters["most_common"],
+        lowercase=preprocessing_parameters["lowercase"],
+        vocab_file=preprocessing_parameters["vocab_file"],
+        unknown_symbol=preprocessing_parameters["unknown_symbol"],
+        padding_symbol=preprocessing_parameters["padding_symbol"],
+        pretrained_model_name_or_path=preprocessing_parameters["pretrained_model_name_or_path"],
+        compute_idf=False,
+        add_special_symbols=False,
+    )
+    
+    tokenizer = strings_utils.get_tokenizer(
+        tokenizer_type=preprocessing_parameters["tokenizer"],
+        tokenizer_vocab_file=preprocessing_parameters["vocab_file"],
+        pretrained_model_name_or_path=preprocessing_parameters["pretrained_model_name_or_path"],
+    )
+
+    # check special tokens
+    assert vocabulary.padding_symbol == tokenizer.get_pad_token()
+    assert vocabulary.pad_idx == tokenizer.get_vocab()[tokenizer.get_pad_token()]
+    assert vocabulary.unknown_symbol == tokenizer.get_unk_token()
+
+    # check all tokens
+    for token, idx in tokenizer.get_vocab().items():
+        assert vocabulary.str2idx[token] == idx
+
+
 @pytest.mark.parametrize("compute_idf", [False, True])
 def test_create_vocabulary_idf(compute_idf: bool):
     data = pd.DataFrame(["Hello, I'm a single sentence!", "And another sentence", "And the very very last one"])
