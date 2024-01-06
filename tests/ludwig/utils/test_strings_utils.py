@@ -196,7 +196,7 @@ def test_build_sequence_matrix():
 
 @pytest.mark.parametrize("pretrained_model_name_or_path", [
     "bert-base-uncased", 
-    # "gpt2",  # fails. transformers.GPT2Tokenizer.pad_token is None and we handle it incorrectly in tokenizers.py
+    "gpt2",
     "HuggingFaceH4/zephyr-7b-beta",
 ])
 def test_get_vocabulary_hf(pretrained_model_name_or_path):
@@ -231,7 +231,7 @@ def test_get_vocabulary_hf(pretrained_model_name_or_path):
 
     # check special tokens
     assert vocabulary.padding_symbol == tokenizer.get_pad_token()
-    assert vocabulary.pad_idx == tokenizer.get_vocab()[tokenizer.get_pad_token()]
+    assert vocabulary.pad_idx == tokenizer.convert_token_to_id(tokenizer.get_pad_token())
     assert vocabulary.unknown_symbol == tokenizer.get_unk_token()
 
     # check all tokens

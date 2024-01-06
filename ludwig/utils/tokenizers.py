@@ -43,6 +43,9 @@ class BaseTokenizer:
     @abstractmethod
     def __call__(self, text: str):
         pass
+    
+    def convert_token_to_id(self, token: str) -> int:
+        raise NotImplementedError()
 
 
 class StringSplitTokenizer(torch.nn.Module):
@@ -857,9 +860,19 @@ class HFTokenizer(BaseTokenizer):
         if self.tokenizer.pad_token is None:
             logger.warning("No padding token found. Using '[PAD]' as the pad token.")
             self.tokenizer.pad_token = "[PAD]"
+
+        # NOTE(geoffrey): you can check this condition separately because these are actually @property methods,
+        # which means one's logic is tightly coupled with the other. If one changes, the other will change as well.
+        # On a related note, that means that this below condition should never be called, but leaving it here in case
+        # it was put here for a reason.
+        # https://github.com/huggingface/transformers/blob/4ab5fb8941a38d172b3883c152c34ae2a0b83a68/src/transformers/tokenization_utils_base.py#L1204-L1210
+        # https://github.com/huggingface/transformers/blob/4ab5fb8941a38d172b3883c152c34ae2a0b83a68/src/transformers/tokenization_utils_base.py#L1266-L1267
         if self.tokenizer.pad_token_id is None:
             logger.warning("No padding token id found. Using 0 as pad token id.")
             self.tokenizer.pad_token_id = 0
+    
+    def convert_token_to_id(self, token: str) -> int:
+        return self.tokenizer.convert_tokens_to_ids(token)
 
 
 tokenizer_registry = {
@@ -1187,6 +1200,9 @@ class BERTTokenizer(torch.nn.Module):
             token_ids.insert(0, self.cls_token_id)
             token_ids.append(self.sep_token_id)
         return token_ids
+
+    def convert_token_to_id(self, token: str) -> int:
+        return self.vocab[token]
 
 
 tokenizer_registry.update(

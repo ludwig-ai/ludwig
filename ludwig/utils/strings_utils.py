@@ -403,10 +403,12 @@ def create_vocabulary(
         max_sequence_length += 2
         sequence_length_99ptile += 2
 
+    pad_idx = None
     if tokenizer_type == "hf_tokenizer":
         # Replace the special symbols with the ones from the tokenizer.
         unknown_symbol = tokenizer.get_unk_token()
         padding_symbol = tokenizer.get_pad_token()
+        pad_idx = tokenizer.convert_token_to_id(padding_symbol)
 
     vocab: List[str] = _get_vocabulary(
         tokenizer_type,
@@ -443,8 +445,7 @@ def create_vocabulary(
         else None
     )
 
-    pad_idx = None
-    if padding_symbol in str2idx.keys():
+    if pad_idx is None and padding_symbol in str2idx.keys():
         pad_idx = str2idx[padding_symbol]
 
     return Vocabulary(
@@ -563,16 +564,9 @@ def build_sequence_matrix(
         logger.debug(f"max length of {format}: {max_length} < limit: {length_limit}")
     max_length = length_limit
 
-    # Set padding token id based on tokenizer_type. Huggingface tokenizers typically have a pad_token_id attribute.
     if tokenizer_type == "hf_tokenizer":
-        if hasattr(tokenizer.tokenizer, "pad_token_id") and tokenizer.tokenizer.pad_token_id is not None:
-            pad_token_id = tokenizer.tokenizer.pad_token_id
-        elif hasattr(tokenizer.tokenizer, "eos_token_id") and tokenizer.tokenizer.eos_token_id is not None:
-            pad_token_id = tokenizer.tokenizer.eos_token_id
-        else:
-            # This happens for torchtext tokenizers like BERTTokenizer. We set pad token to 0.
-            log_once("Could not find pad_token_id or eos_token_id. Setting pad_token_id to 0.")
-            pad_token_id = 0
+        padding_symbol = tokenizer.get_pad_token()
+        pad_token_id = tokenizer.convert_token_to_id(padding_symbol)
     else:
         pad_token_id = inverse_vocabulary[padding_symbol]
 
