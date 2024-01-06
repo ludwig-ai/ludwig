@@ -204,11 +204,17 @@ def test_get_vocabulary_hf(pretrained_model_name_or_path):
     vocab_file = None
     data = pd.DataFrame(["Hello, I'm a single sentence!", "And another sentence", "And the very very last one"])
     column = data[0]
-    preprocessing_parameters = TextPreprocessingConfig().from_dict({
-        "tokenizer": tokenizer_type,
-        "vocab_file": vocab_file,
-        "pretrained_model_name_or_path": pretrained_model_name_or_path,
-    }).to_dict()
+    preprocessing_parameters = (
+        TextPreprocessingConfig()
+        .from_dict(
+            {
+                "tokenizer": tokenizer_type,
+                "vocab_file": vocab_file,
+                "pretrained_model_name_or_path": pretrained_model_name_or_path,
+            }
+        )
+        .to_dict()
+    )
 
     vocabulary = strings_utils.create_vocabulary(
         column,
@@ -222,7 +228,7 @@ def test_get_vocabulary_hf(pretrained_model_name_or_path):
         compute_idf=False,
         add_special_symbols=False,
     )
-    
+
     tokenizer = strings_utils.get_tokenizer(
         tokenizer_type=preprocessing_parameters["tokenizer"],
         tokenizer_vocab_file=preprocessing_parameters["vocab_file"],
