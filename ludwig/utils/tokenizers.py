@@ -43,7 +43,7 @@ class BaseTokenizer:
     @abstractmethod
     def __call__(self, text: str):
         pass
-    
+
     def convert_token_to_id(self, token: str) -> int:
         raise NotImplementedError()
 
@@ -870,7 +870,7 @@ class HFTokenizer(BaseTokenizer):
         if self.tokenizer.pad_token_id is None:
             logger.warning("No padding token id found. Using 0 as pad token id.")
             self.tokenizer.pad_token_id = 0
-    
+
     def convert_token_to_id(self, token: str) -> int:
         return self.tokenizer.convert_tokens_to_ids(token)
 

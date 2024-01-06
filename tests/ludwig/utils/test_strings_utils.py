@@ -194,11 +194,14 @@ def test_build_sequence_matrix():
     ).any()
 
 
-@pytest.mark.parametrize("pretrained_model_name_or_path", [
-    "bert-base-uncased", 
-    "gpt2",
-    "HuggingFaceH4/zephyr-7b-beta",
-])
+@pytest.mark.parametrize(
+    "pretrained_model_name_or_path",
+    [
+        "bert-base-uncased",
+        "gpt2",
+        "HuggingFaceH4/zephyr-7b-beta",
+    ],
+)
 def test_get_vocabulary_hf(pretrained_model_name_or_path):
     tokenizer_type = "hf_tokenizer"
     vocab_file = None
