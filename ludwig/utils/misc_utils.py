@@ -19,9 +19,9 @@ import os
 import random
 import subprocess
 import weakref
-from collections import OrderedDict, Dict
+from collections import OrderedDict
 from collections.abc import Mapping
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict
 
 import numpy
 import torch
@@ -34,8 +34,6 @@ from ludwig.utils.fs_utils import find_non_existing_dir_by_adding_suffix
 
 if TYPE_CHECKING:
     from ludwig.schema.model_types.base import ModelConfig
-
-Any = object()
 
 @DeveloperAPI
 def set_random_seed(random_seed):
