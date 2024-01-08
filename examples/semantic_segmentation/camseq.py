@@ -37,6 +37,7 @@ data_set = df[1:]  # train,test,validate on remaining images
 # print("{}".format(model.model))
 
 # predict
+pred_set.reset_index(inplace=True)
 pred_out_df, results = model.predict(pred_set)
 
 if not isinstance(pred_out_df, pd.DataFrame):
@@ -51,6 +52,6 @@ for index, row in pred_out_df.iterrows():
     if torch.any(pred_mask.gt(1)):
         pred_mask = pred_mask.float() / 255
     save_image(pred_mask, pred_mask_path)
-    print("Input image_path:       {}".format(row["image_path"]))
-    print("Label mask_path:        {}".format(row["mask_path"]))
-    print(f"Predicted mask_path:    {pred_mask_path}")
+    print("Input image_path:    {}".format(row["image_path"]))
+    print("Label mask_path:     {}".format(row["mask_path"]))
+    print(f"Predicted mask_path: {pred_mask_path}")

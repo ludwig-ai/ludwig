@@ -1311,11 +1311,6 @@ def get_resnet_block_sizes(resnet_size):
         raise ValueError(err)
 
 
-"""
-The following implements a U-Net encoder-decoder network
-"""
-
-
 class UNetDoubleConvLayer(LudwigModule):
     def __init__(
         self,
@@ -1325,6 +1320,15 @@ class UNetDoubleConvLayer(LudwigModule):
         out_channels: int,
         norm: str = None,
     ):
+        """Two Conv2d layers, each followed by a ReLU, used for U-Net.
+
+        Args:
+          img_height: the input image height
+          img_width: the input image width
+          in_channels: the number of input channels
+          out_channels: the number of output channels
+          norm: the normalization to be applied
+        """
         super().__init__()
 
         self.layers = nn.ModuleList()
@@ -1368,6 +1372,20 @@ class UNetDownStack(LudwigModule):
         norm: str = None,
         stack_depth: int = 4,
     ):
+        """Creates the contracting downsampling path of a U-Net stack.
+
+        Implements
+        U-Net: Convolutional Networks for Biomedical Image Segmentation
+        https://arxiv.org/abs/1505.04597
+        by Olaf Ronneberger, Philipp Fischer, Thomas Brox, May 2015.
+
+        Args:
+          img_height: the input image height
+          img_width: the input image width
+          in_channels: the number of input channels
+          norm: the normalization to be applied
+          stack_depth: the depth of the unet stack
+        """
         super().__init__()
 
         self.conv_layers = nn.ModuleList()
@@ -1423,6 +1441,20 @@ class UNetUpStack(LudwigModule):
         norm: str = None,
         stack_depth: int = 4,
     ):
+        """Creates the expansive upsampling path of a U-Net stack.
+
+        Implements
+        U-Net: Convolutional Networks for Biomedical Image Segmentation
+        https://arxiv.org/abs/1505.04597
+        by Olaf Ronneberger, Philipp Fischer, Thomas Brox, May 2015.
+
+        Args:
+          img_height: the output image height
+          img_width: the output image width
+          out_channels: the number of output classes
+          norm: the normalization to be applied
+          stack_depth: the depth of the unet stack
+        """
         super().__init__()
 
         self.conv_layers = nn.ModuleList()

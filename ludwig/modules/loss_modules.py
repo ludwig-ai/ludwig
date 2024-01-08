@@ -175,6 +175,7 @@ class SoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
         """
         if len(target.shape) == 1 or len(target.shape) == 3:
             # Assumes we are providing the target as a single class, rather than a distribution
+            # The target shape can be a 3D tensor [batch x H x W], for image segmentation
             target = target.long()
         return self.loss_fn(preds, target)
 
