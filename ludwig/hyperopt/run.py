@@ -205,7 +205,7 @@ def hyperopt(
     else:
         config_dict = config
 
-    if HYPEROPT not in config:
+    if HYPEROPT not in config_dict:
         raise ValueError("Hyperopt Section not present in config")
 
     # backwards compatibility
