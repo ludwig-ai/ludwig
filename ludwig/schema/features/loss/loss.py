@@ -7,6 +7,7 @@ from ludwig.constants import (
     CATEGORY,
     CORN,
     HUBER,
+    IMAGE,
     MEAN_ABSOLUTE_ERROR,
     MEAN_ABSOLUTE_PERCENTAGE_ERROR,
     MEAN_SQUARED_ERROR,
@@ -251,7 +252,7 @@ class BWCEWLossConfig(BaseLossConfig):
 
 
 @DeveloperAPI
-@register_loss([CATEGORY, VECTOR])
+@register_loss([CATEGORY, VECTOR, IMAGE])
 @ludwig_dataclass
 class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(

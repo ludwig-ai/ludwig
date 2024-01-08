@@ -9572,3 +9572,31 @@ conv_params:
     filter_size:
         ui_display_name: null
         expected_impact: 2
+UNetEncoder:
+    type:
+        short_description: The UNet encoder convolutional and max pool layers
+        long_description:
+            Stacks of two 2D convolutional layers with optional normalization
+            and relu activation, followed by a max pool layer in all but the
+            final level of the encoder.
+        compute_tier: 1
+    conv_norm:
+        expected_impact: 2
+        ui_display_name: Convolutional Normalization
+    height:
+        default_value_reasoning:
+            Computed internally, automatically, based on image
+            data preprocessing.
+        internal_only: true
+        ui_display_name: NOT DISPLAYED
+    num_channels:
+        default_value_reasoning:
+            Computed internally, automatically, based on image
+            data preprocessing.
+        ui_display_name: NOT DISPLAYED
+    width:
+        default_value_reasoning:
+            Computed internally, automatically, based on image
+            data preprocessing.
+        internal_only: true
+        ui_display_name: NOT DISPLAYED

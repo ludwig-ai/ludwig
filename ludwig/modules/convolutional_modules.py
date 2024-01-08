@@ -1309,3 +1309,161 @@ def get_resnet_block_sizes(resnet_size):
             resnet_size, resnet_choices.keys()
         )
         raise ValueError(err)
+
+
+"""
+The following implements a U-Net encoder-decoder network
+"""
+
+
+class UNetDoubleConvLayer(LudwigModule):
+    def __init__(
+        self,
+        img_height: int,
+        img_width: int,
+        in_channels: int,
+        out_channels: int,
+        norm: str = None,
+    ):
+        super().__init__()
+
+        self.layers = nn.ModuleList()
+
+        self.layers.append(nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1))
+        if norm == "batch":
+            self.layers.append(nn.BatchNorm2d(out_channels))
+        self.layers.append(nn.ReLU())
+
+        self.layers.append(nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1))
+        if norm == "batch":
+            self.layers.append(nn.BatchNorm2d(out_channels))
+        self.layers.append(nn.ReLU())
+
+        self._input_shape = (in_channels, img_height, img_width)
+        self._output_shape = (out_channels, img_height, img_width)
+
+    def forward(self, inputs):
+        hidden = inputs
+
+        for layer in self.layers:
+            hidden = layer(hidden)
+
+        return hidden
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size(self._output_shape)
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size(self._input_shape)
+
+
+class UNetDownStack(LudwigModule):
+    def __init__(
+        self,
+        img_height: int,
+        img_width: int,
+        in_channels: int,
+        norm: str = None,
+        stack_depth: int = 4,
+    ):
+        super().__init__()
+
+        self.conv_layers = nn.ModuleList()
+        self.down_layers = nn.ModuleList()
+
+        height = img_height
+        width = img_width
+        in_c = in_channels
+        out_c = 64
+
+        self._input_shape = (in_c, height, width)
+
+        for i in range(stack_depth):
+            self.conv_layers.append(UNetDoubleConvLayer(height, width, in_c, out_c, norm))
+            in_c = out_c
+            out_c = out_c * 2
+
+            self.down_layers.append(nn.MaxPool2d(kernel_size=2, stride=2))
+            height = height // 2
+            width = width // 2
+
+        self.bottleneck = UNetDoubleConvLayer(height, width, in_c, out_c, norm)
+
+        self._output_shape = (out_c, height, width)
+
+    def forward(self, inputs):
+        skips = []  # skip connections
+        hidden = inputs
+
+        for conv_layer, down_layer in zip(self.conv_layers, self.down_layers):
+            hidden = conv_layer(hidden)
+            skips.append(hidden)
+            hidden = down_layer(hidden)
+
+        hidden = self.bottleneck(hidden)
+        return hidden, skips
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size(self._output_shape)
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size(self._input_shape)
+
+
+class UNetUpStack(LudwigModule):
+    def __init__(
+        self,
+        img_height: int,
+        img_width: int,
+        out_channels: int,
+        norm: str = None,
+        stack_depth: int = 4,
+    ):
+        super().__init__()
+
+        self.conv_layers = nn.ModuleList()
+        self.up_layers = nn.ModuleList()
+
+        height = img_height >> stack_depth
+        width = img_width >> stack_depth
+        in_c = 64 << stack_depth
+        out_c = in_c // 2
+
+        self._input_shape = (in_c, height, width)
+
+        for i in range(stack_depth):
+            self.up_layers.append(nn.ConvTranspose2d(in_c, out_c, kernel_size=2, stride=2))
+            height = height * 2
+            width = width * 2
+
+            self.conv_layers.append(UNetDoubleConvLayer(height, width, out_c * 2, out_c, norm))
+            in_c = out_c
+            out_c = out_c // 2
+
+        self.last_conv = nn.Conv2d(in_c, out_channels, kernel_size=1, padding=0)
+
+        self._output_shape = (out_channels, img_height, img_width)
+
+    def forward(self, inputs, skips):
+        hidden = inputs
+
+        for conv_layer, up_layer in zip(self.conv_layers, self.up_layers):
+            hidden = up_layer(hidden)
+            skip = skips.pop()
+            hidden = torch.cat([hidden, skip], axis=1)
+            hidden = conv_layer(hidden)
+
+        hidden = self.last_conv(hidden)
+        return hidden
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size(self._output_shape)
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size(self._input_shape)
