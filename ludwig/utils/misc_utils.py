@@ -19,7 +19,7 @@ import os
 import random
 import subprocess
 import weakref
-from collections import OrderedDict
+from collections import OrderedDict, Dict
 from collections.abc import Mapping
 from typing import TYPE_CHECKING
 
@@ -35,6 +35,7 @@ from ludwig.utils.fs_utils import find_non_existing_dir_by_adding_suffix
 if TYPE_CHECKING:
     from ludwig.schema.model_types.base import ModelConfig
 
+Any = object()
 
 @DeveloperAPI
 def set_random_seed(random_seed):
@@ -212,3 +213,10 @@ def get_commit_hash():
     except:  # noqa: E722
         pass
     return None
+
+@DeveloperAPI
+def scrub_creds(config_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """Returns a copy of a config dict with all sensitive fields scrubbed."""
+    if "credentials" in config_dict.get("input_features", {}):
+        config_dict["input_features"]["credentials"] = {}
+    return config_dict
