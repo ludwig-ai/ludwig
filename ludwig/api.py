@@ -538,7 +538,7 @@ class LudwigModel:
                 # save description
                 if self.backend.is_coordinator():
                     description = get_experiment_description(
-                        self.config_obj.to_dict(),
+                        self._scrub_creds(self.config_obj).to_dict(),
                         dataset=dataset,
                         training_set=training_set,
                         validation_set=validation_set,
@@ -1898,7 +1898,13 @@ class LudwigModel:
         """
         os.makedirs(save_path, exist_ok=True)
         model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
-        save_json(model_hyperparameters_path, self.config_obj.to_dict())
+        save_json(model_hyperparameters_path, self._scrub_creds(self.config_obj).to_dict())
+
+    def _scrub_creds(self, config_obj: ModelConfig) -> ModelConfig:
+        """Returns a copy of the config with all sensitive fields scrubbed."""
+        config_dict = config_obj.to_dict()
+        config_dict.get("backend", {})["credentials"] = {}
+        return ModelConfig.from_dict(config_dict)
 
     def to_torchscript(
         self,
