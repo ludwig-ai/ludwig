@@ -28,7 +28,6 @@ from ludwig.constants import PADDING_SYMBOL, START_SYMBOL, STOP_SYMBOL, UNKNOWN_
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.utils.fs_utils import open_file
-from ludwig.utils.logging_utils import log_once
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.tokenizers import get_tokenizer_from_registry
 from ludwig.utils.types import Series
