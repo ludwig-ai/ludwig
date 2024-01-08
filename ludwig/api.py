@@ -1903,7 +1903,8 @@ class LudwigModel:
     def _scrub_creds(self, config_obj: ModelConfig) -> ModelConfig:
         """Returns a copy of the config with all sensitive fields scrubbed."""
         config_dict = config_obj.to_dict()
-        config_dict.get("backend", {})["credentials"] = {}
+        if "credentials" in config_dict.get("input_features", {}):
+            config_dict["input_features"]["credentials"] = {}
         return ModelConfig.from_dict(config_dict)
 
     def to_torchscript(
