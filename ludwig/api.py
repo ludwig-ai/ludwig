@@ -539,7 +539,7 @@ class LudwigModel:
                 # save description
                 if self.backend.is_coordinator():
                     description = get_experiment_description(
-                        scrub_creds(self.config_obj).to_dict(),
+                        scrub_creds(self.config_obj.to_dict()),
                         dataset=dataset,
                         training_set=training_set,
                         validation_set=validation_set,
