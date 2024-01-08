@@ -214,7 +214,7 @@ class FeatureCollection(Generic[T], schema_utils.ListSerializable):
 
     def __getitem__(self, i) -> T:
         if isinstance(i, str):
-            return self._name_to_features[i]
+            return self._name_to_feature[i]
         else:
             return self._features[i]
 

@@ -632,6 +632,25 @@ def check_llm_quantization_backend_incompatibility(config: "ModelConfig") -> Non
 
 
 @register_config_check
+def check_llm_text_encoder_is_not_used_with_ecd(config: "ModelConfig") -> None:
+    """Checks that a pretrained text encoder is not used for ECD models with a text output feature."""
+    if config.model_type != MODEL_ECD:
+        return
+
+    if config.input_features[0].type != TEXT:
+        return
+
+    if config.output_features[0].type != TEXT:
+        return
+
+    if (
+        hasattr(config.input_features[0].encoder, "pretrained_model_name_or_path")
+        and config.input_features[0].encoder.pretrained_model_name_or_path
+    ):
+        raise ConfigValidationError("Please use the `model_type: llm` for text-to-text models.")
+
+
+@register_config_check
 def check_qlora_requirements(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that all the necessary settings are in place for QLoRA."""
     if config.model_type != MODEL_LLM or config.trainer.type == "none":

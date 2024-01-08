@@ -41,6 +41,9 @@ MODEL_PRESETS = {
     # Mistral
     "mistral-7b": "mistralai/Mistral-7B-v0.1",
     "mistral-7b-instruct": "mistralai/Mistral-7B-Instruct-v0.1",
+    # Mixtral
+    "mixtral-8x7b": "mistralai/Mixtral-8x7B-v0.1",
+    "mixtral-8x7b-instruct": "mistralai/Mixtral-8x7B-Instruct-v0.1",
     # OPT
     "opt-350m": "facebook/opt-350m",
     "opt-1.3b": "facebook/opt-1.3b",

@@ -2535,7 +2535,7 @@ class LLMEncoder(Encoder):
         lists in `incompatible_keys` must be made in-place.
 
         Args:
-            module: The torch modulewith newly loaded state
+            module: The torch module with newly loaded state
             incompatible_keys: A tuple with the lists of missing and unexpected keys that were recorded while loading
         """
         # If no adapter was used, `LLMEncoder.load_state_dict` should use the default `torch.Module.load_state_dict`
@@ -2544,12 +2544,28 @@ class LLMEncoder(Encoder):
             adapter_type_prefix = self.ADAPTER_PARAM_NAME_PREFIX[self.config.adapter.type]
             missing_keys, unexpected_keys = incompatible_keys
 
+            # The state dict uses fully qualified parameter names, but this function does not have access to the
+            # fully qualified names or a prefix to recreate them. Iterate over the missing keys and greedily select the
+            # first non-adapter key that shares a suffix with a model parameter name.
+            sample_missing_key = ""
+            sample_model_key = ""
+            for k in missing_keys:
+                # Exclude any adapter weight--those should not be missing. Let torch handle that downstream.
+                if adapter_type_prefix not in k:
+                    sample_model_keys = [p for p, _ in self.named_parameters() if p in k]
+                    if sample_model_keys:
+                        sample_model_key = sample_model_keys[0]
+                        sample_missing_key = k
+                        break
+            sd_prefix = sample_missing_key.replace(sample_model_key, "")
+
             # When loading the adapter weights in strict mode, torch will register the base model weights as missing
             # from the state dict and raise an exception. The base model weights are intended to be excluded, so the
             # missing_keys list is updated post-load to avoid the error.
             for k, _ in self.named_parameters():
-                if k in missing_keys and adapter_type_prefix not in k:
-                    missing_keys.remove(k)
+                full_name = f"{sd_prefix}{k}"
+                if full_name in missing_keys and adapter_type_prefix not in full_name:
+                    missing_keys.remove(full_name)
 
             # peft changes the adapter parameter names under the hood to include the adapter name. When retreiving the
             # adapter state dict, however, the name is not included. This causes the adpater weights to be recorded as
