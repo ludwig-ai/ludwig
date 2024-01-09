@@ -152,10 +152,6 @@ class LLM(BaseModel):
 
         self.attention_masks = None
 
-        self.max_new_tokens = self.max_new_tokens
-        self.max_input_length = self.max_input_length
-        self.generation = self.generation
-
         clear_data_cache()
 
     def create_feature_dict(self) -> DictWrapper:
