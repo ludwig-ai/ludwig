@@ -75,7 +75,7 @@ def test_set_fixed_preprocessing_params_cache_embeddings(encoder_params: Dict[st
 
 
 @pytest.fixture()
-def llm_config_dict():
+def llm_config_dict() -> Dict[str, Any]:
     return {
         MODEL_TYPE: MODEL_LLM,
         BASE_MODEL: "HuggingFaceH4/tiny-random-LlamaForCausalLM",
@@ -85,12 +85,12 @@ def llm_config_dict():
 
 
 @pytest.fixture()
-def llm_config_object(llm_config_dict):
+def llm_config_object(llm_config_dict: Dict[str, Any]) -> ModelConfig:
     return ModelConfig.from_dict(llm_config_dict)
 
 
 @pytest.fixture()
-def ecd_config_dict_llm_encoder():
+def ecd_config_dict_llm_encoder() -> Dict[str, Any]:
     return {
         MODEL_TYPE: MODEL_ECD,
         INPUT_FEATURES: [
@@ -105,12 +105,12 @@ def ecd_config_dict_llm_encoder():
 
 
 @pytest.fixture()
-def ecd_config_object_llm_encoder(ecd_config_dict_llm_encoder):
+def ecd_config_object_llm_encoder(ecd_config_dict_llm_encoder: Dict[str, Any]) -> ModelConfig:
     return ModelConfig.from_dict(ecd_config_dict_llm_encoder)
 
 
 @pytest.fixture()
-def ecd_config_dict_llm_encoder_multiple_features():
+def ecd_config_dict_llm_encoder_multiple_features() -> Dict[str, Any]:
     return {
         MODEL_TYPE: MODEL_ECD,
         INPUT_FEATURES: [
@@ -126,12 +126,14 @@ def ecd_config_dict_llm_encoder_multiple_features():
 
 
 @pytest.fixture()
-def ecd_config_object_llm_encoder_multiple_features(ecd_config_dict_llm_encoder_multiple_features):
+def ecd_config_object_llm_encoder_multiple_features(
+    ecd_config_dict_llm_encoder_multiple_features: Dict[str, Any]
+) -> ModelConfig:
     return ModelConfig.from_dict(ecd_config_dict_llm_encoder_multiple_features)
 
 
 @pytest.fixture()
-def ecd_config_dict_no_llm_encoder():
+def ecd_config_dict_no_llm_encoder() -> Dict[str, Any]:
     return {
         MODEL_TYPE: MODEL_ECD,
         INPUT_FEATURES: [{TYPE: TEXT, NAME: "in1", ENCODER: {TYPE: "parallel_cnn"}}],
@@ -140,12 +142,12 @@ def ecd_config_dict_no_llm_encoder():
 
 
 @pytest.fixture()
-def ecd_config_object_no_llm_encoder(ecd_config_dict_no_llm_encoder):
+def ecd_config_object_no_llm_encoder(ecd_config_dict_no_llm_encoder: Dict[str, Any]) -> ModelConfig:
     return ModelConfig.from_dict(ecd_config_dict_no_llm_encoder)
 
 
 @pytest.fixture()
-def ecd_config_dict_no_text_features():
+def ecd_config_dict_no_text_features() -> Dict[str, Any]:
     return {
         MODEL_TYPE: MODEL_ECD,
         INPUT_FEATURES: [{TYPE: BINARY, NAME: "in1"}],
@@ -154,12 +156,12 @@ def ecd_config_dict_no_text_features():
 
 
 @pytest.fixture()
-def ecd_config_object_no_text_features(ecd_config_dict_no_text_features):
+def ecd_config_object_no_text_features(ecd_config_dict_no_text_features: Dict[str, Any]) -> ModelConfig:
     return ModelConfig.from_dict(ecd_config_dict_no_text_features)
 
 
 @pytest.fixture()
-def gbm_config_dict_llm_encoder():
+def gbm_config_dict_llm_encoder() -> Dict[str, Any]:
     return {
         MODEL_TYPE: MODEL_GBM,
         INPUT_FEATURES: [{TYPE: TEXT, NAME: "in1", ENCODER: {TYPE: "tf_idf"}}],
@@ -168,7 +170,7 @@ def gbm_config_dict_llm_encoder():
 
 
 @pytest.fixture()
-def gbm_config_object_llm_encoder(gbm_config_dict_llm_encoder):
+def gbm_config_object_llm_encoder(gbm_config_dict_llm_encoder: Dict[str, Any]) -> ModelConfig:
     return ModelConfig.from_dict(gbm_config_dict_llm_encoder)
 
 
@@ -196,5 +198,13 @@ def gbm_config_object_llm_encoder(gbm_config_dict_llm_encoder):
     ],
 )
 def test_is_or_uses_llm(config, expectation, request):
+    """Test LLM detection on a variety of configs. Configs that use an LLM anywhere should return True, otherwise
+    False.
+
+    Args:
+        config: The name of the config fixture to test
+        expectation: The expected result
+        request: pytest `request` fixture
+    """
     config = request.getfixturevalue(config)
     assert is_or_uses_llm(config) == expectation
