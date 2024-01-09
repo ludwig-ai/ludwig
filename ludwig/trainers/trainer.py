@@ -1151,8 +1151,19 @@ class Trainer(BaseTrainer):
         final_steps_per_checkpoint: int,
         early_stopping_steps: int,
         profiler: Optional[torch.profiler.profile],
-    ) -> bool:
-        """Completes up to one epoch through the data."""
+    ) -> Tuple[bool, bool]:
+        """Completes up to one epoch through the data.
+
+        This function completes a single pass (epoch) through the training data and returns
+        two boolean values:
+
+        Returns:
+            should_break (bool):
+                Indicates whether the training loop should be terminated prematurely.
+
+            has_nan_or_inf_tensors (bool):
+                Indicates whether the model weights contain NaN or Inf values.
+        """
         self.distributed.zero_grad(self.optimizer)
         batch_idx = 0
         should_break = False
