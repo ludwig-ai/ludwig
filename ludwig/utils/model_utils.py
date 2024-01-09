@@ -96,7 +96,7 @@ def find_embedding_layer_with_path(module, module_names=[]):
     return None, None
 
 
-def has_nan_or_inf_tensors(module: torch.nn.Module) -> bool:
+def contains_nan_or_inf_tensors(module: torch.nn.Module) -> bool:
     """Check for NaN or infinity (inf) values in the tensors (parameters and buffers) of a PyTorch module. This
     function recursively inspects the module's parameters and buffers to identify NaN or inf values. It is designed
     to ensure the numerical stability of the model by detecting any irregularities in the tensor values.
@@ -109,17 +109,17 @@ def has_nan_or_inf_tensors(module: torch.nn.Module) -> bool:
     """
     for name, param in module.named_parameters():
         if param.requires_grad and (torch.isnan(param).any() or torch.isinf(param).any()):
-            logger.info(f"Found NaN or inf values in parameter {name} of module {module.__class__.__name__}")
+            logger.info(f"Found NaN or inf values in parameter '{name}' of module '{module.__class__.__name__}'")
             return True
 
     for name, buffer in module.named_buffers():
         if torch.isnan(buffer).any() or torch.isinf(buffer).any():
-            logger.info(f"Found NaN or inf values in buffer {name} of module {module.__class__.__name__}")
+            logger.info(f"Found NaN or inf values in buffer '{name}' of module '{module.__class__.__name__}'")
             return True
 
     for name, submodule in module.named_children():
-        if has_nan_or_inf_tensors(submodule):
-            logger.info(f"Found NaN or inf values in submodule {name} of module {module.__class__.__name__}")
+        if contains_nan_or_inf_tensors(submodule):
+            logger.info(f"Found NaN or inf values in submodule '{name}' of module '{module.__class__.__name__}'")
             return True
 
     return False

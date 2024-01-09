@@ -64,7 +64,7 @@ from ludwig.utils.llm_utils import update_embedding_layer
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.metrics_printed_table import print_metrics_table
 from ludwig.utils.misc_utils import set_random_seed
-from ludwig.utils.model_utils import has_nan_or_inf_tensors
+from ludwig.utils.model_utils import contains_nan_or_inf_tensors
 from ludwig.utils.torch_utils import get_torch_device
 from ludwig.utils.trainer_utils import (
     append_metrics,
@@ -1079,6 +1079,14 @@ class Trainer(BaseTrainer):
         if self.distributed.is_coordinator():
             if not self.skip_save_model:
                 state_dict = checkpoint_manager.get_best_checkpoint_state_for_inference(self.return_device)
+                if not state_dict:
+                    error_message = "Training ran into an error. No checkpoint was saved."
+                    if has_nan_or_inf_tensors:
+                        error_message += (
+                            " This is because training was terminated early due to the presence of NaN or "
+                            "Inf values in the model weights before a single valid checkpoint could be saved."
+                        )
+                    raise RuntimeError(error_message)
                 if not return_state_dict:
                     if self.distributed.is_model_parallel():
                         # Assume the full weights cannot fit in memory on GPU
@@ -1227,11 +1235,11 @@ class Trainer(BaseTrainer):
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
                 # Before continuing to evaluation or skipping evaluation altogether, we should use this point to
                 # ensure that the model weights are not NaN or Inf.
-                has_nan_or_inf_tensors = self._has_for_nan_or_inf_weights(self.dist_model)
+                has_nan_or_inf_tensors = self._has_nan_or_inf_weights(self.dist_model)
                 # If a nan/inf tensor is detected, we should break out of the training loop immediately and raise an #
-                # error. There is no point in running evaluation for this step, as the model weights are already in
-                # a bad state, or continuing to train the model since the loss will always be NaN or Inf from this
-                # point forward.
+                # error. There is no point in running evaluation for this step as the model weights are already in
+                # a bad state. Theere is also no point in continuing to train the model since the loss will always be
+                # NaN or Inf from this point forward.
                 if has_nan_or_inf_tensors:
                     return True, has_nan_or_inf_tensors
 
@@ -1278,7 +1286,7 @@ class Trainer(BaseTrainer):
 
         return should_break, has_nan_or_inf_tensors
 
-    def _has_for_nan_or_inf_weights(self, model: torch.nn.Module) -> bool:
+    def _has_nan_or_inf_weights(self, model: torch.nn.Module) -> bool:
         """Check for NaN or infinity (inf) values in the weights (parameters and buffers) of a PyTorch model in a
         local or distributed training environment. It is called to ensure the model's numerical stability during
         training. It works for both model parallel and data parallel training.
@@ -1294,7 +1302,7 @@ class Trainer(BaseTrainer):
         Returns:
             bool: Returns True if any NaN or inf tensors are found in the model's weights. Otherwise, returns False.
         """
-        local_has_nan_or_inf = has_nan_or_inf_tensors(model)
+        local_has_nan_or_inf = contains_nan_or_inf_tensors(model)
 
         # Use all_reduce to aggregate local_has_nan across all processes and sum the result into global_has_nan, which
         # will be a tensor with a single element on all processes after the all_reduce operation.
