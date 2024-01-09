@@ -77,6 +77,10 @@ def get_new_progress_tracker(
         best_eval_train_metrics={},
         best_eval_validation_metrics={},
         best_eval_test_metrics={},
+        llm_eval_examples={},
+        incremental_token_usage={},
+        cumulative_token_usage={},
+        total_tokens_used=0,
     )
 
 
@@ -110,6 +114,9 @@ class ProgressTracker:
         best_eval_validation_metrics: Dict[str, Dict[str, float]],
         best_eval_test_metrics: Dict[str, Dict[str, float]],
         llm_eval_examples: Dict[str, List[str]] = None,
+        incremental_token_usage: Dict[int, int] = None,
+        cumulative_token_usage: Dict[int, int] = None,
+        total_tokens_used: int = 0,
     ):
         """JSON-serializable holder object that stores information related to training progress.
 
@@ -191,6 +198,11 @@ class ProgressTracker:
         self.best_eval_validation_metrics = best_eval_validation_metrics
         self.best_eval_test_metrics = best_eval_test_metrics
 
+        # Token usage.
+        self.incremental_token_usage = incremental_token_usage
+        self.cumulative_token_usage = cumulative_token_usage
+        self.total_tokens_used = total_tokens_used
+
     def save(self, filepath):
         save_json(filepath, self.__dict__)
 
@@ -224,6 +236,8 @@ class ProgressTracker:
         # example tensors.
         if self.llm_eval_examples:
             log_metrics["llm_eval_examples"] = self.llm_eval_examples
+
+        log_metrics["total_tokens_used"] = self.total_tokens_used
 
         for metrics_dict_name in [
             "train_metrics",
