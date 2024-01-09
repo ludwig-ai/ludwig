@@ -215,6 +215,6 @@ def get_commit_hash():
 @DeveloperAPI
 def scrub_creds(config_dict: Dict[str, Any]) -> Dict[str, Any]:
     """Returns a copy of a config dict with all sensitive fields scrubbed."""
-    if "credentials" in config_dict.get("backend", {}):
+    if config_dict.get("backend", {}) and "credentials" in config_dict.get("backend", {}):
         config_dict["backend"]["credentials"] = {}
     return config_dict
