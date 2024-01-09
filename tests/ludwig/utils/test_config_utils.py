@@ -20,7 +20,7 @@ from ludwig.schema.encoders.text_encoders import BERTConfig
 from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.schema.features.preprocessing.text import TextPreprocessingConfig
 from ludwig.schema.model_config import ModelConfig
-from ludwig.utils.config_utils import is_or_uses_llm
+from ludwig.utils.config_utils import config_uses_llm
 
 
 @pytest.mark.parametrize(
@@ -207,7 +207,7 @@ def test_is_or_uses_llm(config, expectation, request):
         request: pytest `request` fixture
     """
     config = request.getfixturevalue(config)
-    assert is_or_uses_llm(config) == expectation
+    assert config_uses_llm(config) == expectation
 
 
 @pytest.mark.parametrize("invalid_config", [1, 1.0, "foo", True, False, None, [], {}, {"foo": "bar"}])
@@ -217,4 +217,4 @@ def test_is_or_uses_llm_invalid_input(invalid_config):
     These should all raise an exception.
     """
     with pytest.raises(ValueError):
-        is_or_uses_llm(invalid_config)
+        config_uses_llm(invalid_config)

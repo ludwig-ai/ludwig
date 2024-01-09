@@ -105,7 +105,7 @@ def has_pretrained_encoder(config: ModelConfig) -> bool:
     return False
 
 
-def is_or_uses_llm(config: Union[Dict[str, Any], ModelConfig]) -> bool:
+def config_uses_llm(config: Union[Dict[str, Any], ModelConfig]) -> bool:
     """Determine if a config uses an LLM.
 
     Args:
