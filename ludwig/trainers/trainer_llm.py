@@ -438,11 +438,11 @@ class FineTuneTrainer(Trainer):
         predictor = LlmFineTunePredictor(
             self.model, batch_size=batch_size, distributed=self.distributed, report_tqdm_to_ray=self.report_tqdm_to_ray
         )
-        # logger.info(f'\n[ALEX_TEST] [FineTuneTrainer.evaluation()] PREDICTOR:\n{predictor} ; TYPE: {str(type(predictor))}')
+        logger.info(f'\n[ALEX_TEST] [FineTuneTrainer.evaluation()] PREDICTOR:\n{predictor} ; TYPE: {str(type(predictor))}')
         metrics, _, input_target_output_dict = predictor.batch_evaluation(
             dataset, collect_predictions=False, dataset_name=dataset_name
         )
-        # logger.info(f'\n[ALEX_TEST] [FineTuneTrainer.evaluation()] METRICS:\n{metrics} ; TYPE: {str(type(metrics))}')
+        logger.info(f'\n[ALEX_TEST] [FineTuneTrainer.evaluation()] METRICS:\n{metrics} ; TYPE: {str(type(metrics))}')
         # Setting collect_predictions=True currently causes an error when doing batch evaluation because the outputs
         # can be of variable sizes but we try to concatenate them into a single tensor.
 
@@ -453,23 +453,23 @@ class FineTuneTrainer(Trainer):
         num_examples = min(len(input_target_output_dict["inputs"][input_key]), MAX_EVALUATION_EXAMPLES)
 
         llm_eval_examples = {"inputs": [], "targets": [], "outputs": []}
-        # logger.info(f'\n[ALEX_TEST] [FineTuneTrainer.evaluation()] LLM_EVAL_EXAMPLES-0:\n{llm_eval_examples} ; TYPE: {str(type(llm_eval_examples))}')
+        logger.info(f'\n[ALEX_TEST] [FineTuneTrainer.evaluation()] LLM_EVAL_EXAMPLES-0:\n{llm_eval_examples} ; TYPE: {str(type(llm_eval_examples))}')
         for key in input_target_output_dict["inputs"]:
             for inp in input_target_output_dict["inputs"][key][:num_examples]:
                 llm_eval_examples["inputs"].append(tokenizer.decode(inp, skip_special_tokens=True))
 
-        # logger.info(f'\n[ALEX_TEST] [FineTuneTrainer.evaluation()] LLM_EVAL_EXAMPLES-1:\n{llm_eval_examples} ; TYPE: {str(type(llm_eval_examples))}')
+        logger.info(f'\n[ALEX_TEST] [FineTuneTrainer.evaluation()] LLM_EVAL_EXAMPLES-1:\n{llm_eval_examples} ; TYPE: {str(type(llm_eval_examples))}')
         for key in input_target_output_dict["targets"]:
             for tar in input_target_output_dict["targets"][key][:num_examples]:
                 llm_eval_examples["targets"].append(tokenizer.decode(tar, skip_special_tokens=True))
 
-        # logger.info(f'\n[ALEX_TEST] [FineTuneTrainer.evaluation()] LLM_EVAL_EXAMPLES-2:\n{llm_eval_examples} ; TYPE: {str(type(llm_eval_examples))}')
+        logger.info(f'\n[ALEX_TEST] [FineTuneTrainer.evaluation()] LLM_EVAL_EXAMPLES-2:\n{llm_eval_examples} ; TYPE: {str(type(llm_eval_examples))}')
         for key in input_target_output_dict["outputs"]:
             for out in input_target_output_dict["outputs"][key][:num_examples]:
                 llm_eval_examples["outputs"].append(tokenizer.decode(out, skip_special_tokens=True))
 
         num_examples_shown = min(len(llm_eval_examples["inputs"]), MAX_EVALUATION_EXAMPLES_SHOWN)
-        # logger.info(f'\n[ALEX_TEST] [FineTuneTrainer.evaluation()] NUM_EXAMPLES_SHOWN:\n{num_examples_shown} ; TYPE: {str(type(num_examples_shown))}')
+        logger.info(f'\n[ALEX_TEST] [FineTuneTrainer.evaluation()] NUM_EXAMPLES_SHOWN:\n{num_examples_shown} ; TYPE: {str(type(num_examples_shown))}')
         for i in range(num_examples_shown):
             logger.info(f"Input: {llm_eval_examples['inputs'][i].strip()}")
             logger.info(f"Output: {llm_eval_examples['outputs'][i].strip()}")
