@@ -74,7 +74,7 @@ def test_set_fixed_preprocessing_params_cache_embeddings(encoder_params: Dict[st
     assert preprocessing.cache_encoder_embeddings == expected
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def llm_config_dict() -> Dict[str, Any]:
     return {
         MODEL_TYPE: MODEL_LLM,
@@ -84,12 +84,12 @@ def llm_config_dict() -> Dict[str, Any]:
     }
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def llm_config_object(llm_config_dict: Dict[str, Any]) -> ModelConfig:
     return ModelConfig.from_dict(llm_config_dict)
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def ecd_config_dict_llm_encoder() -> Dict[str, Any]:
     return {
         MODEL_TYPE: MODEL_ECD,
@@ -104,12 +104,12 @@ def ecd_config_dict_llm_encoder() -> Dict[str, Any]:
     }
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def ecd_config_object_llm_encoder(ecd_config_dict_llm_encoder: Dict[str, Any]) -> ModelConfig:
     return ModelConfig.from_dict(ecd_config_dict_llm_encoder)
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def ecd_config_dict_llm_encoder_multiple_features() -> Dict[str, Any]:
     return {
         MODEL_TYPE: MODEL_ECD,
@@ -125,14 +125,14 @@ def ecd_config_dict_llm_encoder_multiple_features() -> Dict[str, Any]:
     }
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def ecd_config_object_llm_encoder_multiple_features(
     ecd_config_dict_llm_encoder_multiple_features: Dict[str, Any]
 ) -> ModelConfig:
     return ModelConfig.from_dict(ecd_config_dict_llm_encoder_multiple_features)
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def ecd_config_dict_no_llm_encoder() -> Dict[str, Any]:
     return {
         MODEL_TYPE: MODEL_ECD,
@@ -141,12 +141,12 @@ def ecd_config_dict_no_llm_encoder() -> Dict[str, Any]:
     }
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def ecd_config_object_no_llm_encoder(ecd_config_dict_no_llm_encoder: Dict[str, Any]) -> ModelConfig:
     return ModelConfig.from_dict(ecd_config_dict_no_llm_encoder)
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def ecd_config_dict_no_text_features() -> Dict[str, Any]:
     return {
         MODEL_TYPE: MODEL_ECD,
@@ -155,13 +155,13 @@ def ecd_config_dict_no_text_features() -> Dict[str, Any]:
     }
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def ecd_config_object_no_text_features(ecd_config_dict_no_text_features: Dict[str, Any]) -> ModelConfig:
     return ModelConfig.from_dict(ecd_config_dict_no_text_features)
 
 
-@pytest.fixture()
-def gbm_config_dict_llm_encoder() -> Dict[str, Any]:
+@pytest.fixture(scope="module")
+def gbm_config_dict() -> Dict[str, Any]:
     return {
         MODEL_TYPE: MODEL_GBM,
         INPUT_FEATURES: [{TYPE: TEXT, NAME: "in1", ENCODER: {TYPE: "tf_idf"}}],
@@ -169,9 +169,23 @@ def gbm_config_dict_llm_encoder() -> Dict[str, Any]:
     }
 
 
-@pytest.fixture()
-def gbm_config_object_llm_encoder(gbm_config_dict_llm_encoder: Dict[str, Any]) -> ModelConfig:
-    return ModelConfig.from_dict(gbm_config_dict_llm_encoder)
+@pytest.fixture(scope="module")
+def gbm_config_object(gbm_config_dict: Dict[str, Any]) -> ModelConfig:
+    return ModelConfig.from_dict(gbm_config_dict)
+
+
+@pytest.fixture(scope="module")
+def gbm_config_dict_no_text_features() -> Dict[str, Any]:
+    return {
+        MODEL_TYPE: MODEL_GBM,
+        INPUT_FEATURES: [{TYPE: BINARY, NAME: "in1"}],
+        OUTPUT_FEATURES: [{TYPE: BINARY, NAME: "out1"}],
+    }
+
+
+@pytest.fixture(scope="module")
+def gbm_config_object_no_text_features(gbm_config_dict_no_text_features: Dict[str, Any]) -> ModelConfig:
+    return ModelConfig.from_dict(gbm_config_dict_no_text_features)
 
 
 @pytest.mark.parametrize(
@@ -192,9 +206,12 @@ def gbm_config_object_llm_encoder(gbm_config_dict_llm_encoder: Dict[str, Any]) -
         # ECD configuration with no text features
         ("ecd_config_dict_no_text_features", False),
         ("ecd_config_object_no_text_features", False),
-        # GBM configuration. "tf_idf" is the only valid text encoder
-        ("gbm_config_dict_llm_encoder", False),
-        ("gbm_config_object_llm_encoder", False),
+        # GBM configuration with text feature. "tf_idf" is the only valid text encoder
+        ("gbm_config_dict", False),
+        ("gbm_config_object", False),
+        # GBM configuration with no text features
+        ("gbm_config_dict_no_text_features", False),
+        ("gbm_config_object_no_text_features", False),
     ],
 )
 def test_is_or_uses_llm(config, expectation, request):
@@ -215,6 +232,9 @@ def test_is_or_uses_llm_invalid_input(invalid_config):
     """Sanity checks for invalid config handling.
 
     These should all raise an exception.
+
+    Args:
+        invalid_config: An invalid argument to `config_uses_llm`
     """
     with pytest.raises(ValueError):
         config_uses_llm(invalid_config)
