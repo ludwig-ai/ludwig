@@ -698,7 +698,7 @@ class Trainer(BaseTrainer):
             dict_save_dir = os.path.join(os.path.dirname(checkpoint_manager.directory), "llm_eval_examples")
             os.makedirs(dict_save_dir, exist_ok=True)
             dict_save_path = os.path.join(dict_save_dir, f"{progress_tracker.checkpoint_number}.csv")
-            logger.info(f'\n[ALEX_TEST] [TuneTrainer.run_evaluation()] <SELF.EVALUATION(VALIDATION_SET)_COMPLETED>-dict_save_path:\n{DICT_SAVE_PATH} ; TYPE: {str(type(dict_save_path))}')
+            logger.info(f'\n[ALEX_TEST] [TuneTrainer.run_evaluation()] <SELF.EVALUATION(VALIDATION_SET)_COMPLETED>-DICT_SAVE_PATH:\n{dict_save_path} ; TYPE: {str(type(dict_save_path))}')
             llm_eval_examples = pd.DataFrame(llm_eval_examples).to_dict(orient="records")
             logger.info(f'\n[ALEX_TEST] [TuneTrainer.run_evaluation()] <SELF.EVALUATION(VALIDATION_SET)_COMPLETED>-LLM_EVAL_EXAMPLES:\n{llm_eval_examples} ; TYPE: {str(type(llm_eval_examples))}')
             with open(dict_save_path, "w") as outfile:
