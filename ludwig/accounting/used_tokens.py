@@ -6,6 +6,10 @@ import torch
 def get_used_tokens_for_gbm(inputs: Dict[str, torch.Tensor]) -> int:
     """Returns the number of used tokens for a GBM model."""
     # 1 token for each input, and 1 token for the target.
+    if isinstance(inputs, torch.Tensor):
+        # Inputs may be a tensor for evaluation.
+        # Use the total number of inputs + the batch size as the number of output tokens.
+        return torch.flatten(inputs).shape[0] + inputs.shape[0]
     return len(inputs.keys()) + 1
 
 

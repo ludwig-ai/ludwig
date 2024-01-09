@@ -118,6 +118,9 @@ class LLM(BaseModel):
         # Initialize tokenizer
         self.tokenizer = HFTokenizer(self.config_obj.base_model).tokenizer
 
+        self._set_generation_config(self.config_obj.generation.to_dict())
+
+        # ================ Inputs ================
         try:
             self.input_features.update(self.build_inputs(input_feature_configs=self.config_obj.input_features))
         except KeyError as e:
@@ -148,9 +151,10 @@ class LLM(BaseModel):
         self._output_feature_decoder = ModuleWrapper(self.output_features.items()[0][1])
 
         self.attention_masks = None
-        self.generation = None
-        self.max_new_tokens = None
-        self.max_input_length = -1
+
+        self.max_new_tokens = self.max_new_tokens
+        self.max_input_length = self.max_input_length
+        self.generation = self.generation
 
         clear_data_cache()
 
