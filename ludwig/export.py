@@ -22,6 +22,7 @@ from typing import Optional
 from ludwig.api import LudwigModel
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.utils.carton_utils import export_carton as utils_export_carton
 from ludwig.utils.neuropod_utils import export_neuropod as utils_export_neuropod
 from ludwig.utils.print_utils import get_logging_level_registry, print_ludwig
 from ludwig.utils.triton_utils import export_triton as utils_export_triton
@@ -84,6 +85,32 @@ def export_triton(model_path, output_path="model_repository", model_name="ludwig
     os.makedirs(output_path, exist_ok=True)
 
     utils_export_triton(model=model, output_path=output_path, model_name=model_name, model_version=model_version)
+
+    logger.info(f"Saved to: {output_path}")
+
+
+def export_carton(model_path, output_path="carton", model_name="carton", **kwargs):
+    """Exports a model to Carton.
+
+    # Inputs
+
+    :param model_path: (str) filepath to pre-trained model.
+    :param output_path: (str, default: `'carton'`)  directory to store the
+        carton model.
+    :param model_name: (str, default: `'carton'`) save carton under this
+        name.
+
+    # Return
+
+    :returns: (`None`)
+    """
+    logger.info(f"Model path: {model_path}")
+    logger.info(f"Output path: {output_path}")
+    logger.info("\n")
+
+    model = LudwigModel.load(model_path)
+    os.makedirs(output_path, exist_ok=True)
+    utils_export_carton(model, output_path, model_name)
 
     logger.info(f"Saved to: {output_path}")
 
@@ -254,6 +281,52 @@ def cli_export_triton(sys_argv):
     export_triton(**vars(args))
 
 
+def cli_export_carton(sys_argv):
+    parser = argparse.ArgumentParser(
+        description="This script loads a pretrained model " "and saves it as a Carton.",
+        prog="ludwig export_carton",
+        usage="%(prog)s [options]",
+    )
+
+    # ----------------
+    # Model parameters
+    # ----------------
+    parser.add_argument("-m", "--model_path", help="model to load", required=True)
+    parser.add_argument("-mn", "--model_name", help="model name", default="carton")
+
+    # -----------------
+    # Output parameters
+    # -----------------
+    parser.add_argument("-op", "--output_path", type=str, help="path where to save the export model", required=True)
+
+    # ------------------
+    # Runtime parameters
+    # ------------------
+    parser.add_argument(
+        "-l",
+        "--logging_level",
+        default="info",
+        help="the level of logging to use",
+        choices=["critical", "error", "warning", "info", "debug", "notset"],
+    )
+
+    add_contrib_callback_args(parser)
+    args = parser.parse_args(sys_argv)
+
+    args.callbacks = args.callbacks or []
+    for callback in args.callbacks:
+        callback.on_cmdline("export_carton", *sys_argv)
+
+    args.logging_level = get_logging_level_registry()[args.logging_level]
+    logging.getLogger("ludwig").setLevel(args.logging_level)
+    global logger
+    logger = logging.getLogger("ludwig.export")
+
+    print_ludwig("Export Carton", LUDWIG_VERSION)
+
+    export_carton(**vars(args))
+
+
 def cli_export_neuropod(sys_argv):
     parser = argparse.ArgumentParser(
         description="This script loads a pretrained model " "and saves it as a Neuropod.",
@@ -360,6 +433,8 @@ if __name__ == "__main__":
             cli_export_mlflow(sys.argv[2:])
         elif sys.argv[1] == "triton":
             cli_export_triton(sys.argv[2:])
+        elif sys.argv[1] == "carton":
+            cli_export_carton(sys.argv[2:])
         elif sys.argv[1] == "neuropod":
             cli_export_neuropod(sys.argv[2:])
         else:
