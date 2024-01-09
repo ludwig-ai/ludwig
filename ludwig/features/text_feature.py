@@ -99,9 +99,9 @@ def _get_metadata_reconciled_max_sequence_length(
     if preprocessing_parameters["max_sequence_length"] is not None:
         if preprocessing_parameters["max_sequence_length"] < vocabulary.max_sequence_length:
             logger.warning(
-                f"The max sequence length of the data, {vocabulary.max_sequence_length} is longer than the max "
+                f"The max sequence length of the data, {vocabulary.max_sequence_length}, is longer than the max "
                 f"sequence length set in the config, {preprocessing_parameters['max_sequence_length']}. Note that this "
-                "will truncating all examples to max_sequence_length="
+                "will truncate all examples to max_sequence_length="
                 f"{preprocessing_parameters['max_sequence_length']}."
             )
         return (

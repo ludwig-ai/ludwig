@@ -203,7 +203,7 @@ def read_xsv(data_fp, df_lib=PANDAS_DF, separator=",", header=0, nrows=None, ski
     try:
         df = df_lib.read_csv(data_fp, **kwargs)
     except ParserError:
-        logger.warning("Failed to parse the CSV with pandas default way," " trying \\ as escape character.")
+        logger.warning("Failed to parse the CSV with pandas default way, trying \\ as escape character.")
         df = df_lib.read_csv(data_fp, escapechar="\\", **kwargs)
 
     return df
@@ -356,7 +356,7 @@ def read_stata(data_fp, df_lib, **kwargs):
 
 @DeveloperAPI
 @spread
-def read_hdf5(data_fp, **kwargs):
+def read_hdf5(data_fp, **_kwargs):
     return load_hdf5(data_fp, clean_cols=True)
 
 
@@ -416,7 +416,7 @@ def load_config_from_str(config):
     config = yaml.safe_load(config)
     if isinstance(config, str):
         # Assume the caller provided a path name
-        with open(config) as f:
+        with open(config, encoding="utf-8") as f:
             config = yaml.safe_load(f)
     return config
 
@@ -462,7 +462,7 @@ def chunk_dict(data, chunk_size=100):
     Source: https://stackoverflow.com/a/22878842
     """
     it = iter(data)
-    for i in range(0, len(data), chunk_size):
+    for _ in range(0, len(data), chunk_size):
         yield {k: data[k] for k in islice(it, chunk_size)}
 
 
@@ -605,9 +605,7 @@ def load_glove(file_path: str, return_embedding_size: bool = False) -> Dict[str,
                     embedding = np.array([float(val) for val in split[-embedding_size:]])
                     embeddings[word] = embedding
                 except ValueError:
-                    logger.warning(
-                        "Line {} in the GloVe file {} is malformed, " "skipping it".format(line_number, file_path)
-                    )
+                    logger.warning(f"Line {line_number} in the GloVe file {file_path} is malformed, skipping it")
     logger.info(f"  {len(embeddings)} embeddings loaded")
 
     if return_embedding_size:
@@ -654,8 +652,7 @@ def shuffle_dict_unison_inplace(np_dict, random_state=None):
     shuffled_list = shuffle_unison_inplace(list_of_lists, random_state)
 
     recon = {}
-    for ii in range(len(keys)):
-        dkey = keys[ii]
+    for ii, dkey in enumerate(keys):
         recon[dkey] = shuffled_list[ii]
 
     # we've shuffled the dictionary in place!
@@ -805,21 +802,44 @@ def normalize_numpy(obj):
 
 @DeveloperAPI
 class NumpyEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, (set, tuple)):
-            return list(obj)
-        elif isinstance(obj, np.integer):
-            return int(obj)
-        elif isinstance(obj, np.floating):
-            return float(obj)
-        elif isinstance(obj, np.ndarray):
-            return obj.tolist()
-        elif isinstance(obj, np.bool_):
-            return bool(obj)
-        elif dataclasses.is_dataclass(obj):
-            return dataclasses.asdict(obj)
+    """Custom JSON encoder for handling NumPy objects.
+
+    This encoder extends the `json.JSONEncoder` class and provides
+    custom serialization for NumPy objects. It converts NumPy arrays,
+    sets, tuples, integers, floating-point numbers, booleans, and
+    dataclasses to their JSON serializable equivalents.
+
+    Attributes:
+        None
+
+    Methods:
+        default: Overrides the default method of `json.JSONEncoder`
+            to provide custom serialization for NumPy objects.
+
+    Usage:
+        Use this encoder when serializing objects that contain NumPy
+        arrays or other NumPy objects to JSON.
+
+    Example:
+        encoder = NumpyEncoder()
+        json_data = encoder.encode(data)
+    """
+
+    def default(self, o):
+        if isinstance(o, (set, tuple)):
+            return list(o)
+        elif isinstance(o, np.integer):
+            return int(o)
+        elif isinstance(o, np.floating):
+            return float(o)
+        elif isinstance(o, np.ndarray):
+            return o.tolist()
+        elif isinstance(o, np.bool_):
+            return bool(o)
+        elif dataclasses.is_dataclass(o):
+            return dataclasses.asdict(o)
         else:
-            return json.JSONEncoder.default(self, obj)
+            return json.JSONEncoder.default(self, o)
 
 
 @DeveloperAPI
@@ -837,7 +857,7 @@ def get_path_size(start_path, regex_accept=None, regex_reject=None):
     pattern_accept = re.compile(regex_accept) if regex_accept else None
     pattern_reject = re.compile(regex_reject) if regex_reject else None
 
-    for dirpath, dirnames, filenames in os.walk(start_path):
+    for dirpath, _, filenames in os.walk(start_path):
         for filename in filenames:
             filepath = os.path.join(dirpath, filename)
             if not os.path.islink(filepath):
@@ -915,7 +935,7 @@ def figure_data_format_dataset(dataset):
         elif dataset.endswith(".h5") or dataset.endswith(".hdf5"):
             return "hdf5"
         else:
-            raise ValueError("Dataset path string {} " "does not contain a valid extension".format(dataset))
+            raise ValueError(f"Dataset path string {dataset} does not contain a valid extension")
     else:
         raise ValueError(f"Cannot figure out the format of dataset {dataset}")
 
@@ -952,24 +972,24 @@ def figure_data_format(dataset=None, training_set=None, validation_set=None, tes
 def is_model_dir(path: str) -> bool:
     hyperparameters_fn = os.path.join(path, MODEL_HYPERPARAMETERS_FILE_NAME)
     ts_metadata_fn = os.path.join(path, TRAIN_SET_METADATA_FILE_NAME)
-    is_model_dir = False
+    is_a_model_dir = False
     if os.path.isdir(path) and os.path.isfile(hyperparameters_fn) and os.path.isfile(ts_metadata_fn):
         weights_files_count = 0
         for file_name in os.listdir(path):
             if file_name.startswith(MODEL_WEIGHTS_FILE_NAME):
                 weights_files_count += 1
         if weights_files_count >= 2:
-            is_model_dir = True
-    return is_model_dir
+            is_a_model_dir = True
+    return is_a_model_dir
 
 
 @DeveloperAPI
 def ndarray2string(parm_array):
     # convert numpy.ndarray to ludwig custom string format
     if isinstance(parm_array, np.ndarray):
-        return "__ndarray__" + json.dumps(parm_array.tolist())
+        return f"__ndarray__{json.dumps(parm_array.tolist())}"
     else:
-        raise ValueError("Argument must be numpy.ndarray.  Instead argument found to be " "{}".format(type(parm_array)))
+        raise ValueError(f"Argument must be numpy.ndarray. Instead argument found to be {type(parm_array)}")
 
 
 @DeveloperAPI
@@ -1017,9 +1037,9 @@ def get_pa_schema(df: DataFrame):
             v = v.fillna(np.nan).replace([np.nan], [None])  # Only fill NaNs if they are present
         v = v.values
 
-        for i in range(len(v)):
-            if v[i] is not None and k not in schema:
-                schema[k] = get_pa_dtype(v[i])
+        for val in v:
+            if val is not None and k not in schema:
+                schema[k] = get_pa_dtype(val)
                 break
     return pa.schema(list(schema.items()))
 
@@ -1057,7 +1077,7 @@ def load_dataset(dataset, data_format=None, df_lib=PANDAS_DF):
         data_reader = get_from_registry(data_format, data_reader_registry)
         return data_reader(dataset, df_lib)
     else:
-        ValueError(f"{data_format} format is not supported")
+        raise ValueError(f"{data_format} format is not supported")
 
 
 @DeveloperAPI
@@ -1075,7 +1095,7 @@ def use_credentials(creds):
     with GLOBAL_CRED_LOCK:
         with tempfile.TemporaryDirectory() as tmpdir:
             fname = os.path.join(tmpdir, "conf.json")
-            with open(fname, "w") as f:
+            with open(fname, "w", encoding="utf-8") as f:
                 json.dump(creds, f)
 
             # Backup any existing credentials
@@ -1087,7 +1107,7 @@ def use_credentials(creds):
                 yield
             finally:
                 # Restore previous credentials
-                with open(fname, "w") as f:
+                with open(fname, "w", encoding="utf-8") as f:
                     json.dump(old_conf, f)
                 conf.clear()
                 set_conf_files(tmpdir, conf)
