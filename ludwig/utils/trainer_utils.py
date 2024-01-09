@@ -204,7 +204,8 @@ class ProgressTracker:
         self.total_tokens_used = total_tokens_used
 
     def save(self, filepath):
-        save_json(filepath, self.__dict__)
+        # sort_keys=False to ensure that token usage dictionaries (keyed by integers) are encodable.
+        save_json(filepath, self.__dict__, sort_keys=False)
 
     @staticmethod
     def load(progress_tracking_dict: Dict):
@@ -228,6 +229,7 @@ class ProgressTracker:
             "best_valid_metric": self.best_eval_metric_value,
             "num_reductions_lr": self.num_reductions_learning_rate,
             "num_increases_bs": self.num_increases_batch_size,
+            "total_tokens_used": self.total_tokens_used,
         }
 
         # This is a non-numerical metric that is only for LLM fine-tuning
@@ -236,8 +238,6 @@ class ProgressTracker:
         # example tensors.
         if self.llm_eval_examples:
             log_metrics["llm_eval_examples"] = self.llm_eval_examples
-
-        log_metrics["total_tokens_used"] = self.total_tokens_used
 
         for metrics_dict_name in [
             "train_metrics",
