@@ -23,6 +23,7 @@ from ludwig.schema.metadata import COMMON_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
 from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import activations, initializer_registry
+from ludwig.utils.misc_utils import scrub_creds
 
 RECURSION_STOP_ENUM = {"weights_initializer", "bias_initializer", "norm_params"}
 ludwig_dataclass = m_dataclass(repr=False, order=True)
@@ -180,7 +181,7 @@ class BaseMarshmallowConfig(ABC):
 
         Returns: dict for this dataclass
         """
-        return convert_submodules(self.__dict__)
+        return scrub_creds(convert_submodules(self.__dict__))
 
     @pre_load
     def log_deprecation_warnings_for_any_invalid_parameters(self, data, **kwargs):

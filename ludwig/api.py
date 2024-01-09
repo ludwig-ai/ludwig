@@ -102,7 +102,6 @@ from ludwig.utils.misc_utils import (
     get_from_registry,
     get_output_directory,
     set_saved_weights_in_checkpoint_flag,
-    scrub_creds
 )
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.tokenizers import HFTokenizer
@@ -539,7 +538,7 @@ class LudwigModel:
                 # save description
                 if self.backend.is_coordinator():
                     description = get_experiment_description(
-                        scrub_creds(self.config_obj.to_dict()),
+                        self.config_obj.to_dict(),
                         dataset=dataset,
                         training_set=training_set,
                         validation_set=validation_set,
@@ -1899,8 +1898,7 @@ class LudwigModel:
         """
         os.makedirs(save_path, exist_ok=True)
         model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
-        config_dict = self.config_obj.to_dict()
-        save_json(model_hyperparameters_path, scrub_creds(config_dict))
+        save_json(model_hyperparameters_path, self.config_obj.to_dict())
 
     def to_torchscript(
         self,
