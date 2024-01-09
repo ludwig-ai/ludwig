@@ -21,7 +21,7 @@ import subprocess
 import weakref
 from collections import OrderedDict
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Dict
+from typing import Any, Dict, TYPE_CHECKING
 
 import numpy
 import torch
@@ -34,6 +34,7 @@ from ludwig.utils.fs_utils import find_non_existing_dir_by_adding_suffix
 
 if TYPE_CHECKING:
     from ludwig.schema.model_types.base import ModelConfig
+
 
 @DeveloperAPI
 def set_random_seed(random_seed):
@@ -211,6 +212,7 @@ def get_commit_hash():
     except:  # noqa: E722
         pass
     return None
+
 
 @DeveloperAPI
 def scrub_creds(config_dict: Dict[str, Any]) -> Dict[str, Any]:

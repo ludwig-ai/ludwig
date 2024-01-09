@@ -21,9 +21,9 @@ from ludwig.constants import ACTIVE, COLUMN, LUDWIG_SCHEMA_VALIDATION_POLICY, NA
 from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.schema.metadata import COMMON_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
+from ludwig.utils.misc_utils import scrub_creds
 from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import activations, initializer_registry
-from ludwig.utils.misc_utils import scrub_creds
 
 RECURSION_STOP_ENUM = {"weights_initializer", "bias_initializer", "norm_params"}
 ludwig_dataclass = m_dataclass(repr=False, order=True)
