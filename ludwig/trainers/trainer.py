@@ -315,7 +315,7 @@ class Trainer(BaseTrainer):
                 predictions = self.model.outputs_to_predictions(model_outputs)
                 self.model.update_metrics(targets, predictions)
 
-            return loss, all_losses
+            return loss, all_losses, model_outputs[USED_TOKENS]
 
         with torch.cuda.amp.autocast() if self.use_amp else contextlib.nullcontext():
             with self.distributed.prepare_model_update(self.dist_model, should_step=should_step):
