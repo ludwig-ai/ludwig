@@ -552,6 +552,7 @@ class Trainer(BaseTrainer):
         snapshot_weights: bool = True,
         on_best_batch_size_updated: Optional[Callable[[int, float, int], None]] = None,
         tune_for_training: bool = True,
+        max_sequence_length: Optional[int] = None,
     ) -> int:
         logger.info("Tuning batch size...")
         skip_save_model = self.skip_save_model
@@ -592,7 +593,7 @@ class Trainer(BaseTrainer):
                 checkpoint.save(os.path.join(tmpdir, "latest.ckpt"), global_step=0)
             try:
                 best_batch_size = evaluator.select_best_batch_size(
-                    len(training_set), max_batch_size, max_trials, self.is_coordinator()
+                    len(training_set), max_batch_size, max_trials, self.is_coordinator(), max_sequence_length
                 )
                 best_batch_size = self.distributed.broadcast_object(best_batch_size)
 
@@ -626,7 +627,7 @@ class Trainer(BaseTrainer):
                 trainer.model.reset_metrics()
                 trainer.optimizer.zero_grad()
 
-            def step(self, batch_size: int):
+            def step(self, batch_size: int, max_sequence_length: Optional[int] = None):
                 trainer.distributed.set_batch_size(trainer.dist_model, batch_size)
                 inputs = {
                     input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(trainer.device)
@@ -648,7 +649,7 @@ class Trainer(BaseTrainer):
                 trainer.model.reset_metrics()
                 trainer.optimizer.zero_grad()
 
-            def step(self, batch_size: int):
+            def step(self, batch_size: int, max_sequence_length: Optional[int] = None):
                 trainer.distributed.set_batch_size(trainer.dist_model, batch_size)
                 inputs = {
                     input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(trainer.device)
