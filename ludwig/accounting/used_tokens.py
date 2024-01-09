@@ -14,8 +14,10 @@ def get_used_tokens_for_ecd(inputs: Dict[str, torch.Tensor], targets: Dict[str, 
     used_tokens = 0
     for input_feature_tensor in inputs.values():
         used_tokens += torch.flatten(input_feature_tensor).shape[0]
-    for output_feature_tensor in targets.values():
-        used_tokens += torch.flatten(output_feature_tensor).shape[0]
+    if targets is not None:
+        # targets may be None for evaluation.
+        for output_feature_tensor in targets.values():
+            used_tokens += torch.flatten(output_feature_tensor).shape[0]
     return used_tokens
 
 
