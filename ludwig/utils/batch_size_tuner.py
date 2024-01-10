@@ -99,7 +99,7 @@ class BatchSizeEvaluator(ABC):
         for _ in range(total_steps):
             self.reset()
             start_ts = time.time()
-            self.step(batch_size, max_sequence_length=max_sequence_length)
+            self.step(batch_size, global_max_sequence_length=global_max_sequence_length)
             durations.append(time.time() - start_ts)
 
         med_duration_s = statistics.median(durations)
