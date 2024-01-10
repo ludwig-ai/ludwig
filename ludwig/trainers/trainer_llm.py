@@ -470,10 +470,18 @@ class FineTuneTrainer(Trainer):
 
         num_examples_shown = min(len(llm_eval_examples["inputs"]), MAX_EVALUATION_EXAMPLES_SHOWN)
         logger.info(f'\n[ALEX_TEST] [FineTuneTrainer.evaluation()] NUM_EXAMPLES_SHOWN:\n{num_examples_shown} ; TYPE: {str(type(num_examples_shown))}')
+        # TODO: <Alex>ALEX</Alex>
+        # for i in range(num_examples_shown):
+        #     logger.info(f"Input: {llm_eval_examples['inputs'][i].strip()}")
+        #     logger.info(f"Output: {llm_eval_examples['outputs'][i].strip()}")
+        #     logger.info("--------------------")
+        # TODO: <Alex>ALEX</Alex>
+        # TODO: <Alex>ALEX</Alex>
         for i in range(num_examples_shown):
-            logger.info(f"Input: {llm_eval_examples['inputs'][i].strip()}")
-            logger.info(f"Output: {llm_eval_examples['outputs'][i].strip()}")
-            logger.info("--------------------")
+            logger.info(f"[ALEX_TEST] Input: {llm_eval_examples['inputs'][i].strip()}")
+            logger.info(f"[ALEX_TEST] Output: {llm_eval_examples['outputs'][i].strip()}")
+            logger.info("[ALEX_TEST] --------------------")
+        # TODO: <Alex>ALEX</Alex>
 
         progress_tracker.llm_eval_examples = llm_eval_examples
         return append_metrics(self.model, dataset_name, metrics, metrics_log, progress_tracker)
