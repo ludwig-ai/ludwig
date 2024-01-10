@@ -66,7 +66,7 @@ class ECD(BaseModel):
             if encoder_type == MODEL_LLM:
                 feature_name = feature.name
                 encoder = self.input_features.get(feature_name)
-                encoder.prepare_for_training(feature)
+                encoder.prepare_for_training()
 
     def encode(
         self,
