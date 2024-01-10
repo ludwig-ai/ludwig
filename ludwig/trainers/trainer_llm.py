@@ -492,7 +492,7 @@ class FineTuneTrainer(Trainer):
                 input_feature_name, input_feature = trainer.model.input_features.items()[0]
                 output_feature_name, output_feature = trainer.model.output_features.items()[0]
                 input_msl = input_feature.input_shape[0]
-                output_msl = output_feature.output_shape[0]
+                output_msl = trainer.model.config_obj.output_features[0].preprocessing.max_sequence_length
                 if global_max_sequence_length is not None and input_msl + output_msl > global_max_sequence_length:
                     # In this case, we just need to make sure that the length of the synthetic data exceeds max_sequence_length
                     input_msl = global_max_sequence_length/2 + 1
