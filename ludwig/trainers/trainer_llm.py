@@ -491,7 +491,7 @@ class FineTuneTrainer(Trainer):
                 trainer.distributed.set_batch_size(trainer.dist_model, batch_size)
                 input_feature_name, input_feature = trainer.model.input_features.items()[0]
                 output_feature_name, output_feature = trainer.model.output_features.items()[0]
-                input_msl = input_feature.input_shape[0]
+                input_msl = input_feature.input_shape[0] # Based on input_shape in text_feature.py, this should provide a tighter bound than the max_sequence_length in the config
                 output_msl = trainer.model.config_obj.output_features[0].preprocessing.max_sequence_length
                 if global_max_sequence_length is not None and input_msl + output_msl > global_max_sequence_length:
                     # In this case, we just need to make sure that the length of the synthetic data exceeds max_sequence_length
