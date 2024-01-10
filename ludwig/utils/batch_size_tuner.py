@@ -21,7 +21,7 @@ class BatchSizeEvaluator(ABC):
         max_batch_size: Optional[int] = None,
         max_trials: int = 20,
         is_coordinator: Optional[bool] = True,
-        max_sequence_length: Optional[int] = None,
+        global_max_sequence_length: Optional[int] = None,
     ) -> int:
         """Returns optimal batch size as measured by throughput (samples / sec)."""
         logger.info("Tuning batch size...")
@@ -52,7 +52,7 @@ class BatchSizeEvaluator(ABC):
             gc.collect()
 
             try:
-                samples_per_sec = self.evaluate(batch_size, total_steps=5, max_sequence_length=max_sequence_length)
+                samples_per_sec = self.evaluate(batch_size, total_steps=5, global_max_sequence_length=global_max_sequence_length)
                 if is_coordinator:
                     logger.info(f"Throughput at batch_size={batch_size}: {samples_per_sec:.5f} samples/s")
                 if samples_per_sec < best_samples_per_sec:
@@ -89,7 +89,7 @@ class BatchSizeEvaluator(ABC):
             logger.info(f"Selected batch_size={best_batch_size}")
         return best_batch_size
 
-    def evaluate(self, batch_size: int, total_steps: int = 5, max_sequence_length: Optional[int] = None) -> float:
+    def evaluate(self, batch_size: int, total_steps: int = 5, global_max_sequence_length: Optional[int] = None) -> float:
         """Evaluates throughput of the given batch size.
 
         Return:
@@ -112,6 +112,6 @@ class BatchSizeEvaluator(ABC):
         """Called at the beginning of each evaluation step."""
         pass
 
-    def step(self, batch_size: int, max_sequence_length: Optional[int] = None):
+    def step(self, batch_size: int, global_max_sequence_length: Optional[int] = None):
         """Called each step to evaluate the given batch size."""
         raise NotImplementedError("`step` must be implemented by concrete evaluator.")
