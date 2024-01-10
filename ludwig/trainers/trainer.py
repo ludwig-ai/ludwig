@@ -699,47 +699,11 @@ class Trainer(BaseTrainer):
             dict_save_dir = os.path.join(os.path.dirname(checkpoint_manager.directory), "llm_eval_examples")
             os.makedirs(dict_save_dir, exist_ok=True)
             dict_save_path = os.path.join(dict_save_dir, f"{progress_tracker.checkpoint_number}.csv")
-            if self.is_coordinator():
-                logger.info(f'\n[ALEX_TEST] [TuneTrainer.run_evaluation()] <SELF.EVALUATION(VALIDATION_SET)_COMPLETED>-DICT_SAVE_PATH:\n{dict_save_path} ; TYPE: {str(type(dict_save_path))}')
             llm_eval_examples = pd.DataFrame(llm_eval_examples).to_dict(orient="records")
-            if self.is_coordinator():
-                logger.info(f'\n[ALEX_TEST] [TuneTrainer.run_evaluation()] <SELF.EVALUATION(VALIDATION_SET)_COMPLETED>-LLM_EVAL_EXAMPLES:\n{llm_eval_examples} ; TYPE: {str(type(llm_eval_examples))}')
-            # TODO: <Alex>ALEX</Alex>
-            # with open(dict_save_path, "w", encoding="utf-8") as outfile:
-            #     writer = csv.DictWriter(outfile, fieldnames=["inputs", "targets", "outputs"])
-            #     # TODO: <Alex>ALEX</Alex>
-            #     if self.is_coordinator():
-            #         logger.info(f'\n[ALEX_TEST] [TuneTrainer.run_evaluation()] <SELF.EVALUATION(VALIDATION_SET)_COMPLETED>-WRITER-0:\n{writer} ; TYPE: {str(type(writer))}')
-            #     # TODO: <Alex>ALEX</Alex>
-            #     writer.writeheader()
-            #     # TODO: <Alex>ALEX</Alex>
-            #     if self.is_coordinator():
-            #         logger.info(f'\n[ALEX_TEST] [TuneTrainer.run_evaluation()] <SELF.EVALUATION(VALIDATION_SET)_COMPLETED>-WRITER-1:\n{writer} ; TYPE: {str(type(writer))}')
-            #     # TODO: <Alex>ALEX</Alex>
-            #     writer.writerows(llm_eval_examples)
-            #     # TODO: <Alex>ALEX</Alex>
-            #     if self.is_coordinator():
-            #         logger.info(f'\n[ALEX_TEST] [TuneTrainer.run_evaluation()] <SELF.EVALUATION(VALIDATION_SET)_COMPLETED>-WRITER-2:\n{writer} ; TYPE: {str(type(writer))}')
-            #     # TODO: <Alex>ALEX</Alex>
-            # TODO: <Alex>ALEX</Alex>
-            # TODO: <Alex>ALEX</Alex>
             with open(dict_save_path, "w", encoding="utf-8") as outfile:
                 writer = csv.DictWriter(outfile, fieldnames=["inputs", "targets", "outputs"])
-                # TODO: <Alex>ALEX</Alex>
-                if self.is_coordinator():
-                    logger.info(f'\n[ALEX_TEST] [TuneTrainer.run_evaluation()] <SELF.EVALUATION(VALIDATION_SET)_COMPLETED>-WRITER-0:\n{writer} ; TYPE: {str(type(writer))}')
-                # TODO: <Alex>ALEX</Alex>
                 writer.writeheader()
-                # TODO: <Alex>ALEX</Alex>
-                if self.is_coordinator():
-                    logger.info(f'\n[ALEX_TEST] [TuneTrainer.run_evaluation()] <SELF.EVALUATION(VALIDATION_SET)_COMPLETED>-WRITER-1:\n{writer} ; TYPE: {str(type(writer))}')
-                # TODO: <Alex>ALEX</Alex>
                 writer.writerows(llm_eval_examples)
-                # TODO: <Alex>ALEX</Alex>
-                if self.is_coordinator():
-                    logger.info(f'\n[ALEX_TEST] [TuneTrainer.run_evaluation()] <SELF.EVALUATION(VALIDATION_SET)_COMPLETED>-WRITER-2:\n{writer} ; TYPE: {str(type(writer))}')
-                # TODO: <Alex>ALEX</Alex>
-            # TODO: <Alex>ALEX</Alex>
 
             self.write_eval_summary(
                 summary_writer=validation_summary_writer,
