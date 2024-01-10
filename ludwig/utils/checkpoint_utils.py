@@ -13,7 +13,7 @@ import tempfile
 import uuid
 from abc import ABC, abstractmethod
 from glob import glob
-from typing import Any, Dict, Mapping, Optional, TYPE_CHECKING
+from typing import Any, Dict, Mapping, Optional, Tuple, TYPE_CHECKING
 
 import torch
 from torch.optim import Optimizer
@@ -318,9 +318,15 @@ class CheckpointManager:
         save_path = os.path.join(self.directory, f"{tag}.ckpt")
         self.checkpoint.load(save_path, self.device)
 
-    def get_best_checkpoint_state_for_inference(self, device: torch.device) -> Mapping[str, Any]:
+    def get_best_checkpoint_state_for_inference(self, device: torch.device) -> Tuple[Mapping[str, Any], None]:
         save_path = os.path.join(self.directory, f"{BEST}.ckpt")
-        return self.checkpoint.get_state_for_inference(save_path, device)
+        try:
+            return self.checkpoint.get_state_for_inference(save_path, device)
+        except Exception:
+            # This exception may be hit if the best checkpoint does not exist. This can happen if the model runs into
+            # NaN loss because of NaN or inf values in the weights before the first checkpoint is saved. In this case,
+            logger.error(f"Could not load best checkpoint state from {save_path}. Best checkpoint may not exist.")
+            return None
 
     def close(self):
         pass
