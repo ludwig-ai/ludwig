@@ -6,7 +6,7 @@ scipy>=0.18
 tabulate>=0.7
 scikit-learn
 tqdm
-torch>=1.13.0
+torch>=2.0.0
 torchaudio
 torchtext
 torchvision
@@ -32,7 +32,7 @@ torchmetrics>=0.11.0
 torchinfo
 filelock
 psutil==5.9.4
-protobuf>=3.19.0
+protobuf
 py-cpuinfo==9.0.0
 gpustat
 rich~=12.4.4
@@ -44,8 +44,9 @@ sacremoses
 sentencepiece
 
 # requirements for daft
-# NOTE: Pinned to <0.2 because of deprecation of fsspec argument in Daft
-getdaft<0.2
+# NOTE: daft needs to be <0.2 because of deprecation of fsspec argument in Daft
+# Pinned for consistency with ludwig-ray docker image.
+getdaft==0.1.20
 
 # requirement for various paged and 8-bit optimizers
 bitsandbytes<0.41.0

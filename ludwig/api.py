@@ -329,7 +329,7 @@ class LudwigModel:
 
         # setup model
         self.model = None
-        self.training_set_metadata: Optional[str, dict] = None
+        self.training_set_metadata: Optional[Dict[str, dict]] = None
 
         # online training state
         self._online_trainer = None

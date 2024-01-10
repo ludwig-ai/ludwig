@@ -28,7 +28,7 @@ jobs:
           - python-version: "3.8"
             pytorch-version: 2.0.0
             torchscript-version: 1.10.2
-            ray-version: 2.2.0
+            ray-version: 2.3.1
           - python-version: "3.9"
             pytorch-version: 2.1.1
             torchscript-version: 1.10.2
@@ -567,7 +567,7 @@ jobs:
   #         aws-region: ${{ secrets.AWS_REGION }}
 
   #     - name: Stop EC2 runner
-  #       uses: machulav/ec2-github-runner@v2.2.0
+  #       uses: machulav/ec2-github-runner@v2.3.1
   #       with:
   #         mode: stop
   #         github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}

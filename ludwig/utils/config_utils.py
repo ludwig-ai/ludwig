@@ -1,7 +1,20 @@
-from typing import Set
+from typing import Any, Dict, Set, Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import DECODER, ENCODER, IMAGE, PREPROCESSING, SEQUENCE, TEXT, TIMESERIES, TYPE
+from ludwig.constants import (
+    DECODER,
+    ENCODER,
+    IMAGE,
+    INPUT_FEATURES,
+    MODEL_ECD,
+    MODEL_LLM,
+    MODEL_TYPE,
+    PREPROCESSING,
+    SEQUENCE,
+    TEXT,
+    TIMESERIES,
+    TYPE,
+)
 from ludwig.features.feature_registries import get_input_type_registry
 from ludwig.schema.model_config import ModelConfig
 from ludwig.types import FeatureConfigDict, FeatureTypeDefaultsDict, PreprocessingConfigDict
@@ -90,3 +103,42 @@ def has_pretrained_encoder(config: ModelConfig) -> bool:
         if feature.encoder.is_pretrained():
             return True
     return False
+
+
+def config_uses_llm(config: Union[Dict[str, Any], ModelConfig]) -> bool:
+    """Determine if a config uses an LLM.
+
+    Args:
+        config: Ludwig config object or dictionary
+
+    Returns:
+        True if the model type is LLM or if the model uses and LLM encoder, otherwise False.
+    """
+    uses_llm = False
+
+    # For a valid config, model_type LLM is automatically True
+    # ECD or GBM models need to be checked for at least one LLM text encoder
+    if isinstance(config, ModelConfig):
+        if config.model_type == MODEL_LLM:
+            uses_llm = True
+        else:
+            for feature in config.input_features:
+                if feature.encoder and feature.encoder.type == MODEL_LLM:
+                    uses_llm = True
+                    break
+    elif isinstance(config, dict) and config:
+        if config.get(MODEL_TYPE, MODEL_ECD) == MODEL_LLM:
+            uses_llm = True
+        elif INPUT_FEATURES in config:
+            for feature in config.get(INPUT_FEATURES, []):
+                if feature.get(ENCODER, {}).get(TYPE) == MODEL_LLM:
+                    uses_llm = True
+                    break
+        else:
+            raise ValueError(
+                "Invalid config cannot be checked for LLM usage because it has no input features." f"Config: {config}"
+            )
+    else:
+        raise ValueError(f"Invalid config cannot be checked for LLM usage. Config: {config}")
+
+    return uses_llm
