@@ -21,6 +21,7 @@ from ludwig.constants import ACTIVE, COLUMN, LUDWIG_SCHEMA_VALIDATION_POLICY, NA
 from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.schema.metadata import COMMON_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
+from ludwig.utils.misc_utils import scrub_creds
 from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import activations, initializer_registry
 
@@ -180,7 +181,7 @@ class BaseMarshmallowConfig(ABC):
 
         Returns: dict for this dataclass
         """
-        return convert_submodules(self.__dict__)
+        return scrub_creds(convert_submodules(self.__dict__))
 
     @pre_load
     def log_deprecation_warnings_for_any_invalid_parameters(self, data, **kwargs):
