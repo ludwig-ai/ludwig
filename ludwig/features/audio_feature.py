@@ -49,6 +49,8 @@ from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
 
+_TORCH_200 = version.parse(torch.__version__) >= version.parse("2.0.0")
+
 
 class _AudioPreprocessing(torch.nn.Module):
     audio_feature_dict: Dict[str, Union[float, int, str]]
@@ -151,8 +153,8 @@ class AudioFeatureMixin(BaseFeatureMixin):
         backend,
     ):
         df_engine = backend.df_engine
-        if version.parse(torch.__version__) > version.parse("2.0.0"):
-            # Read audio from path if the version of torch is > 2.0.0.
+        if _TORCH_200:
+            # Read audio from path if the version of torch is >= 2.0.0.
             raw_audio = backend.read_binary_files(column, map_fn=read_audio_from_path)
         else:
             raw_audio = backend.read_binary_files(column, map_fn=read_audio_from_bytes_obj)

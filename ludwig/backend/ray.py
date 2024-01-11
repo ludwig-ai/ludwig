@@ -1050,8 +1050,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
                         fs=fs,
                     ),
                 )
-
-            if map_fn is not None:
+            else:
                 df = df.with_column(column.name, df[column.name].apply(map_fn, return_dtype=daft.DataType.python()))
 
             # Executes and convert Daft Dataframe to Dask DataFrame or Pandas Dataframe

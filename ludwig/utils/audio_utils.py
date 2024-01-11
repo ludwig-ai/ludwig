@@ -34,6 +34,7 @@ AUDIO_EXTENSIONS = (".wav", ".amb", ".mp3", ".ogg", ".vorbis", ".flac", ".opus",
 
 
 _TORCH_AUDIO_210 = version.parse(torchaudio.__version__) >= version.parse("2.1.0")
+_TORCH_AUDIO_201 = version.parse(torchaudio.__version__) >= version.parse("2.0.1")
 
 
 @DeveloperAPI
@@ -70,7 +71,10 @@ def read_audio_from_path(path: str) -> Optional[TorchAudioTuple]:
     try:
         if _TORCH_AUDIO_210:
             return torchaudio.load(path, backend="sox")
-        return torchaudio.backend.sox_backend.load(path)
+        elif _TORCH_AUDIO_201:
+            return torchaudio.backend.sox_io_backend.load(path)
+        else:
+            return torchaudio.backend.sox_backend.load(path)
     except Exception as e:
         logger.warning(e)
         return None
@@ -83,7 +87,10 @@ def read_audio_from_bytes_obj(bytes_obj: bytes) -> Optional[TorchAudioTuple]:
         f = BytesIO(bytes_obj)
         if _TORCH_AUDIO_210:
             return torchaudio.load(f, backend="sox")
-        return torchaudio.backend.sox_backend.load(f)
+        elif _TORCH_AUDIO_201:
+            return torchaudio.backend.sox_io_backend.load(f)
+        else:
+            return torchaudio.backend.sox_backend.load(f)
     except Exception as e:
         logger.warning(e)
         return None
