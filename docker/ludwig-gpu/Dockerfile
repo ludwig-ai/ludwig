@@ -26,7 +26,8 @@ RUN apt-get -y update && DEBIAN_FRONTEND="noninteractive" apt-get -y install \
     libsndfile1 \
     cmake \
     ffmpeg \
-    sox
+    sox \
+    libsox-dev
 RUN pip install -U pip
 
 WORKDIR /ludwig
