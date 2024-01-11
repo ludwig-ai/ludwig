@@ -8,7 +8,7 @@ import torch.nn.functional as F
 import transformers
 from bitsandbytes.nn.modules import Embedding
 from packaging import version
-from transformers import AutoConfig, AutoModelForCausalLM, PreTrainedModel, PreTrainedTokenizer
+from transformers import AutoConfig, AutoModelForCausalLM, PreTrainedModel, PreTrainedTokenizer, TextStreamer
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, PREDICTIONS, PROBABILITIES
 from ludwig.schema.trainer import LLMTrainerConfig
@@ -622,3 +622,8 @@ def update_embedding_layer(model: AutoModelForCausalLM, config_obj: LLMTrainerCo
         logger.info("Updated the pretrained embedding layer to use the embedding layer from bitsandbytes.")
 
     return model
+
+
+def create_text_streamer(tokenizer: PreTrainedTokenizer):
+    """Creates a TextStreamer object for streaming text to stdout during generation."""
+    return TextStreamer(tokenizer=tokenizer, skip_prompt=True)

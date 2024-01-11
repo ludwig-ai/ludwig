@@ -96,6 +96,7 @@ from ludwig.utils.dataset_utils import generate_dataset_statistics
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import makedirs, path_exists, upload_output_directory
 from ludwig.utils.heuristics import get_auto_learning_rate
+from ludwig.utils.llm_utils import create_text_streamer
 from ludwig.utils.misc_utils import (
     get_commit_hash,
     get_file_names,
@@ -966,6 +967,7 @@ class LudwigModel:
         self,
         input_strings: Union[str, List[str]],
         generation_config: Optional[dict] = None,
+        streaming: Optional[bool] = False,
     ) -> Union[str, List[str]]:
         """A simple generate() method that directly uses the underlying transformers library to generate text."""
         if self.config_obj.model_type != MODEL_LLM:
@@ -983,31 +985,50 @@ class LudwigModel:
         # warning, e.g.:
         # "A decoder-only architecture is being used, but right-padding was detected! For correct generation results, "
         # "please set `padding_side='left'` when initializing the tokenizer.
-        if not self.model.model.config.is_encoder_decoder:
-            padding_side = "left"
-        else:
-            padding_side = "right"
+        padding_side = "left" if not self.model.model.config.is_encoder_decoder else "right"
         tokenizer = HFTokenizer(self.config_obj.base_model, padding_side=padding_side)
 
         with self.model.use_generation_config(generation_config):
             start_time = time.time()
-            inputs = tokenizer.tokenizer(input_strings, return_tensors="pt", padding=True)
-            input_ids = inputs["input_ids"].to("cuda")
-            attention_mask = inputs["attention_mask"].to("cuda")
+            tokenized_inputs = tokenizer.tokenizer(input_strings, return_tensors="pt", padding=True)
+            input_ids = tokenized_inputs["input_ids"].to("cuda")
+            attention_mask = tokenized_inputs["attention_mask"].to("cuda")
+            streamer = create_text_streamer(tokenizer.tokenizer) if streaming else None
+
+            if streamer:
+                outputs = self._generate_streaming_outputs(input_strings, input_ids, attention_mask, streamer)
+            else:
+                outputs = self._generate_non_streaming_outputs(input_strings, input_ids, attention_mask, streamer)
+
+            decoded_outputs = tokenizer.tokenizer.batch_decode(outputs, skip_special_tokens=True)
+            logger.info(f"Finished generating in: {(time.time() - start_time):.2f}s.")
+
+            return decoded_outputs[0] if len(decoded_outputs) == 1 else decoded_outputs
+
+    def _generate_streaming_outputs(self, input_strings, input_ids, attention_mask, streamer):
+        outputs = []
+        input_strings = input_strings if isinstance(input_strings, list) else [input_strings]
+        for i in range(len(input_ids)):
             with torch.no_grad():
-                outputs = self.model.model.generate(
-                    input_ids=input_ids,
-                    attention_mask=attention_mask,
-                    # NOTE: self.model.model.generation_config is not used here because it is the default
-                    # generation config that the CausalLM was initialized with, rather than the one set within the
-                    # context manager.
+                logger.info(f"Input: {input_strings[i]}\n")
+                generated_output = self.model.model.generate(
+                    input_ids=input_ids[i].unsqueeze(0),
+                    attention_mask=attention_mask[i].unsqueeze(0),
                     generation_config=self.model.generation,
+                    streamer=streamer,
                 )
-                decoded_outputs = tokenizer.tokenizer.batch_decode(outputs, skip_special_tokens=True)
-                logger.info(f"Finished generating in: {(time.time() - start_time):.2f}s.")
-                if len(decoded_outputs) == 1:
-                    return decoded_outputs[0]
-                return decoded_outputs
+                logger.info("----------------------\n")
+                outputs.append(generated_output)
+        return torch.cat(outputs, dim=0)
+
+    def _generate_non_streaming_outputs(self, input_strings, input_ids, attention_mask, streamer):
+        with torch.no_grad():
+            return self.model.model.generate(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                generation_config=self.model.generation,
+                streamer=streamer,
+            )
 
     def predict(
         self,
