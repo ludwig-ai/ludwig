@@ -7,7 +7,7 @@ import torch
 
 from ludwig.accounting.used_tokens import get_used_tokens_for_ecd
 from ludwig.combiners.combiners import create_combiner
-from ludwig.constants import MODEL_ECD, USED_TOKENS
+from ludwig.constants import MODEL_ECD, MODEL_LLM, USED_TOKENS
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
 from ludwig.schema.model_types.ecd import ECDModelConfig
@@ -43,7 +43,7 @@ class ECD(BaseModel):
         except KeyError as e:
             raise KeyError(
                 f"An input feature has a name that conflicts with a class attribute of torch's ModuleDict: {e}"
-            )
+            ) from e
 
         # ================ Combiner ================
         logger.debug(f"Combiner {self.config_obj.combiner.type}")
@@ -56,6 +56,18 @@ class ECD(BaseModel):
 
         # After constructing all layers, clear the cache to free up memory
         clear_data_cache()
+
+    def prepare_for_training(self):
+        # 1/10/23: For parity with how the LLM model type sets up adapters and quantization, LLM encoders should call
+        # `prepare_for_training` at training time rather than at initialization. This loop searches for input features
+        # using the LLM encoder and calls `prepare_for_training` on those encoders only. No other changes should be
+        # made to the ECD model itself or any other encoders.
+        for feature in self.config_obj.input_features:
+            encoder_type = feature.encoder.type
+            if encoder_type == MODEL_LLM:
+                feature_name = feature.name
+                encoder = self.input_features.get(feature_name)
+                encoder.prepare_for_training()
 
     def encode(
         self,

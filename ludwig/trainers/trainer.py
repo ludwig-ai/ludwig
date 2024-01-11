@@ -74,6 +74,7 @@ from ludwig.utils.llm_utils import update_embedding_layer
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.metrics_printed_table import print_metrics_table
 from ludwig.utils.misc_utils import set_random_seed
+from ludwig.utils.model_utils import contains_nan_or_inf_tensors
 from ludwig.utils.torch_utils import get_torch_device
 from ludwig.utils.trainer_utils import (
     append_metrics,
@@ -721,7 +722,7 @@ class Trainer(BaseTrainer):
             os.makedirs(dict_save_dir, exist_ok=True)
             dict_save_path = os.path.join(dict_save_dir, f"{progress_tracker.checkpoint_number}.csv")
             llm_eval_examples = pd.DataFrame(llm_eval_examples).to_dict(orient="records")
-            with open(dict_save_path, "w") as outfile:
+            with open(dict_save_path, "w", encoding="utf-8") as outfile:
                 writer = csv.DictWriter(outfile, fieldnames=["inputs", "targets", "outputs"])
                 writer.writeheader()
                 writer.writerows(llm_eval_examples)
@@ -1027,7 +1028,7 @@ class Trainer(BaseTrainer):
                     self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
 
                     # Trains over a full epoch of data or up to the last training step, whichever is sooner.
-                    should_break = self._train_loop(
+                    should_break, has_nan_or_inf_tensors = self._train_loop(
                         batcher,
                         progress_tracker,
                         save_path,
@@ -1053,6 +1054,13 @@ class Trainer(BaseTrainer):
                             f"Epoch {progress_tracker.epoch} took: "
                             f"{time_utils.strdelta((time.time() - start_time) * 1000.0)}."
                         )
+
+                    # Skip saving progress if we're not saving the model. We should do this so as to not overwrite the
+                    # best model checkpoint from the previous round of evaluation so that the previous best model
+                    # weights can be used for inference instead of the current weights which are in a bad state.
+                    if has_nan_or_inf_tensors:
+                        break
+
                     if not self.skip_save_progress:
                         self.save_checkpoint(progress_tracker, save_path, checkpoint_manager)
 
@@ -1085,7 +1093,7 @@ class Trainer(BaseTrainer):
             if test_summary_writer is not None:
                 test_summary_writer.close()
 
-            if not self.skip_save_model and self.skip_all_evaluation:
+            if not self.skip_save_model and self.skip_all_evaluation and not has_nan_or_inf_tensors:
                 # All evaluation was skipped, so save the current step as the best so far.
                 checkpoint_manager.save_best(progress_tracker.steps)
 
@@ -1097,6 +1105,14 @@ class Trainer(BaseTrainer):
         if self.distributed.is_coordinator():
             if not self.skip_save_model:
                 state_dict = checkpoint_manager.get_best_checkpoint_state_for_inference(self.return_device)
+                if not state_dict:
+                    error_message = "Training ran into an error. No checkpoint was saved."
+                    if has_nan_or_inf_tensors:
+                        error_message += (
+                            " This is because training was terminated early due to the presence of NaN or "
+                            "Inf values in the model weights before a single valid checkpoint could be saved."
+                        )
+                    raise RuntimeError(error_message)
                 if not return_state_dict:
                     if self.distributed.is_model_parallel():
                         # Assume the full weights cannot fit in memory on GPU
@@ -1169,11 +1185,23 @@ class Trainer(BaseTrainer):
         final_steps_per_checkpoint: int,
         early_stopping_steps: int,
         profiler: Optional[torch.profiler.profile],
-    ) -> bool:
-        """Completes up to one epoch through the data."""
+    ) -> Tuple[bool, bool]:
+        """Completes up to one epoch through the data.
+
+        This function completes a single pass (epoch) through the training data and returns
+        two boolean values:
+
+        Returns:
+            should_break (bool):
+                Indicates whether the training loop should be terminated prematurely.
+
+            has_nan_or_inf_tensors (bool):
+                Indicates whether the model weights contain NaN or Inf values.
+        """
         self.distributed.zero_grad(self.optimizer)
         batch_idx = 0
         should_break = False
+        has_nan_or_inf_tensors = False
         while not batcher.last_batch() and progress_tracker.steps < self.total_steps and not should_break:
             progress_tracker.learning_rate = self.optimizer.param_groups[0]["lr"]
             self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
@@ -1238,6 +1266,16 @@ class Trainer(BaseTrainer):
                 progress_tracker.epoch += 1
 
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
+                # Before continuing to evaluation or skipping evaluation altogether, we should use this point to
+                # ensure that the model weights are not NaN or Inf.
+                has_nan_or_inf_tensors = self._has_nan_or_inf_weights(self.dist_model)
+                # If a nan/inf tensor is detected, we should break out of the training loop immediately and raise an #
+                # error. There is no point in running evaluation for this step as the model weights are already in
+                # a bad state. Theere is also no point in continuing to train the model since the loss will always be
+                # NaN or Inf from this point forward.
+                if has_nan_or_inf_tensors:
+                    return True, has_nan_or_inf_tensors
+
                 if not self.skip_all_evaluation:
                     # Publishes metrics to MLFLow if there are any MLFlow callbacks.
                     should_break = self.run_evaluation(
@@ -1272,7 +1310,37 @@ class Trainer(BaseTrainer):
             if batcher.last_batch():
                 self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
-        return should_break
+        return should_break, has_nan_or_inf_tensors
+
+    def _has_nan_or_inf_weights(self, model: torch.nn.Module) -> bool:
+        """Check for NaN or infinity (inf) values in the weights (parameters and buffers) of a PyTorch model in a
+        local or distributed training environment. It is called to ensure the model's numerical stability during
+        training. It works for both model parallel and data parallel training.
+
+        This function recursively inspects the model's parameters and buffers to identify NaN or inf values. It
+        communicates and aggregates the results across all distributed processes using the `all_reduce` operation. If
+        any process finds NaN or inf values, it is considered a critical error, and the main coordinator process will
+        return True to halt training in the main training loop.
+
+        Parameters:
+            model (torch.nn.Module): The PyTorch model to check for NaN or inf weights.
+
+        Returns:
+            bool: Returns True if any NaN or inf tensors are found in the model's weights. Otherwise, returns False.
+        """
+        local_has_nan_or_inf = contains_nan_or_inf_tensors(model)
+
+        # Use all_reduce to aggregate local_has_nan across all processes and sum the result into global_has_nan, which
+        # will be a tensor with a single element on all processes after the all_reduce operation.
+        global_has_nan_or_inf = torch.tensor(int(local_has_nan_or_inf), device=self.device)
+        self.distributed.allreduce(global_has_nan_or_inf)
+
+        # The main coordinator process will raise a runtime error if any of the processes found NaN or inf weights.
+        if self.distributed.local_rank() == 0:
+            if global_has_nan_or_inf.item() > 0:
+                logger.warning("NaN or inf tensors found in the model. Stopping training.")
+                return True
+            return False
 
     def train_online(self, dataset):
         self.dist_model.train()  # Sets model training mode.

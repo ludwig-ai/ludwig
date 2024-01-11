@@ -64,7 +64,7 @@ def test_get_latest_metrics_dict_empty():
 
     latest_metrics_dict = trainer_utils.get_latest_metrics_dict(progress_tracker_metrics)
 
-    assert latest_metrics_dict == {}
+    assert not latest_metrics_dict
 
 
 def test_progress_tracker_empty():

@@ -28,7 +28,6 @@ from ludwig.constants import PADDING_SYMBOL, START_SYMBOL, STOP_SYMBOL, UNKNOWN_
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.utils.fs_utils import open_file
-from ludwig.utils.logging_utils import log_once
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.tokenizers import get_tokenizer_from_registry
 from ludwig.utils.types import Series
@@ -250,6 +249,21 @@ class Vocabulary:
     """
 
 
+def _get_vocab_from_dict(vocab: Dict[str, int]) -> List[str]:
+    """Returns a vocab in list format from a vocab token=>idx dictionary."""
+    vocab_values = list(vocab.values())
+    if len(set(vocab_values)) != len(vocab_values):
+        raise ValueError("Vocabulary has duplicate mappings in its vocabulary. This should never happen.")
+
+    # construct a vocab that is a list that reflects the token=>index mapping in HF's vocab
+    # pre-allocate a list to make sure each index is inited to prevent OBO errors caused by missing indices
+    max_idx = max(vocab_values)
+    vocab_list = [None for _ in range(max_idx + 1)]
+    for token, idx in vocab.items():
+        vocab_list[idx] = token
+    return vocab_list
+
+
 def _get_vocabulary(
     tokenizer_type: str,
     tokenizer,
@@ -274,8 +288,7 @@ def _get_vocabulary(
     # Pre-trained huggingface tokenizer. Use the pre-existing vocabulary and special symbols.
     if tokenizer_type == "hf_tokenizer":
         try:
-            vocab = tokenizer.get_vocab()
-            return list(vocab.keys())
+            return _get_vocab_from_dict(tokenizer.get_vocab())
         except NotImplementedError:
             logger.warning(
                 "HuggingFace tokenizer does not have a get_vocab() method. "
@@ -290,8 +303,7 @@ def _get_vocabulary(
 
     # The tokenizer has a preset vocabulary.
     if hasattr(tokenizer, "get_vocab"):
-        vocab = tokenizer.get_vocab()
-        return list(vocab.keys())
+        return _get_vocab_from_dict(tokenizer.get_vocab())
 
     # Load the vocabulary from the vocab file.
     if vocab_file is not None:
@@ -390,10 +402,12 @@ def create_vocabulary(
         max_sequence_length += 2
         sequence_length_99ptile += 2
 
+    pad_idx = None
     if tokenizer_type == "hf_tokenizer":
         # Replace the special symbols with the ones from the tokenizer.
         unknown_symbol = tokenizer.get_unk_token()
         padding_symbol = tokenizer.get_pad_token()
+        pad_idx = tokenizer.convert_token_to_id(padding_symbol)
 
     vocab: List[str] = _get_vocabulary(
         tokenizer_type,
@@ -430,8 +444,7 @@ def create_vocabulary(
         else None
     )
 
-    pad_idx = None
-    if padding_symbol in str2idx.keys():
+    if pad_idx is None and padding_symbol in str2idx.keys():
         pad_idx = str2idx[padding_symbol]
 
     return Vocabulary(
@@ -550,16 +563,9 @@ def build_sequence_matrix(
         logger.debug(f"max length of {format}: {max_length} < limit: {length_limit}")
     max_length = length_limit
 
-    # Set padding token id based on tokenizer_type. Huggingface tokenizers typically have a pad_token_id attribute.
     if tokenizer_type == "hf_tokenizer":
-        if hasattr(tokenizer.tokenizer, "pad_token_id") and tokenizer.tokenizer.pad_token_id is not None:
-            pad_token_id = tokenizer.tokenizer.pad_token_id
-        elif hasattr(tokenizer.tokenizer, "eos_token_id") and tokenizer.tokenizer.eos_token_id is not None:
-            pad_token_id = tokenizer.tokenizer.eos_token_id
-        else:
-            # This happens for torchtext tokenizers like BERTTokenizer. We set pad token to 0.
-            log_once("Could not find pad_token_id or eos_token_id. Setting pad_token_id to 0.")
-            pad_token_id = 0
+        padding_symbol = tokenizer.get_pad_token()
+        pad_token_id = tokenizer.convert_token_to_id(padding_symbol)
     else:
         pad_token_id = inverse_vocabulary[padding_symbol]
 
