@@ -486,14 +486,17 @@ class FineTuneTrainer(Trainer):
                 trainer.model.reset_metrics()
                 trainer.optimizer.zero_grad()
 
-            def step(self, batch_size: int, global_max_sequence_length: Optional[int] = None):
+            def step(self, batch_size: int, global_max_sequence_length: int):
                 # max_sequence_length here is the smaller value between the global max sequence length of the model and the model's context length
                 trainer.distributed.set_batch_size(trainer.dist_model, batch_size)
                 input_feature_name, input_feature = trainer.model.input_features.items()[0]
                 output_feature_name, output_feature = trainer.model.output_features.items()[0]
                 input_msl = input_feature.input_shape[0] # Based on input_shape in text_feature.py, this should provide a tighter bound than the max_sequence_length in the config
-                output_msl = trainer.model.config_obj.output_features[0].preprocessing.max_sequence_length
-                if global_max_sequence_length is not None and input_msl + output_msl > global_max_sequence_length:
+                if trainer.model.config_obj.output_features[0].preprocessing.max_sequence_length:
+                    output_msl = trainer.model.config_obj.output_features[0].preprocessing.max_sequence_length
+                else:
+                    output_msl = global_max_sequence_length/2 + 1
+                if input_msl + output_msl > global_max_sequence_length:
                     # In this case, we just need to make sure that the length of the synthetic data exceeds max_sequence_length
                     input_msl = global_max_sequence_length/2 + 1
                     output_msl = global_max_sequence_length/2 + 1
@@ -503,6 +506,7 @@ class FineTuneTrainer(Trainer):
                 targets = {
                     output_feature_name: torch.rand([batch_size, output_msl]).to(output_feature.get_output_dtype()).to(trainer.device)
                 }
+                breakpoint()
                 trainer.train_step(inputs, targets)
 
         return _TrainerBatchSizeEvaluator()
