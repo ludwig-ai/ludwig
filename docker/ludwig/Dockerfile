@@ -18,7 +18,8 @@ RUN apt-get -y update && apt-get -y install \
     g++ \
     cmake \
     ffmpeg \
-    sox
+    sox \
+    libsox-dev
 RUN pip install -U pip
 
 WORKDIR /ludwig
