@@ -1002,12 +1002,12 @@ class LudwigModel:
             tokenized_inputs = tokenizer.tokenizer(input_strings, return_tensors="pt", padding=True)
             input_ids = tokenized_inputs["input_ids"].to("cuda")
             attention_mask = tokenized_inputs["attention_mask"].to("cuda")
-            streamer = create_text_streamer(tokenizer.tokenizer) if streaming else None
 
-            if streamer:
+            if streaming:
+                streamer = create_text_streamer(tokenizer.tokenizer)
                 outputs = self._generate_streaming_outputs(input_strings, input_ids, attention_mask, streamer)
             else:
-                outputs = self._generate_non_streaming_outputs(input_strings, input_ids, attention_mask, streamer)
+                outputs = self._generate_non_streaming_outputs(input_strings, input_ids, attention_mask)
 
             decoded_outputs = tokenizer.tokenizer.batch_decode(outputs, skip_special_tokens=True)
             logger.info(f"Finished generating in: {(time.time() - start_time):.2f}s.")
@@ -1019,8 +1019,8 @@ class LudwigModel:
         input_strings: Union[str, List[str]],
         input_ids: torch.Tensor,
         attention_mask: torch.Tensor,
-        streamer: Union[TextStreamer, None],
-    ):
+        streamer: TextStreamer,
+    ) -> torch.Tensor:
         """Generate streaming outputs for the given input.
 
         Args:
@@ -1055,8 +1055,7 @@ class LudwigModel:
         _input_strings: Union[str, List[str]],
         input_ids: torch.Tensor,
         attention_mask: torch.Tensor,
-        streamer: Union[TextStreamer, None],
-    ):
+    ) -> torch.Tensor:
         """Generate non-streaming outputs for the given input.
 
         Args:
@@ -1076,7 +1075,6 @@ class LudwigModel:
                 input_ids=input_ids,
                 attention_mask=attention_mask,
                 generation_config=self.model.generation,
-                streamer=streamer,
             )
 
     def predict(
