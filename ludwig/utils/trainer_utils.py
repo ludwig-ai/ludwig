@@ -235,7 +235,8 @@ class ProgressTracker:
 
     def save(self, filepath):
         # sort_keys=False to ensure that token usage dictionaries (keyed by integers) are encodable.
-        save_json(filepath, self.__dict__, sort_keys=False)
+        # save_json(filepath, self.__dict__, sort_keys=False)
+        save_json(filepath, self.__dict__)
 
     @staticmethod
     def load(progress_tracking_dict: Dict):
