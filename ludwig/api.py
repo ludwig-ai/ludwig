@@ -96,6 +96,7 @@ from ludwig.utils.dataset_utils import generate_dataset_statistics
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import makedirs, path_exists, upload_output_directory
 from ludwig.utils.heuristics import get_auto_learning_rate
+from ludwig.utils.llm_utils import create_text_streamer, TextStreamer
 from ludwig.utils.misc_utils import (
     get_commit_hash,
     get_file_names,
@@ -966,8 +967,18 @@ class LudwigModel:
         self,
         input_strings: Union[str, List[str]],
         generation_config: Optional[dict] = None,
+        streaming: Optional[bool] = False,
     ) -> Union[str, List[str]]:
-        """A simple generate() method that directly uses the underlying transformers library to generate text."""
+        """A simple generate() method that directly uses the underlying transformers library to generate text.
+
+        Args:
+            input_strings (Union[str, List[str]]): Input text or list of texts to generate from.
+            generation_config (Optional[dict]): Configuration for text generation.
+            streaming (Optional[bool]): If True, enable streaming output.
+
+        Returns:
+            Union[str, List[str]]: Generated text or list of generated texts.
+        """
         if self.config_obj.model_type != MODEL_LLM:
             raise ValueError(
                 f"Model type {self.config_obj.model_type} is not supported by this method. Only `llm` model type is "
@@ -983,31 +994,88 @@ class LudwigModel:
         # warning, e.g.:
         # "A decoder-only architecture is being used, but right-padding was detected! For correct generation results, "
         # "please set `padding_side='left'` when initializing the tokenizer.
-        if not self.model.model.config.is_encoder_decoder:
-            padding_side = "left"
-        else:
-            padding_side = "right"
+        padding_side = "left" if not self.model.model.config.is_encoder_decoder else "right"
         tokenizer = HFTokenizer(self.config_obj.base_model, padding_side=padding_side)
 
         with self.model.use_generation_config(generation_config):
             start_time = time.time()
-            inputs = tokenizer.tokenizer(input_strings, return_tensors="pt", padding=True)
-            input_ids = inputs["input_ids"].to("cuda")
-            attention_mask = inputs["attention_mask"].to("cuda")
+            tokenized_inputs = tokenizer.tokenizer(input_strings, return_tensors="pt", padding=True)
+            input_ids = tokenized_inputs["input_ids"].to("cuda")
+            attention_mask = tokenized_inputs["attention_mask"].to("cuda")
+
+            if streaming:
+                streamer = create_text_streamer(tokenizer.tokenizer)
+                outputs = self._generate_streaming_outputs(input_strings, input_ids, attention_mask, streamer)
+            else:
+                outputs = self._generate_non_streaming_outputs(input_strings, input_ids, attention_mask)
+
+            decoded_outputs = tokenizer.tokenizer.batch_decode(outputs, skip_special_tokens=True)
+            logger.info(f"Finished generating in: {(time.time() - start_time):.2f}s.")
+
+            return decoded_outputs[0] if len(decoded_outputs) == 1 else decoded_outputs
+
+    def _generate_streaming_outputs(
+        self,
+        input_strings: Union[str, List[str]],
+        input_ids: torch.Tensor,
+        attention_mask: torch.Tensor,
+        streamer: TextStreamer,
+    ) -> torch.Tensor:
+        """Generate streaming outputs for the given input.
+
+        Args:
+            input_strings (Union[str, List[str]]): Input text or list of texts to generate from.
+            input_ids (torch.Tensor): Tensor containing input IDs.
+            attention_mask (torch.Tensor): Tensor containing attention masks.
+            streamer (Union[TextStreamer, None]): Text streamer instance for streaming output.
+
+        Returns:
+            torch.Tensor: Concatenated tensor of generated outputs.
+        """
+        outputs = []
+        input_strings = input_strings if isinstance(input_strings, list) else [input_strings]
+        for i in range(len(input_ids)):
             with torch.no_grad():
-                outputs = self.model.model.generate(
-                    input_ids=input_ids,
-                    attention_mask=attention_mask,
-                    # NOTE: self.model.model.generation_config is not used here because it is the default
-                    # generation config that the CausalLM was initialized with, rather than the one set within the
-                    # context manager.
+                logger.info(f"Input: {input_strings[i]}\n")
+                # NOTE: self.model.model.generation_config is not used here because it is the default
+                # generation config that the CausalLM was initialized with, rather than the one set within the
+                # context manager.
+                generated_output = self.model.model.generate(
+                    input_ids=input_ids[i].unsqueeze(0),
+                    attention_mask=attention_mask[i].unsqueeze(0),
                     generation_config=self.model.generation,
+                    streamer=streamer,
                 )
-                decoded_outputs = tokenizer.tokenizer.batch_decode(outputs, skip_special_tokens=True)
-                logger.info(f"Finished generating in: {(time.time() - start_time):.2f}s.")
-                if len(decoded_outputs) == 1:
-                    return decoded_outputs[0]
-                return decoded_outputs
+                logger.info("----------------------")
+                outputs.append(generated_output)
+        return torch.cat(outputs, dim=0)
+
+    def _generate_non_streaming_outputs(
+        self,
+        _input_strings: Union[str, List[str]],
+        input_ids: torch.Tensor,
+        attention_mask: torch.Tensor,
+    ) -> torch.Tensor:
+        """Generate non-streaming outputs for the given input.
+
+        Args:
+            _input_strings (Union[str, List[str]]): Unused input parameter.
+            input_ids (torch.Tensor): Tensor containing input IDs.
+            attention_mask (torch.Tensor): Tensor containing attention masks.
+            streamer (Union[TextStreamer, None]): Text streamer instance for streaming output.
+
+        Returns:
+            torch.Tensor: Tensor of generated outputs.
+        """
+        with torch.no_grad():
+            # NOTE: self.model.model.generation_config is not used here because it is the default
+            # generation config that the CausalLM was initialized with, rather than the one set within the
+            # context manager.
+            return self.model.model.generate(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                generation_config=self.model.generation,
+            )
 
     def predict(
         self,
