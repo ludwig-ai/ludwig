@@ -20,9 +20,9 @@ from the project's `master` branch.
 - `ludwigai/ludwig` Ludwig packaged with PyTorch
 - `ludwigai/ludwig-gpu` Ludwig packaged with gpu-enabled version of PyTorch
 - `ludwigai/ludwig-ray` Ludwig packaged with PyTorch
-  and Ray 2.2.0 (https://github.com/ray-project/ray)
+  and Ray 2.3.1 (https://github.com/ray-project/ray)
 - `ludwigai/ludwig-ray-gpu` Ludwig packaged with gpu-enabled versions of PyTorch
-  and Ray 2.2.0 (https://github.com/ray-project/ray)
+  and Ray 2.3.1 (https://github.com/ray-project/ray)
 
 ## Image Tags
 
