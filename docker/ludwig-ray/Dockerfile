@@ -26,7 +26,8 @@ RUN sudo apt-get update && DEBIAN_FRONTEND="noninteractive" sudo apt-get install
 	rsync \
 	vim \
 	ffmpeg \
-	sox
+	sox \
+	libsox-dev
 RUN pip install -U pip
 
 WORKDIR /ludwig
