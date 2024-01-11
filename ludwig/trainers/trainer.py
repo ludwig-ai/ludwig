@@ -82,6 +82,7 @@ from ludwig.utils.trainer_utils import (
     get_new_progress_tracker,
     get_total_expected_checkpoints,
     get_total_steps,
+    increment_checkpoint,
     ProgressTracker,
 )
 
@@ -793,6 +794,17 @@ class Trainer(BaseTrainer):
 
         return should_break
 
+    def save_checkpoint(self, progress_tracker: ProgressTracker, save_path: str, checkpoint_manager: CheckpointManager):
+        """Checkpoints the model, progress tracker, and invokes the checkpoint callback."""
+        increment_checkpoint(progress_tracker)
+
+        checkpoint_manager.save(progress_tracker.steps)
+        if self.is_coordinator():
+            progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
+
+        # Callback that the checkpoint was reached, regardless of whether the model was evaluated.
+        self.callback(lambda c: c.on_checkpoint(self, progress_tracker))
+
     def train(
         self,
         training_set,
@@ -1042,14 +1054,7 @@ class Trainer(BaseTrainer):
                             f"{time_utils.strdelta((time.time() - start_time) * 1000.0)}."
                         )
                     if not self.skip_save_progress:
-                        progress_tracker.checkpoint_number += 1
-
-                        checkpoint_manager.save(progress_tracker.steps)
-                        if self.is_coordinator():
-                            progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
-
-                        # Callback that the checkpoint was reached, regardless of whether the model was evaluated.
-                        self.callback(lambda c: c.on_checkpoint(self, progress_tracker))
+                        self.save_checkpoint(progress_tracker, save_path, checkpoint_manager)
 
                     if not self.skip_save_model and self.skip_all_evaluation:
                         # All evaluation was skipped, so save the current step as the best so far.
@@ -1198,9 +1203,9 @@ class Trainer(BaseTrainer):
             self.scheduler.step()
 
             # Update progress tracker with token information.
-            progress_tracker.incremental_token_usage[progress_tracker.steps] = used_tokens
+            progress_tracker.incremental_step_token_usage[progress_tracker.steps] = used_tokens
             progress_tracker.total_tokens_used += used_tokens
-            progress_tracker.cumulative_token_usage[progress_tracker.steps] = progress_tracker.total_tokens_used
+            progress_tracker.cumulative_step_token_usage[progress_tracker.steps] = progress_tracker.total_tokens_used
 
             if self.is_coordinator() and not self.skip_save_log:
                 self.write_step_summary(
@@ -1261,13 +1266,7 @@ class Trainer(BaseTrainer):
                 # this should not make a difference, except in the unlikely event an error occurs during eval and we
                 # want to resume from the last checkpoint, in which case we will lose slightly more progress this way.
                 if not self.skip_save_progress:
-                    progress_tracker.checkpoint_number += 1
-                    checkpoint_manager.save(progress_tracker.steps)
-                    if self.is_coordinator():
-                        progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
-
-                    # Callback that the checkpoint was reached, regardless of whether the model was evaluated or not.
-                    self.callback(lambda c: c.on_checkpoint(self, progress_tracker))
+                    self.save_checkpoint(progress_tracker, save_path, checkpoint_manager)
 
             # If this was the last batch, then increment the epoch counter and invoke the `on_epoch_end` callback.
             if batcher.last_batch():

@@ -78,8 +78,12 @@ def get_new_progress_tracker(
         best_eval_validation_metrics={},
         best_eval_test_metrics={},
         llm_eval_examples={},
-        incremental_token_usage={},
-        cumulative_token_usage={},
+        checkpoint_to_step={},
+        checkpoint_to_epoch={},
+        incremental_step_token_usage={},
+        cumulative_step_token_usage={},
+        incremental_checkpoint_token_usage={},
+        cumulative_checkpoint_token_usage={},
         total_tokens_used=0,
     )
 
@@ -114,8 +118,12 @@ class ProgressTracker:
         best_eval_validation_metrics: Dict[str, Dict[str, float]],
         best_eval_test_metrics: Dict[str, Dict[str, float]],
         llm_eval_examples: Dict[str, List[str]] = None,
-        incremental_token_usage: Dict[int, int] = None,
-        cumulative_token_usage: Dict[int, int] = None,
+        checkpoint_to_step: Dict[int, int] = None,
+        checkpoint_to_epoch: Dict[int, int] = None,
+        incremental_step_token_usage: Dict[int, int] = None,
+        cumulative_step_token_usage: Dict[int, int] = None,
+        incremental_checkpoint_token_usage: Dict[int, int] = None,
+        cumulative_checkpoint_token_usage: Dict[int, int] = None,
         total_tokens_used: int = 0,
     ):
         """JSON-serializable holder object that stores information related to training progress.
@@ -164,6 +172,22 @@ class ProgressTracker:
                 Best eval validation metrics: <output feature name> -> <metric name> -> <metric value>.
             best_eval_test_metrics:
                 Best eval test metrics: <output feature name> -> <metric name> -> <metric value>.
+
+            llm_eval_examples:
+                Dictionary whose keys are "inputs", "targets", and "outputs" and whose values are dicts.
+                The keys of each subdict are the names of the input/target/output features and the values are lists of
+                example tensors. This is only set for LLM fine-tuning.
+
+            checkpoint_to_step: Map of checkpoint number to step number.
+            checkpoint_to_epoch: Map of checkpoint number to epoch number.
+
+            incremental_step_token_usage: Map of step number to number of tokens used in that step.
+            cumulative_step_token_usage: Map of step number to cumulative number of tokens used up to that step.
+            incremental_checkpoint_token_usage: Map of checkpoint number to number of tokens used up to that checkpoint
+                since the last checkpoint.
+            cumulative_checkpoint_token_usage: Map of checkpoint number to cumulative number of tokens used up to that
+                checkpoint.
+            total_tokens_used: Total number of tokens used.
         """
         self.batch_size = batch_size
         self.epoch = epoch
@@ -198,9 +222,15 @@ class ProgressTracker:
         self.best_eval_validation_metrics = best_eval_validation_metrics
         self.best_eval_test_metrics = best_eval_test_metrics
 
+        # Checkpoint tracking.
+        self.checkpoint_to_step = checkpoint_to_step
+        self.checkpoint_to_epoch = checkpoint_to_epoch
+
         # Token usage.
-        self.incremental_token_usage = incremental_token_usage
-        self.cumulative_token_usage = cumulative_token_usage
+        self.incremental_step_token_usage = incremental_step_token_usage
+        self.cumulative_step_token_usage = cumulative_step_token_usage
+        self.incremental_checkpoint_token_usage = incremental_checkpoint_token_usage
+        self.cumulative_checkpoint_token_usage = cumulative_checkpoint_token_usage
         self.total_tokens_used = total_tokens_used
 
     def save(self, filepath):
@@ -422,3 +452,40 @@ def get_rendered_batch_size_grad_accum(config: "BaseTrainerConfig", num_workers:
                 gradient_accumulation_steps = 1
 
     return batch_size, gradient_accumulation_steps
+
+
+def _add_checkpoint_entry_for_used_tokens(progress_tracker: ProgressTracker, checkpoint_number: int):
+    """Adds an entry to the token usage dictionaries for the given checkpoint number.
+
+    Assumes that the token usage dictionaries for steps are filled.
+    """
+    progress_tracker.cumulative_checkpoint_token_usage[checkpoint_number] = progress_tracker.total_tokens_used
+
+    if checkpoint_number <= 0:
+        raise ValueError("Checkpoint number should be greater than 0.")
+
+    if checkpoint_number == 1:
+        # The incremental token usage for checkpoint 0 is the same as the total tokens used so far.
+        progress_tracker.incremental_checkpoint_token_usage[checkpoint_number] = progress_tracker.total_tokens_used
+    else:
+        # The incremental token usage for this checkpoint is the total tokens used minus the cumulative tokens used up
+        # to the previous checkpoint.
+        previous_checkpoint_number = checkpoint_number - 1
+
+        tokens_used_since_previous_checkpoint = (
+            progress_tracker.total_tokens_used
+            - progress_tracker.cumulative_checkpoint_token_usage[previous_checkpoint_number]
+        )
+        progress_tracker.incremental_checkpoint_token_usage[checkpoint_number] = tokens_used_since_previous_checkpoint
+
+
+def increment_checkpoint(progress_tracker: ProgressTracker):
+    """Update the progress tracker for a new checkpoint."""
+    progress_tracker.checkpoint_number += 1
+
+    # Set checkpoint -> step/epoch lookup maps.
+    progress_tracker.checkpoint_to_step[progress_tracker.checkpoint_number] = progress_tracker.steps
+    progress_tracker.checkpoint_to_epoch[progress_tracker.checkpoint_number] = progress_tracker.epoch
+
+    # Set checkpoint -> used tokens lookup maps.
+    _add_checkpoint_entry_for_used_tokens(progress_tracker, progress_tracker.checkpoint_number)
