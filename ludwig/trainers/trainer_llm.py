@@ -1,9 +1,9 @@
 import logging
 import os
 import time
-import torch
 from typing import Callable, Dict, List, Optional, Union
 
+import torch
 from torch.utils.tensorboard import SummaryWriter
 
 from ludwig.constants import MINIMUM_BATCH_SIZE, TEST, TRAINING, VALIDATION
@@ -472,11 +472,32 @@ class FineTuneTrainer(Trainer):
 
         progress_tracker.llm_eval_examples = llm_eval_examples
         return append_metrics(self.model, dataset_name, metrics, metrics_log, progress_tracker)
-    
-    def tune_batch_size(self, config: ModelConfigDict, training_set: Dataset, random_seed: int = default_random_seed, max_trials: int = 20, halving_limit: int = 3, snapshot_weights: bool = True, on_best_batch_size_updated: Optional[Callable[[int, float, int], None]] = None, tune_for_training: bool = True, global_max_sequence_length: Optional[int] = None) -> int:
+
+    def tune_batch_size(
+        self,
+        config: ModelConfigDict,
+        training_set: Dataset,
+        random_seed: int = default_random_seed,
+        max_trials: int = 20,
+        halving_limit: int = 3,
+        snapshot_weights: bool = True,
+        on_best_batch_size_updated: Optional[Callable[[int, float, int], None]] = None,
+        tune_for_training: bool = True,
+        global_max_sequence_length: Optional[int] = None,
+    ) -> int:
         if global_max_sequence_length is None:
             global_max_sequence_length = self.model.global_max_sequence_length
-        return super().tune_batch_size(config, training_set, random_seed, max_trials, halving_limit, snapshot_weights, on_best_batch_size_updated, tune_for_training, global_max_sequence_length)
+        return super().tune_batch_size(
+            config,
+            training_set,
+            random_seed,
+            max_trials,
+            halving_limit,
+            snapshot_weights,
+            on_best_batch_size_updated,
+            tune_for_training,
+            global_max_sequence_length,
+        )
 
     def _create_batch_size_evaluator(self) -> BatchSizeEvaluator:
         trainer = self
@@ -491,25 +512,32 @@ class FineTuneTrainer(Trainer):
                 trainer.distributed.set_batch_size(trainer.dist_model, batch_size)
                 input_feature_name, input_feature = trainer.model.input_features.items()[0]
                 output_feature_name, output_feature = trainer.model.output_features.items()[0]
-                input_msl = input_feature.input_shape[0] # Based on input_shape in text_feature.py, this should provide a tighter bound than the max_sequence_length in the config
+                input_msl = input_feature.input_shape[
+                    0
+                ]  # Based on input_shape in text_feature.py, this should provide a tighter bound than the max_sequence_length in the config
                 if trainer.model.config_obj.output_features[0].preprocessing.max_sequence_length:
                     output_msl = trainer.model.config_obj.output_features[0].preprocessing.max_sequence_length
                 else:
                     output_msl = global_max_sequence_length - input_msl
                 if input_msl + output_msl > global_max_sequence_length:
                     # In this case, we just need to make sure that the length of the synthetic data exceeds max_sequence_length by at most a small amount
-                    input_msl = global_max_sequence_length//2 + 1
-                    output_msl = global_max_sequence_length//2 + 1
+                    input_msl = global_max_sequence_length // 2 + 1
+                    output_msl = global_max_sequence_length // 2 + 1
                 inputs = {
-                    input_feature_name: torch.rand([batch_size, input_msl]).to(input_feature.input_dtype).to(trainer.device)
+                    input_feature_name: torch.rand([batch_size, input_msl])
+                    .to(input_feature.input_dtype)
+                    .to(trainer.device)
                 }
                 targets = {
-                    output_feature_name: torch.rand([batch_size, output_msl]).to(output_feature.get_output_dtype()).to(trainer.device)
+                    output_feature_name: torch.rand([batch_size, output_msl])
+                    .to(output_feature.get_output_dtype())
+                    .to(trainer.device)
                 }
                 breakpoint()
                 trainer.train_step(inputs, targets)
 
         return _TrainerBatchSizeEvaluator()
+
 
 class RemoteLLMTrainer(NoneTrainer):
     def __init__(self, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
