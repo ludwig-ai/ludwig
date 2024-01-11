@@ -1037,6 +1037,9 @@ class LudwigModel:
         for i in range(len(input_ids)):
             with torch.no_grad():
                 logger.info(f"Input: {input_strings[i]}\n")
+                # NOTE: self.model.model.generation_config is not used here because it is the default
+                # generation config that the CausalLM was initialized with, rather than the one set within the
+                # context manager.
                 generated_output = self.model.model.generate(
                     input_ids=input_ids[i].unsqueeze(0),
                     attention_mask=attention_mask[i].unsqueeze(0),
@@ -1066,6 +1069,9 @@ class LudwigModel:
             torch.Tensor: Tensor of generated outputs.
         """
         with torch.no_grad():
+            # NOTE: self.model.model.generation_config is not used here because it is the default
+            # generation config that the CausalLM was initialized with, rather than the one set within the
+            # context manager.
             return self.model.model.generate(
                 input_ids=input_ids,
                 attention_mask=attention_mask,
