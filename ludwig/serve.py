@@ -150,7 +150,7 @@ def convert_input(form, input_features):
     new_input = {}
     files = []
     for k, v in form.multi_items():
-        if type(v) == UploadFile:
+        if isinstance(v, UploadFile):
             # check if audio or image file
             if input_features.get(k).type() == AUDIO:
                 new_input[k] = _write_file(v, files)
@@ -167,18 +167,18 @@ def convert_batch_input(form, input_features):
     file_index = {}
     files = []
     for k, v in form.multi_items():
-        if type(v) == UploadFile:
+        if isinstance(v, UploadFile):
             file_index[v.filename] = v
 
     data = json.loads(form["dataset"])
     for row in data["data"]:
-        for i in range(len(row)):
-            if row[i] in file_index:
+        for i, value in enumerate(row):
+            if value in file_index:
                 feature_name = data["columns"][i]
                 if input_features.get(feature_name).type() == AUDIO:
-                    row[i] = _write_file(file_index[row[i]], files)
+                    row[i] = _write_file(file_index[value], files)
                 else:
-                    row[i] = _read_image_buffer(file_index[row[i]])
+                    row[i] = _read_image_buffer(file_index[value])
 
     return data, files
 

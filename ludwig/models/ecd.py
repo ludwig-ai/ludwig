@@ -42,7 +42,7 @@ class ECD(BaseModel):
         except KeyError as e:
             raise KeyError(
                 f"An input feature has a name that conflicts with a class attribute of torch's ModuleDict: {e}"
-            )
+            ) from e
 
         # ================ Combiner ================
         logger.debug(f"Combiner {self.config_obj.combiner.type}")
