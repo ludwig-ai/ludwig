@@ -96,7 +96,7 @@ from ludwig.utils.dataset_utils import generate_dataset_statistics
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import makedirs, path_exists, upload_output_directory
 from ludwig.utils.heuristics import get_auto_learning_rate
-from ludwig.utils.llm_utils import create_text_streamer
+from ludwig.utils.llm_utils import create_text_streamer, TextStreamer
 from ludwig.utils.misc_utils import (
     get_commit_hash,
     get_file_names,
@@ -969,7 +969,16 @@ class LudwigModel:
         generation_config: Optional[dict] = None,
         streaming: Optional[bool] = False,
     ) -> Union[str, List[str]]:
-        """A simple generate() method that directly uses the underlying transformers library to generate text."""
+        """A simple generate() method that directly uses the underlying transformers library to generate text.
+
+        Args:
+            input_strings (Union[str, List[str]]): Input text or list of texts to generate from.
+            generation_config (Optional[dict]): Configuration for text generation.
+            streaming (Optional[bool]): If True, enable streaming output.
+
+        Returns:
+            Union[str, List[str]]: Generated text or list of generated texts.
+        """
         if self.config_obj.model_type != MODEL_LLM:
             raise ValueError(
                 f"Model type {self.config_obj.model_type} is not supported by this method. Only `llm` model type is "
@@ -1005,7 +1014,24 @@ class LudwigModel:
 
             return decoded_outputs[0] if len(decoded_outputs) == 1 else decoded_outputs
 
-    def _generate_streaming_outputs(self, input_strings, input_ids, attention_mask, streamer):
+    def _generate_streaming_outputs(
+        self,
+        input_strings: Union[str, List[str]],
+        input_ids: torch.Tensor,
+        attention_mask: torch.Tensor,
+        streamer: Union[TextStreamer, None],
+    ):
+        """Generate streaming outputs for the given input.
+
+        Args:
+            input_strings (Union[str, List[str]]): Input text or list of texts to generate from.
+            input_ids (torch.Tensor): Tensor containing input IDs.
+            attention_mask (torch.Tensor): Tensor containing attention masks.
+            streamer (Union[TextStreamer, None]): Text streamer instance for streaming output.
+
+        Returns:
+            torch.Tensor: Concatenated tensor of generated outputs.
+        """
         outputs = []
         input_strings = input_strings if isinstance(input_strings, list) else [input_strings]
         for i in range(len(input_ids)):
@@ -1017,11 +1043,28 @@ class LudwigModel:
                     generation_config=self.model.generation,
                     streamer=streamer,
                 )
-                logger.info("----------------------\n")
+                logger.info("----------------------")
                 outputs.append(generated_output)
         return torch.cat(outputs, dim=0)
 
-    def _generate_non_streaming_outputs(self, input_strings, input_ids, attention_mask, streamer):
+    def _generate_non_streaming_outputs(
+        self,
+        _input_strings: Union[str, List[str]],
+        input_ids: torch.Tensor,
+        attention_mask: torch.Tensor,
+        streamer: Union[TextStreamer, None],
+    ):
+        """Generate non-streaming outputs for the given input.
+
+        Args:
+            _input_strings (Union[str, List[str]]): Unused input parameter.
+            input_ids (torch.Tensor): Tensor containing input IDs.
+            attention_mask (torch.Tensor): Tensor containing attention masks.
+            streamer (Union[TextStreamer, None]): Text streamer instance for streaming output.
+
+        Returns:
+            torch.Tensor: Tensor of generated outputs.
+        """
         with torch.no_grad():
             return self.model.model.generate(
                 input_ids=input_ids,
