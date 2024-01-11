@@ -2395,6 +2395,8 @@ class LLMEncoder(Encoder):
 
         self.config = encoder_config
 
+        self.adapter_is_initialized = False
+
         self.model_name = self.config.base_model
         self.model_config = AutoConfig.from_pretrained(self.config.base_model)
 
@@ -2420,8 +2422,6 @@ class LLMEncoder(Encoder):
         self.tokenizer = HFTokenizer(self.config.base_model).tokenizer
 
         self.attention_masks = None
-
-        self.prepare_for_training()
 
         clear_data_cache()
 
@@ -2450,6 +2450,8 @@ class LLMEncoder(Encoder):
             logger.info(f"Fine-tuning with adapter: {self.config.adapter.type}")
             self.model.print_trainable_parameters()
             logger.info("==================================================")
+
+            self.adapter_is_initialized = True
 
     def prepare_for_training(self):
         # TODO: this implementation will not work if resuming from a previous checkpoint. Need to fix this.
@@ -2485,7 +2487,7 @@ class LLMEncoder(Encoder):
         # contents of the state_dict.
         # The three args to this method are supplied by Module.state_dict
         # https://github.com/pytorch/pytorch/blob/8739d1e3f9b08f4282fe79fc8dacd781d16913ff/torch/nn/modules/module.py#L1824
-        if self.config.adapter:
+        if self.config.adapter and self.adapter_is_initialized:
             # get_peft_model_state_dict geneates a state dict that only contains the adapter weights
             from peft.utils.save_and_load import get_peft_model_state_dict
 
@@ -2498,7 +2500,7 @@ class LLMEncoder(Encoder):
     def state_dict(self, *args, destination=None, prefix="", keep_vars=False):
         destination = super().state_dict(destination, prefix=prefix, keep_vars=keep_vars)
 
-        if self.config.adapter:
+        if self.config.adapter and self.adapter_is_initialized:
             adapter_type_prefix = self.ADAPTER_PARAM_NAME_PREFIX[self.config.adapter.type]
             exclude_model_keys = [k for k in destination.keys() if adapter_type_prefix not in k]
 
@@ -2518,7 +2520,7 @@ class LLMEncoder(Encoder):
             state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
         )
 
-        if self.config.adapter:
+        if self.config.adapter and self.adapter_is_initialized:
             # When using an adapter, only the adapter weights are saved, and so we only want to load those weights.
             # Under the hood, PEFT alters the names of the parameters, which leads to an "unexpected keys" error when
             # using strict mode. This block uses PEFT's version of `load_state_dict` to handle loading in weights.
@@ -2540,7 +2542,7 @@ class LLMEncoder(Encoder):
         """
         # If no adapter was used, `LLMEncoder.load_state_dict` should use the default `torch.Module.load_state_dict`
         # code path to load weights and no modification should be necessary.
-        if self.config.adapter:
+        if self.config.adapter and self.adapter_is_initialized:
             adapter_type_prefix = self.ADAPTER_PARAM_NAME_PREFIX[self.config.adapter.type]
             missing_keys, unexpected_keys = incompatible_keys
 

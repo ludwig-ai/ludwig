@@ -83,18 +83,36 @@ class TestLLMEncoder:
 
     @pytest.mark.parametrize("adapter", list(ADAPTER_CONFIG_MAP.keys()))
     def test_init_with_adapter(self, encoder_config: LLMEncoderConfig, adapter: str, model_config):
-        encoder_config_with_adapter = self.create_encoder_config_with_adapter(encoder_config, adapter)
-
-        # Test initializing with an adapter
         from peft import PeftModel
 
+        encoder_config_with_adapter = self.create_encoder_config_with_adapter(encoder_config, adapter)
         encoder = LLMEncoder(encoder_config=encoder_config_with_adapter)
 
+        # The adapter should not be initialized until `prepare_for_training` is called
+        assert not isinstance(encoder.model, PeftModel)
+        assert not any(map(lambda k: "lora_" in k, encoder.state_dict().keys()))
+
         assert encoder.model_name == encoder_config.base_model
-        assert isinstance(encoder.model, PeftModel)
-        assert any(map(lambda k: "lora_" in k, encoder.state_dict().keys()))  # Check adapter was initialized
         assert encoder.input_shape == torch.Size([encoder_config.max_sequence_length])
         assert encoder.output_shape == torch.Size([encoder_config.max_sequence_length, model_config.hidden_size])
+
+    @pytest.mark.parametrize("adapter", list(ADAPTER_CONFIG_MAP.keys()))
+    def test_prepare_for_training(self, encoder_config: LLMEncoderConfig, adapter: str):
+        from peft import PeftModel
+
+        encoder_config_with_adapter = self.create_encoder_config_with_adapter(encoder_config, adapter)
+        encoder = LLMEncoder(encoder_config=encoder_config_with_adapter)
+
+        # The adapter should not be initialized until `prepare_for_training` is called
+        assert not isinstance(encoder.model, PeftModel)
+        assert not any(map(lambda k: "lora_" in k, encoder.state_dict().keys()))
+
+        # Initialize the adapter
+        encoder.prepare_for_training()
+
+        # At this point, the adapter should be initialized and the state dict should contain adapter parameters
+        assert isinstance(encoder.model, PeftModel)
+        assert any(map(lambda k: "lora_" in k, encoder.state_dict().keys()))
 
     def test_save_to_state_dict(self, encoder_config: LLMEncoderConfig, tmpdir):
         # With no adapter, the state dict should only contain the model parameters
@@ -106,6 +124,8 @@ class TestLLMEncoder:
         # With an adapter, the state dict should only contain adapter parameters
         encoder_config_with_adapter = self.create_encoder_config_with_adapter(encoder_config, adapter)
         encoder = LLMEncoder(encoder_config=encoder_config_with_adapter)
+        # Initialize the adapters
+        encoder.prepare_for_training()
         assert all(map(lambda k: "lora_" in k, encoder.state_dict().keys()))
 
     @pytest.mark.parametrize("wrap", [False, True], ids=["no_wrapper", "with_wrapper"])
@@ -150,6 +170,10 @@ class TestLLMEncoder:
         # Create two encoders from the same config
         encoder1 = LLMEncoder(encoder_config=encoder_config_with_adapter)
         encoder2 = LLMEncoder(encoder_config=encoder_config_with_adapter)
+
+        # Initialize the adapters
+        encoder1.prepare_for_training()
+        encoder2.prepare_for_training()
 
         if wrap:
             encoder1 = WrapperModule(encoder1)
