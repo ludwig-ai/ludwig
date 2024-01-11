@@ -39,7 +39,8 @@ RUN sudo apt-get update && sudo apt install -y software-properties-common && \
     vim \
     gcc-9 \
     ffmpeg \
-    sox
+    sox \
+    libsox-dev
 RUN pip install -U pip
 
 WORKDIR /ludwig
