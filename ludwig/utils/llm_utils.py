@@ -624,6 +624,6 @@ def update_embedding_layer(model: AutoModelForCausalLM, config_obj: LLMTrainerCo
     return model
 
 
-def create_text_streamer(tokenizer: PreTrainedTokenizer):
+def create_text_streamer(tokenizer: PreTrainedTokenizer) -> TextStreamer:
     """Creates a TextStreamer object for streaming text to stdout during generation."""
     return TextStreamer(tokenizer=tokenizer, skip_prompt=True)
