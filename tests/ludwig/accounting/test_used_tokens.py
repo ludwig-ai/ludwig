@@ -16,6 +16,13 @@ def test_get_used_tokens_for_ecd():
     assert get_used_tokens_for_ecd(inputs, targets) == 9
 
 
+def test_get_used_tokens_for_ecd_no_targets():
+    inputs = {"input1": torch.tensor([[1, 2], [3, 4]]), "input2": torch.tensor([5, 6])}
+    targets = None
+
+    assert get_used_tokens_for_ecd(inputs, targets) == 6
+
+
 def test_get_used_tokens_for_llm():
     class MockTokenizer:
         pad_token_id = 0
