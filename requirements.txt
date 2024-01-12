@@ -11,7 +11,7 @@ torchaudio
 torchtext
 torchvision
 pydantic<2.0
-transformers==55090585619d7ab880d9a7d7c8b327a746f7cc40 # For official microsoft/phi-2 support
+git+https://github.com/huggingface/transformers.git@55090585619d7ab880d9a7d7c8b327a746f7cc40 # For official microsoft/phi-2 support
 tifffile
 imagecodecs
 tokenizers>=0.15
