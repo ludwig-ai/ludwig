@@ -1231,9 +1231,11 @@ class Trainer(BaseTrainer):
             self.scheduler.step()
 
             # Update progress tracker with token information.
-            progress_tracker.incremental_step_token_usage[progress_tracker.steps] = used_tokens
+            progress_tracker.incremental_step_token_usage[str(progress_tracker.steps)] = used_tokens
             progress_tracker.total_tokens_used += used_tokens
-            progress_tracker.cumulative_step_token_usage[progress_tracker.steps] = progress_tracker.total_tokens_used
+            progress_tracker.cumulative_step_token_usage[
+                str(progress_tracker.steps)
+            ] = progress_tracker.total_tokens_used
 
             if self.is_coordinator() and not self.skip_save_log:
                 self.write_step_summary(
