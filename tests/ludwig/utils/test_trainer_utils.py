@@ -105,6 +105,7 @@ def test_progress_tracker_empty():
         "best_eval_metric_epoch": 0,
         "checkpoint_number": 0,
         "last_improvement_steps": 0,
+        "total_tokens_used": 0,
     }
 
 
@@ -150,6 +151,7 @@ def test_progress_tracker():
         "tune_checkpoint_num": 0,
         "validation_metrics.combined.loss": 0.2,
         "last_improvement_steps": 0,
+        "total_tokens_used": 0,
     }
 
 
@@ -305,6 +307,7 @@ def test_full_progress_tracker():
             "targets": {"output": [1, 2, 3]},
             "outputs": {"output": [1, 2, 3]},
         },
+        "total_tokens_used": 0,
     }
 
 

@@ -7,7 +7,8 @@ import numpy as np
 import torch
 from transformers import AutoConfig, GenerationConfig
 
-from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, MODEL_LLM, PREDICTIONS, TEXT
+from ludwig.accounting.used_tokens import get_used_tokens_for_llm
+from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, MODEL_LLM, PREDICTIONS, TEXT, USED_TOKENS
 from ludwig.features.base_feature import ModuleWrapper, OutputFeature
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.features.text_feature import TextOutputFeature
@@ -85,7 +86,7 @@ class LLM(BaseModel):
         self,
         config_obj: LLMModelConfig,
         random_seed=None,
-        device=None,
+        _device=None,
         **_kwargs,
     ):
         super().__init__(random_seed=random_seed)
@@ -125,7 +126,7 @@ class LLM(BaseModel):
         except KeyError as e:
             raise KeyError(
                 f"An input feature has a name that conflicts with a class attribute of torch's ModuleDict: {e}"
-            )
+            ) from e
 
         # This is used to store the model inputs during the forward pass when fine-tuning LLMs. This allows us to have
         # access to the joint model inputs (input_ids and target_ids) when computing metrics. In particular, the target
@@ -298,6 +299,8 @@ class LLM(BaseModel):
                 # (which is already the case)
                 outputs[prediction_key] = prediction_tensor.type(torch.float32)
 
+        # Add token usage.
+        outputs[USED_TOKENS] = get_used_tokens_for_llm(self.model_inputs, self.tokenizer)
         return outputs
 
     def generate(
@@ -566,10 +569,10 @@ class LLM(BaseModel):
         if self.config_obj.trainer.type != "none":
             weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
             self.model.base_model.save_pretrained(weights_save_path)
-            """While this class initializes the tokenizer (from the base_model) automatically, and hence does not
-            need to be saved if inference is to be done using LudwigModel.predict(), the rationale for saving the
-            tokenizer to HuggingFace Hub is to provide access to models fine-tuned and persisted to HuggingFace Hub
-            using Ludwig at a later time, with the ability to perform inference, independently of Ludwig itself."""
+            # While this class initializes the tokenizer (from the base_model) automatically, and hence does not
+            # need to be saved if inference is to be done using LudwigModel.predict(), the rationale for saving the
+            # tokenizer to HuggingFace Hub is to provide access to models fine-tuned and persisted to HuggingFace Hub
+            # using Ludwig at a later time, with the ability to perform inference, independently of Ludwig itself.
             self.tokenizer.save_pretrained(weights_save_path)
         else:
             logger.info("Skipped saving LLM without weight adjustments.")

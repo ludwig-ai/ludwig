@@ -33,7 +33,17 @@ import psutil
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import AUTO, LOSS, MAX_CPU_BATCH_SIZE, MINIMIZE, MODEL_ECD, TEST, TRAINING, VALIDATION
+from ludwig.constants import (
+    AUTO,
+    LOSS,
+    MAX_CPU_BATCH_SIZE,
+    MINIMIZE,
+    MODEL_ECD,
+    TEST,
+    TRAINING,
+    USED_TOKENS,
+    VALIDATION,
+)
 from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.globals import (
@@ -263,7 +273,7 @@ class Trainer(BaseTrainer):
         targets: Dict[str, torch.Tensor],
         should_step: bool = True,
         profiler: Optional[torch.profiler.profile] = None,
-    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor], torch.Tensor]:
         """Performs a single training step.
 
         Params:
@@ -272,7 +282,10 @@ class Trainer(BaseTrainer):
             should_step: Whether to perform a step of the optimizer after computing gradients.
 
         Returns:
-            A tuple of the loss tensor and a dictionary of loss for every output feature.
+            A tuple of:
+                1. loss tensor
+                2. dictionary of loss for every output feature.
+                3. tokens usage tensor
         """
         if isinstance(self.optimizer, torch.optim.LBFGS):
             # NOTE: Horovod is not supported for L-BFGS.
@@ -303,7 +316,7 @@ class Trainer(BaseTrainer):
                 predictions = self.model.outputs_to_predictions(model_outputs)
                 self.model.update_metrics(targets, predictions)
 
-            return loss, all_losses
+            return loss, all_losses, model_outputs[USED_TOKENS]
 
         with torch.cuda.amp.autocast() if self.use_amp else contextlib.nullcontext():
             with self.distributed.prepare_model_update(self.dist_model, should_step=should_step):
@@ -314,6 +327,8 @@ class Trainer(BaseTrainer):
                 )
                 loss = loss / self.gradient_accumulation_steps
 
+        used_tokens = model_outputs[USED_TOKENS]
+
         # Begin the backward pass
         variables = self.dist_model.parameters()
         if self.use_amp:
@@ -323,7 +338,7 @@ class Trainer(BaseTrainer):
 
         if not should_step:
             # Short-circuit the parameter updates if we are still accumulating gradients
-            return loss, all_losses
+            return loss, all_losses, used_tokens
 
         # Wait for gradient aggregation to complete before clipping the gradients
         # When using AMP, we need to do this before unscaling.
@@ -363,7 +378,7 @@ class Trainer(BaseTrainer):
         if profiler:
             profiler.step()
 
-        return loss, all_losses
+        return loss, all_losses, used_tokens
 
     def clip_grads(self, variables):
         """Applies gradient clipping."""
@@ -393,9 +408,15 @@ class Trainer(BaseTrainer):
         summary_writer.flush()
 
     @classmethod
-    def write_step_summary(cls, train_summary_writer, combined_loss, all_losses, step, learning_rate=None):
+    def write_step_summary(
+        cls, train_summary_writer, combined_loss, all_losses, step, used_tokens, total_tokens_used, learning_rate=None
+    ):
         if not train_summary_writer:
             return
+
+        # token information.
+        train_summary_writer.add_scalar("tokens/tokens", used_tokens, global_step=step)
+        train_summary_writer.add_scalar("tokens/total_tokens_used", total_tokens_used, global_step=step)
 
         # combined loss
         train_summary_writer.add_scalar("combined/step_training_loss", combined_loss, global_step=step)
@@ -773,6 +794,17 @@ class Trainer(BaseTrainer):
 
         return should_break
 
+    def save_checkpoint(self, progress_tracker: ProgressTracker, save_path: str, checkpoint_manager: CheckpointManager):
+        """Checkpoints the model, progress tracker, and invokes the checkpoint callback."""
+        progress_tracker.increment_checkpoint()
+
+        checkpoint_manager.save(progress_tracker.steps)
+        if self.is_coordinator():
+            progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
+
+        # Callback that the checkpoint was reached, regardless of whether the model was evaluated.
+        self.callback(lambda c: c.on_checkpoint(self, progress_tracker))
+
     def train(
         self,
         training_set,
@@ -1029,14 +1061,7 @@ class Trainer(BaseTrainer):
                         break
 
                     if not self.skip_save_progress:
-                        progress_tracker.checkpoint_number += 1
-
-                        checkpoint_manager.save(progress_tracker.steps)
-                        if self.is_coordinator():
-                            progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
-
-                        # Callback that the checkpoint was reached, regardless of whether the model was evaluated.
-                        self.callback(lambda c: c.on_checkpoint(self, progress_tracker))
+                        self.save_checkpoint(progress_tracker, save_path, checkpoint_manager)
 
                     if not self.skip_save_model and self.skip_all_evaluation:
                         # All evaluation was skipped, so save the current step as the best so far.
@@ -1199,10 +1224,13 @@ class Trainer(BaseTrainer):
                 for o_feat in self.model.output_features.values()
             }
 
-            loss, all_losses = self.train_step(inputs, targets, should_step=should_step, profiler=profiler)
+            loss, all_losses, used_tokens = self.train_step(inputs, targets, should_step=should_step, profiler=profiler)
 
             # Update LR schduler here instead of train loop to avoid updating during batch size tuning, etc.
             self.scheduler.step()
+
+            # Update progress tracker with token information.
+            progress_tracker.set_token_usage_for_this_step(used_tokens)
 
             if self.is_coordinator() and not self.skip_save_log:
                 self.write_step_summary(
@@ -1210,6 +1238,8 @@ class Trainer(BaseTrainer):
                     combined_loss=loss.detach().float(),
                     all_losses=all_losses,
                     step=progress_tracker.steps,
+                    used_tokens=used_tokens,
+                    total_tokens_used=progress_tracker.total_tokens_used,
                     learning_rate=progress_tracker.learning_rate,
                 )
 
@@ -1218,9 +1248,9 @@ class Trainer(BaseTrainer):
             progress_bar.update(1)
             if self.is_coordinator():
                 logger.debug(
-                    f"training: completed batch {progress_bar.total_steps} "
-                    f"memory used: "
-                    f"{psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
+                    "training: completed batch %s memory used: %.2fMB",
+                    progress_bar.total_steps,
+                    psutil.Process(os.getpid()).memory_info()[0] / 1e6,
                 )
 
             # Executing `on_batch_end` calls before `run_evaluation` enables more accurate
@@ -1271,14 +1301,7 @@ class Trainer(BaseTrainer):
                 # this should not make a difference, except in the unlikely event an error occurs during eval and we
                 # want to resume from the last checkpoint, in which case we will lose slightly more progress this way.
                 if not self.skip_save_progress:
-                    # This saves the latest checkpoint, which is the same as the current step.
-                    progress_tracker.checkpoint_number += 1
-                    checkpoint_manager.save(progress_tracker.steps)
-                    if self.is_coordinator():
-                        progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
-
-                    # Callback that the checkpoint was reached, regardless of whether the model was evaluated or not.
-                    self.callback(lambda c: c.on_checkpoint(self, progress_tracker))
+                    self.save_checkpoint(progress_tracker, save_path, checkpoint_manager)
 
             # If this was the last batch, then increment the epoch counter and invoke the `on_epoch_end` callback.
             if batcher.last_batch():
