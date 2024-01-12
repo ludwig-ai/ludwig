@@ -35,8 +35,13 @@ _PHI_BASE_MODEL_MAPPING = {
     "microsoft/phi-1.5": "susnato/phi-1_5_dev",
 }
 
-# The susnato Phi models as of Transformers 4.36.1 don't support "device_map='auto'" at model load time.
-_MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION = {"susnato/phi-1_dev", "susnato/phi-1_5_dev"}
+# The susnato Phi models as of Transformers 4.36.2 don't support "device_map='auto'" at model load time.
+_MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION = {
+    "susnato/phi-1_dev",
+    "susnato/phi-1_5_dev",
+    "susnato/phi-2_dev",
+    "microsoft/phi-2",
+}
 
 
 @default_retry(tries=8)
