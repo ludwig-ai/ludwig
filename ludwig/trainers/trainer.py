@@ -83,7 +83,6 @@ from ludwig.utils.trainer_utils import (
     get_new_progress_tracker,
     get_total_expected_checkpoints,
     get_total_steps,
-    increment_checkpoint,
     ProgressTracker,
 )
 
@@ -797,7 +796,7 @@ class Trainer(BaseTrainer):
 
     def save_checkpoint(self, progress_tracker: ProgressTracker, save_path: str, checkpoint_manager: CheckpointManager):
         """Checkpoints the model, progress tracker, and invokes the checkpoint callback."""
-        increment_checkpoint(progress_tracker)
+        progress_tracker.increment_checkpoint()
 
         checkpoint_manager.save(progress_tracker.steps)
         if self.is_coordinator():
@@ -1231,11 +1230,7 @@ class Trainer(BaseTrainer):
             self.scheduler.step()
 
             # Update progress tracker with token information.
-            progress_tracker.incremental_step_token_usage[str(progress_tracker.steps)] = used_tokens
-            progress_tracker.total_tokens_used += used_tokens
-            progress_tracker.cumulative_step_token_usage[
-                str(progress_tracker.steps)
-            ] = progress_tracker.total_tokens_used
+            progress_tracker.set_token_usage_for_this_step(used_tokens)
 
             if self.is_coordinator() and not self.skip_save_log:
                 self.write_step_summary(
