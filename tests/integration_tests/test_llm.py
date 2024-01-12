@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import os
 import pathlib
 from typing import Any
@@ -664,7 +665,7 @@ def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_stra
             {"bits": 4},
             (
                 ImportError,
-                "Using `load_in_8bit=True` requires Accelerate: `pip install accelerate` and the latest version of bitsandbytes `pip install -i https://test.pypi.org/simple/ bitsandbytes` or pip install bitsandbytes` ",  # noqa E501
+                "Using `load_in_8bit=True` requires Accelerate: `pip install accelerate` and the latest version of bitsandbytes `pip install -i https://test.pypi.org/simple/ bitsandbytes` or pip install bitsandbytes` ",  # noqa: E501
             ),
             id="qlora-4bit-not-merged",
         ),
@@ -674,7 +675,7 @@ def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_stra
             {"bits": 8},
             (
                 ImportError,
-                "Using `load_in_8bit=True` requires Accelerate: `pip install accelerate` and the latest version of bitsandbytes `pip install -i https://test.pypi.org/simple/ bitsandbytes` or pip install bitsandbytes` ",  # noqa E501
+                "Using `load_in_8bit=True` requires Accelerate: `pip install accelerate` and the latest version of bitsandbytes `pip install -i https://test.pypi.org/simple/ bitsandbytes` or pip install bitsandbytes` ",  # noqa: E501
             ),
             id="qlora-8bit-merged",
         ),
@@ -1241,3 +1242,60 @@ def test_llm_encoding(llm_encoder_config, adapter, quantization, tmpdir):
 
     model = LudwigModel(config)
     model.train(dataset=dataset_path, output_directory=str(tmpdir))
+
+
+@pytest.mark.llm
+def test_llm_used_tokens(tmpdir):
+    input_features = [text_feature(name="input", encoder={"type": "passthrough"})]
+    output_features = [text_feature(name="output")]
+
+    df = pd.read_json("https://raw.githubusercontent.com/sahil280114/codealpaca/master/data/code_alpaca_20k.json").head(
+        10
+    )
+
+    # df = generate_data(input_features, output_features, filename=csv_filename, num_examples=25)
+
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: "hf-internal-testing/tiny-random-BartModel",
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        TRAINER: {
+            TYPE: "finetune",
+            BATCH_SIZE: 1,
+            EPOCHS: 3,
+            "enable_gradient_checkpointing": True,
+        },
+    }
+
+    config[ADAPTER] = {TYPE: "lora"}
+
+    model = LudwigModel(config)
+    assert model.config_obj.trainer.enable_gradient_checkpointing
+
+    model.train(dataset=df, output_directory=str(tmpdir), skip_save_processed_input=False)
+
+    with open(
+        os.path.join(str(tmpdir), "api_experiment_run", "model", "training_progress.json"), encoding="utf-8"
+    ) as f:
+        progress_tracker = json.load(f)
+
+    assert progress_tracker["cumulative_step_token_usage"]["11"] == progress_tracker["total_tokens_used"] == 612
+    assert progress_tracker["checkpoint_to_epoch"] == {"1": 1, "2": 1, "3": 2, "4": 2, "5": 3, "6": 3}
+    assert progress_tracker["checkpoint_to_step"] == {"1": 4, "2": 4, "3": 8, "4": 8, "5": 12, "6": 12}
+    assert progress_tracker["cumulative_checkpoint_token_usage"] == {
+        "1": 204,
+        "2": 204,
+        "3": 408,
+        "4": 408,
+        "5": 612,
+        "6": 612,
+    }
+    assert progress_tracker["incremental_checkpoint_token_usage"] == {
+        "1": 204,
+        "2": 0,
+        "3": 204,
+        "4": 0,
+        "5": 204,
+        "6": 0,
+    }

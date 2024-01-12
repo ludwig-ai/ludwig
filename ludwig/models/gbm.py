@@ -7,7 +7,8 @@ import numpy as np
 import torch
 from hummingbird.ml import convert
 
-from ludwig.constants import BINARY, LOGITS, MODEL_GBM, NUMBER
+from ludwig.accounting.used_tokens import get_used_tokens_for_gbm
+from ludwig.constants import BINARY, LOGITS, MODEL_GBM, NUMBER, USED_TOKENS
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
@@ -177,6 +178,8 @@ class GBM(BaseModel):
 
         output_feature_utils.set_output_feature_tensor(output_logits, output_feature_name, LOGITS, logits)
 
+        # 1 token for each input feature + 1 token for the output feature.
+        output_logits[USED_TOKENS] = get_used_tokens_for_gbm(inputs)
         return output_logits
 
     def save(self, save_path):

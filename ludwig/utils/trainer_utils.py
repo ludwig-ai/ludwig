@@ -77,6 +77,14 @@ def get_new_progress_tracker(
         best_eval_train_metrics={},
         best_eval_validation_metrics={},
         best_eval_test_metrics={},
+        llm_eval_examples={},
+        checkpoint_to_step={},
+        checkpoint_to_epoch={},
+        incremental_step_token_usage={},
+        cumulative_step_token_usage={},
+        incremental_checkpoint_token_usage={},
+        cumulative_checkpoint_token_usage={},
+        total_tokens_used=0,
     )
 
 
@@ -110,14 +118,33 @@ class ProgressTracker:
         best_eval_validation_metrics: Dict[str, Dict[str, float]],
         best_eval_test_metrics: Dict[str, Dict[str, float]],
         llm_eval_examples: Dict[str, List[str]] = None,
+        checkpoint_to_step: Dict[str, int] = None,
+        checkpoint_to_epoch: Dict[str, int] = None,
+        incremental_step_token_usage: Dict[str, int] = None,
+        cumulative_step_token_usage: Dict[str, int] = None,
+        incremental_checkpoint_token_usage: Dict[str, int] = None,
+        cumulative_checkpoint_token_usage: Dict[str, int] = None,
+        total_tokens_used: int = 0,
     ):
         """JSON-serializable holder object that stores information related to training progress.
 
         [train/vali/test]_metrics is a nested dictionary of TrainerMetrics: feature_name -> metric_name ->
         List[TrainerMetrics], with one entry per training checkpoint.
 
-        Note that when a model resumes training from a checkpoint, the progress tracker is deserialized from JSON, which
-        automatically converts TrainerMetrics namedtuples into regular (epoch, steps, value) tuples.
+        When the model is saved, all of the progress tracker's attributes are serialized to JSON as
+        `training_progress.json` under the model output directory.
+
+        JSON serialization automatically converts all dictionary top-level keys to strings, and the string typing
+        is preserved when the progress tracker is deserialized from JSON when model resumes training from a checkpoint.
+
+        For this reason, all of the dictionary attributes of the progress tracker are keyed by strings to ensure a
+        consistent interface before or after deserialization. For example, the `tokens` dictionaries are keyed by steps,
+        as strings.
+
+        When the progress tracker is deserialized from JSON like when a model resumes training from a checkpoint, the
+        TrainerMetrics namedtuples are automatically converted into regular (epoch, steps, value) tuples, which is why
+        in trainer.py, we often use `[-1]` to index into the last element of the TrainerMetric namedtuple to get the
+        actual metric value instead of the named field.
 
         Args:
             epoch: The current epoch number.
@@ -157,6 +184,22 @@ class ProgressTracker:
                 Best eval validation metrics: <output feature name> -> <metric name> -> <metric value>.
             best_eval_test_metrics:
                 Best eval test metrics: <output feature name> -> <metric name> -> <metric value>.
+
+            llm_eval_examples:
+                Dictionary whose keys are "inputs", "targets", and "outputs" and whose values are dicts.
+                The keys of each subdict are the names of the input/target/output features and the values are lists of
+                example tensors. This is only set for LLM fine-tuning.
+
+            checkpoint_to_step: Map of checkpoint number to step number.
+            checkpoint_to_epoch: Map of checkpoint number to epoch number.
+
+            incremental_step_token_usage: Map of step number to number of tokens used in that step.
+            cumulative_step_token_usage: Map of step number to cumulative number of tokens used up to that step.
+            incremental_checkpoint_token_usage: Map of checkpoint number to number of tokens used up to that checkpoint
+                since the last checkpoint.
+            cumulative_checkpoint_token_usage: Map of checkpoint number to cumulative number of tokens used up to that
+                checkpoint.
+            total_tokens_used: Total number of tokens used.
         """
         self.batch_size = batch_size
         self.epoch = epoch
@@ -191,7 +234,20 @@ class ProgressTracker:
         self.best_eval_validation_metrics = best_eval_validation_metrics
         self.best_eval_test_metrics = best_eval_test_metrics
 
+        # Checkpoint tracking.
+        self.checkpoint_to_step = checkpoint_to_step
+        self.checkpoint_to_epoch = checkpoint_to_epoch
+
+        # Token usage.
+        self.incremental_step_token_usage = incremental_step_token_usage
+        self.cumulative_step_token_usage = cumulative_step_token_usage
+        self.incremental_checkpoint_token_usage = incremental_checkpoint_token_usage
+        self.cumulative_checkpoint_token_usage = cumulative_checkpoint_token_usage
+        self.total_tokens_used = total_tokens_used
+
     def save(self, filepath):
+        # sort_keys=False to ensure that token usage dictionaries (keyed by integers) are encodable.
+        # save_json(filepath, self.__dict__, sort_keys=False)
         save_json(filepath, self.__dict__)
 
     @staticmethod
@@ -216,6 +272,7 @@ class ProgressTracker:
             "best_valid_metric": self.best_eval_metric_value,
             "num_reductions_lr": self.num_reductions_learning_rate,
             "num_increases_bs": self.num_increases_batch_size,
+            "total_tokens_used": self.total_tokens_used,
         }
 
         # This is a non-numerical metric that is only for LLM fine-tuning
@@ -252,6 +309,47 @@ class ProgressTracker:
                 log_metrics[f"best.test_metrics.{feature_name}.{metric_name}"] = metric_value
 
         return log_metrics
+
+    def _add_checkpoint_entry_for_used_tokens(self, checkpoint_number: int):
+        """Adds an entry to the token usage dictionaries for the given checkpoint number.
+
+        Assumes that the token usage dictionaries for steps are filled.
+        """
+        self.cumulative_checkpoint_token_usage[str(checkpoint_number)] = self.total_tokens_used
+
+        if checkpoint_number <= 0:
+            raise ValueError("Checkpoint number should be greater than 0.")
+
+        if checkpoint_number == 1:
+            # The incremental token usage for checkpoint 0 is the same as the total tokens used so far.
+            self.incremental_checkpoint_token_usage[str(checkpoint_number)] = self.total_tokens_used
+        else:
+            # The incremental token usage for this checkpoint is the total tokens used minus the cumulative tokens used
+            # up to the previous checkpoint.
+            previous_checkpoint_number = checkpoint_number - 1
+
+            tokens_used_since_previous_checkpoint = (
+                self.total_tokens_used - self.cumulative_checkpoint_token_usage[str(previous_checkpoint_number)]
+            )
+            self.incremental_checkpoint_token_usage[str(checkpoint_number)] = tokens_used_since_previous_checkpoint
+
+    def increment_checkpoint(self):
+        """Update the progress tracker for a new checkpoint."""
+        self.checkpoint_number += 1
+
+        # Set checkpoint -> step/epoch lookup maps.
+        self.checkpoint_to_step[str(self.checkpoint_number)] = self.steps
+        self.checkpoint_to_epoch[str(self.checkpoint_number)] = self.epoch
+
+        # Set checkpoint -> used tokens lookup maps.
+        self._add_checkpoint_entry_for_used_tokens(self.checkpoint_number)
+
+    def set_token_usage_for_this_step(self, used_tokens: int):
+        """Update the token usage for the current step."""
+        steps_str = str(self.steps)
+        self.incremental_step_token_usage[steps_str] = used_tokens
+        self.total_tokens_used += used_tokens
+        self.cumulative_step_token_usage[steps_str] = self.total_tokens_used
 
 
 @DeveloperAPI

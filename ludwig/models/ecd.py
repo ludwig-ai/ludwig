@@ -5,8 +5,9 @@ from typing import Dict, Tuple, Union
 import numpy as np
 import torch
 
+from ludwig.accounting.used_tokens import get_used_tokens_for_ecd
 from ludwig.combiners.combiners import create_combiner
-from ludwig.constants import MODEL_ECD, MODEL_LLM
+from ludwig.constants import MODEL_ECD, MODEL_LLM, USED_TOKENS
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
 from ludwig.schema.model_types.ecd import ECDModelConfig
@@ -146,7 +147,11 @@ class ECD(BaseModel):
 
         encoder_outputs = self.encode(inputs)
         combiner_outputs = self.combine(encoder_outputs)
-        return self.decode(combiner_outputs, targets, mask)
+        decoder_outputs = self.decode(combiner_outputs, targets, mask)
+
+        # Compute the number of used tokens.
+        decoder_outputs[USED_TOKENS] = get_used_tokens_for_ecd(inputs, targets)
+        return decoder_outputs
 
     def unskip(self):
         for k in self.input_features.keys():
