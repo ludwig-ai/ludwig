@@ -28,6 +28,7 @@ import time
 from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
+import packaging
 import pandas as pd
 import psutil
 import torch
@@ -87,6 +88,9 @@ from ludwig.utils.trainer_utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+_TORCH210 = packaging.version.parse(torch.__version__) >= packaging.version.parse("2.1.0")
 
 
 @register_trainer(MODEL_ECD, default=True)
@@ -252,7 +256,11 @@ class Trainer(BaseTrainer):
             ):
                 logger.warning("Gradient checkpointing is not supported by this model. Skipping...")
             elif hasattr(self.compiled_model.model, "gradient_checkpointing_enable"):
-                self.compiled_model.model.gradient_checkpointing_enable()
+                if _TORCH210:
+                    # https://pytorch.org/docs/stable/checkpoint.html
+                    self.compiled_model.model.gradient_checkpointing_enable(use_reentrant=False)
+                else:
+                    self.compiled_model.model.gradient_checkpointing_enable()
                 self.compiled_model.model.enable_input_require_grads()
                 logger.info("Gradient checkpointing enabled for training.")
             else:
