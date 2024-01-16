@@ -258,6 +258,7 @@ class Trainer(BaseTrainer):
             elif hasattr(self.compiled_model.model, "gradient_checkpointing_enable"):
                 if _TORCH210:
                     # https://pytorch.org/docs/stable/checkpoint.html
+                    # https://github.com/huggingface/transformers/blob/02f8738ef8c674300c314d004ba436cb5aaca165/src/transformers/modeling_utils.py#L2094 # noqa: E501
                     self.compiled_model.model.gradient_checkpointing_enable(
                         gradient_checkpointing_kwargs={"use_reentrant": False}
                     )
