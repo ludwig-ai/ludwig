@@ -258,7 +258,9 @@ class Trainer(BaseTrainer):
             elif hasattr(self.compiled_model.model, "gradient_checkpointing_enable"):
                 if _TORCH210:
                     # https://pytorch.org/docs/stable/checkpoint.html
-                    self.compiled_model.model.gradient_checkpointing_enable(use_reentrant=False)
+                    self.compiled_model.model.gradient_checkpointing_enable(
+                        gradient_checkpointing_kwargs={"use_reentrant": False}
+                    )
                 else:
                     self.compiled_model.model.gradient_checkpointing_enable()
                 self.compiled_model.model.enable_input_require_grads()
