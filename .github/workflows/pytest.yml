@@ -126,7 +126,8 @@ jobs:
 
           if [ "$PYTORCH" == "nightly" ]; then
             extra_index_url=https://download.pytorch.org/whl/nightly/cpu
-            pip install --pre torch torchdata torchtext torchvision torchaudio --index-url $extra_index_url
+            # This is being tracked as the Issue "https://github.com/ludwig-ai/ludwig/issues/3886" in Ludwig GitHub repository.
+            pip install --pre torch==2.3.0.dev20240111+cpu torchtext torchvision torchaudio --extra-index-url $extra_index_url
 
           else
             extra_index_url=https://download.pytorch.org/whl/cpu
