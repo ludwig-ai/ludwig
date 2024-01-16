@@ -263,6 +263,8 @@ class Trainer(BaseTrainer):
                     )
                 else:
                     self.compiled_model.model.gradient_checkpointing_enable()
+                # `use_cache=True` is incompatible with gradient checkpointing.
+                self.compiled_model.model.config.use_cache = False
                 self.compiled_model.model.enable_input_require_grads()
                 logger.info("Gradient checkpointing enabled for training.")
             else:
