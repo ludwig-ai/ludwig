@@ -9,16 +9,21 @@ on:
   workflow_dispatch:
 
 jobs:
-  pypi-publish:
-    name: upload release to PyPI
+  upload:
     runs-on: ubuntu-latest
-    # Specifying a GitHub environment is optional, but strongly encouraged
-    environment: release
-    permissions:
-      # IMPORTANT: this permission is mandatory for trusted publishing
-      id-token: write
     steps:
-      # retrieve your distributions here
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: "recursive"
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Build and upload to PyPI
+        run: |
+          python setup.py sdist
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
