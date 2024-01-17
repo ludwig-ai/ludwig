@@ -19,6 +19,10 @@ jobs:
       id-token: write
     steps:
       # retrieve your distributions here
+      - name: Build and upload to PyPI
+        run: |
+          python setup.py sdist
+          python -m twine upload dist/*
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
