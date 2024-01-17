@@ -9,9 +9,16 @@ on:
   workflow_dispatch:
 
 jobs:
-  upload:
+  pypi-publish:
+    name: upload release to PyPI
     runs-on: ubuntu-latest
+    # Specifying a GitHub environment is optional, but strongly encouraged
+    environment: release
+    permissions:
+      # IMPORTANT: this permission is mandatory for trusted publishing
+      id-token: write
     steps:
+      # retrieve your distributions here
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -21,15 +28,9 @@ jobs:
         with:
           python-version: 3.8
 
-      - name: Install Twine
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install setuptools wheel twine
-
       - name: Build and upload to PyPI
         run: |
           python setup.py sdist
-          python -m twine upload dist/*
-        env:
-          TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
