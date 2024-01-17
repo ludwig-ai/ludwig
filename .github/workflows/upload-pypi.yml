@@ -9,9 +9,16 @@ on:
   workflow_dispatch:
 
 jobs:
-  upload:
+  pypi-publish:
+    name: upload release to PyPI
     runs-on: ubuntu-latest
+    # Specifying a GitHub environment is optional, but strongly encouraged
+    environment: release
+    permissions:
+      # IMPORTANT: this permission is mandatory for trusted publishing
+      id-token: write
     steps:
+      # retrieve your distributions here
       - name: Checkout
         uses: actions/checkout@v2
         with:
