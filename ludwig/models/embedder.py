@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -73,7 +73,7 @@ def create_embed_batch_size_evaluator(
             self.embedder = embedder.to(self.device)
             self.embedder.eval()
 
-        def step(self, batch_size: int):
+        def step(self, batch_size: int, global_max_sequence_length: Optional[int] = None):
             inputs = {
                 input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(self.device)
                 for input_feature_name, input_feature in self.embedder.input_features.items()
