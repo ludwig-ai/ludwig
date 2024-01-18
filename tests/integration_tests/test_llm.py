@@ -1254,6 +1254,38 @@ def test_llm_encoding(llm_encoder_config, adapter, quantization, tmpdir):
     model = LudwigModel(config)
     model.train(dataset=dataset_path, output_directory=str(tmpdir))
 
+def test_llm_batch_size_tuning():
+    dataset = pd.DataFrame({"instruction": ["a"] * 10, "output": ["a"] * 10})
+    config = yaml.safe_load(
+        """
+    model_type: llm
+    input_features:
+        - name: instruction
+          type: text
+    output_features:
+        - name: output
+          type: text
+    prompt:
+        template: >-
+            {instruction}
+    adapter:
+        type: lora
+    trainer:
+        type: finetune
+        optimizer:
+            type: adam
+        train_steps: 1
+        learning_rate: 0.0002
+        eval_batch_size: 2
+    backend:
+        type: local
+    base_model: HuggingFaceH4/tiny-random-LlamaForCausalLM
+        """
+    )
+    model = LudwigModel(config=config)
+    model.train(dataset=dataset)
+    assert model.config_obj.trainer.batch_size > 1
+
 
 @pytest.mark.llm
 def test_llm_used_tokens(tmpdir):
@@ -1310,6 +1342,8 @@ def test_llm_used_tokens(tmpdir):
         "5": 204,
         "6": 0,
     }
+
+
 def test_llm_batch_size_tuning():
     dataset = pd.DataFrame({"instruction": ["a"]*10, "output": ["a"]*10})
     config = yaml.safe_load(
