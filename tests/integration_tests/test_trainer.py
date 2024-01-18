@@ -417,4 +417,3 @@ def test_enable_gradient_checkpointing(tmpdir, caplog):
     # Check that the warning is emitted when the model does not support gradient checkpointing
     # but does not prevent training from starting.
     assert "Gradient checkpointing is currently only supported for model_type: llm. Skipping..." in caplog.text
-    
