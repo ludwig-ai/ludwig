@@ -845,11 +845,16 @@ class HFTokenizer(BaseTokenizer):
     def _set_pad_token(self) -> None:
         """Sets the pad token and pad token ID for the tokenizer."""
 
+        # CodeGenTokenizer Used by Phi-2
+        # GPTNeoXTokenizerFast Used by Pythia
         from transformers import (
+            CodeGenTokenizer,
+            CodeGenTokenizerFast,
             CodeLlamaTokenizer,
             CodeLlamaTokenizerFast,
             GPT2Tokenizer,
             GPT2TokenizerFast,
+            GPTNeoXTokenizerFast,
             LlamaTokenizer,
             LlamaTokenizerFast,
         )
@@ -865,12 +870,15 @@ class HFTokenizer(BaseTokenizer):
         if any(
             isinstance(self.tokenizer, t)
             for t in [
-                GPT2Tokenizer,
-                GPT2TokenizerFast,
-                LlamaTokenizer,
-                LlamaTokenizerFast,
+                CodeGenTokenizer,
+                CodeGenTokenizerFast,
                 CodeLlamaTokenizer,
                 CodeLlamaTokenizerFast,
+                GPT2Tokenizer,
+                GPT2TokenizerFast,
+                GPTNeoXTokenizerFast,
+                LlamaTokenizer,
+                LlamaTokenizerFast,
             ]
         ):
             if hasattr(self.tokenizer, "eos_token") and self.tokenizer.eos_token is not None:
