@@ -1,5 +1,6 @@
 import logging
 import os
+import yaml
 import shutil
 from unittest import mock
 
@@ -22,6 +23,7 @@ from ludwig.constants import (
     TRAINER,
 )
 from ludwig.distributed import init_dist_strategy
+from ludwig.trainers.trainer_llm import FineTuneTrainer, FineTuneTrainerConfig
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -417,3 +419,57 @@ def test_enable_gradient_checkpointing(tmpdir, caplog):
     # Check that the warning is emitted when the model does not support gradient checkpointing
     # but does not prevent training from starting.
     assert "Gradient checkpointing is currently only supported for model_type: llm. Skipping..." in caplog.text
+
+def test_llm_batch_size_tuning():
+    config = yaml.safe_load(
+        '''
+    model_type: llm
+    input_features:
+        - name: instruction
+          type: text
+    output_features:
+        - name: output
+          type: text
+    prompt:
+        template: >-
+            Below is an instruction that describes a task, paired with an input that
+            provides further context. Write a response that appropriately completes the
+            request.
+
+            ### Instruction: {instruction}
+
+            ### Input: {input}
+
+            ### Response:
+    preprocessing:
+        split:
+            type: random
+            probabilities:
+            - 0.95
+            - 0
+            - 0.05
+        global_max_sequence_length: 512
+    adapter:
+        type: lora
+    trainer:
+        type: finetune
+        optimizer:
+            type: adam
+        epochs: 1
+        #batch_size: 1
+        learning_rate: 0.0002
+        eval_batch_size: 2
+        learning_rate_scheduler:
+            decay: cosine
+            warmup_fraction: 0.03
+        gradient_accumulation_steps: 16
+    backend:
+        type: local
+    base_model: HuggingFaceH4/tiny-random-LlamaForCausalLM
+    ludwig_version: 0.9.dev
+        ''')
+    model = LudwigModel(config=config)
+    model = LudwigModel.create_model(model.config_obj)
+    trainer = FineTuneTrainer(model.config_obj.trainer, model)
+    evaluator = trainer._create_batch_size_evaluator()
+    print(evaluator.input_feature_name) #TEST IS NOT DONE YET
