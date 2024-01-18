@@ -843,30 +843,43 @@ class HFTokenizer(BaseTokenizer):
         return self.tokenizer.unk_token
 
     def _set_pad_token(self) -> None:
-        """Sets the pad token and pad token ID for the tokenizer.
+        """Sets the pad token and pad token ID for the tokenizer."""
 
-        If there is no pad token, then set one by default.
-        If there is no pad token index, then set it to 0.
+        from transformers import (
+            CodeLlamaTokenizer,
+            CodeLlamaTokenizerFast,
+            GPT2Tokenizer,
+            GPT2TokenizerFast,
+            LlamaTokenizer,
+            LlamaTokenizerFast,
+        )
 
-        Notes:
-        - (geoffrey): gpt2 has no pad token. Recommendation is to use eos token instead.
-            - https://github.com/huggingface/transformers/issues/2630#issuecomment-1290809338
-            - https://github.com/huggingface/transformers/issues/2648#issuecomment-616177044
-        - (Justin): Using the EOS token in place of the pad token causes an issue with HF model.generate() when
-            there are multiple examples in the batch.
-            - https://github.com/facebookresearch/llama/issues/380#issuecomment-1716832417
-            - Recommendation is to set a separate '[PAD]' or '<pad>' token.
-        """
-        if self.tokenizer.pad_token is None:
-            logger.warning("No padding token found. Using '[PAD]' as the pad token.")
-            self.tokenizer.pad_token = "[PAD]"
+        # Tokenizers might have the pad token id attribute since they tend to use the same base class, but
+        # it can be set to None so we check for this explicitly.
+        if hasattr(self.tokenizer, "pad_token_id") and self.tokenizer.pad_token_id is not None:
+            return
 
-        # NOTE(geoffrey): you can check this condition separately because these are actually @property methods,
-        # which means one's logic is tightly coupled with the other. If one changes, the other will change as well.
-        # On a related note, that means that this below condition should never be called, but leaving it here in case
-        # it was put here for a reason.
-        # https://github.com/huggingface/transformers/blob/4ab5fb8941a38d172b3883c152c34ae2a0b83a68/src/transformers/tokenization_utils_base.py#L1204-L1210
-        # https://github.com/huggingface/transformers/blob/4ab5fb8941a38d172b3883c152c34ae2a0b83a68/src/transformers/tokenization_utils_base.py#L1266-L1267
+        # HACK(geoffrey): gpt2 has no pad token. Recommendation is to use eos token instead.
+        # https://github.com/huggingface/transformers/issues/2630#issuecomment-1290809338
+        # https://github.com/huggingface/transformers/issues/2648#issuecomment-616177044
+        if any(
+            isinstance(self.tokenizer, t)
+            for t in [
+                GPT2Tokenizer,
+                GPT2TokenizerFast,
+                LlamaTokenizer,
+                LlamaTokenizerFast,
+                CodeLlamaTokenizer,
+                CodeLlamaTokenizerFast,
+            ]
+        ):
+            if hasattr(self.tokenizer, "eos_token") and self.tokenizer.eos_token is not None:
+                logger.warning("No padding token id found. Using eos_token as pad_token.")
+                self.tokenizer.pad_token = self.tokenizer.eos_token
+                self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
+
+        # Incase any HF tokenizer does not have pad token ID, just default to using 0
+        # as the pad_token_id.
         if self.tokenizer.pad_token_id is None:
             logger.warning("No padding token id found. Using 0 as pad token id.")
             self.tokenizer.pad_token_id = 0
