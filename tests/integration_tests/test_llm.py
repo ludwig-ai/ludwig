@@ -1209,12 +1209,22 @@ def llm_encoder_config() -> dict[str, Any]:
 
 @pytest.mark.parametrize(
     "adapter,quantization",
-    [(None, None), ("lora", None), ("lora", {"bits": 4}), ("lora", {"bits": 8})],
-    ids=["FFT", "LoRA", "LoRA 4-bit", "LoRA 8-bit"],
+    [
+        (None, None),
+        ("lora", None),
+        ("lora", {"bits": 4}),
+        ("lora", {"bits": 8}),
+        ("adalora", None),
+        ("adalora", {"bits": 4}),
+        ("adalora", {"bits": 8}),
+    ],
+    ids=["FFT", "LoRA", "LoRA 4-bit", "LoRA 8-bit", "AdaLoRA", "AdaLoRA 4-bit", "AdaLoRA 8-bit"],
 )
 def test_llm_encoding(llm_encoder_config, adapter, quantization, tmpdir):
     if (
-        _finetune_strategy_requires_cuda(finetune_strategy_name=adapter, quantization_args=quantization)
+        _finetune_strategy_requires_cuda(
+            finetune_strategy_name="lora" if adapter else None, quantization_args=quantization
+        )
         and not (torch.cuda.is_available() and torch.cuda.device_count()) > 0
     ):
         pytest.skip("Skip: quantization requires GPU and none are available.")
