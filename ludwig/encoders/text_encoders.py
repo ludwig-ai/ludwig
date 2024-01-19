@@ -2387,7 +2387,11 @@ class TfIdfEncoder(Encoder):
 class LLMEncoder(Encoder):
     # Per-adapter type prefixes for parameter names in the state dict, taken from
     # https://github.com/huggingface/peft/blob/0f1e9091cc975eb5458cc163bf1843a34fb42b76/src/peft/utils/save_and_load.py#L173C9-L180
-    ADAPTER_PARAM_NAME_PREFIX = {"lora": "lora_", "adalora": "lora_"}
+    ADAPTER_PARAM_NAME_PREFIX = {
+        "adalora": "lora_",
+        "ia3": "ia3_",
+        "lora": "lora_",
+    }
 
     def __init__(self, encoder_config: LLMEncoderConfig = None, **kwargs):
         super().__init__()
