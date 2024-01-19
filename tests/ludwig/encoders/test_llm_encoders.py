@@ -88,6 +88,10 @@ class TestLLMEncoder:
         assert encoder.input_shape == torch.Size([encoder_config.max_sequence_length])
         assert encoder.output_shape == torch.Size([encoder_config.max_sequence_length, model_config.hidden_size])
 
+        # The final layer must not be trainable because it is not used
+        last_module = list(encoder.model.modules())[-1]
+        assert all(not p.requires_grad for p in last_module.parameters())
+
         # Test that max sequence length falls back to the context length when too large
         context_len = get_context_len(model_config)
         cl_config = copy.deepcopy(encoder_config)
@@ -104,6 +108,10 @@ class TestLLMEncoder:
         assert encoder.input_shape == torch.Size([context_len])
         assert encoder.output_shape == torch.Size([context_len, model_config.hidden_size])
 
+        # The final layer must not be trainable because it is not used
+        last_module = list(encoder.model.modules())[-1]
+        assert all(not p.requires_grad for p in last_module.parameters())
+
     @pytest.mark.parametrize("adapter", list(ADAPTER_CONFIG_MAP.keys()))
     def test_init_with_adapter(self, encoder_config: LLMEncoderConfig, adapter: str, model_config):
         from peft import PeftModel
@@ -119,6 +127,10 @@ class TestLLMEncoder:
         assert encoder.model_name == encoder_config.base_model
         assert encoder.input_shape == torch.Size([encoder_config.max_sequence_length])
         assert encoder.output_shape == torch.Size([encoder_config.max_sequence_length, model_config.hidden_size])
+
+        # The final layer must not be trainable because it is not used
+        last_module = list(encoder.model.modules())[-1]
+        assert all(not p.requires_grad for p in last_module.parameters())
 
     @pytest.mark.parametrize("adapter", list(ADAPTER_CONFIG_MAP.keys()))
     def test_prepare_for_training(self, encoder_config: LLMEncoderConfig, adapter: str):
