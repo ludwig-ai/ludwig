@@ -81,9 +81,9 @@ def BaseModelDataclassField():
                 return model_name
             if model_name in _PHI_BASE_MODEL_MAPPING:
                 logger.warning(
-                    f"{model_name} does not work correctly out of the box since it requires running remote code. "
-                    f"Replacing {model_name} with {_PHI_BASE_MODEL_MAPPING[model_name]} as the base LLM model since "
-                    "this is the official version of the model supported by HuggingFace."
+                    f"{model_name} does not work correctly out of the box since it is incompatible with newer "
+                    f" versions of the transformers library. "
+                    f"Replacing {model_name} with {_PHI_BASE_MODEL_MAPPING[model_name]} as the base LLM model."
                 )
                 return _PHI_BASE_MODEL_MAPPING[model_name]
             try:
