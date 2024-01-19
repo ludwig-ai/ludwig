@@ -7,13 +7,14 @@ from transformers import AutoConfig, PreTrainedModel
 
 from ludwig.encoders.text_encoders import LLMEncoder
 from ludwig.schema.encoders.text_encoders import LLMEncoderConfig
-from ludwig.schema.llms.peft import AdaloraConfig, BaseAdapterConfig, LoraConfig
+from ludwig.schema.llms.peft import AdaloraConfig, BaseAdapterConfig, IA3Config, LoraConfig
 from ludwig.utils.llm_utils import get_context_len
 
 # Mapping of adapter types to test against and their respective config objects.
 ADAPTER_CONFIG_MAP = {
-    "lora": LoraConfig,
     "adalora": AdaloraConfig,
+    "ia3": IA3Config,
+    "lora": LoraConfig,
 }
 
 
