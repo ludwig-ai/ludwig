@@ -186,7 +186,7 @@ def create_semantic_retrieval_model_evaluator(
             self.model = model.to(get_torch_device())
             self.samples = samples
 
-        def step(self, batch_size: int):
+        def step(self, batch_size: int, global_max_sequence_length: Optional[int] = None):
             self.model.encode(self.samples[:batch_size], batch_size=batch_size, show_progress_bar=False)
 
     return _RetrievalModelEvaluator
