@@ -105,6 +105,14 @@ def test_ludwig_feature_dict_setdefault(feature_dict: feature_utils.LudwigFeatur
     assert feature_dict.get("other_key") is None
 
 
+@pytest.mark.parametrize("name", ["to", "type", "foo", "foo.bar"])
+def test_name_to_module_dict_key(name: str):
+    key = feature_utils.get_module_dict_key_from_name(name)
+    assert key != name
+    assert "." not in key
+    assert feature_utils.get_name_from_module_dict_key(key) == name
+
+
 def test_ludwig_feature_dict():
     feature_dict = feature_utils.LudwigFeatureDict()
 
