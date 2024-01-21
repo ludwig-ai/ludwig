@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import re
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, Iterator, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -174,33 +174,25 @@ class LudwigFeatureDict(torch.nn.Module):
     def __init__(self):
         super().__init__()
         self.module_dict = torch.nn.ModuleDict()
-        self.internal_key_to_original_name_map = {}
 
     def get(self, key) -> torch.nn.Module:
         return self.module_dict[get_module_dict_key_from_name(key)]
 
     def set(self, key: str, module: torch.nn.Module) -> None:
         module_dict_key_name = get_module_dict_key_from_name(key)
-        self.internal_key_to_original_name_map[module_dict_key_name] = key
         self.module_dict[module_dict_key_name] = module
 
     def __len__(self) -> int:
         return len(self.module_dict)
 
-    def __next__(self) -> None:
-        return next(iter(self))
-
-    def __iter__(self) -> None:
+    def __iter__(self) -> Iterator[str]:
         return iter(self.keys())
 
     def keys(self) -> List[str]:
-        return [
-            get_name_from_module_dict_key(feature_name)
-            for feature_name in self.internal_key_to_original_name_map.keys()
-        ]
+        return [get_name_from_module_dict_key(feature_name) for feature_name in self.module_dict.keys()]
 
     def values(self) -> List[torch.nn.Module]:
-        return [module for _, module in self.module_dict.items()]
+        return list(self.module_dict.values())
 
     def items(self) -> List[Tuple[str, torch.nn.Module]]:
         return [
