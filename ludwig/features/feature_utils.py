@@ -14,7 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 import re
-from typing import Dict, Iterator, List, Optional, Tuple, Union
+from collections.abc import MutableMapping
+from typing import Iterator, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -157,7 +158,7 @@ def get_name_from_module_dict_key(key: str, feature_name_suffix_length: int = FE
     return name[:-feature_name_suffix_length]
 
 
-class LudwigFeatureDict(torch.nn.Module):
+class LudwigFeatureDict(torch.nn.Module, MutableMapping):
     """Torch ModuleDict wrapper that permits keys with any name.
 
     Torch's ModuleDict implementation doesn't allow certain keys to be used if they conflict with existing class
@@ -175,30 +176,30 @@ class LudwigFeatureDict(torch.nn.Module):
         super().__init__()
         self.module_dict = torch.nn.ModuleDict()
 
-    def get(self, key) -> torch.nn.Module:
+    def __getitem__(self, key: str) -> torch.nn.Module:
         return self.module_dict[get_module_dict_key_from_name(key)]
 
-    def set(self, key: str, module: torch.nn.Module) -> None:
+    def __setitem__(self, key: str, value: torch.nn.Module) -> None:
         module_dict_key_name = get_module_dict_key_from_name(key)
-        self.module_dict[module_dict_key_name] = module
+        self.module_dict[module_dict_key_name] = value
+
+    def __delitem__(self, key: str) -> None:
+        del self.module_dict[get_module_dict_key_from_name(key)]
+
+    def __iter__(self) -> Iterator[str]:
+        return (get_name_from_module_dict_key(key) for key in self.module_dict)
 
     def __len__(self) -> int:
         return len(self.module_dict)
 
-    def __iter__(self) -> Iterator[str]:
-        return iter(self.keys())
+    def set(self, key: str, value: torch.nn.Module) -> None:
+        self[key] = value
 
-    def keys(self) -> List[str]:
-        return [get_name_from_module_dict_key(feature_name) for feature_name in self.module_dict.keys()]
+    def key_list(self) -> List[str]:
+        return list(self.keys())
 
-    def values(self) -> List[torch.nn.Module]:
-        return list(self.module_dict.values())
+    def value_list(self) -> List[torch.nn.Module]:
+        return list(self.values())
 
-    def items(self) -> List[Tuple[str, torch.nn.Module]]:
-        return [
-            (get_name_from_module_dict_key(feature_name), module) for feature_name, module in self.module_dict.items()
-        ]
-
-    def update(self, modules: Dict[str, torch.nn.Module]) -> None:
-        for feature_name, module in modules.items():
-            self.set(feature_name, module)
+    def item_list(self) -> List[Tuple[str, torch.nn.Module]]:
+        return list(self.items())

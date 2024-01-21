@@ -65,13 +65,13 @@ class DictWrapper:
         return iter(self.obj.keys())
 
     def keys(self) -> List[str]:
-        return self.obj.keys()
+        return self.obj.key_list()
 
     def values(self) -> List[torch.nn.Module]:
-        return self.obj.values()
+        return self.obj.value_list()
 
     def items(self) -> List[Tuple[str, torch.nn.Module]]:
-        return self.obj.items()
+        return self.obj.item_list()
 
     def update(self, modules: Dict[str, torch.nn.Module]) -> None:
         self.obj.update(modules)
@@ -148,7 +148,8 @@ class LLM(BaseModel):
         )
 
         # Extract the decoder object for the forward pass
-        self._output_feature_decoder = ModuleWrapper(self.output_features.items()[0][1])
+        decoder = next(iter(self.output_features.values()))
+        self._output_feature_decoder = ModuleWrapper(decoder)
 
         self.attention_masks = None
 
@@ -401,7 +402,7 @@ class LLM(BaseModel):
         else:
             targets = None
 
-        assert list(inputs.keys()) == self.input_features.keys()
+        assert list(inputs.keys()) == list(self.input_features.keys())
 
         input_ids = self.get_input_ids(inputs)
         target_ids = self.get_target_ids(targets) if targets else None

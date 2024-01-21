@@ -143,7 +143,7 @@ class ECD(BaseModel):
         else:
             targets = None
 
-        assert list(inputs.keys()) == self.input_features.keys()
+        assert list(inputs.keys()) == list(self.input_features.keys())
 
         encoder_outputs = self.encode(inputs)
         combiner_outputs = self.combine(encoder_outputs)

@@ -19,31 +19,35 @@ def type_module() -> torch.nn.Module:
 def feature_dict(to_module: torch.nn.Module, type_module: torch.nn.Module) -> feature_utils.LudwigFeatureDict:
     fdict = feature_utils.LudwigFeatureDict()
     fdict.set("to", to_module)
-    fdict.set("type", type_module)
+    fdict["type"] = type_module
     return fdict
 
 
 def test_ludwig_feature_dict_get(
     feature_dict: feature_utils.LudwigFeatureDict, to_module: torch.nn.Module, type_module: torch.nn.Module
 ):
-    assert feature_dict.get("to") == to_module
+    assert feature_dict["to"] == to_module
     assert feature_dict.get("type") == type_module
+    assert feature_dict.get("other_key", default=None) is None
 
 
 def test_ludwig_feature_dict_keys(feature_dict: feature_utils.LudwigFeatureDict):
-    assert feature_dict.keys() == ["to", "type"]
+    assert list(feature_dict.keys()) == ["to", "type"]
+    assert feature_dict.key_list() == ["to", "type"]
 
 
 def test_ludwig_feature_dict_values(
     feature_dict: feature_utils.LudwigFeatureDict, to_module: torch.nn.Module, type_module: torch.nn.Module
 ):
     assert list(feature_dict.values()) == [to_module, type_module]
+    assert feature_dict.value_list() == [to_module, type_module]
 
 
 def test_ludwig_feature_dict_items(
     feature_dict: feature_utils.LudwigFeatureDict, to_module: torch.nn.Module, type_module: torch.nn.Module
 ):
-    assert feature_dict.items() == [("to", to_module), ("type", type_module)]
+    assert list(feature_dict.items()) == [("to", to_module), ("type", type_module)]
+    assert feature_dict.item_list() == [("to", to_module), ("type", type_module)]
 
 
 def test_ludwig_feature_dict_iter(feature_dict: feature_utils.LudwigFeatureDict):
@@ -55,6 +59,17 @@ def test_ludwig_feature_dict_len(feature_dict: feature_utils.LudwigFeatureDict):
     assert len(feature_dict) == 2
 
 
+def test_ludwig_feature_dict_contains(feature_dict: feature_utils.LudwigFeatureDict):
+    assert "to" in feature_dict and "type" in feature_dict
+
+
+def test_ludwig_feature_dict_eq(feature_dict: feature_utils.LudwigFeatureDict):
+    other_dict = feature_utils.LudwigFeatureDict()
+    assert not feature_dict == other_dict
+    other_dict.update(feature_dict.item_list())
+    assert feature_dict == other_dict
+
+
 def test_ludwig_feature_dict_update(
     feature_dict: feature_utils.LudwigFeatureDict, to_module: torch.nn.Module, type_module: torch.nn.Module
 ):
@@ -62,6 +77,32 @@ def test_ludwig_feature_dict_update(
     assert len(feature_dict) == 3
     assert not feature_dict.get("to") == to_module
     assert feature_dict.get("type") == type_module
+
+
+def test_ludwig_feature_dict_del(feature_dict: feature_utils.LudwigFeatureDict):
+    del feature_dict["to"]
+    assert len(feature_dict) == 1
+
+
+def test_ludwig_feature_dict_clear(feature_dict: feature_utils.LudwigFeatureDict):
+    feature_dict.clear()
+    assert len(feature_dict) == 0
+
+
+def test_ludwig_feature_dict_pop(feature_dict: feature_utils.LudwigFeatureDict, type_module: torch.nn.Module):
+    assert feature_dict.pop("type") == type_module
+    assert len(feature_dict) == 1
+    assert feature_dict.pop("type", default=None) is None
+
+
+def test_ludwig_feature_dict_popitem(feature_dict: feature_utils.LudwigFeatureDict, to_module: torch.nn.Module):
+    assert feature_dict.popitem() == ("to", to_module)
+    assert len(feature_dict) == 1
+
+
+def test_ludwig_feature_dict_setdefault(feature_dict: feature_utils.LudwigFeatureDict, to_module: torch.nn.Module):
+    assert feature_dict.setdefault("to") == to_module
+    assert feature_dict.get("other_key") is None
 
 
 def test_ludwig_feature_dict():
@@ -76,8 +117,8 @@ def test_ludwig_feature_dict():
     assert iter(feature_dict) is not None
     # assert next(feature_dict) is not None
     assert len(feature_dict) == 2
-    assert feature_dict.keys() == ["to", "type"]
-    assert feature_dict.items() == [("to", to_module), ("type", type_module)]
+    assert feature_dict.key_list() == ["to", "type"]
+    assert feature_dict.item_list() == [("to", to_module), ("type", type_module)]
     assert feature_dict.get("to"), to_module
 
     feature_dict.update({"to_empty": torch.nn.Module()})
@@ -93,8 +134,8 @@ def test_ludwig_feature_dict_with_periods():
 
     feature_dict.set("to.", to_module)
 
-    assert feature_dict.keys() == ["to."]
-    assert feature_dict.items() == [("to.", to_module)]
+    assert feature_dict.key_list() == ["to."]
+    assert feature_dict.item_list() == [("to.", to_module)]
     assert feature_dict.get("to.") == to_module
 
 
