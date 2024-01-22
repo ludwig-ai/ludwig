@@ -10,7 +10,6 @@ from ludwig.constants import BASE_MODEL
 from ludwig.error import ConfigValidationError
 from ludwig.schema.metadata import LLM_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
-from ludwig.utils.llm_utils import _PHI_BASE_MODEL_MAPPING
 
 logger = logging.getLogger(__name__)
 
@@ -79,12 +78,6 @@ def BaseModelDataclassField():
                 return MODEL_PRESETS[model_name]
             if os.path.isdir(model_name):
                 return model_name
-            if model_name in _PHI_BASE_MODEL_MAPPING:
-                logger.warning(
-                    f"{model_name} is no longer officially supported with newer versions of transformers. "
-                    f"Replacing {model_name} with {_PHI_BASE_MODEL_MAPPING[model_name]} as the base LLM model."
-                )
-                return _PHI_BASE_MODEL_MAPPING[model_name]
             try:
                 AutoConfig.from_pretrained(model_name)
                 return model_name

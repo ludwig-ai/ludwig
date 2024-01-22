@@ -28,17 +28,11 @@ FALLBACK_CONTEXT_LEN = 2048
 
 transformers_436 = version.parse(transformers.__version__) >= version.parse("4.36.0")
 
-# Older versions of phi models supported by the official Transformers library in their 4.36.2 release
-# are no longer compatible with the latest version of Transformers. We need to map the old model names
-# to the new model names to ensure that the model is loaded correctly.
-_PHI_BASE_MODEL_MAPPING = {
-    "susnato/phi-1_dev": "microsoft/phi-1",
-    "susnato/phi-1_5_dev": "microsoft/phi-1_5",
-    "susnato/phi-2": "microsoft/phi-2",
-}
-
 # The susnato Phi models as of Transformers 4.36.2 don't support "device_map='auto'" at model load time.
 _MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION = {
+    "susnato/phi-1_dev",
+    "susnato/phi-1_5_dev",
+    "susnato/phi-2",
     "microsoft/phi-1",
     "microsoft/phi-1_5",
     "microsoft/phi-2",
