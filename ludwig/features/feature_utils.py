@@ -196,4 +196,5 @@ class LudwigFeatureDict(torch.nn.Module, MutableMapping):
         self[key] = value
 
     def __hash__(self) -> int:
+        """Static hash value, because the object is mutable, but needs to be hashable for pytorch."""
         return 1

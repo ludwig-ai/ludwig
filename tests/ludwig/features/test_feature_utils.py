@@ -7,11 +7,13 @@ from ludwig.features import feature_utils
 
 @pytest.fixture
 def to_module() -> torch.nn.Module:
+    """Dummy Module to test the LudwigFeatureDict."""
     return torch.nn.Module()
 
 
 @pytest.fixture
 def type_module() -> torch.nn.Module:
+    """Dummy Module to test the LudwigFeatureDict."""
     return torch.nn.Module()
 
 
