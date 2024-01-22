@@ -28,7 +28,7 @@ FALLBACK_CONTEXT_LEN = 2048
 
 transformers_436 = version.parse(transformers.__version__) >= version.parse("4.36.0")
 
-# The susnato Phi models as of Transformers 4.36.2 don't support "device_map='auto'" at model load time.
+# Phi models don't support "device_map='auto'" at model load time as of transformers 4.37.0.
 _MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION = {
     "susnato/phi-1_dev",
     "susnato/phi-1_5_dev",
