@@ -28,16 +28,15 @@ FALLBACK_CONTEXT_LEN = 2048
 
 transformers_436 = version.parse(transformers.__version__) >= version.parse("4.36.0")
 
-# The official microsoft phi models don't work out of the box because the weights aren't compatiable with HF
-# See https://github.com/huggingface/transformers/issues/28049 for more context.
-_PHI_BASE_MODEL_MAPPING = {
-    "microsoft/phi-1": "susnato/phi-1_dev",
-    "microsoft/phi-1.5": "susnato/phi-1_5_dev",
-    "microsoft/phi-2": "susnato/phi-2",
+# Phi models don't support "device_map='auto'" at model load time as of transformers 4.37.0.
+_MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION = {
+    "susnato/phi-1_dev",
+    "susnato/phi-1_5_dev",
+    "susnato/phi-2",
+    "microsoft/phi-1",
+    "microsoft/phi-1_5",
+    "microsoft/phi-2",
 }
-
-# The susnato Phi models as of Transformers 4.36.1 don't support "device_map='auto'" at model load time.
-_MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION = {"susnato/phi-1_dev", "susnato/phi-1_5_dev", "susnato/phi-2"}
 
 
 @default_retry(tries=8)
