@@ -81,8 +81,7 @@ def BaseModelDataclassField():
                 return model_name
             if model_name in _PHI_BASE_MODEL_MAPPING:
                 logger.warning(
-                    f"{model_name} does not work correctly out of the box since it is incompatible with newer "
-                    f" versions of the transformers library. "
+                    f"{model_name} is no longer officially supported with newer versions of transformers. "
                     f"Replacing {model_name} with {_PHI_BASE_MODEL_MAPPING[model_name]} as the base LLM model."
                 )
                 return _PHI_BASE_MODEL_MAPPING[model_name]
