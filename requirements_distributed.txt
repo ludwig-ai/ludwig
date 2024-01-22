@@ -9,7 +9,9 @@ GPUtil
 tblib
 awscli
 
-deepspeed!=0.11.0  # https://github.com/microsoft/DeepSpeed/issues/4473
+# https://github.com/microsoft/DeepSpeed/issues/4473
+# https://github.com/ludwig-ai/ludwig/issues/3905
+deepspeed!=0.11.0,<0.13.0
 
 # requirements for daft
 getdaft[ray]==0.1.20
