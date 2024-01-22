@@ -15,7 +15,7 @@
 # ==============================================================================
 import re
 from collections.abc import MutableMapping
-from typing import Iterator, List, Optional, Tuple, Union
+from typing import Iterator, List, Optional, Union
 
 import numpy as np
 import torch
@@ -194,15 +194,6 @@ class LudwigFeatureDict(torch.nn.Module, MutableMapping):
 
     def set(self, key: str, value: torch.nn.Module) -> None:
         self[key] = value
-
-    def key_list(self) -> List[str]:
-        return list(self.keys())
-
-    def value_list(self) -> List[torch.nn.Module]:
-        return list(self.values())
-
-    def item_list(self) -> List[Tuple[str, torch.nn.Module]]:
-        return list(self.items())
 
     def __hash__(self) -> int:
         return 1

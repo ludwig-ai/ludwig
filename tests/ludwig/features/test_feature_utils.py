@@ -33,21 +33,18 @@ def test_ludwig_feature_dict_get(
 
 def test_ludwig_feature_dict_keys(feature_dict: feature_utils.LudwigFeatureDict):
     assert list(feature_dict.keys()) == ["to", "type"]
-    assert feature_dict.key_list() == ["to", "type"]
 
 
 def test_ludwig_feature_dict_values(
     feature_dict: feature_utils.LudwigFeatureDict, to_module: torch.nn.Module, type_module: torch.nn.Module
 ):
     assert list(feature_dict.values()) == [to_module, type_module]
-    assert feature_dict.value_list() == [to_module, type_module]
 
 
 def test_ludwig_feature_dict_items(
     feature_dict: feature_utils.LudwigFeatureDict, to_module: torch.nn.Module, type_module: torch.nn.Module
 ):
     assert list(feature_dict.items()) == [("to", to_module), ("type", type_module)]
-    assert feature_dict.item_list() == [("to", to_module), ("type", type_module)]
 
 
 def test_ludwig_feature_dict_iter(feature_dict: feature_utils.LudwigFeatureDict):
@@ -66,7 +63,7 @@ def test_ludwig_feature_dict_contains(feature_dict: feature_utils.LudwigFeatureD
 def test_ludwig_feature_dict_eq(feature_dict: feature_utils.LudwigFeatureDict):
     other_dict = feature_utils.LudwigFeatureDict()
     assert not feature_dict == other_dict
-    other_dict.update(feature_dict.item_list())
+    other_dict.update(feature_dict.items())
     assert feature_dict == other_dict
 
 
@@ -125,8 +122,8 @@ def test_ludwig_feature_dict():
     assert iter(feature_dict) is not None
     # assert next(feature_dict) is not None
     assert len(feature_dict) == 2
-    assert feature_dict.key_list() == ["to", "type"]
-    assert feature_dict.item_list() == [("to", to_module), ("type", type_module)]
+    assert list(feature_dict.keys()) == ["to", "type"]
+    assert list(feature_dict.items()) == [("to", to_module), ("type", type_module)]
     assert feature_dict.get("to"), to_module
 
     feature_dict.update({"to_empty": torch.nn.Module()})
@@ -142,8 +139,8 @@ def test_ludwig_feature_dict_with_periods():
 
     feature_dict.set("to.", to_module)
 
-    assert feature_dict.key_list() == ["to."]
-    assert feature_dict.item_list() == [("to.", to_module)]
+    assert list(feature_dict.keys()) == ["to."]
+    assert list(feature_dict.items()) == [("to.", to_module)]
     assert feature_dict.get("to.") == to_module
 
 

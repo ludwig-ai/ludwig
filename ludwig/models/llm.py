@@ -65,13 +65,13 @@ class DictWrapper:
         return iter(self.obj.keys())
 
     def keys(self) -> List[str]:
-        return self.obj.key_list()
+        return list(self.obj.keys())
 
     def values(self) -> List[torch.nn.Module]:
-        return self.obj.value_list()
+        return list(self.obj.values())
 
     def items(self) -> List[Tuple[str, torch.nn.Module]]:
-        return self.obj.item_list()
+        return list(self.obj.items())
 
     def update(self, modules: Dict[str, torch.nn.Module]) -> None:
         self.obj.update(modules)
