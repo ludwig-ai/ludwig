@@ -1,7 +1,8 @@
 Cython>=0.25
 h5py>=2.6,!=3.0.0
 numpy>=1.15
-pandas>=1.0,!=1.1.5
+# GitHub Issue for Pinning Pandas < 2.2.0: https://github.com/ludwig-ai/ludwig/issues/3907
+pandas>=1.0,!=1.1.5,<2.2.0
 scipy>=0.18
 tabulate>=0.7
 scikit-learn
