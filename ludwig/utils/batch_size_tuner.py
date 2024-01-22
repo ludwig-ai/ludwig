@@ -12,6 +12,8 @@ from ludwig.constants import MAX_BATCH_SIZE_DATASET_FRACTION, MIN_POSSIBLE_BATCH
 
 logger = logging.getLogger(__name__)
 
+TOTAL_STEPS = 5
+
 
 @DeveloperAPI
 class BatchSizeEvaluator(ABC):
@@ -21,6 +23,7 @@ class BatchSizeEvaluator(ABC):
         max_batch_size: Optional[int] = None,
         max_trials: int = 20,
         is_coordinator: Optional[bool] = True,
+        global_max_sequence_length: Optional[int] = None,
     ) -> int:
         """Returns optimal batch size as measured by throughput (samples / sec)."""
         logger.info("Tuning batch size...")
@@ -51,7 +54,9 @@ class BatchSizeEvaluator(ABC):
             gc.collect()
 
             try:
-                samples_per_sec = self.evaluate(batch_size, total_steps=5)
+                samples_per_sec = self.evaluate(
+                    batch_size, total_steps=TOTAL_STEPS, global_max_sequence_length=global_max_sequence_length
+                )
                 if is_coordinator:
                     logger.info(f"Throughput at batch_size={batch_size}: {samples_per_sec:.5f} samples/s")
                 if samples_per_sec < best_samples_per_sec:
@@ -88,7 +93,9 @@ class BatchSizeEvaluator(ABC):
             logger.info(f"Selected batch_size={best_batch_size}")
         return best_batch_size
 
-    def evaluate(self, batch_size: int, total_steps: int = 5) -> float:
+    def evaluate(
+        self, batch_size: int, total_steps: int = 5, global_max_sequence_length: Optional[int] = None
+    ) -> float:
         """Evaluates throughput of the given batch size.
 
         Return:
@@ -98,7 +105,7 @@ class BatchSizeEvaluator(ABC):
         for _ in range(total_steps):
             self.reset()
             start_ts = time.time()
-            self.step(batch_size)
+            self.step(batch_size, global_max_sequence_length=global_max_sequence_length)
             durations.append(time.time() - start_ts)
 
         med_duration_s = statistics.median(durations)
@@ -111,6 +118,6 @@ class BatchSizeEvaluator(ABC):
         """Called at the beginning of each evaluation step."""
         pass
 
-    def step(self, batch_size: int):
+    def step(self, batch_size: int, global_max_sequence_length: Optional[int] = None):
         """Called each step to evaluate the given batch size."""
         raise NotImplementedError("`step` must be implemented by concrete evaluator.")
