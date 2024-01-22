@@ -12,6 +12,7 @@ from ludwig.constants import MAX_BATCH_SIZE_DATASET_FRACTION, MIN_POSSIBLE_BATCH
 
 logger = logging.getLogger(__name__)
 
+TOTAL_STEPS = 5
 
 @DeveloperAPI
 class BatchSizeEvaluator(ABC):
@@ -53,7 +54,7 @@ class BatchSizeEvaluator(ABC):
 
             try:
                 samples_per_sec = self.evaluate(
-                    batch_size, total_steps=5, global_max_sequence_length=global_max_sequence_length
+                    batch_size, total_steps=TOTAL_STEPS, global_max_sequence_length=global_max_sequence_length
                 )
                 if is_coordinator:
                     logger.info(f"Throughput at batch_size={batch_size}: {samples_per_sec:.5f} samples/s")
