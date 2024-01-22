@@ -1254,6 +1254,7 @@ def test_llm_encoding(llm_encoder_config, adapter, quantization, tmpdir):
     model = LudwigModel(config)
     model.train(dataset=dataset_path, output_directory=str(tmpdir))
 
+
 def test_llm_batch_size_tuning():
     dataset = pd.DataFrame({"instruction": ["a"] * 100, "output": ["a"] * 100})
     config = yaml.safe_load(

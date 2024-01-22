@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 TOTAL_STEPS = 5
 
+
 @DeveloperAPI
 class BatchSizeEvaluator(ABC):
     def select_best_batch_size(
