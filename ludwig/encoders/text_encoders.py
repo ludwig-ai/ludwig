@@ -2387,7 +2387,11 @@ class TfIdfEncoder(Encoder):
 class LLMEncoder(Encoder):
     # Per-adapter type prefixes for parameter names in the state dict, taken from
     # https://github.com/huggingface/peft/blob/0f1e9091cc975eb5458cc163bf1843a34fb42b76/src/peft/utils/save_and_load.py#L173C9-L180
-    ADAPTER_PARAM_NAME_PREFIX = {"lora": "lora_", "adalora": "lora_"}
+    ADAPTER_PARAM_NAME_PREFIX = {
+        "adalora": "lora_",
+        "ia3": "ia3_",
+        "lora": "lora_",
+    }
 
     def __init__(self, encoder_config: LLMEncoderConfig = None, **kwargs):
         super().__init__()
@@ -2425,6 +2429,14 @@ class LLMEncoder(Encoder):
 
         clear_data_cache()
 
+        # Because we use the last hidden state as encoder output rather than the logits, the final module of the model
+        # has input pass through but no gradient update in the backward pass. This can lead to a DDP error. Freezing
+        # the module prevents this from happening. This is done at initialization to prevent "unused parameters" errors
+        # from happening when the encoder is used before `prepare_for_training` is called, for example during batch
+        # size tuning.
+        out_module = list(self.model.modules())[-1]
+        out_module.requires_grad_(requires_grad=False)
+
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
         return LLMEncoderConfig
@@ -2459,13 +2471,6 @@ class LLMEncoder(Encoder):
             self.prepare_for_quantized_training()
         self.initialize_adapter()
 
-        # Because we use the last hidden state as encoder output rather than the logits, the final module of the model
-        # has input pass through but no gradient update in the backward pass. This can lead to a DDP error. Freezing
-        # the module prevents this from happening.
-        if not self.config.adapter:
-            out_module = list(self.model.modules())[-1]
-            out_module.requires_grad_(requires_grad=False)
-
     def prepare_for_quantized_training(self):
         from peft import prepare_model_for_kbit_training
 
@@ -2479,7 +2484,7 @@ class LLMEncoder(Encoder):
             # Get the hidden state of the last layer and return it as the text encoding
             model_outputs = self.model(input_ids=inputs, output_hidden_states=True).hidden_states[-1]
 
-        return {ENCODER_OUTPUT: model_outputs}
+        return {ENCODER_OUTPUT: model_outputs.type(torch.float32)}
 
     def _save_to_state_dict(self, destination: Dict, prefix: str, keep_vars: bool):
         # This is called by `torch.nn.Module.state_dict()` under the hood. `state_dict()` does additional work to
