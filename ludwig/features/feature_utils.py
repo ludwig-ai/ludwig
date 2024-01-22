@@ -203,3 +203,6 @@ class LudwigFeatureDict(torch.nn.Module, MutableMapping):
 
     def item_list(self) -> List[Tuple[str, torch.nn.Module]]:
         return list(self.items())
+
+    def __hash__(self) -> int:
+        return 1
