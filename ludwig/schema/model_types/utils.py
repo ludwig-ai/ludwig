@@ -319,7 +319,7 @@ def set_llm_parameters(config: "ModelConfig") -> None:
     _set_mixtral_target_modules(config)
 
     # HACK(Arnav): Set Phi-2 target modules when using LoRA
-    # GitHub issue:
+    # GitHub issue: https://github.com/ludwig-ai/ludwig/issues/3910
     # PEFT PR: https://github.com/huggingface/peft/pull/1375
     _set_phi2_target_modules(config)
 
