@@ -315,7 +315,13 @@ def set_llm_parameters(config: "ModelConfig") -> None:
 
     # HACK(Arnav): Set Mixtral target modules when using LoRA
     # GitHub issue: https://github.com/ludwig-ai/ludwig/issues/3853
+    # PEFT PR: https://github.com/huggingface/peft/pull/1376
     _set_mixtral_target_modules(config)
+
+    # HACK(Arnav): Set Phi-2 target modules when using LoRA
+    # GitHub issue:
+    # PEFT PR: https://github.com/huggingface/peft/pull/1375
+    _set_phi2_target_modules(config)
 
 
 def _set_llm_tokenizers(config: "ModelConfig") -> None:
@@ -421,9 +427,35 @@ def _set_mixtral_target_modules(config: "ModelConfig") -> None:
     if config.adapter.type != "lora" or config.adapter.target_modules:
         return
 
-    logger.info("Setting adapter target modules to ['q_proj', 'v_proj'] for Mixtral 7x8 base model with LoRA adapter.")
+    target_modules = ["q_proj", "v_proj"]
 
-    config.adapter.target_modules = ["q_proj", "v_proj"]
+    logger.info(f"Setting adapter target modules to {target_modules} for Mixtral 7x8 base model with LoRA adapter.")
+    config.adapter.target_modules = target_modules
+
+
+def _set_phi2_target_modules(config: "ModelConfig") -> None:
+    """If the base model is Phi-2, LoRA is enabled and the target modules are not set, set the target modules to
+    maximize performance."""
+    if config.base_model not in {
+        "susnato/phi-1_dev",
+        "susnato/phi-1_5_dev",
+        "susnato/phi-2",
+        "microsoft/phi-1",
+        "microsoft/phi-1_5",
+        "microsoft/phi-2",
+    }:
+        return
+
+    if not config.adapter:
+        return
+
+    if config.adapter.type != "lora" or config.adapter.target_modules:
+        return
+
+    target_modules = ["q_proj", "k_proj", "v_proj", "dense", "fc1", "fc2"]
+
+    logger.info(f"Setting adapter target modules to {target_modules} for Phi-2 base model with LoRA adapter.")
+    config.adapter.target_modules = target_modules
 
 
 @DeveloperAPI
