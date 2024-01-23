@@ -4,12 +4,22 @@ from typing import Dict
 import pytest
 import torch
 
-from ludwig.constants import BFILL, CROP_OR_PAD, ENCODER, ENCODER_OUTPUT, INTERPOLATE, TYPE
-from ludwig.features.image_feature import _ImagePreprocessing, ImageInputFeature
-from ludwig.schema.features.image_feature import ImageInputFeatureConfig
+from ludwig.constants import (
+    BFILL,
+    CROP_OR_PAD,
+    ENCODER,
+    ENCODER_OUTPUT,
+    ENCODER_OUTPUT_STATE,
+    INTERPOLATE,
+    LOGITS,
+    TYPE,
+)
+from ludwig.features.image_feature import _ImagePreprocessing, ImageInputFeature, ImageOutputFeature
+from ludwig.schema.features.image_feature import ImageInputFeatureConfig, ImageOutputFeatureConfig
 from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.torch_utils import get_torch_device
+from tests.integration_tests.utils import image_feature
 
 BATCH_SIZE = 2
 DEVICE = get_torch_device()
@@ -112,6 +122,76 @@ def test_image_input_feature(image_config: Dict, encoder: str, height: int, widt
     #         )
 
 
+@pytest.mark.parametrize(
+    "encoder, decoder, height, width, num_channels, num_classes",
+    [
+        ("unet", "unet", 128, 128, 3, 2),
+        ("unet", "unet", 32, 32, 3, 7),
+    ],
+)
+def test_image_output_feature(
+    encoder: str,
+    decoder: str,
+    height: int,
+    width: int,
+    num_channels: int,
+    num_classes: int,
+) -> None:
+    # setup image input feature definition
+    input_feature_def = image_feature(
+        folder=".",
+        encoder={
+            "type": encoder,
+            "height": height,
+            "width": width,
+            "num_channels": num_channels,
+        },
+    )
+    # create image input feature object
+    feature_cls = ImageInputFeature
+    schema_cls = ImageInputFeatureConfig
+    input_config = schema_cls.from_dict(input_feature_def)
+    input_feature_obj = feature_cls(input_config).to(DEVICE)
+
+    # check one forward pass through input feature
+    input_tensor = torch.rand(size=(BATCH_SIZE, num_channels, height, width), dtype=torch.float32).to(DEVICE)
+
+    encoder_output = input_feature_obj(input_tensor)
+    assert encoder_output[ENCODER_OUTPUT].shape == (BATCH_SIZE, *input_feature_obj.output_shape)
+    if encoder == "unet":
+        assert len(encoder_output[ENCODER_OUTPUT_STATE]) == 4
+
+    hidden = torch.reshape(encoder_output[ENCODER_OUTPUT], [BATCH_SIZE, -1])
+
+    # setup image output feature definition
+    output_feature_def = image_feature(
+        folder=".",
+        decoder={
+            "type": decoder,
+            "height": height,
+            "width": width,
+            "num_channels": num_channels,
+            "num_classes": num_classes,
+        },
+        input_size=hidden.size(dim=1),
+    )
+    # create image output feature object
+    feature_cls = ImageOutputFeature
+    schema_cls = ImageOutputFeatureConfig
+    output_config = schema_cls.from_dict(output_feature_def)
+    output_feature_obj = feature_cls(output_config, {}).to(DEVICE)
+
+    combiner_outputs = {
+        "combiner_output": hidden,
+        ENCODER_OUTPUT_STATE: encoder_output[ENCODER_OUTPUT_STATE],
+    }
+
+    image_output = output_feature_obj(combiner_outputs, {})
+
+    assert LOGITS in image_output
+    assert image_output[LOGITS].size() == torch.Size([BATCH_SIZE, num_classes, height, width])
+
+
 def test_image_preproc_module_bad_num_channels():
     metadata = {
         "preprocessing": {
@@ -128,6 +208,8 @@ def test_image_preproc_module_bad_num_channels():
             "height": 12,
             "width": 12,
             "num_channels": 2,
+            "num_classes": 0,
+            "channel_class_map": [],
         },
         "reshape": (2, 12, 12),
     }
@@ -155,6 +237,8 @@ def test_image_preproc_module_list_of_tensors(resize_method, num_channels, num_c
             "height": 12,
             "width": 12,
             "num_channels": num_channels_expected,
+            "num_classes": 0,
+            "channel_class_map": [],
         },
         "reshape": (num_channels_expected, 12, 12),
     }
@@ -183,6 +267,8 @@ def test_image_preproc_module_tensor(resize_method, num_channels, num_channels_e
             "height": 12,
             "width": 12,
             "num_channels": num_channels_expected,
+            "num_classes": 0,
+            "channel_class_map": [],
         },
         "reshape": (num_channels_expected, 12, 12),
     }
@@ -191,3 +277,39 @@ def test_image_preproc_module_tensor(resize_method, num_channels, num_channels_e
     res = module(torch.rand(2, num_channels, 10, 10))
 
     assert res.shape == torch.Size((2, num_channels_expected, 12, 12))
+
+
+@pytest.mark.parametrize(["height", "width"], [(224, 224), (32, 32)])
+def test_image_preproc_module_class_map(height, width):
+    metadata = {
+        "preprocessing": {
+            "num_processes": 1,
+            "resize_method": CROP_OR_PAD,
+            "infer_image_num_channels": True,
+            "infer_image_dimensions": True,
+            "infer_image_max_height": height,
+            "infer_image_max_width": width,
+            "infer_image_sample_size": 100,
+            "infer_image_num_classes": True,
+            "height": height,
+            "width": width,
+            "num_channels": 3,
+            "num_classes": 8,
+            "channel_class_map": [
+                [40, 40, 40],
+                [40, 40, 41],
+                [40, 41, 40],
+                [40, 41, 41],
+                [41, 40, 40],
+                [41, 40, 41],
+                [41, 41, 40],
+                [41, 41, 41],
+            ],
+        },
+    }
+    module = _ImagePreprocessing(metadata)
+
+    res = module(torch.randint(40, 42, (2, 3, height, width)))
+
+    assert res.shape == torch.Size((2, height, width))
+    assert torch.all(res.ge(0)) and torch.all(res.le(7))

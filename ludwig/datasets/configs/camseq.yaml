@@ -1,0 +1,21 @@
+version: 1.0
+name: camseq
+kaggle_dataset_id: carlolepelaars/camseq-semantic-segmentation
+archive_filenames: camseq-semantic-segmentation.zip
+sha256:
+   camseq-semantic-segmentation.zip: ea3aeba2661d9b3e3ea406668e7d9240cb2ba0c7e374914bb6d866147faff502
+loader: camseq.CamseqLoader
+preserve_paths:
+  - images
+  - masks
+description: |
+  CamSeq01 Cambridge Labeled Objects in Video
+  https://www.kaggle.com/datasets/carlolepelaars/camseq-semantic-segmentation
+columns:
+  - name: image_path
+    type: image
+  - name: mask_path
+    type: image
+output_features:
+  - name: mask_path
+    type: image

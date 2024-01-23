@@ -4,7 +4,7 @@ import pytest
 import torch
 
 from ludwig.constants import ENCODER_OUTPUT
-from ludwig.encoders.image.base import MLPMixerEncoder, ResNetEncoder, Stacked2DCNN, ViTEncoder
+from ludwig.encoders.image.base import MLPMixerEncoder, ResNetEncoder, Stacked2DCNN, UNetEncoder, ViTEncoder
 from ludwig.encoders.image.torchvision import (
     TVAlexNetEncoder,
     TVConvNeXtEncoder,
@@ -111,6 +111,23 @@ def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
     # check for parameter updating
     target = torch.randn(outputs[ENCODER_OUTPUT].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(vit, (inputs,), target)
+
+    assert tpc == upc, f"Not all expected parameters updated.  Parameters not updated {not_updated}."
+
+
+@pytest.mark.parametrize("height,width,num_channels", [(224, 224, 1), (224, 224, 3)])
+def test_unet_encoder(height: int, width: int, num_channels: int):
+    # make repeatable
+    set_random_seed(RANDOM_SEED)
+
+    unet_encoder = UNetEncoder(height=height, width=width, num_channels=num_channels)
+    inputs = torch.rand(2, num_channels, height, width)
+    outputs = unet_encoder(inputs)
+    assert outputs[ENCODER_OUTPUT].shape[1:] == unet_encoder.output_shape
+
+    # check for parameter updating
+    target = torch.randn(outputs[ENCODER_OUTPUT].shape)
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(unet_encoder, (inputs,), target)
 
     assert tpc == upc, f"Not all expected parameters updated.  Parameters not updated {not_updated}."
 
