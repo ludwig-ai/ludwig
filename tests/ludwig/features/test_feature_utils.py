@@ -122,7 +122,6 @@ def test_ludwig_feature_dict():
     feature_dict.set("type", type_module)
 
     assert iter(feature_dict) is not None
-    # assert next(feature_dict) is not None
     assert len(feature_dict) == 2
     assert list(feature_dict.keys()) == ["to", "type"]
     assert list(feature_dict.items()) == [("to", to_module), ("type", type_module)]
