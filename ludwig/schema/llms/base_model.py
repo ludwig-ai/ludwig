@@ -10,7 +10,6 @@ from ludwig.constants import BASE_MODEL
 from ludwig.error import ConfigValidationError
 from ludwig.schema.metadata import LLM_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
-from ludwig.utils.llm_utils import _PHI_BASE_MODEL_MAPPING
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +56,10 @@ MODEL_PRESETS = {
     # Zephyr
     "zephyr-7b-alpha": "HuggingFaceH4/zephyr-7b-alpha",
     "zephyr-7b-beta": "HuggingFaceH4/zephyr-7b-beta",
+    # Phi
+    "phi-1": "microsoft/phi-1",
+    "phi-1_5": "microsoft/phi-1_5",
+    "phi-2": "microsoft/phi-2",
 }
 
 
@@ -79,13 +82,6 @@ def BaseModelDataclassField():
                 return MODEL_PRESETS[model_name]
             if os.path.isdir(model_name):
                 return model_name
-            if model_name in _PHI_BASE_MODEL_MAPPING:
-                logger.warning(
-                    f"{model_name} does not work correctly out of the box since it requires running remote code. "
-                    f"Replacing {model_name} with {_PHI_BASE_MODEL_MAPPING[model_name]} as the base LLM model since "
-                    "this is the official version of the model supported by HuggingFace."
-                )
-                return _PHI_BASE_MODEL_MAPPING[model_name]
             try:
                 AutoConfig.from_pretrained(model_name)
                 return model_name
