@@ -56,6 +56,10 @@ MODEL_PRESETS = {
     # Zephyr
     "zephyr-7b-alpha": "HuggingFaceH4/zephyr-7b-alpha",
     "zephyr-7b-beta": "HuggingFaceH4/zephyr-7b-beta",
+    # Phi
+    "phi-1": "microsoft/phi-1",
+    "phi-1_5": "microsoft/phi-1_5",
+    "phi-2": "microsoft/phi-2",
 }
 
 
