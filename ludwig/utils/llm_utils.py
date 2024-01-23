@@ -23,13 +23,11 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+transformers_436 = version.parse(transformers.__version__) >= version.parse("4.36.0")
 
 FALLBACK_CONTEXT_LEN = 2048
 
-transformers_436 = version.parse(transformers.__version__) >= version.parse("4.36.0")
-
-# Phi models don't support "device_map='auto'" at model load time as of transformers 4.37.0.
-_MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION = {
+_PHI_MODELS = {
     "susnato/phi-1_dev",
     "susnato/phi-1_5_dev",
     "susnato/phi-2",
@@ -37,6 +35,10 @@ _MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION = {
     "microsoft/phi-1_5",
     "microsoft/phi-2",
 }
+
+_MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION = set()
+# Phi models don't support "device_map='auto'" at model load time as of transformers 4.37.0.
+_MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION.update(_PHI_MODELS)
 
 
 @default_retry(tries=8)
