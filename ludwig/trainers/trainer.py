@@ -40,6 +40,7 @@ from ludwig.constants import (
     MAX_CPU_BATCH_SIZE,
     MINIMIZE,
     MODEL_ECD,
+    MODEL_LLM,
     TEST,
     TRAINING,
     USED_TOKENS,
@@ -1143,8 +1144,10 @@ class Trainer(BaseTrainer):
                         # to a RuntimeError in `load_state_dict`. Explicitly call `model.cuda()` to make sure the
                         # matrices are part of model state. This workaround is necessary because the matrices are
                         # deleted during the model's forward pass.
-                        if self.model.model.device.type == "cuda":
+                        if self.model.config_obj.model_type == MODEL_LLM and self.model.model.device.type == "cuda":
                             self.model.model.cuda()
+                        elif self.model.config_obj.model_type == MODEL_ECD and self.model.device.type == "cuda":
+                            self.model.cuda()
                         _, unexpected_keys = self.model.load_state_dict(state_dict, strict=False)
                         only_weights_format_keys = ["weights_format" in k for k in unexpected_keys]
 
