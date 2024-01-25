@@ -68,6 +68,7 @@ from ludwig.types import ModelConfigDict
 from ludwig.utils import time_utils
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
+from ludwig.utils.config_utils import get_quantization
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import path_exists
@@ -1133,11 +1134,9 @@ class Trainer(BaseTrainer):
 
                     # For a full explanation of this 8-bit workaround, see https://github.com/ludwig-ai/ludwig/pull/3606
                     # TODO (jeffkinnison): Determine why `SCB` and `CB` are deleted from parameter state
-                    if (
-                        hasattr(self.model.config_obj, "quantization")
-                        and self.model.config_obj.quantization
-                        and self.model.config_obj.quantization.bits == 8
-                    ):
+                    quantization = get_quantization(self.config)
+                    uses_quantization = bool(quantization) if not isinstance(quantization, list) else any(quantization)
+                    if uses_quantization and 8 in quantization:
                         # If the model was previously placed on GPU, 8-bit parameter state will be updated with several
                         # matrices containing quantization information. These are recorded matrices are recorded in the
                         # training checkpoint state dicts, but do not necessarily exist in the parameter object, leading
