@@ -1134,7 +1134,7 @@ class Trainer(BaseTrainer):
 
                     # For a full explanation of this 8-bit workaround, see https://github.com/ludwig-ai/ludwig/pull/3606
                     # TODO (jeffkinnison): Determine why `SCB` and `CB` are deleted from parameter state
-                    quantization = get_quantization(self.config)
+                    quantization = get_quantization(self.model.config_obj)
                     uses_quantization = bool(quantization) if not isinstance(quantization, list) else any(quantization)
                     if uses_quantization and 8 in quantization:
                         # If the model was previously placed on GPU, 8-bit parameter state will be updated with several
