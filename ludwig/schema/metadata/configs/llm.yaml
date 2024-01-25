@@ -58,6 +58,9 @@ generation:
   use_cache:
     ui_display_name: Use Cache
     expected_impact: 2
+  prompt_lookup_num_tokens:
+    ui_display_name: Prompt Lookup Num Tokens
+    expected_impact: 2
 prompt:
   retrieval:
     type:
