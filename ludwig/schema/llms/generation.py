@@ -109,8 +109,8 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
     prompt_lookup_num_tokens: Optional[int] = schema_utils.NonNegativeInteger(
         default=None,
         allow_none=True,
-        description="The number of tokens to use from the prompt for the prompt lookup decoding, an alternate method to"
-        " assisted generation. If set to 0, the prompt lookup decoding is not used.",
+        description="The number of tokens to consider as a candidate from the prompt for prompt lookup decoding, "
+        " an alternate way of performing assisted generation. If set to 0, the prompt lookup decoding is not used.",
         parameter_metadata=LLM_METADATA["generation"]["prompt_lookup_num_tokens"],
     )
 
