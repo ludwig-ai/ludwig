@@ -58,7 +58,7 @@ xlrd>=2.0.1         # excel
 xlsxwriter>=1.4.3   # excel
 openpyxl>=3.0.7     # excel
 pyxlsb>=1.0.8       # excel
-pyarrow             # parquet
+pyarrow<15.0.0      # parquet
 lxml                # html
 html5lib            # html
 

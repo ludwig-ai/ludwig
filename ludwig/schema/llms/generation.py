@@ -106,6 +106,14 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         parameter_metadata=LLM_METADATA["generation"]["use_cache"],
     )
 
+    prompt_lookup_num_tokens: Optional[int] = schema_utils.NonNegativeInteger(
+        default=None,
+        allow_none=True,
+        description="The number of tokens to consider as a candidate from the prompt for prompt lookup decoding, "
+        " an alternate way of performing assisted generation. If set to 0, the prompt lookup decoding is not used.",
+        parameter_metadata=LLM_METADATA["generation"]["prompt_lookup_num_tokens"],
+    )
+
     # Parameters for manipulation of the model output logits
 
     temperature: Optional[float] = schema_utils.NonNegativeFloat(
