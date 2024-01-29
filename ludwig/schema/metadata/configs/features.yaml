@@ -437,6 +437,9 @@ image:
         infer_image_sample_size:
             ui_display_name: null
             expected_impact: 1
+        infer_image_num_classes:
+            ui_display_name: null
+            expected_impact: 1
         missing_value_strategy:
             default_value_reasoning:
                 The default `fill_with_const` replaces missing
@@ -453,6 +456,9 @@ image:
             ui_display_name: Missing Value Strategy
             expected_impact: 3
         num_channels:
+            ui_display_name: null
+            expected_impact: 2
+        num_classes:
             ui_display_name: null
             expected_impact: 2
         num_processes:
@@ -483,6 +489,12 @@ image:
         requires_equal_dimensions:
             ui_display_name: null
             expected_impact: 1
+    dependencies:
+        expected_impact: 1
+    reduce_dependencies:
+        expected_impact: 1
+    reduce_input:
+        expected_impact: 1
 number:
     preprocessing:
         computed_fill_value:

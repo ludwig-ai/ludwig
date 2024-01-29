@@ -1,0 +1,33 @@
+input_features:
+  - name: image_path
+    type: image
+    preprocessing:
+      num_processes: 6
+      infer_image_max_height: 1024
+      infer_image_max_width: 1024
+    encoder: unet
+
+output_features:
+  - name: mask_path
+    type: image
+    preprocessing:
+      num_processes: 6
+      infer_image_max_height: 1024
+      infer_image_max_width: 1024
+      infer_image_num_classes: true
+      num_classes: 32
+    decoder:
+      type: unet
+      num_fc_layers: 0
+    loss:
+      type: softmax_cross_entropy
+
+combiner:
+  type: concat
+  num_fc_layers: 0
+
+trainer:
+  epochs: 100
+  early_stop: -1
+  batch_size: 1
+  max_batch_size: 1

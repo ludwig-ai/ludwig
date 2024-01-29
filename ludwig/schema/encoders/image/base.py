@@ -718,3 +718,46 @@ class ViTConfig(ImageEncoderConfig):
 
     def is_pretrained(self) -> bool:
         return self.use_pretrained
+
+
+@DeveloperAPI
+@register_encoder_config("unet", IMAGE)
+@ludwig_dataclass
+class UNetEncoderConfig(ImageEncoderConfig):
+    @staticmethod
+    def module_name():
+        return "UNetEncoder"
+
+    type: str = schema_utils.ProtectedString(
+        "unet",
+        description=ENCODER_METADATA["UNetEncoder"]["type"].long_description,
+    )
+
+    height: int = schema_utils.NonNegativeInteger(
+        default=None,
+        allow_none=True,
+        description="Height of the input image.",
+        parameter_metadata=ENCODER_METADATA["UNetEncoder"]["height"],
+    )
+
+    width: int = schema_utils.NonNegativeInteger(
+        default=None,
+        allow_none=True,
+        description="Width of the input image.",
+        parameter_metadata=ENCODER_METADATA["UNetEncoder"]["width"],
+    )
+
+    num_channels: Optional[int] = schema_utils.NonNegativeInteger(
+        default=None,
+        allow_none=True,
+        description="Number of channels in the input image. ",
+        parameter_metadata=ENCODER_METADATA["UNetEncoder"]["num_channels"],
+    )
+
+    conv_norm: Optional[str] = schema_utils.StringOptions(
+        ["batch"],
+        default="batch",
+        allow_none=True,
+        description="This is the default norm that will be used for each double conv layer." "It can be null or batch.",
+        parameter_metadata=ENCODER_METADATA["UNetEncoder"]["conv_norm"],
+    )
