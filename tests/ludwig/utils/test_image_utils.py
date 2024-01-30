@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from typing import Callable
+from typing import Callable, List
 
 import pytest
 import torch
@@ -21,6 +21,9 @@ import torchvision.transforms.functional as F
 from ludwig.utils.image_utils import (
     crop,
     crop_or_pad,
+    get_class_mask_from_image,
+    get_image_from_class_mask,
+    get_unique_channels,
     grayscale,
     is_image_score,
     num_channels_in_image,
@@ -280,3 +283,107 @@ def test_read_image_as_tif():
 )
 def test_is_image_score(extension: str, score: int):
     assert is_image_score(extension) == score
+
+
+@pytest.mark.parametrize(
+    "img_list,num_channels,num_classes,expected_class_map",
+    [
+        (
+            [
+                torch.Tensor([0, 0, 8, 8, 120, 120, 180, 180, 230, 230, 255, 255]).type(torch.uint8).reshape(3, 2, 2),
+                torch.Tensor([1, 2, 3, 4, 131, 132, 133, 134, 241, 242, 243, 244]).type(torch.uint8).reshape(3, 2, 2),
+            ],
+            3,
+            None,
+            torch.Tensor(
+                [[0, 120, 230], [8, 180, 255], [1, 131, 241], [2, 132, 242], [3, 133, 243], [4, 134, 244]]
+            ).type(torch.uint8),
+        ),
+        (
+            [
+                torch.Tensor([0, 255, 255, 0, 255, 255, 255, 0, 0, 0, 255, 255, 0, 255, 255])
+                .type(torch.uint8)
+                .reshape(1, 3, 5),
+            ],
+            1,
+            None,
+            torch.Tensor([[0], [255]]).type(torch.uint8),
+        ),
+        (
+            [
+                torch.Tensor([0, 31, 17, 185, 192, 173, 55, 76, 24, 128, 255, 238]).type(torch.uint8).reshape(3, 4),
+            ],
+            1,
+            2,
+            torch.Tensor([[0], [255]]).type(torch.uint8),
+        ),
+    ],
+)
+def test_unique_channels(
+    img_list: List[torch.Tensor], num_channels: int, num_classes: int, expected_class_map: torch.Tensor
+):
+    channel_class_map = get_unique_channels(img_list, num_channels, num_classes)
+
+    channel_class_map, _ = channel_class_map.sort(dim=0)
+    expected_class_map, _ = expected_class_map.sort(dim=0)
+    assert torch.equal(channel_class_map, expected_class_map)
+
+
+@pytest.mark.parametrize(
+    "img,channel_class_map,expected_mask",
+    [
+        (
+            torch.Tensor([1, 2, 3, 4, 131, 132, 133, 134, 241, 242, 243, 244]).type(torch.uint8).reshape(3, 2, 2),
+            torch.Tensor(
+                [[0, 120, 230], [8, 180, 255], [1, 131, 241], [2, 132, 242], [3, 133, 243], [4, 134, 244]]
+            ).type(torch.uint8),
+            torch.Tensor([2, 3, 4, 5]).type(torch.uint8).reshape(2, 2),
+        ),
+        (
+            torch.Tensor([0, 255, 255, 0, 255, 255, 255, 0, 0, 0, 255, 255, 0, 255, 255])
+            .type(torch.uint8)
+            .reshape(1, 3, 5),
+            torch.Tensor([[0], [255]]).type(torch.uint8),
+            torch.Tensor([0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1]).type(torch.uint8).reshape(3, 5),
+        ),
+        (
+            torch.Tensor([0, 31, 17, 185, 192, 173, 55, 76, 24, 128, 255, 238]).type(torch.uint8).reshape(3, 4),
+            torch.Tensor([[0], [255]]).type(torch.uint8),
+            torch.Tensor([0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1]).type(torch.uint8).reshape(3, 4),
+        ),
+    ],
+)
+def test_class_mask_from_image(img: torch.Tensor, channel_class_map: torch.Tensor, expected_mask: torch.Tensor):
+    mask = get_class_mask_from_image(channel_class_map, img)
+    assert torch.equal(mask, expected_mask)
+
+
+@pytest.mark.parametrize(
+    "mask,channel_class_map,expected_img",
+    [
+        (
+            torch.Tensor([0, 0, 1, 1]).type(torch.uint8).reshape(2, 2),
+            torch.Tensor(
+                [[0, 120, 230], [8, 180, 255], [1, 131, 241], [2, 132, 242], [3, 133, 243], [4, 134, 244]]
+            ).type(torch.uint8),
+            torch.Tensor([0, 0, 8, 8, 120, 120, 180, 180, 230, 230, 255, 255]).type(torch.uint8).reshape(3, 2, 2),
+        ),
+        (
+            torch.Tensor([2, 3, 4, 5]).type(torch.uint8).reshape(2, 2),
+            torch.Tensor(
+                [[0, 120, 230], [8, 180, 255], [1, 131, 241], [2, 132, 242], [3, 133, 243], [4, 134, 244]]
+            ).type(torch.uint8),
+            torch.Tensor([1, 2, 3, 4, 131, 132, 133, 134, 241, 242, 243, 244]).type(torch.uint8).reshape(3, 2, 2),
+        ),
+        (
+            torch.Tensor([0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1]).type(torch.uint8).reshape(3, 5),
+            torch.Tensor([[0], [255]]).type(torch.uint8),
+            torch.Tensor([0, 255, 255, 0, 255, 255, 255, 0, 0, 0, 255, 255, 0, 255, 255])
+            .type(torch.uint8)
+            .reshape(1, 3, 5),
+        ),
+    ],
+)
+def test_image_from_class_mask(mask: torch.Tensor, channel_class_map: torch.Tensor, expected_img: torch.Tensor):
+    img = get_image_from_class_mask(channel_class_map, mask.numpy())
+    assert torch.equal(torch.from_numpy(img), expected_img)
