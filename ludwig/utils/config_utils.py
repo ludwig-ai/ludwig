@@ -1,4 +1,4 @@
-from typing import Any, Dict, Set, Union
+from typing import Any, Dict, List, Set, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
@@ -142,3 +142,43 @@ def config_uses_llm(config: Union[Dict[str, Any], ModelConfig]) -> bool:
         raise ValueError(f"Invalid config cannot be checked for LLM usage. Config: {config}")
 
     return uses_llm
+
+
+def get_quantization(config: Union[Dict[str, Any], ModelConfig]) -> Union[int, List[int], None]:
+    """Get the quantization specified in a config at any level.
+
+    Args:
+        config: Ludwig config object or dictionary
+
+    Returns:
+        For LLM models, the value of quantization.bits or None if it is not specified.
+        For ECD and GBM models, the list of values of quantization.bits for each encoder. If the encoder does not
+        support quantization or no quantization config is specified, the list entry is None.
+    """
+    if isinstance(config, ModelConfig):
+        if config.model_type == MODEL_LLM:
+            return config.quantization.bits if config.quantization else None
+        else:
+            quantization_bits = []
+            for feature in config.input_features:
+                try:
+                    quantization = feature.encoder.quantization.bits
+                except AttributeError:
+                    quantization = None
+                quantization_bits.append(quantization)
+            return quantization_bits
+    elif isinstance(config, dict) and config:
+        if config.get(MODEL_TYPE, MODEL_ECD) == MODEL_LLM:
+            return config.get("quantization", {}).get("bits")
+        elif INPUT_FEATURES in config:
+            quantization_bits = []
+            for feature in config.get(INPUT_FEATURES, []):
+                quantization_bits.append(feature.get(ENCODER, {}).get("quantization", {}).get("bits"))
+            return quantization_bits
+        else:
+            raise ValueError(
+                "Invalid config cannot be checked for quantization because it has no input features."
+                f"Config: {config}"
+            )
+    else:
+        raise ValueError(f"Invalid config cannot be checked for quantization. Config: {config}")

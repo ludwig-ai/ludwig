@@ -48,6 +48,7 @@ from ludwig.constants import (
     HITS_AT_K,
     HUBER,
     IGNORE_INDEX_TOKEN_ID,
+    IMAGE,
     JACCARD,
     LOGITS,
     LOSS,
@@ -307,7 +308,7 @@ class BWCEWLMetric(LossMetric):
         return self.loss_function(preds, target)
 
 
-@register_metric("softmax_cross_entropy", [CATEGORY, CATEGORY_DISTRIBUTION], MINIMIZE, LOGITS)
+@register_metric("softmax_cross_entropy", [CATEGORY, CATEGORY_DISTRIBUTION, IMAGE], MINIMIZE, LOGITS)
 class SoftmaxCrossEntropyMetric(LossMetric):
     def __init__(self, config: SoftmaxCrossEntropyLossConfig, **kwargs):
         super().__init__()

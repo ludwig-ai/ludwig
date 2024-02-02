@@ -40,6 +40,7 @@ from ludwig.constants import (
     MAX_CPU_BATCH_SIZE,
     MINIMIZE,
     MODEL_ECD,
+    MODEL_LLM,
     TEST,
     TRAINING,
     USED_TOKENS,
@@ -68,6 +69,7 @@ from ludwig.types import ModelConfigDict
 from ludwig.utils import time_utils
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
+from ludwig.utils.config_utils import get_quantization
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import path_exists
@@ -1133,19 +1135,19 @@ class Trainer(BaseTrainer):
 
                     # For a full explanation of this 8-bit workaround, see https://github.com/ludwig-ai/ludwig/pull/3606
                     # TODO (jeffkinnison): Determine why `SCB` and `CB` are deleted from parameter state
-                    if (
-                        hasattr(self.model.config_obj, "quantization")
-                        and self.model.config_obj.quantization
-                        and self.model.config_obj.quantization.bits == 8
-                    ):
+                    quantization = get_quantization(self.model.config_obj)
+                    uses_quantization = bool(quantization) if not isinstance(quantization, list) else any(quantization)
+                    if uses_quantization and 8 in quantization:
                         # If the model was previously placed on GPU, 8-bit parameter state will be updated with several
                         # matrices containing quantization information. These are recorded matrices are recorded in the
                         # training checkpoint state dicts, but do not necessarily exist in the parameter object, leading
                         # to a RuntimeError in `load_state_dict`. Explicitly call `model.cuda()` to make sure the
                         # matrices are part of model state. This workaround is necessary because the matrices are
                         # deleted during the model's forward pass.
-                        if self.model.model.device.type == "cuda":
+                        if self.model.config_obj.model_type == MODEL_LLM and self.model.model.device.type == "cuda":
                             self.model.model.cuda()
+                        elif self.model.config_obj.model_type == MODEL_ECD and self.model.device.type == "cuda":
+                            self.model.cuda()
                         _, unexpected_keys = self.model.load_state_dict(state_dict, strict=False)
                         only_weights_format_keys = ["weights_format" in k for k in unexpected_keys]
 

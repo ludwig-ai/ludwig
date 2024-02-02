@@ -1,7 +1,7 @@
 from typing import Optional, Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BFILL, IMAGE, IMAGENET1K, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING
+from ludwig.constants import BFILL, DROP_ROW, IMAGE, IMAGENET1K, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
@@ -138,4 +138,33 @@ class ImagePreprocessingConfig(BasePreprocessingConfig):
         default=False,
         description="If true, then width and height must be equal.",
         parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["requires_equal_dimensions"],
+    )
+
+    num_classes: int = schema_utils.PositiveInteger(
+        default=None,
+        allow_none=True,
+        description="Number of channel classes in the images. If specified, this value will be validated "
+        "against the inferred number of classes. ",
+        parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["num_classes"],
+    )
+
+    infer_image_num_classes: bool = schema_utils.Boolean(
+        default=False,
+        description="If true, then the number of channel classes in the dataset will be inferred from a sample of "
+        "the first image in the dataset. Each unique channel value will be mapped to a class and preprocessing will "
+        "create a masked image based on the channel classes. ",
+        parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["infer_image_num_classes"],
+    )
+
+
+@DeveloperAPI
+@register_preprocessor("image_output")
+@ludwig_dataclass
+class ImageOutputPreprocessingConfig(ImagePreprocessingConfig):
+    missing_value_strategy: str = schema_utils.StringOptions(
+        MISSING_VALUE_STRATEGY_OPTIONS,
+        default=DROP_ROW,
+        allow_none=False,
+        description="What strategy to follow when there's a missing value in an image column",
+        parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["missing_value_strategy"],
     )

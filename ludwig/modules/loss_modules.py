@@ -167,11 +167,15 @@ class SoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
         """
         Params:
             preds: Tensor of shape [batch x num_classes]
+                          or shape [batch x num_classes x H x W]
             target: Tensor of shape [batch], where each element is integral
                 between 0 and num_classes.
+                           or shape [batch x H x W], where each element is integral
+                between 0 and num_classes.
         """
-        if len(target.shape) == 1:
+        if len(target.shape) == 1 or len(target.shape) == 3:
             # Assumes we are providing the target as a single class, rather than a distribution
+            # The target shape can be a 3D tensor [batch x H x W], for image segmentation
             target = target.long()
         return self.loss_fn(preds, target)
 

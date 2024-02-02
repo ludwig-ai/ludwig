@@ -28,8 +28,7 @@ from torchvision.io import decode_image, ImageReadMode
 from torchvision.models._api import WeightsEnum
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import CROP_OR_PAD, INTERPOLATE
-from ludwig.encoders.base import Encoder
+from ludwig.constants import CROP_OR_PAD, IMAGE_MAX_CLASSES, INTERPOLATE
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
 from ludwig.utils.registry import Registry
 
@@ -95,14 +94,6 @@ def is_bytes_image(bytes_obj) -> bool:
 @DeveloperAPI
 def is_image_score(path):
     return int(isinstance(path, str) and path.lower().endswith(IMAGE_EXTENSIONS))
-
-
-@DeveloperAPI
-def is_torchvision_encoder(encoder_obj: Encoder) -> bool:
-    # TODO(travis): do this through an interface rather than conditional logic
-    from ludwig.encoders.image.torchvision import TVBaseEncoder
-
-    return isinstance(encoder_obj, TVBaseEncoder)
 
 
 @DeveloperAPI
@@ -316,6 +307,126 @@ def num_channels_in_image(img: torch.Tensor):
         return 1
     else:
         return img.shape[0]
+
+
+@DeveloperAPI
+def get_unique_channels(
+    image_sample: List[torch.Tensor],
+    num_channels: int,
+    num_classes: int = None,
+) -> torch.Tensor:
+    """Returns a tensor of unique channel values from a list of images.
+    Args:
+        image_sample: A list of images of dimensions [C x H x W] or [H x W], where C is the channel dimension
+        num_channels: The expected number of channels
+        num_classes: The expected number of classes or None
+
+    Return:
+        channel_class_map: A tensor mapping channel values to classes, where dim=0 is the class.
+    """
+    n_images = 0
+    no_new_class = 0
+    channel_class_map = None
+    for img in image_sample:
+        if img.ndim < 2:
+            raise ValueError("Invalid image dimensions {img.ndim}")
+        if img.ndim == 2:
+            img = img.unsqueeze(0)
+        if num_channels == 1 and num_channels_in_image(img) != 1:
+            img = grayscale(img)
+        if num_classes == 2 and num_channels_in_image(img) == 1:
+            img = img.type(torch.float32) / 255
+            img = img.round() * 255
+            img = img.type(torch.uint8)
+
+        img = img.flatten(1, 2)
+        img = img.permute(1, 0)
+        uniq_chans = img.unique(dim=0)
+
+        if channel_class_map is None:
+            channel_class_map = uniq_chans
+        else:
+            channel_class_map = torch.concat((channel_class_map, uniq_chans)).unique(dim=0)
+        if channel_class_map.shape[0] > IMAGE_MAX_CLASSES:
+            raise ValueError(
+                f"Images inferred num classes {channel_class_map.shape[0]} exceeds " f"max classes {IMAGE_MAX_CLASSES}."
+            )
+
+        n_images += 1
+        if n_images % 25 == 0:
+            logger.info(f"Processed the first {n_images} images inferring {channel_class_map.shape[0]} classes...")
+
+        if channel_class_map.shape[0] == uniq_chans.shape[0]:
+            no_new_class += 1
+            if no_new_class >= 4 and channel_class_map.shape[0] == num_classes:
+                break  # early loop exit
+        else:
+            no_new_class = 0
+
+    logger.info(f"Inferred {channel_class_map.shape[0]} classes from the first {n_images} images.")
+    return channel_class_map.type(torch.uint8)
+
+
+@DeveloperAPI
+def get_class_mask_from_image(
+    channel_class_map: torch.Tensor,
+    img: torch.Tensor,
+) -> torch.Tensor:
+    """Returns a masked image where each mask value is the channel class of the input.
+    Args:
+        channel_class_map: A tensor mapping channel values to classes, where dim=0 is the class.
+        img: An input image of dimensions [C x H x W] or [H x W], where C is the channel dimension
+
+    Return:
+        [mask] A masked image of dimensions [H x W] where each value is the channel class of the input
+    """
+    num_classes = channel_class_map.shape[0]
+    mask = torch.full((img.shape[-2], img.shape[-1]), num_classes, dtype=torch.uint8)
+    if img.ndim == 2:
+        img = img.unsqueeze(0)
+    if num_classes == 2 and num_channels_in_image(img) == 1:
+        img = img.type(torch.float32) / 255
+        img = img.round() * 255
+        img = img.type(torch.uint8)
+    img = img.permute(1, 2, 0)
+    for nclass, value in enumerate(channel_class_map):
+        mask[(img == value).all(-1)] = nclass
+
+    if torch.any(mask.ge(num_classes)):
+        raise ValueError(
+            f"Image channel could not be mapped to a class because an unknown channel value was detected. "
+            f"{num_classes} classes were inferred from the first set of images. This image has a channel "
+            f"value that was not previously seen in the first set of images. Check preprocessing parameters "
+            f"for image resizing, num channels, num classes and num samples. Image resizing may affect "
+            f"channel values. "
+        )
+
+    return mask
+
+
+@DeveloperAPI
+def get_image_from_class_mask(
+    channel_class_map: torch.Tensor,
+    mask: np.ndarray,
+) -> np.ndarray:
+    """Returns an image with channel values determined from a corresponding mask.
+    Args:
+        channel_class_map: An tensor mapping channel values to classes, where dim=0 is the class.
+        mask: A masked image of dimensions [H x W] where each value is the channel class of the final image
+
+    Return:
+        [img] An image of dimensions [C x H x W], where C is the channel dimension
+    """
+    mask = torch.from_numpy(mask)
+    img = torch.zeros(channel_class_map.shape[1], mask.shape[-2], mask.shape[-1], dtype=torch.uint8)
+    img = img.permute(1, 2, 0)
+    mask = mask.unsqueeze(0)
+    mask = mask.permute(1, 2, 0)
+    for nclass, value in enumerate(channel_class_map):
+        img[(mask == nclass).all(-1)] = value
+    img = img.permute(2, 0, 1)
+
+    return img.numpy()
 
 
 @DeveloperAPI

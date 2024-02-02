@@ -37,9 +37,12 @@ from ludwig.constants import (
     INFER_IMAGE_DIMENSIONS,
     INFER_IMAGE_MAX_HEIGHT,
     INFER_IMAGE_MAX_WIDTH,
+    INFER_IMAGE_NUM_CLASSES,
     INFER_IMAGE_SAMPLE_SIZE,
+    LOGITS,
     NAME,
     NUM_CHANNELS,
+    PREDICTIONS,
     PREPROCESSING,
     PROC_COLUMN,
     REQUIRES_EQUAL_DIMENSIONS,
@@ -49,8 +52,9 @@ from ludwig.constants import (
     WIDTH,
 )
 from ludwig.data.cache.types import wrap
+from ludwig.encoders.base import Encoder
 from ludwig.encoders.image.torchvision import TVModelVariant
-from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
+from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.augmentation.base import BaseAugmentationConfig
 from ludwig.schema.features.augmentation.image import (
     AutoAugmentationConfig,
@@ -61,16 +65,25 @@ from ludwig.schema.features.augmentation.image import (
     RandomRotateConfig,
     RandomVerticalFlipConfig,
 )
-from ludwig.schema.features.image_feature import ImageInputFeatureConfig
-from ludwig.types import FeatureMetadataDict, ModelConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
+from ludwig.schema.features.image_feature import ImageInputFeatureConfig, ImageOutputFeatureConfig
+from ludwig.types import (
+    FeatureMetadataDict,
+    FeaturePostProcessingOutputDict,
+    ModelConfigDict,
+    PreprocessingConfigDict,
+    TrainingSetMetadataDict,
+)
+from ludwig.utils import output_feature_utils
 from ludwig.utils.augmentation_utils import get_augmentation_op, register_augmentation_op
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.dataframe_utils import is_dask_series_or_df
 from ludwig.utils.fs_utils import has_remote_protocol, upload_h5
 from ludwig.utils.image_utils import (
+    get_class_mask_from_image,
     get_gray_default_image,
+    get_image_from_class_mask,
+    get_unique_channels,
     grayscale,
-    is_torchvision_encoder,
     num_channels_in_image,
     read_image_from_bytes_obj,
     read_image_from_path,
@@ -308,6 +321,13 @@ def _get_torchvision_parameters(model_type: str, model_variant: str) -> TVModelV
     return torchvision_model_registry.get(model_type).get(model_variant)
 
 
+def is_torchvision_encoder(encoder_obj: Encoder) -> bool:
+    # TODO(travis): do this through an interface rather than conditional logic
+    from ludwig.encoders.image.torchvision import TVBaseEncoder
+
+    return isinstance(encoder_obj, TVBaseEncoder)
+
+
 class _ImagePreprocessing(torch.nn.Module):
     """Torchscript-enabled version of preprocessing done by ImageFeatureMixin.add_feature_data."""
 
@@ -325,10 +345,12 @@ class _ImagePreprocessing(torch.nn.Module):
             self.height = transform_metadata.height
             self.width = transform_metadata.width
             self.num_channels = transform_metadata.num_channels
+            self.channel_class_map = torch.Tensor([])
         else:
             self.height = metadata["preprocessing"]["height"]
             self.width = metadata["preprocessing"]["width"]
             self.num_channels = metadata["preprocessing"]["num_channels"]
+            self.channel_class_map = torch.ByteTensor(metadata["preprocessing"]["channel_class_map"])
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         """Takes a list of images and adjusts the size and number of channels as specified in the metadata.
@@ -378,9 +400,38 @@ class _ImagePreprocessing(torch.nn.Module):
                         f"{self.num_channels}, but imgs.shape[1] = {num_channels}"
                     )
 
-            imgs_stacked = imgs_stacked.type(torch.float32) / 255
+            # Create class-masked images if required
+            if self.channel_class_map.shape[0]:
+                masks = []
+                for img in imgs_stacked:
+                    mask = get_class_mask_from_image(self.channel_class_map, img)
+                    masks.append(mask)
+                imgs_stacked = torch.stack(masks)
+            else:
+                imgs_stacked = imgs_stacked.type(torch.float32) / 255
 
         return imgs_stacked
+
+
+class _ImagePostprocessing(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.logits_key = LOGITS
+        self.predictions_key = PREDICTIONS
+
+    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> FeaturePostProcessingOutputDict:
+        predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
+        logits = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.logits_key)
+
+        return {self.predictions_key: predictions, self.logits_key: logits}
+
+
+class _ImagePredict(PredictModule):
+    def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
+        predictions = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.predictions_key)
+        logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
+
+        return {self.predictions_key: predictions, self.logits_key: logits}
 
 
 class ImageFeatureMixin(BaseFeatureMixin):
@@ -412,6 +463,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         resize_method: str,
         user_specified_num_channels: bool,
         standardize_image: str,
+        channel_class_map: torch.Tensor,
     ) -> Optional[np.ndarray]:
         """
         :param img_entry Union[bytes, torch.Tensor, np.ndarray, str]: if str file path to the
@@ -423,6 +475,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         :param num_channels: expected number of channels in the first image
         :param user_specified_num_channels: did the user specify num channels?
         :param standardize_image: specifies whether to standarize image with imagenet1k specifications
+        :param channel_class_map: A tensor mapping channel values to classes, where dim=0 is the class
         :return: image object as a numpy array
 
         Helper method to read and resize an image according to model definition.
@@ -497,11 +550,15 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 "#image-features-preprocessing".format([img_height, img_width, num_channels], img.shape)
             )
 
-        # casting and rescaling
-        img = img.type(torch.float32) / 255
+        # Create class-masked image if required
+        if channel_class_map.shape[0]:
+            img = get_class_mask_from_image(channel_class_map, img)
+        else:
+            # casting and rescaling
+            img = img.type(torch.float32) / 255
 
-        if standardize_image == IMAGENET1K:
-            img = normalize(img, mean=IMAGENET1K_MEAN, std=IMAGENET1K_STD)
+            if standardize_image == IMAGENET1K:
+                img = normalize(img, mean=IMAGENET1K_MEAN, std=IMAGENET1K_STD)
 
         return img.numpy()
 
@@ -631,6 +688,41 @@ class ImageFeatureMixin(BaseFeatureMixin):
         return num_channels
 
     @staticmethod
+    def _infer_image_num_classes(
+        image_sample: List[torch.Tensor],
+        num_channels: int,
+        num_classes: int,
+    ) -> torch.Tensor:
+        """Infers the number of channel classes from a group of images (for image segmentation). The returned
+        tensor contains the channel value for each class, where dim=0 is the class.
+
+        Args:
+            image_sample: Sample of images to use to infer image size. Must be formatted as [channels, height, width].
+            num_channels: Expected number of channels
+            num_classes: Expected number of channel classes or None
+
+        Return:
+            channel_class_map: A tensor mapping channel values to classes, where dim=0 is the class.
+        """
+        n_images = len(image_sample)
+        logger.info(f"Inferring num_classes from the first {n_images} images.")
+        channel_class_map = get_unique_channels(image_sample, num_channels, num_classes)
+
+        inferred_num_classes = channel_class_map.shape[0]
+        if num_classes:
+            if num_classes < inferred_num_classes:
+                raise ValueError(
+                    f"Images inferred num classes {inferred_num_classes} exceeds `num_classes` {num_classes}."
+                )
+            elif num_classes > inferred_num_classes:
+                logger.warning(
+                    "Images inferred num classes {} does not match `num_classes` {}. "
+                    "Using inferred num classes {}.".format(inferred_num_classes, num_classes, inferred_num_classes)
+                )
+
+        return channel_class_map
+
+    @staticmethod
     def _finalize_preprocessing_parameters(
         preprocessing_parameters: dict,
         encoder_type: str,
@@ -744,6 +836,13 @@ class ImageFeatureMixin(BaseFeatureMixin):
             )
             standardize_image = None
 
+        if preprocessing_parameters[INFER_IMAGE_NUM_CLASSES] or preprocessing_parameters["num_classes"]:
+            channel_class_map = ImageFeatureMixin._infer_image_num_classes(
+                sample, num_channels, preprocessing_parameters["num_classes"]
+            )
+        else:
+            channel_class_map = torch.Tensor([])
+
         return (
             should_resize,
             width,
@@ -752,6 +851,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
             user_specified_num_channels,
             average_file_size,
             standardize_image,
+            channel_class_map,
         )
 
     @staticmethod
@@ -768,7 +868,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
         name = feature_config[NAME]
         column = input_df[feature_config[COLUMN]]
-        encoder_type = feature_config[ENCODER][TYPE]
+        encoder_type = feature_config[ENCODER][TYPE] if ENCODER in feature_config.keys() else None
 
         src_path = None
         if SRC in metadata:
@@ -779,8 +879,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
         )
 
         # determine if specified encoder is a torchvision model
-        model_type = feature_config[ENCODER].get("type", None)
-        model_variant = feature_config[ENCODER].get("model_variant")
+        model_type = feature_config[ENCODER].get("type", None) if ENCODER in feature_config.keys() else None
+        model_variant = feature_config[ENCODER].get("model_variant") if ENCODER in feature_config.keys() else None
         if model_variant:
             torchvision_parameters = _get_torchvision_parameters(model_type, model_variant)
         else:
@@ -815,6 +915,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
             height = transform_metadata.height
             width = transform_metadata.width
             num_channels = transform_metadata.num_channels
+            channel_class_map = torch.Tensor([])
         else:
             # torchvision_parameters is None
             # perform Ludwig specified transformations
@@ -826,6 +927,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 user_specified_num_channels,
                 average_file_size,
                 standardize_image,
+                channel_class_map,
             ) = ImageFeatureMixin._finalize_preprocessing_parameters(
                 preprocessing_parameters, encoder_type, abs_path_column
             )
@@ -833,6 +935,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
             metadata[name][PREPROCESSING]["height"] = height
             metadata[name][PREPROCESSING]["width"] = width
             metadata[name][PREPROCESSING]["num_channels"] = num_channels
+            metadata[name][PREPROCESSING]["num_classes"] = channel_class_map.shape[0]
+            metadata[name][PREPROCESSING]["channel_class_map"] = channel_class_map.tolist()
 
             read_image_if_bytes_obj_and_resize = partial(
                 ImageFeatureMixin._read_image_if_bytes_obj_and_resize,
@@ -843,11 +947,16 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 resize_method=preprocessing_parameters["resize_method"],
                 user_specified_num_channels=user_specified_num_channels,
                 standardize_image=standardize_image,
+                channel_class_map=channel_class_map,
             )
 
         # TODO: alternatively use get_average_image() for unreachable images
-        default_image = get_gray_default_image(num_channels, height, width)
-        metadata[name]["reshape"] = (num_channels, height, width)
+        if channel_class_map.shape[0]:
+            default_image = get_gray_default_image(1, height, width).squeeze(0)
+            metadata[name]["reshape"] = (height, width)
+        else:
+            default_image = get_gray_default_image(num_channels, height, width)
+            metadata[name]["reshape"] = (num_channels, height, width)
 
         in_memory = feature_config[PREPROCESSING]["in_memory"]
         if in_memory or skip_save_processed_input:
@@ -989,3 +1098,79 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
     def get_augmentation_pipeline(self):
         return self.augmentation_pipeline
+
+
+class ImageOutputFeature(ImageFeatureMixin, OutputFeature):
+    def __init__(
+        self,
+        output_feature_config: Union[ImageOutputFeatureConfig, Dict],
+        output_features: Dict[str, OutputFeature],
+        **kwargs,
+    ):
+        super().__init__(output_feature_config, output_features, **kwargs)
+        self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
+        self._setup_loss()
+        self._setup_metrics()
+
+    def logits(self, inputs: Dict[str, torch.Tensor], target=None, **kwargs):
+        return self.decoder_obj(inputs, target=target)
+
+    def metric_kwargs(self):
+        return dict(num_outputs=self.output_shape[0])
+
+    def create_predict_module(self) -> PredictModule:
+        return _ImagePredict()
+
+    def get_prediction_set(self):
+        return self.decoder_obj.get_prediction_set()
+
+    @classmethod
+    def get_output_dtype(cls):
+        return torch.float32
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.decoder_obj.output_shape
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return self.decoder_obj.input_shape
+
+    @staticmethod
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        for key in ["height", "width", "num_channels", "num_classes", "standardize_image"]:
+            if hasattr(feature_config.decoder, key):
+                setattr(feature_config.decoder, key, feature_metadata[PREPROCESSING][key])
+
+    @staticmethod
+    def calculate_overall_stats(predictions, targets, metadata):
+        # no overall stats, just return empty dictionary
+        return {}
+
+    def postprocess_predictions(
+        self,
+        result,
+        metadata,
+    ):
+        predictions_col = f"{self.feature_name}_{PREDICTIONS}"
+
+        if predictions_col in result:
+            channel_class_map = torch.ByteTensor(metadata[PREPROCESSING]["channel_class_map"])
+
+            if channel_class_map.shape[0]:
+
+                def class_mask2img(row):
+                    pred = row[predictions_col]
+                    return get_image_from_class_mask(channel_class_map, pred)
+
+                result[predictions_col] = result.apply(class_mask2img, axis=1)
+
+            return result
+
+    @staticmethod
+    def create_postproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
+        return _ImagePostprocessing(metadata)
+
+    @staticmethod
+    def get_schema_cls():
+        return ImageOutputFeatureConfig
