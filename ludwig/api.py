@@ -959,7 +959,7 @@ class LudwigModel:
 
         logger.info(
             "If you want to upload this model to huggingface.co, run the following Python commands: \n"
-            "from ludwig.utils.hf_utils import upload_model_to_hfhub; \n"
+            "from ludwig.utils.hf_utils import upload_folder_to_hfhub; \n"
             f"upload_folder_to_hfhub(repo_id='desired/huggingface/repo/name', folder_path='{save_path}')"
         )
 
