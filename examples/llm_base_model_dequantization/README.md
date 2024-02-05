@@ -45,7 +45,7 @@ Beneath the surface, this script:
 
 ## Bonus
 
-If desired, Ludwig can alsopush the new dequantized model weights straight to huggingface hub!
+If desired, you can also use Ludwig to push the new dequantized model weights straight to HuggingFace hub!
 
 ```python
 from ludwig.utils.hf_utils import upload_folder_to_hfhub
