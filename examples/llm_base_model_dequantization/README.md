@@ -31,7 +31,7 @@ without sacrificing on inference performance.
 | - Dequantized base model in fp16 | - Dequantized base model in fp16 | - Dequantized base model in fp16 |
 | - Direct Forward Pass using fp16 | - Direct Forward Pass using fp16 | - Direct Forward Pass using fp16 |
 
-## Example
+## Running the example script
 
 The example `phi_2_dequantization.py` shows how you how you can quantize and then dequantized Phi-2. This process
 can be repeated for any other base model supported by Ludwig that is quantized using 4 bits nf4 bitsandbytes quantization. You will need a GPU to run the script successfully.
@@ -42,6 +42,8 @@ Beneath the surface, this script:
 1. Dequantizes the model layer by layer back into fp16 in-place.
 1. Write the new dequantized weights to disk at `save_path`
 1. Write the tokenizer to disk at `save_path`
+
+Make sure you update the paths at the top of the file for base model, save path, and huggingface repo ID!
 
 ## Bonus
 
