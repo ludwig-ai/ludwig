@@ -12,9 +12,9 @@ hfhub_repo_id = "arnavgrg/" + dequantized_path
 
 
 config = yaml.safe_load(
-    """
+    f"""
     model_type: llm
-    base_model: microsoft/phi-2
+    base_model: {base_model_name}
 
     quantization:
       bits: 4
