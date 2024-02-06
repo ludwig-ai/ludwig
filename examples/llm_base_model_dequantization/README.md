@@ -15,12 +15,12 @@ without sacrificing on inference performance.
 | **Request 1:**                             | **Request 2:**                             | **Request 3:**                             |
 | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
 | - Quantized bitsandbytes model             | - Quantized bitsandbytes model             | - Quantized bitsandbytes model             |
-| - Layer 1                                  | - Layer 1                                  | - Layer 1                                  |
-| - Dequantization (nf4 to fp16)             | - Dequantization (nf4 to fp16)             | - Dequantization (nf4 to fp16)             |
+| - Dequantization of layer 1 (nf4 to fp16)  | - Dequantization of layer 1 (nf4 to fp16)  | - Dequantization of layer 1 (nf4 to fp16)  |
 | - Forward Pass (using dequantized weights) | - Forward Pass (using dequantized weights) | - Forward Pass (using dequantized weights) |
-| - Layer 2                                  | - Layer 2                                  | - Layer 2                                  |
-| - Dequantization (nf4 to fp16)             | - Dequantization (nf4 to fp16)             | - Dequantization (nf4 to fp16)             |
+| - Quantization of layer 1 (fp16 to nf4)    | - Quantization of layer 1 (fp16 to nf4)    | - Quantization of layer 1 (fp16 to nf4)    |
+| - Dequantization of layer 2 (nf4 to fp16)  | - Dequantization of layer 2 (nf4 to fp16)  | - Dequantization of layer 2 (nf4 to fp16)  |
 | - Forward Pass (using dequantized weights) | - Forward Pass (using dequantized weights) | - Forward Pass (using dequantized weights) |
+| - Quantization of layer 2 (fp16 to nf4)    | - Quantization of layer 2 (fp16 to nf4)    | - Quantization of layer 2 (fp16 to nf4)    |
 | - ...                                      | - ...                                      | - ...                                      |
 | - Final Output                             | - Final Output                             | - Final Output                             |
 
@@ -29,7 +29,10 @@ without sacrificing on inference performance.
 | **Request 1:**                   | **Request 2:**                   | **Request 3:**                   |
 | -------------------------------- | -------------------------------- | -------------------------------- |
 | - Dequantized base model in fp16 | - Dequantized base model in fp16 | - Dequantized base model in fp16 |
-| - Direct Forward Pass using fp16 | - Direct Forward Pass using fp16 | - Direct Forward Pass using fp16 |
+| - Forward pass through layer 1   | - Forward pass through layer 1   | - Forward pass through layer 1   |
+| - Forward pass through layer 2   | - Forward pass through layer 2   | - Forward pass through layer 2   |
+| - ...                            | - ...                            | - ...                            |
+| - Final Output                   | - Final Output                   | - Final Output                   |
 
 ## Running the example script
 
