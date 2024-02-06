@@ -144,7 +144,7 @@ class ImagePreprocessingConfig(BasePreprocessingConfig):
         default=None,
         allow_none=True,
         description="Number of channel classes in the images. If specified, this value will be validated "
-        "against the inferred number of classes. ",
+        "against the inferred number of classes. Use 2 to convert grayscale images to binary images.",
         parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["num_classes"],
     )
 

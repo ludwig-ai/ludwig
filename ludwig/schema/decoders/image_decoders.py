@@ -71,4 +71,5 @@ class UNetDecoderConfig(ImageDecoderConfig):
         default=None,
         allow_none=True,
         description="Number of classes to predict in the output. ",
+        parameter_metadata=DECODER_METADATA["UNetDecoder"]["num_classes"],
     )
