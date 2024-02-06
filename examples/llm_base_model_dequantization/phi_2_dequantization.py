@@ -1,14 +1,16 @@
 import logging
 
 import yaml
+from huggingface_hub import whoami
 
 from ludwig.api import LudwigModel
 from ludwig.utils.hf_utils import upload_folder_to_hfhub
 
+hf_username = whoami().get("name")
 base_model_name = "microsoft/phi-2"
 dequantized_path = "microsoft-phi-2-dequantized"
 save_path = "/home/ray/" + dequantized_path
-hfhub_repo_id = "arnavgrg/" + dequantized_path
+hfhub_repo_id = hf_username + dequantized_path
 
 
 config = yaml.safe_load(
