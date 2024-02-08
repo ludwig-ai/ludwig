@@ -144,7 +144,7 @@ def config_uses_llm(config: Union[Dict[str, Any], ModelConfig]) -> bool:
     return uses_llm
 
 
-def get_quantization(config: Union[Dict[str, Any], ModelConfig]) -> Union[int, List[int], None]:
+def get_quantization(config: Union[Dict[str, Any], ModelConfig]) -> Union[List[int], None]:
     """Get the quantization specified in a config at any level.
 
     Args:
@@ -157,7 +157,7 @@ def get_quantization(config: Union[Dict[str, Any], ModelConfig]) -> Union[int, L
     """
     if isinstance(config, ModelConfig):
         if config.model_type == MODEL_LLM:
-            return config.quantization.bits if config.quantization else None
+            return [config.quantization.bits] if config.quantization else None
         else:
             quantization_bits = []
             for feature in config.input_features:
@@ -169,7 +169,8 @@ def get_quantization(config: Union[Dict[str, Any], ModelConfig]) -> Union[int, L
             return quantization_bits
     elif isinstance(config, dict) and config:
         if config.get(MODEL_TYPE, MODEL_ECD) == MODEL_LLM:
-            return config.get("quantization", {}).get("bits")
+            quantization = config.get("quantization", {}).get("bits")
+            return [quantization] if quantization is not None else quantization_bits
         elif INPUT_FEATURES in config:
             quantization_bits = []
             for feature in config.get(INPUT_FEATURES, []):
