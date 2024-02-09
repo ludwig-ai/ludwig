@@ -246,9 +246,9 @@ def ecd_config_dict_llm_encoder_8bit(
     "config,expectation",
     [
         # LLM configurations
-        ("llm_config_dict", None),
-        ("llm_config_dict_4bit", 4),
-        ("llm_config_dict_8bit", 8),
+        ("llm_config_dict", [None]),
+        ("llm_config_dict_4bit", [4]),
+        ("llm_config_dict_8bit", [8]),
         # LLM encoder configurations with one feature
         ("ecd_config_dict_llm_encoder", [None]),
         ("ecd_config_dict_llm_encoder_4bit", [4]),
