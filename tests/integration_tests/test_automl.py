@@ -1,4 +1,5 @@
 import os
+import random
 import tempfile
 from typing import List, Set
 from unittest import mock
@@ -9,6 +10,7 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, SPLIT, TYPE
+from ludwig.data.dataset_synthesizer import cli_synthesize_dataset
 from ludwig.schema.model_types.base import ModelConfig
 from ludwig.types import FeatureConfigDict, ModelConfigDict
 from ludwig.utils.misc_utils import merge_dict
@@ -380,3 +382,66 @@ def _run_train_with_config(time_budget, test_data, tmpdir, **kwargs):
         else:
             assert best_model is None
             assert mock_fn.call_count == 0
+
+
+@pytest.mark.distributed
+def test_mark_collinear_features(csv_filename):
+    from ludwig.automl.automl import mark_collinear_features
+
+    N_SAMPLES = 100
+    INPUT_FEATURES = [
+        {"name": "bin_feature", "type": "binary"},
+        {"name": "cat_feature", "type": "category"},
+        {"name": "num_0", "type": "number"},
+        {"name": "num_1", "type": "number"},
+        {"name": "num_2", "type": "number"},
+        {"name": "num_3", "type": "number"},
+        {"name": "num_4", "type": "number"},
+        {"name": "num_5", "type": "number"},
+    ]
+    OUTPUT_FEATURES = [
+        {"name": "target", "type": "number"},
+    ]
+
+    # create base dataset
+    FEATURES_LIST = INPUT_FEATURES + OUTPUT_FEATURES
+
+    # set seed for reproducibility
+    np.random.seed(42)
+    random.seed(42)
+
+    # create base dataset
+    cli_synthesize_dataset(N_SAMPLES, FEATURES_LIST, csv_filename)
+    df_X = pd.read_csv(csv_filename)
+
+    # add 4 collinear features
+    df_X.loc[:, "num_6"] = -3.0 * df_X.loc[:, "num_1"] + np.random.normal(0, 1, N_SAMPLES)
+    INPUT_FEATURES.append({"name": "num_6", "type": "number"})
+
+    df_X.loc[:, "num_7"] = -4.0 * df_X.loc[:, "num_5"] + 5 * df_X.loc[:, "num_6"] + np.random.normal(0, 1, N_SAMPLES)
+    INPUT_FEATURES.append({"name": "num_7", "type": "number"})
+
+    df_X.loc[:, "num_8"] = 10.0 * df_X.loc[:, "num_2"] + 3 * df_X.loc[:, "num_3"] + np.random.normal(0, 1, N_SAMPLES)
+    INPUT_FEATURES.append({"name": "num_8", "type": "number"})
+
+    df_X.loc[:, "num_9"] = 5.0 * df_X.loc[:, "num_4"] + np.random.normal(0, 1, N_SAMPLES)
+    INPUT_FEATURES.append({"name": "num_9", "type": "number"})
+
+    # setup model config
+    model_config = {
+        "input_features": INPUT_FEATURES,
+        "output_features": OUTPUT_FEATURES,
+    }
+
+    # check that collinear features are detected
+    collinear_status = mark_collinear_features(df_X, model_config, 5.0)
+
+    # check that collinear_status is a dictionary
+    assert isinstance(collinear_status, dict)
+
+    # check that number of entries in dictionary equals number numeric features,
+    # excluding categorical and binary features
+    assert len(collinear_status) == len(INPUT_FEATURES) - 2
+
+    # check that 4 collinear features are detected
+    assert sum([v["collinear"] for c, v in collinear_status.items()]) == 4
