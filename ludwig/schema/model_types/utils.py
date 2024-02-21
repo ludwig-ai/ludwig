@@ -323,6 +323,11 @@ def set_llm_parameters(config: "ModelConfig") -> None:
     # PEFT PR: https://github.com/huggingface/peft/pull/1375
     _set_phi2_target_modules(config)
 
+    # HACK(Arnav): Set Gemma target modules when using LoRA
+    # GitHub issue:
+    # PEFT PR:
+    _set_gemma_target_modules(config)
+
 
 def _set_llm_tokenizers(config: "ModelConfig") -> None:
     """Sets the tokenizers for the LLM model to the pretrained model name or path. This ensures that they use the
@@ -448,6 +453,22 @@ def _set_phi2_target_modules(config: "ModelConfig") -> None:
     target_modules = ["q_proj", "k_proj", "v_proj", "dense", "fc1", "fc2"]
 
     logger.info(f"Setting adapter target modules to {target_modules} for Phi-2 base model with LoRA adapter.")
+    config.adapter.target_modules = target_modules
+
+
+def _set_gemma_target_modules(config: "ModelConfig") -> None:
+    """If the base model is Gemma, LoRA is enabled and the target modules are not set, set the target modules to
+    maximize performance."""
+    if config.base_model not in {"google/gemma-2b", "google/gemma-2b-it", "google/gemma-7b", "google/gemma-7b-it"}:
+        return
+
+    if not config.adapter:
+        return
+
+    if config.adapter.type != "lora" or config.adapter.target_modules:
+        return
+
+    target_modules = ["k_proj", "v_proj"]
     config.adapter.target_modules = target_modules
 
 
