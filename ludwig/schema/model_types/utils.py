@@ -324,7 +324,7 @@ def set_llm_parameters(config: "ModelConfig") -> None:
     _set_phi2_target_modules(config)
 
     # HACK(Arnav): Set Gemma target modules when using LoRA
-    # GitHub issue:
+    # GitHub issue: https://github.com/ludwig-ai/ludwig/issues/3937
     # PEFT PR:
     _set_gemma_target_modules(config)
 
