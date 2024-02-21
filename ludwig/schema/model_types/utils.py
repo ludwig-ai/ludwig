@@ -325,7 +325,7 @@ def set_llm_parameters(config: "ModelConfig") -> None:
 
     # HACK(Arnav): Set Gemma target modules when using LoRA
     # GitHub issue: https://github.com/ludwig-ai/ludwig/issues/3937
-    # PEFT PR:
+    # PEFT PR: https://github.com/huggingface/peft/pull/1499
     _set_gemma_target_modules(config)
 
 
