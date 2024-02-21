@@ -532,7 +532,9 @@ def _verify_lm_lora_finetuning_layers(
             id="adalora_not_merged",
         ),
         # TODO: <Alex>02/21/2024: Disabling AdaptionPrompt (waiting for PEFT release to fix
-        # "TypeError: LlamaRotaryEmbedding.forward() missing 1 required positional argument: 'position_ids')"</Alex>
+        # "TypeError: LlamaRotaryEmbedding.forward() missing 1 required positional argument: 'position_ids')"
+        # (this is reflected in https://github.com/ludwig-ai/ludwig/issues/3938).
+        # </Alex>
         # pytest.param(
         #     "adaption_prompt",
         #     {},
@@ -1024,7 +1026,9 @@ def test_default_max_sequence_length():
         "lora",
         "adalora",
         # TODO: <Alex>02/21/2024: Disabling AdaptionPrompt (waiting for PEFT release to fix
-        # "TypeError: LlamaRotaryEmbedding.forward() missing 1 required positional argument: 'position_ids')"</Alex>
+        # "TypeError: LlamaRotaryEmbedding.forward() missing 1 required positional argument: 'position_ids')"
+        # (this is reflected in https://github.com/ludwig-ai/ludwig/issues/3938).
+        # </Alex>
         # "adaption_prompt",
     ],
 )
