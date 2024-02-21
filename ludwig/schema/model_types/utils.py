@@ -468,7 +468,7 @@ def _set_gemma_target_modules(config: "ModelConfig") -> None:
     if config.adapter.type != "lora" or config.adapter.target_modules:
         return
 
-    target_modules = ["k_proj", "v_proj"]
+    target_modules = ["q_proj", "v_proj"]
     config.adapter.target_modules = target_modules
 
 
