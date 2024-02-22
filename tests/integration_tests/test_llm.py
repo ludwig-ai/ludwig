@@ -532,7 +532,9 @@ def _verify_lm_lora_finetuning_layers(
             id="adalora_not_merged",
         ),
         # TODO: <Alex>02/21/2024: Disabling AdaptionPrompt (waiting for PEFT release to fix
-        # "TypeError: LlamaRotaryEmbedding.forward() missing 1 required positional argument: 'position_ids')"</Alex>
+        # "TypeError: LlamaRotaryEmbedding.forward() missing 1 required positional argument: 'position_ids')"
+        # (this is reflected in https://github.com/ludwig-ai/ludwig/issues/3938).
+        # </Alex>
         # pytest.param(
         #     "adaption_prompt",
         #     {},
@@ -1018,7 +1020,18 @@ def test_default_max_sequence_length():
 
 
 @pytest.mark.llm
-@pytest.mark.parametrize("adapter", ["lora", "adalora", "adaption_prompt"])
+@pytest.mark.parametrize(
+    "adapter",
+    [
+        "lora",
+        "adalora",
+        # TODO: <Alex>02/21/2024: Disabling AdaptionPrompt (waiting for PEFT release to fix
+        # "TypeError: LlamaRotaryEmbedding.forward() missing 1 required positional argument: 'position_ids')"
+        # (this is reflected in https://github.com/ludwig-ai/ludwig/issues/3938).
+        # </Alex>
+        # "adaption_prompt",
+    ],
+)
 def test_load_pretrained_adapter_weights(adapter):
     from peft import PeftModel
     from transformers import PreTrainedModel

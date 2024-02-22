@@ -406,7 +406,11 @@ class AdaloraConfig(LoraConfig):
 
 
 @DeveloperAPI
-@register_adapter("adaption_prompt")
+# TODO: <Alex>02/21/2024: Disabling AdaptionPrompt (waiting for PEFT release to fix
+# "TypeError: LlamaRotaryEmbedding.forward() missing 1 required positional argument: 'position_ids')"
+# (this is reflected in https://github.com/ludwig-ai/ludwig/issues/3938).
+# </Alex>
+# @register_adapter("adaption_prompt")
 @ludwig_dataclass
 class AdaptionPromptConfig(BaseAdapterConfig):
     """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/adaption_prompt/config.py."""

@@ -49,7 +49,7 @@ with open(path.join(here, "requirements_extra.txt"), encoding="utf-8") as f:
 
 setup(
     name="ludwig",
-    version="0.9.4",
+    version="0.10.0",
     description="Declarative machine learning: End-to-end machine learning pipelines using data-driven configurations.",
     long_description=long_description,
     long_description_content_type="text/markdown",
