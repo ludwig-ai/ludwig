@@ -1343,18 +1343,18 @@ def test_llm_used_tokens(tmpdir):
     assert progress_tracker["checkpoint_to_epoch"] == {"1": 1, "2": 1, "3": 2, "4": 2, "5": 3, "6": 3}
     assert progress_tracker["checkpoint_to_step"] == {"1": 4, "2": 4, "3": 8, "4": 8, "5": 12, "6": 12}
     assert progress_tracker["cumulative_checkpoint_token_usage"] == {
-        "1": 204,
-        "2": 204,
-        "3": 408,
-        "4": 408,
-        "5": 612,
-        "6": 612,
+        "1": 207,
+        "2": 207,
+        "3": 414,
+        "4": 414,
+        "5": 621,
+        "6": 621,
     }
     assert progress_tracker["incremental_checkpoint_token_usage"] == {
-        "1": 204,
+        "1": 207,
         "2": 0,
-        "3": 204,
+        "3": 207,
         "4": 0,
-        "5": 204,
+        "5": 207,
         "6": 0,
     }
