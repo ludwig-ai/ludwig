@@ -267,9 +267,11 @@ class LLM(BaseModel):
         )
 
         # Wrap with flash attention backend for faster generation
-        with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False) if (
-            torch.cuda.is_available() and self.curr_device.type == "cuda"
-        ) else contextlib.nullcontext():
+        with (
+            torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False)
+            if (torch.cuda.is_available() and self.curr_device.type == "cuda")
+            else contextlib.nullcontext()
+        ):
             # TODO (jeffkinnison): Determine why the 8-bit `SCB` and `CB` matrices are deleted in the forward pass
             model_outputs = self.model(input_ids=self.model_inputs, attention_mask=self.attention_masks).get(LOGITS)
 
@@ -330,9 +332,11 @@ class LLM(BaseModel):
                 input_lengths.append(input_ids_sample_no_padding.shape[1])
 
                 # Wrap with flash attention backend for faster generation
-                with torch.backends.cuda.sdp_kernel(
-                    enable_flash=True, enable_math=False, enable_mem_efficient=False
-                ) if (torch.cuda.is_available() and self.curr_device.type == "cuda") else contextlib.nullcontext():
+                with (
+                    torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False)
+                    if (torch.cuda.is_available() and self.curr_device.type == "cuda")
+                    else contextlib.nullcontext()
+                ):
                     # Generate text using the model
                     model_outputs = self.model.generate(
                         input_ids=input_ids_sample_no_padding,
@@ -656,7 +660,7 @@ class LLM(BaseModel):
     ) -> Dict[str, torch.Tensor]:
         """Update target tensor for fine-tuning.
 
-        This method removes left padding from target tensors, adds a pad token to the end of the target tensors,
+        This method removes left padding from target tensors, adds a eos token to the end of the target tensors,
         and pads the target tensors with -100 to ensure equal length for loss computation. It then realigns the
         target tensors with the prediction tensors.
 
@@ -674,10 +678,10 @@ class LLM(BaseModel):
         targets_without_padding = []
         lengths = []
 
-        pad_token_tensor = torch.tensor([self.tokenizer.pad_token_id])
+        eos_token_tensor = torch.tensor([self.tokenizer.eos_token_id])
         for target in targets[of_name]:
             target = remove_left_padding(target, self.tokenizer)[0]
-            target = torch.cat([target, pad_token_tensor.to(device=target.device)], dim=-1).unsqueeze(0)
+            target = torch.cat([target, eos_token_tensor.to(device=target.device)], dim=-1).unsqueeze(0)
             targets_without_padding.append(target)
             lengths.append(target.shape[1])
 

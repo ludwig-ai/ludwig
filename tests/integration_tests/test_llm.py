@@ -1339,7 +1339,9 @@ def test_llm_used_tokens(tmpdir):
     ) as f:
         progress_tracker = json.load(f)
 
-    assert progress_tracker["cumulative_step_token_usage"]["11"] == progress_tracker["total_tokens_used"] == 612
+    print("progress_tracker['cumulative_step_token_usage']", progress_tracker["cumulative_step_token_usage"])
+    print("progress_tracker['total_tokens_used']", progress_tracker["total_tokens_used"])
+    assert progress_tracker["cumulative_step_token_usage"]["11"] == progress_tracker["total_tokens_used"] == 621
     assert progress_tracker["checkpoint_to_epoch"] == {"1": 1, "2": 1, "3": 2, "4": 2, "5": 3, "6": 3}
     assert progress_tracker["checkpoint_to_step"] == {"1": 4, "2": 4, "3": 8, "4": 8, "5": 12, "6": 12}
     assert progress_tracker["cumulative_checkpoint_token_usage"] == {

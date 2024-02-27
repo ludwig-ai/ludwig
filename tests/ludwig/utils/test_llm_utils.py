@@ -156,7 +156,7 @@ def test_find_last_matching_index(tensor_a, tensor_b, expected_index):
 def test_generate_merged_ids_with_target(tokenizer, input_ids, target_ids):
     # Test case when target_ids is not None
     merged_ids, attention_masks = generate_merged_ids(input_ids, target_ids, tokenizer)
-    assert torch.equal(merged_ids, torch.tensor([[3, 4, 5, 9, 10, 11, 1], [6, 7, 8, 12, 13, 14, 1]]))
+    assert torch.equal(merged_ids, torch.tensor([[3, 4, 5, 9, 10, 11, 2], [6, 7, 8, 12, 13, 14, 2]]))
     assert merged_ids.shape == (2, 7)  # Check the shape of merged_ids
     assert attention_masks.shape == (2, 7)  # Check the shape of attention_masks
 
@@ -186,7 +186,7 @@ def test_generate_merged_ids_padding_removal(tokenizer, input_ids, target_ids):
 
     assert torch.equal(merged_ids[0][:3], input_ids[0])  # Check the input_ids part without padding
     assert torch.equal(merged_ids[0][3:-1], target_ids[0])  # Check the target_ids part without padding
-    assert torch.equal(merged_ids[0][-1], torch.tensor(tokenizer.pad_token_id))  # Check the padding tokens
+    assert torch.equal(merged_ids[0][-1], torch.tensor(tokenizer.eos_token_id))  # Check the padding tokens
 
     assert torch.all(attention_masks == 1)
 
