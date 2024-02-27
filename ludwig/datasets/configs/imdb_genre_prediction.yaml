@@ -27,7 +27,9 @@ columns:
     type: category
   - name: Runtime (Minutes)
     type: number
-  - name: Rating Votes
+  - name: Rating
+    type: Number
+  - name: Votes
     type: number
   - name: Revenue (Millions)
     type: number
