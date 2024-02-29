@@ -503,6 +503,21 @@ def _verify_lm_lora_finetuning_layers(
         ),
         pytest.param(
             "lora",
+            {"use_rslora": True},
+            id="lora-rslora-enabled",
+        ),
+        pytest.param(
+            "lora",
+            {"use_dora": True},
+            id="lora-dora-enabled",
+        ),
+        pytest.param(
+            "lora",
+            {"use_rslora": True, "use_dora": True},
+            id="lora-rslora-and-dora-enabled",
+        ),
+        pytest.param(
+            "lora",
             {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True}},
             id="lora_merged",
         ),
