@@ -114,6 +114,12 @@ adapter:
     target_modules:
       ui_display_name: Target Modules
       expected_impact: 2
+    use_rslora:
+      ui_display_name: Enable RSLora
+      expected_impact: 2
+    use_dora:
+      ui_display_name: Enable DoRa
+      expected_impact: 2
   adalora:
     type:
       long_description: |
