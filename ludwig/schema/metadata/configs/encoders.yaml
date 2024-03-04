@@ -9593,6 +9593,7 @@ UNetEncoder:
         default_value_reasoning:
             Computed internally, automatically, based on image
             data preprocessing.
+        internal_only: true
         ui_display_name: NOT DISPLAYED
     width:
         default_value_reasoning:
