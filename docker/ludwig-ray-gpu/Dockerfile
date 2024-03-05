@@ -15,7 +15,7 @@ FROM rayproject/ray:2.3.1-py38-cu118
 # https://kubernetes.io/blog/2023/08/15/pkgs-k8s-io-introduction/
 RUN sudo mkdir /etc/apt/keyrings
 RUN echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
-RUN wget https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key 
+RUN wget https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key
 RUN cat Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 # Done
 
