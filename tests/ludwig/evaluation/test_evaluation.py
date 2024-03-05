@@ -32,6 +32,7 @@ def test_eval_steps_determinism():
     generation:
         temperature: null
         do_sample: False
+        max_new_tokens: 64
 
     preprocessing:
         split:
@@ -64,4 +65,4 @@ def test_eval_steps_determinism():
             diff_exists = True
         # Test if all the metrics are the same between results2 and results3
         assert results2[0]["out"][k] == results3[0]["out"][k]
-    assert diff_exists
+    assert not diff_exists

@@ -37,7 +37,7 @@ from torchmetrics.text import BLEUScore, CharErrorRate, WordErrorRate
 from torchmetrics.text.perplexity import Perplexity
 from torchmetrics.text.rouge import ROUGEScore
 
-from ludwig.constants import (
+from ludwig.constants import (  # RESPONSE,
     ACCURACY,
     ACCURACY_MICRO,
     BINARY,
@@ -65,7 +65,6 @@ from ludwig.constants import (
     PROBABILITIES,
     R2,
     RECALL,
-    RESPONSE,
     ROC_AUC,
     ROOT_MEAN_SQUARED_ERROR,
     ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
@@ -393,25 +392,29 @@ class NextTokenPerplexityMetric(MeanMetric):
         return torch.exp(shifted_loss)
 
 
-@register_metric("bleu", [TEXT], MAXIMIZE, RESPONSE)
+# @register_metric("bleu", [TEXT], MAXIMIZE, RESPONSE)
+# https://github.com/ludwig-ai/ludwig/issues/3953
 class BLEUScoreMetric(BLEUScore, LudwigMetric):
     def __init__(self, **kwargs):
         super().__init__()
 
 
-@register_metric("rouge", [TEXT], MAXIMIZE, RESPONSE)
+# @register_metric("rouge", [TEXT], MAXIMIZE, RESPONSE)
+# https://github.com/ludwig-ai/ludwig/issues/3953
 class ROUGEScoreMetric(ROUGEScore, LudwigMetric):
     def __init__(self, **kwargs):
         super().__init__()
 
 
-@register_metric("word_error_rate", [TEXT], MINIMIZE, RESPONSE)
+# @register_metric("word_error_rate", [TEXT], MINIMIZE, RESPONSE)
+# https://github.com/ludwig-ai/ludwig/issues/3953
 class WordErrorRateMetric(WordErrorRate, LudwigMetric):
     def __init__(self, **kwargs):
         super().__init__()
 
 
-@register_metric("char_error_rate", [TEXT], MINIMIZE, RESPONSE)
+# @register_metric("char_error_rate", [TEXT], MINIMIZE, RESPONSE)
+# https://github.com/ludwig-ai/ludwig/issues/3953
 class CharErrorRateMetric(CharErrorRate, LudwigMetric):
     def __init__(self, **kwargs):
         super().__init__()
