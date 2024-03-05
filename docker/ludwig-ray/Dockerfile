@@ -11,6 +11,13 @@
 
 FROM rayproject/ray:2.3.1-py38
 
+# Fix kubernetes package repositories 
+# https://kubernetes.io/blog/2023/08/15/pkgs-k8s-io-introduction/
+RUN sudo mkdir /etc/apt/keyrings
+RUN echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+RUN curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+# Done
+
 RUN sudo apt-get update && DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y \
 	build-essential \
 	wget \
