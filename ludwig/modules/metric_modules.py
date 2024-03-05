@@ -393,24 +393,28 @@ class NextTokenPerplexityMetric(MeanMetric):
 
 
 # @register_metric("bleu", [TEXT], MAXIMIZE, RESPONSE)
+# https://github.com/ludwig-ai/ludwig/issues/3953
 class BLEUScoreMetric(BLEUScore, LudwigMetric):
     def __init__(self, **kwargs):
         super().__init__()
 
 
 # @register_metric("rouge", [TEXT], MAXIMIZE, RESPONSE)
+# https://github.com/ludwig-ai/ludwig/issues/3953
 class ROUGEScoreMetric(ROUGEScore, LudwigMetric):
     def __init__(self, **kwargs):
         super().__init__()
 
 
 # @register_metric("word_error_rate", [TEXT], MINIMIZE, RESPONSE)
+# https://github.com/ludwig-ai/ludwig/issues/3953
 class WordErrorRateMetric(WordErrorRate, LudwigMetric):
     def __init__(self, **kwargs):
         super().__init__()
 
 
 # @register_metric("char_error_rate", [TEXT], MINIMIZE, RESPONSE)
+# https://github.com/ludwig-ai/ludwig/issues/3953
 class CharErrorRateMetric(CharErrorRate, LudwigMetric):
     def __init__(self, **kwargs):
         super().__init__()
