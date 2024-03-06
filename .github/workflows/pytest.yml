@@ -126,18 +126,20 @@ jobs:
 
           if [ "$PYTORCH" == "nightly" ]; then
             extra_index_url=https://download.pytorch.org/whl/nightly/cpu
-            # pip install --pre torch torchtext torchvision torchaudio --extra-index-url $extra_index_url
-            pip install --pre torch torchvision torchaudio --extra-index-url $extra_index_url
+            pip install pytorch-cuda
+            pip install --pre torch torchtext torchvision torchaudio --extra-index-url $extra_index_url
+            # pip install --pre torch torchvision torchaudio --extra-index-url $extra_index_url
 
           else
             extra_index_url=https://download.pytorch.org/whl/cpu
-            # pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
-            pip install torch==$PYTORCH torch torchvision torchaudio --extra-index-url $extra_index_url
+            pip install pytorch-cuda
+            pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
+            # pip install torch==$PYTORCH torch torchvision torchaudio --extra-index-url $extra_index_url
           fi
 
-          # pip install '.[test]' --extra-index-url $extra_index_url
-          pip install torchtext --extra-index-url $extra_index_url
-          pip install '.[test]'
+          pip install '.[test]' --extra-index-url $extra_index_url
+          # pip install torchtext --extra-index-url $extra_index_url
+          # pip install '.[test]'
           pip list
 
           if [ "$PYTORCH" == "nightly" ]; then
