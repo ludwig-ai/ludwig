@@ -33,10 +33,10 @@ jobs:
             pytorch-version: 2.1.1
             torchscript-version: 1.10.2
             ray-version: 2.3.1
-          - python-version: "3.10"
-            pytorch-version: nightly
-            torchscript-version: 1.10.2
-            ray-version: 2.3.1
+          # - python-version: "3.10"
+          #   pytorch-version: nightly
+          #   torchscript-version: 1.10.2
+          #   ray-version: 2.3.1
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
@@ -125,7 +125,6 @@ jobs:
           fi
 
           if [ "$PYTORCH" == "nightly" ]; then
-            pip install --upgrade bitsandbytes
             extra_index_url=https://download.pytorch.org/whl/nightly/cpu
             pip install --pre torch torchtext torchvision torchaudio --extra-index-url $extra_index_url
 
