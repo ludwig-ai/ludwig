@@ -126,11 +126,11 @@ jobs:
 
           if [ "$PYTORCH" == "nightly" ]; then
             index_url=https://download.pytorch.org/whl/nightly/cpu
-            pip install --pre torch torchtext torchvision torchaudio --index-url $index_url
+            pip install --pre torch torchtext torchvision torchaudio --index-url $index_url --find-links
 
           else
             index_url=https://download.pytorch.org/whl/cpu
-            pip install torch==$PYTORCH torchtext torchvision torchaudio --index-url $index_url
+            pip install torch==$PYTORCH torchtext torchvision torchaudio --index-url $index_url --find-links
           fi
 
           pip install '.[test]' --index-url $index_url
