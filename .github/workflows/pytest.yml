@@ -138,6 +138,7 @@ jobs:
 
           # pip install '.[test]' --extra-index-url $extra_index_url
           # pip install torchtext --extra-index-url $extra_index_url
+          pip install cudatoolkit
           pip install torchtext
           pip install '.[test]'
           pip list
