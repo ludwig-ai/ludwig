@@ -135,7 +135,8 @@ jobs:
             pip install torch==$PYTORCH torch torchvision torchaudio --extra-index-url $extra_index_url
           fi
 
-          pip install '.[test]' --extra-index-url $extra_index_url
+          # pip install '.[test]' --extra-index-url $extra_index_url
+          pip install '.[test]'
           pip list
 
           if [ "$PYTORCH" == "nightly" ]; then
