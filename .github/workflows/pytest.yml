@@ -42,7 +42,7 @@ jobs:
       MARKERS: ${{ matrix.test-markers }}
       NEUROPOD_BASE_DIR: "/usr/local/lib/neuropod"
       NEUROPOD_VERISON: "0.3.0-rc6"
-      TORCHSCRIPT_VERISON: ${{ matrix.torchscript-version }}
+      TORCHSCRIPT_VERSION: ${{ matrix.torchscript-version }}
       RAY_VERSION: ${{ matrix.ray-version }}
       AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
@@ -78,7 +78,7 @@ jobs:
       - name: Setup Linux
         if: runner.os == 'linux'
         run: |
-          sudo apt-get update && sudo apt-get install -y cmake libsndfile1 wget libsox-dev libhdf5-dev libhdf5-serial-dev
+          sudo apt-get update && sudo apt-get install -y cmake libsndfile1 wget libsox-dev
 
       - name: Setup macOS
         if: runner.os == 'macOS'
@@ -125,19 +125,16 @@ jobs:
           fi
 
           if [ "$PYTORCH" == "nightly" ]; then
-            pip install wheel Cython h5py
-            python setup.py bdist_wheel
-            index_url=https://download.pytorch.org/whl/nightly/cpu
-            pip install --pre torch torchtext torchvision torchaudio --no-build-isolation --index-url $index_url
+            extra_index_url=https://download.pytorch.org/whl/nightly/cpu
+            pip install --pre torch torchtext torchvision torchaudio --extra-index-url $extra_index_url
 
           else
-            pip install wheel Cython h5py
-            python setup.py bdist_wheel
-            index_url=https://download.pytorch.org/whl/cpu
-            pip install torch==$PYTORCH torchtext torchvision torchaudio --no-build-isolation --index-url $index_url
+            extra_index_url=https://download.pytorch.org/whl/cpu
+            pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
           fi
 
-          pip install '.[test]' --no-build-isolation --index-url $index_url
+          # pip install '.[test]' --extra-index-url $extra_index_url
+          pip install '.[test]' --index-url $extra_index_url
           pip list
 
           if [ "$PYTORCH" == "nightly" ]; then
@@ -156,7 +153,7 @@ jobs:
       - name: Install Neuropod backend
         run: |
           sudo mkdir -p "$NEUROPOD_BASE_DIR"
-          curl -L https://github.com/uber/neuropod/releases/download/v${{ env.NEUROPOD_VERISON }}/libneuropod-cpu-linux-v${{ env.NEUROPOD_VERISON }}-torchscript-${{ env.TORCHSCRIPT_VERISON }}-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
+          curl -L https://github.com/uber/neuropod/releases/download/v${{ env.NEUROPOD_VERISON }}/libneuropod-cpu-linux-v${{ env.NEUROPOD_VERISON }}-torchscript-${{ env.TORCHSCRIPT_VERSION }}-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
         shell: bash
 
       - name: Unit Tests
@@ -445,7 +442,7 @@ jobs:
   #     PYTORCH: ${{ matrix.pytorch-version }}
   #     NEUROPOD_BASE_DIR: "/usr/local/lib/neuropod"
   #     NEUROPOD_VERISON: "0.3.0-rc6"
-  #     TORCHSCRIPT_VERISON: ${{ matrix.torchscript-version }}
+  #     TORCHSCRIPT_VERSION: ${{ matrix.torchscript-version }}
 
   #   name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, gpu
 
@@ -507,7 +504,7 @@ jobs:
   #     - name: Install Neuropod backend
   #       run: |
   #         sudo mkdir -p "$NEUROPOD_BASE_DIR"
-  #         curl -L https://github.com/uber/neuropod/releases/download/v${{ env.NEUROPOD_VERISON }}/libneuropod-cpu-linux-v${{ env.NEUROPOD_VERISON }}-torchscript-${{ env.TORCHSCRIPT_VERISON }}-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
+  #         curl -L https://github.com/uber/neuropod/releases/download/v${{ env.NEUROPOD_VERISON }}/libneuropod-cpu-linux-v${{ env.NEUROPOD_VERISON }}-torchscript-${{ env.TORCHSCRIPT_VERSION }}-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
   #       shell: bash
 
   #     - name: Reinstall Horovod if necessary
