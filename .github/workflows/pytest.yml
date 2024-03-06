@@ -126,14 +126,14 @@ jobs:
 
           if [ "$PYTORCH" == "nightly" ]; then
             index_url=https://download.pytorch.org/whl/nightly/cpu
-            pip install --pre torch torchtext torchvision torchaudio --no-build-isolation --index-url $index_url
+            pip install --pre wheel torch torchtext torchvision torchaudio --no-build-isolation --index-url $index_url
 
           else
             index_url=https://download.pytorch.org/whl/cpu
-            pip install torch==$PYTORCH torchtext torchvision torchaudio --no-build-isolation --index-url $index_url
+            pip install wheel torch==$PYTORCH torchtext torchvision torchaudio --no-build-isolation --index-url $index_url
           fi
 
-          pip install '.[test]' --no-build-isolation --index-url $index_url
+          pip install wheel '.[test]' --no-build-isolation --index-url $index_url
           pip list
 
           if [ "$PYTORCH" == "nightly" ]; then
