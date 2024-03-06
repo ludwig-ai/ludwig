@@ -78,7 +78,7 @@ jobs:
       - name: Setup Linux
         if: runner.os == 'linux'
         run: |
-          sudo apt-get update && sudo apt-get install -y cmake libsndfile1 wget libsox-dev
+          sudo apt-get update && sudo apt-get install -y cmake libsndfile1 wget libsox-dev libhdf5-dev libhdf5-serial-dev
 
       - name: Setup macOS
         if: runner.os == 'macOS'
@@ -125,13 +125,13 @@ jobs:
           fi
 
           if [ "$PYTORCH" == "nightly" ]; then
-            pip install wheel Cython
+            pip install wheel Cython h5py
             python setup.py bdist_wheel
             index_url=https://download.pytorch.org/whl/nightly/cpu
             pip install --pre torch torchtext torchvision torchaudio --no-build-isolation --index-url $index_url
 
           else
-            pip install wheel Cython
+            pip install wheel Cython h5py
             python setup.py bdist_wheel
             index_url=https://download.pytorch.org/whl/cpu
             pip install torch==$PYTORCH torchtext torchvision torchaudio --no-build-isolation --index-url $index_url
