@@ -78,14 +78,7 @@ jobs:
       - name: Setup Linux
         if: runner.os == 'linux'
         run: |
-          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin
-          sudo mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600
-          wget https://developer.download.nvidia.com/compute/cuda/11.5.1/local_installers/cuda-repo-ubuntu2004-11-5-local_11.5.1-495.29.05-1_amd64.deb
-          sudo dpkg -i cuda-repo-ubuntu2004-11-5-local_11.5.1-495.29.05-1_amd64.deb
-          sudo apt-key add /var/cuda-repo-ubuntu2004-11-5-local/7fa2af80.pub
-          # sudo apt-get update
-          # sudo apt-get -y install cuda
-          sudo apt-get update && sudo apt-get install -y cmake libsndfile1 wget libsox-dev cuda
+          sudo apt-get update && sudo apt-get install -y cmake libsndfile1 wget libsox-dev
 
       - name: Setup macOS
         if: runner.os == 'macOS'
@@ -132,6 +125,7 @@ jobs:
           fi
 
           if [ "$PYTORCH" == "nightly" ]; then
+            pip install nvidia-cuda-nvrtc-cu12==12.1.105
             extra_index_url=https://download.pytorch.org/whl/nightly/cpu
             pip install --pre torch torchtext torchvision torchaudio --extra-index-url $extra_index_url
             # pip install --pre torch torchvision torchaudio --extra-index-url $extra_index_url
