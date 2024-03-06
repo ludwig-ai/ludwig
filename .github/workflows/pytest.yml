@@ -125,22 +125,16 @@ jobs:
           fi
 
           if [ "$PYTORCH" == "nightly" ]; then
-            # pip install nvidia-cuda-nvrtc-cu12==12.1.105
+            pip install --upgrade bitsandbytes
             extra_index_url=https://download.pytorch.org/whl/nightly/cpu
-            # pip install --pre torch torchtext torchvision torchaudio --extra-index-url $extra_index_url
-            pip install --pre torch torchvision torchaudio --extra-index-url $extra_index_url
+            pip install --pre torch torchtext torchvision torchaudio --extra-index-url $extra_index_url
 
           else
             extra_index_url=https://download.pytorch.org/whl/cpu
-            # pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
-            pip install torch==$PYTORCH torch torchvision torchaudio --extra-index-url $extra_index_url
+            pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
           fi
 
-          # pip install '.[test]' --extra-index-url $extra_index_url
-          # pip install torchtext --extra-index-url $extra_index_url
-          pip install cudatoolkit
-          pip install torchtext
-          pip install '.[test]'
+          pip install '.[test]' --extra-index-url $extra_index_url
           pip list
 
           if [ "$PYTORCH" == "nightly" ]; then
