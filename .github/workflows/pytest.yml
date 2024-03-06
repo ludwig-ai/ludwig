@@ -125,12 +125,16 @@ jobs:
           fi
 
           if [ "$PYTORCH" == "nightly" ]; then
+            pip install wheel
+            python setup.py bdist_wheel
             index_url=https://download.pytorch.org/whl/nightly/cpu
-            pip install --pre wheel torch torchtext torchvision torchaudio --no-build-isolation --index-url $index_url
+            pip install --pre torch torchtext torchvision torchaudio --no-build-isolation --index-url $index_url
 
           else
+            pip install wheel
+            python setup.py bdist_wheel
             index_url=https://download.pytorch.org/whl/cpu
-            pip install wheel torch==$PYTORCH torchtext torchvision torchaudio --no-build-isolation --index-url $index_url
+            pip install torch==$PYTORCH torchtext torchvision torchaudio --no-build-isolation --index-url $index_url
           fi
 
           pip install wheel '.[test]' --no-build-isolation --index-url $index_url
