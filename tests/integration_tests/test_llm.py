@@ -351,6 +351,7 @@ def _prepare_finetuning_test(
         BASE_MODEL: model_name,
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
+        GENERATION: {"max_new_tokens": 64},
         TRAINER: {
             TYPE: "finetune",
             BATCH_SIZE: "auto",
