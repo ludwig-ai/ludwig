@@ -150,10 +150,7 @@ class BaseLLMBatchSizeEvaluator(BatchSizeEvaluator):
         self.trainer.optimizer.zero_grad()
 
     def step(self, batch_size: int, global_max_sequence_length: Optional[int] = None):
-        if global_max_sequence_length is None:
-            global_max_sequence_length = self.trainer.model.global_max_sequence_length
-
-        if self.input_msl + self.output_msl > global_max_sequence_length:
+        if global_max_sequence_length and self.input_msl + self.output_msl > global_max_sequence_length:
             # In this case, we just need to make sure that the length of the synthetic data exceeds
             # max_sequence_length by at most a small amount
             self.input_msl = global_max_sequence_length // 2 + 1
