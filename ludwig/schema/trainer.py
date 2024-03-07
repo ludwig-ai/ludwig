@@ -922,9 +922,31 @@ class FineTuneTrainerConfig(ECDTrainerConfig):
         description="Base learning rate used for training in the LLM trainer.",
     )
 
-    eval_batch_size: int = schema_utils.PositiveInteger(
+    batch_size: Union[int, str, None] = schema_utils.OneOfOptionsField(
+        default=1,
+        allow_none=False,
+        description=(
+            "The number of training examples utilized in one training step of the model. If `auto`, the "
+            "batch size that maximized training throughput (samples / sec) will be used."
+        ),
+        field_options=[
+            schema_utils.PositiveInteger(default=1, description="", allow_none=False),
+            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
+        ],
+    )
+
+    eval_batch_size: Union[int, str, None] = schema_utils.OneOfOptionsField(
         default=2,
-        description="Batch size used for evaluation in the LLM trainer.",
+        allow_none=True,
+        description=(
+            "Size of batch to pass to the model for evaluation. If it is `0` or `None`, the same value of `batch_size` "
+            "is used. This is useful to speedup evaluation with a much bigger batch size than training, if enough "
+            "memory is available. If `auto`, the biggest batch size (power of 2) that can fit in memory will be used."
+        ),
+        field_options=[
+            schema_utils.PositiveInteger(default=2, description="", allow_none=False),
+            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
+        ],
     )
 
 

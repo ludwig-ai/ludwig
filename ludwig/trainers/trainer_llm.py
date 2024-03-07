@@ -549,6 +549,29 @@ class FineTuneTrainer(Trainer):
 
         return _TrainerBatchSizeEvaluator()
 
+    # def _create_predict_batch_size_evaluator(self) -> BatchSizeEvaluator:
+    #     trainer = self
+
+    #     class _PredictBatchSizeEvaluator(BatchSizeEvaluator):
+    #         def reset(self):
+    #             trainer.model.reset_metrics()
+    #             trainer.optimizer.zero_grad()
+
+    #         def step(self, batch_size: int, global_max_sequence_length: Optional[int] = None):
+    #             trainer.distributed.set_batch_size(trainer.dist_model, batch_size)
+    #             inputs = {
+    #                 input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(trainer.device)
+    #                 for input_feature_name, input_feature in trainer.model.input_features.items()
+    #             }
+    #             targets = {
+    #                 output_feature_name: output_feature.create_sample_output(batch_size=batch_size).to(trainer.device)
+    #                 for output_feature_name, output_feature in trainer.model.output_features.items()
+    #             }
+    #             with torch.no_grad():
+    #                 trainer.dist_model((inputs, targets))
+
+    #     return _PredictBatchSizeEvaluator()
+
 
 class RemoteLLMTrainer(NoneTrainer):
     def __init__(self, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
