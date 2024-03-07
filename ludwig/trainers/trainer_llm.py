@@ -509,10 +509,11 @@ class FineTuneTrainer(Trainer):
 
                 # Get the length of the longest input sequence from the training data
                 self.input_msl = self.input_feature.input_shape[0]
+                if trainer.model.config_obj.input_features[0].preprocessing.max_sequence_length:
+                    self.input_msl = trainer.model.config_obj.input_features[0].preprocessing.max_sequence_length
+
                 # Get the length of the longest output sequence from the training data
                 self.output_msl = self.output_feature.output_shape[0]
-                # max_sequence_length here is the smaller value between the global max sequence length of the model
-                # and the model's context length
                 if trainer.model.config_obj.output_features[0].preprocessing.max_sequence_length:
                     self.output_msl = trainer.model.config_obj.output_features[0].preprocessing.max_sequence_length
 
@@ -527,21 +528,19 @@ class FineTuneTrainer(Trainer):
             def step(self, batch_size: int, global_max_sequence_length: int):
                 trainer.distributed.set_batch_size(trainer.dist_model, batch_size)
 
-                input_msl = self.input_msl
-                output_msl = self.output_msl
                 if self.input_msl + self.output_msl > global_max_sequence_length:
                     # In this case, we just need to make sure that the length of the synthetic data exceeds
                     # max_sequence_length by at most a small amount
-                    input_msl = global_max_sequence_length // 2 + 1
-                    output_msl = global_max_sequence_length // 2 + 1
+                    self.input_msl = global_max_sequence_length // 2 + 1
+                    self.output_msl = global_max_sequence_length // 2 + 1
 
                 inputs = {
-                    self.input_feature_name: torch.randint(0, self.vocab_size, size=(batch_size, input_msl))
+                    self.input_feature_name: torch.randint(0, self.vocab_size, size=(batch_size, self.input_msl))
                     .to(self.input_feature.input_dtype)
                     .to(trainer.device)
                 }
                 targets = {
-                    self.output_feature_name: torch.randint(0, self.vocab_size, size=(batch_size, output_msl))
+                    self.output_feature_name: torch.randint(0, self.vocab_size, size=(batch_size, self.output_msl))
                     .to(self.output_feature.get_output_dtype())
                     .to(trainer.device)
                 }
@@ -549,28 +548,53 @@ class FineTuneTrainer(Trainer):
 
         return _TrainerBatchSizeEvaluator()
 
-    # def _create_predict_batch_size_evaluator(self) -> BatchSizeEvaluator:
-    #     trainer = self
+    def _create_predict_batch_size_evaluator(self) -> BatchSizeEvaluator:
+        trainer = self
 
-    #     class _PredictBatchSizeEvaluator(BatchSizeEvaluator):
-    #         def reset(self):
-    #             trainer.model.reset_metrics()
-    #             trainer.optimizer.zero_grad()
+        class _PredictBatchSizeEvaluator(BatchSizeEvaluator):
+            def __init__(self):
+                self.input_feature_name, self.input_feature = trainer.model.input_features.items()[0]
+                self.output_feature_name, self.output_feature = trainer.model.output_features.items()[0]
 
-    #         def step(self, batch_size: int, global_max_sequence_length: Optional[int] = None):
-    #             trainer.distributed.set_batch_size(trainer.dist_model, batch_size)
-    #             inputs = {
-    #                 input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(trainer.device)
-    #                 for input_feature_name, input_feature in trainer.model.input_features.items()
-    #             }
-    #             targets = {
-    #                 output_feature_name: output_feature.create_sample_output(batch_size=batch_size).to(trainer.device)
-    #                 for output_feature_name, output_feature in trainer.model.output_features.items()
-    #             }
-    #             with torch.no_grad():
-    #                 trainer.dist_model((inputs, targets))
+                # Get the length of the longest input sequence from the training data
+                self.input_msl = self.input_feature.input_shape[0]
+                if trainer.model.config_obj.input_features[0].preprocessing.max_sequence_length:
+                    self.input_msl = trainer.model.config_obj.input_features[0].preprocessing.max_sequence_length
 
-    #     return _PredictBatchSizeEvaluator()
+                # Get the length of the longest output sequence from the training data
+                self.output_msl = self.output_feature.output_shape[0]
+                if trainer.model.config_obj.output_features[0].preprocessing.max_sequence_length:
+                    self.output_msl = trainer.model.config_obj.output_features[0].preprocessing.max_sequence_length
+
+                # This is useful to create the synthetic input and target data which will be a
+                # random sequence of integers between 0 and vocab_size
+                self.vocab_size = len(trainer.model.config_obj.input_features[0].encoder.vocab)
+
+            def reset(self):
+                trainer.model.reset_metrics()
+                trainer.optimizer.zero_grad()
+
+            def step(self, batch_size: int, global_max_sequence_length: Optional[int] = None):
+                if self.input_msl + self.output_msl > global_max_sequence_length:
+                    # In this case, we just need to make sure that the length of the synthetic data exceeds
+                    # max_sequence_length by at most a small amount
+                    self.input_msl = global_max_sequence_length // 2 + 1
+                    self.output_msl = global_max_sequence_length // 2 + 1
+
+                inputs = {
+                    self.input_feature_name: torch.randint(0, self.vocab_size, size=(batch_size, self.input_msl))
+                    .to(self.input_feature.input_dtype)
+                    .to(trainer.device)
+                }
+                targets = {
+                    self.output_feature_name: torch.randint(0, self.vocab_size, size=(batch_size, self.output_msl))
+                    .to(self.output_feature.get_output_dtype())
+                    .to(trainer.device)
+                }
+                with torch.no_grad():
+                    trainer.dist_model((inputs, targets))
+
+        return _PredictBatchSizeEvaluator()
 
 
 class RemoteLLMTrainer(NoneTrainer):
