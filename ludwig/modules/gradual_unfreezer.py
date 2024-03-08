@@ -1,9 +1,8 @@
-from ludwig.models.ecd import ECD
 from ludwig.schema.gradual_unfreezer import GradualUnfreezerConfig
 
 
 class GradualUnfreezer:
-    def __init__(self, config: GradualUnfreezerConfig, model: ECD):
+    def __init__(self, config: GradualUnfreezerConfig, model):
         self.config = config
         self.model = model
         self.thaw_epochs = self.config.thaw_epochs
