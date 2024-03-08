@@ -527,8 +527,7 @@ class Trainer(BaseTrainer):
                 # Total memory used.
                 train_summary_writer.add_scalar(
                     f"cuda/device{i}/total_memory_used_gb",
-                    (torch.cuda.mem_get_info(device=device)[1] - torch.cuda.mem_get_info(device=device)[0])
-                    / (1000**3),
+                    (torch.cuda.mem_get_info(device=device)[1] - torch.cuda.mem_get_info(device=device)[0]) / (1000**3),
                     global_step=step,
                 )
 
@@ -595,7 +594,12 @@ class Trainer(BaseTrainer):
                 checkpoint.save(os.path.join(tmpdir, "latest.ckpt"), global_step=0)
             try:
                 best_batch_size = evaluator.select_best_batch_size(
-                    len(training_set), max_batch_size, max_trials, self.is_coordinator(), global_max_sequence_length
+                    len(training_set),
+                    max_batch_size,
+                    max_trials,
+                    self.is_coordinator(),
+                    global_max_sequence_length,
+                    gpu_memory_fraction=self.config.batch_size_tuning_gpu_memory_limit,
                 )
                 best_batch_size = self.distributed.broadcast_object(best_batch_size)
 

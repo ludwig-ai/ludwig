@@ -7,8 +7,8 @@ import pytest
 import torch
 
 from ludwig.utils.torch_utils import (
-    _get_torch_init_params,
-    _set_torch_init_params,
+    get_torch_init_params,
+    set_torch_init_params,
     initialize_pytorch,
     sequence_length_2D,
     sequence_length_3D,
@@ -33,14 +33,14 @@ def test_sequence_length_3D(input_sequence: List[List[List[int]]], expected_outp
 
 @contextlib.contextmanager
 def clean_params():
-    prev = _get_torch_init_params()
+    prev = get_torch_init_params()
     try:
-        _set_torch_init_params(None)
+        set_torch_init_params(None)
         if "CUDA_VISIBLE_DEVICES" in os.environ:
             del os.environ["CUDA_VISIBLE_DEVICES"]
         yield
     finally:
-        _set_torch_init_params(prev)
+        set_torch_init_params(prev)
 
 
 @patch("ludwig.utils.torch_utils.torch")

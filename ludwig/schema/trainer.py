@@ -114,6 +114,11 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         default={},
     )
 
+    batch_size_tuning_gpu_memory_limit: int = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="The maximum amount of GPU memory to use for batch size tuning.",
+    )
+
     def can_tune_batch_size(self) -> bool:
         return True
 

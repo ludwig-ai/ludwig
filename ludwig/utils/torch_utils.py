@@ -356,15 +356,15 @@ def initialize_pytorch(
             for gpu in gpus or range(gpu_device_count):
                 torch.cuda.memory.set_per_process_memory_fraction(gpu_memory_limit, gpu)
 
-    _set_torch_init_params(param_tuple)
+    set_torch_init_params(param_tuple)
 
 
-def _set_torch_init_params(params: Optional[Tuple]):
+def set_torch_init_params(params: Optional[Tuple]):
     global _TORCH_INIT_PARAMS
     _TORCH_INIT_PARAMS = params
 
 
-def _get_torch_init_params() -> Optional[Tuple]:
+def get_torch_init_params() -> Optional[Tuple]:
     return _TORCH_INIT_PARAMS
 
 
