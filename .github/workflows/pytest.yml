@@ -27,7 +27,7 @@ jobs:
         # python-version: ["3.8", "3.9", "3.10"]
         # TODO: <Alex>ALEX</Alex>
         # TODO: <Alex>ALEX</Alex>
-        python-version: [3.10"]
+        python-version: ["3.10"]
         # TODO: <Alex>ALEX</Alex>
         # test-markers: ["not distributed", "distributed"]
         # TODO: <Alex>ALEX</Alex>
