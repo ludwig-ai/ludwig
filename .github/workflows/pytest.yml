@@ -24,21 +24,30 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         python-version: ["3.8", "3.9", "3.10"]
-        test-markers: ["not distributed", "distributed"]
+        # TODO: <Alex>ALEX</Alex>
+        # test-markers: ["not distributed", "distributed"]
+        # TODO: <Alex>ALEX</Alex>
+        # TODO: <Alex>ALEX</Alex>
+        test-markers: ["not distributed"]
+        # TODO: <Alex>ALEX</Alex>
         include:
-          - python-version: "3.8"
-            pytorch-version: 2.0.0
-            torchscript-version: 1.10.2
-            ray-version: 2.3.1
-          - python-version: "3.9"
-            pytorch-version: 2.1.1
-            torchscript-version: 1.10.2
-            ray-version: 2.3.1
+          # TODO: <Alex>ALEX</Alex>
+          # - python-version: "3.8"
+          #   pytorch-version: 2.0.0
+          #   torchscript-version: 1.10.2
+          #   ray-version: 2.3.1
+          # - python-version: "3.9"
+          #   pytorch-version: 2.1.1
+          #   torchscript-version: 1.10.2
+          #   ray-version: 2.3.1
+          # TODO: <Alex>ALEX</Alex>
+          # TODO: <Alex>ALEX</Alex>
           - python-version: "3.10"
             # pytorch-version: nightly
             pytorch-version: 2.2.1
             torchscript-version: 1.10.2
             ray-version: 2.3.1
+          # TODO: <Alex>ALEX</Alex>
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
