@@ -527,7 +527,8 @@ class Trainer(BaseTrainer):
                 # Total memory used.
                 train_summary_writer.add_scalar(
                     f"cuda/device{i}/total_memory_used_gb",
-                    (torch.cuda.mem_get_info(device=device)[1] - torch.cuda.mem_get_info(device=device)[0]) / (1000**3),
+                    (torch.cuda.mem_get_info(device=device)[1] - torch.cuda.mem_get_info(device=device)[0])
+                    / (1000**3),
                     global_step=step,
                 )
 

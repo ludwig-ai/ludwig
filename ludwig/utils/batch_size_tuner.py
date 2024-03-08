@@ -3,11 +3,10 @@ import logging
 import statistics
 import time
 from abc import ABC
+from contextlib import contextmanager
 from typing import Optional
 
 import torch
-from contextlib import contextmanager
-
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import MAX_BATCH_SIZE_DATASET_FRACTION, MIN_POSSIBLE_BATCH_SIZE

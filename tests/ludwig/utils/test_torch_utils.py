@@ -8,10 +8,10 @@ import torch
 
 from ludwig.utils.torch_utils import (
     get_torch_init_params,
-    set_torch_init_params,
     initialize_pytorch,
     sequence_length_2D,
     sequence_length_3D,
+    set_torch_init_params,
 )
 
 
