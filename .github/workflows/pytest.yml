@@ -17,186 +17,186 @@ concurrency:
 
 jobs:
   # TODO: <Alex>ALEX</Alex>
-  # pytest:
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       os: [ubuntu-latest]
-  #       python-version: ["3.8", "3.9", "3.10"]
-  #       test-markers: ["not distributed", "distributed"]
-  #       include:
-  #         - python-version: "3.8"
-  #           pytorch-version: 2.0.0
-  #           torchscript-version: 1.10.2
-  #           ray-version: 2.3.1
-  #         - python-version: "3.9"
-  #           pytorch-version: 2.1.1
-  #           torchscript-version: 1.10.2
-  #           ray-version: 2.3.1
-  #         - python-version: "3.10"
-  #           # pytorch-version: nightly
-  #           pytorch-version: 2.2.1
-  #           torchscript-version: 1.10.2
-  #           ray-version: 2.3.1
-  #   env:
-  #     PYTORCH: ${{ matrix.pytorch-version }}
-  #     MARKERS: ${{ matrix.test-markers }}
-  #     NEUROPOD_BASE_DIR: "/usr/local/lib/neuropod"
-  #     NEUROPOD_VERISON: "0.3.0-rc6"
-  #     TORCHSCRIPT_VERSION: ${{ matrix.torchscript-version }}
-  #     RAY_VERSION: ${{ matrix.ray-version }}
-  #     AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
-  #     AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
-  #     KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
-  #     KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
-  #     IS_NOT_FORK: ${{ !(github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && github.event.pull_request.head.repo.fork) }}
+  pytest:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.8", "3.9", "3.10"]
+        test-markers: ["not distributed", "distributed"]
+        include:
+          - python-version: "3.8"
+            pytorch-version: 2.0.0
+            torchscript-version: 1.10.2
+            ray-version: 2.3.1
+          - python-version: "3.9"
+            pytorch-version: 2.1.1
+            torchscript-version: 1.10.2
+            ray-version: 2.3.1
+          - python-version: "3.10"
+            # pytorch-version: nightly
+            pytorch-version: 2.2.1
+            torchscript-version: 1.10.2
+            ray-version: 2.3.1
+    env:
+      PYTORCH: ${{ matrix.pytorch-version }}
+      MARKERS: ${{ matrix.test-markers }}
+      NEUROPOD_BASE_DIR: "/usr/local/lib/neuropod"
+      NEUROPOD_VERISON: "0.3.0-rc6"
+      TORCHSCRIPT_VERSION: ${{ matrix.torchscript-version }}
+      RAY_VERSION: ${{ matrix.ray-version }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
+      KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+      KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+      IS_NOT_FORK: ${{ !(github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && github.event.pull_request.head.repo.fork) }}
 
-  #   name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}, ray ${{ matrix.ray-version }}
-  #   services:
-  #     minio:
-  #       image: fclairamb/minio-github-actions
-  #       env:
-  #         MINIO_ACCESS_KEY: minio
-  #         MINIO_SECRET_KEY: minio123
-  #       ports:
-  #         - 9000:9000
+    name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}, ray ${{ matrix.ray-version }}
+    services:
+      minio:
+        image: fclairamb/minio-github-actions
+        env:
+          MINIO_ACCESS_KEY: minio
+          MINIO_SECRET_KEY: minio123
+        ports:
+          - 9000:9000
 
-  #   timeout-minutes: 150
-  #   steps:
-  #     - name: Setup ludwigai/ludwig-ray container for local testing with act.
-  #       if: ${{ env.ACT }}
-  #       run: |
-  #         curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
-  #         sudo apt-get install -y nodejs
-  #         sudo mkdir -p /opt/hostedtoolcache/
-  #         sudo chmod 777 -R /opt/hostedtoolcache/
-  #     - uses: actions/checkout@v2
-  #     - name: Set up Python ${{ matrix.python-version }}
-  #       uses: actions/setup-python@v2
-  #       with:
-  #         python-version: ${{ matrix.python-version }}
+    timeout-minutes: 150
+    steps:
+      - name: Setup ludwigai/ludwig-ray container for local testing with act.
+        if: ${{ env.ACT }}
+        run: |
+          curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+          sudo mkdir -p /opt/hostedtoolcache/
+          sudo chmod 777 -R /opt/hostedtoolcache/
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
 
-  #     - name: Setup Linux
-  #       if: runner.os == 'linux'
-  #       run: |
-  #         sudo apt-get update && sudo apt-get install -y cmake libsndfile1 wget libsox-dev
+      - name: Setup Linux
+        if: runner.os == 'linux'
+        run: |
+          sudo apt-get update && sudo apt-get install -y cmake libsndfile1 wget libsox-dev
 
-  #     - name: Setup macOS
-  #       if: runner.os == 'macOS'
-  #       run: |
-  #         brew install libuv
+      - name: Setup macOS
+        if: runner.os == 'macOS'
+        run: |
+          brew install libuv
 
-  #     - name: pip cache
-  #       if: ${{ !env.ACT }}
-  #       uses: actions/cache@v2
-  #       with:
-  #         path: ~/.cache/pip
-  #         key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ matrix.test-markers }}-${{ hashFiles('requirements*.txt', '.github/workflows/pytest.yml') }}
+      - name: pip cache
+        if: ${{ !env.ACT }}
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ matrix.test-markers }}-${{ hashFiles('requirements*.txt', '.github/workflows/pytest.yml') }}
 
-  #     - name: Debug out of space
-  #       run: |
-  #         du -h -d 1 ~
-  #         df -h
+      - name: Debug out of space
+        run: |
+          du -h -d 1 ~
+          df -h
 
-  #     - name: Install dependencies
-  #       run: |
-  #         python --version
-  #         pip --version
-  #         python -m pip install -U pip
-  #         cmake --version
+      - name: Install dependencies
+        run: |
+          python --version
+          pip --version
+          python -m pip install -U pip
+          cmake --version
 
-  #         # remove torch and ray from the dependencies so we can add them depending on the matrix args for the job.
-  #         cat requirements.txt | sed '/^torch[>=<\b]/d' | sed '/^torchtext/d' | sed '/^torchvision/d' | sed '/^torchaudio/d' > requirements-temp && mv requirements-temp requirements.txt
-  #         cat requirements_distributed.txt | sed '/^ray[\[]/d'
+          # remove torch and ray from the dependencies so we can add them depending on the matrix args for the job.
+          cat requirements.txt | sed '/^torch[>=<\b]/d' | sed '/^torchtext/d' | sed '/^torchvision/d' | sed '/^torchaudio/d' > requirements-temp && mv requirements-temp requirements.txt
+          cat requirements_distributed.txt | sed '/^ray[\[]/d'
 
-  #         if [ "$MARKERS" != "distributed" ]; then
-  #           # Skip distributed and hyperopt requirements to test optional imports
-  #           echo > requirements-temp && mv requirements-temp requirements_distributed.txt
-  #           echo > requirements-temp && mv requirements-temp requirements_hyperopt.txt
+          if [ "$MARKERS" != "distributed" ]; then
+            # Skip distributed and hyperopt requirements to test optional imports
+            echo > requirements-temp && mv requirements-temp requirements_distributed.txt
+            echo > requirements-temp && mv requirements-temp requirements_hyperopt.txt
 
-  #           # Skip distributed tree requirement (lightgbm-ray)
-  #           cat requirements_tree.txt | sed '/^lightgbm-ray/d' > requirements-temp && mv requirements-temp requirements_tree.txt
-  #         else
-  #           if [ "$RAY_VERSION" == "nightly" ]; then
-  #             # NOTE: hardcoded for python 3.10 on Linux
-  #             echo "ray[default,data,serve,tune] @ https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp310-cp310-manylinux2014_x86_64.whl" >> requirements_distributed.txt
-  #           else
-  #             echo "ray[default,data,serve,tune]==$RAY_VERSION" >> requirements_distributed.txt
-  #           fi
-  #         fi
+            # Skip distributed tree requirement (lightgbm-ray)
+            cat requirements_tree.txt | sed '/^lightgbm-ray/d' > requirements-temp && mv requirements-temp requirements_tree.txt
+          else
+            if [ "$RAY_VERSION" == "nightly" ]; then
+              # NOTE: hardcoded for python 3.10 on Linux
+              echo "ray[default,data,serve,tune] @ https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp310-cp310-manylinux2014_x86_64.whl" >> requirements_distributed.txt
+            else
+              echo "ray[default,data,serve,tune]==$RAY_VERSION" >> requirements_distributed.txt
+            fi
+          fi
 
-  #         if [ "$PYTORCH" == "nightly" ]; then
-  #           extra_index_url=https://download.pytorch.org/whl/nightly/cpu
-  #           pip install --pre torch torchtext torchvision torchaudio --extra-index-url $extra_index_url
+          if [ "$PYTORCH" == "nightly" ]; then
+            extra_index_url=https://download.pytorch.org/whl/nightly/cpu
+            pip install --pre torch torchtext torchvision torchaudio --extra-index-url $extra_index_url
 
-  #         else
-  #           extra_index_url=https://download.pytorch.org/whl/cpu
-  #           pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
-  #         fi
+          else
+            extra_index_url=https://download.pytorch.org/whl/cpu
+            pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
+          fi
 
-  #         pip install '.[test]' --extra-index-url $extra_index_url
-  #         pip list
+          pip install '.[test]' --extra-index-url $extra_index_url
+          pip list
 
-  #         if [ "$PYTORCH" == "nightly" ]; then
-  #           python -c "from packaging import version; import torch; assert version.parse(torch.__version__).release >= version.parse(\"2.0.0\").release, f\"torch {version.parse(torch.__version__).release} < version.parse(\'2.0.0\').release\""
-  #         else
-  #           python -c "from packaging import version; import torch; assert version.parse(torch.__version__).release == version.parse(\"$PYTORCH\").release, f\"torch {version.parse(torch.__version__).release} != version.parse(\'$PYTORCH\').release\""
-  #         fi
+          if [ "$PYTORCH" == "nightly" ]; then
+            python -c "from packaging import version; import torch; assert version.parse(torch.__version__).release >= version.parse(\"2.0.0\").release, f\"torch {version.parse(torch.__version__).release} < version.parse(\'2.0.0\').release\""
+          else
+            python -c "from packaging import version; import torch; assert version.parse(torch.__version__).release == version.parse(\"$PYTORCH\").release, f\"torch {version.parse(torch.__version__).release} != version.parse(\'$PYTORCH\').release\""
+          fi
 
-  #         if [ "$MARKERS" == "distributed" ]; then
-  #           python -c "from packaging import version; import ray; assert version.parse(ray.__version__).release == version.parse(\"$RAY_VERSION\").release, f\"ray {version.parse(ray.__version__).release} != version.parse(\'$RAY_VERSION\').release\""
-  #         else
-  #           python -c "import importlib.util; assert importlib.util.find_spec('ray') is None, \"found ray but expected it to not be installed\""
-  #         fi
-  #       shell: bash
+          if [ "$MARKERS" == "distributed" ]; then
+            python -c "from packaging import version; import ray; assert version.parse(ray.__version__).release == version.parse(\"$RAY_VERSION\").release, f\"ray {version.parse(ray.__version__).release} != version.parse(\'$RAY_VERSION\').release\""
+          else
+            python -c "import importlib.util; assert importlib.util.find_spec('ray') is None, \"found ray but expected it to not be installed\""
+          fi
+        shell: bash
 
-  #     - name: Install Neuropod backend
-  #       run: |
-  #         sudo mkdir -p "$NEUROPOD_BASE_DIR"
-  #         curl -L https://github.com/uber/neuropod/releases/download/v${{ env.NEUROPOD_VERISON }}/libneuropod-cpu-linux-v${{ env.NEUROPOD_VERISON }}-torchscript-${{ env.TORCHSCRIPT_VERSION }}-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
-  #       shell: bash
+      - name: Install Neuropod backend
+        run: |
+          sudo mkdir -p "$NEUROPOD_BASE_DIR"
+          curl -L https://github.com/uber/neuropod/releases/download/v${{ env.NEUROPOD_VERISON }}/libneuropod-cpu-linux-v${{ env.NEUROPOD_VERISON }}-torchscript-${{ env.TORCHSCRIPT_VERSION }}-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
+        shell: bash
 
-  #     - name: Unit Tests
-  #       run: |
-  #         RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod and not llm" --junitxml pytest.xml tests/ludwig
+      - name: Unit Tests
+        run: |
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod and not llm" --junitxml pytest.xml tests/ludwig
 
-  #     - name: Regression Tests
-  #       run: |
-  #         RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod or benchmark and not llm" --junitxml pytest.xml tests/regression_tests
+      - name: Regression Tests
+        run: |
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod or benchmark and not llm" --junitxml pytest.xml tests/regression_tests
 
-  #     # Skip Horovod and replace with DDP.
-  #     # https://github.com/ludwig-ai/ludwig/issues/3468
-  #     # - name: Install Horovod if necessary
-  #     #   if: matrix.test-markers == 'distributed' && matrix.pytorch-version != 'nightly'
-  #     #   env:
-  #     #     HOROVOD_WITH_PYTORCH: 1
-  #     #     HOROVOD_WITHOUT_MPI: 1
-  #     #     HOROVOD_WITHOUT_TENSORFLOW: 1
-  #     #     HOROVOD_WITHOUT_MXNET: 1
-  #     #   run: |
-  #     #     pip install -r requirements_extra.txt
-  #     #     HOROVOD_BUILT=$(python -c "import horovod.torch; horovod.torch.nccl_built(); print('SUCCESS')" || true)
-  #     #     if [[ $HOROVOD_BUILT != "SUCCESS" ]]; then
-  #     #       pip uninstall -y horovod
-  #     #       pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
-  #     #     fi
-  #     #     horovodrun --check-build
-  #     #   shell: bash
+      # Skip Horovod and replace with DDP.
+      # https://github.com/ludwig-ai/ludwig/issues/3468
+      # - name: Install Horovod if necessary
+      #   if: matrix.test-markers == 'distributed' && matrix.pytorch-version != 'nightly'
+      #   env:
+      #     HOROVOD_WITH_PYTORCH: 1
+      #     HOROVOD_WITHOUT_MPI: 1
+      #     HOROVOD_WITHOUT_TENSORFLOW: 1
+      #     HOROVOD_WITHOUT_MXNET: 1
+      #   run: |
+      #     pip install -r requirements_extra.txt
+      #     HOROVOD_BUILT=$(python -c "import horovod.torch; horovod.torch.nccl_built(); print('SUCCESS')" || true)
+      #     if [[ $HOROVOD_BUILT != "SUCCESS" ]]; then
+      #       pip uninstall -y horovod
+      #       pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
+      #     fi
+      #     horovodrun --check-build
+      #   shell: bash
 
-  #     # Skip Horovod tests and replace with DDP.
-  #     # https://github.com/ludwig-ai/ludwig/issues/3468
-  #     # - name: Horovod Tests
-  #     #   if: matrix.test-markers == 'distributed' && matrix.pytorch-version != 'nightly'
-  #     #   run: |
-  #     #     RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and horovod and not slow and not combinatorial and not llm" --junitxml pytest.xml tests/
+      # Skip Horovod tests and replace with DDP.
+      # https://github.com/ludwig-ai/ludwig/issues/3468
+      # - name: Horovod Tests
+      #   if: matrix.test-markers == 'distributed' && matrix.pytorch-version != 'nightly'
+      #   run: |
+      #     RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and horovod and not slow and not combinatorial and not llm" --junitxml pytest.xml tests/
 
-  #     - name: Upload Unit Test Results
-  #       if: ${{ always() && !env.ACT }}
-  #       uses: actions/upload-artifact@v2
-  #       with:
-  #         name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
-  #         path: pytest.xml
+      - name: Upload Unit Test Results
+        if: ${{ always() && !env.ACT }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
+          path: pytest.xml
   # TODO: <Alex>ALEX</Alex>
 
   integration-tests:
