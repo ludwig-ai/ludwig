@@ -105,10 +105,11 @@ def export_carton(model: LudwigModel, carton_path: str, carton_model_name="ludwi
 
     # Generate a torchscript model
     model_ts = generate_carton_torchscript(model)
+    print(f"\n[ALEX_TEST] [WOUTPUT] MODEL_TORCH_SCRIPT:\n{model_ts} ; TYPE: {str(type(model_ts))}")
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Save the model to a temp dir
-        input_model_path = os.path.join(tmpdir, "model.pt")
+        input_model_path: str = os.path.join(tmpdir, "model.pt")
         torch.jit.save(model_ts, input_model_path)
 
         # carton.pack is an async function so we run it and wait until it's complete
@@ -129,8 +130,9 @@ def export_carton(model: LudwigModel, carton_path: str, carton_model_name="ludwi
 
         # TODO: <Alex>ALEX</Alex>
         # TODO: <Alex>ALEX</Alex>
-        async def packster():
-            return await carton.pack(
+        async def packster() -> str:
+            time.sleep(1)
+            a: str = await carton.pack(
                 input_model_path,
                 runner_name="torchscript",
                 # Any 2.x.x version is okay
@@ -140,11 +142,16 @@ def export_carton(model: LudwigModel, carton_path: str, carton_model_name="ludwi
                 inputs=_get_input_spec(model),
                 outputs=_get_output_spec(model),
             )
+            time.sleep(1)
+            print(f"\n[ALEX_TEST] [WOUTPUT] WOUTPUT:\n{a} ; TYPE: {str(type(a))}")
+            time.sleep(1)
+            return a
 
         # TODO: <Alex>ALEX</Alex>
 
         # TODO: <Alex>ALEX</Alex>
         loop = asyncio.get_event_loop()
+        print(f"\n[ALEX_TEST] [WOUTPUT] LOOP:\n{loop} ; TYPE: {str(type(loop))}")
         # tmp_out_path = loop.run_until_complete(pack())
         # TODO: <Alex>ALEX</Alex>
         # TODO: <Alex>ALEX</Alex>
@@ -158,7 +165,7 @@ def export_carton(model: LudwigModel, carton_path: str, carton_model_name="ludwi
             # TODO: <Alex>ALEX</Alex>
             # TODO: <Alex>ALEX</Alex>
             time.sleep(1)
-            tmp_out_path = loop.run_until_complete(packster())
+            tmp_out_path: str = loop.run_until_complete(packster())
             # TODO: <Alex>ALEX</Alex>
         except Exception as e:
             exception_message: str = "A general Exception occurred.\n"
