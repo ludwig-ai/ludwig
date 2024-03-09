@@ -114,6 +114,7 @@ def export_carton(model: LudwigModel, carton_path: str, carton_model_name="ludwi
         # carton.pack is an async function so we run it and wait until it's complete
         # See https://pyo3.rs/v0.20.0/ecosystem/async-await#a-note-about-asynciorun for why we wrap it
         # in another function
+        # TODO: <Alex>ALEX</Alex>
         async def pack():
             return await carton.pack(
                 input_model_path,
@@ -126,8 +127,26 @@ def export_carton(model: LudwigModel, carton_path: str, carton_model_name="ludwi
                 outputs=_get_output_spec(model),
             )
 
+        # TODO: <Alex>ALEX</Alex>
+
         loop = asyncio.get_event_loop()
-        tmp_out_path = loop.run_until_complete(pack())
+        # TODO: <Alex>ALEX</Alex>
+        # tmp_out_path = loop.run_until_complete(pack())
+        # TODO: <Alex>ALEX</Alex>
+        # TODO: <Alex>ALEX</Alex>
+        import sys
+        import traceback
+
+        try:
+            tmp_out_path = loop.run_until_complete(pack())
+        except Exception as e:
+            exception_message: str = "A Sub-Process call Exception occurred.\n"
+            exception_traceback: str = traceback.format_exc()
+            exception_message += f'{type(e).__name__}: "{str(e)}".  Traceback: "{exception_traceback}".'
+            sys.stderr.write(exception_message)
+            sys.stderr.flush()
+            raise SystemExit(exception_message) from e  # Make sure error is fatal.
+        # TODO: <Alex>ALEX</Alex>
 
         # Move it to the output path
         shutil.move(tmp_out_path, carton_path)
