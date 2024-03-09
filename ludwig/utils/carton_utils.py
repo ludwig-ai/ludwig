@@ -140,7 +140,7 @@ def export_carton(model: LudwigModel, carton_path: str, carton_model_name="ludwi
         try:
             tmp_out_path = loop.run_until_complete(pack())
         except Exception as e:
-            exception_message: str = "A Sub-Process call Exception occurred.\n"
+            exception_message: str = "A general Exception occurred.\n"
             exception_traceback: str = traceback.format_exc()
             exception_message += f'{type(e).__name__}: "{str(e)}".  Traceback: "{exception_traceback}".'
             sys.stderr.write(exception_message)
