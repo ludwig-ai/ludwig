@@ -115,7 +115,21 @@ def export_carton(model: LudwigModel, carton_path: str, carton_model_name="ludwi
         # See https://pyo3.rs/v0.20.0/ecosystem/async-await#a-note-about-asynciorun for why we wrap it
         # in another function
         # TODO: <Alex>ALEX</Alex>
-        async def pack():
+        # async def pack():
+        #     return await carton.pack(
+        #         input_model_path,
+        #         runner_name="torchscript",
+        #         # Any 2.x.x version is okay
+        #         # TODO: improve this
+        #         required_framework_version="=2",
+        #         model_name=carton_model_name,
+        #         inputs=_get_input_spec(model),
+        #         outputs=_get_output_spec(model),
+        #     )
+
+        # TODO: <Alex>ALEX</Alex>
+        # TODO: <Alex>ALEX</Alex>
+        async def packster():
             return await carton.pack(
                 input_model_path,
                 runner_name="torchscript",
@@ -129,16 +143,23 @@ def export_carton(model: LudwigModel, carton_path: str, carton_model_name="ludwi
 
         # TODO: <Alex>ALEX</Alex>
 
-        loop = asyncio.get_event_loop()
         # TODO: <Alex>ALEX</Alex>
+        loop = asyncio.get_event_loop()
         # tmp_out_path = loop.run_until_complete(pack())
         # TODO: <Alex>ALEX</Alex>
         # TODO: <Alex>ALEX</Alex>
+        import time
         import sys
         import traceback
 
         try:
-            tmp_out_path = loop.run_until_complete(pack())
+            # TODO: <Alex>ALEX</Alex>
+            # tmp_out_path = loop.run_until_complete(pack())
+            # TODO: <Alex>ALEX</Alex>
+            # TODO: <Alex>ALEX</Alex>
+            time.sleep(1)
+            tmp_out_path = loop.run_until_complete(packster())
+            # TODO: <Alex>ALEX</Alex>
         except Exception as e:
             exception_message: str = "A general Exception occurred.\n"
             exception_traceback: str = traceback.format_exc()
@@ -149,4 +170,5 @@ def export_carton(model: LudwigModel, carton_path: str, carton_model_name="ludwi
         # TODO: <Alex>ALEX</Alex>
 
         # Move it to the output path
+        time.sleep(1)
         shutil.move(tmp_out_path, carton_path)
