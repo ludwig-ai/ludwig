@@ -185,7 +185,7 @@ def export_carton(model: LudwigModel, carton_path: str, carton_model_name="ludwi
                     sys.stderr.flush()
                     # raise ValueError(exception_message) from ie
                 if idx >= max_tries - 1:
-                    raise ValueError(exception_message) from ie
+                    raise ValueError("THINGS ENDED VERY BADLY!!!!!!!!!!!!!")
                 time.sleep(1)
             # TODO: <Alex>ALEX</Alex>
 
