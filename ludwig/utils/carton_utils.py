@@ -98,6 +98,7 @@ def _get_output_spec(model: LudwigModel) -> List[Dict[str, Any]]:
 
 @DeveloperAPI
 def export_carton(model: LudwigModel, carton_path: str, carton_model_name="ludwig_model"):
+    print(f"\n[ALEX_TEST] [WOUTPUT] CARTON_PATH:\n{carton_path} ; TYPE: {str(type(carton_path))}")
     try:
         import cartonml as carton
     except ImportError:
@@ -108,86 +109,88 @@ def export_carton(model: LudwigModel, carton_path: str, carton_model_name="ludwi
     print(f"\n[ALEX_TEST] [WOUTPUT] MODEL_TORCH_SCRIPT:\n{model_ts} ; TYPE: {str(type(model_ts))}")
 
     with tempfile.TemporaryDirectory() as tmpdir:
+        print(f"\n[ALEX_TEST] [WOUTPUT] TMPDIR:\n{tmpdir} ; TYPE: {str(type(tmpdir))}")
         # Save the model to a temp dir
         input_model_path: str = os.path.join(tmpdir, "model.pt")
         torch.jit.save(model_ts, input_model_path)
+        print(f"\n[ALEX_TEST] [WOUTPUT] INPUT_MODEL_PATH:\n{input_model_path} ; TYPE: {str(type(input_model_path))}")
 
         # carton.pack is an async function so we run it and wait until it's complete
         # See https://pyo3.rs/v0.20.0/ecosystem/async-await#a-note-about-asynciorun for why we wrap it
         # in another function
         # TODO: <Alex>ALEX</Alex>
-        # async def pack():
-        #     return await carton.pack(
-        #         input_model_path,
-        #         runner_name="torchscript",
-        #         # Any 2.x.x version is okay
-        #         # TODO: improve this
-        #         required_framework_version="=2",
-        #         model_name=carton_model_name,
-        #         inputs=_get_input_spec(model),
-        #         outputs=_get_output_spec(model),
-        #     )
+        async def pack():
+            return await carton.pack(
+                path=input_model_path,
+                runner_name="torchscript",
+                # Any 2.x.x version is okay
+                # TODO: improve this
+                required_framework_version=">=2",
+                model_name=carton_model_name,
+                inputs=_get_input_spec(model),
+                outputs=_get_output_spec(model),
+            )
 
         # TODO: <Alex>ALEX</Alex>
         # TODO: <Alex>ALEX</Alex>
-        async def packster() -> str:
-            time.sleep(1)
-            # TODO: <Alex>ALEX</Alex>
-            # try:
-            #     a: str = await carton.pack(
-            #         input_model_path,
-            #         runner_name="torchscript",
-            #         # Any 2.x.x version is okay
-            #         # TODO: improve this
-            #         required_framework_version="=2",
-            #         model_name=carton_model_name,
-            #         inputs=_get_input_spec(model),
-            #         outputs=_get_output_spec(model),
-            #     )
-            #     time.sleep(1)
-            #     print(f"\n[ALEX_TEST] [WOUTPUT] WOUTPUT:\n{a} ; TYPE: {str(type(a))}")
-            #     time.sleep(1)
-            #     return a
-            # except Exception as ie:
-            #     exception_message: str = "A Packster-Inside Exception occurred.\n"
-            #     exception_traceback: str = traceback.format_exc()
-            #     exception_message += f'{type(ie).__name__}: "{str(ie)}".  Traceback: "{exception_traceback}".'
-            #     sys.stderr.write(exception_message)
-            #     sys.stderr.flush()
-            #     raise ValueError(exception_message) from ie
-            # TODO: <Alex>ALEX</Alex>
-            # TODO: <Alex>ALEX</Alex>
-            max_tries: int = 5
-            idx: int
-            for idx in range(max_tries):
-                print(f"\n[ALEX_TEST] [WOUTPUT] TRYING_IDX:\n{idx} ; TYPE: {str(type(idx))}")
-                time.sleep(1)
-                try:
-                    a: str = await carton.pack(
-                        input_model_path,
-                        runner_name="torchscript",
-                        # Any 2.x.x version is okay
-                        # TODO: improve this
-                        required_framework_version="=2",
-                        model_name=carton_model_name,
-                        inputs=_get_input_spec(model),
-                        outputs=_get_output_spec(model),
-                    )
-                    time.sleep(1)
-                    print(f"\n[ALEX_TEST] [WOUTPUT] WOUTPUT:\n{a} ; TYPE: {str(type(a))}")
-                    time.sleep(1)
-                    return a
-                except Exception as ie:
-                    exception_message: str = "A Packster-Inside Exception occurred.\n"
-                    exception_traceback: str = traceback.format_exc()
-                    exception_message += f'{type(ie).__name__}: "{str(ie)}".  Traceback: "{exception_traceback}".'
-                    sys.stderr.write(exception_message)
-                    sys.stderr.flush()
-                    # raise ValueError(exception_message) from ie
-                if idx >= max_tries - 1:
-                    raise ValueError("THINGS ENDED VERY BADLY!!!!!!!!!!!!!")
-                time.sleep(1)
-            # TODO: <Alex>ALEX</Alex>
+        # async def packster() -> str:
+        #     time.sleep(1)
+        #     # TODO: <Alex>ALEX</Alex>
+        #     # try:
+        #     #     a: str = await carton.pack(
+        #     #         input_model_path,
+        #     #         runner_name="torchscript",
+        #     #         # Any 2.x.x version is okay
+        #     #         # TODO: improve this
+        #     #         required_framework_version="=2",
+        #     #         model_name=carton_model_name,
+        #     #         inputs=_get_input_spec(model),
+        #     #         outputs=_get_output_spec(model),
+        #     #     )
+        #     #     time.sleep(1)
+        #     #     print(f"\n[ALEX_TEST] [WOUTPUT] WOUTPUT:\n{a} ; TYPE: {str(type(a))}")
+        #     #     time.sleep(1)
+        #     #     return a
+        #     # except Exception as ie:
+        #     #     exception_message: str = "A Packster-Inside Exception occurred.\n"
+        #     #     exception_traceback: str = traceback.format_exc()
+        #     #     exception_message += f'{type(ie).__name__}: "{str(ie)}".  Traceback: "{exception_traceback}".'
+        #     #     sys.stderr.write(exception_message)
+        #     #     sys.stderr.flush()
+        #     #     raise ValueError(exception_message) from ie
+        #     # TODO: <Alex>ALEX</Alex>
+        #     # TODO: <Alex>ALEX</Alex>
+        #     max_tries: int = 5
+        #     idx: int
+        #     for idx in range(max_tries):
+        #         print(f"\n[ALEX_TEST] [WOUTPUT] TRYING_IDX:\n{idx} ; TYPE: {str(type(idx))}")
+        #         time.sleep(1)
+        #         try:
+        #             a: str = await carton.pack(
+        #                 input_model_path,
+        #                 runner_name="torchscript",
+        #                 # Any 2.x.x version is okay
+        #                 # TODO: improve this
+        #                 required_framework_version="=2",
+        #                 model_name=carton_model_name,
+        #                 inputs=_get_input_spec(model),
+        #                 outputs=_get_output_spec(model),
+        #             )
+        #             time.sleep(1)
+        #             print(f"\n[ALEX_TEST] [WOUTPUT] WOUTPUT:\n{a} ; TYPE: {str(type(a))}")
+        #             time.sleep(1)
+        #             return a
+        #         except Exception as ie:
+        #             exception_message: str = "A Packster-Inside Exception occurred.\n"
+        #             exception_traceback: str = traceback.format_exc()
+        #             exception_message += f'{type(ie).__name__}: "{str(ie)}".  Traceback: "{exception_traceback}".'
+        #             sys.stderr.write(exception_message)
+        #             sys.stderr.flush()
+        #             # raise ValueError(exception_message) from ie
+        #         if idx >= max_tries - 1:
+        #             raise ValueError("THINGS ENDED VERY BADLY!!!!!!!!!!!!!")
+        #         time.sleep(1)
+        # TODO: <Alex>ALEX</Alex>
 
         # TODO: <Alex>ALEX</Alex>
 
@@ -201,13 +204,14 @@ def export_carton(model: LudwigModel, carton_path: str, carton_model_name="ludwi
         import sys
         import traceback
 
+        tmp_out_path: str = None
         try:
             # TODO: <Alex>ALEX</Alex>
-            # tmp_out_path = loop.run_until_complete(pack())
+            tmp_out_path = loop.run_until_complete(pack())
             # TODO: <Alex>ALEX</Alex>
             # TODO: <Alex>ALEX</Alex>
-            time.sleep(1)
-            tmp_out_path: str = loop.run_until_complete(packster())
+            # time.sleep(1)
+            # tmp_out_path: str = loop.run_until_complete(packster())
             # TODO: <Alex>ALEX</Alex>
         except Exception as e:
             exception_message: str = "A general Exception occurred.\n"
@@ -219,5 +223,5 @@ def export_carton(model: LudwigModel, carton_path: str, carton_model_name="ludwi
         # TODO: <Alex>ALEX</Alex>
 
         # Move it to the output path
-        time.sleep(1)
+        # time.sleep(1)
         shutil.move(tmp_out_path, carton_path)
