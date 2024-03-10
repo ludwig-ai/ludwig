@@ -65,6 +65,7 @@ from ludwig.features.feature_registries import update_config_with_metadata, upda
 from ludwig.globals import (
     LUDWIG_VERSION,
     MODEL_HYPERPARAMETERS_FILE_NAME,
+    MODEL_WEIGHTS_FILE_NAME,
     set_disable_progressbar,
     TRAIN_SET_METADATA_FILE_NAME,
 )
@@ -375,6 +376,7 @@ class LudwigModel:
         skip_save_processed_input: bool = False,
         output_directory: Optional[str] = "results",
         random_seed: int = default_random_seed,
+        save_ludwig_config_with_weights: bool = False,
         **kwargs,
     ) -> TrainingResults:
         """This function is used to perform a full training of the model on the specified dataset.
@@ -456,6 +458,9 @@ class LudwigModel:
         :param random_seed: (int, default: `42`) a random seed that will be
             used anywhere there is a call to a random number generator: data
             splitting, parameter initialization and training set shuffling
+        :param save_ludwig_config_with_weights: (bool, default: False) indicates
+            whether the user-provided ludwig-config should be saved along with
+            the model weights (to be eventually uploaded to HF)
         :param kwargs: (dict, default: {}) a dictionary of optional parameters.
 
         # Return
@@ -766,6 +771,9 @@ class LudwigModel:
                 # Ensure model weights are saved to the driver if training was done remotely
                 if self.backend.is_coordinator() and not skip_save_model:
                     self.model.save(model_dir)
+                    if save_ludwig_config_with_weights:
+                        weights_save_path = os.path.join(model_dir, MODEL_WEIGHTS_FILE_NAME, 'ludwig_config.json')
+                        self.save_config(weights_save_path)
 
                 if self.is_merge_and_unload_set():
                     # For an LLM model trained with a LoRA adapter, handle merge and unload postprocessing directives.
