@@ -125,7 +125,7 @@ def export_carton(model: LudwigModel, carton_path: str, carton_model_name="ludwi
                 runner_name="torchscript",
                 # Any 2.x.x version is okay
                 # TODO: improve this
-                required_framework_version=">=2",
+                required_framework_version="=2.0",
                 model_name=carton_model_name,
                 inputs=_get_input_spec(model),
                 outputs=_get_output_spec(model),
