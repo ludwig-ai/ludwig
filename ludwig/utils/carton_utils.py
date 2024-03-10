@@ -161,6 +161,7 @@ def export_carton(model: LudwigModel, carton_path: str, carton_model_name="ludwi
             idx: int
             for idx in range(max_tries):
                 print(f"\n[ALEX_TEST] [WOUTPUT] TRYING_IDX:\n{idx} ; TYPE: {str(type(idx))}")
+                time.sleep(1)
                 try:
                     a: str = await carton.pack(
                         input_model_path,
@@ -185,6 +186,7 @@ def export_carton(model: LudwigModel, carton_path: str, carton_model_name="ludwi
                     # raise ValueError(exception_message) from ie
                 if idx >= max_tries - 1:
                     raise ValueError(exception_message) from ie
+                time.sleep(1)
             # TODO: <Alex>ALEX</Alex>
 
         # TODO: <Alex>ALEX</Alex>
