@@ -21,6 +21,7 @@ from ludwig.constants import (
     BATCH_SIZE,
     COMBINER,
     EPOCHS,
+    EVAL_BATCH_SIZE,
     GENERATION,
     INPUT_FEATURES,
     MERGE_ADAPTER_INTO_BASE_MODEL,
@@ -350,9 +351,11 @@ def _prepare_finetuning_test(
         BASE_MODEL: model_name,
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
+        GENERATION: {"max_new_tokens": 64},
         TRAINER: {
             TYPE: "finetune",
-            BATCH_SIZE: 8,
+            BATCH_SIZE: "auto",
+            EVAL_BATCH_SIZE: "auto",
             EPOCHS: 2,
         },
         BACKEND: backend,
@@ -1305,6 +1308,7 @@ def test_llm_batch_size_tuning():
         type: finetune
         optimizer:
             type: adam
+        batch_size: auto
         train_steps: 1
         learning_rate: 0.0002
         eval_batch_size: 2
