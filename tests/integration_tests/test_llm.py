@@ -1308,6 +1308,7 @@ def test_llm_batch_size_tuning():
         type: finetune
         optimizer:
             type: adam
+        batch_size: auto
         train_steps: 1
         learning_rate: 0.0002
         eval_batch_size: 2
