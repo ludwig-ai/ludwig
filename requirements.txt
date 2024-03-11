@@ -67,3 +67,6 @@ datasets
 
 # pin required for torch 2.1.0
 urllib3<2
+
+# required for torchaudio 2.1.0
+sox

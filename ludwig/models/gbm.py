@@ -101,14 +101,14 @@ class GBM(BaseModel):
     ) -> Dict[str, torch.Tensor]:
         # Invoke output features.
         output_logits = {}
-        output_feature_name = self.output_features.keys()[0]
+        output_feature_name = next(iter(self.output_features.keys()))
         output_feature = self.output_features.get(output_feature_name)
 
         # If `inputs` is a tuple, it should contain `(inputs, targets)`.
         if isinstance(inputs, tuple):
             inputs, _ = inputs
 
-        assert list(inputs.keys()) == self.input_features.keys()
+        assert list(inputs.keys()) == list(self.input_features.keys())
 
         # If the model has not been compiled, predict using the LightGBM sklearn iterface. Otherwise, use torch with
         # the Hummingbird compiled model. Notably, when compiling the model to torchscript, compiling with Hummingbird

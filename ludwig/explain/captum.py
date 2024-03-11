@@ -216,13 +216,13 @@ class IntegratedGradientsExplainer(Explainer):
                 feat_to_token_attributions_global[feat_name] = token_attributions_global
 
             self.global_explanation.add(
-                input_features.keys(), total_attribution_global, feat_to_token_attributions_global
+                list(input_features.keys()), total_attribution_global, feat_to_token_attributions_global
             )
 
             for i, (feature_attributions, explanation) in enumerate(zip(total_attribution, self.row_explanations)):
                 # Add the feature attributions to the explanation object for this row.
                 explanation.add(
-                    input_features.keys(),
+                    list(input_features.keys()),
                     feature_attributions,
                     {k: v[i] for k, v in feat_to_token_attributions.items()},
                 )
@@ -245,7 +245,7 @@ class IntegratedGradientsExplainer(Explainer):
             }
             # Prepend the negative class to the list of label explanations.
             self.global_explanation.add(
-                input_features.keys(), negated_attributions, negated_token_attributions, prepend=True
+                list(input_features.keys()), negated_attributions, negated_token_attributions, prepend=True
             )
 
             for explanation in self.row_explanations:
@@ -257,7 +257,9 @@ class IntegratedGradientsExplainer(Explainer):
                     if fa.token_attributions is not None
                 }
                 # Prepend the negative class to the list of label explanations.
-                explanation.add(input_features.keys(), negated_attributions, negated_token_attributions, prepend=True)
+                explanation.add(
+                    list(input_features.keys()), negated_attributions, negated_token_attributions, prepend=True
+                )
 
             # TODO(travis): for force plots, need something similar to SHAP E[X]
             expected_values.append(0.0)

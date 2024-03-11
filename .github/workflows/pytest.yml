@@ -255,7 +255,7 @@ jobs:
           # remove torch and ray from the dependencies so we can add them depending on the matrix args for the job.
           cat requirements.txt | sed '/^torch[>=<\b]/d' | sed '/^torchtext/d' | sed '/^torchvision/d' | sed '/^torchaudio/d' > requirements-temp && mv requirements-temp requirements.txt
           cat requirements_distributed.txt | sed '/^ray[\[]/d'
-          pip install torch==2.0.0 torchtext torchvision torchaudio
+          pip install torch==2.1.0 torchtext torchvision torchaudio
           pip install ray==2.3.0
           pip install '.[test]'
           pip list
