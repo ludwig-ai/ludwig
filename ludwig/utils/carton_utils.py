@@ -164,6 +164,7 @@ def export_carton(model: LudwigModel, carton_path: str, carton_model_name="ludwi
             max_tries: int = 1
             idx: int
             em: str = ""
+            error: Exception | None = None
             for idx in range(max_tries):
                 print(f"\n[ALEX_TEST] [WOUTPUT] TRYING_IDX:\n{idx} ; TYPE: {str(type(idx))}")
                 time.sleep(1)
@@ -189,10 +190,11 @@ def export_carton(model: LudwigModel, carton_path: str, carton_model_name="ludwi
                     sys.stderr.write(exception_message)
                     sys.stderr.flush()
                     em = exception_message
+                    error = ie
                     # raise ValueError(exception_message) from ie
                 if idx >= max_tries - 1:
                     # raise ValueError("THINGS ENDED VERY BADLY!!!!!!!!!!!!!")
-                    raise ValueError(em) from ie
+                    raise ValueError(em) from error
                 # time.sleep(1)
 
         # TODO: <Alex>ALEX</Alex>
