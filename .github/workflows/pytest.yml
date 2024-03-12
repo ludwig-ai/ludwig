@@ -94,7 +94,7 @@ jobs:
 
       - name: Clean out /tmp directory
         run: |
-          rm -rf /tmp/*
+          sudo rm -rf /tmp/*
 
       - name:  #Integration Tests
         run: |

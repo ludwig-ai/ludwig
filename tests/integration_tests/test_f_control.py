@@ -180,33 +180,35 @@ def test_carton_torchscript(csv_filename, tmpdir):
 
 
 # TODO: <Alex>ALEX</Alex>
-# # TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_x
-# # TODO: <Alex>ALEX</Alex>
-# @pytest.mark.parametrize("use_pretrained", [False, True], ids=["false", "true"])
-# def test_vit_encoder_different_dimension_image(tmpdir, csv_filename, use_pretrained: bool):
-#     input_features = [
-#         image_feature(
-#             os.path.join(tmpdir, "generated_output"),
-#             preprocessing={"in_memory": True, "height": 224, "width": 206, "num_channels": 3},
-#             encoder={TYPE: "_vit_legacy", "use_pretrained": use_pretrained},
-#         )
-#     ]
-#     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
+# TODO: <Alex>ALEX</Alex>
+@pytest.mark.integration_tests_x
+# TODO: <Alex>ALEX</Alex>
+@pytest.mark.parametrize("use_pretrained", [False, True], ids=["false", "true"])
+def test_vit_encoder_different_dimension_image(tmpdir, csv_filename, use_pretrained: bool):
+    input_features = [
+        image_feature(
+            os.path.join(tmpdir, "generated_output"),
+            preprocessing={"in_memory": True, "height": 224, "width": 206, "num_channels": 3},
+            encoder={TYPE: "_vit_legacy", "use_pretrained": use_pretrained},
+        )
+    ]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
 
-#     data_csv = generate_data(
-#         input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=NUM_EXAMPLES
-#     )
+    data_csv = generate_data(
+        input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=NUM_EXAMPLES
+    )
 
-#     config = {
-#         INPUT_FEATURES: input_features,
-#         OUTPUT_FEATURES: output_features,
-#         TRAINER: {"train_steps": 1},
-#     }
+    config = {
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        TRAINER: {"train_steps": 1},
+    }
 
-#     model = LudwigModel(config)
+    model = LudwigModel(config)
 
-#     # Failure happens post preprocessing but before training during the ECD model creation phase
-#     # so make sure the model can be created properly and training can proceed
-#     model.train(dataset=data_csv)
+    # Failure happens post preprocessing but before training during the ECD model creation phase
+    # so make sure the model can be created properly and training can proceed
+    model.train(dataset=data_csv)
+
+
 # TODO: <Alex>ALEX</Alex>
