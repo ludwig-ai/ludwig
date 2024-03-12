@@ -79,7 +79,17 @@ jobs:
         run: |
           du -h -d 1 ~
           df -h
-          du -s /tmp
+          # du -s /tmp
+
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          swap-storage: true
 
       - name: Integration Tests
         run: |
@@ -89,7 +99,7 @@ jobs:
         run: |
           du -h -d 1 ~
           df -h
-          du -s /tmp
+          # du -s /tmp
 
   event_file:
     name: "Event File"
