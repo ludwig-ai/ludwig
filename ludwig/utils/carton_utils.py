@@ -169,7 +169,7 @@ def export_carton(model: LudwigModel, carton_path: str, carton_model_name="ludwi
                 time.sleep(1)
                 try:
                     a: str = await carton.pack(
-                        input_model_path,
+                        path=input_model_path,
                         runner_name="torchscript",
                         # Any 2.x.x version is okay
                         # TODO: improve this

@@ -60,6 +60,11 @@ jobs:
         run: |
           brew install libuv
 
+      - name: Debug out of space
+        run: |
+          du -h -d 1 ~
+          df -h
+
       - name: Install dependencies
         run: |
           python --version
