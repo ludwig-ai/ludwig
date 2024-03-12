@@ -44,9 +44,6 @@ explicit_int_markers = {
     "integration_tests_c",
     "integration_tests_d",
     "integration_tests_e",
-    # TODO: <Alex>ALEX</Alex>
-    "integration_tests_x",
-    # TODO: <Alex>ALEX</Alex>
 }
 
 
