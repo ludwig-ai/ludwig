@@ -3,7 +3,9 @@ import importlib.util
 import logging
 import os
 import shutil
+import sys
 import tempfile
+import traceback
 from typing import Any, Dict, List
 
 import torch
@@ -108,26 +110,40 @@ def export_carton(model: LudwigModel, carton_path: str, carton_model_name="ludwi
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Save the model to a temp dir
-        input_model_path = os.path.join(tmpdir, "model.pt")
+        input_model_path: str = os.path.join(tmpdir, "model.pt")
         torch.jit.save(model_ts, input_model_path)
 
         # carton.pack is an async function so we run it and wait until it's complete
         # See https://pyo3.rs/v0.20.0/ecosystem/async-await#a-note-about-asynciorun for why we wrap it
         # in another function
-        async def pack():
-            return await carton.pack(
-                input_model_path,
-                runner_name="torchscript",
-                # Any 2.x.x version is okay
-                # TODO: improve this
-                required_framework_version="=2",
-                model_name=carton_model_name,
-                inputs=_get_input_spec(model),
-                outputs=_get_output_spec(model),
-            )
+        async def pack() -> str:
+            try:
+                return await carton.pack(
+                    path=input_model_path,
+                    runner_name="torchscript",
+                    # Any 2.x.x version is okay
+                    # TODO: improve this
+                    required_framework_version="=2",
+                    model_name=carton_model_name,
+                    inputs=_get_input_spec(model),
+                    outputs=_get_output_spec(model),
+                )
+            except Exception as e:
+                exception_message: str = 'An Exception inside "pack()" occurred.\n'
+                exception_traceback: str = traceback.format_exc()
+                exception_message += f'{type(e).__name__}: "{str(e)}".  Traceback: "{exception_traceback}".'
+                sys.stderr.write(exception_message)
+                sys.stderr.flush()
+                raise ValueError(exception_message) from e  # Re-raise error for calling function to handle.
 
-        loop = asyncio.get_event_loop()
-        tmp_out_path = loop.run_until_complete(pack())
-
-        # Move it to the output path
-        shutil.move(tmp_out_path, carton_path)
+        try:
+            tmp_out_path: str = asyncio.get_event_loop().run_until_complete(pack())
+            # Move it to the output path
+            shutil.move(tmp_out_path, carton_path)
+        except Exception as e:
+            exception_message: str = 'An Exception inside "export_carton()" occurred.\n'
+            exception_traceback: str = traceback.format_exc()
+            exception_message += f'{type(e).__name__}: "{str(e)}".  Traceback: "{exception_traceback}".'
+            sys.stderr.write(exception_message)
+            sys.stderr.flush()
+            raise SystemExit(exception_message) from e  # Make sure error is fatal.
