@@ -476,7 +476,7 @@ def cli(sys_argv):
         "--save_ludwig_config_with_model_weights",
         action="store_true",
         default=False,
-        help="save ludwig config with model weights"
+        help="save ludwig config with model weights",
     )
 
     # ------------------
