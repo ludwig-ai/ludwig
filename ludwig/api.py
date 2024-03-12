@@ -773,7 +773,7 @@ class LudwigModel:
                     self.model.save(model_dir)
                     if save_ludwig_config_with_model_weights:
                         weights_save_path = os.path.join(model_dir, MODEL_WEIGHTS_FILE_NAME, "ludwig_config.json")
-                        self.save_config(weights_save_path)
+                        save_json(weights_save_path, self.config_obj.to_dict())
 
                 if self.is_merge_and_unload_set():
                     # For an LLM model trained with a LoRA adapter, handle merge and unload postprocessing directives.
