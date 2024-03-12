@@ -65,6 +65,7 @@ def experiment_cli(
     callbacks: List[Callback] = None,
     backend: Union[Backend, str] = None,
     random_seed: int = default_random_seed,
+    save_ludwig_config_with_model_weights: bool = False,
     logging_level: int = logging.INFO,
     **kwargs,
 ):
@@ -172,6 +173,9 @@ def experiment_cli(
          of backend to use to execute preprocessing / training steps.
      :param random_seed: (int: default: 42) random seed used for weights
          initialization, splits and any other random function.
+     :param save_ludwig_config_with_model_weights: (bool, default: False) indicates
+         whether the user-provided ludwig-config should be saved along with
+         the model weights (to be eventually uploaded to HF)
      :param logging_level: (int) Log level that will be sent to stderr.
 
      # Return
@@ -238,6 +242,7 @@ def experiment_cli(
         skip_collect_overall_stats=skip_collect_overall_stats,
         output_directory=output_directory,
         random_seed=random_seed,
+        save_ludwig_config_with_model_weights=save_ludwig_config_with_model_weights,
     )
 
     return model, eval_stats, train_stats, preprocessed_data, output_directory
@@ -464,6 +469,14 @@ def cli(sys_argv):
         help="disables saving TensorBoard logs. By default Ludwig saves "
         "logs for the TensorBoard, but if it is not needed turning it off "
         "can slightly increase the overall speed",
+    )
+
+    parser.add_argument(
+        "-slcwmw",
+        "--save_ludwig_config_with_model_weights",
+        action="store_true",
+        default=False,
+        help="save ludwig config with model weights"
     )
 
     # ------------------
