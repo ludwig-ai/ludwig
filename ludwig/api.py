@@ -772,7 +772,7 @@ class LudwigModel:
                 if self.backend.is_coordinator() and not skip_save_model:
                     self.model.save(model_dir)
                     if save_ludwig_config_with_model_weights:
-                        weights_save_path = os.path.join(model_dir, MODEL_WEIGHTS_FILE_NAME, 'ludwig_config.json')
+                        weights_save_path = os.path.join(model_dir, MODEL_WEIGHTS_FILE_NAME, "ludwig_config.json")
                         self.save_config(weights_save_path)
 
                 if self.is_merge_and_unload_set():
@@ -1563,7 +1563,7 @@ class LudwigModel:
             skip_save_unprocessed_output=skip_save_unprocessed_output,
             output_directory=output_directory,
             random_seed=random_seed,
-            save_ludwig_config_with_model_weights=save_ludwig_config_with_model_weights
+            save_ludwig_config_with_model_weights=save_ludwig_config_with_model_weights,
         )
 
         (training_set, validation_set, test_set, training_set_metadata) = preprocessed_data
