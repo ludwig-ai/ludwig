@@ -60,11 +60,6 @@ jobs:
         run: |
           brew install libuv
 
-      - name: Debug out of space
-        run: |
-          du -h -d 1 ~
-          df -h
-
       - name: Install dependencies
         run: |
           python --version
@@ -79,6 +74,11 @@ jobs:
           pip install '.[test]'
           pip list
         shell: bash
+
+      - name: Debug out of space
+        run: |
+          du -h -d 1 ~
+          df -h
 
       - name: Integration Tests
         run: |
