@@ -75,14 +75,21 @@ jobs:
           pip list
         shell: bash
 
-      - name: Debug out of space
+      - name: Debug out of space -- A
         run: |
           du -h -d 1 ~
           df -h
+          du -s /tmp
 
       - name: Integration Tests
         run: |
           RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m "not slow and not combinatorial and not horovod and not llm and $MARKERS" --junitxml pytest.xml tests/integration_tests
+
+      - name: Debug out of space -- B
+        run: |
+          du -h -d 1 ~
+          df -h
+          du -s /tmp
 
   event_file:
     name: "Event File"
