@@ -376,7 +376,7 @@ class LudwigModel:
         skip_save_processed_input: bool = False,
         output_directory: Optional[str] = "results",
         random_seed: int = default_random_seed,
-        save_ludwig_config_with_weights: bool = False,
+        save_ludwig_config_with_model_weights: bool = False,
         **kwargs,
     ) -> TrainingResults:
         """This function is used to perform a full training of the model on the specified dataset.
@@ -458,7 +458,7 @@ class LudwigModel:
         :param random_seed: (int, default: `42`) a random seed that will be
             used anywhere there is a call to a random number generator: data
             splitting, parameter initialization and training set shuffling
-        :param save_ludwig_config_with_weights: (bool, default: False) indicates
+        :param save_ludwig_config_with_model_weights: (bool, default: False) indicates
             whether the user-provided ludwig-config should be saved along with
             the model weights (to be eventually uploaded to HF)
         :param kwargs: (dict, default: {}) a dictionary of optional parameters.
@@ -771,7 +771,7 @@ class LudwigModel:
                 # Ensure model weights are saved to the driver if training was done remotely
                 if self.backend.is_coordinator() and not skip_save_model:
                     self.model.save(model_dir)
-                    if save_ludwig_config_with_weights:
+                    if save_ludwig_config_with_model_weights:
                         weights_save_path = os.path.join(model_dir, MODEL_WEIGHTS_FILE_NAME, 'ludwig_config.json')
                         self.save_config(weights_save_path)
 
@@ -1436,6 +1436,7 @@ class LudwigModel:
         skip_collect_overall_stats: bool = False,
         output_directory: str = "results",
         random_seed: int = default_random_seed,
+        save_ludwig_config_with_model_weights: bool = False,
         **kwargs,
     ) -> Tuple[Optional[dict], TrainingStats, PreprocessedDataset, str]:
         """Trains a model on a dataset's training and validation splits and uses it to predict on the test split.
@@ -1524,6 +1525,9 @@ class LudwigModel:
             model and the training progress files.
         :param random_seed: (int: default: 42) random seed used for weights
             initialization, splits and any other random function.
+        :param save_ludwig_config_with_model_weights: (bool, default: False) indicates
+            whether the user-provided ludwig-config should be saved along with
+            the model weights (to be eventually uploaded to HF)
 
         # Return
         :return: (Tuple[dict, dict, tuple, str))
@@ -1559,6 +1563,7 @@ class LudwigModel:
             skip_save_unprocessed_output=skip_save_unprocessed_output,
             output_directory=output_directory,
             random_seed=random_seed,
+            save_ludwig_config_with_model_weights=save_ludwig_config_with_model_weights
         )
 
         (training_set, validation_set, test_set, training_set_metadata) = preprocessed_data
