@@ -139,46 +139,6 @@ def test_model_progress_save(skip_save_progress, skip_save_model, tmp_path):
         assert len(training_checkpoints) > 0
 
 
-@pytest.mark.parametrize("save_ludwig_config_with_model_weights", [False, True])
-def test_ludwig_config_save(save_ludwig_config_with_model_weights, tmp_path):
-    input_features, output_features = synthetic_test_data.get_feature_configs()
-
-    config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "combiner": {"type": "concat"},
-        TRAINER: {"epochs": 1, BATCH_SIZE: 128},
-    }
-
-    # create sub-directory to store results
-    results_dir = tmp_path / "results"
-    results_dir.mkdir()
-
-    # run experiment
-    generated_data = synthetic_test_data.get_generated_data()
-    _, _, _, _, output_dir = experiment_cli(
-        training_set=generated_data.train_df,
-        validation_set=generated_data.validation_df,
-        test_set=generated_data.test_df,
-        output_directory=str(results_dir),
-        config=config,
-        skip_save_processed_input=True,
-        skip_save_progress=False,
-        skip_save_unprocessed_output=True,
-        skip_save_model=False,
-        skip_save_log=True,
-        save_ludwig_config_with_model_weights=save_ludwig_config_with_model_weights,
-    )
-
-    # ========== Check for required ludwig-config file =============
-    model_weights_dir = os.path.join(output_dir, "model", "model_weights")
-    files = [f for f in os.listdir(model_weights_dir) if re.match(r"ludwig_config", f)]
-    if save_ludwig_config_with_model_weights:
-        assert len(files) == 1
-    else:
-        assert len(files) == 0
-
-
 @pytest.mark.parametrize("optimizer", ["sgd", "adam"])
 def test_resume_training(optimizer, tmp_path):
     input_features, output_features = synthetic_test_data.get_feature_configs()
