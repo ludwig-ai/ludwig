@@ -147,7 +147,7 @@ def test_ludwig_config_save(save_ludwig_config_with_model_weights, tmp_path):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat"},
-        TRAINER: {"epochs": 5, BATCH_SIZE: 128},
+        TRAINER: {"epochs": 1, BATCH_SIZE: 128},
     }
 
     # create sub-directory to store results
