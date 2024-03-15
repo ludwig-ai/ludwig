@@ -1,4 +1,3 @@
-# schema
 from abc import ABC
 from dataclasses import field
 from typing import Dict
@@ -7,19 +6,30 @@ from marshmallow import fields, ValidationError
 
 import ludwig.schema.utils as schema_utils
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.constants import MODEL_ECD
+from ludwig.schema.metadata import TRAINER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
 @ludwig_dataclass
 class GradualUnfreezerConfig(schema_utils.BaseMarshmallowConfig, ABC):
-    """Configuration for freezing scheduler parameters."""
+    """Configuration for gradual unfreezing parameters."""
 
     thaw_epochs: list = schema_utils.List(
-        default=None, description="Epochs to thaw at. For example, [1, 2, 3, 4] will thaw corresponding layers in "
+        int,
+        default=None,
+        description="Epochs to thaw at. For example, [1, 2, 3, 4] will thaw layers in layers_to_thaw 2D array",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["gradual_unfreezer"]["thaw_epochs"],
     )
 
-    layers_to_thaw: list = schema_utils.List(default=None, description="placeholder")
+    layers_to_thaw: list = schema_utils.List(
+        list,
+        inner_type=str,
+        default=None,
+        description="Individual layers to thaw at each thaw_epoch. 2D Array",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["gradual_unfreezer"]["layers_to_thaw"],
+    )
 
 
 @DeveloperAPI
@@ -43,7 +53,7 @@ def GradualUnfreezerDataclassField(description: str, default: Dict = None):
         def _jsonschema_type_mapping(self):
             return {
                 **schema_utils.unload_jsonschema_from_marshmallow_class(GradualUnfreezerConfig),
-                "title": "gradual_unfreezer_options",
+                "title": "gradual_unfreeze_options",
                 "description": description,
             }
 

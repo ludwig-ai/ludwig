@@ -180,8 +180,6 @@ class Trainer(BaseTrainer):
         self.increase_batch_size_on_plateau_rate = config.increase_batch_size_on_plateau_rate
         self.increase_batch_size_eval_metric = config.increase_batch_size_eval_metric
         self.increase_batch_size_eval_split = config.increase_batch_size_eval_split
-        self.thaw_epochs = config.thaw_epochs
-        self.layers_to_thaw = config.layers_to_thaw
         self.gradient_accumulation_steps = (
             config.gradient_accumulation_steps
             if self.distributed.allow_gradient_accumulation() and config.gradient_accumulation_steps != AUTO
@@ -1007,7 +1005,9 @@ class Trainer(BaseTrainer):
                 )
 
                 # Initialize gradual unfreezer
-                self.gradual_unfreezer = GradualUnfreezer(self.config.gradual_unfreezer, self.model)
+                if self.config.gradual_unfreezer.thaw_epochs:
+                    self.gradual_unfreezer = GradualUnfreezer(self.config.gradual_unfreezer, self.model)
+                    logger.info(f"Gradual unfreezing for {len(self.gradual_unfreezer.thaw_epochs)} epoch(s)")
 
                 if self.is_coordinator():
                     logger.info(
@@ -1036,13 +1036,11 @@ class Trainer(BaseTrainer):
                 if profiler:
                     profiler.start()
 
-                for name, p in self.model.named_parameters():
-                    print(f"{name}, {p.requires_grad}")
-
                 current_epoch = 0
 
                 while progress_tracker.steps < self.total_steps:
-                    self.gradual_unfreezer.thaw(current_epoch)
+                    if self.gradual_unfreezer:
+                        self.gradual_unfreezer.thaw(current_epoch)
 
                     # note that batch size may change over epochs
                     batcher.set_epoch(progress_tracker.epoch, progress_tracker.batch_size)
@@ -1260,9 +1258,6 @@ class Trainer(BaseTrainer):
 
             # Update LR schduler here instead of train loop to avoid updating during batch size tuning, etc.
             self.scheduler.step()
-
-            # add conditional logic here if user is using the freezing scheduler
-            # self.freezing_scheduler.step()
 
             # Update progress tracker with token information.
             progress_tracker.set_token_usage_for_this_step(used_tokens)
