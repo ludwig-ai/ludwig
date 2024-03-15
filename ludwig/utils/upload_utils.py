@@ -3,9 +3,10 @@ from __future__ import annotations
 import logging
 import os
 from abc import ABC, abstractmethod
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 
 from huggingface_hub import HfApi, login
+
+from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 
 logger = logging.getLogger(__name__)
 
