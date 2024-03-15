@@ -258,8 +258,9 @@ class HuggingFaceHub(BaseModelUpload):
         )
 
         # Upload all artifacts in model weights folder
-        commit_message_weights = f"{commit_message} (weights)" if commit_message else commit_message
-        commit_description_weights = f"{commit_description} (weights)" if commit_description else commit_description
+        commit_message_weights: str | None = f"{commit_message} (weights)" if commit_message else commit_message
+        commit_description_weights: str | None = f"{commit_description} (weights)" if commit_description else \
+            commit_description
         upload_path_weights = self.api.upload_folder(
             folder_path=os.path.join(model_path, "model", "model_weights"),
             repo_id=repo_id,
@@ -270,8 +271,10 @@ class HuggingFaceHub(BaseModelUpload):
 
         if upload_path_weights:
             logger.info(f"Model weights uploaded to `{upload_path_weights}` with repository name `{repo_id}`")
-            commit_message_config = f"{commit_message} (config)" if commit_message else commit_message
-            commit_description_config = f"{commit_description} (config)" if commit_description else commit_description
+            # Upload the ludwig configuration file
+            commit_message_config: str | None = f"{commit_message} (config)" if commit_message else commit_message
+            commit_description_config: str | None = f"{commit_description} (config)" if commit_description else \
+                commit_description
             upload_path_config = self.api.upload_file(
                 path_or_fileobj=os.path.join(model_path, "model", MODEL_HYPERPARAMETERS_FILE_NAME),
                 path_in_repo="ludwig_config.json",
