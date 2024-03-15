@@ -68,8 +68,8 @@ def output_directory_manager(tmpdir) -> str:
                 "pytorch_model.bin",
             ],
             (
-                    ValueError,
-                    "Can't find ludwig config at {model_weights_path}.  ludwig config should be saved as`ludwig_config.json`",  # noqa E501
+                ValueError,
+                "Can't find ludwig config at {model_weights_path}.  ludwig config should be saved as`ludwig_config.json`",  # noqa E501
             ),
             id="pretrained_model_weights_bin_and_ludwig_config_missing",
         ),
@@ -86,8 +86,8 @@ def output_directory_manager(tmpdir) -> str:
                 "adapter_model.bin",
             ],
             (
-                    ValueError,
-                    "Can't find ludwig config at {model_weights_path}.  ludwig config should be saved as`ludwig_config.json`",  # noqa E501
+                ValueError,
+                "Can't find ludwig config at {model_weights_path}.  ludwig config should be saved as`ludwig_config.json`",  # noqa E501
             ),
             id="adapter_model_weights_bin_unmerged_and_ludwig_config_missing",  # backward compatibility for peft versions < 0.7.0
         ),
@@ -104,8 +104,8 @@ def output_directory_manager(tmpdir) -> str:
                 "adapter_model.safetensors",
             ],
             (
-                    ValueError,
-                    "Can't find ludwig config at {model_weights_path}.  ludwig config should be saved as`ludwig_config.json`",  # noqa E501
+                ValueError,
+                "Can't find ludwig config at {model_weights_path}.  ludwig config should be saved as`ludwig_config.json`",  # noqa E501
             ),
             id="adapter_model_weights_safetensors_unmerged_and_ludwig_config_missing",
         ),
@@ -124,8 +124,8 @@ def output_directory_manager(tmpdir) -> str:
                 "adapter_model.safetensors",
             ],
             (
-                    ValueError,
-                    "Can't find ludwig config at {model_weights_path}.  ludwig config should be saved as`ludwig_config.json`",  # noqa E501
+                ValueError,
+                "Can't find ludwig config at {model_weights_path}.  ludwig config should be saved as`ludwig_config.json`",  # noqa E501
             ),
             id="adapter_model_weights_bin_and_safetensors_unmerged_and_ludwig_config_missing",  # backward compatibility for peft versions < 0.7.0
         ),
@@ -144,18 +144,16 @@ def output_directory_manager(tmpdir) -> str:
                 "adapter_model.safetensors",
             ],
             (
-                    ValueError,
-                    "Can't find ludwig config at {model_weights_path}.  ludwig config should be saved as`ludwig_config.json`",  # noqa E501
+                ValueError,
+                "Can't find ludwig config at {model_weights_path}.  ludwig config should be saved as`ludwig_config.json`",  # noqa E501
             ),
             id="pretrained_model_weights_bin_and_adapter_model_weights_safetensors_merged_and_ludwig_config_missing",
         ),
         pytest.param(
-            [
-                "ludwig_config.json"
-            ],
+            ["ludwig_config.json"],
             (
-                    ValueError,
-                    "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
+                ValueError,
+                "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
             ),
             id="model_weights_missing",
         ),
@@ -173,8 +171,8 @@ def output_directory_manager(tmpdir) -> str:
                 "pytorch_model.safetensors",
             ],
             (
-                    ValueError,
-                    "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
+                ValueError,
+                "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
             ),
             id="model_weights_unexpected_name_format_combination",
         ),
@@ -194,8 +192,8 @@ def output_directory_manager(tmpdir) -> str:
                 "pytorch_model.unkn",
             ],
             (
-                    ValueError,
-                    "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
+                ValueError,
+                "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
             ),
             id="model_weights_unrecognized_format",
         ),
@@ -215,8 +213,8 @@ def output_directory_manager(tmpdir) -> str:
                 "unknown_model.safetensors",
             ],
             (
-                    ValueError,
-                    "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
+                ValueError,
+                "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
             ),
             id="model_weights_unrecognized_name",
         ),
