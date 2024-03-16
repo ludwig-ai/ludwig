@@ -7,6 +7,7 @@ import shutil
 import pytest
 
 from ludwig.utils.upload_utils import HuggingFaceHub
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -26,14 +27,15 @@ def _build_fake_model_repo(
     names must be leaf file names, not paths).
     """
     # Create a temporary folder designating training output directory.
-    model_directory: str = pathlib.Path(destination_directory) / experiment_name / model_directory_name
-    model_weights_directory: str = model_directory / model_weights_directory_name
+    model_directory: Path = pathlib.Path(destination_directory) / experiment_name / model_directory_name
+    model_weights_directory: Path = model_directory / model_weights_directory_name
     model_weights_directory.mkdir(parents=True, exist_ok=True)
 
     # Create files within the "model_weights" subdirectory.
     file_name: str
     for file_name in file_names:
         pathlib.Path(model_weights_directory / file_name).touch()
+    pathlib.Path(model_directory / "model_hyperparameters.json").touch()
 
 
 @pytest.fixture
@@ -79,7 +81,7 @@ def output_directory_manager(tmpdir) -> str:
                 "adapter_model.bin",
             ],
             None,
-            id="ludwig_config_and_adapter_model_weights_bin_unmerged",  # backward compatibility for peft versions < 0.7.0
+            id="ludwig_config_and_adapter_model_weights_bin_unmerged",  # backward compatibility for peft versions < 0.7.0 # noqa E501
         ),
         pytest.param(
             [
@@ -89,7 +91,7 @@ def output_directory_manager(tmpdir) -> str:
                     ValueError,
                     "Can't find ludwig config at {model_weights_path}.  ludwig config should be saved as`ludwig_config.json`",  # noqa E501
             ),
-            id="adapter_model_weights_bin_unmerged_and_ludwig_config_missing",  # backward compatibility for peft versions < 0.7.0
+            id="adapter_model_weights_bin_unmerged_and_ludwig_config_missing",  # backward compatibility for peft versions < 0.7.0 # noqa E501
         ),
         pytest.param(
             [
@@ -116,7 +118,7 @@ def output_directory_manager(tmpdir) -> str:
                 "adapter_model.safetensors",
             ],
             None,
-            id="ludwig_config_and_adapter_model_weights_bin_and_safetensors_unmerged",  # backward compatibility for peft versions < 0.7.0
+            id="ludwig_config_and_adapter_model_weights_bin_and_safetensors_unmerged",  # backward compatibility for peft versions < 0.7.0 # noqa E501
         ),
         pytest.param(
             [
@@ -127,7 +129,7 @@ def output_directory_manager(tmpdir) -> str:
                     ValueError,
                     "Can't find ludwig config at {model_weights_path}.  ludwig config should be saved as`ludwig_config.json`",  # noqa E501
             ),
-            id="adapter_model_weights_bin_and_safetensors_unmerged_and_ludwig_config_missing",  # backward compatibility for peft versions < 0.7.0
+            id="adapter_model_weights_bin_and_safetensors_unmerged_and_ludwig_config_missing",  # backward compatibility for peft versions < 0.7.0 # noqa E501
         ),
         pytest.param(
             [
