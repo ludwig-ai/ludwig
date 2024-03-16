@@ -208,9 +208,7 @@ class HuggingFaceHub(BaseModelUpload):
             )
         model_hyperparameters_path = os.path.join(model_path, "model")
         if MODEL_HYPERPARAMETERS_FILE_NAME not in os.listdir(model_hyperparameters_path):
-            raise ValueError(
-                f"Can't find '{MODEL_HYPERPARAMETERS_FILE_NAME}' at {model_hyperparameters_path}."
-            )
+            raise ValueError(f"Can't find '{MODEL_HYPERPARAMETERS_FILE_NAME}' at {model_hyperparameters_path}.")
 
     def upload(
         self,
