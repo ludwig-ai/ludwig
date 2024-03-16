@@ -195,16 +195,21 @@ class HuggingFaceHub(BaseModelUpload):
            </Alex(12/10/2023): TODO>
         """
         files = set(os.listdir(trained_model_artifacts_path))
-        acceptable_model_artifact_file_nanes: set[str] = {
+        acceptable_model_artifact_file_names: set[str] = {
             "pytorch_model.bin",
             "adapter_model.bin",  # Delete per formal deprecation policy TBD (per above comment).
             "adapter_model.safetensors",  # New format as of PEFT version "0.7.0" (per above comment).
         }
-        if not (files & acceptable_model_artifact_file_nanes):
+        if not (files & acceptable_model_artifact_file_names):
             raise ValueError(
                 f"Can't find model weights at {trained_model_artifacts_path}. Trained model weights should "
                 "either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`"
                 "or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA."
+            )
+        model_hyperparameters_path = os.path.join(model_path, "model")
+        if MODEL_HYPERPARAMETERS_FILE_NAME not in os.listdir(model_hyperparameters_path):
+            raise ValueError(
+                f"Can't find '{MODEL_HYPERPARAMETERS_FILE_NAME}' at {model_hyperparameters_path}."
             )
 
     def upload(

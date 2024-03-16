@@ -6,8 +6,8 @@ import shutil
 
 import pytest
 
+from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.utils.upload_utils import HuggingFaceHub
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -27,15 +27,15 @@ def _build_fake_model_repo(
     names must be leaf file names, not paths).
     """
     # Create a temporary folder designating training output directory.
-    model_directory: Path = pathlib.Path(destination_directory) / experiment_name / model_directory_name
-    model_weights_directory: Path = model_directory / model_weights_directory_name
+    model_directory: pathlib.Path = pathlib.Path(destination_directory) / experiment_name / model_directory_name
+    model_weights_directory: pathlib.Path = model_directory / model_weights_directory_name
     model_weights_directory.mkdir(parents=True, exist_ok=True)
 
     # Create files within the "model_weights" subdirectory.
     file_name: str
     for file_name in file_names:
         pathlib.Path(model_weights_directory / file_name).touch()
-    pathlib.Path(model_directory / "model_hyperparameters.json").touch()
+    pathlib.Path(model_directory / MODEL_HYPERPARAMETERS_FILE_NAME).touch()
 
 
 @pytest.fixture
@@ -59,100 +59,43 @@ def output_directory_manager(tmpdir) -> str:
     [
         pytest.param(
             [
-                "ludwig_config.json",
                 "pytorch_model.bin",
             ],
             None,
-            id="ludwig_config_and_pretrained_model_weights_bin",
-        ),
-        pytest.param(
-            [
-                "pytorch_model.bin",
-            ],
-            (
-                ValueError,
-                "Can't find ludwig config at {model_weights_path}.  ludwig config should be saved as`ludwig_config.json`",  # noqa E501
-            ),
-            id="pretrained_model_weights_bin_and_ludwig_config_missing",
-        ),
-        pytest.param(
-            [
-                "ludwig_config.json",
-                "adapter_model.bin",
-            ],
-            None,
-            id="ludwig_config_and_adapter_model_weights_bin_unmerged",  # backward compatibility for peft versions < 0.7.0 # noqa E501
+            id="pretrained_model_weights_bin",
         ),
         pytest.param(
             [
                 "adapter_model.bin",
             ],
-            (
-                ValueError,
-                "Can't find ludwig config at {model_weights_path}.  ludwig config should be saved as`ludwig_config.json`",  # noqa E501
-            ),
-            id="adapter_model_weights_bin_unmerged_and_ludwig_config_missing",  # backward compatibility for peft versions < 0.7.0 # noqa E501
+            None,
+            id="adapter_model_weights_bin_unmerged",  # backward compatibility for peft versions < 0.7.0
         ),
         pytest.param(
             [
-                "ludwig_config.json",
                 "adapter_model.safetensors",
             ],
             None,
-            id="ludwig_config_and_adapter_model_weights_safetensors_unmerged",
-        ),
-        pytest.param(
-            [
-                "adapter_model.safetensors",
-            ],
-            (
-                ValueError,
-                "Can't find ludwig config at {model_weights_path}.  ludwig config should be saved as`ludwig_config.json`",  # noqa E501
-            ),
-            id="adapter_model_weights_safetensors_unmerged_and_ludwig_config_missing",
-        ),
-        pytest.param(
-            [
-                "ludwig_config.json",
-                "adapter_model.bin",
-                "adapter_model.safetensors",
-            ],
-            None,
-            id="ludwig_config_and_adapter_model_weights_bin_and_safetensors_unmerged",  # backward compatibility for peft versions < 0.7.0 # noqa E501
+            id="adapter_model_weights_safetensors_unmerged",
         ),
         pytest.param(
             [
                 "adapter_model.bin",
                 "adapter_model.safetensors",
             ],
-            (
-                ValueError,
-                "Can't find ludwig config at {model_weights_path}.  ludwig config should be saved as`ludwig_config.json`",  # noqa E501
-            ),
-            id="adapter_model_weights_bin_and_safetensors_unmerged_and_ludwig_config_missing",  # backward compatibility for peft versions < 0.7.0 # noqa E501
+            None,
+            id="adapter_model_weights_bin_and_safetensors_unmerged",  # backward compatibility for peft versions < 0.7.0
         ),
         pytest.param(
             [
-                "ludwig_config.json",
                 "pytorch_model.bin",
                 "adapter_model.safetensors",
             ],
             None,
-            id="ludwig_config_and_pretrained_model_weights_bin_and_adapter_model_weights_safetensors_merged",
+            id="pretrained_model_weights_bin_and_adapter_model_weights_safetensors_merged",
         ),
         pytest.param(
-            [
-                "pytorch_model.bin",
-                "adapter_model.safetensors",
-            ],
-            (
-                ValueError,
-                "Can't find ludwig config at {model_weights_path}.  ludwig config should be saved as`ludwig_config.json`",  # noqa E501
-            ),
-            id="pretrained_model_weights_bin_and_adapter_model_weights_safetensors_merged_and_ludwig_config_missing",
-        ),
-        pytest.param(
-            ["ludwig_config.json"],
+            [],
             (
                 ValueError,
                 "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
@@ -160,16 +103,7 @@ def output_directory_manager(tmpdir) -> str:
             id="model_weights_missing",
         ),
         pytest.param(
-            [],
-            (
-                ValueError,
-                "Can't find model weights and ludwig config at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
-            ),
-            id="model_weights_missing_and_ludwig_config_missing",
-        ),
-        pytest.param(
             [
-                "ludwig_config.json",
                 "pytorch_model.safetensors",
             ],
             (
@@ -180,17 +114,6 @@ def output_directory_manager(tmpdir) -> str:
         ),
         pytest.param(
             [
-                "pytorch_model.safetensors",
-            ],
-            (
-                ValueError,
-                "Can't find model weights and ludwig config at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
-            ),
-            id="model_weights_unexpected_name_format_combination_and_ludwig_config_missing",
-        ),
-        pytest.param(
-            [
-                "ludwig_config.json",
                 "pytorch_model.unkn",
             ],
             (
@@ -201,17 +124,6 @@ def output_directory_manager(tmpdir) -> str:
         ),
         pytest.param(
             [
-                "pytorch_model.unkn",
-            ],
-            (
-                ValueError,
-                "Can't find model weights and ludwig config at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
-            ),
-            id="model_weights_unrecognized_format_and_ludwig_config_missing",
-        ),
-        pytest.param(
-            [
-                "ludwig_config.json",
                 "unknown_model.safetensors",
             ],
             (
@@ -219,16 +131,6 @@ def output_directory_manager(tmpdir) -> str:
                 "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
             ),
             id="model_weights_unrecognized_name",
-        ),
-        pytest.param(
-            [
-                "unknown_model.safetensors",
-            ],
-            (
-                ValueError,
-                "Can't find model weights and ludwig config at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
-            ),
-            id="model_weights_unrecognized_name_and_ludwig_config_missing",
         ),
     ],
 )
