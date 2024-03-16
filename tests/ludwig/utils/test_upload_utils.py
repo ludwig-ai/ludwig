@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import pathlib
 import shutil
-from pathlib import Path
 
 import pytest
 
