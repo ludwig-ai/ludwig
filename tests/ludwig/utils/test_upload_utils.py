@@ -6,6 +6,7 @@ import shutil
 
 import pytest
 
+from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.utils.upload_utils import HuggingFaceHub
 
 logger = logging.getLogger(__name__)
@@ -26,14 +27,15 @@ def _build_fake_model_repo(
     names must be leaf file names, not paths).
     """
     # Create a temporary folder designating training output directory.
-    model_directory: str = pathlib.Path(destination_directory) / experiment_name / model_directory_name
-    model_weights_directory: str = model_directory / model_weights_directory_name
+    model_directory: pathlib.Path = pathlib.Path(destination_directory) / experiment_name / model_directory_name
+    model_weights_directory: pathlib.Path = model_directory / model_weights_directory_name
     model_weights_directory.mkdir(parents=True, exist_ok=True)
 
     # Create files within the "model_weights" subdirectory.
     file_name: str
     for file_name in file_names:
         pathlib.Path(model_weights_directory / file_name).touch()
+    pathlib.Path(model_directory / MODEL_HYPERPARAMETERS_FILE_NAME).touch()
 
 
 @pytest.fixture

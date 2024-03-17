@@ -5,6 +5,9 @@ import os
 from abc import ABC, abstractmethod
 
 from huggingface_hub import HfApi, login
+from huggingface_hub.hf_api import CommitInfo
+
+from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -193,17 +196,20 @@ class HuggingFaceHub(BaseModelUpload):
            </Alex(12/10/2023): TODO>
         """
         files = set(os.listdir(trained_model_artifacts_path))
-        acceptable_model_artifact_file_nanes: set[str] = {
+        acceptable_model_artifact_file_names: set[str] = {
             "pytorch_model.bin",
             "adapter_model.bin",  # Delete per formal deprecation policy TBD (per above comment).
             "adapter_model.safetensors",  # New format as of PEFT version "0.7.0" (per above comment).
         }
-        if not (files & acceptable_model_artifact_file_nanes):
+        if not (files & acceptable_model_artifact_file_names):
             raise ValueError(
                 f"Can't find model weights at {trained_model_artifacts_path}. Trained model weights should "
                 "either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`"
                 "or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA."
             )
+        model_hyperparameters_path: str = os.path.join(model_path, "model")
+        if MODEL_HYPERPARAMETERS_FILE_NAME not in os.listdir(model_hyperparameters_path):
+            raise ValueError(f"Can't find '{MODEL_HYPERPARAMETERS_FILE_NAME}' at {model_hyperparameters_path}.")
 
     def upload(
         self,
@@ -256,17 +262,37 @@ class HuggingFaceHub(BaseModelUpload):
         )
 
         # Upload all artifacts in model weights folder
-        upload_path = self.api.upload_folder(
+        commit_message_weights: str | None = f"{commit_message} (weights)" if commit_message else commit_message
+        commit_description_weights: str | None = (
+            f"{commit_description} (weights)" if commit_description else commit_description
+        )
+        upload_path_weights: CommitInfo = self.api.upload_folder(
             folder_path=os.path.join(model_path, "model", "model_weights"),
             repo_id=repo_id,
             repo_type=repo_type,
-            commit_message=commit_message,
-            commit_description=commit_description,
+            commit_message=commit_message_weights,
+            commit_description=commit_description_weights,
         )
 
-        if upload_path:
-            logger.info(f"Model uploaded to `{upload_path}` with repository name `{repo_id}`")
-            return True
+        if upload_path_weights:
+            logger.info(f"Model weights uploaded to `{upload_path_weights}` with repository name `{repo_id}`")
+            # Upload the ludwig configuration file
+            commit_message_config: str | None = f"{commit_message} (config)" if commit_message else commit_message
+            commit_description_config: str | None = (
+                f"{commit_description} (config)" if commit_description else commit_description
+            )
+            upload_path_config: CommitInfo = self.api.upload_file(
+                path_or_fileobj=os.path.join(model_path, "model", MODEL_HYPERPARAMETERS_FILE_NAME),
+                path_in_repo="ludwig_config.json",
+                repo_id=repo_id,
+                repo_type=repo_type,
+                commit_message=commit_message_config,
+                commit_description=commit_description_config,
+            )
+
+            if upload_path_config:
+                logger.info(f"Model config uploaded to `{upload_path_config}` with repository name `{repo_id}`")
+                return True
 
         return False
 
