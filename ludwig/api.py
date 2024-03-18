@@ -66,6 +66,7 @@ from ludwig.globals import (
     LUDWIG_VERSION,
     MODEL_HYPERPARAMETERS_FILE_NAME,
     set_disable_progressbar,
+    TRAINING_CHECKPOINTS_DIR_PATH,
     TRAIN_SET_METADATA_FILE_NAME,
 )
 from ludwig.models.base import BaseModel
@@ -1282,9 +1283,12 @@ class LudwigModel:
                     self.model.output_features, predictions, dataset, training_set_metadata
                 )
                 eval_stats = {
-                    of_name: {**eval_stats[of_name], **overall_stats[of_name]}
-                    # account for presence of 'combined' key
-                    if of_name in overall_stats else {**eval_stats[of_name]}
+                    of_name: (
+                        {**eval_stats[of_name], **overall_stats[of_name]}
+                        # account for presence of 'combined' key
+                        if of_name in overall_stats
+                        else {**eval_stats[of_name]}
+                    )
                     for of_name in eval_stats
                 }
 
@@ -1765,6 +1769,7 @@ class LudwigModel:
         gpu_memory_limit: Optional[float] = None,
         allow_parallel_threads: bool = True,
         callbacks: List[Callback] = None,
+        from_checkpoint: bool = False,
     ) -> "LudwigModel":  # return is an instance of ludwig.api.LudwigModel class
         """This function allows for loading pretrained models.
 
@@ -1788,6 +1793,9 @@ class LudwigModel:
         :param callbacks: (list, default: `None`) a list of
             `ludwig.callbacks.Callback` objects that provide hooks into the
             Ludwig pipeline.
+        :param from_checkpoint: (bool, default: `False`) if `True`, the model
+            will be loaded from the latest checkpoint (training_checkpoints/)
+            instead of the final model weights.
 
         # Return
 
@@ -1834,7 +1842,7 @@ class LudwigModel:
         ludwig_model.model = LudwigModel.create_model(config_obj)
 
         # load model weights
-        ludwig_model.load_weights(model_dir)
+        ludwig_model.load_weights(model_dir, from_checkpoint)
 
         # The LoRA layers appear to be loaded again (perhaps due to a potential bug); hence, we merge and unload again.
         if ludwig_model.is_merge_and_unload_set():
@@ -1851,12 +1859,16 @@ class LudwigModel:
     def load_weights(
         self,
         model_dir: str,
+        from_checkpoint: bool = False,
     ) -> None:
         """Loads weights from a pre-trained model.
 
         # Inputs
         :param model_dir: (str) filepath string to location of a pre-trained
             model
+        :param from_checkpoint: (bool, default: `False`) if `True`, the model
+            will be loaded from the latest checkpoint (training_checkpoints/)
+            instead of the final model weights.
 
         # Return
         :return: `None`
@@ -1868,7 +1880,16 @@ class LudwigModel:
         ```
         """
         if self.backend.is_coordinator():
-            self.model.load(model_dir)
+            if from_checkpoint:
+                with self.backend.create_trainer(
+                    model=self.model,
+                    config=self.config_obj.trainer,
+                ) as trainer:
+                    checkpoint = trainer.create_checkpoint_handle()
+                    training_checkpoints_path = os.path.join(model_dir, TRAINING_CHECKPOINTS_DIR_PATH)
+                    trainer.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
+            else:
+                self.model.load(model_dir)
 
         self.backend.sync_model(self.model)
 
