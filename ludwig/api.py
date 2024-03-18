@@ -66,8 +66,8 @@ from ludwig.globals import (
     LUDWIG_VERSION,
     MODEL_HYPERPARAMETERS_FILE_NAME,
     set_disable_progressbar,
-    TRAINING_CHECKPOINTS_DIR_PATH,
     TRAIN_SET_METADATA_FILE_NAME,
+    TRAINING_CHECKPOINTS_DIR_PATH,
 )
 from ludwig.models.base import BaseModel
 from ludwig.models.calibrator import Calibrator
