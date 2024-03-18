@@ -1894,14 +1894,16 @@ class LudwigModel:
         """
         self._check_initialization()
 
+        model_save_path: str = os.path.join(save_path, "model")
+
         # save config
-        self.save_config(save_path)
+        self.save_config(model_save_path)
 
         # save model weights
-        self.model.save(save_path)
+        self.model.save(model_save_path)
 
         # save training set metadata
-        training_set_metadata_path = os.path.join(save_path, TRAIN_SET_METADATA_FILE_NAME)
+        training_set_metadata_path = os.path.join(model_save_path, TRAIN_SET_METADATA_FILE_NAME)
         save_json(training_set_metadata_path, self.training_set_metadata)
 
     @staticmethod
