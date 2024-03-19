@@ -286,7 +286,7 @@ POSTPROCESSOR = "postprocessor"
 TARGET_MODULES = "target_modules"
 
 GENERATION = "generation"
-PROMPT = "prompt"
+PROMPT = "__prompt__"
 ADAPTER = "adapter"
 QUANTIZATION = "quantization"
 MIN_QUANTIZATION_BITS_FOR_MERGE_AND_UNLOAD = 8
