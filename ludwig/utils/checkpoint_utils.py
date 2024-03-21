@@ -337,4 +337,4 @@ class CheckpointManager:
         if last_ckpt:
             checkpoint.load(last_ckpt, device)
         else:
-            logger.error(f"No checkpoints found in {directory}.")
+            raise FileNotFoundError(f"No checkpoints found in {directory}.")

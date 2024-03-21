@@ -821,6 +821,11 @@ class Trainer(BaseTrainer):
         # Callback that the checkpoint was reached, regardless of whether the model was evaluated.
         self.callback(lambda c: c.on_checkpoint(self, progress_tracker))
 
+    def create_checkpoint_handle(self):
+        return self.distributed.create_checkpoint_handle(
+            dist_model=self.dist_model, model=self.model, optimizer=self.optimizer, scheduler=self.scheduler
+        )
+
     def train(
         self,
         training_set,
@@ -873,9 +878,7 @@ class Trainer(BaseTrainer):
         )
 
         # ====== Setup session =======
-        checkpoint = self.distributed.create_checkpoint_handle(
-            dist_model=self.dist_model, model=self.model, optimizer=self.optimizer, scheduler=self.scheduler
-        )
+        checkpoint = self.create_checkpoint_handle()
         checkpoint_manager = CheckpointManager(checkpoint, training_checkpoints_path, device=self.device)
 
         # ====== Setup Tensorboard writers =======
