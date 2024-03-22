@@ -1962,11 +1962,13 @@ class LudwigModel:
 
         :return: (bool) True for success, False for failure.
         """
-        if (os.path.exists(os.path.join(model_path, "model", "model_weights")) and
-                os.path.exists(os.path.join(model_path, "model", MODEL_HYPERPARAMETERS_FILE_NAME))):
+        if os.path.exists(os.path.join(model_path, "model", "model_weights")) and os.path.exists(
+            os.path.join(model_path, "model", MODEL_HYPERPARAMETERS_FILE_NAME)
+        ):
             model_path_is_experiment_path = True
-        elif (os.path.exists(os.path.join(model_path, "model_weights")) and
-              os.path.exists(os.path.join(model_path, MODEL_HYPERPARAMETERS_FILE_NAME))):
+        elif os.path.exists(os.path.join(model_path, "model_weights")) and os.path.exists(
+            os.path.join(model_path, MODEL_HYPERPARAMETERS_FILE_NAME)
+        ):
             model_path_is_experiment_path = False
         else:
             raise ValueError(
