@@ -70,6 +70,10 @@ ecd:
             In many large-scale training runs, evaluation is often configured to run on
             a sub-epoch time scale, or every few thousand steps.
         ui_display_name: Checkpoints per epoch
+    layers_to_freeze_regex:
+        default_value_reasoning:
+            Default no layers will be frozen
+        expected_impact: 1
     early_stop:
         default_value_reasoning:
             Deep learning models are prone to overfitting. It's generally
