@@ -20,6 +20,7 @@ import logging
 import math
 import os
 import os.path
+import re
 import signal
 import sys
 import tempfile
@@ -154,6 +155,7 @@ class Trainer(BaseTrainer):
         self._validation_field = config.validation_field
         self._validation_metric = config.validation_metric
         self.early_stop = config.early_stop
+        self.layers_to_freeze_regex = config.layers_to_freeze_regex
         self.steps_per_checkpoint = config.steps_per_checkpoint
         self.checkpoints_per_epoch = config.checkpoints_per_epoch
         self.evaluate_training_set = config.evaluate_training_set
@@ -224,6 +226,9 @@ class Trainer(BaseTrainer):
             lr_scale_fn = learning_rate_scale_fns[self.config.learning_rate_scaling]
             base_learning_rate *= lr_scale_fn(self.distributed.size())
         self.base_learning_rate = base_learning_rate
+
+        if self.config.layers_to_freeze_regex:
+            self.regex()  # freeze layers
 
         # We may need to replace the embedding layer when using 8-bit optimizers from bitsandbytes.
         update_embedding_layer(self.compiled_model, self.config)
@@ -772,6 +777,17 @@ class Trainer(BaseTrainer):
         torch.cuda.empty_cache()
 
         return should_break
+
+    def freeze_layers(self):
+        try:
+            pattern = re.compile(self.layers_to_freeze_regex)
+        except re.error:
+            print("Invalid regex input")
+            exit()
+
+        for name, p in self.model.named_parameters():
+            if re.search(pattern, str(name)):
+                p.requires_grad = False
 
     def train(
         self,
