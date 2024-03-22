@@ -273,7 +273,8 @@ def test_upload_to_hf_hub__validate_upload_parameters2(
 
     This test differs from the previous test (`test_upload_to_hf_hub__validate_upload_parameters`) by passing the
     `model` folder to the `model_path` argument of `HuggingFaceHub._validate_upload_parameters()`. The previous test
-    passed the `experiment` folder to the `model_path` argument.
+    passed the `experiment` folder to the `model_path` argument. Also note the additional argument
+    `model_path_is_experiment_path=False` passed to `HuggingFaceHub._validate_upload_parameters`.
     """
     output_directory: str = output_directory_manager
     _build_fake_model_repo(
@@ -293,6 +294,7 @@ def test_upload_to_hf_hub__validate_upload_parameters2(
             HuggingFaceHub._validate_upload_parameters(
                 repo_id=repo_id,
                 model_path=model_path,
+                model_path_is_experiment_path=False,
             )
 
         assert str(excinfo.value) == error_message.format(model_weights_path=model_weights_path)
@@ -301,6 +303,7 @@ def test_upload_to_hf_hub__validate_upload_parameters2(
             HuggingFaceHub._validate_upload_parameters(
                 repo_id=repo_id,
                 model_path=model_path,
+                model_path_is_experiment_path=False,
             )
         except Exception as exc:
             assert False, f'"HuggingFaceHub._validate_upload_parameters()" raised an exception: "{exc}".'
