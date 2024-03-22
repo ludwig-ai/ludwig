@@ -221,8 +221,8 @@ def test_upload_to_hf_hub__validate_upload_parameters(
         pytest.param(
             [],
             (
-                    ValueError,
-                    "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
+                ValueError,
+                "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
             ),
             id="model_weights_missing",
         ),
@@ -231,8 +231,8 @@ def test_upload_to_hf_hub__validate_upload_parameters(
                 "pytorch_model.safetensors",
             ],
             (
-                    ValueError,
-                    "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
+                ValueError,
+                "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
             ),
             id="model_weights_unexpected_name_format_combination",
         ),
@@ -241,8 +241,8 @@ def test_upload_to_hf_hub__validate_upload_parameters(
                 "pytorch_model.unkn",
             ],
             (
-                    ValueError,
-                    "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
+                ValueError,
+                "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
             ),
             id="model_weights_unrecognized_format",
         ),
@@ -251,8 +251,8 @@ def test_upload_to_hf_hub__validate_upload_parameters(
                 "unknown_model.safetensors",
             ],
             (
-                    ValueError,
-                    "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
+                ValueError,
+                "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
             ),
             id="model_weights_unrecognized_name",
         ),
@@ -260,7 +260,7 @@ def test_upload_to_hf_hub__validate_upload_parameters(
 )
 @pytest.mark.unit
 def test_upload_to_hf_hub__validate_upload_parameters2(
-        output_directory_manager, file_names: list[str], error_raised: tuple[type, str] | None
+    output_directory_manager, file_names: list[str], error_raised: tuple[type, str] | None
 ):
     """Test "HuggingFaceHub._validate_upload_parameters()", which is executed in the path of upload to HuggingFace
     Hub; for example: `upload hf_hub -repo_id "hf-account/repo-name" --model_path.
