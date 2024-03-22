@@ -110,6 +110,7 @@ from ludwig.utils.tokenizers import HFTokenizer
 from ludwig.utils.torch_utils import DEVICE
 from ludwig.utils.trainer_utils import get_training_report
 from ludwig.utils.types import DataFrame, TorchDevice
+from ludwig.utils.upload_utils import HuggingFaceHub
 
 logger = logging.getLogger(__name__)
 
@@ -1938,39 +1939,51 @@ class LudwigModel:
 
         # Inputs
 
-        :param repo_id (`str`):
+        :param repo_id: (`str`)
             A namespace (user or an organization) and a repo name separated
             by a `/`.
-        :param model_path (`str`):
-            The path of the saved model. This is the top level directory where
-            the models weights as well as other associated training artifacts
-            are saved.
-        :param private (`bool`, *optional*, defaults to `False`):
+        :param model_path: (`str`)
+            The path of the saved model. This is either (a) the directory where
+            the 'models_weights' folder and the 'model_hyperparameters.json' file
+            are stored, or (b) the parent of that folder.
+        :param private: (`bool`, *optional*, defaults to `False`)
             Whether the model repo should be private.
-        :param repo_type (`str`, *optional*):
+        :param repo_type: (`str`, *optional*)
             Set to `"dataset"` or `"space"` if uploading to a dataset or
             space, `None` or `"model"` if uploading to a model. Default is
             `None`.
-        :param commit_message (`str`, *optional*):
+        :param commit_message: (`str`, *optional*)
             The summary / title / first line of the generated commit. Defaults to:
             `f"Upload {path_in_repo} with huggingface_hub"`
-        :param commit_description (`str` *optional*):
+        :param commit_description: (`str` *optional*)
             The description of the generated commit
 
         # Returns
 
         :return: (bool) True for success, False for failure.
         """
+        if (os.path.exists(os.path.join(model_path, "model", "model_weights")) and
+                os.path.exists(os.path.join(model_path, "model", MODEL_HYPERPARAMETERS_FILE_NAME))):
+            model_path_is_experiment_path = True
+        elif (os.path.exists(os.path.join(model_path, "model_weights")) and
+              os.path.exists(os.path.join(model_path, MODEL_HYPERPARAMETERS_FILE_NAME))):
+            model_path_is_experiment_path = False
+        else:
+            raise ValueError(
+                f"Can't find 'model_weights' and '{MODEL_HYPERPARAMETERS_FILE_NAME}' either at "
+                f"'{model_path}' or at '{model_path}/model'"
+            )
         model_service = get_upload_registry()["hf_hub"]
-        hub = model_service()
+        hub: HuggingFaceHub = model_service()
         hub.login()
-        upload_status = hub.upload(
+        upload_status: bool = hub.upload(
             repo_id=repo_id,
             model_path=model_path,
             repo_type=repo_type,
             private=private,
             commit_message=commit_message,
             commit_description=commit_description,
+            model_path_is_experiment_path=model_path_is_experiment_path,
         )
         return upload_status
 

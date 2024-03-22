@@ -43,6 +43,7 @@ class BaseModelUpload(ABC):
         commit_description: str | None = None,
         dataset_file: str | None = None,
         dataset_name: str | None = None,
+        model_path_is_experiment_path: bool = True
     ) -> bool:
         """Abstract method to upload trained model artifacts to the target repository.
 
@@ -67,6 +68,7 @@ class BaseModelUpload(ABC):
         private: bool | None = False,
         commit_message: str | None = None,
         commit_description: str | None = None,
+        model_path_is_experiment_path: bool = True
     ):
         """Validate parameters before uploading trained model artifacts.
 
@@ -87,6 +89,8 @@ class BaseModelUpload(ABC):
             commit_description (str, optional): A description of the commit when uploading to version control
                 systems. Not used in the base class, but subclasses may use it for specific repository
                 implementations. Defaults to None.
+            model_path_is_experiment_path (bool, optional): Whether the 'model_path' argument points to the
+                experiment folder
 
         Raises:
             FileNotFoundError: If the model_path does not exist.
@@ -99,7 +103,10 @@ class BaseModelUpload(ABC):
             raise FileNotFoundError(f"The path '{model_path}' does not exist.")
 
         # Make sure the model is actually trained
-        trained_model_artifacts_path = os.path.join(model_path, "model", "model_weights")
+        if model_path_is_experiment_path:
+            trained_model_artifacts_path = os.path.join(model_path, "model", "model_weights")
+        else:
+            trained_model_artifacts_path = os.path.join(model_path, "model_weights")
         if not os.path.exists(trained_model_artifacts_path):
             raise Exception(
                 f"Model artifacts not found at {trained_model_artifacts_path}. "
@@ -143,6 +150,7 @@ class HuggingFaceHub(BaseModelUpload):
         private: bool | None = False,
         commit_message: str | None = None,
         commit_description: str | None = None,
+        model_path_is_experiment_path: bool = True
     ):
         """Validate parameters before uploading trained model artifacts.
 
@@ -165,6 +173,8 @@ class HuggingFaceHub(BaseModelUpload):
             commit_description (str, optional): A description of the commit when uploading to version control
                 systems. Not used in the base class, but subclasses may use it for specific repository
                 implementations. Defaults to None.
+            model_path_is_experiment_path (bool, optional): Whether the 'model_path' argument points to the
+                experiment folder
 
         Raises:
             ValueError: If the repo_id does not have both a namespace and a repo name separated by a '/'.
@@ -183,9 +193,13 @@ class HuggingFaceHub(BaseModelUpload):
             private,
             commit_message,
             commit_description,
+            model_path_is_experiment_path,
         )
 
-        trained_model_artifacts_path = os.path.join(model_path, "model", "model_weights")
+        if model_path_is_experiment_path:
+            trained_model_artifacts_path = os.path.join(model_path, "model", "model_weights")
+        else:
+            trained_model_artifacts_path = os.path.join(model_path, "model_weights")
         """
         Make sure the model's saved artifacts either contain:
         1. pytorch_model.bin -> regular model training, such as ECD or for LLMs
@@ -207,7 +221,10 @@ class HuggingFaceHub(BaseModelUpload):
                 "either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`"
                 "or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA."
             )
-        model_hyperparameters_path: str = os.path.join(model_path, "model")
+        if model_path_is_experiment_path:
+            model_hyperparameters_path: str = os.path.join(model_path, "model")
+        else:
+            model_hyperparameters_path: str = model_path
         if MODEL_HYPERPARAMETERS_FILE_NAME not in os.listdir(model_hyperparameters_path):
             raise ValueError(f"Can't find '{MODEL_HYPERPARAMETERS_FILE_NAME}' at {model_hyperparameters_path}.")
 
@@ -219,6 +236,7 @@ class HuggingFaceHub(BaseModelUpload):
         private: bool | None = False,
         commit_message: str | None = None,
         commit_description: str | None = None,
+        model_path_is_experiment_path: bool = True,
         **kwargs,
     ) -> bool:
         """Create an empty repo on the HuggingFace Hub and upload trained model artifacts to that repo.
@@ -242,6 +260,8 @@ class HuggingFaceHub(BaseModelUpload):
                 `f"Upload {path_in_repo} with huggingface_hub"`
             commit_description (`str` *optional*):
                 The description of the generated commit
+            model_path_is_experiment_path (`bool`, *optional*):
+                Whether the 'model_path' argument points to the experiment folder
         """
         # Validate upload parameters are in the right format
         HuggingFaceHub._validate_upload_parameters(
@@ -251,6 +271,7 @@ class HuggingFaceHub(BaseModelUpload):
             private,
             commit_message,
             commit_description,
+            model_path_is_experiment_path,
         )
 
         # Create empty model repo using repo_id, but it is okay if it already exists.
@@ -266,8 +287,12 @@ class HuggingFaceHub(BaseModelUpload):
         commit_description_weights: str | None = (
             f"{commit_description} (weights)" if commit_description else commit_description
         )
+        if model_path_is_experiment_path:
+            folder_path = os.path.join(model_path, "model", "model_weights")
+        else:
+            folder_path = os.path.join(model_path, "model_weights")
         upload_path_weights: CommitInfo = self.api.upload_folder(
-            folder_path=os.path.join(model_path, "model", "model_weights"),
+            folder_path=folder_path,
             repo_id=repo_id,
             repo_type=repo_type,
             commit_message=commit_message_weights,
@@ -281,8 +306,12 @@ class HuggingFaceHub(BaseModelUpload):
             commit_description_config: str | None = (
                 f"{commit_description} (config)" if commit_description else commit_description
             )
+            if model_path_is_experiment_path:
+                path_or_fileobj = os.path.join(model_path, "model", MODEL_HYPERPARAMETERS_FILE_NAME)
+            else:
+                path_or_fileobj = os.path.join(model_path, MODEL_HYPERPARAMETERS_FILE_NAME)
             upload_path_config: CommitInfo = self.api.upload_file(
-                path_or_fileobj=os.path.join(model_path, "model", MODEL_HYPERPARAMETERS_FILE_NAME),
+                path_or_fileobj=path_or_fileobj,
                 path_in_repo="ludwig_config.json",
                 repo_id=repo_id,
                 repo_type=repo_type,
@@ -334,6 +363,7 @@ class Predibase(BaseModelUpload):
         private: bool | None = False,
         commit_message: str | None = None,
         commit_description: str | None = None,
+        model_path_is_experiment_path: bool = True
     ):
         """Validate parameters before uploading trained model artifacts.
 
@@ -354,6 +384,8 @@ class Predibase(BaseModelUpload):
             commit_description (str, optional): A description of the commit when uploading to version control
                 systems. Not used in the base class, but subclasses may use it for specific repository
                 implementations. Defaults to None.
+            model_path_is_experiment_path (bool, optional): Whether the 'model_path' argument points to the
+                experiment folder.
 
         Raises:
             ValueError: If the repo_id is too long.
@@ -368,6 +400,7 @@ class Predibase(BaseModelUpload):
             private,
             commit_message,
             commit_description,
+            model_path_is_experiment_path,
         )
 
     def upload(
