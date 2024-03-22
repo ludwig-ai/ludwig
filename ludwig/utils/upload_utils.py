@@ -43,7 +43,7 @@ class BaseModelUpload(ABC):
         commit_description: str | None = None,
         dataset_file: str | None = None,
         dataset_name: str | None = None,
-        model_path_is_experiment_path: bool = True
+        model_path_is_experiment_path: bool = True,
     ) -> bool:
         """Abstract method to upload trained model artifacts to the target repository.
 
@@ -68,7 +68,7 @@ class BaseModelUpload(ABC):
         private: bool | None = False,
         commit_message: str | None = None,
         commit_description: str | None = None,
-        model_path_is_experiment_path: bool = True
+        model_path_is_experiment_path: bool = True,
     ):
         """Validate parameters before uploading trained model artifacts.
 
@@ -150,7 +150,7 @@ class HuggingFaceHub(BaseModelUpload):
         private: bool | None = False,
         commit_message: str | None = None,
         commit_description: str | None = None,
-        model_path_is_experiment_path: bool = True
+        model_path_is_experiment_path: bool = True,
     ):
         """Validate parameters before uploading trained model artifacts.
 
@@ -363,7 +363,7 @@ class Predibase(BaseModelUpload):
         private: bool | None = False,
         commit_message: str | None = None,
         commit_description: str | None = None,
-        model_path_is_experiment_path: bool = True
+        model_path_is_experiment_path: bool = True,
     ):
         """Validate parameters before uploading trained model artifacts.
 
