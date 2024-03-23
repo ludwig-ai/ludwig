@@ -1,8 +1,10 @@
 import argparse
 import logging
+import os
 import sys
 from typing import Optional
 
+from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.utils.print_utils import get_logging_level_registry
 from ludwig.utils.upload_utils import HuggingFaceHub, Predibase
 
@@ -60,10 +62,21 @@ def upload_cli(
             `"predibase"`.
     """
     model_service = get_upload_registry().get(service, "hf_hub")
-    hub = model_service()
+    hub: HuggingFaceHub = model_service()
+    if os.path.exists(os.path.join(model_path, "model", "model_weights")) and os.path.exists(
+            os.path.join(model_path, "model", MODEL_HYPERPARAMETERS_FILE_NAME)):
+        experiment_path = model_path
+    elif os.path.exists(os.path.join(model_path, "model_weights")) and os.path.exists(
+            os.path.join(model_path, MODEL_HYPERPARAMETERS_FILE_NAME)):
+        experiment_path = os.path.normpath(os.path.join(model_path, ".."))
+    else:
+        raise ValueError(
+            f"Can't find 'model_weights' and '{MODEL_HYPERPARAMETERS_FILE_NAME}' either at "
+            f"'{model_path}' or at '{model_path}/model'"
+        )
     hub.upload(
         repo_id=repo_id,
-        model_path=model_path,
+        model_path=experiment_path,
         repo_type=repo_type,
         private=private,
         commit_message=commit_message,

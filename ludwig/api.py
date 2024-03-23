@@ -1963,13 +1963,11 @@ class LudwigModel:
         :return: (bool) True for success, False for failure.
         """
         if os.path.exists(os.path.join(model_path, "model", "model_weights")) and os.path.exists(
-            os.path.join(model_path, "model", MODEL_HYPERPARAMETERS_FILE_NAME)
-        ):
-            model_path_is_experiment_path = True
+                os.path.join(model_path, "model", MODEL_HYPERPARAMETERS_FILE_NAME)):
+            experiment_path = model_path
         elif os.path.exists(os.path.join(model_path, "model_weights")) and os.path.exists(
-            os.path.join(model_path, MODEL_HYPERPARAMETERS_FILE_NAME)
-        ):
-            model_path_is_experiment_path = False
+                os.path.join(model_path, MODEL_HYPERPARAMETERS_FILE_NAME)):
+            experiment_path = os.path.normpath(os.path.join(model_path, ".."))
         else:
             raise ValueError(
                 f"Can't find 'model_weights' and '{MODEL_HYPERPARAMETERS_FILE_NAME}' either at "
@@ -1980,12 +1978,11 @@ class LudwigModel:
         hub.login()
         upload_status: bool = hub.upload(
             repo_id=repo_id,
-            model_path=model_path,
+            model_path=experiment_path,
             repo_type=repo_type,
             private=private,
             commit_message=commit_message,
-            commit_description=commit_description,
-            model_path_is_experiment_path=model_path_is_experiment_path,
+            commit_description=commit_description
         )
         return upload_status
 
