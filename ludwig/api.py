@@ -1963,10 +1963,12 @@ class LudwigModel:
         :return: (bool) True for success, False for failure.
         """
         if os.path.exists(os.path.join(model_path, "model", "model_weights")) and os.path.exists(
-                os.path.join(model_path, "model", MODEL_HYPERPARAMETERS_FILE_NAME)):
+            os.path.join(model_path, "model", MODEL_HYPERPARAMETERS_FILE_NAME)
+        ):
             experiment_path = model_path
         elif os.path.exists(os.path.join(model_path, "model_weights")) and os.path.exists(
-                os.path.join(model_path, MODEL_HYPERPARAMETERS_FILE_NAME)):
+            os.path.join(model_path, MODEL_HYPERPARAMETERS_FILE_NAME)
+        ):
             experiment_path = os.path.normpath(os.path.join(model_path, ".."))
         else:
             raise ValueError(
@@ -1982,7 +1984,7 @@ class LudwigModel:
             repo_type=repo_type,
             private=private,
             commit_message=commit_message,
-            commit_description=commit_description
+            commit_description=commit_description,
         )
         return upload_status
 

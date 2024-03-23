@@ -64,10 +64,12 @@ def upload_cli(
     model_service = get_upload_registry().get(service, "hf_hub")
     hub: HuggingFaceHub = model_service()
     if os.path.exists(os.path.join(model_path, "model", "model_weights")) and os.path.exists(
-            os.path.join(model_path, "model", MODEL_HYPERPARAMETERS_FILE_NAME)):
+        os.path.join(model_path, "model", MODEL_HYPERPARAMETERS_FILE_NAME)
+    ):
         experiment_path = model_path
     elif os.path.exists(os.path.join(model_path, "model_weights")) and os.path.exists(
-            os.path.join(model_path, MODEL_HYPERPARAMETERS_FILE_NAME)):
+        os.path.join(model_path, MODEL_HYPERPARAMETERS_FILE_NAME)
+    ):
         experiment_path = os.path.normpath(os.path.join(model_path, ".."))
     else:
         raise ValueError(
