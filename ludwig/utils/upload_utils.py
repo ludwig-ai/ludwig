@@ -229,7 +229,7 @@ class HuggingFaceHub(BaseModelUpload):
                 by a `/`.
             model_path (`str`):
                 The path of the saved model. This is the top level directory where
-                the models weights as well as other associated training artifacts
+                the model's weights as well as other associated training artifacts
                 are saved.
             repo_type (`str`, *optional*):
                 Set to `"dataset"` or `"space"` if uploading to a dataset or
