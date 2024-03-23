@@ -64,7 +64,9 @@ from ludwig.datasets import load_dataset_uris
 from ludwig.features.feature_registries import update_config_with_metadata, update_config_with_model
 from ludwig.globals import (
     LUDWIG_VERSION,
+    MODEL_FILE_NAME,
     MODEL_HYPERPARAMETERS_FILE_NAME,
+    MODEL_WEIGHTS_FILE_NAME,
     set_disable_progressbar,
     TRAIN_SET_METADATA_FILE_NAME,
     TRAINING_CHECKPOINTS_DIR_PATH,
@@ -1962,11 +1964,11 @@ class LudwigModel:
 
         :return: (bool) True for success, False for failure.
         """
-        if os.path.exists(os.path.join(model_path, "model", "model_weights")) and os.path.exists(
-            os.path.join(model_path, "model", MODEL_HYPERPARAMETERS_FILE_NAME)
+        if os.path.exists(os.path.join(model_path, MODEL_FILE_NAME, MODEL_WEIGHTS_FILE_NAME)) and os.path.exists(
+            os.path.join(model_path, MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME)
         ):
             experiment_path = model_path
-        elif os.path.exists(os.path.join(model_path, "model_weights")) and os.path.exists(
+        elif os.path.exists(os.path.join(model_path, MODEL_WEIGHTS_FILE_NAME)) and os.path.exists(
             os.path.join(model_path, MODEL_HYPERPARAMETERS_FILE_NAME)
         ):
             experiment_path = os.path.dirname(model_path)

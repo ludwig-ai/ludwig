@@ -39,6 +39,7 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
+from ludwig.globals import MODEL_FILE_NAME, MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.llm import LLM
 from ludwig.schema.model_types.base import ModelConfig
 from ludwig.utils.fs_utils import list_file_names_in_directory
@@ -613,7 +614,7 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
     train_df, prediction_df, config = _prepare_finetuning_test(csv_filename, finetune_strategy, backend, adapter_args)
 
     output_directory: str = str(tmpdir)
-    model_directory: str = pathlib.Path(output_directory) / "api_experiment_run" / "model"
+    model_directory: str = pathlib.Path(output_directory) / "api_experiment_run" / MODEL_FILE_NAME
 
     model = LudwigModel(config)
     model.train(dataset=train_df, output_directory=output_directory, skip_save_processed_input=False)
@@ -665,7 +666,7 @@ def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_stra
     model.train(dataset=train_df, output_directory=str(tmpdir), skip_save_processed_input=False)
 
     # Make sure we can load the saved model and then use it for predictions
-    model = LudwigModel.load(os.path.join(str(tmpdir), "api_experiment_run", "model"))
+    model = LudwigModel.load(os.path.join(str(tmpdir), "api_experiment_run", MODEL_FILE_NAME))
 
     base_model = LLM(ModelConfig.from_dict(config))
     assert not _compare_models(base_model, model.model)  # noqa F821
@@ -893,8 +894,9 @@ def test_llm_lora_finetuning_merge_and_unload(
     )
 
     output_directory: str = str(tmpdir)
-    model_directory: str = pathlib.Path(output_directory) / "api_experiment_run" / "model"
-    model_weights_directory: str = pathlib.Path(output_directory) / "api_experiment_run" / "model" / "model_weights"
+    model_directory: str = pathlib.Path(output_directory) / "api_experiment_run" / MODEL_FILE_NAME
+    model_weights_directory: str = (pathlib.Path(output_directory) / "api_experiment_run" / MODEL_FILE_NAME /
+                                    MODEL_WEIGHTS_FILE_NAME)
 
     model = LudwigModel(config)
     model.train(dataset=train_df, output_directory=output_directory, skip_save_processed_input=False)
@@ -1216,7 +1218,7 @@ def test_llm_finetuning_with_embedding_noise(
         assert model.config_obj.model_parameters.neftune_noise_alpha == embedding_noise
 
     output_directory: str = str(tmpdir)
-    model_directory: str = pathlib.Path(output_directory) / "api_experiment_run" / "model"
+    model_directory: str = pathlib.Path(output_directory) / "api_experiment_run" / MODEL_FILE_NAME
     model.train(dataset=train_df, output_directory=output_directory, skip_save_processed_input=False)
 
     # Make sure we can load the saved model and then use it for predictions
@@ -1354,7 +1356,7 @@ def test_llm_used_tokens(tmpdir):
     model.train(dataset=df, output_directory=str(tmpdir), skip_save_processed_input=False)
 
     with open(
-        os.path.join(str(tmpdir), "api_experiment_run", "model", "training_progress.json"), encoding="utf-8"
+        os.path.join(str(tmpdir), "api_experiment_run", MODEL_FILE_NAME, "training_progress.json"), encoding="utf-8"
     ) as f:
         progress_tracker = json.load(f)
 

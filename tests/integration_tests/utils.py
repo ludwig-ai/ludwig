@@ -64,7 +64,10 @@ from ludwig.constants import (
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FORMATS
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
-from ludwig.globals import PREDICTIONS_PARQUET_FILE_NAME
+from ludwig.globals import (
+    MODEL_FILE_NAME,
+    PREDICTIONS_PARQUET_FILE_NAME
+)
 from ludwig.schema.encoders.text_encoders import HFEncoderConfig
 from ludwig.schema.encoders.utils import get_encoder_classes
 from ludwig.trainers.trainer import Trainer
@@ -119,7 +122,7 @@ class FakeRemoteBackend(LocalBackend):
 
 
 class FakeRemoteTrainer(Trainer):
-    def train(self, *args, save_path="model", **kwargs):
+    def train(self, *args, save_path=MODEL_FILE_NAME, **kwargs):
         with tempfile.TemporaryDirectory() as tmpdir:
             return super().train(*args, save_path=tmpdir, **kwargs)
 
@@ -726,7 +729,7 @@ def run_api_experiment(input_features, output_features, data_csv):
         )
         model.predict(dataset=data_csv)
 
-        model_dir = os.path.join(output_dir, "model")
+        model_dir = os.path.join(output_dir, MODEL_FILE_NAME)
         loaded_model = LudwigModel.load(model_dir)
 
         # Necessary before call to get_weights() to materialize the weights
@@ -1159,7 +1162,7 @@ def run_test_suite(config, dataset, backend):
         model = LudwigModel(config, backend=backend)
         _, _, output_dir = model.train(dataset=dataset, output_directory=tmpdir)
 
-        model_dir = os.path.join(output_dir, "model")
+        model_dir = os.path.join(output_dir, MODEL_FILE_NAME)
         loaded_model = LudwigModel.load(model_dir, backend=backend)
         loaded_model.predict(dataset=dataset)
         return loaded_model

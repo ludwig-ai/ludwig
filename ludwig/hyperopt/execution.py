@@ -35,6 +35,7 @@ from ludwig.backend import initialize_backend, RAY
 from ludwig.backend.ray import initialize_ray
 from ludwig.callbacks import Callback
 from ludwig.constants import MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
+from ludwig.globals import MODEL_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.hyperopt.syncer import RemoteSyncer
 from ludwig.hyperopt.utils import load_json_values, substitute_parameters
@@ -125,7 +126,7 @@ def checkpoint(progress_tracker, save_path):
         return [f for f in files if f.startswith(".")]
 
     with tune.checkpoint_dir(step=progress_tracker.tune_checkpoint_num) as checkpoint_dir:
-        checkpoint_model = os.path.join(checkpoint_dir, "model")
+        checkpoint_model = os.path.join(checkpoint_dir, MODEL_FILE_NAME)
         # Atomic copying of the checkpoints
         if not os.path.isdir(checkpoint_model):
             copy_id = uuid.uuid4()
@@ -411,7 +412,7 @@ class RayTuneExecutor:
         debug,
     ):
         best_model = LudwigModel.load(
-            os.path.join(best_model_path, "model"),
+            os.path.join(best_model_path, MODEL_FILE_NAME),
             backend=backend,
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
@@ -549,7 +550,7 @@ class RayTuneExecutor:
                             os.rename(save_path, tmp_path)
 
                         try:
-                            safe_move_file(os.path.join(ckpt_path, "model"), save_path)
+                            safe_move_file(os.path.join(ckpt_path, MODEL_FILE_NAME), save_path)
                         except Exception:
                             # Rollback from partial changes. Remove the save_path
                             # and move the original save_path back.

@@ -19,6 +19,7 @@ import torch
 from torch.optim import Optimizer
 
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.modules.lr_scheduler import LRScheduler
 
 if TYPE_CHECKING:
@@ -139,7 +140,7 @@ class MultiNodeCheckpoint(Checkpoint):
             state = torch.load(save_path, map_location=device)
             try:
                 self.global_step = self._get_global_step(state, save_path)
-                _, unexpected_keys = self.model.load_state_dict(state["model_weights"], strict=False)
+                _, unexpected_keys = self.model.load_state_dict(state[MODEL_WEIGHTS_FILE_NAME], strict=False)
                 assert unexpected_keys == [], f"Unexpected keys found in state dict: {unexpected_keys}"
                 if self.optimizer is not None:
                     self.optimizer.load_state_dict(state["optim_state"])
@@ -161,7 +162,7 @@ class MultiNodeCheckpoint(Checkpoint):
 
     def get_state_for_inference(self, save_path: str, device: Optional[torch.device] = None) -> Mapping[str, Any]:
         state = torch.load(save_path, map_location=device)
-        return state["model_weights"]
+        return state[MODEL_WEIGHTS_FILE_NAME]
 
     def save(self, save_path: str, global_step: int):
         """Save a state to disk.
@@ -176,7 +177,7 @@ class MultiNodeCheckpoint(Checkpoint):
         if self.is_local_rank_0():
             state = {
                 "global_step": global_step,
-                "model_weights": self.get_model_state_dict(),
+                MODEL_WEIGHTS_FILE_NAME: self.get_model_state_dict(),
             }
             if self.optimizer is not None:
                 state["optim_state"] = self.optimizer.state_dict()

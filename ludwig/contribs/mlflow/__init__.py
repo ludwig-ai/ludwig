@@ -6,7 +6,11 @@ import threading
 from ludwig.api_annotations import DeveloperAPI, PublicAPI
 from ludwig.callbacks import Callback
 from ludwig.constants import TRAINER
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
+from ludwig.globals import (
+    MODEL_FILE_NAME,
+    MODEL_HYPERPARAMETERS_FILE_NAME,
+    TRAIN_SET_METADATA_FILE_NAME
+)
 from ludwig.types import TrainingSetMetadataDict
 from ludwig.utils.data_utils import chunk_dict, flatten_dict, save_json, to_json_dict
 from ludwig.utils.package_utils import LazyLoader
@@ -258,7 +262,7 @@ def _log_mlflow(log_metrics, steps, save_path, should_continue, log_artifacts: b
 def _log_artifacts(output_directory):
     for fname in os.listdir(output_directory):
         lpath = os.path.join(output_directory, fname)
-        if fname == "model":
+        if fname == MODEL_FILE_NAME:
             _log_model(lpath)
         else:
             mlflow.log_artifact(lpath)

@@ -28,7 +28,10 @@ import torch
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import PROC_COLUMN
-from ludwig.globals import DESCRIPTION_FILE_NAME
+from ludwig.globals import (
+    DESCRIPTION_FILE_NAME,
+    MODEL_FILE_NAME
+)
 from ludwig.utils import fs_utils
 from ludwig.utils.fs_utils import find_non_existing_dir_by_adding_suffix
 
@@ -136,7 +139,7 @@ def get_file_names(output_directory):
     description_fn = os.path.join(output_directory, DESCRIPTION_FILE_NAME)
     training_stats_fn = os.path.join(output_directory, "training_statistics.json")
 
-    model_dir = os.path.join(output_directory, "model")
+    model_dir = os.path.join(output_directory, MODEL_FILE_NAME)
 
     return description_fn, training_stats_fn, model_dir
 

@@ -26,7 +26,11 @@ from ludwig.backend import initialize_backend
 from ludwig.callbacks import Callback
 from ludwig.constants import ACCURACY, AUTO, BATCH_SIZE, EXECUTOR, MAX_CONCURRENT_TRIALS, TRAINER
 from ludwig.contribs.mlflow import MlflowCallback
-from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME
+from ludwig.globals import (
+    HYPEROPT_STATISTICS_FILE_NAME,
+    MODEL_FILE_NAME,
+    MODEL_HYPERPARAMETERS_FILE_NAME
+)
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
@@ -130,7 +134,7 @@ class HyperoptTestCallback(TuneCallback):
         self.trial_status[trial.trial_id] = trial.status
 
         model_hyperparameters = os.path.join(
-            trial.logdir, f"{self.exp_name}_{self.model_type}", "model", MODEL_HYPERPARAMETERS_FILE_NAME
+            trial.logdir, f"{self.exp_name}_{self.model_type}", MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME
         )
         if os.path.isfile(model_hyperparameters):
             try:
@@ -331,7 +335,7 @@ def test_hyperopt_ray_mlflow(csv_filename, tmpdir, ray_cluster_4cpu):
     for run in runs:
         artifacts = [f.path for f in client.list_artifacts(run.info.run_id, "")]
         assert "config.yaml" in artifacts
-        assert "model" in artifacts
+        assert MODEL_FILE_NAME in artifacts
 
 
 def run_hyperopt(

@@ -50,7 +50,10 @@ from ludwig.constants import (
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.data.cache.types import CacheableDataset
 from ludwig.datasets import load_dataset_uris
-from ludwig.globals import LUDWIG_VERSION
+from ludwig.globals import (
+    MODEL_FILE_NAME,
+    LUDWIG_VERSION
+)
 from ludwig.hyperopt.run import hyperopt
 from ludwig.schema.model_config import ModelConfig
 from ludwig.types import ModelConfigDict
@@ -101,10 +104,10 @@ class AutoTrainResults:
             # Read remote URIs using Ludwig's internal remote file loading APIs, as
             # Ray's do not handle custom credentials at the moment.
             with use_credentials(self._creds):
-                return LudwigModel.load(os.path.join(ckpt_path, "model"))
+                return LudwigModel.load(os.path.join(ckpt_path, MODEL_FILE_NAME))
         else:
             with checkpoint.as_directory() as ckpt_path:
-                return LudwigModel.load(os.path.join(ckpt_path, "model"))
+                return LudwigModel.load(os.path.join(ckpt_path, MODEL_FILE_NAME))
 
 
 @PublicAPI

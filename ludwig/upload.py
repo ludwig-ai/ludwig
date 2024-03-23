@@ -4,7 +4,11 @@ import os
 import sys
 from typing import Optional
 
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
+from ludwig.globals import (
+    MODEL_FILE_NAME,
+    MODEL_HYPERPARAMETERS_FILE_NAME,
+    MODEL_WEIGHTS_FILE_NAME
+)
 from ludwig.utils.print_utils import get_logging_level_registry
 from ludwig.utils.upload_utils import HuggingFaceHub, Predibase
 
@@ -63,11 +67,11 @@ def upload_cli(
     """
     model_service = get_upload_registry().get(service, "hf_hub")
     hub: HuggingFaceHub = model_service()
-    if os.path.exists(os.path.join(model_path, "model", "model_weights")) and os.path.exists(
-        os.path.join(model_path, "model", MODEL_HYPERPARAMETERS_FILE_NAME)
+    if os.path.exists(os.path.join(model_path, MODEL_FILE_NAME, MODEL_WEIGHTS_FILE_NAME)) and os.path.exists(
+        os.path.join(model_path, MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME)
     ):
         experiment_path = model_path
-    elif os.path.exists(os.path.join(model_path, "model_weights")) and os.path.exists(
+    elif os.path.exists(os.path.join(model_path, MODEL_WEIGHTS_FILE_NAME)) and os.path.exists(
         os.path.join(model_path, MODEL_HYPERPARAMETERS_FILE_NAME)
     ):
         experiment_path = os.path.normpath(os.path.join(model_path, ".."))

@@ -7,7 +7,11 @@ from abc import ABC, abstractmethod
 from huggingface_hub import HfApi, login
 from huggingface_hub.hf_api import CommitInfo
 
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
+from ludwig.globals import (
+    MODEL_FILE_NAME,
+    MODEL_HYPERPARAMETERS_FILE_NAME,
+    MODEL_WEIGHTS_FILE_NAME
+)
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +104,7 @@ class BaseModelUpload(ABC):
             raise FileNotFoundError(f"The path '{model_path}' does not exist.")
 
         # Make sure the model is actually trained
-        trained_model_artifacts_path = os.path.join(model_path, "model", "model_weights")
+        trained_model_artifacts_path = os.path.join(model_path, MODEL_FILE_NAME, MODEL_WEIGHTS_FILE_NAME)
         if not os.path.exists(trained_model_artifacts_path):
             raise Exception(
                 f"Model artifacts not found at {trained_model_artifacts_path}. "
@@ -187,7 +191,7 @@ class HuggingFaceHub(BaseModelUpload):
             commit_description,
         )
 
-        trained_model_artifacts_path = os.path.join(model_path, "model", "model_weights")
+        trained_model_artifacts_path = os.path.join(model_path, MODEL_FILE_NAME, MODEL_WEIGHTS_FILE_NAME)
         """
         Make sure the model's saved artifacts either contain:
         1. pytorch_model.bin -> regular model training, such as ECD or for LLMs
@@ -209,7 +213,7 @@ class HuggingFaceHub(BaseModelUpload):
                 "either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`"
                 "or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA."
             )
-        model_hyperparameters_path: str = os.path.join(model_path, "model")
+        model_hyperparameters_path: str = os.path.join(model_path, MODEL_FILE_NAME)
         if MODEL_HYPERPARAMETERS_FILE_NAME not in os.listdir(model_hyperparameters_path):
             raise ValueError(f"Can't find '{MODEL_HYPERPARAMETERS_FILE_NAME}' at {model_hyperparameters_path}.")
 
@@ -268,7 +272,7 @@ class HuggingFaceHub(BaseModelUpload):
         commit_description_weights: str | None = (
             f"{commit_description} (weights)" if commit_description else commit_description
         )
-        folder_path = os.path.join(model_path, "model", "model_weights")
+        folder_path = os.path.join(model_path, MODEL_FILE_NAME, MODEL_WEIGHTS_FILE_NAME)
         upload_path_weights: CommitInfo = self.api.upload_folder(
             folder_path=folder_path,
             repo_id=repo_id,
@@ -284,7 +288,7 @@ class HuggingFaceHub(BaseModelUpload):
             commit_description_config: str | None = (
                 f"{commit_description} (config)" if commit_description else commit_description
             )
-            path_or_fileobj = os.path.join(model_path, "model", MODEL_HYPERPARAMETERS_FILE_NAME)
+            path_or_fileobj = os.path.join(model_path, MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME)
             upload_path_config: CommitInfo = self.api.upload_file(
                 path_or_fileobj=path_or_fileobj,
                 path_in_repo="ludwig_config.json",
