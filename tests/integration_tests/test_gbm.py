@@ -6,8 +6,8 @@ import pytest
 from ludwig.api import LudwigModel
 from ludwig.constants import INPUT_FEATURES, MODEL_TYPE, OUTPUT_FEATURES, TRAINER
 from ludwig.error import ConfigValidationError
-from ludwig.schema.model_types.base import ModelConfig
 from ludwig.globals import MODEL_FILE_NAME
+from ludwig.schema.model_types.base import ModelConfig
 from tests.integration_tests import synthetic_test_data
 from tests.integration_tests.utils import binary_feature
 from tests.integration_tests.utils import category_feature as _category_feature

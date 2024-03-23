@@ -56,7 +56,11 @@ def build_benchmarking_result(benchmarking_config: dict, experiment_idx: int):
         description=load_json(os.path.join(experiment_run_path, "description.json")),
         test_statistics=load_json(os.path.join(experiment_run_path, "test_statistics.json")),
         training_statistics=load_json(os.path.join(experiment_run_path, "training_statistics.json")),
-        model_hyperparameters=load_json(os.path.join(experiment_run_path, MODEL_FILE_NAME, "model_hyperparameters.json")),
+        model_hyperparameters=load_json(
+            os.path.join(experiment_run_path, MODEL_FILE_NAME, "model_hyperparameters.json")
+        ),
         training_progress=load_json(os.path.join(experiment_run_path, MODEL_FILE_NAME, "training_progress.json")),
-        training_set_metadata=load_json(os.path.join(experiment_run_path, MODEL_FILE_NAME, "training_set_metadata.json")),
+        training_set_metadata=load_json(
+            os.path.join(experiment_run_path, MODEL_FILE_NAME, "training_set_metadata.json")
+        ),
     )

@@ -7,11 +7,7 @@ from abc import ABC, abstractmethod
 from huggingface_hub import HfApi, login
 from huggingface_hub.hf_api import CommitInfo
 
-from ludwig.globals import (
-    MODEL_FILE_NAME,
-    MODEL_HYPERPARAMETERS_FILE_NAME,
-    MODEL_WEIGHTS_FILE_NAME
-)
+from ludwig.globals import MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, MODEL_WEIGHTS_FILE_NAME
 
 logger = logging.getLogger(__name__)
 

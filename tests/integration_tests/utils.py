@@ -64,10 +64,7 @@ from ludwig.constants import (
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FORMATS
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
-from ludwig.globals import (
-    MODEL_FILE_NAME,
-    PREDICTIONS_PARQUET_FILE_NAME
-)
+from ludwig.globals import MODEL_FILE_NAME, PREDICTIONS_PARQUET_FILE_NAME
 from ludwig.schema.encoders.text_encoders import HFEncoderConfig
 from ludwig.schema.encoders.utils import get_encoder_classes
 from ludwig.trainers.trainer import Trainer

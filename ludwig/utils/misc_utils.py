@@ -28,10 +28,7 @@ import torch
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import PROC_COLUMN
-from ludwig.globals import (
-    DESCRIPTION_FILE_NAME,
-    MODEL_FILE_NAME
-)
+from ludwig.globals import DESCRIPTION_FILE_NAME, MODEL_FILE_NAME
 from ludwig.utils import fs_utils
 from ludwig.utils.fs_utils import find_non_existing_dir_by_adding_suffix
 

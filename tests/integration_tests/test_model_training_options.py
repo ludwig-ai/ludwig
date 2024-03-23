@@ -25,12 +25,7 @@ from ludwig.constants import (
 from ludwig.contribs.mlflow import MlflowCallback
 from ludwig.experiment import experiment_cli
 from ludwig.features.number_feature import numeric_transformation_registry
-from ludwig.globals import (
-    DESCRIPTION_FILE_NAME,
-    MODEL_FILE_NAME,
-    MODEL_WEIGHTS_FILE_NAME,
-    TRAINING_PREPROC_FILE_NAME
-)
+from ludwig.globals import DESCRIPTION_FILE_NAME, MODEL_FILE_NAME, MODEL_WEIGHTS_FILE_NAME, TRAINING_PREPROC_FILE_NAME
 from ludwig.schema.optimizers import optimizer_registry
 from ludwig.utils.data_utils import load_json, replace_file_extension
 from ludwig.utils.misc_utils import get_from_registry

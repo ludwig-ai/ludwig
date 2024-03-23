@@ -895,8 +895,9 @@ def test_llm_lora_finetuning_merge_and_unload(
 
     output_directory: str = str(tmpdir)
     model_directory: str = pathlib.Path(output_directory) / "api_experiment_run" / MODEL_FILE_NAME
-    model_weights_directory: str = (pathlib.Path(output_directory) / "api_experiment_run" / MODEL_FILE_NAME /
-                                    MODEL_WEIGHTS_FILE_NAME)
+    model_weights_directory: str = (
+        pathlib.Path(output_directory) / "api_experiment_run" / MODEL_FILE_NAME / MODEL_WEIGHTS_FILE_NAME
+    )
 
     model = LudwigModel(config)
     model.train(dataset=train_df, output_directory=output_directory, skip_save_processed_input=False)

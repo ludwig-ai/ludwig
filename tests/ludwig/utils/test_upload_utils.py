@@ -6,11 +6,7 @@ import shutil
 
 import pytest
 
-from ludwig.globals import (
-    MODEL_FILE_NAME,
-    MODEL_HYPERPARAMETERS_FILE_NAME,
-    MODEL_WEIGHTS_FILE_NAME
-)
+from ludwig.globals import MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, MODEL_WEIGHTS_FILE_NAME
 from ludwig.utils.upload_utils import HuggingFaceHub
 
 logger = logging.getLogger(__name__)

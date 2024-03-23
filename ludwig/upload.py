@@ -4,11 +4,7 @@ import os
 import sys
 from typing import Optional
 
-from ludwig.globals import (
-    MODEL_FILE_NAME,
-    MODEL_HYPERPARAMETERS_FILE_NAME,
-    MODEL_WEIGHTS_FILE_NAME
-)
+from ludwig.globals import MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, MODEL_WEIGHTS_FILE_NAME
 from ludwig.utils.print_utils import get_logging_level_registry
 from ludwig.utils.upload_utils import HuggingFaceHub, Predibase
 

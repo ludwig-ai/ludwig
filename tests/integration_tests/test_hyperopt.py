@@ -44,10 +44,7 @@ from ludwig.constants import (
     TYPE,
     VALIDATION,
 )
-from ludwig.globals import (
-    MODEL_FILE_NAME,
-    HYPEROPT_STATISTICS_FILE_NAME
-)
+from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME, MODEL_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
@@ -435,7 +432,10 @@ def test_hyperopt_with_feature_specific_parameters(csv_filename, tmpdir, ray_clu
     model_parameters = json.load(
         open(
             os.path.join(
-                hyperopt_results_df.iloc[0]["trial_dir"], "test_hyperopt_run", MODEL_FILE_NAME, "model_hyperparameters.json"
+                hyperopt_results_df.iloc[0]["trial_dir"],
+                "test_hyperopt_run",
+                MODEL_FILE_NAME,
+                "model_hyperparameters.json",
             )
         )
     )

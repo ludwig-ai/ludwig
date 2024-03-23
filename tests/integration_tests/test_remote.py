@@ -6,11 +6,7 @@ import yaml
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend
 from ludwig.constants import BATCH_SIZE, TRAINER
-from ludwig.globals import (
-    DESCRIPTION_FILE_NAME,
-    MODEL_FILE_NAME,
-    MODEL_WEIGHTS_FILE_NAME
-)
+from ludwig.globals import DESCRIPTION_FILE_NAME, MODEL_FILE_NAME, MODEL_WEIGHTS_FILE_NAME
 from ludwig.utils import fs_utils
 from ludwig.utils.data_utils import use_credentials
 from tests.integration_tests.utils import (

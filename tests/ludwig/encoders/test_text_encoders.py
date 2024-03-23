@@ -11,10 +11,7 @@ from ludwig.api import LudwigModel
 from ludwig.constants import ENCODER, ENCODER_OUTPUT, MODEL_ECD, NAME, TEXT, TRAINER
 from ludwig.encoders import text_encoders
 from ludwig.error import ConfigValidationError
-from ludwig.globals import (
-    MODEL_FILE_NAME,
-    MODEL_HYPERPARAMETERS_FILE_NAME
-)
+from ludwig.globals import MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.schema.model_config import ModelConfig
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.torch_utils import get_torch_device

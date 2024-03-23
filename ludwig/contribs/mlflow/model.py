@@ -16,10 +16,7 @@ from mlflow.utils.environment import _mlflow_conda_env
 from mlflow.utils.model_utils import _get_flavor_configuration
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.globals import (
-    MODEL_FILE_NAME,
-    MODEL_HYPERPARAMETERS_FILE_NAME
-)
+from ludwig.globals import MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.utils.data_utils import load_json
 
 FLAVOR_NAME = "ludwig"

@@ -772,7 +772,9 @@ def _run_experiment_model_resume_distributed(tmpdir, dist_strategy):
         config, dataset=rel_path, model_resume_path=output_dir, output_directory=os.path.join(tmpdir, "results2")
     )
 
-    predict_cli(os.path.join(output_dir, MODEL_FILE_NAME), dataset=rel_path, output_directory=os.path.join(tmpdir, "results3"))
+    predict_cli(
+        os.path.join(output_dir, MODEL_FILE_NAME), dataset=rel_path, output_directory=os.path.join(tmpdir, "results3")
+    )
 
 
 @pytest.mark.parametrize(

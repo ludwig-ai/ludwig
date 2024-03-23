@@ -26,11 +26,7 @@ from ludwig.backend import initialize_backend
 from ludwig.callbacks import Callback
 from ludwig.constants import ACCURACY, AUTO, BATCH_SIZE, EXECUTOR, MAX_CONCURRENT_TRIALS, TRAINER
 from ludwig.contribs.mlflow import MlflowCallback
-from ludwig.globals import (
-    HYPEROPT_STATISTICS_FILE_NAME,
-    MODEL_FILE_NAME,
-    MODEL_HYPERPARAMETERS_FILE_NAME
-)
+from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME, MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults

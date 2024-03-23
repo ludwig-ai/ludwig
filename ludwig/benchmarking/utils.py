@@ -16,11 +16,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, CATEGORY
 from ludwig.datasets import model_configs_for_dataset
 from ludwig.datasets.loaders.dataset_loader import DatasetLoader
-from ludwig.globals import (
-    MODEL_FILE_NAME,
-    MODEL_WEIGHTS_FILE_NAME,
-    CONFIG_YAML
-)
+from ludwig.globals import CONFIG_YAML, MODEL_FILE_NAME, MODEL_WEIGHTS_FILE_NAME
 from ludwig.utils.data_utils import load_yaml
 from ludwig.utils.dataset_utils import get_repeatable_train_val_test_split
 from ludwig.utils.defaults import default_random_seed

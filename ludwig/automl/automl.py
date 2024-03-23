@@ -50,10 +50,7 @@ from ludwig.constants import (
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.data.cache.types import CacheableDataset
 from ludwig.datasets import load_dataset_uris
-from ludwig.globals import (
-    MODEL_FILE_NAME,
-    LUDWIG_VERSION
-)
+from ludwig.globals import LUDWIG_VERSION, MODEL_FILE_NAME
 from ludwig.hyperopt.run import hyperopt
 from ludwig.schema.model_config import ModelConfig
 from ludwig.types import ModelConfigDict

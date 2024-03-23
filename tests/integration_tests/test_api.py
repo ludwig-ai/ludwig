@@ -25,10 +25,7 @@ import yaml
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
 from ludwig.constants import BATCH_SIZE, ENCODER, TRAINER, TYPE
-from ludwig.globals import (
-    MODEL_FILE_NAME,
-    MODEL_HYPERPARAMETERS_FILE_NAME
-)
+from ludwig.globals import MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.models.inference import InferenceModule
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import (

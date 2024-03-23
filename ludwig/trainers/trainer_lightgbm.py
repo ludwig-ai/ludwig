@@ -17,9 +17,9 @@ from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.globals import (
     is_progressbar_disabled,
-    TRAINING_CHECKPOINTS_DIR_PATH,
     MODEL_FILE_NAME,
-    TRAINING_PROGRESS_TRACKER_FILE_NAME
+    TRAINING_CHECKPOINTS_DIR_PATH,
+    TRAINING_PROGRESS_TRACKER_FILE_NAME,
 )
 from ludwig.models.gbm import GBM
 from ludwig.models.predictor import Predictor
