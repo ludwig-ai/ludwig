@@ -1943,8 +1943,8 @@ class LudwigModel:
             A namespace (user or an organization) and a repo name separated
             by a `/`.
         :param model_path: (`str`)
-            The path of the saved model. This is either (a) the directory where
-            the 'models_weights' folder and the 'model_hyperparameters.json' file
+            The path of the saved model. This is either (a) the folder where
+            the 'model_weights' folder and the 'model_hyperparameters.json' file
             are stored, or (b) the parent of that folder.
         :param private: (`bool`, *optional*, defaults to `False`)
             Whether the model repo should be private.
@@ -1969,7 +1969,7 @@ class LudwigModel:
         elif os.path.exists(os.path.join(model_path, "model_weights")) and os.path.exists(
             os.path.join(model_path, MODEL_HYPERPARAMETERS_FILE_NAME)
         ):
-            experiment_path = os.path.normpath(os.path.join(model_path, ".."))
+            experiment_path = os.path.dirname(model_path)
         else:
             raise ValueError(
                 f"Can't find 'model_weights' and '{MODEL_HYPERPARAMETERS_FILE_NAME}' either at "

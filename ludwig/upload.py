@@ -40,9 +40,9 @@ def upload_cli(
             A namespace (user or an organization) and a repo name separated
             by a `/`.
         model_path (`str`):
-            The path of the saved model. This is the top level directory where
-            the models weights as well as other associated training artifacts
-            are saved.
+            The path of the saved model. This is the parent-folder of the folder
+            where the 'model_weights' folder and the 'model_hyperparameters.json' file
+            are stored.
         private (`bool`, *optional*, defaults to `False`):
             Whether the model repo should be private.
         repo_type (`str`, *optional*):

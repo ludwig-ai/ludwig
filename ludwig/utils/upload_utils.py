@@ -75,8 +75,9 @@ class BaseModelUpload(ABC):
 
         Args:
             repo_id (str): The ID of the target repository. Each provider will verify their specific rules.
-            model_path (str): The path to the directory containing the trained model artifacts. It should contain
-                the model's weights, usually saved under 'model/model_weights'.
+            model_path (str): The path to the directory containing the trained model artifacts.
+            This is the parent-folder of the folder where the 'model_weights' folder and the
+            'model_hyperparameters.json' file are stored.
             repo_type (str, optional): The type of the repository. Not used in the base class, but subclasses
                 may use it for specific repository implementations. Defaults to None.
             private (bool, optional): Whether the repository should be private or not. Not used in the base class,
@@ -153,8 +154,9 @@ class HuggingFaceHub(BaseModelUpload):
             repo_id (str): The ID of the target repository. It must be a namespace (user or an organization)
                 and a repository name separated by a '/'. For example, if your HF username is 'johndoe' and you
                 want to create a repository called 'test', the repo_id should be 'johndoe/test'.
-            model_path (str): The path to the directory containing the trained model artifacts. It should contain
-                the model's weights, usually saved under 'model/model_weights'.
+            model_path (str): The path to the directory containing the trained model artifacts.
+            This is the parent-folder of the folder where the 'model_weights' folder and the
+            'model_hyperparameters.json' file are stored.
             repo_type (str, optional): The type of the repository. Not used in the base class, but subclasses
                 may use it for specific repository implementations. Defaults to None.
             private (bool, optional): Whether the repository should be private or not. Not used in the base class,
@@ -228,9 +230,9 @@ class HuggingFaceHub(BaseModelUpload):
                 A namespace (user or an organization) and a repo name separated
                 by a `/`.
             model_path (`str`):
-                The path of the saved model. This is the top level directory where
-                the model's weights as well as other associated training artifacts
-                are saved.
+                The path of the saved model. This is the parent-folder of the folder
+            where the 'model_weights' folder and the 'model_hyperparameters.json' file
+            are stored.
             repo_type (`str`, *optional*):
                 Set to `"dataset"` or `"space"` if uploading to a dataset or
                 space, `None` or `"model"` if uploading to a model. Default is
