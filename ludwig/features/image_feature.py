@@ -752,7 +752,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
         sample_num_bytes = []
         failed_entries = []
         for image_entry in column.head(sample_size):
-            if isinstance(image_entry, str):
+            if isinstance(image_entry, bytes):
+                image = read_image_from_bytes_obj(image_entry)
+            elif isinstance(image_entry, str):
                 # Tries to read image as PNG or numpy file from the path.
                 image, num_bytes = read_image_from_path(image_entry, return_num_bytes=True)
                 if num_bytes is not None:
