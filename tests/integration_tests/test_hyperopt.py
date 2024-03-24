@@ -44,7 +44,7 @@ from ludwig.constants import (
     TYPE,
     VALIDATION,
 )
-from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
+from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME, MODEL_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
@@ -365,7 +365,7 @@ def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_
     ) as path:
         assert path is not None
         assert isinstance(path, str)
-        assert "model" in os.listdir(path)
+        assert MODEL_FILE_NAME in os.listdir(path)
 
 
 @pytest.mark.slow
@@ -432,7 +432,10 @@ def test_hyperopt_with_feature_specific_parameters(csv_filename, tmpdir, ray_clu
     model_parameters = json.load(
         open(
             os.path.join(
-                hyperopt_results_df.iloc[0]["trial_dir"], "test_hyperopt_run", "model", "model_hyperparameters.json"
+                hyperopt_results_df.iloc[0]["trial_dir"],
+                "test_hyperopt_run",
+                MODEL_FILE_NAME,
+                "model_hyperparameters.json",
             )
         )
     )
@@ -563,7 +566,7 @@ def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster_7cpu):
     for _, trial_meta in results_df.iterrows():
         trial_dir = trial_meta["trial_dir"]
         trial_config = load_json(
-            os.path.join(trial_dir, "test_hyperopt_nested_params_run", "model", "model_hyperparameters.json")
+            os.path.join(trial_dir, "test_hyperopt_nested_params_run", MODEL_FILE_NAME, "model_hyperparameters.json")
         )
 
         assert len(trial_config[INPUT_FEATURES]) == len(config[INPUT_FEATURES])

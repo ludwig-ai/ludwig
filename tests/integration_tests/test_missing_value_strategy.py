@@ -21,6 +21,7 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.constants import BATCH_SIZE, COLUMN, DROP_ROW, FILL_WITH_MEAN, PREPROCESSING, PROC_COLUMN, TRAINER
+from ludwig.globals import MODEL_FILE_NAME
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -60,7 +61,7 @@ def test_missing_value_prediction(tmpdir, csv_filename):
     dataset[input_features[0]["name"]] = None
     model.predict(dataset=dataset)
 
-    model = LudwigModel.load(os.path.join(output_dir, "model"))
+    model = LudwigModel.load(os.path.join(output_dir, MODEL_FILE_NAME))
     model.predict(dataset=dataset)
 
 

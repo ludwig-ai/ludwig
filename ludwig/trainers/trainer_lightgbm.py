@@ -15,7 +15,12 @@ from ludwig.constants import BINARY, CATEGORY, MINIMIZE, MODEL_GBM, NUMBER, TEST
 from ludwig.distributed import init_dist_strategy
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.features.feature_utils import LudwigFeatureDict
-from ludwig.globals import is_progressbar_disabled, TRAINING_CHECKPOINTS_DIR_PATH, TRAINING_PROGRESS_TRACKER_FILE_NAME
+from ludwig.globals import (
+    is_progressbar_disabled,
+    MODEL_FILE_NAME,
+    TRAINING_CHECKPOINTS_DIR_PATH,
+    TRAINING_PROGRESS_TRACKER_FILE_NAME,
+)
 from ludwig.models.gbm import GBM
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_improved_fn, get_initial_validation_value
@@ -562,7 +567,7 @@ class LightGBMTrainer(BaseTrainer):
         training_set: Union["Dataset", "RayDataset"],  # noqa: F821
         validation_set: Optional[Union["Dataset", "RayDataset"]],  # noqa: F821
         test_set: Optional[Union["Dataset", "RayDataset"]],  # noqa: F821
-        save_path="model",
+        save_path=MODEL_FILE_NAME,
         **kwargs,
     ):
         # ====== General setup =======

@@ -25,7 +25,7 @@ import yaml
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
 from ludwig.constants import BATCH_SIZE, ENCODER, TRAINER, TYPE
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
+from ludwig.globals import MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.models.inference import InferenceModule
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import (
@@ -732,7 +732,7 @@ def test_saved_weights_in_checkpoint(tmpdir):
         training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir
     )
 
-    config_save_path = os.path.join(output_dir, "model", MODEL_HYPERPARAMETERS_FILE_NAME)
+    config_save_path = os.path.join(output_dir, MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME)
     with open(config_save_path) as f:
         saved_config = json.load(f)
     saved_input_features = saved_config["input_features"]

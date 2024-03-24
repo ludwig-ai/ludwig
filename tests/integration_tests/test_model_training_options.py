@@ -25,7 +25,7 @@ from ludwig.constants import (
 from ludwig.contribs.mlflow import MlflowCallback
 from ludwig.experiment import experiment_cli
 from ludwig.features.number_feature import numeric_transformation_registry
-from ludwig.globals import DESCRIPTION_FILE_NAME, TRAINING_PREPROC_FILE_NAME
+from ludwig.globals import DESCRIPTION_FILE_NAME, MODEL_FILE_NAME, MODEL_WEIGHTS_FILE_NAME, TRAINING_PREPROC_FILE_NAME
 from ludwig.schema.optimizers import optimizer_registry
 from ludwig.utils.data_utils import load_json, replace_file_extension
 from ludwig.utils.misc_utils import get_from_registry
@@ -124,14 +124,14 @@ def test_model_progress_save(skip_save_progress, skip_save_model, tmp_path):
     )
 
     # ========== Check for required result data sets =============
-    model_dir = os.path.join(output_dir, "model")
-    files = [f for f in os.listdir(model_dir) if re.match(r"model_weights", f)]
+    model_dir = os.path.join(output_dir, MODEL_FILE_NAME)
+    files = [f for f in os.listdir(model_dir) if re.match(MODEL_WEIGHTS_FILE_NAME, f)]
     if skip_save_model:
         assert len(files) == 0
     else:
         assert len(files) == 1
 
-    training_checkpoints_dir = os.path.join(output_dir, "model", "training_checkpoints")
+    training_checkpoints_dir = os.path.join(output_dir, MODEL_FILE_NAME, "training_checkpoints")
     training_checkpoints = os.listdir(training_checkpoints_dir)
     if skip_save_progress:
         assert len(training_checkpoints) == 0

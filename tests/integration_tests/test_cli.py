@@ -34,6 +34,7 @@ from ludwig.constants import (
     PREPROCESSING,
     TRAINER,
 )
+from ludwig.globals import MODEL_FILE_NAME
 from ludwig.types import FeatureConfigDict
 from ludwig.utils.data_utils import load_yaml
 from tests.integration_tests.utils import category_feature, generate_data, number_feature, sequence_feature
@@ -177,7 +178,7 @@ def test_train_cli_horovod(tmpdir, csv_filename):
         dataset=dataset_filename,
         config=config_filename,
         output_directory=str(tmpdir),
-        model_load_path=os.path.join(tmpdir, "horovod_experiment_run", "model"),
+        model_load_path=os.path.join(tmpdir, "horovod_experiment_run", MODEL_FILE_NAME),
     )
 
 
@@ -188,7 +189,7 @@ def test_export_torchscript_cli(tmpdir, csv_filename):
     _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
     _run_ludwig(
         "export_torchscript",
-        model_path=os.path.join(tmpdir, "experiment_run", "model"),
+        model_path=os.path.join(tmpdir, "experiment_run", MODEL_FILE_NAME),
         output_path=os.path.join(tmpdir, "torchscript"),
     )
 
@@ -200,7 +201,7 @@ def test_export_mlflow_cli(tmpdir, csv_filename):
     _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
     _run_ludwig(
         "export_mlflow",
-        model_path=os.path.join(tmpdir, "experiment_run", "model"),
+        model_path=os.path.join(tmpdir, "experiment_run", MODEL_FILE_NAME),
         output_path=os.path.join(tmpdir, "data/results/mlflow"),
     )
 
@@ -220,7 +221,7 @@ def test_predict_cli(tmpdir, csv_filename):
     _run_ludwig(
         "predict",
         dataset=dataset_filename,
-        model=os.path.join(tmpdir, "experiment_run", "model"),
+        model=os.path.join(tmpdir, "experiment_run", MODEL_FILE_NAME),
         output_directory=os.path.join(tmpdir, "predictions"),
     )
 
@@ -233,7 +234,7 @@ def test_evaluate_cli(tmpdir, csv_filename):
     _run_ludwig(
         "evaluate",
         dataset=dataset_filename,
-        model=os.path.join(tmpdir, "experiment_run", "model"),
+        model=os.path.join(tmpdir, "experiment_run", MODEL_FILE_NAME),
         output_directory=os.path.join(tmpdir, "predictions"),
     )
 
@@ -265,7 +266,7 @@ def test_collect_summary_activations_weights_cli(tmpdir, csv_filename):
     config_filename = os.path.join(tmpdir, "config.yaml")
     dataset_filename = _prepare_data(csv_filename, config_filename)
     _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
-    assert _run_ludwig("collect_summary", model=os.path.join(tmpdir, "experiment_run", "model"))
+    assert _run_ludwig("collect_summary", model=os.path.join(tmpdir, "experiment_run", MODEL_FILE_NAME))
 
 
 def test_synthesize_dataset_cli(tmpdir, csv_filename):

@@ -16,6 +16,7 @@
 
 LUDWIG_VERSION = "0.10.2.dev"
 
+MODEL_FILE_NAME = "model"
 MODEL_WEIGHTS_FILE_NAME = "model_weights"
 MODEL_HYPERPARAMETERS_FILE_NAME = "model_hyperparameters.json"
 TRAIN_SET_METADATA_FILE_NAME = "training_set_metadata.json"
