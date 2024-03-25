@@ -48,7 +48,7 @@ class Callback(ABC):
         :param test_set: The test set.
         :type test_set: ludwig.dataset.base.Dataset
         :param training_set_metadata: Values inferred from the training set, including preprocessing settings,
-                                      vocabularies, feature statistics, etc. Same as training_set_metadata.json.
+            vocabularies, feature statistics, etc. Same as training_set_metadata.json.
         """
 
         pass
@@ -374,7 +374,6 @@ class Callback(ABC):
         :param train_fn: The function which runs the experiment trial.
         :param tune_config: The ray tune configuration dictionary.
         :param tune_callbacks: List of callbacks (not used yet).
-
         :returns: Tuple[Callable, Dict] The train_fn and tune_config, which will be passed to ray tune.
         """
         return train_fn, tune_config

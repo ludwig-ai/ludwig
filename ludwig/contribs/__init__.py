@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
 """All contrib classes must implement the `ludwig.callbacks.Callback` interface.
 
 If you don't want to handle the call, either provide an empty method with `pass`, or just don't implement the method.
