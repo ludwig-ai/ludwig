@@ -60,7 +60,7 @@ _PARQUET_SUFFIX = "parquet"
 
 
 def _convert_ground_truth(ground_truth, feature_metadata, ground_truth_apply_idx, positive_label):
-    """converts non-np.array representation to be np.array."""
+    """Converts non-np.array representation to be np.array."""
     if "str2idx" in feature_metadata:
         # categorical output feature as binary
         ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
@@ -102,8 +102,7 @@ def validate_conf_thresholds_and_probabilities_2d_3d(probabilities, threshold_ou
     """Ensure probabilities and threshold output_feature_names arrays have two members each.
 
     :param probabilities: List of probabilities per model
-    :param threshhold_output_feature_names: List of threshhold output_feature_names per model
-    :raise: RuntimeError
+    :param threshhold_output_feature_names: List of threshhold output_feature_names per model :raise: RuntimeError
     """
     validation_mapping = {
         "probabilities": probabilities,
@@ -122,9 +121,8 @@ def load_data_for_viz(load_type, model_file_statistics, dtype=int, ground_truth_
     """Load JSON files (training stats, evaluation stats...) for a list of models.
 
     :param load_type: type of the data loader to be used.
-    :param model_file_statistics: JSON file or list of json files containing any
-           model experiment stats.
-    :return List of training statistics loaded as json objects.
+    :param model_file_statistics: JSON file or list of json files containing any model experiment stats. :return List of
+        training statistics loaded as json objects.
     """
     supported_load_types = dict(
         load_json=load_json,
@@ -145,9 +143,8 @@ def load_training_stats_for_viz(load_type, model_file_statistics, dtype=int, gro
     """Load model file data (specifically training stats) for a list of models.
 
     :param load_type: type of the data loader to be used.
-    :param model_file_statistics: JSON file or list of json files containing any
-           model experiment stats.
-    :return List of model statistics loaded as TrainingStats objects.
+    :param model_file_statistics: JSON file or list of json files containing any model experiment stats. :return List of
+        model statistics loaded as TrainingStats objects.
     """
     stats_per_model = load_data_for_viz(
         load_type, model_file_statistics, dtype=dtype, ground_truth_split=ground_truth_split
@@ -213,7 +210,7 @@ def _validate_output_feature_name_from_test_stats(output_feature_name, test_stat
 
 
 def _encode_categorical_feature(raw: np.array, str2idx: dict) -> np.array:
-    """encodes raw categorical string value to encoded numeric value.
+    """Encodes raw categorical string value to encoded numeric value.
 
     Args:
     :param raw: (np.array) string categorical representation
@@ -326,10 +323,8 @@ def generate_filename_template_path(output_dir, filename_template):
 
     Create output directory if yet does exist.
     :param output_dir: Directory that will contain the filename_template file
-    :param filename_template: name of the file template to be appended to the
-            filename template path
-    :return: path to filename template inside the output dir or None if the
-             output dir is None
+    :param filename_template: name of the file template to be appended to the filename template path
+    :return: path to filename template inside the output dir or None if the output dir is None
     """
     if output_dir:
         os.makedirs(output_dir, exist_ok=True)
@@ -343,12 +338,8 @@ def compare_performance_cli(test_statistics: Union[str, List[str]], **kwargs: di
 
     # Inputs
 
-    :param test_statistics: (Union[str, List[str]]) path to experiment test
-        statistics file.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param test_statistics: (Union[str, List[str]]) path to experiment test statistics file.
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
     test_stats_per_model = load_data_for_viz("load_json", test_statistics)
@@ -361,12 +352,8 @@ def learning_curves_cli(training_statistics: Union[str, List[str]], **kwargs: di
 
     # Inputs
 
-    :param training_statistics: (Union[str, List[str]]) path to experiment
-        training statistics file
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param training_statistics: (Union[str, List[str]]) path to experiment training statistics file
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
     train_stats_per_model = load_training_stats_for_viz("load_json", training_statistics)
@@ -588,13 +575,9 @@ def compare_classifiers_multiclass_multimetric_cli(
 
     # Inputs
 
-    :param test_statistics: (Union[str, List[str]]) path to experiment test
-        statistics file.
+    :param test_statistics: (Union[str, List[str]]) path to experiment test statistics file.
     :param ground_truth_metadata: (str) path to ground truth metadata file.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
     test_stats_per_model = load_data_for_viz("load_json", test_statistics)
@@ -1175,12 +1158,8 @@ def roc_curves_from_test_statistics_cli(test_statistics: Union[str, List[str]], 
     """Load model data from files to be shown by roc_curves_from_test_statistics_cli.
 
     # Inputs
-    :param test_statistics: (Union[str, List[str]]) path to experiment test
-        statistics file.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param test_statistics: (Union[str, List[str]]) path to experiment test statistics file.
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
     test_stats_per_model = load_data_for_viz("load_json", test_statistics)
@@ -1325,13 +1304,9 @@ def confusion_matrix_cli(test_statistics: Union[str, List[str]], ground_truth_me
 
     # Inputs
 
-    :param test_statistics: (Union[str, List[str]]) path to experiment test
-        statistics file.
+    :param test_statistics: (Union[str, List[str]]) path to experiment test statistics file.
     :param ground_truth_metadata: (str) path to ground truth metadata file.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
     test_stats_per_model = load_data_for_viz("load_json", test_statistics)
@@ -1345,13 +1320,9 @@ def frequency_vs_f1_cli(test_statistics: Union[str, List[str]], ground_truth_met
 
     # Inputs
 
-    :param test_statistics: (Union[str, List[str]]) path to experiment test
-        statistics file.
+    :param test_statistics: (Union[str, List[str]]) path to experiment test statistics file.
     :param ground_truth_metadata: (str) path to ground truth metadata file.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
     test_stats_per_model = load_data_for_viz("load_json", test_statistics)
@@ -1733,7 +1704,7 @@ def compare_classifiers_performance_subset(
     metadata: dict,
     output_feature_name: str,
     top_n_classes: List[int],
-    labels_limit: (int),
+    labels_limit: int,
     subset: str,
     model_names: Union[str, List[str]] = None,
     output_directory: str = None,

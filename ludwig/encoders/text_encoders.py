@@ -2478,9 +2478,11 @@ class LLMEncoder(Encoder):
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
         # Wrap with flash attention backend for faster generation
-        with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False) if (
-            torch.cuda.is_available() and self.curr_device.type == "cuda"
-        ) else contextlib.nullcontext():
+        with (
+            torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False)
+            if (torch.cuda.is_available() and self.curr_device.type == "cuda")
+            else contextlib.nullcontext()
+        ):
             # Get the hidden state of the last layer and return it as the text encoding
             model_outputs = self.model(input_ids=inputs, output_hidden_states=True).hidden_states[-1]
 
