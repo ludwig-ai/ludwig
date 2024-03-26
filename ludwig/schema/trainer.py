@@ -86,6 +86,10 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         ),
     )
 
+    layers_to_freeze_regex: str = schema_utils.String(
+        default=None, allow_none=True, description=("Freeze layers based on regex provided.")
+    )
+
     early_stop: int = schema_utils.IntegerRange(
         default=5,
         min=-1,
