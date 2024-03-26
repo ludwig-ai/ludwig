@@ -228,7 +228,7 @@ class Trainer(BaseTrainer):
         self.base_learning_rate = base_learning_rate
 
         if self.config.layers_to_freeze_regex:
-            self.regex()  # freeze layers
+            self.freeze_layers()  # freeze layers
 
         # We may need to replace the embedding layer when using 8-bit optimizers from bitsandbytes.
         update_embedding_layer(self.compiled_model, self.config)
@@ -782,12 +782,15 @@ class Trainer(BaseTrainer):
         try:
             pattern = re.compile(self.layers_to_freeze_regex)
         except re.error:
-            print("Invalid regex input")
+            logger.warning("Invalid regex input.\n")
             exit()
 
         for name, p in self.model.named_parameters():
             if re.search(pattern, str(name)):
                 p.requires_grad = False
+
+        for name, p in self.model.named_parameters():
+            print(f"{name}: {p.requires_grad}")
 
     def train(
         self,
