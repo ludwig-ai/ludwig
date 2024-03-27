@@ -1,4 +1,5 @@
 import logging
+import re
 from collections import defaultdict
 from typing import Dict, List, Tuple, TYPE_CHECKING
 
@@ -10,6 +11,7 @@ except ImportError:
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import AUTO, COMBINED, LOSS
 from ludwig.models.base import BaseModel
+from ludwig.models.ecd import ECD
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.metric_utils import TrainerMetric
@@ -408,3 +410,16 @@ def get_rendered_batch_size_grad_accum(config: "BaseTrainerConfig", num_workers:
                 gradient_accumulation_steps = 1
 
     return batch_size, gradient_accumulation_steps
+
+
+def freeze_layers_regex(config: "BaseTrainerConfig", model: ECD) -> None:
+    """Freezes layers based on provided regular expression."""
+    try:
+        pattern = re.compile(config.layers_to_freeze_regex)
+    except re.error:
+        logger.warning("Invalid regex input.\n")
+        exit()
+
+    for name, p in model.named_parameters():
+        if re.search(pattern, str(name)):
+            p.requires_grad = False

@@ -20,7 +20,6 @@ import logging
 import math
 import os
 import os.path
-import re
 import signal
 import sys
 import tempfile
@@ -69,6 +68,7 @@ from ludwig.utils.model_utils import contains_nan_or_inf_tensors
 from ludwig.utils.torch_utils import get_torch_device
 from ludwig.utils.trainer_utils import (
     append_metrics,
+    freeze_layers_regex,
     get_final_steps_per_checkpoint,
     get_latest_metrics_dict,
     get_new_progress_tracker,
@@ -228,7 +228,7 @@ class Trainer(BaseTrainer):
         self.base_learning_rate = base_learning_rate
 
         if self.config.layers_to_freeze_regex:
-            self.freeze_layers()  # freeze layers
+            freeze_layers_regex(self.config, self.model)
 
         # We may need to replace the embedding layer when using 8-bit optimizers from bitsandbytes.
         update_embedding_layer(self.compiled_model, self.config)
@@ -777,20 +777,6 @@ class Trainer(BaseTrainer):
         torch.cuda.empty_cache()
 
         return should_break
-
-    def freeze_layers(self):
-        try:
-            pattern = re.compile(self.layers_to_freeze_regex)
-        except re.error:
-            logger.warning("Invalid regex input.\n")
-            exit()
-
-        for name, p in self.model.named_parameters():
-            if re.search(pattern, str(name)):
-                p.requires_grad = False
-
-        for name, p in self.model.named_parameters():
-            print(f"{name}: {p.requires_grad}")
 
     def train(
         self,
