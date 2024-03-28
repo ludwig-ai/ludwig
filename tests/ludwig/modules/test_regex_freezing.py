@@ -14,13 +14,6 @@ from tests.integration_tests.utils import category_feature, generate_data, image
 RANDOM_SEED = 130
 
 
-@pytest.mark.parametrize("trainable", [True])
-@pytest.mark.parametrize(
-    "use_pretrained",
-    [
-        False,
-    ],
-)
 @pytest.mark.parametrize(
     "regex",
     [
@@ -31,11 +24,11 @@ RANDOM_SEED = 130
         r"(features\.8\.\d+\.weight|features\.8\.\d+\.bias)",
     ],
 )
-def test_tv_efficientnet_freezing(trainable: bool, use_pretrained: bool, regex):
+def test_tv_efficientnet_freezing(regex):
     set_random_seed(RANDOM_SEED)
 
     pretrained_model = TVEfficientNetEncoder(
-        model_variant="b0", use_pretrained=use_pretrained, saved_weights_in_checkpoint=True, trainable=trainable
+        model_variant="b0", use_pretrained=True, saved_weights_in_checkpoint=True, trainable=True
     )
 
     config = BaseTrainerConfig(layers_to_freeze_regex=regex)
@@ -47,7 +40,7 @@ def test_tv_efficientnet_freezing(trainable: bool, use_pretrained: bool, regex):
             assert param.requires_grad
 
 
-def test_training(tmpdir, csv_filename):
+def test_frozen_training(tmpdir, csv_filename):
     input_features = [image_feature(tmpdir)]
     output_features = [category_feature()]
 
