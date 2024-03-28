@@ -227,6 +227,7 @@ class Trainer(BaseTrainer):
             base_learning_rate *= lr_scale_fn(self.distributed.size())
         self.base_learning_rate = base_learning_rate
 
+        # Given that regex is supplied, freeze layers
         if self.config.layers_to_freeze_regex:
             freeze_layers_regex(self.config, self.model)
 

@@ -40,7 +40,7 @@ def test_tv_efficientnet_freezing(regex):
             assert param.requires_grad
 
 
-def test_frozen_training(tmpdir, csv_filename):
+def test_frozen_tv_training(tmpdir, csv_filename):
     input_features = [image_feature(tmpdir)]
     output_features = [category_feature()]
 
