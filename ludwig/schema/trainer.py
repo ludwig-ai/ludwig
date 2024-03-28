@@ -87,7 +87,14 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     )
 
     layers_to_freeze_regex: str = schema_utils.String(
-        default=None, allow_none=True, description=("Freeze layers based on regex provided.")
+        default=None,
+        allow_none=True,
+        description=(
+            "Freeze specific layers based on provided regex. Freezing specific layers can improve a  "
+            "pretrained models performancein a number of ways. At a basic level, freezing early layers can  "
+            "prevent overfitting by retainingmore general features (beneficial for small datasets). Also can  "
+            "reduce computational resource use and lower overall training time due to less gradient calculations. "
+        ),
     )
 
     early_stop: int = schema_utils.IntegerRange(
