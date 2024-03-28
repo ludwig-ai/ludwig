@@ -1,11 +1,15 @@
 import re
+from contextlib import nullcontext as no_error_raised
 
 import pytest
 
+from ludwig.api import LudwigModel
+from ludwig.constants import TRAINER
 from ludwig.encoders.image.torchvision import TVEfficientNetEncoder
 from ludwig.schema.trainer import BaseTrainerConfig
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.trainer_utils import freeze_layers_regex
+from tests.integration_tests.utils import category_feature, generate_data, image_feature
 
 RANDOM_SEED = 130
 
@@ -41,3 +45,33 @@ def test_tv_efficientnet_freezing(trainable: bool, use_pretrained: bool, regex):
             assert not param.requires_grad
         else:
             assert param.requires_grad
+
+
+def test_training(tmpdir, csv_filename):
+    input_features = [image_feature(tmpdir)]
+    output_features = [category_feature()]
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {
+            "layers_to_freeze_regex": r"(features\.1.*|features\.2.*|model\.features\.4\.1\.block\.3\.0\.weight)",
+            "epochs": 1,
+            "train_steps": 1,
+        },
+        "encoder": {"type": "efficientnet", "use_pretrained": True},
+    }
+
+    training_data_csv_path = generate_data(config["input_features"], config["output_features"], csv_filename)
+    model = LudwigModel(config)
+
+    with no_error_raised():
+        model.experiment(
+            dataset=training_data_csv_path,
+            skip_save_training_description=True,
+            skip_save_training_statistics=True,
+            skip_save_model=True,
+            skip_save_progress=True,
+            skip_save_log=True,
+            skip_save_processed_input=True,
+        )
