@@ -52,7 +52,7 @@ def test_frozen_tv_training(tmpdir, csv_filename):
             "epochs": 1,
             "train_steps": 1,
         },
-        "encoder": {"type": "efficientnet", "use_pretrained": True},
+        "encoder": {"type": "efficientnet", "use_pretrained": False},
     }
 
     training_data_csv_path = generate_data(config["input_features"], config["output_features"], csv_filename)
