@@ -133,7 +133,8 @@ def cli_summarize_pretrained(sys_argv):
         prog="ludwig pretrained_summary",
         usage="%(prog)s [options]",
     )
-    parser.add_argument("-m", "--model_name", help="output model layers", required=True, type=str)
+    parser.add_argument("-m", "--model_name", help="output model layers", required=False, type=str)
+    parser.add_argument("-l", "--list_models", action="store_true", help="print available models")
 
     add_contrib_callback_args(parser)
     args = parser.parse_args(sys_argv)
@@ -143,4 +144,9 @@ def cli_summarize_pretrained(sys_argv):
         callback.on_cmdline("pretrained_summary", *sys_argv)
 
     print_ludwig("Model Summary", LUDWIG_VERSION)
-    pretrained_summary(**vars(args))
+    if args.list_models:
+        print("Available models:")
+        for model in models:
+            print(f"- {model}")
+    else:
+        pretrained_summary(**vars(args))

@@ -268,6 +268,24 @@ def test_collect_summary_activations_weights_cli(tmpdir, csv_filename):
     assert _run_ludwig("collect_summary", model=os.path.join(tmpdir, "experiment_run", "model"))
 
 
+@pytest.mark.parametrize(
+    "model_name",
+    [
+        "alexnet",
+        "convnext_base",
+        "convnext_large",
+        "convnext_small",
+        "convnext_tiny",
+        "densenet121",
+        "densenet161",
+        "densenet169",
+    ],
+)
+def test_pretrained_summary_cli(model_name: str):
+    """Test pretrained_summary cli."""
+    _run_ludwig("pretrained_summary", model_name=model_name)
+
+
 def test_synthesize_dataset_cli(tmpdir, csv_filename):
     """Test synthesize_data cli."""
     # test depends on default setting of --dataset_size
