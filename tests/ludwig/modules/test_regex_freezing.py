@@ -28,7 +28,7 @@ def test_tv_efficientnet_freezing(regex):
     set_random_seed(RANDOM_SEED)
 
     pretrained_model = TVEfficientNetEncoder(
-        model_variant="b0", use_pretrained=True, saved_weights_in_checkpoint=True, trainable=True
+        model_variant="b0", use_pretrained=False, saved_weights_in_checkpoint=True, trainable=True
     )
 
     config = BaseTrainerConfig(layers_to_freeze_regex=regex)
