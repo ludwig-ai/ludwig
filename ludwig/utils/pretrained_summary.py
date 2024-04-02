@@ -116,15 +116,12 @@ models = [
 
 def pretrained_summary(model_name, **kwargs) -> None:
     if model_name in models:
-        try:
-            module = importlib.import_module("torchvision.models")
-            encoder_class = getattr(module, model_name)
-            model = encoder_class()
+        module = importlib.import_module("torchvision.models")
+        encoder_class = getattr(module, model_name)
+        model = encoder_class()
 
-            for name, _ in model.named_parameters():
-                print(name)
-        except (ImportError, AttributeError) as e:
-            print(f"Error instantiating encoder '{model_name}': {e}")
+        for name, _ in model.named_parameters():
+            print(name)
     else:
         print(f"No encoder found for '{model_name}'")
 
