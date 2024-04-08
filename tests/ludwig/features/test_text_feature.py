@@ -122,7 +122,7 @@ def test_get_decoded_targets_and_predictions(vocab_size, targets, predictions):
     tokenizer = AutoTokenizer.from_pretrained(TEST_MODEL_NAME)
 
     # Scenario 1: Prediction and target tensors have the same length, so nothing should change
-    targets, decoded_texts = targets
+    targets, decoded_texts_gt = targets
     targets = torch.tensor([targets])
     predictions = {
         PREDICTIONS: torch.tensor([predictions], dtype=torch.int64),
@@ -138,5 +138,4 @@ def test_get_decoded_targets_and_predictions(vocab_size, targets, predictions):
     assert isinstance(decoded_predictions, list)
     assert all(isinstance(x, str) for x in decoded_targets)
     assert all(isinstance(x, str) for x in decoded_predictions)
-    assert decoded_targets == decoded_predictions
-    assert decoded_targets == decoded_texts
+    assert decoded_targets == decoded_predictions == decoded_texts_gt
