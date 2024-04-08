@@ -18,7 +18,7 @@ _Declarative deep learning framework built for scale and efficiency._
 </div>
 
 > \[!IMPORTANT\]
-> Our community has moved to [Discord](https://discord.gg/CBgdrGnZjy) -- please join us!
+> Our community has moved to [Discord](https://discord.gg/CBgdrGnZjy) -- please join us there!
 
 # 📖 What is Ludwig?
 
