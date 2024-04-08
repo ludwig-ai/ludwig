@@ -151,6 +151,8 @@ class LoraConfig(BaseAdapterConfig):
             bias=self.bias_type,
             target_modules=self.target_modules,
             task_type=task_type,
+            use_rslora=self.use_rslora,
+            use_dora=self.use_dora,
         )
 
     @classmethod

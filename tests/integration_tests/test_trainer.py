@@ -22,6 +22,7 @@ from ludwig.constants import (
     TRAINER,
 )
 from ludwig.distributed import init_dist_strategy
+from ludwig.globals import MODEL_FILE_NAME
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -177,7 +178,7 @@ def test_ecd_tune_batch_size_and_lr(tmpdir, eval_batch_size, effective_batch_siz
 
     check_postconditions(model)
 
-    model = LudwigModel.load(os.path.join(output_directory, "model"))
+    model = LudwigModel.load(os.path.join(output_directory, MODEL_FILE_NAME))
 
     # loaded model should retain the tuned params
     check_postconditions(model)

@@ -35,6 +35,7 @@ from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.encoders.registry import get_encoder_classes
 from ludwig.error import ConfigValidationError
 from ludwig.experiment import experiment_cli
+from ludwig.globals import MODEL_FILE_NAME
 from ludwig.predict import predict_cli
 from ludwig.utils.data_utils import read_csv
 from ludwig.utils.defaults import default_random_seed
@@ -713,7 +714,7 @@ def test_experiment_model_resume(tmpdir):
 
     experiment_cli(config, dataset=rel_path, model_resume_path=output_dir)
 
-    predict_cli(os.path.join(output_dir, "model"), dataset=rel_path)
+    predict_cli(os.path.join(output_dir, MODEL_FILE_NAME), dataset=rel_path)
     shutil.rmtree(output_dir, ignore_errors=True)
 
 
@@ -771,7 +772,9 @@ def _run_experiment_model_resume_distributed(tmpdir, dist_strategy):
         config, dataset=rel_path, model_resume_path=output_dir, output_directory=os.path.join(tmpdir, "results2")
     )
 
-    predict_cli(os.path.join(output_dir, "model"), dataset=rel_path, output_directory=os.path.join(tmpdir, "results3"))
+    predict_cli(
+        os.path.join(output_dir, MODEL_FILE_NAME), dataset=rel_path, output_directory=os.path.join(tmpdir, "results3")
+    )
 
 
 @pytest.mark.parametrize(
@@ -800,7 +803,7 @@ def test_experiment_model_resume_missing_file(tmpdir, missing_file):
     try:
         # Remove file to simulate failure during first epoch of training which prevents
         # training_checkpoints to be empty and training_progress.json to not be created
-        missing_file_path = os.path.join(output_dir, "model", missing_file)
+        missing_file_path = os.path.join(output_dir, MODEL_FILE_NAME, missing_file)
         if missing_file == "training_progress.json":
             os.remove(missing_file_path)
         else:
@@ -809,7 +812,7 @@ def test_experiment_model_resume_missing_file(tmpdir, missing_file):
         # Training should start a fresh model training run without any errors
         experiment_cli(config, dataset=rel_path, model_resume_path=output_dir)
 
-    predict_cli(os.path.join(output_dir, "model"), dataset=rel_path)
+    predict_cli(os.path.join(output_dir, MODEL_FILE_NAME), dataset=rel_path)
     shutil.rmtree(output_dir, ignore_errors=True)
 
 

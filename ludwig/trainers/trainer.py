@@ -50,6 +50,7 @@ from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.globals import (
     is_progressbar_disabled,
+    MODEL_FILE_NAME,
     MODEL_HYPERPARAMETERS_FILE_NAME,
     TRAINING_CHECKPOINTS_DIR_PATH,
     TRAINING_PROGRESS_TRACKER_FILE_NAME,
@@ -831,7 +832,7 @@ class Trainer(BaseTrainer):
         training_set,
         validation_set=None,
         test_set=None,
-        save_path="model",
+        save_path=MODEL_FILE_NAME,
         return_state_dict: bool = False,
         **kwargs,
     ):

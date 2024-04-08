@@ -6,6 +6,7 @@ import pytest
 from ludwig.api import LudwigModel
 from ludwig.constants import INPUT_FEATURES, MODEL_TYPE, OUTPUT_FEATURES, TRAINER
 from ludwig.error import ConfigValidationError
+from ludwig.globals import MODEL_FILE_NAME
 from ludwig.schema.model_types.base import ModelConfig
 from tests.integration_tests import synthetic_test_data
 from tests.integration_tests.utils import binary_feature
@@ -77,7 +78,7 @@ def _train_and_predict_gbm(input_features, output_features, tmpdir, backend_conf
         skip_save_unprocessed_output=True,
         skip_save_log=True,
     )
-    model.load(os.path.join(tmpdir, "api_experiment_run", "model"))
+    model.load(os.path.join(tmpdir, "api_experiment_run", MODEL_FILE_NAME))
     preds, _ = model.predict(dataset=dataset_filename, output_directory=output_directory, split="test")
 
     return preds, model

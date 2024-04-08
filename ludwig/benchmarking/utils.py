@@ -16,7 +16,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, CATEGORY
 from ludwig.datasets import model_configs_for_dataset
 from ludwig.datasets.loaders.dataset_loader import DatasetLoader
-from ludwig.globals import CONFIG_YAML
+from ludwig.globals import CONFIG_YAML, MODEL_FILE_NAME, MODEL_WEIGHTS_FILE_NAME
 from ludwig.utils.data_utils import load_yaml
 from ludwig.utils.dataset_utils import get_repeatable_train_val_test_split
 from ludwig.utils.defaults import default_random_seed
@@ -251,9 +251,9 @@ def delete_model_checkpoints(output_directory: str):
     Args:
         output_directory: output directory of the hyperopt run.
     """
-    shutil.rmtree(os.path.join(output_directory, "model", "training_checkpoints"), ignore_errors=True)
-    if os.path.isfile(os.path.join(output_directory, "model", "model_weights")):
-        os.remove(os.path.join(output_directory, "model", "model_weights"))
+    shutil.rmtree(os.path.join(output_directory, MODEL_FILE_NAME, "training_checkpoints"), ignore_errors=True)
+    if os.path.isfile(os.path.join(output_directory, MODEL_FILE_NAME, MODEL_WEIGHTS_FILE_NAME)):
+        os.remove(os.path.join(output_directory, MODEL_FILE_NAME, MODEL_WEIGHTS_FILE_NAME))
 
 
 def delete_hyperopt_outputs(output_directory: str):

@@ -6,7 +6,7 @@ import yaml
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend
 from ludwig.constants import BATCH_SIZE, TRAINER
-from ludwig.globals import DESCRIPTION_FILE_NAME
+from ludwig.globals import DESCRIPTION_FILE_NAME, MODEL_FILE_NAME, MODEL_WEIGHTS_FILE_NAME
 from ludwig.utils import fs_utils
 from ludwig.utils.data_utils import use_credentials
 from tests.integration_tests.utils import (
@@ -74,8 +74,8 @@ def test_remote_training_set(csv_filename, fs_protocol, bucket, creds, backend, 
             assert os.path.join(output_directory, "api_experiment_run") == output_run_directory
             assert fs_utils.path_exists(os.path.join(output_run_directory, DESCRIPTION_FILE_NAME))
             assert fs_utils.path_exists(os.path.join(output_run_directory, "training_statistics.json"))
-            assert fs_utils.path_exists(os.path.join(output_run_directory, "model"))
-            assert fs_utils.path_exists(os.path.join(output_run_directory, "model", "model_weights"))
+            assert fs_utils.path_exists(os.path.join(output_run_directory, MODEL_FILE_NAME))
+            assert fs_utils.path_exists(os.path.join(output_run_directory, MODEL_FILE_NAME, MODEL_WEIGHTS_FILE_NAME))
 
             model.predict(dataset=test_csv, output_directory=output_directory)
 

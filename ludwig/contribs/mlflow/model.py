@@ -16,7 +16,7 @@ from mlflow.utils.environment import _mlflow_conda_env
 from mlflow.utils.model_utils import _get_flavor_configuration
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
+from ludwig.globals import MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.utils.data_utils import load_json
 
 FLAVOR_NAME = "ludwig"
@@ -97,7 +97,7 @@ def save_model(
     path = os.path.abspath(path)
     if os.path.exists(path):
         raise MlflowException(f"Path '{path}' already exists")
-    model_data_subpath = "model"
+    model_data_subpath = MODEL_FILE_NAME
     model_data_path = os.path.join(path, model_data_subpath)
     os.makedirs(path)
     if mlflow_model is None:
@@ -267,7 +267,7 @@ def export_model(model_path, output_path, registered_model_name=None):
         if not model_path.startswith("runs:/") or output_path is not None:
             # No run specified, so in order to register the model in mlflow, we need
             # to create a new run and upload the model as an artifact first
-            output_path = output_path or "model"
+            output_path = output_path or MODEL_FILE_NAME
             log_model(
                 _CopyModel(model_path),
                 artifact_path=output_path,
@@ -295,7 +295,7 @@ def log_saved_model(lpath):
     """
     log_model(
         _CopyModel(lpath),
-        artifact_path="model",
+        artifact_path=MODEL_FILE_NAME,
     )
 
 

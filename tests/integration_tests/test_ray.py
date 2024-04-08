@@ -50,6 +50,7 @@ from ludwig.constants import (
 )
 from ludwig.data.preprocessing import balance_data
 from ludwig.data.split import DEFAULT_PROBABILITIES
+from ludwig.globals import MODEL_FILE_NAME
 from ludwig.utils.data_utils import read_parquet
 from ludwig.utils.misc_utils import merge_dict
 from tests.integration_tests.utils import (
@@ -98,7 +99,7 @@ except ImportError:
 def train_gpu(config, dataset, output_directory):
     model = LudwigModel(config, backend="local")
     _, _, output_dir = model.train(dataset, output_directory=output_directory)
-    return os.path.join(output_dir, "model")
+    return os.path.join(output_dir, MODEL_FILE_NAME)
 
 
 @ray.remote(num_cpus=1, num_gpus=0)

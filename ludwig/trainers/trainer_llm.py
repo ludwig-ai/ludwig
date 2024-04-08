@@ -9,6 +9,7 @@ from ludwig.constants import MINIMUM_BATCH_SIZE, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.features.feature_utils import LudwigFeatureDict
+from ludwig.globals import MODEL_FILE_NAME
 from ludwig.models.llm import LLM
 from ludwig.models.predictor import LlmFineTunePredictor, LlmPredictor
 from ludwig.modules.metric_modules import get_initial_validation_value
@@ -140,7 +141,7 @@ class NoneTrainer(BaseTrainer):
         training_set: Dataset,
         validation_set: Optional[Dataset] = None,
         test_set: Optional[Dataset] = None,
-        save_path: str = "model",
+        save_path: str = MODEL_FILE_NAME,
         return_state_dict: bool = False,
         **kwargs,
     ):

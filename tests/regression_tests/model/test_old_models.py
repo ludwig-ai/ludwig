@@ -7,6 +7,7 @@ import wget
 
 from ludwig.api import LudwigModel
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset_df
+from ludwig.globals import MODEL_FILE_NAME
 
 NUM_EXAMPLES = 25
 
@@ -51,7 +52,7 @@ def test_model_loaded_from_old_config_prediction_works(tmpdir):
     ids=["titanic", "twitter_bots", "respiratory"],  # , "gbm_adult_census_income"],
 )
 def test_predict_deprecated_model(model_url, tmpdir):
-    model_dir = os.path.join(tmpdir, "model")
+    model_dir = os.path.join(tmpdir, MODEL_FILE_NAME)
     os.makedirs(model_dir)
 
     archive_path = wget.download(model_url, tmpdir)

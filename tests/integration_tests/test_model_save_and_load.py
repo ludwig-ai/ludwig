@@ -10,6 +10,7 @@ import torch
 from ludwig.api import LudwigModel
 from ludwig.constants import BATCH_SIZE, ENCODER, LOSS, NAME, PREPROCESSING, TRAINER, TRAINING, TYPE
 from ludwig.data.split import get_splitter
+from ludwig.globals import MODEL_FILE_NAME
 from ludwig.modules.loss_modules import MSELoss
 from ludwig.schema.features.loss.loss import MSELossConfig
 from ludwig.utils.data_utils import read_csv
@@ -70,7 +71,7 @@ def test_model_load_from_checkpoint(tmpdir, csv_filename, tmp_path):
         output_directory="results",  # results_dir
     )
 
-    model_dir = os.path.join(output_dir, "model")
+    model_dir = os.path.join(output_dir, MODEL_FILE_NAME)
     ludwig_model_loaded = LudwigModel.load(model_dir, backend=backend, from_checkpoint=True)
     preds_1, _ = ludwig_model1.predict(dataset=validation_set)
 
@@ -207,7 +208,7 @@ def test_model_save_reload_api(tmpdir, csv_filename, tmp_path):
     check_model_equal(ludwig_model_loaded)
 
     # Test loading the model from the experiment directory
-    ludwig_model_exp = LudwigModel.load(os.path.join(output_dir, "model"), backend=backend)
+    ludwig_model_exp = LudwigModel.load(os.path.join(output_dir, MODEL_FILE_NAME), backend=backend)
     check_model_equal(ludwig_model_exp)
 
 
@@ -297,7 +298,7 @@ def test_gbm_model_save_reload_api(tmpdir, csv_filename, tmp_path):
     check_model_equal(ludwig_model_loaded)
 
     # Test loading the model from the experiment directory
-    ludwig_model_exp = LudwigModel.load(os.path.join(output_dir, "model"), backend=backend)
+    ludwig_model_exp = LudwigModel.load(os.path.join(output_dir, MODEL_FILE_NAME), backend=backend)
     check_model_equal(ludwig_model_exp)
 
 
@@ -437,7 +438,7 @@ def test_model_save_reload_tv_model(torch_encoder, variant, tmpdir, csv_filename
     check_model_equal(ludwig_model_loaded)
 
     # Test loading the model from the experiment directory
-    ludwig_model_exp = LudwigModel.load(os.path.join(output_dir, "model"), backend=backend)
+    ludwig_model_exp = LudwigModel.load(os.path.join(output_dir, MODEL_FILE_NAME), backend=backend)
 
     # confirm model structure and weights are the same
     check_model_equal(ludwig_model_exp)
@@ -529,7 +530,7 @@ def test_model_save_reload_hf_model(tmpdir, csv_filename, tmp_path):
     check_model_equal(ludwig_model_loaded)
 
     # Test loading the model from the experiment directory
-    ludwig_model_exp = LudwigModel.load(os.path.join(output_dir, "model"), backend=backend)
+    ludwig_model_exp = LudwigModel.load(os.path.join(output_dir, MODEL_FILE_NAME), backend=backend)
 
     # confirm model structure and weights are the same
     check_model_equal(ludwig_model_exp)

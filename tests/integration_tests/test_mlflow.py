@@ -13,6 +13,7 @@ from ludwig.api import LudwigModel
 from ludwig.constants import TRAINER
 from ludwig.contribs.mlflow import MlflowCallback
 from ludwig.export import export_mlflow
+from ludwig.globals import MODEL_FILE_NAME
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from tests.integration_tests.utils import category_feature, FakeRemoteBackend, generate_data, sequence_feature
 
@@ -167,10 +168,10 @@ def test_export_mlflow_local(tmpdir):
     model = LudwigModel(config, backend=FakeRemoteBackend())
     _, _, output_directory = model.train(training_set=data_csv, experiment_name=exp_name, output_directory=output_dir)
 
-    model_path = os.path.join(output_directory, "model")
+    model_path = os.path.join(output_directory, MODEL_FILE_NAME)
     output_path = os.path.join(tmpdir, "data/results/mlflow")
     export_mlflow(model_path, output_path)
-    assert set(os.listdir(output_path)) == {"MLmodel", "model", "conda.yaml"}
+    assert set(os.listdir(output_path)) == {"MLmodel", MODEL_FILE_NAME, "conda.yaml"}
 
 
 @pytest.mark.distributed
