@@ -37,7 +37,7 @@ Ludwig is hosted by the
 > `  `
 > `  `
 >
-> # \[!IMPORTANT\]
+> \[!# IMPORTANT\]
 >
 > Our community has moved to [Discord](https://discord.gg/CBgdrGnZjy) -- please join us!
 > `  `
