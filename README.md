@@ -34,8 +34,8 @@ Ludwig is hosted by the
 
 ![img](https://raw.githubusercontent.com/ludwig-ai/ludwig-docs/master/docs/images/ludwig_legos_unanimated.gif)
 
-\[!IMPORTANT\]
-Our community has moved to [Discord](https://discord.gg/CBgdrGnZjy) -- please join us!
+> \[!IMPORTANT\]
+> Our community has moved to [Discord](https://discord.gg/CBgdrGnZjy) -- please join us!
 
 # 💾 Installation
 
