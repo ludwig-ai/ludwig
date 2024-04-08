@@ -68,7 +68,7 @@ def get_decoded_targets_and_predictions(
     """Returns the decoded targets and predictions, accounting for IGNORE_INDEX_TOKEN_ID."""
     sanitized_targets = torch.where(targets != IGNORE_INDEX_TOKEN_ID, targets, tokenizer.pad_token_id)
     sanitized_predictions = torch.where(
-        predictions[PREDICTIONS] != IGNORE_INDEX_TOKEN_ID,
+        targets != IGNORE_INDEX_TOKEN_ID,
         predictions[PREDICTIONS],
         tokenizer.pad_token_id,
     )
