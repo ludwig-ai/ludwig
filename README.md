@@ -13,7 +13,7 @@ _Declarative deep learning framework built for scale and efficiency._
 [![DockerHub](https://img.shields.io/docker/pulls/ludwigai/ludwig.svg)](https://hub.docker.com/r/ludwigai)
 [![Downloads](https://pepy.tech/badge/ludwig)](https://pepy.tech/project/ludwig)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/ludwig-ai/ludwig/blob/master/LICENSE)
-[![Twitter](https://img.shields.io/twitter/follow/ludwig_ai.svg?style=social&logo=twitter)](https://twitter.com/ludwig_ai)
+[![X](https://img.shields.io/twitter/follow/ludwig_ai.svg?style=social&logo=twitter)](https://twitter.com/ludwig_ai)
 
 </div>
 
@@ -313,7 +313,7 @@ Read our publications on [Ludwig](https://arxiv.org/pdf/1909.07930.pdf), [declar
 Learn more about [how Ludwig works](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/how_ludwig_works/), [how to get started](https://ludwig-ai.github.io/ludwig-docs/latest/getting_started/), and work through more [examples](https://ludwig-ai.github.io/ludwig-docs/latest/examples).
 
 If you are interested in [contributing](https://github.com/ludwig-ai/ludwig/blob/master/CONTRIBUTING.md), have questions, comments, or thoughts to share, or if you just want to be in the
-know, please consider [joining our Community Discord](https://discord.gg/CBgdrGnZjy) and follow us on [Twitter](https://twitter.com/ludwig_ai)!
+know, please consider [joining our Community Discord](https://discord.gg/CBgdrGnZjy) and follow us on [X](https://twitter.com/ludwig_ai)!
 
 # 🤝 Join the community to build Ludwig with us
 
@@ -332,6 +332,6 @@ more accessible and feature rich framework for everyone to use!
 # 👋 Getting Involved
 
 - [Discord](https://discord.gg/CBgdrGnZjy)
-- [Twitter](https://twitter.com/ludwig_ai)
+- [X](https://twitter.com/ludwig_ai)
 - [Medium](https://medium.com/ludwig-ai)
 - [GitHub Issues](https://github.com/ludwig-ai/ludwig/issues)

@@ -5,7 +5,7 @@ way to help the community. Answering questions, helping others, reaching out and
 documentation are immensely valuable contributions as well.
 
 It also helps us if you spread the word: reference the library from blog posts on the awesome
-projects it made possible, shout out on Twitter every time it has helped you, or simply star the
+projects it made possible, shout out on X every time it has helped you, or simply star the
 repo to say "thank you".
 
 Check out the official [ludwig docs](https://ludwig-ai.github.io/ludwig-docs/) to get oriented
