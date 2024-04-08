@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-LUDWIG_VERSION = "0.10.3"
+LUDWIG_VERSION = "0.10.3.dev"
 
 MODEL_FILE_NAME = "model"
 MODEL_WEIGHTS_FILE_NAME = "model_weights"
