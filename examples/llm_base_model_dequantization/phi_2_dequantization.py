@@ -1,4 +1,5 @@
 import logging
+import os
 
 import yaml
 from huggingface_hub import whoami
@@ -10,7 +11,7 @@ hf_username = whoami().get("name")
 base_model_name = "microsoft/phi-2"
 dequantized_path = "microsoft-phi-2-dequantized"
 save_path = "/home/ray/" + dequantized_path
-hfhub_repo_id = hf_username + dequantized_path
+hfhub_repo_id = os.path.join(hf_username, dequantized_path)
 
 
 config = yaml.safe_load(
