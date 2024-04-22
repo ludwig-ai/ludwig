@@ -417,9 +417,14 @@ def freeze_layers_regex(config: "BaseTrainerConfig", model: ECD) -> None:
     try:
         pattern = re.compile(config.layers_to_freeze_regex)
     except re.error:
-        logger.warning("Invalid regex input.\n")
+        logger.error(f"Invalid regex input: {pattern}")
         exit()
 
+    matched = False
     for name, p in model.named_parameters():
         if re.search(pattern, str(name)):
             p.requires_grad = False
+            matched = True
+    if not matched:
+        logger.warning(f"No layers matched the regex pattern: {config.layers_to_freeze_regex}")
+        raise RuntimeError
