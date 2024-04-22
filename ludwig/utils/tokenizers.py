@@ -867,6 +867,7 @@ class HFTokenizer(BaseTokenizer):
         # HACK(geoffrey): gpt2 has no pad token. Recommendation is to use eos token instead.
         # https://github.com/huggingface/transformers/issues/2630#issuecomment-1290809338
         # https://github.com/huggingface/transformers/issues/2648#issuecomment-616177044
+        # Falcon tokenizer type is PreTrainedTokenizerFast so we use the name_or_path attribute for distinction
         if any(
             isinstance(self.tokenizer, t)
             for t in [
