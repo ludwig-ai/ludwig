@@ -880,7 +880,14 @@ class HFTokenizer(BaseTokenizer):
                 LlamaTokenizer,
                 LlamaTokenizerFast,
             ]
-        ):
+        ) or self.tokenizer.name_or_path in {
+            "tiiuae/falcon-7b",
+            "tiiuae/falcon-7b-instruct",
+            "tiiuae/falcon-40b",
+            "tiiuae/falcon-40b-instruct",
+            "tiiuae/falcon-180B",
+            "tiiuae/falcon-180B-chat",
+        }:
             if hasattr(self.tokenizer, "eos_token") and self.tokenizer.eos_token is not None:
                 logger.warning("No padding token id found. Using eos_token as pad_token.")
                 self.tokenizer.pad_token = self.tokenizer.eos_token
