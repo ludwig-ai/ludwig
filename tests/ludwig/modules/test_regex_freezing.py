@@ -41,18 +41,19 @@ def test_tv_efficientnet_freezing(regex):
 
 
 def test_frozen_tv_training(tmpdir, csv_filename):
-    input_features = [image_feature(tmpdir)]
+    input_features = [
+        image_feature(tmpdir, encoder={"type": "efficientnet", "use_pretrained": False, "model_variant": "b0"})
+    ]
     output_features = [category_feature()]
 
     config = {
         "input_features": input_features,
         "output_features": output_features,
         TRAINER: {
-            "layers_to_freeze_regex": r"(features\.1.*|features\.2.*|model\.features\.4\.1\.block\.3\.0\.weight)",
+            "layers_to_freeze_regex": r"(features\.1.*|features\.2\.*|features\.3.*)",
             "epochs": 1,
             "train_steps": 1,
         },
-        "encoder": {"type": "efficientnet", "use_pretrained": False},
     }
 
     training_data_csv_path = generate_data(config["input_features"], config["output_features"], csv_filename)
