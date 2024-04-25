@@ -72,9 +72,9 @@ ecd:
         ui_display_name: Checkpoints per epoch
     layers_to_freeze_regex:
         default_value_reasoning:
-            Default no layers will be frozen for fine-tuning a pretrained model.
+            By default no layers will be frozen when fine-tuning a pretrained model.
         description_implications:
-            Freezing specific layers can improve a pretrained models performance in a number
+            Freezing specific layers can improve a pretrained model's performance in a number
             of ways. At a basic level, freezing early layers can prevent overfitting by retaining
             more general features (beneficial for small datasets). Also can reduce computational
             resource use and lower overall training time due to less gradient calculations.
