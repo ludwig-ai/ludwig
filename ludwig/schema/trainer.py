@@ -91,7 +91,7 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         allow_none=True,
         description=(
             "Freeze specific layers based on provided regex. Freezing specific layers can improve a  "
-            "pretrained models performance in a number of ways. At a basic level, freezing early layers can  "
+            "pretrained model's performance in a number of ways. At a basic level, freezing early layers can  "
             "prevent overfitting by retaining more general features (beneficial for small datasets). Also can  "
             "reduce computational resource use and lower overall training time due to less gradient calculations. "
         ),
