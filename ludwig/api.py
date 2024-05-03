@@ -64,9 +64,12 @@ from ludwig.datasets import load_dataset_uris
 from ludwig.features.feature_registries import update_config_with_metadata, update_config_with_model
 from ludwig.globals import (
     LUDWIG_VERSION,
+    MODEL_FILE_NAME,
     MODEL_HYPERPARAMETERS_FILE_NAME,
+    MODEL_WEIGHTS_FILE_NAME,
     set_disable_progressbar,
     TRAIN_SET_METADATA_FILE_NAME,
+    TRAINING_CHECKPOINTS_DIR_PATH,
 )
 from ludwig.models.base import BaseModel
 from ludwig.models.calibrator import Calibrator
@@ -109,6 +112,7 @@ from ludwig.utils.tokenizers import HFTokenizer
 from ludwig.utils.torch_utils import DEVICE
 from ludwig.utils.trainer_utils import get_training_report
 from ludwig.utils.types import DataFrame, TorchDevice
+from ludwig.utils.upload_utils import HuggingFaceHub
 
 logger = logging.getLogger(__name__)
 
@@ -1282,9 +1286,12 @@ class LudwigModel:
                     self.model.output_features, predictions, dataset, training_set_metadata
                 )
                 eval_stats = {
-                    of_name: {**eval_stats[of_name], **overall_stats[of_name]}
-                    # account for presence of 'combined' key
-                    if of_name in overall_stats else {**eval_stats[of_name]}
+                    of_name: (
+                        {**eval_stats[of_name], **overall_stats[of_name]}
+                        # account for presence of 'combined' key
+                        if of_name in overall_stats
+                        else {**eval_stats[of_name]}
+                    )
                     for of_name in eval_stats
                 }
 
@@ -1765,6 +1772,7 @@ class LudwigModel:
         gpu_memory_limit: Optional[float] = None,
         allow_parallel_threads: bool = True,
         callbacks: List[Callback] = None,
+        from_checkpoint: bool = False,
     ) -> "LudwigModel":  # return is an instance of ludwig.api.LudwigModel class
         """This function allows for loading pretrained models.
 
@@ -1788,6 +1796,9 @@ class LudwigModel:
         :param callbacks: (list, default: `None`) a list of
             `ludwig.callbacks.Callback` objects that provide hooks into the
             Ludwig pipeline.
+        :param from_checkpoint: (bool, default: `False`) if `True`, the model
+            will be loaded from the latest checkpoint (training_checkpoints/)
+            instead of the final model weights.
 
         # Return
 
@@ -1834,7 +1845,7 @@ class LudwigModel:
         ludwig_model.model = LudwigModel.create_model(config_obj)
 
         # load model weights
-        ludwig_model.load_weights(model_dir)
+        ludwig_model.load_weights(model_dir, from_checkpoint)
 
         # The LoRA layers appear to be loaded again (perhaps due to a potential bug); hence, we merge and unload again.
         if ludwig_model.is_merge_and_unload_set():
@@ -1851,12 +1862,16 @@ class LudwigModel:
     def load_weights(
         self,
         model_dir: str,
+        from_checkpoint: bool = False,
     ) -> None:
         """Loads weights from a pre-trained model.
 
         # Inputs
         :param model_dir: (str) filepath string to location of a pre-trained
             model
+        :param from_checkpoint: (bool, default: `False`) if `True`, the model
+            will be loaded from the latest checkpoint (training_checkpoints/)
+            instead of the final model weights.
 
         # Return
         :return: `None`
@@ -1868,7 +1883,16 @@ class LudwigModel:
         ```
         """
         if self.backend.is_coordinator():
-            self.model.load(model_dir)
+            if from_checkpoint:
+                with self.backend.create_trainer(
+                    model=self.model,
+                    config=self.config_obj.trainer,
+                ) as trainer:
+                    checkpoint = trainer.create_checkpoint_handle()
+                    training_checkpoints_path = os.path.join(model_dir, TRAINING_CHECKPOINTS_DIR_PATH)
+                    trainer.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
+            else:
+                self.model.load(model_dir)
 
         self.backend.sync_model(self.model)
 
@@ -1917,35 +1941,48 @@ class LudwigModel:
 
         # Inputs
 
-        :param repo_id (`str`):
+        :param repo_id: (`str`)
             A namespace (user or an organization) and a repo name separated
             by a `/`.
-        :param model_path (`str`):
-            The path of the saved model. This is the top level directory where
-            the models weights as well as other associated training artifacts
-            are saved.
-        :param private (`bool`, *optional*, defaults to `False`):
+        :param model_path: (`str`)
+            The path of the saved model. This is either (a) the folder where
+            the 'model_weights' folder and the 'model_hyperparameters.json' file
+            are stored, or (b) the parent of that folder.
+        :param private: (`bool`, *optional*, defaults to `False`)
             Whether the model repo should be private.
-        :param repo_type (`str`, *optional*):
+        :param repo_type: (`str`, *optional*)
             Set to `"dataset"` or `"space"` if uploading to a dataset or
             space, `None` or `"model"` if uploading to a model. Default is
             `None`.
-        :param commit_message (`str`, *optional*):
+        :param commit_message: (`str`, *optional*)
             The summary / title / first line of the generated commit. Defaults to:
             `f"Upload {path_in_repo} with huggingface_hub"`
-        :param commit_description (`str` *optional*):
+        :param commit_description: (`str` *optional*)
             The description of the generated commit
 
         # Returns
 
         :return: (bool) True for success, False for failure.
         """
+        if os.path.exists(os.path.join(model_path, MODEL_FILE_NAME, MODEL_WEIGHTS_FILE_NAME)) and os.path.exists(
+            os.path.join(model_path, MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME)
+        ):
+            experiment_path = model_path
+        elif os.path.exists(os.path.join(model_path, MODEL_WEIGHTS_FILE_NAME)) and os.path.exists(
+            os.path.join(model_path, MODEL_HYPERPARAMETERS_FILE_NAME)
+        ):
+            experiment_path = os.path.dirname(model_path)
+        else:
+            raise ValueError(
+                f"Can't find 'model_weights' and '{MODEL_HYPERPARAMETERS_FILE_NAME}' either at "
+                f"'{model_path}' or at '{model_path}/model'"
+            )
         model_service = get_upload_registry()["hf_hub"]
-        hub = model_service()
+        hub: HuggingFaceHub = model_service()
         hub.login()
-        upload_status = hub.upload(
+        upload_status: bool = hub.upload(
             repo_id=repo_id,
-            model_path=model_path,
+            model_path=experiment_path,
             repo_type=repo_type,
             private=private,
             commit_message=commit_message,

@@ -2238,7 +2238,7 @@ def compare_classifiers_predictions_distribution(
     ground_truth_apply_idx: bool = True,
     **kwargs,
 ) -> None:
-    """Show comparision of models predictions distribution for 10 output_feature_name classes.
+    """Show comparison of models predictions distribution for 10 output_feature_name classes.
 
     This visualization produces a radar plot comparing the distributions of
     predictions of the models for the first 10 classes of the specified

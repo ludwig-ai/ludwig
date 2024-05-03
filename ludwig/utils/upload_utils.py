@@ -5,6 +5,9 @@ import os
 from abc import ABC, abstractmethod
 
 from huggingface_hub import HfApi, login
+from huggingface_hub.hf_api import CommitInfo
+
+from ludwig.globals import MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, MODEL_WEIGHTS_FILE_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -72,8 +75,9 @@ class BaseModelUpload(ABC):
 
         Args:
             repo_id (str): The ID of the target repository. Each provider will verify their specific rules.
-            model_path (str): The path to the directory containing the trained model artifacts. It should contain
-                the model's weights, usually saved under 'model/model_weights'.
+            model_path (str): The path to the directory containing the trained model artifacts.
+                This is the parent-folder of the folder where the 'model_weights' folder and the
+                'model_hyperparameters.json' file are stored.
             repo_type (str, optional): The type of the repository. Not used in the base class, but subclasses
                 may use it for specific repository implementations. Defaults to None.
             private (bool, optional): Whether the repository should be private or not. Not used in the base class,
@@ -96,7 +100,7 @@ class BaseModelUpload(ABC):
             raise FileNotFoundError(f"The path '{model_path}' does not exist.")
 
         # Make sure the model is actually trained
-        trained_model_artifacts_path = os.path.join(model_path, "model", "model_weights")
+        trained_model_artifacts_path = os.path.join(model_path, MODEL_FILE_NAME, MODEL_WEIGHTS_FILE_NAME)
         if not os.path.exists(trained_model_artifacts_path):
             raise Exception(
                 f"Model artifacts not found at {trained_model_artifacts_path}. "
@@ -150,8 +154,9 @@ class HuggingFaceHub(BaseModelUpload):
             repo_id (str): The ID of the target repository. It must be a namespace (user or an organization)
                 and a repository name separated by a '/'. For example, if your HF username is 'johndoe' and you
                 want to create a repository called 'test', the repo_id should be 'johndoe/test'.
-            model_path (str): The path to the directory containing the trained model artifacts. It should contain
-                the model's weights, usually saved under 'model/model_weights'.
+            model_path (str): The path to the directory containing the trained model artifacts.
+                This is the parent-folder of the folder where the 'model_weights' folder and the
+                'model_hyperparameters.json' file are stored.
             repo_type (str, optional): The type of the repository. Not used in the base class, but subclasses
                 may use it for specific repository implementations. Defaults to None.
             private (bool, optional): Whether the repository should be private or not. Not used in the base class,
@@ -182,7 +187,7 @@ class HuggingFaceHub(BaseModelUpload):
             commit_description,
         )
 
-        trained_model_artifacts_path = os.path.join(model_path, "model", "model_weights")
+        trained_model_artifacts_path = os.path.join(model_path, MODEL_FILE_NAME, MODEL_WEIGHTS_FILE_NAME)
         """
         Make sure the model's saved artifacts either contain:
         1. pytorch_model.bin -> regular model training, such as ECD or for LLMs
@@ -193,17 +198,20 @@ class HuggingFaceHub(BaseModelUpload):
            </Alex(12/10/2023): TODO>
         """
         files = set(os.listdir(trained_model_artifacts_path))
-        acceptable_model_artifact_file_nanes: set[str] = {
+        acceptable_model_artifact_file_names: set[str] = {
             "pytorch_model.bin",
             "adapter_model.bin",  # Delete per formal deprecation policy TBD (per above comment).
             "adapter_model.safetensors",  # New format as of PEFT version "0.7.0" (per above comment).
         }
-        if not (files & acceptable_model_artifact_file_nanes):
+        if not (files & acceptable_model_artifact_file_names):
             raise ValueError(
                 f"Can't find model weights at {trained_model_artifacts_path}. Trained model weights should "
                 "either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`"
                 "or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA."
             )
+        model_hyperparameters_path: str = os.path.join(model_path, MODEL_FILE_NAME)
+        if MODEL_HYPERPARAMETERS_FILE_NAME not in os.listdir(model_hyperparameters_path):
+            raise ValueError(f"Can't find '{MODEL_HYPERPARAMETERS_FILE_NAME}' at {model_hyperparameters_path}.")
 
     def upload(
         self,
@@ -222,9 +230,9 @@ class HuggingFaceHub(BaseModelUpload):
                 A namespace (user or an organization) and a repo name separated
                 by a `/`.
             model_path (`str`):
-                The path of the saved model. This is the top level directory where
-                the models weights as well as other associated training artifacts
-                are saved.
+                The path of the saved model. This is the parent-folder of the folder
+                where the 'model_weights' folder and the 'model_hyperparameters.json' file
+                are stored.
             repo_type (`str`, *optional*):
                 Set to `"dataset"` or `"space"` if uploading to a dataset or
                 space, `None` or `"model"` if uploading to a model. Default is
@@ -256,17 +264,39 @@ class HuggingFaceHub(BaseModelUpload):
         )
 
         # Upload all artifacts in model weights folder
-        upload_path = self.api.upload_folder(
-            folder_path=os.path.join(model_path, "model", "model_weights"),
+        commit_message_weights: str | None = f"{commit_message} (weights)" if commit_message else commit_message
+        commit_description_weights: str | None = (
+            f"{commit_description} (weights)" if commit_description else commit_description
+        )
+        folder_path = os.path.join(model_path, MODEL_FILE_NAME, MODEL_WEIGHTS_FILE_NAME)
+        upload_path_weights: CommitInfo = self.api.upload_folder(
+            folder_path=folder_path,
             repo_id=repo_id,
             repo_type=repo_type,
-            commit_message=commit_message,
-            commit_description=commit_description,
+            commit_message=commit_message_weights,
+            commit_description=commit_description_weights,
         )
 
-        if upload_path:
-            logger.info(f"Model uploaded to `{upload_path}` with repository name `{repo_id}`")
-            return True
+        if upload_path_weights:
+            logger.info(f"Model weights uploaded to `{upload_path_weights}` with repository name `{repo_id}`")
+            # Upload the ludwig configuration file
+            commit_message_config: str | None = f"{commit_message} (config)" if commit_message else commit_message
+            commit_description_config: str | None = (
+                f"{commit_description} (config)" if commit_description else commit_description
+            )
+            path_or_fileobj = os.path.join(model_path, MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME)
+            upload_path_config: CommitInfo = self.api.upload_file(
+                path_or_fileobj=path_or_fileobj,
+                path_in_repo="ludwig_config.json",
+                repo_id=repo_id,
+                repo_type=repo_type,
+                commit_message=commit_message_config,
+                commit_description=commit_description_config,
+            )
+
+            if upload_path_config:
+                logger.info(f"Model config uploaded to `{upload_path_config}` with repository name `{repo_id}`")
+                return True
 
         return False
 

@@ -1,9 +1,10 @@
 import pandas as pd
+import pytest
 import torch
 from transformers import AutoTokenizer
 
 from ludwig.backend import LocalBackend
-from ludwig.constants import LOGITS, PREDICTIONS, PROBABILITIES
+from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, PREDICTIONS, PROBABILITIES
 from ludwig.features import text_feature
 
 TEST_MODEL_NAME = "hf-internal-testing/tiny-random-OPTForCausalLM"
@@ -108,14 +109,23 @@ def test_backwards_compatibility():
     assert list(feature_data[1]) == [1, 3, 3]
 
 
-def test_get_decoded_targets_and_predictions():
+@pytest.mark.parametrize("vocab_size", [8])
+@pytest.mark.parametrize(
+    "targets",
+    [
+        ([78, 79, 504, 76, 397, 84, 0], [" first she 18 yearman our<s>"]),
+        ([IGNORE_INDEX_TOKEN_ID, IGNORE_INDEX_TOKEN_ID, IGNORE_INDEX_TOKEN_ID, 76, 397, 84, 0], [" yearman our<s>"]),
+    ],
+)
+@pytest.mark.parametrize("predictions", [[78, 79, 504, 76, 397, 84, 0]])
+def test_get_decoded_targets_and_predictions(vocab_size, targets, predictions):
     tokenizer = AutoTokenizer.from_pretrained(TEST_MODEL_NAME)
-    vocab_size = 8
 
     # Scenario 1: Prediction and target tensors have the same length, so nothing should change
-    targets = torch.tensor([[78, 79, 504, 76, 397, 84, 0]])
+    targets, decoded_texts_gt = targets
+    targets = torch.tensor([targets])
     predictions = {
-        PREDICTIONS: torch.tensor([[78, 79, 504, 76, 397, 84, 0]], dtype=torch.int64),
+        PREDICTIONS: torch.tensor([predictions], dtype=torch.int64),
         PROBABILITIES: torch.randn(1, 7, vocab_size).to(torch.float32),
         LOGITS: torch.randn(1, 7, vocab_size).to(torch.float32),
     }
@@ -124,5 +134,8 @@ def test_get_decoded_targets_and_predictions():
         decoded_predictions,
     ) = text_feature.get_decoded_targets_and_predictions(targets, predictions, tokenizer)
 
-    assert decoded_targets == [" first she 18 yearman our<s>"]
-    assert decoded_predictions == [" first she 18 yearman our<s>"]
+    assert isinstance(decoded_targets, list)
+    assert isinstance(decoded_predictions, list)
+    assert all(isinstance(x, str) for x in decoded_targets)
+    assert all(isinstance(x, str) for x in decoded_predictions)
+    assert decoded_targets == decoded_predictions == decoded_texts_gt

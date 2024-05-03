@@ -24,6 +24,7 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.constants import BATCH_SIZE, DECODER, NAME, TRAINER
+from ludwig.globals import MODEL_FILE_NAME
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -235,7 +236,7 @@ def predict_with_backend(tmpdir, config, data_csv_path, backend, patch_args=None
         output_directory=os.path.join(tmpdir, "output"),
     )
     # Check that metadata JSON saves and loads correctly
-    ludwig_model = LudwigModel.load(os.path.join(output_directory, "model"))
+    ludwig_model = LudwigModel.load(os.path.join(output_directory, MODEL_FILE_NAME))
 
     if patch_args is not None:
         with mock.patch(*patch_args):

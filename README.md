@@ -9,13 +9,16 @@
 _Declarative deep learning framework built for scale and efficiency._
 
 [![PyPI version](https://badge.fury.io/py/ludwig.svg)](https://badge.fury.io/py/ludwig)
-[![Slack](https://img.shields.io/badge/slack-chat-green.svg?logo=slack)](https://join.slack.com/t/ludwig-ai/shared_invite/zt-mrxo87w6-DlX5~73T2B4v_g6jj0pJcQ)
+[![Discord](https://dcbadge.vercel.app/api/server/CBgdrGnZjy?style=flat&theme=discord-inverted)](https://discord.gg/CBgdrGnZjy)
 [![DockerHub](https://img.shields.io/docker/pulls/ludwigai/ludwig.svg)](https://hub.docker.com/r/ludwigai)
 [![Downloads](https://pepy.tech/badge/ludwig)](https://pepy.tech/project/ludwig)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/ludwig-ai/ludwig/blob/master/LICENSE)
-[![Twitter](https://img.shields.io/twitter/follow/ludwig_ai.svg?style=social&logo=twitter)](https://twitter.com/ludwig_ai)
+[![X](https://img.shields.io/twitter/follow/ludwig_ai.svg?style=social&logo=twitter)](https://twitter.com/ludwig_ai)
 
 </div>
+
+> \[!IMPORTANT\]
+> Our community has moved to [Discord](https://discord.gg/CBgdrGnZjy) -- please join us there!
 
 # 📖 What is Ludwig?
 
@@ -193,7 +196,7 @@ ludwig train --config model.yaml --dataset rotten_tomatoes.csv
 
 **Happy modeling**
 
-Try applying Ludwig to your data. [Reach out](https://join.slack.com/t/ludwig-ai/shared_invite/zt-mrxo87w6-DlX5~73T2B4v_g6jj0pJcQ)
+Try applying Ludwig to your data. [Reach out on Discord](https://discord.gg/CBgdrGnZjy)
 if you have any questions.
 
 # ❓ Why you should use Ludwig
@@ -313,7 +316,7 @@ Read our publications on [Ludwig](https://arxiv.org/pdf/1909.07930.pdf), [declar
 Learn more about [how Ludwig works](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/how_ludwig_works/), [how to get started](https://ludwig-ai.github.io/ludwig-docs/latest/getting_started/), and work through more [examples](https://ludwig-ai.github.io/ludwig-docs/latest/examples).
 
 If you are interested in [contributing](https://github.com/ludwig-ai/ludwig/blob/master/CONTRIBUTING.md), have questions, comments, or thoughts to share, or if you just want to be in the
-know, please consider [joining the Ludwig Slack](https://join.slack.com/t/ludwig-ai/shared_invite/zt-mrxo87w6-DlX5~73T2B4v_g6jj0pJcQ) and follow us on [Twitter](https://twitter.com/ludwig_ai)!
+know, please consider [joining our Community Discord](https://discord.gg/CBgdrGnZjy) and follow us on [X](https://twitter.com/ludwig_ai)!
 
 # 🤝 Join the community to build Ludwig with us
 
@@ -331,7 +334,7 @@ more accessible and feature rich framework for everyone to use!
 
 # 👋 Getting Involved
 
-- [Slack](https://join.slack.com/t/ludwig-ai/shared_invite/zt-mrxo87w6-DlX5~73T2B4v_g6jj0pJcQ)
-- [Twitter](https://twitter.com/ludwig_ai)
+- [Discord](https://discord.gg/CBgdrGnZjy)
+- [X](https://twitter.com/ludwig_ai)
 - [Medium](https://medium.com/ludwig-ai)
 - [GitHub Issues](https://github.com/ludwig-ai/ludwig/issues)

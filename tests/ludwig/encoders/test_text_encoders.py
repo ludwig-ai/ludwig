@@ -11,7 +11,7 @@ from ludwig.api import LudwigModel
 from ludwig.constants import ENCODER, ENCODER_OUTPUT, MODEL_ECD, NAME, TEXT, TRAINER
 from ludwig.encoders import text_encoders
 from ludwig.error import ConfigValidationError
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
+from ludwig.globals import MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.schema.model_config import ModelConfig
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.torch_utils import get_torch_device
@@ -42,7 +42,7 @@ def _load_pretrained_hf_model_no_weights(
 
 
 def get_mismatched_config_params(ludwig_results_dir, ludwig_model):
-    saved_config_dict = load_json(os.path.join(ludwig_results_dir, "model", MODEL_HYPERPARAMETERS_FILE_NAME))
+    saved_config_dict = load_json(os.path.join(ludwig_results_dir, MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME))
     saved_config_obj = ModelConfig.from_dict(saved_config_dict)
 
     mismatches = []
@@ -120,7 +120,7 @@ def test_hf_ludwig_model_e2e(tmpdir, csv_filename, encoder_name):
 
         # Validate the model can be loaded.
         # This ensures that the config reflects the internal architecture of the encoder.
-        LudwigModel.load(os.path.join(results_dir, "model"))
+        LudwigModel.load(os.path.join(results_dir, MODEL_FILE_NAME))
     clear_huggingface_cache()
 
 

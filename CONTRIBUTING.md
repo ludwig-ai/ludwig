@@ -5,7 +5,7 @@ way to help the community. Answering questions, helping others, reaching out and
 documentation are immensely valuable contributions as well.
 
 It also helps us if you spread the word: reference the library from blog posts on the awesome
-projects it made possible, shout out on Twitter every time it has helped you, or simply star the
+projects it made possible, shout out on X every time it has helped you, or simply star the
 repo to say "thank you".
 
 Check out the official [ludwig docs](https://ludwig-ai.github.io/ludwig-docs/) to get oriented
@@ -96,8 +96,7 @@ Work on your self-assigned issue and eventually create a Pull Request.
    To do that, edit the file `requirements_extra.txt` and comment out the line that begins with `horovod`.  After that,
    please execute the long `pip install` command given in the previous step.  With these work-around provisions, your
    installation should run to completion successfully.  If you are still having difficulty, please reach out with the
-   specifics of your environment in the Ludwig Community
-   [Slack](https://join.slack.com/t/ludwig-ai/shared_invite/zt-mrxo87w6-DlX5~73T2B4v_g6jj0pJcQ).
+   specifics of your environment in the Ludwig Community [Discord](https://discord.gg/CBgdrGnZjy).
 
 1. Develop features on your branch.
 

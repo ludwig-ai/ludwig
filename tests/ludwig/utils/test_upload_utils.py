@@ -6,6 +6,7 @@ import shutil
 
 import pytest
 
+from ludwig.globals import MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, MODEL_WEIGHTS_FILE_NAME
 from ludwig.utils.upload_utils import HuggingFaceHub
 
 logger = logging.getLogger(__name__)
@@ -16,8 +17,8 @@ def _build_fake_model_repo(
     experiment_name: str,
     file_names: list[str],
     *,
-    model_directory_name: str = "model",
-    model_weights_directory_name: str = "model_weights",
+    model_directory_name: str = MODEL_FILE_NAME,
+    model_weights_directory_name: str = MODEL_WEIGHTS_FILE_NAME,
 ) -> None:
     """This utility function accepts the "destination_directory" and list of file names on input.
 
@@ -26,14 +27,15 @@ def _build_fake_model_repo(
     names must be leaf file names, not paths).
     """
     # Create a temporary folder designating training output directory.
-    model_directory: str = pathlib.Path(destination_directory) / experiment_name / model_directory_name
-    model_weights_directory: str = model_directory / model_weights_directory_name
+    model_directory: pathlib.Path = pathlib.Path(destination_directory) / experiment_name / model_directory_name
+    model_weights_directory: pathlib.Path = model_directory / model_weights_directory_name
     model_weights_directory.mkdir(parents=True, exist_ok=True)
 
     # Create files within the "model_weights" subdirectory.
     file_name: str
     for file_name in file_names:
         pathlib.Path(model_weights_directory / file_name).touch()
+    pathlib.Path(model_directory / MODEL_HYPERPARAMETERS_FILE_NAME).touch()
 
 
 @pytest.fixture
@@ -151,7 +153,7 @@ def test_upload_to_hf_hub__validate_upload_parameters(
     )
 
     model_path: pathlib.Path = pathlib.Path(output_directory) / "my_simple_experiment_run"
-    model_weights_path: pathlib.Path = pathlib.Path(model_path / "model" / "model_weights")
+    model_weights_path: pathlib.Path = pathlib.Path(model_path / MODEL_FILE_NAME / MODEL_WEIGHTS_FILE_NAME)
 
     repo_id: str = "test_account/test_repo"
     model_path: str = str(model_path)

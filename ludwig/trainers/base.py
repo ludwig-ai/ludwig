@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from ludwig.data.dataset.base import Dataset
+from ludwig.globals import MODEL_FILE_NAME
 from ludwig.schema.trainer import BaseTrainerConfig
 from ludwig.types import ModelConfigDict
 from ludwig.utils.defaults import default_random_seed
@@ -8,7 +9,7 @@ from ludwig.utils.defaults import default_random_seed
 
 class BaseTrainer(ABC):
     @abstractmethod
-    def train(self, training_set, validation_set=None, test_set=None, save_path="model", **kwargs):
+    def train(self, training_set, validation_set=None, test_set=None, save_path=MODEL_FILE_NAME, **kwargs):
         raise NotImplementedError()
 
     @abstractmethod
