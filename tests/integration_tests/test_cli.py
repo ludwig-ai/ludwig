@@ -279,11 +279,13 @@ def test_collect_summary_activations_weights_cli(tmpdir, csv_filename):
         "densenet121",
         "densenet161",
         "densenet169",
+        "openai-community/gpt2",
+        "facebook/opt-125m",
     ],
 )
-def test_pretrained_summary_cli(model_name: str):
-    """Test pretrained_summary cli."""
-    _run_ludwig("pretrained_summary", model_name=model_name)
+def test_collect_summary_pretrained_model_cli(model_name):
+    """Test collect_summary pretrained model cli."""
+    assert _run_ludwig("collect_summary", pretrained_model=model_name)
 
 
 def test_synthesize_dataset_cli(tmpdir, csv_filename):

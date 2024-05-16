@@ -58,7 +58,6 @@ Available sub-commands:
    render_config         Renders the fully populated config with all defaults set
    check_install         Runs a quick training run on synthetic data to verify installation status
    upload                Push trained model artifacts to a registry (e.g., Predibase, HuggingFace Hub)
-   pretrained_summary    Displays a summary of pretrained model (e.g. alexnet, efficientnet)
 """,
         )
         parser.add_argument("command", help="Subcommand to run")
@@ -191,11 +190,6 @@ Available sub-commands:
         from ludwig import upload
 
         upload.cli(sys.argv[2:])
-
-    def pretrained_summary(self):
-        from ludwig.utils import pretrained_summary
-
-        pretrained_summary.cli_summarize_pretrained(sys.argv[2:])
 
 
 def main():
