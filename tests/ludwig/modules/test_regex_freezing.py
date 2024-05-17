@@ -4,12 +4,22 @@ from contextlib import nullcontext as no_error_raised
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import TRAINER
+from ludwig.constants import (
+    BASE_MODEL,
+    BATCH_SIZE,
+    EPOCHS,
+    INPUT_FEATURES,
+    MODEL_LLM,
+    MODEL_TYPE,
+    OUTPUT_FEATURES,
+    TRAINER,
+    TYPE,
+)
 from ludwig.encoders.image.torchvision import TVEfficientNetEncoder
-from ludwig.schema.trainer import BaseTrainerConfig
+from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.trainer_utils import freeze_layers_regex
-from tests.integration_tests.utils import category_feature, generate_data, image_feature
+from tests.integration_tests.utils import category_feature, generate_data, image_feature, text_feature
 
 RANDOM_SEED = 130
 
@@ -31,13 +41,39 @@ def test_tv_efficientnet_freezing(regex):
         model_variant="b0", use_pretrained=False, saved_weights_in_checkpoint=True, trainable=True
     )
 
-    config = BaseTrainerConfig(layers_to_freeze_regex=regex)
+    config = ECDTrainerConfig(layers_to_freeze_regex=regex)
     freeze_layers_regex(config, pretrained_model)
     for name, param in pretrained_model.named_parameters():
         if re.search(re.compile(regex), name):
             assert not param.requires_grad
         else:
             assert param.requires_grad
+
+
+def test_llm_freezing(tmpdir, csv_filename):
+    input_features = [text_feature(name="input", encoder={"type": "passthrough"})]
+    output_features = [text_feature(name="output")]
+
+    train_df = generate_data(input_features, output_features, filename=csv_filename, num_examples=25)
+
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: "HuggingFaceH4/tiny-random-LlamaForCausalLM",
+        INPUT_FEATURES: [text_feature(name="input", encoder={"type": "passthrough"})],
+        OUTPUT_FEATURES: [text_feature(name="output")],
+        TRAINER: {TYPE: "finetune", BATCH_SIZE: 8, EPOCHS: 2, "layers_to_freeze_regex": r"(model\.layers\.0\.*)"},
+    }
+
+    model = LudwigModel(config)
+
+    output_directory: str = str(tmpdir)
+    model.train(dataset=train_df, output_directory=output_directory, skip_save_processed_input=False)
+
+    for name, p in model.model.named_parameters():
+        if "model.layers.0" in name:
+            assert not p.requires_grad
+        else:
+            assert p.requires_grad
 
 
 def test_frozen_tv_training(tmpdir, csv_filename):

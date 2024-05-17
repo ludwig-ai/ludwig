@@ -438,11 +438,13 @@ def freeze_layers_regex(config: Union[ECDTrainerConfig, FineTuneTrainerConfig], 
     - None: This function does not return any value but modifies the model in-place by freezing certain layers.
     """
     pattern = re.compile(config.layers_to_freeze_regex)
+    matched_layers = set()
 
-    matched = False
     for name, p in model.named_parameters():
         if re.search(pattern, str(name)):
             p.requires_grad = False
-            matched = True
-    if not matched:
+            matched_layers.add(name)
+    if matched_layers:
+        logger.info(f"Layers where requires_grad was set to False: {matched_layers}")
+    else:
         logger.error(f"No regex match for {config.layers_to_freeze_regex}! Check layer names and regex syntax.")
