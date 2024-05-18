@@ -452,7 +452,12 @@ def freeze_layers_regex(config: Union[ECDTrainerConfig, FineTuneTrainerConfig], 
     count_parameters(model)
 
 
-def count_parameters(model):
+def count_parameters(model) -> None:
+    """Counts number of trainable parameters post freezing.
+
+    Returns:
+    - None: This function does not return any value.
+    """
     total_params = 0
     for _, parameter in model.named_parameters():
         if not parameter.requires_grad:
@@ -461,5 +466,5 @@ def count_parameters(model):
 
         total_params += params
 
-    print(f"Total Trainable Params after freezing: {total_params}")
+    logger.info(f"Total Trainable Params after freezing: {total_params}")
     return total_params
