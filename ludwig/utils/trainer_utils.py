@@ -448,3 +448,18 @@ def freeze_layers_regex(config: Union[ECDTrainerConfig, FineTuneTrainerConfig], 
         logger.info(f"Layers where requires_grad was set to False: {matched_layers}")
     else:
         logger.error(f"No regex match for {config.layers_to_freeze_regex}! Check layer names and regex syntax.")
+
+    count_parameters(model)
+
+
+def count_parameters(model):
+    total_params = 0
+    for _, parameter in model.named_parameters():
+        if not parameter.requires_grad:
+            continue
+        params = parameter.numel()
+
+        total_params += params
+
+    print(f"Total Trainable Params after freezing: {total_params}")
+    return total_params
