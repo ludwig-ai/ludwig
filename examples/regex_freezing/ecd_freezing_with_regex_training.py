@@ -28,6 +28,13 @@ test_df["image_path"] = test_df["image_path"].apply(lambda x: os.path.join("test
 train_df.to_csv("beans_train.csv", index=False)
 test_df.to_csv("beans_test.csv", index=False)
 
+"""
+To inspect model layers in the terminal, type: "ludwig collect_summary -pm resnet18"
+
+For some models, a HuggingFace Token will be necessary.
+Once you obtain one, use "export HUGGING_FACE_HUB_TOKEN="<api_token>"" in the terminal.
+"""
+
 config = {
     "input_features": [
         {

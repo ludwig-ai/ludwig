@@ -4,6 +4,13 @@ import yaml
 
 from ludwig.api import LudwigModel
 
+"""
+To inspect model layers in the terminal, type: "ludwig collect_summary -pm facebook/opt-350m"
+
+For some models, a HuggingFace Token will be necessary.
+Once you obtain one, use "export HUGGING_FACE_HUB_TOKEN="<api_token>"" in the terminal.
+"""
+
 config_str = r"""
 model_type: llm
 base_model: facebook/opt-350m
