@@ -60,6 +60,3 @@ config = yaml.safe_load(config_str)
 
 model = LudwigModel(config=config, logging_level=logging.INFO)
 results = model.train(dataset="ludwig://alpaca")
-for name, p in model.named_parameters():
-    print(f"{name}, {p.requires_grad}")
-print(results)
