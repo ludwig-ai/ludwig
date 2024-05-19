@@ -47,10 +47,11 @@ trainer:
 
 preprocessing:
   sample_ratio: 0.1
+
+generation:
+  pad_token_id : 0
 """
 )
 
-config = yaml.safe_load(config_str)
-
-model = LudwigModel(config=config, logging_level=logging.INFO)
+model = LudwigModel(config=config_str, logging_level=logging.INFO)
 results = model.train(dataset="ludwig://alpaca")
