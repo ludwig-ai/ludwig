@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 def avg_num_tokens_decoder(x):
     if x is None:
         return None
-    if type(x) == bytes:
+    if type(x) is bytes:
         return x.decode("utf-8")
     return str(x)
 
