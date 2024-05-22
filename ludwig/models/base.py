@@ -316,7 +316,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         weight_names = {name for name, _ in self.named_parameters()}
         for name in tensor_names:
             if name not in weight_names:
-                raise ValueError(f'Requested tensor name filter "{name}" not present in the model graph')
+                raise ValueError(f'Requested tensor name filter "{name}" not present in the model graph')  # noqa: E713
 
         # Apply filter.
         tensor_set = set(tensor_names)
