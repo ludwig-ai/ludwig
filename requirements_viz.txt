@@ -1,4 +1,4 @@
-matplotlib>=3.4; python_version > '3.6'
+matplotlib>3.4,<3.9.0; python_version > '3.6'
 matplotlib>=3.0,<3.4; python_version <= '3.6'
 seaborn>=0.7,<0.12
 hiplot
