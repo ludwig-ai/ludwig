@@ -563,6 +563,8 @@ class LLM(BaseModel):
         # avoid this hack
         if self.config_obj.trainer.type != "none":
             weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
+            # We initialize the model's generation configuration; otherwise, we get a validation error.
+            self.model.generation_config = self.generation
             self.model.save_pretrained(weights_save_path)
         else:
             logger.info("Skipped saving LLM without weight adjustments.")
