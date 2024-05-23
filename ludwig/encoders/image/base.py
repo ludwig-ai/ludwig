@@ -402,6 +402,12 @@ class ViTEncoder(ImageEncoder):
             )
             transformer = ViTModel(config)
 
+        if output_attentions:
+            config_dict: dict = transformer.config.to_dict()
+            updated_config: ViTConfig = ViTConfig(**config_dict)
+            updated_config._attn_implementation = "eager"
+            transformer = ViTModel(updated_config)
+
         self.transformer = FreezeModule(transformer, frozen=not trainable)
 
         self._output_shape = (transformer.config.hidden_size,)
