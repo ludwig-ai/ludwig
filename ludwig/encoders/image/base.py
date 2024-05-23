@@ -391,39 +391,23 @@ class ViTEncoder(ImageEncoder):
             else:
                 transformer = ViTModel.from_pretrained(pretrained_model_name_or_path=pretrained_model)
         else:
-            if output_attentions:
-                config = ViTConfig(
-                    image_size=img_height,
-                    num_channels=in_channels,
-                    patch_size=patch_size,
-                    hidden_size=hidden_size,
-                    num_hidden_layers=num_hidden_layers,
-                    num_attention_heads=num_attention_heads,
-                    intermediate_size=intermediate_size,
-                    hidden_act=hidden_act,
-                    hidden_dropout_prob=hidden_dropout_prob,
-                    attention_probs_dropout_prob=attention_probs_dropout_prob,
-                    initializer_range=initializer_range,
-                    layer_norm_eps=layer_norm_eps,
-                    gradient_checkpointing=gradient_checkpointing,
-                    attn_implementation="eager",
-                )
-            else:
-                config = ViTConfig(
-                    image_size=img_height,
-                    num_channels=in_channels,
-                    patch_size=patch_size,
-                    hidden_size=hidden_size,
-                    num_hidden_layers=num_hidden_layers,
-                    num_attention_heads=num_attention_heads,
-                    intermediate_size=intermediate_size,
-                    hidden_act=hidden_act,
-                    hidden_dropout_prob=hidden_dropout_prob,
-                    attention_probs_dropout_prob=attention_probs_dropout_prob,
-                    initializer_range=initializer_range,
-                    layer_norm_eps=layer_norm_eps,
-                    gradient_checkpointing=gradient_checkpointing,
-                )
+            config_dict: dict = {
+                "image_size": img_height,
+                "num_channels": in_channels,
+                "patch_size": patch_size,
+                "hidden_size": hidden_size,
+                "num_hidden_layers": num_hidden_layers,
+                "num_attention_heads": num_attention_heads,
+                "intermediate_size": intermediate_size,
+                "hidden_act": hidden_act,
+                "hidden_dropout_prob": hidden_dropout_prob,
+                "attention_probs_dropout_prob": attention_probs_dropout_prob,
+                "initializer_range": initializer_range,
+                "layer_norm_eps": layer_norm_eps,
+                "gradient_checkpointing": gradient_checkpointing,
+            }
+            config_dict["attn_implementation"] = "eager"
+            config = ViTConfig(**config_dict)
             transformer = ViTModel(config)
 
         self.transformer = FreezeModule(transformer, frozen=not trainable)
