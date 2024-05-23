@@ -382,31 +382,36 @@ class ViTEncoder(ImageEncoder):
             raise ValueError("img_height and img_width should be identical.")
         self._input_shape = (in_channels, img_height, img_width)
 
+        config_dict: dict
         if use_pretrained and not saved_weights_in_checkpoint:
-            transformer = ViTModel.from_pretrained(pretrained_model)
-        else:
-            config = ViTConfig(
-                image_size=img_height,
-                num_channels=in_channels,
-                patch_size=patch_size,
-                hidden_size=hidden_size,
-                num_hidden_layers=num_hidden_layers,
-                num_attention_heads=num_attention_heads,
-                intermediate_size=intermediate_size,
-                hidden_act=hidden_act,
-                hidden_dropout_prob=hidden_dropout_prob,
-                attention_probs_dropout_prob=attention_probs_dropout_prob,
-                initializer_range=initializer_range,
-                layer_norm_eps=layer_norm_eps,
-                gradient_checkpointing=gradient_checkpointing,
-            )
-            transformer = ViTModel(config)
+            config_dict = {
+                "pretrained_model_name_or_path": pretrained_model,
+            }
+            if output_attentions:
+                config_dict["attn_implementation"] = "eager"
 
-        if output_attentions:
-            config_dict: dict = transformer.config.to_dict()
-            updated_config: ViTConfig = ViTConfig(**config_dict)
-            updated_config._attn_implementation = "eager"
-            transformer = ViTModel(updated_config)
+            transformer = ViTModel.from_pretrained(**config_dict)
+        else:
+            config_dict = {
+                "image_size": img_height,
+                "num_channels": in_channels,
+                "patch_size": patch_size,
+                "hidden_size": hidden_size,
+                "num_hidden_layers": num_hidden_layers,
+                "num_attention_heads": num_attention_heads,
+                "intermediate_size": intermediate_size,
+                "hidden_act": hidden_act,
+                "hidden_dropout_prob": hidden_dropout_prob,
+                "attention_probs_dropout_prob": attention_probs_dropout_prob,
+                "initializer_range": initializer_range,
+                "layer_norm_eps": layer_norm_eps,
+                "gradient_checkpointing": gradient_checkpointing,
+            }
+            if output_attentions:
+                config_dict["attn_implementation"] = "eager"
+
+            config = ViTConfig(**config_dict)
+            transformer = ViTModel(config)
 
         self.transformer = FreezeModule(transformer, frozen=not trainable)
 
