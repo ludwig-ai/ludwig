@@ -382,16 +382,17 @@ class ViTEncoder(ImageEncoder):
             raise ValueError("img_height and img_width should be identical.")
         self._input_shape = (in_channels, img_height, img_width)
 
+        config_dict: dict
         if use_pretrained and not saved_weights_in_checkpoint:
+            config_dict = {
+                "pretrained_model_name_or_path": pretrained_model,
+            }
             if output_attentions:
-                transformer = ViTModel.from_pretrained(
-                    pretrained_model_name_or_path=pretrained_model,
-                    attn_implementation="eager",
-                )
-            else:
-                transformer = ViTModel.from_pretrained(pretrained_model_name_or_path=pretrained_model)
+                config_dict["attn_implementation"] = "eager"
+
+            transformer = ViTModel.from_pretrained(**config_dict)
         else:
-            config_dict: dict = {
+            config_dict = {
                 "image_size": img_height,
                 "num_channels": in_channels,
                 "patch_size": patch_size,
