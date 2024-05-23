@@ -389,7 +389,7 @@ class ViTEncoder(ImageEncoder):
                     attn_implementation="eager",
                 )
             else:
-                transformer = ViTModel.from_pretrained(pretrained_model)
+                transformer = ViTModel.from_pretrained(pretrained_model_name_or_path=pretrained_model)
         else:
             if output_attentions:
                 config = ViTConfig(
