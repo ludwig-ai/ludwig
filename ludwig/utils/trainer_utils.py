@@ -466,4 +466,4 @@ def count_parameters(model) -> None:
 
         total_params += params
 
-    logger.info(f"Total Trainable Params after freezing: {total_params}")
+    logger.info(f"Total Trainable Parameters after freezing: {total_params}")

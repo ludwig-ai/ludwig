@@ -2,9 +2,17 @@ import logging
 import os
 
 import pandas as pd
+import yaml
 from datasets import load_dataset
 
 from ludwig.api import LudwigModel
+
+"""
+To inspect model layers in the terminal, type: "ludwig collect_summary -pm resnet18"
+
+For some models, a HuggingFace Token will be necessary.
+Once you obtain one, use "export HUGGING_FACE_HUB_TOKEN="<api_token>"" in the terminal.
+"""
 
 dataset = load_dataset("beans")
 train_df = pd.DataFrame(
@@ -28,30 +36,30 @@ test_df["image_path"] = test_df["image_path"].apply(lambda x: os.path.join("test
 train_df.to_csv("beans_train.csv", index=False)
 test_df.to_csv("beans_test.csv", index=False)
 
-"""
-To inspect model layers in the terminal, type: "ludwig collect_summary -pm resnet18"
 
-For some models, a HuggingFace Token will be necessary.
-Once you obtain one, use "export HUGGING_FACE_HUB_TOKEN="<api_token>"" in the terminal.
-"""
+config = yaml.safe_load(
+    r"""
+input_features:
+  - name: image_path
+    type: image
+    encoder:
+      type: resnet
+      use_pretrained: true
+      trainable: true
+output_features:
+  - name: label
+    type: category
+trainer:
+  epochs: 1
+  batch_size: 5
+  layers_to_freeze_regex: '(layer1\.0\.*|layer2\.0\.*)'
 
-config = {
-    "input_features": [
-        {
-            "name": "image_path",
-            "type": "image",
-            "encoder": {"type": "resnet", "use_pretrained": True, "trainable": True},
-        }
-    ],
-    "output_features": [{"name": "label", "type": "category"}],
-    "trainer": {"epochs": 1, "batch_size": 5, "layers_to_freeze_regex": r"(layer1\.0\.*|layer2\.0\.*)"},
-}
+    """
+)
 
 model = LudwigModel(config, logging_level=logging.INFO)
 train_stats = model.train(dataset="beans_train.csv")
-model.save("beans_model")
 eval_stats, predictions, output_directory = model.evaluate(dataset="beans_test.csv")
-
 
 print("Training Statistics: ", train_stats)
 print("Evaluation Statistics: ", eval_stats)
