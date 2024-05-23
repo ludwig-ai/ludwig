@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 
 import pandas as pd
 import yaml
@@ -58,8 +59,13 @@ trainer:
 )
 
 model = LudwigModel(config, logging_level=logging.INFO)
-train_stats = model.train(dataset="beans_train.csv")
+train_stats = model.train(dataset="beans_train.csv", skip_save_model=True)
 eval_stats, predictions, output_directory = model.evaluate(dataset="beans_test.csv")
 
 print("Training Statistics: ", train_stats)
 print("Evaluation Statistics: ", eval_stats)
+
+shutil.rmtree("train_images")
+shutil.rmtree("test_images")
+os.remove("beans_train.csv")
+os.remove("beans_test.csv")
