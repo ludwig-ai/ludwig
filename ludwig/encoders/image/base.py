@@ -406,7 +406,9 @@ class ViTEncoder(ImageEncoder):
                 "layer_norm_eps": layer_norm_eps,
                 "gradient_checkpointing": gradient_checkpointing,
             }
-            config_dict["attn_implementation"] = "eager"
+            if output_attentions:
+                config_dict["attn_implementation"] = "eager"
+
             config = ViTConfig(**config_dict)
             transformer = ViTModel(config)
 
