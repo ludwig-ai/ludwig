@@ -1432,7 +1432,7 @@ def hyperopt_report(hyperparameters, hyperopt_results_df, metric, filename_templ
         else:
             # TODO: more research needed on how to handle RayTune "sample_from" search space
             raise ValueError(
-                f"{hp_params[SPACE]} search space not supported in Ludwig.  "
+                f"{hp_params[SPACE]} search space not supported in Ludwig.  "  # noqa: E713
                 f"Supported values are {RAY_TUNE_FLOAT_SPACES | RAY_TUNE_INT_SPACES | RAY_TUNE_CATEGORY_SPACES}."
             )
 

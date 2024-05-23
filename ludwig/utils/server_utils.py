@@ -134,7 +134,7 @@ def deserialize_request(form) -> tuple:
     files = []
     file_index = {}
     for k, v in form.multi_items():
-        if type(v) == UploadFile:
+        if type(v) is UploadFile:
             file_index[v.filename] = _write_file(v, files)
 
     # reconstruct the dataframe

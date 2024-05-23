@@ -446,11 +446,11 @@ def to_np_tuple(prop: Union[int, Iterable]) -> np.ndarray:
     height_stride = 2 and width_stride = 3. stride=2 gets converted into
     np.array([2, 2]).
     """
-    if type(prop) == int:
+    if type(prop) is int:
         return np.ones(2).astype(int) * prop
     elif isinstance(prop, Iterable) and len(prop) == 2:
         return np.array(list(prop)).astype(int)
-    elif type(prop) == np.ndarray and prop.size == 2:
+    elif type(prop) is np.ndarray and prop.size == 2:
         return prop.astype(int)
     else:
         raise TypeError(f"prop must be int or iterable of length 2, but is {prop}.")

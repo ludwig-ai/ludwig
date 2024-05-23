@@ -1224,7 +1224,7 @@ def build_dataset(
         else:
             logger.warning(
                 f"Specified split column {global_preprocessing_parameters['split']['column']} for fixed "
-                f"split strategy was not found in dataset."
+                f"split strategy was not found in dataset."  # noqa: E713
             )
 
     # update input features with prompt configs during preprocessing (as opposed to during the model forward pass)
@@ -1457,7 +1457,7 @@ def cast_columns(dataset_cols, features, backend) -> None:
             )
         except KeyError as e:
             raise KeyError(
-                f"Feature name {e} specified in the config was not found in dataset with columns: "
+                f"Feature name {e} specified in the config was not found in dataset with columns: "  # noqa: E713
                 + f"{list(dataset_cols.keys())}"
             )
 
