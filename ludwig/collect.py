@@ -196,12 +196,15 @@ def pretrained_summary(pretrained_model: str, **kwargs) -> None:
     from transformers import AutoConfig, AutoModel
 
     model = None
-
     # get access token if available
     token = os.getenv("HUGGING_FACE_HUB_TOKEN")
-    if not token:
-        logger.error(f"Invalid token {token}.")
-        return
+    if token is None:
+        logger.info("No token provided. Continuing loading without token access.")
+    elif not token:
+        raise ValueError("Invalid token provided. Exiting.")
+    else:
+        logger.info("Valid token provided. Proceeding with token access.")
+
     # Try to load from transformers/HF
     # TODO -> Fix OOM on large models e.g. llama 3 8B
     try:
@@ -215,9 +218,10 @@ def pretrained_summary(pretrained_model: str, **kwargs) -> None:
     if model is None:
         try:
             module = importlib.import_module("torchvision.models")
-            model = getattr(module, pretrained_model)(pretrained=False)
+            model = getattr(module, pretrained_model)(weights=None)
         except AttributeError:
             logger.error(f"{pretrained_model} is not a valid torchvision model.")
+
     if model:
         for name, _ in model.named_parameters():
             logger.info(name)

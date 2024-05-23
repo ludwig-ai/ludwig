@@ -1,3 +1,4 @@
+import logging
 import re
 from contextlib import nullcontext as no_error_raised
 
@@ -8,6 +9,7 @@ from ludwig.constants import (
     BASE_MODEL,
     BATCH_SIZE,
     EPOCHS,
+    GENERATION,
     INPUT_FEATURES,
     MODEL_LLM,
     MODEL_TYPE,
@@ -58,19 +60,20 @@ def test_llm_freezing(tmpdir, csv_filename):
 
     config = {
         MODEL_TYPE: MODEL_LLM,
-        BASE_MODEL: "HuggingFaceH4/tiny-random-LlamaForCausalLM",
+        BASE_MODEL: "hf-internal-testing/tiny-random-GPTJForCausalLM",
         INPUT_FEATURES: [text_feature(name="input", encoder={"type": "passthrough"})],
         OUTPUT_FEATURES: [text_feature(name="output")],
-        TRAINER: {TYPE: "finetune", BATCH_SIZE: 8, EPOCHS: 2, "layers_to_freeze_regex": r"(model\.layers\.0\.*)"},
+        TRAINER: {TYPE: "finetune", BATCH_SIZE: 8, EPOCHS: 1, "layers_to_freeze_regex": r"(h\.0\.attn\.*)"},
+        GENERATION: {"pad_token_id": 0},
     }
 
-    model = LudwigModel(config)
+    model = LudwigModel(config, logging_level=logging.INFO)
 
     output_directory: str = str(tmpdir)
     model.train(dataset=train_df, output_directory=output_directory, skip_save_processed_input=False)
 
     for name, p in model.model.named_parameters():
-        if "model.layers.0" in name:
+        if "h.0.attn" in name:
             assert not p.requires_grad
         else:
             assert p.requires_grad
