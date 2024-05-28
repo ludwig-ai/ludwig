@@ -21,6 +21,5 @@ def test_links():
         download_urls = [config.download_urls] if isinstance(config.download_urls, str) else config.download_urls
         for url in download_urls:
             logger.info(f"Checking {dataset_name}: {url}")
-            print(f"Checking {dataset_name}: {url}")
             response = requests.head(url)
             assert response.ok, f"Failed to download {dataset_name} from {url}"
