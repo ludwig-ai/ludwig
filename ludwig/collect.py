@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import argparse
+import importlib
 import logging
 import os
 import sys
@@ -184,6 +185,51 @@ def print_model_summary(model_path: str, **kwargs) -> None:
     logger.info("\nParameters:\n")
     for name, _ in model.model.named_parameters():
         logger.info(name)
+
+
+def pretrained_summary(pretrained_model: str, **kwargs) -> None:
+    """Loads a pretrained model from Huggingface or Torchvision models and prints names of layers.
+
+    # Inputs
+    :param pretrained_model: (str) name of model to load (case sensitive).
+
+    # Return
+    :return: (`None`)
+    """
+    from transformers import AutoConfig, AutoModel
+
+    model = None
+    # get access token if available
+    token = os.getenv("HUGGING_FACE_HUB_TOKEN")
+    if token is None:
+        logger.info("No token provided. Continuing loading without token access.")
+    elif not token:
+        raise ValueError("Invalid token provided. Exiting.")
+    else:
+        logger.info("Valid token provided. Proceeding with token access.")
+
+    # Try to load from transformers/HF
+    # TODO -> Fix OOM on large models e.g. llama 3 8B
+    try:
+        config = AutoConfig.from_pretrained(pretrained_model, token=token, low_cpu_mem_usage=True)
+        model = AutoModel.from_config(config=config)
+        logger.info(f"Loaded {pretrained_model} from Hugging Face Transformers.")
+    except Exception as e:
+        logger.error(f"Failed to load {pretrained_model} from Hugging Face Transformers: {e}")
+
+    # Try and load from torchvision-models
+    if model is None:
+        try:
+            module = importlib.import_module("torchvision.models")
+            model = getattr(module, pretrained_model)(weights=None)
+        except AttributeError:
+            logger.error(f"{pretrained_model} is not a valid torchvision model.")
+
+    if model:
+        for name, _ in model.named_parameters():
+            logger.info(name)
+    else:
+        logger.error(f"Unable to load the model {pretrained_model} from any known source.")
 
 
 def cli_collect_activations(sys_argv):
@@ -374,8 +420,8 @@ def cli_collect_weights(sys_argv):
 def cli_collect_summary(sys_argv):
     """Command Line Interface to collecting a summary of the model layers and weights.
 
-    --m: Input model that is necessary to collect to the tensors, this is a
-         required *option*
+    --m: Input model that is necessary to collect to the tensors
+    --pm: Model name in order to fetch from Huggingface or Torchvision
     --v: Verbose: Defines the logging level that the user will be exposed to
     """
     parser = argparse.ArgumentParser(
@@ -389,7 +435,10 @@ def cli_collect_summary(sys_argv):
     # ----------------
     # Model parameters
     # ----------------
-    parser.add_argument("-m", "--model_path", help="model to load", required=True)
+    parser.add_argument("-m", "--model_path", help="model to load", required=False)
+    parser.add_argument(
+        "-pm", "--pretrained_model", help="pretrained model to summarize (torchvision and huggingface)", required=False
+    )
 
     # ------------------
     # Runtime parameters
@@ -416,7 +465,10 @@ def cli_collect_summary(sys_argv):
 
     print_ludwig("Collect Summary", LUDWIG_VERSION)
 
-    print_model_summary(**vars(args))
+    if args.model_path:
+        print_model_summary(**vars(args))
+    elif args.pretrained_model and not args.model_path:
+        pretrained_summary(**vars(args))
 
 
 if __name__ == "__main__":

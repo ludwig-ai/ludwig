@@ -70,6 +70,15 @@ ecd:
             In many large-scale training runs, evaluation is often configured to run on
             a sub-epoch time scale, or every few thousand steps.
         ui_display_name: Checkpoints per epoch
+    layers_to_freeze_regex:
+        default_value_reasoning:
+            By default no layers will be frozen when fine-tuning a pretrained model.
+        description_implications:
+            Freezing specific layers can improve a pretrained model's performance in a number
+            of ways. At a basic level, freezing early layers can prevent overfitting by retaining
+            more general features (beneficial for small datasets). Also can reduce computational
+            resource use and lower overall training time due to less gradient calculations.
+        expected_impact: 1
     early_stop:
         default_value_reasoning:
             Deep learning models are prone to overfitting. It's generally

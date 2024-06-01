@@ -1,3 +1,4 @@
+import re
 from abc import ABC
 from typing import Optional, Type, Union
 
@@ -160,6 +161,14 @@ class ECDTrainerConfig(BaseTrainerConfig):
                 raise ConfigValidationError(
                     f"`effective_batch_size` ({self.effective_batch_size}) must be divisible by "
                     f"`gradient_accumulation_steps` ({self.gradient_accumulation_steps})."
+                )
+
+        if self.layers_to_freeze_regex:
+            try:
+                re.compile(self.layers_to_freeze_regex)
+            except re.error:
+                raise ConfigValidationError(
+                    f"`layers_to_freeze_regex` ({self.layers_to_freeze_regex}) must be a valid regular expression."
                 )
 
     learning_rate: Union[float, str] = schema_utils.OneOfOptionsField(
@@ -442,6 +451,17 @@ class ECDTrainerConfig(BaseTrainerConfig):
         description="Whether to enable gradient checkpointing, which trades compute for memory."
         "This is useful for training very deep models with limited memory.",
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["enable_gradient_checkpointing"],
+    )
+
+    layers_to_freeze_regex: str = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description=(
+            "Freeze specific layers based on provided regex. Freezing specific layers can improve a  "
+            "pretrained model's performance in a number of ways. At a basic level, freezing early layers can  "
+            "prevent overfitting by retaining more general features (beneficial for small datasets). Also can  "
+            "reduce computational resource use and lower overall training time due to less gradient calculations. "
+        ),
     )
 
     def update_batch_size_grad_accum(self, num_workers: int):

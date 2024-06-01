@@ -82,6 +82,7 @@ from ludwig.utils.model_utils import contains_nan_or_inf_tensors
 from ludwig.utils.torch_utils import get_torch_device
 from ludwig.utils.trainer_utils import (
     append_metrics,
+    freeze_layers_regex,
     get_final_steps_per_checkpoint,
     get_latest_metrics_dict,
     get_new_progress_tracker,
@@ -171,6 +172,7 @@ class Trainer(BaseTrainer):
         self._validation_field = config.validation_field
         self._validation_metric = config.validation_metric
         self.early_stop = config.early_stop
+        self.layers_to_freeze_regex = config.layers_to_freeze_regex
         self.steps_per_checkpoint = config.steps_per_checkpoint
         self.checkpoints_per_epoch = config.checkpoints_per_epoch
         self.evaluate_training_set = config.evaluate_training_set
@@ -241,6 +243,10 @@ class Trainer(BaseTrainer):
             lr_scale_fn = learning_rate_scale_fns[self.config.learning_rate_scaling]
             base_learning_rate *= lr_scale_fn(self.distributed.size())
         self.base_learning_rate = base_learning_rate
+
+        # Given that regex is supplied, freeze layers
+        if self.config.layers_to_freeze_regex:
+            freeze_layers_regex(self.config, self.model)
 
         # We may need to replace the embedding layer when using 8-bit optimizers from bitsandbytes.
         update_embedding_layer(self.compiled_model, self.config)

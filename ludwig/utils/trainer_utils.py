@@ -1,6 +1,7 @@
 import logging
+import re
 from collections import defaultdict
-from typing import Dict, List, Tuple, TYPE_CHECKING
+from typing import Dict, List, Tuple, TYPE_CHECKING, Union
 
 try:
     from typing import Literal
@@ -10,13 +11,17 @@ except ImportError:
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import AUTO, COMBINED, LOSS
 from ludwig.models.base import BaseModel
+from ludwig.models.ecd import ECD
+from ludwig.models.llm import LLM
 from ludwig.modules.metric_modules import get_best_function
+from ludwig.schema.trainer import ECDTrainerConfig, FineTuneTrainerConfig
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.metric_utils import TrainerMetric
 
 if TYPE_CHECKING:
     from ludwig.features.base_feature import OutputFeature
     from ludwig.schema.trainer import BaseTrainerConfig
+
 
 logger = logging.getLogger(__name__)
 
@@ -506,3 +511,57 @@ def get_rendered_batch_size_grad_accum(config: "BaseTrainerConfig", num_workers:
                 gradient_accumulation_steps = 1
 
     return batch_size, gradient_accumulation_steps
+
+
+def freeze_layers_regex(config: Union[ECDTrainerConfig, FineTuneTrainerConfig], model: Union[ECD, LLM]) -> None:
+    """Freezes layers in a model whose names match a specified regular expression pattern.
+
+    This function iterates over all parameters of the model, checking each parameter's name against
+    the regular expression defined in the configuration object.
+    If a match is found, the parameter's `requires_grad` attribute is set to False,
+    effectively freezing the layer for training purposes.
+    If no matches are found, an error is logged indicating the issue with the regex or the model's layer names.
+
+    Parameters:
+    - config (Union[ECDTrainerConfig, FineTuneTrainerConfig]):
+    - model (Union[ECD, LLM]): The model object containing layers and parameters. This could be an instance of either
+    ECD or LLM classes, which should have a method `named_parameters()` that yields the name and parameter
+    object of each layer.
+
+    Raises:
+    - re.error: If the regular expression pattern in `config.layers_to_freeze_regex` is invalid, an error is logged
+    and the function exits.
+
+    Returns:
+    - None: This function does not return any value but modifies the model in-place by freezing certain layers.
+    """
+    pattern = re.compile(config.layers_to_freeze_regex)
+    matched_layers = set()
+
+    for name, p in model.named_parameters():
+        if re.search(pattern, str(name)):
+            p.requires_grad = False
+            matched_layers.add(name)
+    if matched_layers:
+        logger.info(f"Layers where requires_grad was set to False: {matched_layers}")
+    else:
+        logger.error(f"No regex match for {config.layers_to_freeze_regex}! Check layer names and regex syntax.")
+
+    count_parameters(model)
+
+
+def count_parameters(model) -> None:
+    """Counts number of trainable parameters post freezing.
+
+    Returns:
+    - None: This function does not return any value.
+    """
+    total_params = 0
+    for _, parameter in model.named_parameters():
+        if not parameter.requires_grad:
+            continue
+        params = parameter.numel()
+
+        total_params += params
+
+    logger.info(f"Total Trainable Parameters after freezing: {total_params}")
