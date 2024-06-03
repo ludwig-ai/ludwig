@@ -1,0 +1,42 @@
+input_features:
+  - name: lp
+    type: number
+  - name: v
+    type: number
+  - name: gtt
+    type: number
+  - name: gtn
+    type: number
+  - name: ggn
+    type: number
+  - name: ts
+    type: number
+  - name: tp
+    type: number
+  - name: t48
+    type: number
+  - name: t1
+    type: category
+  - name: t2
+    type: number
+  - name: p48
+    type: number
+  - name: p1
+    type: number
+  - name: p2
+    type: number
+  - name: pexh
+    type: number
+  - name: tic
+    type: number
+  - name: mf
+    type: number
+  - name: gttdsc
+    type: number
+output_features:
+  - name: gtcdsc
+    type: number
+preprocessing:
+  split:
+    type: fixed
+model_type: gbm
