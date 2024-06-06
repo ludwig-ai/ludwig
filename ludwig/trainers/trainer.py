@@ -58,6 +58,7 @@ from ludwig.globals import (
 from ludwig.models.ecd import ECD
 from ludwig.models.llm import LLM
 from ludwig.models.predictor import Predictor
+from ludwig.modules.gradual_unfreezer import GradualUnfreezer
 from ludwig.modules.lr_scheduler import LRScheduler
 from ludwig.modules.metric_modules import get_improved_fn, get_initial_validation_value
 from ludwig.modules.metric_registry import get_metric_objective
@@ -218,6 +219,7 @@ class Trainer(BaseTrainer):
         self.dist_model = None
         self.optimizer = None
         self.scheduler = None
+        self.gradual_unfreezer = None
 
         self.prepare()
 
@@ -1012,6 +1014,11 @@ class Trainer(BaseTrainer):
                     total_steps=self.total_steps,
                 )
 
+                # Initialize gradual unfreezer
+                if self.config.gradual_unfreezer.thaw_epochs:
+                    self.gradual_unfreezer = GradualUnfreezer(self.config.gradual_unfreezer, self.model)
+                    logger.info(f"Gradual unfreezing for {len(self.gradual_unfreezer.thaw_epochs)} epoch(s)")
+
                 if self.is_coordinator():
                     logger.info(
                         f"Training for {self.total_steps} step(s), approximately "
@@ -1039,7 +1046,12 @@ class Trainer(BaseTrainer):
                 if profiler:
                     profiler.start()
 
+                current_epoch = 0
+
                 while progress_tracker.steps < self.total_steps:
+                    if self.gradual_unfreezer:
+                        self.gradual_unfreezer.thaw(current_epoch)
+
                     # note that batch size may change over epochs
                     batcher.set_epoch(progress_tracker.epoch, progress_tracker.batch_size)
 
@@ -1096,6 +1108,8 @@ class Trainer(BaseTrainer):
                     # Early stop if needed.
                     if should_break:
                         break
+
+                    current_epoch += 1
         finally:
             # ================ Finished Training ================
             self.callback(
