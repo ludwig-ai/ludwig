@@ -2,7 +2,9 @@ import math
 import os
 import warnings
 from abc import abstractmethod
+from copy import deepcopy
 from functools import lru_cache
+from itertools import chain
 from typing import List, Optional, Tuple, Union
 
 import torch
@@ -375,3 +377,63 @@ def model_size(model: nn.Module):
     size += sum(param.nelement() * param.element_size() for param in model.parameters())
     size += sum(buffer.nelement() * buffer.element_size() for buffer in model.buffers())
     return size
+
+
+def get_absolute_module_key_from_submodule(module: torch.nn.Module, submodule: torch.nn.Module):
+    """Get the absolute module key for each param in the target layer.
+
+    Assumes that the keys in the submodule are relative to the module.
+
+    We find the params from the submodule in the module by comparing the data
+    pointers, since the data returned by named_parameters is by reference.
+    More information on checking if tensors point to the same place in storage can be found here:
+    https://discuss.pytorch.org/t/any-way-to-check-if-two-tensors-have-the-same-base/44310/2
+    """
+    absolute_keys = []
+    for module_key, module_param in module.named_parameters():
+        for _, submodule_param in submodule.named_parameters():
+            if submodule_param.data_ptr() == module_param.data_ptr():
+                absolute_keys.append(module_key)
+                break
+    return absolute_keys
+
+
+@DeveloperAPI
+def copy_module_and_tie_weights(source_module: nn.Module, keep_copy: Optional[List[nn.Module]] = None):
+    """Create a copy of a module with shared weights.
+
+    At a high-level the approach is the following:
+    1. Create a deep-copy of the entire encoder object and set it as the feature's encoder object
+    2. Replace the tensors in the copied encoder object with the tensors from the original encoder object, except for
+         the tensors in the target layer. We want to explain these tensors, so we want to keep them as deep copies.
+
+    Args:
+        source_module: The parent module to copy and tie weights with.
+        ignore_layers: A list of submodules of `source_module` that will not have tied weights.
+
+    Returns:
+        A copy of `source_module` that shares weights with `source_module`.
+    """
+    with torch.no_grad():
+        source_state_dict = source_module.state_dict()
+        target_module = deepcopy(source_module)
+
+        # We have to get the absolute module key in order to do string matching because the ignore_layers keys are
+        # relative to those modules. If we were to leave it as-is and attempt to suffix match, we may get duplicates
+        # for common layers i.e. "LayerNorm.weight" and "LayerNorm.bias". Getting the absolute module key ensures we
+        # use values like "transformer.module.embedding.LayerNorm.weight" instead.
+        if keep_copy is not None:
+            keys_to_keep_copy = list(
+                chain.from_iterable([get_absolute_module_key_from_submodule(source_module, m) for m in keep_copy])
+            )
+        else:
+            keys_to_keep_copy = []
+
+        # In some cases, we don't want parameters to share data pointers, for example during explanation. Modules
+        # passed to `keep_copies` will not point to the same parameter data but should have weights identical to the
+        # original module.
+        for name, param in target_module.named_parameters():
+            if name not in keys_to_keep_copy:
+                param.data = source_state_dict[name].data
+
+    return target_module
