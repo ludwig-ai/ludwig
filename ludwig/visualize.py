@@ -40,6 +40,7 @@ from ludwig.utils.data_utils import (
     CACHEABLE_FORMATS,
     data_reader_registry,
     figure_data_format_dataset,
+    HDF5_FORMATS,
     load_array,
     load_from_file,
     load_json,
@@ -57,6 +58,8 @@ _PREDICTIONS_SUFFIX = "_predictions"
 _PROBABILITIES_SUFFIX = "_probabilities"
 _CSV_SUFFIX = "csv"
 _PARQUET_SUFFIX = "parquet"
+
+GROUND_TRUTH_FORMATS = CACHEABLE_FORMATS | HDF5_FORMATS
 
 
 def _convert_ground_truth(ground_truth, feature_metadata, ground_truth_apply_idx, positive_label):
@@ -229,9 +232,9 @@ def _encode_categorical_feature(raw: np.array, str2idx: dict) -> np.array:
 def _get_ground_truth_df(ground_truth: str) -> DataFrame:
     # determine ground truth data format and get appropriate reader
     data_format = figure_data_format_dataset(ground_truth)
-    if data_format not in CACHEABLE_FORMATS:
+    if data_format not in GROUND_TRUTH_FORMATS:
         raise ValueError(
-            "{} is not supported for ground truth file, " "valid types are {}".format(data_format, CACHEABLE_FORMATS)
+            f"{data_format} is not supported for ground truth file, valid types are {GROUND_TRUTH_FORMATS}"
         )
     reader = get_from_registry(data_format, data_reader_registry)
 
