@@ -55,11 +55,11 @@ class GBMExplainer(Explainer):
 
         expected_values = []
         for _ in range(self.vocab_size):
-            self.global_explanation.add(base_model.input_features.keys(), feat_imp)
+            self.global_explanation.add(list(base_model.input_features.keys()), feat_imp)
 
             for explanation in self.row_explanations:
                 # Add the feature attributions to the explanation object for this row.
-                explanation.add(base_model.input_features.keys(), feat_imp)
+                explanation.add(list(base_model.input_features.keys()), feat_imp)
 
             # TODO:
             expected_values.append(0.0)

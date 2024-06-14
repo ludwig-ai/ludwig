@@ -836,8 +836,8 @@ class LightGBMTrainer(BaseTrainer):
         validation_set: Optional["Dataset"] = None,  # noqa: F821
         test_set: Optional["Dataset"] = None,  # noqa: F821
     ) -> Tuple[lgb.Dataset, List[lgb.Dataset], List[str]]:
-        X_train = training_set.to_scalar_df(self.model.input_features.values())
-        y_train = training_set.to_scalar_df(self.model.output_features.values())
+        X_train = training_set.to_scalar_df(list(self.model.input_features.values()))
+        y_train = training_set.to_scalar_df(list(self.model.output_features.values()))
 
         # create dataset for lightgbm
         # keep raw data for continued training https://github.com/microsoft/LightGBM/issues/4965#issuecomment-1019344293
@@ -855,8 +855,8 @@ class LightGBMTrainer(BaseTrainer):
         eval_sets = [lgb_train]
         eval_names = [LightGBMTrainer.TRAIN_KEY]
         if validation_set is not None:
-            X_val = validation_set.to_scalar_df(self.model.input_features.values())
-            y_val = validation_set.to_scalar_df(self.model.output_features.values())
+            X_val = validation_set.to_scalar_df(list(self.model.input_features.values()))
+            y_val = validation_set.to_scalar_df(list(self.model.output_features.values()))
             try:
                 lgb_val = lgb.Dataset(X_val, label=y_val, reference=lgb_train, free_raw_data=False).construct()
             except lgb.basic.LightGBMError as e:
@@ -874,8 +874,8 @@ class LightGBMTrainer(BaseTrainer):
             pass
 
         if test_set is not None:
-            X_test = test_set.to_scalar_df(self.model.input_features.values())
-            y_test = test_set.to_scalar_df(self.model.output_features.values())
+            X_test = test_set.to_scalar_df(list(self.model.input_features.values()))
+            y_test = test_set.to_scalar_df(list(self.model.output_features.values()))
             try:
                 lgb_test = lgb.Dataset(X_test, label=y_test, reference=lgb_train, free_raw_data=False).construct()
             except lgb.basic.LightGBMError as e:
