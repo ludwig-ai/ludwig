@@ -8,8 +8,7 @@ from ludwig.backend._ray210_compat import TunerRay210
 class HorovodTrainerRay210(HorovodTrainer):
     """HACK(geoffrey): This is a temporary fix to support Ray 2.1.0.
 
-    Specifically, this Trainer ensures that TunerRay210 is called by the class.
-    For more details, see TunerRay210.
+    Specifically, this Trainer ensures that TunerRay210 is called by the class. For more details, see TunerRay210.
     """
 
     def fit(self) -> Result:

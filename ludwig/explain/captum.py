@@ -122,9 +122,11 @@ class WrapperModule(torch.nn.Module):
         inputs = {
             # Send the input through the identity layer so that we can use the output of the layer for attribution.
             # Except for text/category features where we use the embedding layer for attribution.
-            feat_name: feat_input
-            if input_features.get(feat_name).type() in EMBEDDED_TYPES
-            else self.input_maps.get(feat_name)(feat_input)
+            feat_name: (
+                feat_input
+                if input_features.get(feat_name).type() in EMBEDDED_TYPES
+                else self.input_maps.get(feat_name)(feat_input)
+            )
             for feat_name, feat_input in zip(input_features.keys(), args)
         }
 
@@ -273,10 +275,7 @@ def get_input_tensors(
     # Inputs
 
     :param model: The LudwigModel to use for encoding.
-    :param input_set: The input data to encode of shape [batch size, num input features].
-
-    # Return
-
+    :param input_set: The input data to encode of shape [batch size, num input features].  # Return
     :return: A list of variables, one for each input feature. Shape of each variable is [batch size, embedding size].
     """
     # Ignore sample_ratio and sample_size from the model config, since we want to explain all the data.

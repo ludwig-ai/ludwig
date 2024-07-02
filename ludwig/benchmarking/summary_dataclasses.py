@@ -454,9 +454,9 @@ def build_resource_usage_diff(
         diff = ResourceUsageDiff(
             code_block_tag=base_summary.code_block_tag,
             base_experiment_name=base_experiment_name if base_experiment_name else "experiment_1",
-            experimental_experiment_name=experimental_experiment_name
-            if experimental_experiment_name
-            else "experiment_2",
+            experimental_experiment_name=(
+                experimental_experiment_name if experimental_experiment_name else "experiment_2"
+            ),
             metrics=metrics,
         )
         diffs.append(diff)

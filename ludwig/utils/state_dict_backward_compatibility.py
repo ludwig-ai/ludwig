@@ -17,9 +17,11 @@
 def _update_transformers_to_freeze_module(state_dict):
     """Updates pre-trained encoders which were saved prior to the addition of FreezeModule."""
     return {
-        k.replace("encoder_obj.transformer.", "encoder_obj.transformer.module.")
-        if "encoder_obj.transformer.module" not in k
-        else k: v
+        (
+            k.replace("encoder_obj.transformer.", "encoder_obj.transformer.module.")
+            if "encoder_obj.transformer.module" not in k
+            else k
+        ): v
         for k, v in state_dict.items()
     }
 
