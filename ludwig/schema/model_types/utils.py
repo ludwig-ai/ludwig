@@ -34,7 +34,7 @@ from ludwig.schema.llms.generation import LLMGenerationConfig
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.types import HyperoptConfigDict, ModelConfigDict
 from ludwig.utils.data_utils import get_sanitized_feature_name
-from ludwig.utils.llm_utils import _PHI_MODELS, get_context_len
+from ludwig.utils.llm_utils import get_context_len
 
 if TYPE_CHECKING:
     from ludwig.schema.model_types.base import ModelConfig
@@ -323,6 +323,9 @@ def set_llm_parameters(config: "ModelConfig") -> None:
     # PEFT PR: https://github.com/huggingface/peft/pull/1375
     _set_phi2_target_modules(config)
 
+    # HACK(Arnav): Set Phi-3 target modules when using LoRA
+    _set_phi3_target_modules(config)
+
     # HACK(Arnav): Set Gemma target modules when using LoRA
     # GitHub issue: https://github.com/ludwig-ai/ludwig/issues/3937
     # PEFT PR: https://github.com/huggingface/peft/pull/1499
@@ -441,7 +444,11 @@ def _set_mixtral_target_modules(config: "ModelConfig") -> None:
 def _set_phi2_target_modules(config: "ModelConfig") -> None:
     """If the base model is Phi-2, LoRA is enabled and the target modules are not set, set the target modules to
     maximize performance."""
-    if config.base_model not in _PHI_MODELS:
+    if config.base_model not in {
+        "microsoft/phi-1",
+        "microsoft/phi-1_5",
+        "microsoft/phi-2",
+    }:
         return
 
     if not config.adapter:
@@ -453,6 +460,25 @@ def _set_phi2_target_modules(config: "ModelConfig") -> None:
     target_modules = ["q_proj", "k_proj", "v_proj", "dense", "fc1", "fc2"]
 
     logger.info(f"Setting adapter target modules to {target_modules} for Phi-2 base model with LoRA adapter.")
+    config.adapter.target_modules = target_modules
+
+
+def _set_phi3_target_modules(config: "ModelConfig") -> None:
+    if config.base_model not in {
+        "microsoft/Phi-3-mini-4k-instruct",
+        "microsoft/Phi-3-mini-128k-instruct",
+    }:
+        return
+
+    if not config.adapter:
+        return
+
+    if config.adapter.type != "lora" or config.adapter.target_modules:
+        return
+
+    target_modules = ["qkv_proj", "o_proj", "gate_up_proj", "down_proj"]
+
+    logger.info(f"Setting adapter target modules to {target_modules} for Phi-3 base model with LoRA adapter.")
     config.adapter.target_modules = target_modules
 
 

@@ -27,18 +27,7 @@ transformers_436 = version.parse(transformers.__version__) >= version.parse("4.3
 
 FALLBACK_CONTEXT_LEN = 2048
 
-_PHI_MODELS = {
-    "susnato/phi-1_dev",
-    "susnato/phi-1_5_dev",
-    "susnato/phi-2",
-    "microsoft/phi-1",
-    "microsoft/phi-1_5",
-    "microsoft/phi-2",
-}
-
 _MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION = set()
-# Phi models don't support "device_map='auto'" at model load time as of transformers 4.37.0.
-_MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION.update(_PHI_MODELS)
 
 
 @default_retry(tries=8)
@@ -52,8 +41,7 @@ def load_pretrained_from_config(
         # Apply quantization configuration at model load time
         load_kwargs["torch_dtype"] = getattr(torch, config_obj.quantization.bnb_4bit_compute_dtype)
         load_kwargs["quantization_config"] = config_obj.quantization.to_bitsandbytes()
-        if config_obj.base_model not in _MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION:
-            load_kwargs["device_map"] = "auto"
+        load_kwargs["device_map"] = "auto"
 
         if transformers_436:
             load_kwargs["attn_implementation"] = "eager"
