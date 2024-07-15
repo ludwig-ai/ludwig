@@ -39,6 +39,8 @@ gpustat
 rich~=12.4.4
 packaging
 retry
+coremltools==7.1
+hyperopt==0.2.7
 
 # required for TransfoXLTokenizer when using transformer_xl
 sacremoses
