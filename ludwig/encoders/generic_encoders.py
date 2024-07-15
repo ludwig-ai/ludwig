@@ -65,7 +65,7 @@ class DenseEncoder(Encoder):
     def __init__(
         self,
         input_size,
-        layers=None,
+        fc_layers=None,
         num_layers=1,
         output_size=256,
         use_bias=True,
@@ -87,7 +87,7 @@ class DenseEncoder(Encoder):
         logger.debug("  FCStack")
         self.fc_stack = FCStack(
             first_layer_input_size=input_size,
-            layers=layers,
+            layers=fc_layers,
             num_layers=num_layers,
             default_output_size=output_size,
             default_use_bias=use_bias,
