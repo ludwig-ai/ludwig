@@ -649,6 +649,11 @@ ecd:
         eta_min:
             expected_impact: 1
             ui_display_name: Eta Min
+    gradual_unfreezer:
+        thaw_epochs:
+            expected_impact: 1
+        layers_to_thaw:
+            expected_impact: 1
 gbm:
     learning_rate:
         commonly_used: true

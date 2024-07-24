@@ -19,6 +19,7 @@ from ludwig.constants import (
 )
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.gradual_unfreezer import GradualUnfreezerConfig, GradualUnfreezerDataclassField
 from ludwig.schema.lr_scheduler import LRSchedulerConfig, LRSchedulerDataclassField
 from ludwig.schema.metadata import TRAINER_METADATA
 from ludwig.schema.optimizers import (
@@ -184,6 +185,11 @@ class ECDTrainerConfig(BaseTrainerConfig):
             schema_utils.FloatRange(default=0.001, allow_none=False, min=0, max=1),
             schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
         ],
+    )
+
+    gradual_unfreezer: GradualUnfreezerConfig = GradualUnfreezerDataclassField(
+        description="Parameter values for gradual unfreezer.",
+        default=None,
     )
 
     learning_rate_scheduler: LRSchedulerConfig = LRSchedulerDataclassField(
