@@ -140,13 +140,14 @@ def to_device(
 
 
 def initialize_adapter(
-    model: PreTrainedModel, config_obj: "LLMModelConfig"  # noqa F821
+    model: PreTrainedModel, config_obj: "LLMModelConfig", is_trainable: bool = False  # noqa F821
 ) -> Union["PeftModel", PreTrainedModel]:  # noqa F821
     """Wrap a pretrained model with a PEFT model for fine-tuning.
 
     Args:
          model: Pretrained model to fine-tune with an adapter.
          config_obj: LLM config
+         is_trainable: bool indicating whether the adapter should be trainable
 
     Returns:
         `model` wrapped in a PEFT model if an adapter config was provided, otherwise `model`.
@@ -163,7 +164,7 @@ def initialize_adapter(
             peft_config = PeftConfig.from_pretrained(config_obj.adapter.pretrained_adapter_weights)
 
             model = MODEL_TYPE_TO_PEFT_MODEL_MAPPING[peft_config.task_type].from_pretrained(
-                model, config_obj.adapter.pretrained_adapter_weights
+                model, config_obj.adapter.pretrained_adapter_weights, is_trainable=is_trainable
             )
         else:
             # Leave this import inline to support a minimal install of Ludwig

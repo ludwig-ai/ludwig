@@ -197,7 +197,8 @@ class LLM(BaseModel):
                     "`finetune` or remove the adapter config."
                 )
 
-            self.model = initialize_adapter(self.model, self.config_obj)
+            is_trainable = self.config_obj.trainer.type == "finetune"
+            self.model = initialize_adapter(self.model, self.config_obj, is_trainable=is_trainable)
 
             logger.info("==================================================")
             logger.info("Trainable Parameter Summary For Fine-Tuning")
