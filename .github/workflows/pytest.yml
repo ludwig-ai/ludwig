@@ -389,7 +389,7 @@ jobs:
           python -m pip install -U pip
           pip install ray==2.3.0
           pip install '.'
-          pip install torch==2.0.0 torchtext
+          pip install torch==2.0.0 torchtext torchvision torchaudio
           pip list
         shell: bash
       - name: Check Install
