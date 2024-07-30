@@ -11,7 +11,7 @@ mlflow
 # For testing optional Ray Tune Search Algorithms
 # search_alg: bohb
 hpbandster
-ConfigSpace
+ConfigSpace==0.7.1
 
 # search_alg: ax
 ax-platform
