@@ -58,11 +58,8 @@ class MNISTLoader(DatasetLoader):
     def read_source_dataset(self, dataset="training", path="."):
         """Create a directory for training and test and extract all the images and labels to this destination.
 
-        :args:
-            dataset (str) : the label for the dataset
-            path (str): the raw dataset path
-        :returns:
-            A tuple of the label for the image, the file array, the size and rows and columns for the image
+        :args:     dataset (str) : the label for the dataset     path (str): the raw dataset path
+        :returns: A tuple of the label for the image, the file array, the size and rows and columns for the image
         """
         if dataset == "training":
             fname_img = os.path.join(path, "train-images-idx3-ubyte")
@@ -87,13 +84,9 @@ class MNISTLoader(DatasetLoader):
     def write_output_dataset(self, labels, images, output_dir):
         """Create output directories where we write out the images.
 
-        :args:
-            labels (str) : the labels for the image
-            data (np.array) : the binary array corresponding to the image
-            output_dir (str) : the output directory that we need to write to
-            path (str): the raw dataset path
-        :returns:
-            A tuple of the label for the image, the file array, the size and rows and columns for the image
+        :args:     labels (str) : the labels for the image     data (np.array) : the binary array corresponding to the
+        image     output_dir (str) : the output directory that we need to write to     path (str): the raw dataset path
+        :returns: A tuple of the label for the image, the file array, the size and rows and columns for the image
         """
         # create child image output directories
         output_dirs = [os.path.join(output_dir, str(i)) for i in range(NUM_LABELS)]

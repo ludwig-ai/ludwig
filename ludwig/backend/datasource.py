@@ -88,8 +88,8 @@ class BinaryIgnoreNoneTypeDatasource(BinaryDatasource):
 
         The default implementation opens the source path as a sequential input stream.
 
-        Implementations that do not support streaming reads (e.g. that require random
-        access) should override this method.
+        Implementations that do not support streaming reads (e.g. that require random access) should override this
+        method.
         """
         if path is None or is_http(path):
             return contextlib.nullcontext()
