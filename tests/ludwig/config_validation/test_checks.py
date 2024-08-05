@@ -2,9 +2,7 @@
 
 Note that all testing should be done with the public API, rather than individual checks.
 
-```
-ModelConfig.from_dict(config)
-```
+``` ModelConfig.from_dict(config) ```
 """
 
 import contextlib

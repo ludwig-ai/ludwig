@@ -419,8 +419,7 @@ class LightGBMTrainer(BaseTrainer):
     ) -> bool:
         """Checks the history of validation scores.
 
-        Uses history of validation scores to decide whether training
-        should stop.
+        Uses history of validation scores to decide whether training should stop.
 
         Saves the model if scores have improved.
         """

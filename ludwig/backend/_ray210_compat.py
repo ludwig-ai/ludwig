@@ -19,8 +19,8 @@ if TYPE_CHECKING:
 class TunerRay210(Tuner):
     """HACK(geoffrey): This is a temporary fix to support Ray 2.1.0.
 
-    Specifically, this Tuner ensures that TunerInternalRay210 is called by the class.
-    For more details, see TunerInternalRay210.
+    Specifically, this Tuner ensures that TunerInternalRay210 is called by the class. For more details, see
+    TunerInternalRay210.
     """
 
     def __init__(
@@ -120,8 +120,9 @@ class TunerRay210(Tuner):
 class TunerInternalRay210(TunerInternal):
     """HACK(geoffrey): This is a temporary fix to support Ray 2.1.0.
 
-    This TunerInternal ensures that a division by zero is avoided when running zero-CPU hyperopt trials.
-    This is fixed in ray>=2.2 (but not ray<=2.1) here: https://github.com/ray-project/ray/pull/30598
+    This TunerInternal ensures that a division by zero is avoided when running zero-CPU hyperopt trials. This is fixed
+    in ray>=2.2 (but not ray<=2.1) here:
+    https://github.com/ray-project/ray/pull/30598
     """
 
     def _expected_utilization(self, cpus_per_trial, cpus_total):
