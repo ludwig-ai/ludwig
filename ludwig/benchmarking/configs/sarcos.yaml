@@ -1,0 +1,61 @@
+input_features:
+  - name: position_1
+    type: number
+  - name: position_2
+    type: number
+  - name: position_3
+    type: number
+  - name: position_4
+    type: number
+  - name: position_5
+    type: number
+  - name: position_6
+    type: number
+  - name: position_7
+    type: number
+  - name: velocity_1
+    type: number
+  - name: velocity_2
+    type: number
+  - name: velocity_3
+    type: number
+  - name: velocity_4
+    type: number
+  - name: velocity_5
+    type: number
+  - name: velocity_6
+    type: number
+  - name: velocity_7
+    type: number
+  - name: acceleration_1
+    type: number
+  - name: acceleration_2
+    type: number
+  - name: acceleration_3
+    type: number
+  - name: acceleration_4
+    type: number
+  - name: acceleration_5
+    type: number
+  - name: acceleration_6
+    type: number
+  - name: acceleration_7
+    type: number
+  - name: torque_2
+    type: number
+  - name: torque_3
+    type: number
+  - name: torque_4
+    type: number
+  - name: torque_5
+    type: number
+  - name: torque_6
+    type: number
+  - name: torque_7
+    type: number
+output_features:
+  - name: torque_1
+    type: number
+preprocessing:
+  split:
+    type: fixed
