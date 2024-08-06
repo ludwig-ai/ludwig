@@ -139,15 +139,13 @@ def WeightsInitializerField(
 def EmbeddingInitializerField(
     default: Optional[str] = None, description: str = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
-    initializers_str = ", ".join([f"`{i}`" for i in initializer_registry.keys()])
     description = description or "Initializer for the embedding matrix."
-    full_description = f"{description} Options: {initializers_str}."
     parameter_metadata = parameter_metadata or COMMON_METADATA["embedding_initializer"]
     return schema_utils.StringOptions(
         list(initializer_registry.keys()),
         default=default,
         allow_none=True,
-        description=full_description,
+        description=description,
         parameter_metadata=parameter_metadata,
     )
 
