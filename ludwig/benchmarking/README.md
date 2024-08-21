@@ -3,7 +3,7 @@
 ### Some use cases
 
 - Regression testing for ML experiments across releases and PRs.
-- Model performance testing for experimenting with new features and hyperparmeters.
+- Model performance testing for experimenting with new features and hyperparameters.
 - Resource usage tracking for the full ML pipeline.
 
 ## Ludwig benchmarking CLI and API
