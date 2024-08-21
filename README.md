@@ -55,7 +55,7 @@ Please see [contributing](https://github.com/ludwig-ai/ludwig/blob/master/CONTRI
 
 # 🚂 Getting Started
 
-Want to take a quick peak at some of the Ludwig 0.8 features? Check out this Colab Notebook 🚀 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1lB4ALmEyvcMycE3Mlnsd7I3bc0zxvk39)
+Want to take a quick peek at some of the Ludwig 0.8 features? Check out this Colab Notebook 🚀 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1lB4ALmEyvcMycE3Mlnsd7I3bc0zxvk39)
 
 Looking to fine-tune Llama-2 or Mistral? Check out these notebooks:
 
