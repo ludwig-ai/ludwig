@@ -74,7 +74,7 @@ ______________________________________________________________________
 Gets a dictionary of model configs for the specified dataset.  Keys are the config names, and may
 contain the special keys:
 
-- `default` - The default config for the dataset.  Should train to decent performance under 10 minutes on a tyipcal
+- `default` - The default config for the dataset.  Should train to decent performance under 10 minutes on a typical
   laptop without GPU.
 - `best` - The best known config for the dataset.  Should be replaced when a better config is found.  This is a good
   opportunity for contributions, if you find a better one please check it in and open a PR!
