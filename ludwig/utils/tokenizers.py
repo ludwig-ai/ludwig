@@ -19,6 +19,8 @@ from typing import Any, Dict, List, Optional, Union
 
 import torch
 import torchtext
+import torchtext.utils
+import torchtext.transforms
 
 from ludwig.constants import PADDING_SYMBOL, UNKNOWN_SYMBOL
 from ludwig.utils.data_utils import load_json
