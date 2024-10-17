@@ -20,7 +20,7 @@ from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatur
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.torch_utils import DEVICE, LudwigModule, reg_loss
+from ludwig.utils.torch_utils import copy_module_and_tie_weights, DEVICE, LudwigModule, reg_loss
 from ludwig.utils.types import TorchDevice
 
 logger = logging.getLogger(__name__)
@@ -94,7 +94,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         if feature_config.tied is not None:
             tied_input_feature_name = feature_config.tied
             if tied_input_feature_name in other_input_features:
-                encoder_obj = other_input_features[tied_input_feature_name].encoder_obj
+                encoder_obj = copy_module_and_tie_weights(other_input_features[tied_input_feature_name].encoder_obj)
 
         return create_input_feature(feature_config, encoder_obj)
 
