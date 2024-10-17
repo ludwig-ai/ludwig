@@ -436,7 +436,8 @@ def generate_datetime(feature, outdir: Optional[str] = None) -> str:
         datetime_generation_format = DATETIME_FORMATS[next(iter(DATETIME_FORMATS))]
 
     y = random.randint(1, 99)
-    Y = random.randint(1, 9999)
+    # https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timestamp-limitations
+    Y = random.randint(pd.Timestamp.min.year + 1, pd.Timestamp.max.year - 1)
     m = random.randint(1, 12)
     d = random.randint(1, 28)
     H = random.randint(1, 12)
