@@ -440,14 +440,50 @@ def test_read_image_from_numpy_array(tmpdir, csv_filename):
     )
 
 
-def test_read_image_failure_default_image(monkeypatch, tmpdir, csv_filename):
-    """Tests that the default image used when an image cannot be read has the correct properties."""
+def test_read_image_failure_all_images_raise_error(monkeypatch, tmpdir, csv_filename):
+    """Tests that image feature raises an error when all images fail to be read."""
 
-    def mock_read_binary_files(self, column, map_fn, file_size):
+    def mock_read_binary_files_no_success(self, column, map_fn, file_size):
         """Mock read_binary_files to return None (failed image read) to test error handling."""
         return column.map(lambda x: None)
 
-    monkeypatch.setattr(ludwig.backend.base.LocalPreprocessingMixin, "read_binary_files", mock_read_binary_files)
+    monkeypatch.setattr(
+        ludwig.backend.base.LocalPreprocessingMixin, "read_binary_files", mock_read_binary_files_no_success
+    )
+
+    image_feature_config = image_feature(os.path.join(tmpdir, "generated_output"))
+    input_features = [image_feature_config]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
+
+    data_csv = generate_data(
+        input_features,
+        output_features,
+        os.path.join(tmpdir, csv_filename),
+        num_examples=NUM_EXAMPLES,
+    )
+
+    model = LudwigModel(config)
+
+    with pytest.raises(RuntimeError):
+        model.preprocess(data_csv)
+
+
+def test_read_image_failure_default_image(monkeypatch, tmpdir, csv_filename):
+    """Tests that the default image used when an image cannot be read has the correct properties."""
+
+    def mock_read_binary_files_partial_success(self, column, map_fn, file_size):
+        """Mock read_binary_files to return None (failed image read) to test error handling."""
+        return column.map(lambda x: None if random.random() < 0.5 else x)
+
+    monkeypatch.setattr(
+        ludwig.backend.base.LocalPreprocessingMixin, "read_binary_files", mock_read_binary_files_partial_success
+    )
 
     image_feature_config = image_feature(os.path.join(tmpdir, "generated_output"))
     input_features = [image_feature_config]
