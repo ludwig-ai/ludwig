@@ -21,6 +21,7 @@ from ludwig.constants import (
 from ludwig.error import ConfigValidationError
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.backend import BaseBackendConfig
 from ludwig.schema.defaults.base import BaseDefaultsConfig
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig, FeatureCollection
 from ludwig.schema.hyperopt import HyperoptConfig
@@ -57,9 +58,9 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
     trainer: BaseTrainerConfig
     preprocessing: PreprocessingConfig
     defaults: BaseDefaultsConfig
-    hyperopt: Optional[HyperoptConfig] = None
+    backend: BaseBackendConfig
 
-    backend: Dict[str, Any] = schema_utils.Dict()  # TODO(jeffkinnison): Add backend schema
+    hyperopt: Optional[HyperoptConfig] = None
     ludwig_version: str = schema_utils.ProtectedString(LUDWIG_VERSION)
 
     def __post_init__(self):
