@@ -1,0 +1,28 @@
+model_type: gbm
+input_features:
+  - name: RESOURCE
+    type: category
+  - name: MGR_ID
+    type: category
+  - name: ROLE_ROLLUP_1
+    type: category
+  - name: ROLE_ROLLUP_2
+    type: category
+  - name: ROLE_DEPTNAME
+    type: category
+  - name: ROLE_TITLE
+    type: category
+  - name: ROLE_FAMILY_DESC
+    type: category
+  - name: ROLE_FAMILY
+    type: category
+  - name: ROLE_CODE
+    type: category
+output_features:
+  - name: ACTION
+    type: binary
+preprocessing:
+  split:
+    type: stratify
+    column: ACTION
+    probabilities: [0.8, 0.1, 0.1]
