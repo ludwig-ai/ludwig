@@ -140,9 +140,25 @@ class NgramTokenizer(SpaceStringToListTokenizer):
         self.n = ngram_size or 2
 
     def get_tokens(self, tokens: List[str]) -> List[str]:
-        from torchtext.data.utils import ngrams_iterator
+        return list(self._ngrams_iterator(tokens, ngrams=self.n))
 
-        return list(ngrams_iterator(tokens, ngrams=self.n))
+    def _ngrams_iterator(self, token_list, ngrams):
+        """Return an iterator that yields the given tokens and their ngrams. This code is taken from
+        https://pytorch.org/text/stable/_modules/torchtext/data/utils.html#ngrams_iterator.
+
+        Args:
+            token_list: A list of tokens
+            ngrams: the number of ngrams.
+        """
+
+        def _get_ngrams(n):
+            return zip(*[token_list[i:] for i in range(n)])
+
+        for x in token_list:
+            yield x
+        for n in range(2, ngrams + 1):
+            for x in _get_ngrams(n):
+                yield " ".join(x)
 
 
 class SpacePunctuationStringToListTokenizer(torch.nn.Module):
