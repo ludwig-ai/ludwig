@@ -1028,16 +1028,14 @@ Only available with torchtext>=0.12.0.
 
 
 class SentencePieceTokenizer(torch.nn.Module):
-    def __init__(self, pretrained_model_name_or_path: Optional[str] = None, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__()
-        if pretrained_model_name_or_path is None:
-            pretrained_model_name_or_path = "https://download.pytorch.org/models/text/xlmr.sentencepiece.bpe.model"
-        self.tokenizer = torchtext.transforms.SentencePieceTokenizer(sp_model_path=pretrained_model_name_or_path)
+        self.tokenizer = load_pretrained_hf_tokenizer("FacebookAI/xlm-roberta-base")
 
     def forward(self, v: Union[str, List[str], torch.Tensor]):
         if isinstance(v, torch.Tensor):
             raise ValueError(f"Unsupported input: {v}")
-        return self.tokenizer(v)
+        return self.tokenizer.tokenize(v)
 
 
 class _BPETokenizer(torch.nn.Module):

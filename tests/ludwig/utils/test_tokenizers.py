@@ -4,7 +4,12 @@ import pytest
 import torch
 import torchtext
 
-from ludwig.utils.tokenizers import EnglishLemmatizeFilterTokenizer, NgramTokenizer, StringSplitTokenizer
+from ludwig.utils.tokenizers import (
+    EnglishLemmatizeFilterTokenizer,
+    NgramTokenizer,
+    SentencePieceTokenizer,
+    StringSplitTokenizer,
+)
 
 TORCHTEXT_0_14_0_HF_NAMES = [
     "bert-base-uncased",
@@ -85,3 +90,10 @@ def test_english_lemmatize_filter_tokenizer():
     tokenizer = EnglishLemmatizeFilterTokenizer()
     tokens = tokenizer(inputs)
     assert len(tokens) > 0
+
+
+def test_sentence_piece_tokenizer():
+    inputs = "This is a sentence. And this is another one."
+    tokenizer = SentencePieceTokenizer()
+    tokens = tokenizer(inputs)
+    assert tokens == ["▁This", "▁is", "▁a", "▁sentence", ".", "▁And", "▁this", "▁is", "▁another", "▁one", "."]
