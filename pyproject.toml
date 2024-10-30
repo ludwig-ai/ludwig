@@ -1,3 +1,246 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ludwig"
+dynamic = ["version"]
+description = "Declarative machine learning: End-to-end machine learning pipelines using data-driven configurations."
+readme = "README.md"
+license = { text = "Apache 2.0" }
+requires-python = ">=3.8"
+authors = [
+    { name = "Piero Molino", email = "piero.molino@gmail.com" },
+]
+keywords = [
+    "computer",
+    "deep",
+    "deep_learning",
+    "language",
+    "learning",
+    "ludwig",
+    "machine",
+    "machine_learning",
+    "natural",
+    "processing",
+    "vision",
+]
+dependencies = [
+    "absl-py",
+    "bitsandbytes<0.41.0",
+    "Cython>=0.25",
+    "dataclasses-json",
+    "datasets",
+    "filelock",
+    "fsspec[http]<=2023.10.0",
+    "getdaft==0.1.20",
+    "gpustat",
+    "h5py>=2.6,!=3.0.0",
+    "html5lib",
+    "imagecodecs",
+    "jsonschema>=4.5.0,<4.7",
+    "kaggle",
+    "lxml",
+    "marshmallow",
+    "marshmallow-dataclass==8.5.4",
+    "marshmallow-jsonschema",
+    "nltk",
+    "numpy>=1.15",
+    "openpyxl>=3.0.7",
+    "packaging",
+    "pandas>=1.0,!=1.1.5,<2.2.0",
+    "protobuf",
+    "psutil",
+    "py-cpuinfo==9.0.0",
+    "pyarrow<15.0.0",
+    "pydantic<2.0",
+    "pyxlsb>=1.0.8",
+    "PyYAML>=3.12,<6.0.1,!=5.4.*",
+    "requests",
+    "retry",
+    "rich~=12.4.4",
+    "sacremoses",
+    "scikit-learn",
+    "scipy>=0.18",
+    "sentencepiece",
+    "spacy>=2.3",
+    "tabulate>=0.7",
+    "tensorboard",
+    "tifffile",
+    "tokenizers>=0.15",
+    "torch>=2.0.0",
+    "torchaudio",
+    "torchinfo",
+    "torchmetrics>=0.11.0",
+    "torchtext",
+    "torchvision",
+    "tqdm",
+    "transformers>=4.42.3",
+    "urllib3<2",
+    "xlrd>=2.0.1",
+    "xlsxwriter>=1.4.3",
+    "xlwt",
+]
+
+[project.optional-dependencies]
+benchmarking = [
+    "s3fs",
+]
+distributed = [
+    "awscli",
+    "dask[dataframe]<2023.4.0",
+    "deepspeed!=0.11.0,<0.13.0",
+    "getdaft[ray]==0.1.20",
+    "GPUtil",
+    "pyarrow",
+    "ray[default,data,serve,tune]==2.3.1",
+    "tblib",
+    "tensorboardX<2.3",
+]
+explain = [
+    "captum",
+]
+extra = [
+    "horovod[pytorch]>=0.24.0,!=0.26.0",
+    "modin[ray]",
+    "predibase>=2023.10.2",
+]
+full = [
+    "accelerate",
+    "awscli",
+    "captum",
+    "cartonml-nightly",
+    "dask[dataframe]<2023.4.0",
+    "deepspeed!=0.11.0,<0.13.0",
+    "faiss-cpu",
+    "fastapi",
+    "getdaft[ray]==0.1.20",
+    "GPUtil",
+    "hiplot",
+    "httpx",
+    "hummingbird-ml>=0.4.8",
+    "hyperopt",
+    "lightgbm",
+    "lightgbm-ray",
+    "loralib",
+    "matplotlib>3.4,<3.9.0; python_version > '3.6'",
+    "matplotlib>=3.0,<3.4; python_version <= '3.6'",
+    "neuropod==0.3.0rc6 ; platform_system != \"Windows\" and python_version < '3.9'",
+    "peft>=0.10.0",
+    "ptitprince",
+    "pyarrow",
+    "python-multipart",
+    "ray[default,data,serve,tune]==2.3.1",
+    "ray[default,tune]>=2.0.0",
+    "s3fs",
+    "seaborn>=0.7,<0.12",
+    "sentence-transformers",
+    "tblib",
+    "tensorboardX<2.3",
+    "uvicorn",
+]
+hyperopt = [
+    "hyperopt",
+    "ray[default,tune]>=2.0.0",
+]
+llm = [
+    "accelerate",
+    "faiss-cpu",
+    "loralib",
+    "peft>=0.10.0",
+    "sentence-transformers",
+]
+serve = [
+    "cartonml-nightly",
+    "fastapi",
+    "httpx",
+    "neuropod==0.3.0rc6 ; platform_system != \"Windows\" and python_version < '3.9'",
+    "python-multipart",
+    "uvicorn",
+]
+test = [
+    "accelerate",
+    "aim",
+    "awscli",
+    "ax-platform",
+    "bayesian-optimization",
+    "captum",
+    "cartonml-nightly",
+    "comet_ml",
+    "ConfigSpace==0.7.1",
+    "dask[dataframe]<2023.4.0",
+    "deepspeed!=0.11.0,<0.13.0",
+    "faiss-cpu",
+    "fastapi",
+    "flaml[blendsearch]",
+    "getdaft[ray]==0.1.20",
+    "GPUtil",
+    "HEBO",
+    "hiplot",
+    "hpbandster",
+    "httpx",
+    "hummingbird-ml>=0.4.8",
+    "hyperopt",
+    "lightgbm",
+    "lightgbm-ray",
+    "loralib",
+    "matplotlib>3.4,<3.9.0; python_version > '3.6'",
+    "matplotlib>=3.0,<3.4; python_version <= '3.6'",
+    "mlflow",
+    "neuropod==0.3.0rc6 ; platform_system != \"Windows\" and python_version < '3.9'",
+    "nevergrad",
+    "optuna",
+    "peft>=0.10.0",
+    "ptitprince",
+    "pyarrow",
+    "pytest",
+    "pytest-timeout",
+    "python-multipart",
+    "ray[default,data,serve,tune]==2.3.1",
+    "ray[default,tune]>=2.0.0",
+    "s3fs",
+    "s3fs>=2022.8.2",
+    "scikit-optimize",
+    "seaborn>=0.7,<0.12",
+    "sentence-transformers",
+    "six>=1.13.0",
+    "sqlalchemy<2",
+    "tblib",
+    "tensorboardX<2.3",
+    "tifffile",
+    "uvicorn",
+    "wandb<0.12.11",
+    "wget",
+    "zoopt",
+]
+tree = [
+    "hummingbird-ml>=0.4.8",
+    "lightgbm",
+    "lightgbm-ray",
+]
+viz = [
+    "hiplot",
+    "matplotlib>3.4,<3.9.0; python_version > '3.6'",
+    "matplotlib>=3.0,<3.4; python_version <= '3.6'",
+    "ptitprince",
+    "seaborn>=0.7,<0.12",
+]
+
+[project.scripts]
+ludwig = "ludwig.cli:main"
+
+[project.urls]
+Download = "https://pypi.org/project/ludwig/"
+Homepage = "https://github.com/ludwig-ai/ludwig"
+
+[tool.hatch.version]
+path = "ludwig/__about__.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/ludwig",
+]
+
 [tool.isort]
 profile = "black"
 line_length = 120
