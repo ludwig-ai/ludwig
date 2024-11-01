@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "Declarative machine learning: End-to-end machine learning pipelines using data-driven configurations."
 readme = "README.md"
 license = { text = "Apache 2.0" }
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 authors = [
     { name = "Piero Molino", email = "piero.molino@gmail.com" },
 ]
@@ -55,25 +55,25 @@ dependencies = [
     "pyarrow<15.0.0",
     "pydantic<2.0",
     "pyxlsb>=1.0.8",
-    "PyYAML>=3.12,<6.0.1,!=5.4.*",
+    "PyYAML==6.0.2",
     "requests",
     "retry",
     "rich~=12.4.4",
     "sacremoses",
+    "importlib",
     "scikit-learn",
     "scipy>=0.18",
     "sentencepiece",
     "spacy>=2.3",
     "tabulate>=0.7",
     "tensorboard",
-    "tifffile",
     "tokenizers>=0.15",
-    "torch>=2.0.0",
-    "torchaudio",
+    "torch==2.2.2",
+    "torchaudio==2.2.2",
     "torchinfo",
     "torchmetrics>=0.11.0",
-    "torchtext",
-    "torchvision",
+    "torchtext==0.17.2",
+    "torchvision==0.17.2",
     "tqdm",
     "transformers>=4.42.3",
     "urllib3<2",
@@ -82,7 +82,12 @@ dependencies = [
     "xlwt",
 ]
 
+# Optional Dependencies
 [project.optional-dependencies]
+dev = [
+    "flake8",
+    "flake8-pyproject"
+]
 benchmarking = [
     "s3fs",
 ]
@@ -158,7 +163,27 @@ serve = [
     "python-multipart",
     "uvicorn",
 ]
-test = [
+tree = [
+    "hummingbird-ml>=0.4.8",
+    "lightgbm",
+    "lightgbm-ray",
+]
+viz = [
+    "hiplot",
+    "matplotlib>3.4,<3.9.0; python_version > '3.6'",
+    "matplotlib>=3.0,<3.4; python_version <= '3.6'",
+    "ptitprince",
+    "seaborn>=0.7,<0.12",
+]
+
+[project.urls]
+Download = "https://pypi.org/project/ludwig/"
+Homepage = "https://github.com/ludwig-ai/ludwig"
+Website = "https://ludwig.ai/latest/"
+
+[tool.hatch.envs.hatch-test]
+dependencies = [
+    "gpy >=1.10.0",
     "accelerate",
     "aim",
     "awscli",
@@ -195,9 +220,10 @@ test = [
     "pyarrow",
     "pytest",
     "pytest-timeout",
+    "pytest-cov",
     "python-multipart",
-    "ray[default,data,serve,tune]==2.3.1",
-    "ray[default,tune]>=2.0.0",
+    #"ray[default,data,serve,tune]==2.3.1",
+    #"ray[default,tune]>=2.0.0",
     "s3fs",
     "s3fs>=2022.8.2",
     "scikit-optimize",
@@ -209,29 +235,15 @@ test = [
     "tensorboardX<2.3",
     "tifffile",
     "uvicorn",
-    "wandb<0.12.11",
+    "wandb",
+    #"wandb<0.12.11",
     "wget",
-    "zoopt",
-]
-tree = [
-    "hummingbird-ml>=0.4.8",
-    "lightgbm",
-    "lightgbm-ray",
-]
-viz = [
-    "hiplot",
-    "matplotlib>3.4,<3.9.0; python_version > '3.6'",
-    "matplotlib>=3.0,<3.4; python_version <= '3.6'",
-    "ptitprince",
-    "seaborn>=0.7,<0.12",
+    "zoopt"
 ]
 
-[project.scripts]
-ludwig = "ludwig.cli:main"
-
-[project.urls]
-Download = "https://pypi.org/project/ludwig/"
-Homepage = "https://github.com/ludwig-ai/ludwig"
+#[tool.hatch.envs.hatch-test]
+#setup = "pip install -e .[test]"
+#run = "pytest {args:test}"
 
 [tool.hatch.version]
 path = "ludwig/__about__.py"
@@ -239,7 +251,45 @@ path = "ludwig/__about__.py"
 [tool.hatch.build.targets.sdist]
 include = [
     "/ludwig",
+    "/tests"
 ]
+
+# ------- flake8 ----------
+[tool.flake8]
+max-line-length = 120
+exclude = [
+    ".tox",
+    "*.egg",
+    "*_pb2.py",
+    "build",
+    "temp"
+]
+select = ["E", "W", "F"]
+doctests = true
+verbose = 2
+format = "pylint"
+ignore = [
+    "E731",
+    "W503",
+    "E203",
+    "E231",
+    "E241",
+    "E221",
+    "E225",
+    "E226",
+    "E241",
+    "E271",
+    "E275"
+]
+
+[tool.hatch.envs.lint]
+dependencies = [
+    "flake8",
+    "flake8-pyproject"
+]
+
+[tool.hatch.envs.lint.scripts]
+style = "flake8 ."
 
 [tool.isort]
 profile = "black"

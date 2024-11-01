@@ -1,7 +1,0 @@
-sentence-transformers
-faiss-cpu
-
-accelerate
-loralib
-
-peft>=0.10.0
