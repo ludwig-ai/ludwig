@@ -9,9 +9,7 @@ description = "Declarative machine learning: End-to-end machine learning pipelin
 readme = "README.md"
 license = { text = "Apache 2.0" }
 requires-python = ">=3.10"
-authors = [
-    { name = "Piero Molino", email = "piero.molino@gmail.com" },
-]
+authors = [{ name = "Piero Molino", email = "piero.molino@gmail.com" }]
 keywords = [
     "computer",
     "deep",
@@ -80,19 +78,13 @@ dependencies = [
     "xlrd>=2.0.1",
     "xlsxwriter>=1.4.3",
     "xlwt",
-    "tifffile"
+    "tifffile==2024.9.20",
 ]
 
 # Optional Dependencies
 [project.optional-dependencies]
-dev = [
-    "flake8",
-    "flake8-pyproject",
-    "pre-commit",
-]
-benchmarking = [
-    "s3fs",
-]
+dev = ["flake8", "flake8-pyproject", "pre-commit"]
+benchmarking = ["s3fs"]
 distributed = [
     "awscli",
     "dask[dataframe]<2023.4.0",
@@ -104,9 +96,7 @@ distributed = [
     "tblib",
     "tensorboardX<2.3",
 ]
-explain = [
-    "captum",
-]
+explain = ["captum"]
 extra = [
     "horovod[pytorch]>=0.24.0,!=0.26.0",
     "modin[ray]",
@@ -146,10 +136,7 @@ full = [
     "tensorboardX<2.3",
     "uvicorn",
 ]
-hyperopt = [
-    "hyperopt",
-    "ray[default,tune]>=2.0.0",
-]
+hyperopt = ["hyperopt", "ray[default,tune]>=2.0.0"]
 llm = [
     "accelerate",
     "faiss-cpu",
@@ -165,11 +152,7 @@ serve = [
     "python-multipart",
     "uvicorn",
 ]
-tree = [
-    "hummingbird-ml>=0.4.8",
-    "lightgbm",
-    "lightgbm-ray",
-]
+tree = ["hummingbird-ml>=0.4.8", "lightgbm", "lightgbm-ray"]
 viz = [
     "hiplot",
     "matplotlib>3.4,<3.9.0; python_version > '3.6'",
@@ -242,7 +225,7 @@ dependencies = [
     "wandb",
     #"wandb<0.12.11",
     "wget",
-    "zoopt"
+    "zoopt",
 ]
 
 #[tool.hatch.envs.hatch-test]
@@ -253,21 +236,12 @@ dependencies = [
 path = "ludwig/__about__.py"
 
 [tool.hatch.build.targets.sdist]
-include = [
-    "/ludwig",
-    "/tests"
-]
+include = ["/ludwig", "/tests"]
 
 # ------- flake8 ----------
 [tool.flake8]
 max-line-length = 120
-exclude = [
-    ".tox",
-    "*.egg",
-    "*_pb2.py",
-    "build",
-    "temp"
-]
+exclude = [".tox", "*.egg", "*_pb2.py", "build", "temp"]
 select = ["E", "W", "F"]
 doctests = true
 verbose = 2
@@ -283,14 +257,11 @@ ignore = [
     "E226",
     "E241",
     "E271",
-    "E275"
+    "E275",
 ]
 
 [tool.hatch.envs.lint]
-dependencies = [
-    "flake8",
-    "flake8-pyproject"
-]
+dependencies = ["flake8", "flake8-pyproject"]
 
 [tool.hatch.envs.lint.scripts]
 style = "flake8 ."
