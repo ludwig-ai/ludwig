@@ -86,7 +86,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "flake8",
-    "flake8-pyproject"
+    "flake8-pyproject",
+    "pre-commit",
 ]
 benchmarking = [
     "s3fs",
