@@ -182,6 +182,9 @@ Download = "https://pypi.org/project/ludwig/"
 Homepage = "https://github.com/ludwig-ai/ludwig"
 Website = "https://ludwig.ai/latest/"
 
+[project.scripts]
+ludwig = "ludwig.cli:main"
+
 [tool.hatch.envs.hatch-test]
 dependencies = [
     "gpy >=1.10.0",
