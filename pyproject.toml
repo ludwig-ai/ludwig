@@ -80,6 +80,7 @@ dependencies = [
     "xlrd>=2.0.1",
     "xlsxwriter>=1.4.3",
     "xlwt",
+    "tifffile"
 ]
 
 # Optional Dependencies
@@ -237,7 +238,6 @@ dependencies = [
     "sqlalchemy<2",
     "tblib",
     "tensorboardX<2.3",
-    "tifffile",
     "uvicorn",
     "wandb",
     #"wandb<0.12.11",
