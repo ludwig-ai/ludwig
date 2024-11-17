@@ -34,7 +34,7 @@ repos:
       - id: pyupgrade
         args: [--py36-plus]
   - repo: https://github.com/PyCQA/docformatter
-    rev: v1.5.1
+    rev: 06907d0
     hooks:
       - id: docformatter
         args: [--in-place, --wrap-summaries=115, --wrap-descriptions=120]
