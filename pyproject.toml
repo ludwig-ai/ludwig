@@ -58,7 +58,6 @@ dependencies = [
     "retry",
     "rich~=12.4.4",
     "sacremoses",
-    #"importlib",
     "scikit-learn==1.3",
     "scipy>=0.18",
     "sentencepiece",
