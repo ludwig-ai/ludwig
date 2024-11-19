@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "setuptools>=65.0"]
 build-backend = "hatchling.build"
 
 [project]
@@ -46,7 +46,7 @@ dependencies = [
     "numpy==1.26",
     "openpyxl>=3.0.7",
     "packaging",
-    "pandas>=1.0,!=1.1.5,<2.2.0",
+    "pandas",
     "protobuf",
     "psutil",
     "py-cpuinfo==9.0.0",
@@ -58,7 +58,7 @@ dependencies = [
     "retry",
     "rich~=12.4.4",
     "sacremoses",
-    "importlib",
+    #"importlib",
     "scikit-learn==1.3",
     "scipy>=0.18",
     "sentencepiece",
@@ -83,25 +83,6 @@ dependencies = [
 
 # Optional Dependencies
 [project.optional-dependencies]
-dev = ["flake8", "flake8-pyproject", "pre-commit"]
-benchmarking = ["s3fs"]
-distributed = [
-    "awscli",
-    "dask[dataframe]<2023.4.0",
-    "deepspeed!=0.11.0,<0.13.0",
-    "getdaft[ray]==0.1.20",
-    "GPUtil",
-    "pyarrow",
-    "ray[default,data,serve,tune]==2.3.1",
-    "tblib",
-    "tensorboardX<2.3",
-]
-explain = ["captum"]
-extra = [
-    "horovod[pytorch]>=0.24.0,!=0.26.0",
-    "modin[ray]",
-    "predibase>=2023.10.2",
-]
 full = [
     "accelerate",
     "awscli",
@@ -135,6 +116,28 @@ full = [
     "tblib",
     "tensorboardX<2.3",
     "uvicorn",
+]
+
+dev = ["flake8", "flake8-pyproject", "pre-commit", "setuptools"]
+
+test = ["pytest", "pytest-timeout", "wget", "six>=1.13.0", "cloudpickle"]
+benchmarking = ["s3fs"]
+distributed = [
+    "awscli",
+    "dask[dataframe]<2023.4.0",
+    "deepspeed!=0.11.0,<0.13.0",
+    "getdaft[ray]==0.1.20",
+    "GPUtil",
+    "pyarrow",
+    "ray[default,data,serve,tune]==2.3.1",
+    "tblib",
+    "tensorboardX<2.3",
+]
+explain = ["captum"]
+extra = [
+    "horovod[pytorch]>=0.24.0,!=0.26.0",
+    "modin[ray]",
+    "predibase>=2023.10.2",
 ]
 hyperopt = ["hyperopt", "ray[default,tune]>=2.0.0"]
 llm = [
@@ -265,6 +268,15 @@ dependencies = ["flake8", "flake8-pyproject"]
 
 [tool.hatch.envs.lint.scripts]
 style = "flake8 ."
+
+[tool.hatch.envs.default]
+python = "3.11"
+dependencies = ["setuptools>=65.0"]
+
+[tool.hatch.envs.dev]
+python = "3.11"
+dependencies = [".[dev]"]
+
 
 [tool.isort]
 profile = "black"
