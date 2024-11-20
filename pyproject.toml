@@ -65,12 +65,12 @@ dependencies = [
     "tabulate>=0.7",
     "tensorboard",
     "tokenizers>=0.15",
-    "torch==2.2.2",
-    "torchaudio==2.2.2",
+    "torch==2.4.1",
+    "torchaudio==2.4.1",
     "torchinfo",
     "torchmetrics>=0.11.0",
-    "torchtext==0.17.2",
-    "torchvision==0.17.2",
+    #"torchtext==0.17.2",
+    "torchvision==0.19.1",
     "tqdm",
     "transformers>=4.42.3",
     "urllib3<2",
@@ -269,11 +269,11 @@ dependencies = ["flake8", "flake8-pyproject"]
 style = "flake8 ."
 
 [tool.hatch.envs.default]
-python = "3.11"
+python = "3.12"
 dependencies = ["setuptools>=65.0"]
 
 [tool.hatch.envs.dev]
-python = "3.11"
+python = "3.12"
 dependencies = [".[dev]"]
 
 
