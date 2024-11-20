@@ -27,8 +27,6 @@ jobs:
 
     env:
       MARKERS: ${{ matrix.test-markers }}
-      NEUROPOD_BASE_DIR: "/usr/local/lib/neuropod"
-      NEUROPOD_VERISON: "0.3.0-rc6"
       AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
       KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
@@ -91,12 +89,6 @@ jobs:
 
           pip install '.[test]'
           pip list
-        shell: bash
-
-      - name: Install Neuropod backend
-        run: |
-          sudo mkdir -p "$NEUROPOD_BASE_DIR"
-          curl -L https://github.com/uber/neuropod/releases/download/v${{ env.NEUROPOD_VERISON }}/libneuropod-cpu-linux-v${{ env.NEUROPOD_VERISON }}-torchscript-${{ env.TORCHSCRIPT_VERSION }}-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
         shell: bash
 
       - name: Unit Tests
