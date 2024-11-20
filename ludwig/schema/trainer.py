@@ -1,8 +1,10 @@
+# flake8: noqa: E501
 import re
 from abc import ABC
 from typing import Optional, Type, Union
 
 import torch
+import torch._dynamo
 from packaging.version import parse as parse_version
 
 from ludwig.api_annotations import DeveloperAPI
@@ -33,6 +35,9 @@ from ludwig.utils.registry import Registry
 
 _torch_200 = parse_version(torch.__version__) >= parse_version("2.0")
 
+# this is a workarrpund to avoid an error regarding torch.compile.
+# TODO Fix torch.compile and dynamo problems
+torch._dynamo.config.suppress_errors = True
 
 trainer_schema_registry = Registry()
 _llm_trainer_schema_registry = Registry()
