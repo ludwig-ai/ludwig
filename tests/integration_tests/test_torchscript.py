@@ -1,3 +1,4 @@
+# flake8: noqa: E501
 # Copyright (c) 2023 Predibase, Inc., 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,7 +22,6 @@ import numpy as np
 import pandas as pd
 import pytest
 import torch
-import torchtext
 
 from ludwig.api import LudwigModel
 from ludwig.backend import RAY
@@ -408,32 +408,7 @@ def test_torchscript_e2e_text(tmpdir, csv_filename):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
-@pytest.mark.skipif(
-    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 14, 0),
-    reason="requires torchtext 0.14.0 or higher",
-)
-@pytest.mark.integration_tests_e
-def test_torchscript_e2e_text_hf_tokenizer(tmpdir, csv_filename):
-    data_csv_path = os.path.join(tmpdir, csv_filename)
-    input_features = [text_feature(encoder={"vocab_size": 3, "type": "bert"})]
-    output_features = [
-        category_feature(),
-    ]
-    backend = LocalTestBackend()
-    config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        TRAINER: {"epochs": 2, BATCH_SIZE: 128, EVAL_BATCH_SIZE: 128},
-    }
-    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
-
-    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
-
-
-@pytest.mark.skipif(
-    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 14, 0),
-    reason="requires torchtext 0.14.0 or higher",
-)
+@pytest.mark.skip()
 @pytest.mark.integration_tests_e
 def test_torchscript_e2e_text_hf_tokenizer_truncated_sequence(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)

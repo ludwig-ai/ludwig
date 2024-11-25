@@ -50,7 +50,7 @@ RUN pip install -U pip
 
 WORKDIR /ludwig
 
-RUN pip install --no-cache-dir torch==2.1.0 torchtext torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu118
+RUN pip install --no-cache-dir torch==2.1.0  torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu118
 
 COPY . .
 RUN pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cu118

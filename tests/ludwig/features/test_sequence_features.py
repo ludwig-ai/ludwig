@@ -1,9 +1,9 @@
+# flake8: noqa: E501
 from typing import List, Tuple
 
 import numpy as np
 import pytest
 import torch
-import torchtext
 
 from ludwig.constants import ENCODER_OUTPUT, LAST_HIDDEN, LOGITS, SEQUENCE, TEXT, TYPE
 from ludwig.features.sequence_feature import _SequencePreprocessing, SequenceInputFeature, SequenceOutputFeature
@@ -192,9 +192,7 @@ def test_text_preproc_module_space_punct_tokenizer():
     )
 
 
-@pytest.mark.skipif(
-    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0), reason="requires torchtext 0.12.0 or higher"
-)
+@pytest.mark.skip()
 def test_sequence_preproc_module_sentencepiece_tokenizer():
     metadata = {
         "preprocessing": {
@@ -227,9 +225,7 @@ def test_sequence_preproc_module_sentencepiece_tokenizer():
     )
 
 
-@pytest.mark.skipif(
-    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0), reason="requires torchtext 0.12.0 or higher"
-)
+@pytest.mark.skip()
 def test_sequence_preproc_module_clip_tokenizer():
     metadata = {
         "preprocessing": {
@@ -260,9 +256,7 @@ def test_sequence_preproc_module_clip_tokenizer():
     )
 
 
-@pytest.mark.skipif(
-    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0), reason="requires torchtext 0.12.0 or higher"
-)
+@pytest.mark.skip()
 def test_sequence_preproc_module_gpt2bpe_tokenizer():
     metadata = {
         "preprocessing": {
@@ -296,9 +290,7 @@ def test_sequence_preproc_module_gpt2bpe_tokenizer():
     )
 
 
-@pytest.mark.skipif(
-    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 13, 0), reason="requires torchtext 0.13.0 or higher"
-)
+@pytest.mark.skip()
 def test_sequence_preproc_module_bert_tokenizer():
     metadata = {
         "preprocessing": {

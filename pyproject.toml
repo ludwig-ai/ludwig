@@ -23,6 +23,7 @@ keywords = [
     "processing",
     "vision",
 ]
+
 dependencies = [
     "absl-py",
     "bitsandbytes<0.41.0",
@@ -69,7 +70,6 @@ dependencies = [
     "torchaudio==2.4.1",
     "torchinfo",
     "torchmetrics>=0.11.0",
-    #"torchtext==0.17.2",
     "torchvision==0.19.1",
     "tqdm",
     "transformers>=4.42.3",
@@ -78,48 +78,42 @@ dependencies = [
     "xlsxwriter>=1.4.3",
     "xlwt",
     "tifffile==2024.9.20",
+    "onnx",
 ]
 
-# Optional Dependencies
 [project.optional-dependencies]
-full = [
-    "accelerate",
-    "awscli",
-    "captum",
-    "cartonml-nightly",
-    "dask[dataframe]<2023.4.0",
-    "deepspeed!=0.11.0,<0.13.0",
-    "faiss-cpu",
-    "fastapi",
-    "getdaft[ray]==0.1.20",
-    "GPUtil",
-    "hiplot",
-    "httpx",
-    "hummingbird-ml>=0.4.8",
-    "hyperopt",
-    "lightgbm",
-    "lightgbm-ray",
-    "loralib",
-    "matplotlib>3.4,<3.9.0; python_version > '3.6'",
-    "matplotlib>=3.0,<3.4; python_version <= '3.6'",
-    "neuropod==0.3.0rc6 ; platform_system != \"Windows\" and python_version < '3.9'",
-    "peft>=0.10.0",
-    "ptitprince",
-    "pyarrow",
-    "python-multipart",
-    "ray[default,data,serve,tune]==2.3.1",
-    "ray[default,tune]>=2.0.0",
-    "s3fs",
-    "seaborn>=0.7,<0.12",
-    "sentence-transformers",
-    "tblib",
-    "tensorboardX<2.3",
-    "uvicorn",
-]
-
 dev = ["flake8", "flake8-pyproject", "pre-commit", "setuptools"]
+test = [
+    # Core testing
+    "pytest",
+    "pytest-timeout",
+    "pytest-cov",
+    "tifffile",
+    "wget",
+    "six>=1.13.0",
 
-test = ["pytest", "pytest-timeout", "wget", "six>=1.13.0", "cloudpickle"]
+    # Logging and experiment tracking
+    "aim",
+    "wandb<0.12.11",
+    "comet_ml",
+    "mlflow",
+    "sqlalchemy<2",  # Pinned for aimstack compatibility
+
+    # Ray Tune Search Algorithms
+    "hpbandster",            # BOHB algorithm
+    "ConfigSpace==0.7.1",
+    "ax-platform",           # AX algorithm
+    "bayesian-optimization", # Bayesian optimization
+    "flaml[blendsearch]",    # CFO and blendsearch
+    "HEBO",                  # HEBO algorithm
+    "nevergrad",             # Nevergrad algorithm
+    "optuna",                # Optuna algorithm
+    "scikit-optimize",       # SKopt algorithm
+    "zoopt",                 # ZOOpt algorithm
+
+    # Storage
+    "s3fs>=2022.8.2",
+]
 benchmarking = ["s3fs"]
 distributed = [
     "awscli",
@@ -153,6 +147,7 @@ serve = [
     "neuropod==0.3.0rc6 ; platform_system != \"Windows\" and python_version < '3.9'",
     "python-multipart",
     "uvicorn",
+    "starlette",
 ]
 tree = ["hummingbird-ml>=0.4.8", "lightgbm", "lightgbm-ray"]
 viz = [
@@ -170,69 +165,6 @@ Website = "https://ludwig.ai/latest/"
 
 [project.scripts]
 ludwig = "ludwig.cli:main"
-
-[tool.hatch.envs.hatch-test]
-dependencies = [
-    "gpy >=1.10.0",
-    "accelerate",
-    "aim",
-    "awscli",
-    "ax-platform",
-    "bayesian-optimization",
-    "captum",
-    "cartonml-nightly",
-    "comet_ml",
-    "ConfigSpace==0.7.1",
-    "dask[dataframe]<2023.4.0",
-    "deepspeed!=0.11.0,<0.13.0",
-    "faiss-cpu",
-    "fastapi",
-    "flaml[blendsearch]",
-    "getdaft[ray]==0.1.20",
-    "GPUtil",
-    "HEBO",
-    "hiplot",
-    "hpbandster",
-    "httpx",
-    "hummingbird-ml>=0.4.8",
-    "hyperopt",
-    "lightgbm",
-    "lightgbm-ray",
-    "loralib",
-    "matplotlib>3.4,<3.9.0; python_version > '3.6'",
-    "matplotlib>=3.0,<3.4; python_version <= '3.6'",
-    "mlflow",
-    "neuropod==0.3.0rc6 ; platform_system != \"Windows\" and python_version < '3.9'",
-    "nevergrad",
-    "optuna",
-    "peft>=0.10.0",
-    "ptitprince",
-    "pyarrow",
-    "pytest",
-    "pytest-timeout",
-    "pytest-cov",
-    "python-multipart",
-    #"ray[default,data,serve,tune]==2.3.1",
-    #"ray[default,tune]>=2.0.0",
-    "s3fs",
-    "s3fs>=2022.8.2",
-    "scikit-optimize",
-    "seaborn>=0.7,<0.12",
-    "sentence-transformers",
-    "six>=1.13.0",
-    "sqlalchemy<2",
-    "tblib",
-    "tensorboardX<2.3",
-    "uvicorn",
-    "wandb",
-    #"wandb<0.12.11",
-    "wget",
-    "zoopt",
-]
-
-#[tool.hatch.envs.hatch-test]
-#setup = "pip install -e .[test]"
-#run = "pytest {args:test}"
 
 [tool.hatch.version]
 path = "ludwig/__about__.py"
@@ -270,11 +202,11 @@ dependencies = ["flake8", "flake8-pyproject"]
 style = "flake8 ."
 
 [tool.hatch.envs.default]
-python = "3.12"
+python = "3.11"
 dependencies = ["setuptools>=65.0"]
 
 [tool.hatch.envs.dev]
-python = "3.12"
+python = "3.11"
 dependencies = [".[dev]"]
 
 

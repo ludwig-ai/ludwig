@@ -50,7 +50,7 @@ jobs:
           python --version
           pip --version
           python -m pip install -U pip
-          pip install torch==2.1.0 torchtext torchvision torchaudio
+          pip install torch==2.1.0 torchvision torchaudio
           pip install ray==2.3.1
           pip install '.[test]'
 

@@ -1,3 +1,4 @@
+# flake8: noqa: E501
 import logging
 import re
 from typing import Any, Dict, List, Union
@@ -91,7 +92,6 @@ class TextExtractorDecoder(Decoder):
             # Transformer Tokenizers
             self.tokenizer_vocab_size = self.tokenizer.tokenizer.vocab_size
         else:
-            # TorchText Tokenizers
             self.tokenizer_vocab_size = len(self.tokenizer.vocab)
 
         # Maximum number of new tokens that will be generated

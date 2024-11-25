@@ -24,7 +24,7 @@ RUN pip install -U pip
 
 WORKDIR /ludwig
 
-RUN pip install --no-cache-dir torch==2.0.0 torchtext torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir torch==2.0.0 torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
 
 COPY . .
 RUN pip install --no-cache-dir '.[full]'
