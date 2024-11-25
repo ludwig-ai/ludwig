@@ -140,3 +140,5 @@ examples/*/visualizations/
 
 # benchmarking configs
 ludwig/benchmarking/configs/
+pytest.xml
+ludwig.code-workspace
