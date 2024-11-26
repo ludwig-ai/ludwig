@@ -53,6 +53,7 @@ dependencies = [
     "py-cpuinfo==9.0.0",
     "pyarrow<15.0.0",
     "pydantic<2.0",
+    "pythran>=0.9",
     "pyxlsb>=1.0.8",
     "PyYAML==6.0.2",
     "requests",
