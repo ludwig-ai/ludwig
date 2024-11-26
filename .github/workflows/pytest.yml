@@ -61,7 +61,7 @@ jobs:
       - name: Setup Linux
         if: runner.os == 'linux'
         run: |
-          sudo apt-get update && sudo apt-get install -y cmake libsndfile1 wget libsox-dev "pythran~=0.9.0" libopenblas-dev
+          sudo apt-get update && sudo apt-get install -y cmake libsndfile1 wget libsox-dev "pythran=0.9.*" libopenblas-dev
 
       - name: Setup macOS
         if: runner.os == 'macOS'
