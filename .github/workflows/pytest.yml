@@ -87,7 +87,7 @@ jobs:
           python -m pip install -U pip
           cmake --version
 
-          pip install '.[test]'
+          pip install --prefer-binary '.[test]'
           pip list
         shell: bash
 
