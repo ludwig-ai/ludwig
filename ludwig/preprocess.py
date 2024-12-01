@@ -45,11 +45,10 @@ def preprocess_cli(
     logging_level: int = logging.INFO,
     callbacks: List[Callback] = None,
     backend: Union[Backend, str] = None,
-    **kwargs
+    **kwargs,
 ) -> None:
-    """*train* defines the entire training procedure used by Ludwig's
-    internals. Requires most of the parameters that are taken into the model.
-    Builds a full ludwig model and performs the training.
+    """*train* defines the entire training procedure used by Ludwig's internals. Requires most of the parameters
+    that are taken into the model. Builds a full ludwig model and performs the training.
 
     :param preprocessing_config: (Union[str, dict]) in-memory representation of
             config or string path to a YAML config file.

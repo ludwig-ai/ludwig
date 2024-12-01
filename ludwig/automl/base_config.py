@@ -79,9 +79,8 @@ class DatasetInfo:
 def allocate_experiment_resources(resources: Resources) -> dict:
     """Allocates ray trial resources based on available resources.
 
-    # Inputs
-    :param resources (dict) specifies all available GPUs, CPUs and associated
-        metadata of the machines (i.e. memory)
+    # Inputs :param resources (dict) specifies all available GPUs, CPUs and associated     metadata of the machines
+    (i.e. memory)
 
     # Return
     :return: (dict) gpu and cpu resources per trial
@@ -260,9 +259,7 @@ def get_dataset_info(df: Union[pd.DataFrame, dd.core.DataFrame]) -> DatasetInfo:
     inference.
 
     # Inputs
-    :param df: (Union[pd.DataFrame, dd.core.DataFrame]) Pandas or Dask dataframe.
-
-    # Return
+    :param df: (Union[pd.DataFrame, dd.core.DataFrame]) Pandas or Dask dataframe.  # Return
     :return: (DatasetInfo) Structure containing list of FieldInfo objects.
     """
     source = wrap_data_source(df)
@@ -297,9 +294,8 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
     inference.
 
     # Inputs
-    :param source: (DataSource) A wrapper around a data source, which may represent a pandas or Dask dataframe.
-
-    # Return
+    :param source: (DataSource) A wrapper around a data source, which may represent a pandas or Dask dataframe. #
+        Return
     :return: (DatasetInfo) Structure containing list of FieldInfo objects.
     """
     row_count = len(source)
@@ -355,10 +351,8 @@ def get_features_config(
 
     # Inputs
     :param fields: (List[FieldInfo]) FieldInfo objects for all fields in dataset
-    :param row_count: (int) total number of entries in original dataset
-    :param target_name (str, List[str]) name of target feature
-
-    # Return
+    :param row_count: (int) total number of entries in original dataset :param target_name (str, List[str]) name of
+        target feature # Return
     :return: (dict) section of auto_train config for input_features and output_features
     """
     targets = convert_targets(target_name)
@@ -379,10 +373,8 @@ def get_config_from_metadata(metadata: List[FieldMetadata], targets: Set[str] = 
     """Builds input/output feature sections of auto-train config using field metadata.
 
     # Inputs
-    :param metadata: (List[FieldMetadata]) field descriptions
-    :param targets (Set[str]) names of target features
-
-    # Return
+    :param metadata: (List[FieldMetadata]) field descriptions :param targets (Set[str]) names of target features #
+        Return
     :return: (dict) section of auto_train config for input_features and output_features
     """
     config = {
@@ -405,10 +397,8 @@ def get_field_metadata(fields: List[FieldInfo], row_count: int, targets: Set[str
 
     # Inputs
     :param fields: (List[FieldInfo]) FieldInfo objects for all fields in dataset
-    :param row_count: (int) total number of entries in original dataset
-    :param targets (Set[str]) names of target features
-
-    # Return
+    :param row_count: (int) total number of entries in original dataset :param targets (Set[str]) names of target
+        features # Return
     :return: (List[FieldMetadata]) list of objects containing metadata for each field
     """
 

@@ -700,14 +700,12 @@ def class_counts(dataset, labels_field):
 def load_from_file(file_name, field=None, dtype=int, ground_truth_split=2):
     """Load experiment data from supported file formats.
 
-    Experiment data can be test/train statistics, model predictions,
-    probability, ground truth,  ground truth metadata.
+    Experiment data can be test/train statistics, model predictions, probability, ground truth,  ground truth metadata.
     :param file_name: Path to file to be loaded
     :param field: Target Prediction field.
     :param dtype:
-    :param ground_truth_split: Ground truth split filter where 0 is train 1 is
-    validation and 2 is test split. By default test split is used when loading
-    ground truth from hdf5.
+    :param ground_truth_split: Ground truth split filter where 0 is train 1 is validation and 2 is test split. By
+        default test split is used when loading ground truth from hdf5.
     :return: Experiment data as array
     """
     if file_name.endswith(".hdf5") and field is not None:
@@ -753,7 +751,7 @@ def add_sequence_feature_column(df, col_name, seq_length):
     delimited strings composed of preceding values of the same column up to seq_length. For example values of the
     i-th row of the new column will be a space-delimited string of df[col_name][i-seq_length].
 
-     :param df: input dataframe
+    :param df: input dataframe
     :param col_name: column name containing sequential data
     :param seq_length: length of an array of preceeding column values to use
     """
