@@ -95,7 +95,8 @@ test = [
 
     # Logging and experiment tracking
     "aim",
-    "wandb<0.12.11",
+    #"wandb<0.12.11",
+    "wandb",
     "comet_ml",
     "mlflow",
     "sqlalchemy<2",  # Pinned for aimstack compatibility
