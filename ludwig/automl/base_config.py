@@ -294,8 +294,7 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
     inference.
 
     # Inputs
-    :param source: (DataSource) A wrapper around a data source, which may represent a pandas or Dask dataframe. #
-        Return
+    :param source: (DataSource) A wrapper around a data source, which may represent a pandas or Dask dataframe. # Return
     :return: (DatasetInfo) Structure containing list of FieldInfo objects.
     """
     row_count = len(source)
