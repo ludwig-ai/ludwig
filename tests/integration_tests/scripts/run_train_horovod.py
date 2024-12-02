@@ -82,5 +82,5 @@ if __name__ == "__main__":
         args.rel_path,
         json.loads(args.input_features),
         json.loads(args.output_features),
-        **json.loads(args.ludwig_kwargs)
+        **json.loads(args.ludwig_kwargs),
     )

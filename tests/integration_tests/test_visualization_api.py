@@ -118,9 +118,7 @@ class Experiment:
 def obtain_df_splits(data_csv):
     """Split input data csv file in to train, validation and test dataframes.
 
-    :param data_csv: Input data CSV file.
-    :return test_df, train_df, val_df: Train, validation and test dataframe
-            splits
+    :param data_csv: Input data CSV file. :return test_df, train_df, val_df: Train, validation and test dataframe splits
     """
     data_df = read_csv(data_csv)
     # Obtain data split array mapping data rows to split type
@@ -134,8 +132,7 @@ def obtain_df_splits(data_csv):
 def test_learning_curves_vis_api(experiment_to_use, training_only):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
+    :param experiment_to_use: Object containing trained model and results to test visualization
     :return: None
     """
     experiment = experiment_to_use
@@ -158,8 +155,7 @@ def test_learning_curves_vis_api(experiment_to_use, training_only):
 def test_compare_performance_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
+    :param experiment_to_use: Object containing trained model and results to test visualization
     :return: None
     """
     experiment = experiment_to_use
@@ -183,8 +179,7 @@ def test_compare_performance_vis_api(experiment_to_use):
 def test_compare_classifier_performance_from_prob_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
+    :param experiment_to_use: Object containing trained model and results to test visualization
     :return: None
     """
     experiment = experiment_to_use
@@ -211,8 +206,7 @@ def test_compare_classifier_performance_from_prob_vis_api(experiment_to_use):
 def test_compare_classifier_performance_from_pred_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
+    :param experiment_to_use: Object containing trained model and results to test visualization
     :return: None
     """
     experiment = experiment_to_use
@@ -238,8 +232,7 @@ def test_compare_classifier_performance_from_pred_vis_api(experiment_to_use):
 def test_compare_classifiers_performance_subset_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
+    :param experiment_to_use: Object containing trained model and results to test visualization
     :return: None
     """
     experiment = experiment_to_use
@@ -267,8 +260,7 @@ def test_compare_classifiers_performance_subset_vis_api(experiment_to_use):
 def test_compare_classifiers_performance_changing_k_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
+    :param experiment_to_use: Object containing trained model and results to test visualization
     :return: None
     """
     experiment = experiment_to_use
@@ -295,8 +287,7 @@ def test_compare_classifiers_performance_changing_k_vis_api(experiment_to_use):
 def test_compare_classifiers_multiclass_multimetric_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
+    :param experiment_to_use: Object containing trained model and results to test visualization
     :return: None
     """
     experiment = experiment_to_use
@@ -322,8 +313,7 @@ def test_compare_classifiers_multiclass_multimetric_vis_api(experiment_to_use):
 def test_compare_classifiers_predictions_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
+    :param experiment_to_use: Object containing trained model and results to test visualization
     :return: None
     """
     experiment = experiment_to_use
@@ -349,8 +339,7 @@ def test_compare_classifiers_predictions_vis_api(experiment_to_use):
 def test_compare_classifiers_predictions_distribution_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
+    :param experiment_to_use: Object containing trained model and results to test visualization
     :return: None
     """
     experiment = experiment_to_use
@@ -376,8 +365,7 @@ def test_compare_classifiers_predictions_distribution_vis_api(experiment_to_use)
 def test_confidence_thresholding_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
+    :param experiment_to_use: Object containing trained model and results to test visualization
     :return: None
     """
     experiment = experiment_to_use
@@ -403,8 +391,7 @@ def test_confidence_thresholding_vis_api(experiment_to_use):
 def test_confidence_thresholding_data_vs_acc_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
+    :param experiment_to_use: Object containing trained model and results to test visualization
     :return: None
     """
     experiment = experiment_to_use
@@ -430,8 +417,7 @@ def test_confidence_thresholding_data_vs_acc_vis_api(experiment_to_use):
 def test_confidence_thresholding_data_vs_acc_subset_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
+    :param experiment_to_use: Object containing trained model and results to test visualization
     :return: None
     """
     experiment = experiment_to_use
@@ -459,8 +445,7 @@ def test_confidence_thresholding_data_vs_acc_subset_vis_api(experiment_to_use):
 def test_confidence_thresholding_data_vs_acc_subset_per_class_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
+    :param experiment_to_use: Object containing trained model and results to test visualization
     :return: None
     """
     experiment = experiment_to_use
@@ -635,8 +620,7 @@ def test_confidence_thresholding_2thresholds_3d_vis_api(csv_filename):
 def test_binary_threshold_vs_metric_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
+    :param experiment_to_use: Object containing trained model and results to test visualization
     :return: None
     """
     experiment = experiment_to_use
@@ -665,8 +649,7 @@ def test_binary_threshold_vs_metric_vis_api(experiment_to_use):
 def test_precision_recall_curves_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
+    :param experiment_to_use: Object containing trained model and results to test visualization
     :return: None
     """
     experiment = experiment_to_use
@@ -727,8 +710,7 @@ def test_precision_recall_curves_from_test_statistics_vis_api(csv_filename):
 def test_roc_curves_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
+    :param experiment_to_use: Object containing trained model and results to test visualization
     :return: None
     """
     experiment = experiment_to_use
@@ -789,8 +771,7 @@ def test_roc_curves_from_test_statistics_vis_api(csv_filename):
 def test_calibration_1_vs_all_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
+    :param experiment_to_use: Object containing trained model and results to test visualization
     :return: None
     """
     experiment = experiment_to_use
@@ -817,8 +798,7 @@ def test_calibration_1_vs_all_vis_api(experiment_to_use):
 def test_calibration_multiclass_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
+    :param experiment_to_use: Object containing trained model and results to test visualization
     :return: None
     """
     experiment = experiment_to_use
@@ -844,8 +824,7 @@ def test_calibration_multiclass_vis_api(experiment_to_use):
 def test_confusion_matrix_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
+    :param experiment_to_use: Object containing trained model and results to test visualization
     :return: None
     """
     experiment = experiment_to_use
@@ -872,8 +851,7 @@ def test_confusion_matrix_vis_api(experiment_to_use):
 def test_frequency_vs_f1_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
+    :param experiment_to_use: Object containing trained model and results to test visualization
     :return: None
     """
     experiment = experiment_to_use

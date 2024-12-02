@@ -242,7 +242,7 @@ def get_datasets_output_features(
     :param include_competitions: (bool) whether to include the output features from kaggle competition datasets
     :param include_data_modalities: (bool) whether to include the data modalities associated with the prediction task
     :return: (dict) dictionary with the output features for each dataset or a dictionary with the output features for
-                    the specified dataset
+        the specified dataset
     """
     ordered_configs = OrderedDict(sorted(_get_dataset_configs().items()))
     competition_datasets = []
@@ -321,10 +321,8 @@ def _get_hf_dataset_and_subsample(dataset_name: str) -> Tuple[str, Optional[str]
 
     The dataset name should follow the format "{HF_PREFIX}{hf_id}--{hf_subsample}"
 
-    Examples (Dataset Name --> HF ID; HF subsample):
-    "hf://wikisql" --> "wikisql"; None
-    "hf://ColumbiaNLP/FLUTE" --> "ColumbiaNLP/FLUTE"; None
-    "hf://mstz/adult--income" --> "mstz/adult"; "income"
+    Examples (Dataset Name --> HF ID; HF subsample): "hf://wikisql" --> "wikisql"; None "hf://ColumbiaNLP/FLUTE" -->
+    "ColumbiaNLP/FLUTE"; None "hf://mstz/adult--income" --> "mstz/adult"; "income"
     """
     dataset_name = dataset_name[len(HF_PREFIX) :]
     dataset_name = dataset_name.split("--")

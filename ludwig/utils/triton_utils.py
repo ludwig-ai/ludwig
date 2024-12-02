@@ -739,8 +739,7 @@ def export_triton(
 
     # Inputs
     :param model: (LudwigModel) A ludwig model.
-    :param data_example: (pd.DataFrame) an example from the dataset.
-        Used to get dimensions throughout the pipeline.
+    :param data_example: (pd.DataFrame) an example from the dataset. Used to get dimensions throughout the pipeline.
     :param output_path: (str) The output path for the model repository.
     :param model_name: (str) The optional model name.
     :param model_version: (Union[int,str]) The optional model verison.
@@ -749,9 +748,7 @@ def export_triton(
     :param predictor_num_instances: (int) number of instances for the predictor.
     :param postprocessor_num_instances: (int) number of instances for the postprocessor (on CPU).
     :param predictor_max_batch_size: (int) max_batch_size parameter for the predictor Triton config.
-    :param max_queue_delay_microseconds: (int) max_queue_delay_microseconds for all Triton configs.
-
-    # Return
+    :param max_queue_delay_microseconds: (int) max_queue_delay_microseconds for all Triton configs.  # Return
     :return: (List[TritonArtifact]) list of TritonArtifacts that contains information about exported artifacts.
     """
 

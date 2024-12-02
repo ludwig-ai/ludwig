@@ -166,7 +166,7 @@ def run_test_explainer_api(
     tmpdir,
     input_features=None,
     batch_size=128,
-    **kwargs
+    **kwargs,
 ):
     image_dest_folder = os.path.join(tmpdir, "generated_images")
 

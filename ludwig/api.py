@@ -2015,9 +2015,9 @@ class LudwigModel:
         # Inputs
 
         :param  model_only (bool, optional): If True, only the ECD model will be converted to Torchscript. Else,
-            preprocessing and postprocessing steps will also be converted to Torchscript.
-        :param device (TorchDevice, optional): If None, the model will be converted to Torchscript on the same device to
-            ensure maximum model parity.
+        preprocessing and postprocessing steps will also be converted to Torchscript. :param device (TorchDevice,
+        optional): If None, the model will be converted to Torchscript on the same device to     ensure maximum model
+        parity.
 
         # Returns
 
@@ -2086,11 +2086,8 @@ class LudwigModel:
 
         # Inputs
         :param config_obj: (Union[Config, dict]) Ludwig config object
-        :param random_seed: (int, default: ludwig default random seed) Random
-            seed used for weights initialization,
-            splits and any other random function.
-
-        # Return
+        :param random_seed: (int, default: ludwig default random seed) Random seed used for weights initialization,
+            splits and any other random function. # Return
         :return: (ludwig.models.BaseModel) Instance of the Ludwig model object.
         """
         if isinstance(config_obj, dict):
@@ -2136,7 +2133,7 @@ class LudwigModel:
 
         # Return
 
-            :return (bool): whether merge_and_unload should be done.
+        :return (bool): whether merge_and_unload should be done.
         """
         # TODO: In the future, it may be possible to move up the model type check into the BaseModel class.
         return self.config_obj.model_type == MODEL_LLM and self.model.is_merge_and_unload_set()

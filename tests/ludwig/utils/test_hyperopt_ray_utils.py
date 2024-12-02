@@ -78,7 +78,7 @@ def test_grid_strategy(key):
         "minimize",
         "validation",
         search_alg={TYPE: "variant_generator"},
-        **{"type": "ray", "num_samples": 2, "scheduler": {"type": "fifo"}}
+        **{"type": "ray", "num_samples": 2, "scheduler": {"type": "fifo"}},
     )
 
     search_space = hyperopt_executor.search_space

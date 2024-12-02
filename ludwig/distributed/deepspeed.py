@@ -47,7 +47,7 @@ class DeepSpeedStrategy(DDPStrategy):
         fp16: Optional[Dict[str, Any]] = None,
         bf16: Optional[Dict[str, Any]] = None,
         compression_training: Optional[Dict[str, Any]] = None,
-        **kwargs
+        **kwargs,
     ):
         # If we're initializing from a `deepspeed` CLI command, deepspeed will have already been initialized, as
         # indicated by the presence of the LOCAL_RANK var. Otherwise, we're initializing from Ray / torchrun, and will
