@@ -11,18 +11,19 @@ import lightgbm as lgb
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import (BINARY, CATEGORY, MINIMIZE, MODEL_GBM, NUMBER,
-                              TEST, TRAINING, VALIDATION)
+from ludwig.constants import BINARY, CATEGORY, MINIMIZE, MODEL_GBM, NUMBER, TEST, TRAINING, VALIDATION
 from ludwig.distributed import init_dist_strategy
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.features.feature_utils import LudwigFeatureDict
-from ludwig.globals import (MODEL_FILE_NAME, TRAINING_CHECKPOINTS_DIR_PATH,
-                            TRAINING_PROGRESS_TRACKER_FILE_NAME,
-                            is_progressbar_disabled)
+from ludwig.globals import (
+    is_progressbar_disabled,
+    MODEL_FILE_NAME,
+    TRAINING_CHECKPOINTS_DIR_PATH,
+    TRAINING_PROGRESS_TRACKER_FILE_NAME,
+)
 from ludwig.models.gbm import GBM
 from ludwig.models.predictor import Predictor
-from ludwig.modules.metric_modules import (get_improved_fn,
-                                           get_initial_validation_value)
+from ludwig.modules.metric_modules import get_improved_fn, get_initial_validation_value
 from ludwig.modules.metric_registry import get_metric_objective
 from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import BaseTrainerConfig, GBMTrainerConfig
@@ -32,17 +33,25 @@ from ludwig.types import ModelConfigDict
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import CheckpointManager
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.gbm_utils import (TrainLogits, get_single_output_feature,
-                                    get_targets, log_loss_objective,
-                                    logits_to_predictions,
-                                    multiclass_objective, store_predictions,
-                                    store_predictions_ray)
-from ludwig.utils.metric_utils import TrainerMetric, get_metric_names
+from ludwig.utils.gbm_utils import (
+    get_single_output_feature,
+    get_targets,
+    log_loss_objective,
+    logits_to_predictions,
+    multiclass_objective,
+    store_predictions,
+    store_predictions_ray,
+    TrainLogits,
+)
+from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.metrics_printed_table import print_metrics_table
 from ludwig.utils.misc_utils import set_random_seed
-from ludwig.utils.trainer_utils import (ProgressTracker, append_metrics,
-                                        get_latest_metrics_dict,
-                                        get_new_progress_tracker)
+from ludwig.utils.trainer_utils import (
+    append_metrics,
+    get_latest_metrics_dict,
+    get_new_progress_tracker,
+    ProgressTracker,
+)
 
 try:
     import ray

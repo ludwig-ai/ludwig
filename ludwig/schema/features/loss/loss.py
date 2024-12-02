@@ -1,16 +1,29 @@
 from typing import Dict, List, Type, Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (BINARY, BINARY_WEIGHTED_CROSS_ENTROPY, CATEGORY,
-                              CORN, HUBER, IMAGE, MEAN_ABSOLUTE_ERROR,
-                              MEAN_ABSOLUTE_PERCENTAGE_ERROR,
-                              MEAN_SQUARED_ERROR,
-                              NEXT_TOKEN_SOFTMAX_CROSS_ENTROPY, NUMBER,
-                              ROOT_MEAN_SQUARED_ERROR,
-                              ROOT_MEAN_SQUARED_PERCENTAGE_ERROR, SEQUENCE,
-                              SEQUENCE_SOFTMAX_CROSS_ENTROPY, SET,
-                              SIGMOID_CROSS_ENTROPY, SOFTMAX_CROSS_ENTROPY,
-                              TEXT, TIMESERIES, VECTOR)
+from ludwig.constants import (
+    BINARY,
+    BINARY_WEIGHTED_CROSS_ENTROPY,
+    CATEGORY,
+    CORN,
+    HUBER,
+    IMAGE,
+    MEAN_ABSOLUTE_ERROR,
+    MEAN_ABSOLUTE_PERCENTAGE_ERROR,
+    MEAN_SQUARED_ERROR,
+    NEXT_TOKEN_SOFTMAX_CROSS_ENTROPY,
+    NUMBER,
+    ROOT_MEAN_SQUARED_ERROR,
+    ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
+    SEQUENCE,
+    SEQUENCE_SOFTMAX_CROSS_ENTROPY,
+    SET,
+    SIGMOID_CROSS_ENTROPY,
+    SOFTMAX_CROSS_ENTROPY,
+    TEXT,
+    TIMESERIES,
+    VECTOR,
+)
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata import LOSS_METADATA
 from ludwig.schema.utils import ludwig_dataclass

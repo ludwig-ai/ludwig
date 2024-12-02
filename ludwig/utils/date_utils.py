@@ -18,7 +18,7 @@ from datetime import date, datetime
 from typing import Union
 
 import numpy as np
-from dateutil.parser import ParserError, parse
+from dateutil.parser import parse, ParserError
 
 from ludwig.api_annotations import DeveloperAPI
 

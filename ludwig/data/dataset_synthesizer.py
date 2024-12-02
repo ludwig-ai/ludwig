@@ -30,11 +30,29 @@ import yaml
 from packaging import version
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (AUDIO, BAG, BINARY, CATEGORY,
-                              CATEGORY_DISTRIBUTION, DATE, DECODER, ENCODER,
-                              H3, IMAGE, INPUT_FEATURES, NAME, NUMBER,
-                              OUTPUT_FEATURES, PREPROCESSING, SEQUENCE, SET,
-                              TEXT, TIMESERIES, TYPE, VECTOR)
+from ludwig.constants import (
+    AUDIO,
+    BAG,
+    BINARY,
+    CATEGORY,
+    CATEGORY_DISTRIBUTION,
+    DATE,
+    DECODER,
+    ENCODER,
+    H3,
+    IMAGE,
+    INPUT_FEATURES,
+    NAME,
+    NUMBER,
+    OUTPUT_FEATURES,
+    PREPROCESSING,
+    SEQUENCE,
+    SET,
+    TEXT,
+    TIMESERIES,
+    TYPE,
+    VECTOR,
+)
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.types import ModelConfigDict

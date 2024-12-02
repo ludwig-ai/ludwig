@@ -20,16 +20,33 @@ import yaml
 
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import PublicAPI
-from ludwig.automl.base_config import (DatasetInfo, create_default_config,
-                                       get_dataset_info, get_features_config,
-                                       get_reference_configs)
+from ludwig.automl.base_config import (
+    create_default_config,
+    DatasetInfo,
+    get_dataset_info,
+    get_features_config,
+    get_reference_configs,
+)
 from ludwig.backend import Backend, initialize_backend
-from ludwig.constants import (AUTO, AUTOML_DEFAULT_IMAGE_ENCODER,
-                              AUTOML_DEFAULT_TABULAR_MODEL,
-                              AUTOML_DEFAULT_TEXT_ENCODER, BINARY, CATEGORY,
-                              ENCODER, HYPEROPT, IMAGE, INPUT_FEATURES, NAME,
-                              NUMBER, OUTPUT_FEATURES, TABULAR, TEXT, TRAINER,
-                              TYPE)
+from ludwig.constants import (
+    AUTO,
+    AUTOML_DEFAULT_IMAGE_ENCODER,
+    AUTOML_DEFAULT_TABULAR_MODEL,
+    AUTOML_DEFAULT_TEXT_ENCODER,
+    BINARY,
+    CATEGORY,
+    ENCODER,
+    HYPEROPT,
+    IMAGE,
+    INPUT_FEATURES,
+    NAME,
+    NUMBER,
+    OUTPUT_FEATURES,
+    TABULAR,
+    TEXT,
+    TRAINER,
+    TYPE,
+)
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.data.cache.types import CacheableDataset
 from ludwig.datasets import load_dataset_uris
@@ -38,8 +55,7 @@ from ludwig.hyperopt.run import hyperopt
 from ludwig.schema.model_config import ModelConfig
 from ludwig.types import ModelConfigDict
 from ludwig.utils.automl.ray_utils import _ray_init
-from ludwig.utils.automl.utils import (_add_transfer_config, get_model_type,
-                                       set_output_feature_metric)
+from ludwig.utils.automl.utils import _add_transfer_config, get_model_type, set_output_feature_metric
 from ludwig.utils.data_utils import load_dataset, use_credentials
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import open_file

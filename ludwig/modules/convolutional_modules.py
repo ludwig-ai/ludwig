@@ -20,7 +20,7 @@ import torch
 import torch.nn as nn
 
 from ludwig.utils.image_utils import get_img_output_shape
-from ludwig.utils.torch_utils import LudwigModule, get_activation
+from ludwig.utils.torch_utils import get_activation, LudwigModule
 
 logger = logging.getLogger(__name__)
 

@@ -30,8 +30,7 @@ else:
     HOROVOD_AVAILABLE = True
 
 from ludwig.constants import ENCODER, TYPE
-from tests.integration_tests.utils import (ENCODERS, category_feature,
-                                           generate_data, sequence_feature)
+from tests.integration_tests.utils import category_feature, ENCODERS, generate_data, sequence_feature
 
 # This script will run the actual test model training in parallel
 TEST_SCRIPT = os.path.join(os.path.dirname(__file__), "scripts", "run_train_horovod.py")

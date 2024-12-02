@@ -8,15 +8,18 @@ import yaml
 
 ray = pytest.importorskip("ray")  # noqa
 
-from ludwig.automl.base_config import (get_dataset_info,  # noqa
-                                       get_dataset_info_from_source,
-                                       get_field_metadata,
-                                       get_reference_configs, is_field_boolean)
+from ludwig.automl.base_config import get_dataset_info  # noqa
+from ludwig.automl.base_config import (
+    get_dataset_info_from_source,
+    get_field_metadata,
+    get_reference_configs,
+    is_field_boolean,
+)
 from ludwig.data.dataframe.dask import DaskEngine  # noqa
 from ludwig.data.dataframe.pandas import PandasEngine  # noqa
 from ludwig.schema.model_types.base import ModelConfig  # noqa
-from ludwig.utils.automl.data_source import (DataframeSource,  # noqa
-                                             wrap_data_source)
+from ludwig.utils.automl.data_source import DataframeSource  # noqa
+from ludwig.utils.automl.data_source import wrap_data_source
 
 pytestmark = pytest.mark.distributed
 

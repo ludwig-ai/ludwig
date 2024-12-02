@@ -4,8 +4,7 @@ import onnx
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.model_export.base_model_exporter import (BaseModelExporter,
-                                                     LudwigTorchWrapper)
+from ludwig.model_export.base_model_exporter import BaseModelExporter, LudwigTorchWrapper
 
 
 # Copyright (c) 2023 Predibase, Inc., 2019 Uber Technologies, Inc.

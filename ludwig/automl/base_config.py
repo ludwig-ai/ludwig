@@ -20,18 +20,28 @@ import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 import yaml
-from dataclasses_json import LetterCase, dataclass_json
+from dataclasses_json import dataclass_json, LetterCase
 from tqdm import tqdm
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend import Backend
-from ludwig.constants import (COLUMN, COMBINER, ENCODER, EXECUTOR, HYPEROPT,
-                              INPUT_FEATURES, PREPROCESSING, SCHEDULER,
-                              SEARCH_ALG, SPLIT, TEXT, TYPE)
+from ludwig.constants import (
+    COLUMN,
+    COMBINER,
+    ENCODER,
+    EXECUTOR,
+    HYPEROPT,
+    INPUT_FEATURES,
+    PREPROCESSING,
+    SCHEDULER,
+    SEARCH_ALG,
+    SPLIT,
+    TEXT,
+    TYPE,
+)
 from ludwig.types import ModelConfigDict
 from ludwig.utils.automl.data_source import DataSource, wrap_data_source
-from ludwig.utils.automl.field_info import (FieldConfig, FieldInfo,
-                                            FieldMetadata)
+from ludwig.utils.automl.field_info import FieldConfig, FieldInfo, FieldMetadata
 from ludwig.utils.automl.type_inference import infer_type, should_exclude
 from ludwig.utils.data_utils import load_yaml
 from ludwig.utils.misc_utils import merge_dict

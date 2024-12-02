@@ -3,12 +3,10 @@ import math
 import numpy as np
 from torch.optim import SGD
 
-from ludwig.features.number_feature import (NumberInputFeature,
-                                            NumberOutputFeature)
+from ludwig.features.number_feature import NumberInputFeature, NumberOutputFeature
 from ludwig.modules.lr_scheduler import LRScheduler
 from ludwig.schema.encoders.base import DenseEncoderConfig
-from ludwig.schema.features.number_feature import (
-    ECDNumberOutputFeatureConfig, NumberInputFeatureConfig)
+from ludwig.schema.features.number_feature import ECDNumberOutputFeatureConfig, NumberInputFeatureConfig
 from ludwig.schema.lr_scheduler import LRSchedulerConfig
 from ludwig.utils.metric_utils import TrainerMetric
 from ludwig.utils.trainer_utils import get_new_progress_tracker

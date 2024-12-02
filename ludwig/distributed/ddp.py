@@ -2,8 +2,7 @@ import contextlib
 import logging
 import os
 import socket
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple, Type,
-                    Union)
+from typing import Any, Callable, Dict, Optional, Tuple, Type, TYPE_CHECKING, Union
 
 import torch
 import torch.distributed as dist

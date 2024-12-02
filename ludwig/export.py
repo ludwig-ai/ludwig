@@ -23,8 +23,7 @@ from ludwig.api import LudwigModel
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.carton_utils import export_carton as utils_export_carton
-from ludwig.utils.neuropod_utils import \
-    export_neuropod as utils_export_neuropod
+from ludwig.utils.neuropod_utils import export_neuropod as utils_export_neuropod
 from ludwig.utils.print_utils import get_logging_level_registry, print_ludwig
 from ludwig.utils.triton_utils import export_triton as utils_export_triton
 

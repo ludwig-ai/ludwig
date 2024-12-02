@@ -3,21 +3,20 @@ from typing import Optional
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.defaults.llm import LLMDefaultsConfig, LLMDefaultsField
-from ludwig.schema.features.base import (BaseInputFeatureConfig,
-                                         BaseOutputFeatureConfig,
-                                         FeatureCollection,
-                                         LLMInputFeatureSelection,
-                                         LLMOutputFeatureSelection)
+from ludwig.schema.features.base import (
+    BaseInputFeatureConfig,
+    BaseOutputFeatureConfig,
+    FeatureCollection,
+    LLMInputFeatureSelection,
+    LLMOutputFeatureSelection,
+)
 from ludwig.schema.hyperopt import HyperoptConfig, HyperoptField
 from ludwig.schema.llms.base_model import BaseModelDataclassField
-from ludwig.schema.llms.generation import (LLMGenerationConfig,
-                                           LLMGenerationConfigField)
-from ludwig.schema.llms.model_parameters import (ModelParametersConfig,
-                                                 ModelParametersConfigField)
+from ludwig.schema.llms.generation import LLMGenerationConfig, LLMGenerationConfigField
+from ludwig.schema.llms.model_parameters import ModelParametersConfig, ModelParametersConfigField
 from ludwig.schema.llms.peft import AdapterDataclassField, BaseAdapterConfig
 from ludwig.schema.llms.prompt import PromptConfig, PromptConfigField
-from ludwig.schema.llms.quantization import (QuantizationConfig,
-                                             QuantizationConfigField)
+from ludwig.schema.llms.quantization import QuantizationConfig, QuantizationConfigField
 from ludwig.schema.model_types.base import ModelConfig, register_model_type
 from ludwig.schema.preprocessing import PreprocessingConfig, PreprocessingField
 from ludwig.schema.trainer import LLMTrainerConfig, LLMTrainerDataclassField

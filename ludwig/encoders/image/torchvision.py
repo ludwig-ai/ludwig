@@ -13,17 +13,27 @@ from ludwig.encoders.registry import register_encoder
 from ludwig.encoders.types import EncoderOutputDict
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.image.torchvision import (
-    TVAlexNetEncoderConfig, TVConvNeXtEncoderConfig, TVDenseNetEncoderConfig,
-    TVEfficientNetEncoderConfig, TVGoogLeNetEncoderConfig,
-    TVInceptionV3EncoderConfig, TVMaxVitEncoderConfig, TVMNASNetEncoderConfig,
-    TVMobileNetV2EncoderConfig, TVMobileNetV3EncoderConfig,
-    TVRegNetEncoderConfig, TVResNetEncoderConfig, TVResNeXtEncoderConfig,
-    TVShuffleNetV2EncoderConfig, TVSqueezeNetEncoderConfig,
-    TVSwinTransformerEncoderConfig, TVVGGEncoderConfig, TVViTEncoderConfig,
-    TVWideResNetEncoderConfig)
-from ludwig.utils.image_utils import (TVModelVariant,
-                                      register_torchvision_model_variants,
-                                      torchvision_model_registry)
+    TVAlexNetEncoderConfig,
+    TVConvNeXtEncoderConfig,
+    TVDenseNetEncoderConfig,
+    TVEfficientNetEncoderConfig,
+    TVGoogLeNetEncoderConfig,
+    TVInceptionV3EncoderConfig,
+    TVMaxVitEncoderConfig,
+    TVMNASNetEncoderConfig,
+    TVMobileNetV2EncoderConfig,
+    TVMobileNetV3EncoderConfig,
+    TVRegNetEncoderConfig,
+    TVResNetEncoderConfig,
+    TVResNeXtEncoderConfig,
+    TVShuffleNetV2EncoderConfig,
+    TVSqueezeNetEncoderConfig,
+    TVSwinTransformerEncoderConfig,
+    TVVGGEncoderConfig,
+    TVViTEncoderConfig,
+    TVWideResNetEncoderConfig,
+)
+from ludwig.utils.image_utils import register_torchvision_model_variants, torchvision_model_registry, TVModelVariant
 
 logger = logging.getLogger(__name__)
 

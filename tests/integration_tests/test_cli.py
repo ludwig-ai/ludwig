@@ -24,14 +24,20 @@ from typing import List, Set
 import pytest
 import yaml
 
-from ludwig.constants import (BATCH_SIZE, COMBINER, EVAL_BATCH_SIZE,
-                              INPUT_FEATURES, NAME, OUTPUT_FEATURES,
-                              PREPROCESSING, TRAINER)
+from ludwig.constants import (
+    BATCH_SIZE,
+    COMBINER,
+    EVAL_BATCH_SIZE,
+    INPUT_FEATURES,
+    NAME,
+    OUTPUT_FEATURES,
+    PREPROCESSING,
+    TRAINER,
+)
 from ludwig.globals import MODEL_FILE_NAME
 from ludwig.types import FeatureConfigDict
 from ludwig.utils.data_utils import load_yaml
-from tests.integration_tests.utils import (category_feature, generate_data,
-                                           number_feature, sequence_feature)
+from tests.integration_tests.utils import category_feature, generate_data, number_feature, sequence_feature
 
 pytestmark = pytest.mark.integration_tests_b
 

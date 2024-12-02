@@ -4,18 +4,36 @@ from typing import Any, Dict
 
 import pytest
 
-from ludwig.constants import (BATCH_SIZE, BFILL, CLASS_WEIGHTS, DEFAULTS,
-                              EVAL_BATCH_SIZE, EXECUTOR, HYPEROPT,
-                              INPUT_FEATURES, LEARNING_RATE_SCHEDULER, LOSS,
-                              NUMBER, OUTPUT_FEATURES, PREPROCESSING,
-                              SCHEDULER, SPLIT, TRAINER, TYPE)
+from ludwig.constants import (
+    BATCH_SIZE,
+    BFILL,
+    CLASS_WEIGHTS,
+    DEFAULTS,
+    EVAL_BATCH_SIZE,
+    EXECUTOR,
+    HYPEROPT,
+    INPUT_FEATURES,
+    LEARNING_RATE_SCHEDULER,
+    LOSS,
+    NUMBER,
+    OUTPUT_FEATURES,
+    PREPROCESSING,
+    SCHEDULER,
+    SPLIT,
+    TRAINER,
+    TYPE,
+)
 from ludwig.schema.model_config import ModelConfig
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.backward_compatibility import (
-    _update_backend_cache_credentials, _upgrade_encoder_decoder_params,
-    _upgrade_feature, _upgrade_preprocessing_split,
-    upgrade_config_dict_to_latest_version, upgrade_missing_value_strategy,
-    upgrade_model_progress)
+    _update_backend_cache_credentials,
+    _upgrade_encoder_decoder_params,
+    _upgrade_feature,
+    _upgrade_preprocessing_split,
+    upgrade_config_dict_to_latest_version,
+    upgrade_missing_value_strategy,
+    upgrade_model_progress,
+)
 from ludwig.utils.trainer_utils import TrainerMetric
 
 

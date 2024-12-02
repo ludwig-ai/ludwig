@@ -20,24 +20,27 @@ import torch
 from torch import nn
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (AUDIO, ENCODER_OUTPUT, ENCODER_OUTPUT_STATE,
-                              SEQUENCE, TEXT, TIMESERIES)
+from ludwig.constants import AUDIO, ENCODER_OUTPUT, ENCODER_OUTPUT_STATE, SEQUENCE, TEXT, TIMESERIES
 from ludwig.encoders.base import Encoder
-from ludwig.encoders.registry import (register_encoder,
-                                      register_sequence_encoder)
+from ludwig.encoders.registry import register_encoder, register_sequence_encoder
 from ludwig.encoders.types import EncoderOutputDict
 from ludwig.modules.attention_modules import TransformerStack
-from ludwig.modules.convolutional_modules import (Conv1DStack, ParallelConv1D,
-                                                  ParallelConv1DStack)
-from ludwig.modules.embedding_modules import (EmbedSequence,
-                                              TokenAndPositionEmbedding)
+from ludwig.modules.convolutional_modules import Conv1DStack, ParallelConv1D, ParallelConv1DStack
+from ludwig.modules.embedding_modules import EmbedSequence, TokenAndPositionEmbedding
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.recurrent_modules import RecurrentStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.schema.encoders.sequence_encoders import (
-    ParallelCNNConfig, SequenceEmbedConfig, SequenceEncoderConfig,
-    SequencePassthroughConfig, StackedCNNConfig, StackedCNNRNNConfig,
-    StackedParallelCNNConfig, StackedRNNConfig, StackedTransformerConfig)
+    ParallelCNNConfig,
+    SequenceEmbedConfig,
+    SequenceEncoderConfig,
+    SequencePassthroughConfig,
+    StackedCNNConfig,
+    StackedCNNRNNConfig,
+    StackedParallelCNNConfig,
+    StackedRNNConfig,
+    StackedTransformerConfig,
+)
 
 logger = logging.getLogger(__name__)
 

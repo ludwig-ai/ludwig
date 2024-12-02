@@ -23,29 +23,56 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.backend import (LOCAL_BACKEND, create_ray_backend,
-                            initialize_backend)
-from ludwig.constants import (AUDIO, BAG, BALANCE_PERCENTAGE_TOLERANCE,
-                              BATCH_SIZE, BFILL, BINARY, CATEGORY, COLUMN,
-                              DATE, H3, IMAGE, MAX_BATCH_SIZE_DATASET_FRACTION,
-                              NAME, NUMBER, PREPROCESSING, SEQUENCE, SET,
-                              SPLIT, TEXT, TIMESERIES, TRAINER, VECTOR)
+from ludwig.backend import create_ray_backend, initialize_backend, LOCAL_BACKEND
+from ludwig.constants import (
+    AUDIO,
+    BAG,
+    BALANCE_PERCENTAGE_TOLERANCE,
+    BATCH_SIZE,
+    BFILL,
+    BINARY,
+    CATEGORY,
+    COLUMN,
+    DATE,
+    H3,
+    IMAGE,
+    MAX_BATCH_SIZE_DATASET_FRACTION,
+    NAME,
+    NUMBER,
+    PREPROCESSING,
+    SEQUENCE,
+    SET,
+    SPLIT,
+    TEXT,
+    TIMESERIES,
+    TRAINER,
+    VECTOR,
+)
 from ludwig.data.preprocessing import balance_data
 from ludwig.data.split import DEFAULT_PROBABILITIES
 from ludwig.globals import MODEL_FILE_NAME
 from ludwig.utils.data_utils import read_parquet
 from ludwig.utils.misc_utils import merge_dict
-from tests.integration_tests.utils import (RAY_BACKEND_CONFIG, audio_feature,
-                                           augment_dataset_with_none,
-                                           bag_feature, binary_feature,
-                                           category_feature,
-                                           create_data_set_to_use,
-                                           date_feature, generate_data,
-                                           h3_feature, image_feature,
-                                           number_feature, sequence_feature,
-                                           set_feature, text_feature,
-                                           timeseries_feature,
-                                           train_with_backend, vector_feature)
+from tests.integration_tests.utils import (
+    audio_feature,
+    augment_dataset_with_none,
+    bag_feature,
+    binary_feature,
+    category_feature,
+    create_data_set_to_use,
+    date_feature,
+    generate_data,
+    h3_feature,
+    image_feature,
+    number_feature,
+    RAY_BACKEND_CONFIG,
+    sequence_feature,
+    set_feature,
+    text_feature,
+    timeseries_feature,
+    train_with_backend,
+    vector_feature,
+)
 
 ray = pytest.importorskip("ray")  # noqa
 
@@ -57,10 +84,9 @@ import ray  # noqa: E402
 import ray.exceptions  # noqa: E402
 from ray.air.config import DatasetConfig  # noqa: E402
 from ray.data import Dataset, DatasetPipeline  # noqa: E402
-from ray.train._internal.dataset_spec import \
-    DataParallelIngestSpec  # noqa: E402
+from ray.train._internal.dataset_spec import DataParallelIngestSpec  # noqa: E402
 
-from ludwig.backend.ray import RayBackend, get_trainer_kwargs  # noqa: E402
+from ludwig.backend.ray import get_trainer_kwargs, RayBackend  # noqa: E402
 from ludwig.data.dataframe.dask import DaskEngine  # noqa: E402
 
 try:

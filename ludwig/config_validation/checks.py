@@ -2,18 +2,30 @@
 
 from abc import ABC, abstractmethod
 from re import findall
-from typing import TYPE_CHECKING, Callable
+from typing import Callable, TYPE_CHECKING
 
 from transformers import AutoConfig
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (AUDIO, BINARY, CATEGORY, IMAGE, IN_MEMORY,
-                              MIN_QUANTIZATION_BITS_FOR_MERGE_AND_UNLOAD,
-                              MODEL_ECD, MODEL_GBM, MODEL_LLM, NUMBER,
-                              SEQUENCE, SET, TEXT, TIMESERIES, VECTOR)
+from ludwig.constants import (
+    AUDIO,
+    BINARY,
+    CATEGORY,
+    IMAGE,
+    IN_MEMORY,
+    MIN_QUANTIZATION_BITS_FOR_MERGE_AND_UNLOAD,
+    MODEL_ECD,
+    MODEL_GBM,
+    MODEL_LLM,
+    NUMBER,
+    SEQUENCE,
+    SET,
+    TEXT,
+    TIMESERIES,
+    VECTOR,
+)
 from ludwig.error import ConfigValidationError
-from ludwig.utils.metric_utils import \
-    get_feature_to_metric_names_map_from_feature_collection
+from ludwig.utils.metric_utils import get_feature_to_metric_names_map_from_feature_collection
 from ludwig.utils.misc_utils import merge_dict
 
 if TYPE_CHECKING:
@@ -346,8 +358,8 @@ def check_hyperopt_parameter_dicts(config: "ModelConfig") -> None:  # noqa: F821
     if config.hyperopt is None:
         return
 
-    from ludwig.schema.hyperopt.utils import (get_parameter_cls,  # noqa: F401
-                                              parameter_config_registry)
+    from ludwig.schema.hyperopt.utils import get_parameter_cls  # noqa: F401
+    from ludwig.schema.hyperopt.utils import parameter_config_registry
 
     for parameter, space in config.hyperopt.parameters.items():
         # skip nested hyperopt parameters
@@ -543,8 +555,7 @@ def check_llm_finetuning_adalora_config(config: "ModelConfig"):
     if config.adapter.type != "adalora":
         return
 
-    from peft.utils import \
-        TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING
+    from peft.utils import TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING
 
     model_config = _get_llm_model_config(config.base_model)
     if model_config.model_type not in TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING:

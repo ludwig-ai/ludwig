@@ -1,5 +1,4 @@
-from ludwig.utils.version_transformation import (VersionTransformation,
-                                                 VersionTransformationRegistry)
+from ludwig.utils.version_transformation import VersionTransformation, VersionTransformationRegistry
 
 
 def test_version_transformation_registry():

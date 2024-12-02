@@ -1,6 +1,6 @@
 import pytest
 
-from ludwig.modules.mlp_mixer_modules import MLP, MixerBlock, MLPMixer
+from ludwig.modules.mlp_mixer_modules import MixerBlock, MLP, MLPMixer
 
 from .test_utils import assert_output_shapes
 

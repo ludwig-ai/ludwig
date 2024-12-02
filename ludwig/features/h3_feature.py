@@ -21,8 +21,7 @@ import torch
 from ludwig.constants import COLUMN, H3, PROC_COLUMN
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.h3_feature import H3InputFeatureConfig
-from ludwig.types import (FeatureMetadataDict, ModelConfigDict,
-                          PreprocessingConfigDict, TrainingSetMetadataDict)
+from ludwig.types import FeatureMetadataDict, ModelConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.h3_util import h3_to_components
 from ludwig.utils.types import TorchscriptPreprocessingInput
 

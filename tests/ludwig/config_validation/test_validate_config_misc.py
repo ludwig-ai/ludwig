@@ -1,10 +1,26 @@
 import pytest
 
 from ludwig.config_validation.validation import check_schema, get_schema
-from ludwig.constants import (ACTIVE, AUDIO, BACKEND, CATEGORY, COLUMN,
-                              DECODER, DEFAULTS, ENCODER, LOSS, MODEL_ECD,
-                              MODEL_GBM, MODEL_LLM, MODEL_TYPE, NAME,
-                              PREPROCESSING, PROC_COLUMN, TRAINER, TYPE)
+from ludwig.constants import (
+    ACTIVE,
+    AUDIO,
+    BACKEND,
+    CATEGORY,
+    COLUMN,
+    DECODER,
+    DEFAULTS,
+    ENCODER,
+    LOSS,
+    MODEL_ECD,
+    MODEL_GBM,
+    MODEL_LLM,
+    MODEL_TYPE,
+    NAME,
+    PREPROCESSING,
+    PROC_COLUMN,
+    TRAINER,
+    TYPE,
+)
 from ludwig.error import ConfigValidationError
 from ludwig.features.feature_registries import get_output_type_registry
 from ludwig.schema import utils as schema_utils
@@ -13,36 +29,37 @@ from ludwig.schema.defaults.ecd import ECDDefaultsConfig
 from ludwig.schema.defaults.gbm import GBMDefaultsConfig
 from ludwig.schema.features.preprocessing.audio import AudioPreprocessingConfig
 from ludwig.schema.features.preprocessing.bag import BagPreprocessingConfig
-from ludwig.schema.features.preprocessing.binary import \
-    BinaryPreprocessingConfig
-from ludwig.schema.features.preprocessing.category import \
-    CategoryPreprocessingConfig
+from ludwig.schema.features.preprocessing.binary import BinaryPreprocessingConfig
+from ludwig.schema.features.preprocessing.category import CategoryPreprocessingConfig
 from ludwig.schema.features.preprocessing.date import DatePreprocessingConfig
 from ludwig.schema.features.preprocessing.h3 import H3PreprocessingConfig
 from ludwig.schema.features.preprocessing.image import ImagePreprocessingConfig
-from ludwig.schema.features.preprocessing.number import \
-    NumberPreprocessingConfig
-from ludwig.schema.features.preprocessing.sequence import \
-    SequencePreprocessingConfig
+from ludwig.schema.features.preprocessing.number import NumberPreprocessingConfig
+from ludwig.schema.features.preprocessing.sequence import SequencePreprocessingConfig
 from ludwig.schema.features.preprocessing.set import SetPreprocessingConfig
 from ludwig.schema.features.preprocessing.text import TextPreprocessingConfig
-from ludwig.schema.features.preprocessing.timeseries import \
-    TimeseriesPreprocessingConfig
-from ludwig.schema.features.preprocessing.vector import \
-    VectorPreprocessingConfig
-from ludwig.schema.features.utils import (get_input_feature_jsonschema,
-                                          get_output_feature_jsonschema)
+from ludwig.schema.features.preprocessing.timeseries import TimeseriesPreprocessingConfig
+from ludwig.schema.features.preprocessing.vector import VectorPreprocessingConfig
+from ludwig.schema.features.utils import get_input_feature_jsonschema, get_output_feature_jsonschema
 from ludwig.schema.llms.peft import LoraConfig
 from ludwig.schema.model_types.base import ModelConfig
-from ludwig.schema.utils import (ludwig_dataclass,
-                                 unload_jsonschema_from_marshmallow_class)
-from tests.integration_tests.utils import (ENCODERS, audio_feature,
-                                           bag_feature, binary_feature,
-                                           category_feature, date_feature,
-                                           h3_feature, image_feature,
-                                           number_feature, sequence_feature,
-                                           set_feature, text_feature,
-                                           timeseries_feature, vector_feature)
+from ludwig.schema.utils import ludwig_dataclass, unload_jsonschema_from_marshmallow_class
+from tests.integration_tests.utils import (
+    audio_feature,
+    bag_feature,
+    binary_feature,
+    category_feature,
+    date_feature,
+    ENCODERS,
+    h3_feature,
+    image_feature,
+    number_feature,
+    sequence_feature,
+    set_feature,
+    text_feature,
+    timeseries_feature,
+    vector_feature,
+)
 
 
 def test_config_features():

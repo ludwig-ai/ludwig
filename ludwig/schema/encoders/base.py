@@ -1,9 +1,8 @@
 from abc import ABC
-from typing import TYPE_CHECKING, List, Union
+from typing import List, TYPE_CHECKING, Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (BINARY, MODEL_ECD, MODEL_GBM, MODEL_LLM, NUMBER,
-                              TEXT, TIMESERIES, VECTOR)
+from ludwig.constants import BINARY, MODEL_ECD, MODEL_GBM, MODEL_LLM, NUMBER, TEXT, TIMESERIES, VECTOR
 from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.utils import register_encoder_config
@@ -11,8 +10,7 @@ from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
 if TYPE_CHECKING:
-    from ludwig.schema.features.preprocessing.base import \
-        BasePreprocessingConfig
+    from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 
 
 @DeveloperAPI

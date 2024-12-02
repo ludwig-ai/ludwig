@@ -22,26 +22,40 @@ import torch
 from torch import Tensor
 from transformers import PreTrainedTokenizer
 
-from ludwig.constants import (COLUMN, IGNORE_INDEX_TOKEN_ID, LAST_PREDICTIONS,
-                              LENGTHS, NAME, PREDICTIONS, PREPROCESSING,
-                              PROBABILITIES, PROBABILITY, PROC_COLUMN,
-                              RESPONSE, TEXT)
+from ludwig.constants import (
+    COLUMN,
+    IGNORE_INDEX_TOKEN_ID,
+    LAST_PREDICTIONS,
+    LENGTHS,
+    NAME,
+    PREDICTIONS,
+    PREPROCESSING,
+    PROBABILITIES,
+    PROBABILITY,
+    PROC_COLUMN,
+    RESPONSE,
+    TEXT,
+)
 from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature
-from ludwig.features.feature_utils import (compute_sequence_probability,
-                                           compute_token_probabilities)
-from ludwig.features.sequence_feature import (SequenceInputFeature,
-                                              SequenceOutputFeature,
-                                              _SequencePostprocessing,
-                                              _SequencePreprocessing)
+from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
+from ludwig.features.sequence_feature import (
+    _SequencePostprocessing,
+    _SequencePreprocessing,
+    SequenceInputFeature,
+    SequenceOutputFeature,
+)
 from ludwig.modules.metric_registry import get_metric_tensor_input
-from ludwig.schema.features.text_feature import (TextInputFeatureConfig,
-                                                 TextOutputFeatureConfig)
-from ludwig.types import (FeatureMetadataDict, ModelConfigDict,
-                          PreprocessingConfigDict, TrainingSetMetadataDict)
+from ludwig.schema.features.text_feature import TextInputFeatureConfig, TextOutputFeatureConfig
+from ludwig.types import FeatureMetadataDict, ModelConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.math_utils import softmax
-from ludwig.utils.strings_utils import (UNKNOWN_SYMBOL, SpecialSymbol,
-                                        Vocabulary, build_sequence_matrix,
-                                        create_vocabulary, get_tokenizer)
+from ludwig.utils.strings_utils import (
+    build_sequence_matrix,
+    create_vocabulary,
+    get_tokenizer,
+    SpecialSymbol,
+    UNKNOWN_SYMBOL,
+    Vocabulary,
+)
 
 logger = logging.getLogger(__name__)
 

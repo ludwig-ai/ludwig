@@ -5,8 +5,7 @@ import torch
 
 from ludwig.constants import ENCODER, ENCODER_OUTPUT, TYPE
 from ludwig.features.timeseries_feature import TimeseriesInputFeature
-from ludwig.schema.features.timeseries_feature import \
-    TimeseriesInputFeatureConfig
+from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
 from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils.torch_utils import get_torch_device
 

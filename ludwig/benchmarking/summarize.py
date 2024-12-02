@@ -5,9 +5,13 @@ import shutil
 from typing import List, Tuple
 
 from ludwig.benchmarking.summary_dataclasses import (
-    MetricsDiff, ResourceUsageDiff, build_metrics_diff,
-    build_resource_usage_diff, export_metrics_diff_to_csv,
-    export_resource_usage_diff_to_csv)
+    build_metrics_diff,
+    build_resource_usage_diff,
+    export_metrics_diff_to_csv,
+    export_resource_usage_diff_to_csv,
+    MetricsDiff,
+    ResourceUsageDiff,
+)
 from ludwig.benchmarking.utils import download_artifacts
 
 logger = logging.getLogger()

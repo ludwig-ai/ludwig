@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, List, Optional, Type
+from typing import List, Optional, Type, TYPE_CHECKING
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError

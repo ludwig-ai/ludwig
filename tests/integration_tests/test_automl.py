@@ -8,24 +8,28 @@ import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import (COLUMN, ENCODER, INPUT_FEATURES, NAME,
-                              OUTPUT_FEATURES, PREPROCESSING, SPLIT, TYPE)
+from ludwig.constants import COLUMN, ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, SPLIT, TYPE
 from ludwig.schema.model_types.base import ModelConfig
 from ludwig.types import FeatureConfigDict, ModelConfigDict
 from ludwig.utils.misc_utils import merge_dict
-from tests.integration_tests.utils import (binary_feature, category_feature,
-                                           generate_data, image_feature,
-                                           minio_test_creds, number_feature,
-                                           private_param, remote_tmpdir,
-                                           text_feature)
+from tests.integration_tests.utils import (
+    binary_feature,
+    category_feature,
+    generate_data,
+    image_feature,
+    minio_test_creds,
+    number_feature,
+    private_param,
+    remote_tmpdir,
+    text_feature,
+)
 
 ray = pytest.importorskip("ray")
 
 import dask.dataframe as dd  # noqa E402
 from ray.tune.experiment.trial import Trial  # noqa E402
 
-from ludwig.automl import (auto_train, create_auto_config,  # noqa E402
-                           train_with_config)
+from ludwig.automl import auto_train, create_auto_config, train_with_config  # noqa E402
 from ludwig.automl.automl import OUTPUT_DIR  # noqa E402
 from ludwig.hyperopt.execution import RayTuneExecutor  # noqa E402
 

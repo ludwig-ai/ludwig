@@ -16,7 +16,7 @@
 
 import argparse
 
-from ludwig.contribs import ContribLoader, contrib_registry
+from ludwig.contribs import contrib_registry, ContribLoader
 
 
 def create_load_action(contrib_loader: ContribLoader) -> argparse.Action:

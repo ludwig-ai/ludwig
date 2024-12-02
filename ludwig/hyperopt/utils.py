@@ -7,19 +7,40 @@ import warnings
 from typing import Any, Dict
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (AUTO, COMBINED, EXECUTOR, GOAL, GRID_SEARCH,
-                              HYPEROPT, INPUT_FEATURES, LOSS,
-                              MAX_CONCURRENT_TRIALS, METRIC, MINIMIZE, NAME,
-                              NUM_SAMPLES, OUTPUT_FEATURES, PARAMETERS,
-                              PREPROCESSING, RAY, SPACE, SPLIT, TYPE,
-                              VALIDATION)
+from ludwig.constants import (
+    AUTO,
+    COMBINED,
+    EXECUTOR,
+    GOAL,
+    GRID_SEARCH,
+    HYPEROPT,
+    INPUT_FEATURES,
+    LOSS,
+    MAX_CONCURRENT_TRIALS,
+    METRIC,
+    MINIMIZE,
+    NAME,
+    NUM_SAMPLES,
+    OUTPUT_FEATURES,
+    PARAMETERS,
+    PREPROCESSING,
+    RAY,
+    SPACE,
+    SPLIT,
+    TYPE,
+    VALIDATION,
+)
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.types import HyperoptConfigDict, ModelConfigDict
 from ludwig.utils.data_utils import save_json
-from ludwig.utils.misc_utils import (get_class_attributes, get_from_registry,
-                                     merge_dict, set_default_value,
-                                     set_default_values)
+from ludwig.utils.misc_utils import (
+    get_class_attributes,
+    get_from_registry,
+    merge_dict,
+    set_default_value,
+    set_default_values,
+)
 from ludwig.utils.print_utils import print_boxed
 
 logger = logging.getLogger(__name__)

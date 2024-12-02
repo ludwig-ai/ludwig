@@ -21,11 +21,9 @@ from packaging import version
 from ray import tune
 from ray.air import Checkpoint
 from ray.air.config import CheckpointConfig, FailureConfig, RunConfig
-from ray.tune import (ExperimentAnalysis, Stopper, TuneConfig,
-                      register_trainable)
+from ray.tune import ExperimentAnalysis, register_trainable, Stopper, TuneConfig
 from ray.tune.execution.placement_groups import PlacementGroupFactory
-from ray.tune.schedulers.resource_changing_scheduler import (
-    DistributeResources, ResourceChangingScheduler)
+from ray.tune.schedulers.resource_changing_scheduler import DistributeResources, ResourceChangingScheduler
 from ray.tune.search import BasicVariantGenerator, ConcurrencyLimiter
 from ray.tune.tuner import Tuner
 from ray.tune.utils import wait_for_gpu
@@ -33,11 +31,10 @@ from ray.util.queue import Queue as RayQueue
 
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import PublicAPI
-from ludwig.backend import RAY, initialize_backend
+from ludwig.backend import initialize_backend, RAY
 from ludwig.backend.ray import initialize_ray
 from ludwig.callbacks import Callback
-from ludwig.constants import (MAXIMIZE, TEST, TRAINER, TRAINING, TYPE,
-                              VALIDATION)
+from ludwig.constants import MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
 from ludwig.globals import MODEL_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.hyperopt.syncer import RemoteSyncer
@@ -47,7 +44,7 @@ from ludwig.schema.hyperopt.utils import get_search_algorithm_cls
 from ludwig.schema.model_config import ModelConfig
 from ludwig.types import ModelConfigDict
 from ludwig.utils import fs_utils, metric_utils
-from ludwig.utils.data_utils import NumpyEncoder, hash_dict, use_credentials
+from ludwig.utils.data_utils import hash_dict, NumpyEncoder, use_credentials
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.fs_utils import has_remote_protocol, safe_move_file
@@ -806,8 +803,7 @@ class RayTuneExecutor:
             self.sync_config = tune.SyncConfig(upload_dir=output_directory, syncer=self.sync_client)
             output_directory = None
         elif self.kubernetes_namespace:
-            from ray.tune.integration.kubernetes import (
-                KubernetesSyncClient, NamespacedKubernetesSyncer)
+            from ray.tune.integration.kubernetes import KubernetesSyncClient, NamespacedKubernetesSyncer
 
             self.sync_config = tune.SyncConfig(sync_to_driver=NamespacedKubernetesSyncer(self.kubernetes_namespace))
             self.sync_client = KubernetesSyncClient(self.kubernetes_namespace)

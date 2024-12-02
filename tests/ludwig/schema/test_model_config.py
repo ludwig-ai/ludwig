@@ -5,21 +5,42 @@ from typing import Any, Dict, Optional, Union
 import pytest
 import yaml
 
-from ludwig.constants import (ACTIVE, BASE_MODEL, CLIP, COLUMN, COMBINER,
-                              DECODER, DEFAULT_VALIDATION_METRIC, DEFAULTS,
-                              DEPENDENCIES, ENCODER, HYPEROPT, INPUT_FEATURES,
-                              INPUT_SIZE, LOSS, MODEL_ECD, MODEL_GBM,
-                              MODEL_LLM, MODEL_TYPE, NAME, NUM_CLASSES,
-                              OPTIMIZER, OUTPUT_FEATURES, PREPROCESSING,
-                              PROC_COLUMN, REDUCE_DEPENDENCIES, REDUCE_INPUT,
-                              TIED, TRAINER, TYPE)
+from ludwig.constants import (
+    ACTIVE,
+    BASE_MODEL,
+    CLIP,
+    COLUMN,
+    COMBINER,
+    DECODER,
+    DEFAULT_VALIDATION_METRIC,
+    DEFAULTS,
+    DEPENDENCIES,
+    ENCODER,
+    HYPEROPT,
+    INPUT_FEATURES,
+    INPUT_SIZE,
+    LOSS,
+    MODEL_ECD,
+    MODEL_GBM,
+    MODEL_LLM,
+    MODEL_TYPE,
+    NAME,
+    NUM_CLASSES,
+    OPTIMIZER,
+    OUTPUT_FEATURES,
+    PREPROCESSING,
+    PROC_COLUMN,
+    REDUCE_DEPENDENCIES,
+    REDUCE_INPUT,
+    TIED,
+    TRAINER,
+    TYPE,
+)
 from ludwig.error import ConfigValidationError
 from ludwig.schema.decoders.base import ClassifierConfig
 from ludwig.schema.encoders.text_encoders import BERTConfig
-from ludwig.schema.features.augmentation.image import (RandomBlurConfig,
-                                                       RandomRotateConfig)
-from ludwig.schema.features.image_feature import \
-    AUGMENTATION_DEFAULT_OPERATIONS
+from ludwig.schema.features.augmentation.image import RandomBlurConfig, RandomRotateConfig
+from ludwig.schema.features.image_feature import AUGMENTATION_DEFAULT_OPERATIONS
 from ludwig.schema.features.number_feature import NumberOutputFeatureConfig
 from ludwig.schema.features.text_feature import TextOutputFeatureConfig
 from ludwig.schema.llms.quantization import QuantizationConfig

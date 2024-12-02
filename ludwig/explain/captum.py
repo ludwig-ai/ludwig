@@ -16,9 +16,21 @@ from tqdm import tqdm
 
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import PublicAPI
-from ludwig.constants import (BINARY, CATEGORY, DATE, IMAGE, INPUT_FEATURES,
-                              MINIMUM_BATCH_SIZE, NAME, NUMBER, PREPROCESSING,
-                              SEQUENCE, SET, TEXT, UNKNOWN_SYMBOL)
+from ludwig.constants import (
+    BINARY,
+    CATEGORY,
+    DATE,
+    IMAGE,
+    INPUT_FEATURES,
+    MINIMUM_BATCH_SIZE,
+    NAME,
+    NUMBER,
+    PREPROCESSING,
+    SEQUENCE,
+    SET,
+    TEXT,
+    UNKNOWN_SYMBOL,
+)
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import ExplanationsResult

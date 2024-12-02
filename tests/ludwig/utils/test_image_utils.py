@@ -18,12 +18,20 @@ import pytest
 import torch
 import torchvision.transforms.functional as F
 
-from ludwig.utils.image_utils import (ResizeChannels, crop, crop_or_pad,
-                                      get_class_mask_from_image,
-                                      get_image_from_class_mask,
-                                      get_unique_channels, grayscale,
-                                      is_image_score, num_channels_in_image,
-                                      pad, read_image_as_tif, resize_image)
+from ludwig.utils.image_utils import (
+    crop,
+    crop_or_pad,
+    get_class_mask_from_image,
+    get_image_from_class_mask,
+    get_unique_channels,
+    grayscale,
+    is_image_score,
+    num_channels_in_image,
+    pad,
+    read_image_as_tif,
+    resize_image,
+    ResizeChannels,
+)
 
 
 @pytest.mark.parametrize("pad_fn", [pad, torch.jit.script(pad)])

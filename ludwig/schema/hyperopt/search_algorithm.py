@@ -2,7 +2,7 @@ from dataclasses import field
 from importlib import import_module
 from typing import Dict, List, Optional
 
-from marshmallow import ValidationError, fields
+from marshmallow import fields, ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils

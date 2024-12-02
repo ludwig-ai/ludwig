@@ -1,7 +1,5 @@
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (DROP_ROW, FILL_WITH_CONST,
-                              MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING,
-                              VECTOR)
+from ludwig.constants import DROP_ROW, FILL_WITH_CONST, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING, VECTOR
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor

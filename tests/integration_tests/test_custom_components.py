@@ -4,12 +4,11 @@ from typing import Dict
 
 import torch
 from marshmallow_dataclass import dataclass
-from torch import Tensor, nn
+from torch import nn, Tensor
 
 from ludwig.api import LudwigModel
 from ludwig.combiners.combiners import Combiner, register_combiner
-from ludwig.constants import (BATCH_SIZE, ENCODER_OUTPUT, LOGITS, MINIMIZE,
-                              NUMBER, TRAINER)
+from ludwig.constants import BATCH_SIZE, ENCODER_OUTPUT, LOGITS, MINIMIZE, NUMBER, TRAINER
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.encoders.base import Encoder
@@ -24,11 +23,14 @@ from ludwig.schema.decoders.utils import register_decoder_config
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.features.loss.loss import BaseLossConfig
-from ludwig.schema.features.loss.loss import \
-    register_loss as register_loss_schema
-from tests.integration_tests.utils import (LocalTestBackend, category_feature,
-                                           generate_data, number_feature,
-                                           sequence_feature)
+from ludwig.schema.features.loss.loss import register_loss as register_loss_schema
+from tests.integration_tests.utils import (
+    category_feature,
+    generate_data,
+    LocalTestBackend,
+    number_feature,
+    sequence_feature,
+)
 
 
 @register_encoder_config("custom_number_encoder", NUMBER)

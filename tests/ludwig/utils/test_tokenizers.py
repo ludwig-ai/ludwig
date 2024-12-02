@@ -1,6 +1,9 @@
-from ludwig.utils.tokenizers import (EnglishLemmatizeFilterTokenizer,
-                                     NgramTokenizer, StringSplitTokenizer,
-                                     get_tokenizer_from_registry)
+from ludwig.utils.tokenizers import (
+    EnglishLemmatizeFilterTokenizer,
+    get_tokenizer_from_registry,
+    NgramTokenizer,
+    StringSplitTokenizer,
+)
 
 
 def test_ngram_tokenizer():

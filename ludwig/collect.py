@@ -30,8 +30,7 @@ from ludwig.callbacks import Callback
 from ludwig.constants import FULL, TEST, TRAINING, VALIDATION
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.utils.print_utils import (get_logging_level_registry, print_boxed,
-                                      print_ludwig)
+from ludwig.utils.print_utils import get_logging_level_registry, print_boxed, print_ludwig
 from ludwig.utils.strings_utils import make_safe_filename
 
 logger = logging.getLogger(__name__)

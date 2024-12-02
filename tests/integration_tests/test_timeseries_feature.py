@@ -4,11 +4,9 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.constants import (COLUMN, ENCODER_OUTPUT, INPUT_FEATURES,
-                              OUTPUT_FEATURES)
+from ludwig.constants import COLUMN, ENCODER_OUTPUT, INPUT_FEATURES, OUTPUT_FEATURES
 from ludwig.features.timeseries_feature import TimeseriesInputFeature
-from ludwig.schema.features.timeseries_feature import \
-    TimeseriesInputFeatureConfig
+from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
 from ludwig.schema.utils import load_config_with_kwargs
 from tests.integration_tests.utils import number_feature, timeseries_feature
 

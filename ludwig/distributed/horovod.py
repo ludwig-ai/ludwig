@@ -1,7 +1,6 @@
 import contextlib
 import logging
-from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple,
-                    Type)
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TYPE_CHECKING
 
 import horovod.torch as hvd
 import ray
@@ -17,8 +16,7 @@ from torch.optim import Optimizer
 from ludwig.constants import AUTO
 from ludwig.distributed.base import DistributedStrategy
 from ludwig.modules.optimization_modules import create_optimizer
-from ludwig.utils.horovod_utils import (gather_all_tensors,
-                                        is_distributed_available)
+from ludwig.utils.horovod_utils import gather_all_tensors, is_distributed_available
 
 if TYPE_CHECKING:
     from ludwig.schema.trainer import ECDTrainerConfig

@@ -24,12 +24,19 @@ from fsspec.config import conf
 from ludwig.api import LudwigModel
 from ludwig.data.cache.types import CacheableDataframe
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset_df
-from ludwig.utils.data_utils import (PANDAS_DF, NumpyEncoder,
-                                     add_sequence_feature_column,
-                                     figure_data_format_dataset, get_abs_path,
-                                     hash_dict, read_csv, read_html,
-                                     read_parquet, sanitize_column_names,
-                                     use_credentials)
+from ludwig.utils.data_utils import (
+    add_sequence_feature_column,
+    figure_data_format_dataset,
+    get_abs_path,
+    hash_dict,
+    NumpyEncoder,
+    PANDAS_DF,
+    read_csv,
+    read_html,
+    read_parquet,
+    sanitize_column_names,
+    use_credentials,
+)
 from tests.integration_tests.utils import private_param
 
 try:

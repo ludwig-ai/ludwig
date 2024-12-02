@@ -19,21 +19,26 @@ from typing import Dict, List, Tuple, Union
 import numpy as np
 import torch
 
-from ludwig.constants import (BINARY, COLUMN, HIDDEN, LOGITS, NAME,
-                              PREDICTIONS, PROBABILITIES, PROBABILITY,
-                              PROC_COLUMN)
+from ludwig.constants import BINARY, COLUMN, HIDDEN, LOGITS, NAME, PREDICTIONS, PROBABILITIES, PROBABILITY, PROC_COLUMN
 from ludwig.error import InputDataError
-from ludwig.features.base_feature import (BaseFeatureMixin, InputFeature,
-                                          OutputFeature, PredictModule)
-from ludwig.schema.features.binary_feature import (BinaryInputFeatureConfig,
-                                                   BinaryOutputFeatureConfig)
-from ludwig.types import (FeatureConfigDict, FeatureMetadataDict,
-                          FeaturePostProcessingOutputDict, ModelConfigDict,
-                          PreprocessingConfigDict, TrainingSetMetadataDict)
+from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
+from ludwig.schema.features.binary_feature import BinaryInputFeatureConfig, BinaryOutputFeatureConfig
+from ludwig.types import (
+    FeatureConfigDict,
+    FeatureMetadataDict,
+    FeaturePostProcessingOutputDict,
+    ModelConfigDict,
+    PreprocessingConfigDict,
+    TrainingSetMetadataDict,
+)
 from ludwig.utils import calibration, output_feature_utils, strings_utils
-from ludwig.utils.eval_utils import (ConfusionMatrix, average_precision_score,
-                                     precision_recall_curve, roc_auc_score,
-                                     roc_curve)
+from ludwig.utils.eval_utils import (
+    average_precision_score,
+    ConfusionMatrix,
+    precision_recall_curve,
+    roc_auc_score,
+    roc_curve,
+)
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)

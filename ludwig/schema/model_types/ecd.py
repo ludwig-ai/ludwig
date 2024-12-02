@@ -5,11 +5,13 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.combiners.utils import CombinerSelection
 from ludwig.schema.defaults.ecd import ECDDefaultsConfig, ECDDefaultsField
-from ludwig.schema.features.base import (BaseInputFeatureConfig,
-                                         BaseOutputFeatureConfig,
-                                         ECDInputFeatureSelection,
-                                         ECDOutputFeatureSelection,
-                                         FeatureCollection)
+from ludwig.schema.features.base import (
+    BaseInputFeatureConfig,
+    BaseOutputFeatureConfig,
+    ECDInputFeatureSelection,
+    ECDOutputFeatureSelection,
+    FeatureCollection,
+)
 from ludwig.schema.hyperopt import HyperoptConfig, HyperoptField
 from ludwig.schema.model_types.base import ModelConfig, register_model_type
 from ludwig.schema.preprocessing import PreprocessingConfig, PreprocessingField

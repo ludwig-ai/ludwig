@@ -10,11 +10,17 @@ from ludwig.constants import TRAINER
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.utils.data_utils import read_csv
 from ludwig.utils.torch_utils import get_torch_device
-from tests.integration_tests.utils import (LocalTestBackend, binary_feature,
-                                           category_feature, date_feature,
-                                           generate_data, image_feature,
-                                           number_feature, sequence_feature,
-                                           set_feature)
+from tests.integration_tests.utils import (
+    binary_feature,
+    category_feature,
+    date_feature,
+    generate_data,
+    image_feature,
+    LocalTestBackend,
+    number_feature,
+    sequence_feature,
+    set_feature,
+)
 
 DEVICE = get_torch_device()
 BATCH_SIZE = 32

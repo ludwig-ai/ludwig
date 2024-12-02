@@ -33,14 +33,18 @@ from ludwig.api import TrainingStats
 from ludwig.api_annotations import DeveloperAPI, PublicAPI
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.callbacks import Callback
-from ludwig.constants import (ACCURACY, EDIT_DISTANCE, HITS_AT_K, LOSS,
-                              PREDICTIONS, SPACE, SPLIT)
+from ludwig.constants import ACCURACY, EDIT_DISTANCE, HITS_AT_K, LOSS, PREDICTIONS, SPACE, SPLIT
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.utils import visualization_utils
-from ludwig.utils.data_utils import (CACHEABLE_FORMATS, data_reader_registry,
-                                     figure_data_format_dataset, load_array,
-                                     load_from_file, load_json,
-                                     replace_file_extension)
+from ludwig.utils.data_utils import (
+    CACHEABLE_FORMATS,
+    data_reader_registry,
+    figure_data_format_dataset,
+    load_array,
+    load_from_file,
+    load_json,
+    replace_file_extension,
+)
 from ludwig.utils.dataframe_utils import to_numpy_dataset, unflatten_df
 from ludwig.utils.fs_utils import path_exists
 from ludwig.utils.misc_utils import get_from_registry

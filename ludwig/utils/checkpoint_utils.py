@@ -13,7 +13,7 @@ import tempfile
 import uuid
 from abc import ABC, abstractmethod
 from glob import glob
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple
+from typing import Any, Dict, Mapping, Optional, Tuple, TYPE_CHECKING
 
 import torch
 from torch.optim import Optimizer

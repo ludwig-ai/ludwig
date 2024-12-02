@@ -10,10 +10,15 @@ from ludwig.api import kfold_cross_validate
 from ludwig.constants import BATCH_SIZE, TRAINER
 from ludwig.experiment import kfold_cross_validate_cli
 from ludwig.utils.data_utils import load_json
-from tests.integration_tests.utils import (binary_feature, category_feature,
-                                           create_data_set_to_use,
-                                           generate_data, number_feature,
-                                           sequence_feature, text_feature)
+from tests.integration_tests.utils import (
+    binary_feature,
+    category_feature,
+    create_data_set_to_use,
+    generate_data,
+    number_feature,
+    sequence_feature,
+    text_feature,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

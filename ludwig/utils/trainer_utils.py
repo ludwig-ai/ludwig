@@ -1,7 +1,7 @@
 import logging
 import re
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, TYPE_CHECKING, Union
 
 try:
     from typing import Literal

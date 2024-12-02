@@ -24,10 +24,15 @@ from ludwig.api import LudwigModel
 from ludwig.constants import BATCH_SIZE, DECODER, TRAINER
 from ludwig.serve import server
 from ludwig.utils.data_utils import read_csv
-from tests.integration_tests.utils import (LocalTestBackend, audio_feature,
-                                           category_feature, generate_data,
-                                           image_feature, number_feature,
-                                           text_feature)
+from tests.integration_tests.utils import (
+    audio_feature,
+    category_feature,
+    generate_data,
+    image_feature,
+    LocalTestBackend,
+    number_feature,
+    text_feature,
+)
 
 logger = logging.getLogger(__name__)
 

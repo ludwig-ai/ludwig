@@ -19,13 +19,11 @@ from typing import Dict, Optional, Type
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (ENCODER_OUTPUT_STATE, HIDDEN, IMAGE, LOGITS,
-                              PREDICTIONS)
+from ludwig.constants import ENCODER_OUTPUT_STATE, HIDDEN, IMAGE, LOGITS, PREDICTIONS
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.modules.convolutional_modules import UNetUpStack
-from ludwig.schema.decoders.image_decoders import (ImageDecoderConfig,
-                                                   UNetDecoderConfig)
+from ludwig.schema.decoders.image_decoders import ImageDecoderConfig, UNetDecoderConfig
 
 logger = logging.getLogger(__name__)
 

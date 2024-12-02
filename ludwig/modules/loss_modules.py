@@ -17,7 +17,7 @@
 from typing import Type
 
 import torch
-from torch import Tensor, nn
+from torch import nn, Tensor
 from torch.nn import HuberLoss as _HuberLoss
 from torch.nn import L1Loss
 from torch.nn import MSELoss as _MSELoss
@@ -27,11 +27,20 @@ import ludwig.utils.loss_utils as utils
 from ludwig.constants import LOGITS
 from ludwig.modules.loss_implementations.corn import corn_loss
 from ludwig.schema.features.loss.loss import (
-    BaseLossConfig, BWCEWLossConfig, CORNLossConfig, HuberLossConfig,
-    MAELossConfig, MAPELossConfig, MSELossConfig,
-    NextTokenSoftmaxCrossEntropyLossConfig, RMSELossConfig, RMSPELossConfig,
-    SequenceSoftmaxCrossEntropyLossConfig, SigmoidCrossEntropyLossConfig,
-    SoftmaxCrossEntropyLossConfig)
+    BaseLossConfig,
+    BWCEWLossConfig,
+    CORNLossConfig,
+    HuberLossConfig,
+    MAELossConfig,
+    MAPELossConfig,
+    MSELossConfig,
+    NextTokenSoftmaxCrossEntropyLossConfig,
+    RMSELossConfig,
+    RMSPELossConfig,
+    SequenceSoftmaxCrossEntropyLossConfig,
+    SigmoidCrossEntropyLossConfig,
+    SoftmaxCrossEntropyLossConfig,
+)
 from ludwig.utils import strings_utils
 from ludwig.utils.registry import Registry
 

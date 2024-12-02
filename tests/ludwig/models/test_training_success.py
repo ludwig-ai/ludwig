@@ -2,8 +2,7 @@ from contextlib import nullcontext as no_error_raised
 
 from ludwig.api import LudwigModel
 from ludwig.constants import BINARY, TRAINER
-from tests.integration_tests.utils import (binary_feature, category_feature,
-                                           generate_data)
+from tests.integration_tests.utils import binary_feature, category_feature, generate_data
 
 
 def generate_data_and_train(config, csv_filename):

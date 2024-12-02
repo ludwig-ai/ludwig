@@ -8,8 +8,8 @@ from typing import Dict, List, Optional, Set, Union
 import ludwig.modules.metric_modules  # noqa: F401
 from ludwig.benchmarking.utils import format_memory, format_time
 from ludwig.globals import MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME
-from ludwig.modules.metric_registry import (get_metric_classes,  # noqa: F401
-                                            metric_feature_type_registry)
+from ludwig.modules.metric_registry import get_metric_classes  # noqa: F401
+from ludwig.modules.metric_registry import metric_feature_type_registry
 from ludwig.types import ModelConfigDict
 from ludwig.utils.data_utils import load_json
 

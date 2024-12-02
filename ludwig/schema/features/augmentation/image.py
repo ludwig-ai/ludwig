@@ -2,8 +2,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import AUGMENTATION, IMAGE, TYPE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.augmentation.base import BaseAugmentationConfig
-from ludwig.schema.features.augmentation.utils import \
-    register_augmentation_config
+from ludwig.schema.features.augmentation.utils import register_augmentation_config
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 

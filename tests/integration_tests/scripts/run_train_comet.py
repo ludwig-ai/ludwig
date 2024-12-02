@@ -28,8 +28,8 @@ PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 PATH_ROOT = os.path.join(PATH_HERE, "..", "..", "..")
 sys.path.insert(0, os.path.abspath(PATH_ROOT))
 
-from tests.integration_tests.utils import (category_feature,  # noqa
-                                           generate_data, image_feature)
+from tests.integration_tests.utils import category_feature  # noqa
+from tests.integration_tests.utils import generate_data, image_feature
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--csv-filename", required=True)

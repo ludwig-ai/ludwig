@@ -19,26 +19,40 @@ from typing import Any, Dict, List, Union
 import numpy as np
 import torch
 
-from ludwig.constants import (CATEGORY, CATEGORY_DISTRIBUTION, COLUMN, HIDDEN,
-                              LOGITS, NAME, PREDICTIONS, PREPROCESSING,
-                              PROBABILITIES, PROBABILITY, PROC_COLUMN,
-                              PROJECTION_INPUT)
+from ludwig.constants import (
+    CATEGORY,
+    CATEGORY_DISTRIBUTION,
+    COLUMN,
+    HIDDEN,
+    LOGITS,
+    NAME,
+    PREDICTIONS,
+    PREPROCESSING,
+    PROBABILITIES,
+    PROBABILITY,
+    PROC_COLUMN,
+    PROJECTION_INPUT,
+)
 from ludwig.error import InputDataError
-from ludwig.features.base_feature import (BaseFeatureMixin, InputFeature,
-                                          OutputFeature, PredictModule)
+from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.vector_feature import VectorFeatureMixin
 from ludwig.schema.features.category_feature import (
-    CategoryDistributionOutputFeatureConfig, CategoryInputFeatureConfig,
-    CategoryOutputFeatureConfig)
+    CategoryDistributionOutputFeatureConfig,
+    CategoryInputFeatureConfig,
+    CategoryOutputFeatureConfig,
+)
 from ludwig.schema.features.loss.loss import CORNLossConfig
-from ludwig.types import (FeatureMetadataDict, FeaturePostProcessingOutputDict,
-                          ModelConfigDict, PreprocessingConfigDict,
-                          TrainingSetMetadataDict)
+from ludwig.types import (
+    FeatureMetadataDict,
+    FeaturePostProcessingOutputDict,
+    ModelConfigDict,
+    PreprocessingConfigDict,
+    TrainingSetMetadataDict,
+)
 from ludwig.utils import calibration, output_feature_utils
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import int_type, softmax
-from ludwig.utils.strings_utils import (UNKNOWN_SYMBOL,
-                                        create_vocabulary_single_token)
+from ludwig.utils.strings_utils import create_vocabulary_single_token, UNKNOWN_SYMBOL
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)

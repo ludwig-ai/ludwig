@@ -15,7 +15,7 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import List, Optional, Tuple, TYPE_CHECKING
 from zlib import crc32
 
 import numpy as np
@@ -23,12 +23,15 @@ from sklearn.model_selection import train_test_split
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend
-from ludwig.constants import (BINARY, CATEGORY, DATE, MIN_DATASET_SPLIT_ROWS,
-                              SPLIT)
+from ludwig.constants import BINARY, CATEGORY, DATE, MIN_DATASET_SPLIT_ROWS, SPLIT
 from ludwig.error import ConfigValidationError
-from ludwig.schema.split import (DateTimeSplitConfig, FixedSplitConfig,
-                                 HashSplitConfig, RandomSplitConfig,
-                                 StratifySplitConfig)
+from ludwig.schema.split import (
+    DateTimeSplitConfig,
+    FixedSplitConfig,
+    HashSplitConfig,
+    RandomSplitConfig,
+    StratifySplitConfig,
+)
 from ludwig.types import ModelConfigDict, PreprocessingConfigDict
 from ludwig.utils.data_utils import hash_dict, split_dataset_ttv
 from ludwig.utils.defaults import default_random_seed

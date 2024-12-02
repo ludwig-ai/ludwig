@@ -1,8 +1,7 @@
 import pytest
 
 from ludwig.modules.reduction_modules import reduce_mode_registry
-from tests.integration_tests.utils import (category_feature, generate_data,
-                                           run_experiment, sequence_feature)
+from tests.integration_tests.utils import category_feature, generate_data, run_experiment, sequence_feature
 
 
 @pytest.mark.parametrize("reduce_output", reduce_mode_registry)

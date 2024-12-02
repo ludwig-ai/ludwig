@@ -4,10 +4,25 @@ from typing import Dict, Optional
 import pandas as pd
 import torch
 
-from ludwig.constants import (AUDIO, BAG, BINARY, CATEGORY, COLUMN, DATE,
-                              IMAGE, NAME, POSTPROCESSOR, PREDICTOR,
-                              PREPROCESSOR, SEQUENCE, SET, TEXT, TIMESERIES,
-                              TYPE, VECTOR)
+from ludwig.constants import (
+    AUDIO,
+    BAG,
+    BINARY,
+    CATEGORY,
+    COLUMN,
+    DATE,
+    IMAGE,
+    NAME,
+    POSTPROCESSOR,
+    PREDICTOR,
+    PREPROCESSOR,
+    SEQUENCE,
+    SET,
+    TEXT,
+    TIMESERIES,
+    TYPE,
+    VECTOR,
+)
 from ludwig.types import FeatureConfigDict, ModelConfigDict
 from ludwig.utils.audio_utils import read_audio_from_path
 from ludwig.utils.date_utils import create_vector_from_datetime_obj

@@ -1,7 +1,7 @@
 # Implements https://github.com/ray-project/ray/pull/30598 ahead of Ray 2.2 release.
 
 import math
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type, Union
+from typing import Any, Callable, Dict, Optional, Type, TYPE_CHECKING, Union
 
 import ray
 from ray.air.config import RunConfig

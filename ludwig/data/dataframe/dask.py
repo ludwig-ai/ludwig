@@ -30,8 +30,7 @@ from ray.data import Dataset, read_parquet
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.utils.data_utils import (get_pa_schema, get_parquet_filename,
-                                     split_by_slices)
+from ludwig.utils.data_utils import get_pa_schema, get_parquet_filename, split_by_slices
 from ludwig.utils.dataframe_utils import set_index_name
 from ludwig.utils.fs_utils import get_fs_and_path
 

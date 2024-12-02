@@ -9,22 +9,39 @@ import yaml
 from tabulate import tabulate
 
 from ludwig.api import LudwigModel
-from ludwig.backend import Backend, LocalBackend, initialize_backend
+from ludwig.backend import Backend, initialize_backend, LocalBackend
 from ludwig.callbacks import Callback
-from ludwig.constants import (AUTO, COMBINED, EXECUTOR, GOAL, HYPEROPT, LOSS,
-                              MAX_CONCURRENT_TRIALS, METRIC, NAME,
-                              OUTPUT_FEATURES, PARAMETERS, PREPROCESSING,
-                              SEARCH_ALG, SPLIT, TEST, TRAINING, TYPE,
-                              VALIDATION)
+from ludwig.constants import (
+    AUTO,
+    COMBINED,
+    EXECUTOR,
+    GOAL,
+    HYPEROPT,
+    LOSS,
+    MAX_CONCURRENT_TRIALS,
+    METRIC,
+    NAME,
+    OUTPUT_FEATURES,
+    PARAMETERS,
+    PREPROCESSING,
+    SEARCH_ALG,
+    SPLIT,
+    TEST,
+    TRAINING,
+    TYPE,
+    VALIDATION,
+)
 from ludwig.data.split import get_splitter
 from ludwig.hyperopt.results import HyperoptResults
-from ludwig.hyperopt.utils import (log_warning_if_all_grid_type_parameters,
-                                   print_hyperopt_results, save_hyperopt_stats,
-                                   should_tune_preprocessing,
-                                   update_hyperopt_params_with_defaults)
+from ludwig.hyperopt.utils import (
+    log_warning_if_all_grid_type_parameters,
+    print_hyperopt_results,
+    save_hyperopt_stats,
+    should_tune_preprocessing,
+    update_hyperopt_params_with_defaults,
+)
 from ludwig.schema.model_config import ModelConfig
-from ludwig.utils.backward_compatibility import \
-    upgrade_config_dict_to_latest_version
+from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.dataset_utils import generate_dataset_statistics
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import makedirs, open_file
@@ -179,8 +196,7 @@ def hyperopt(
     :return: (List[dict]) List of results for each trial, ordered by
         descending performance on the target metric.
     """
-    from ludwig.hyperopt.execution import (RayTuneExecutor,
-                                           get_build_hyperopt_executor)
+    from ludwig.hyperopt.execution import get_build_hyperopt_executor, RayTuneExecutor
 
     # check if config is a path or a dict
     if isinstance(config, str):  # assume path

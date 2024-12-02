@@ -1,7 +1,6 @@
 import pytest
 
-from ludwig.config_validation.preprocessing import \
-    check_global_max_sequence_length_fits_prompt_template
+from ludwig.config_validation.preprocessing import check_global_max_sequence_length_fits_prompt_template
 from ludwig.config_validation.validation import check_schema
 from tests.integration_tests.utils import binary_feature, category_feature
 

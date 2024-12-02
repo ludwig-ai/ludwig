@@ -25,8 +25,7 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.backend import RAY
-from ludwig.constants import (BATCH_SIZE, COMBINER, EVAL_BATCH_SIZE, LOGITS,
-                              NAME, PREDICTIONS, PROBABILITIES, TRAINER)
+from ludwig.constants import BATCH_SIZE, COMBINER, EVAL_BATCH_SIZE, LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.features.number_feature import numeric_transformation_registry
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
@@ -34,14 +33,23 @@ from ludwig.models.inference import to_inference_module_input_from_dataframe
 from ludwig.utils import output_feature_utils
 from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from tests.integration_tests import utils
-from tests.integration_tests.utils import (LocalTestBackend, audio_feature,
-                                           bag_feature, binary_feature,
-                                           category_feature, date_feature,
-                                           generate_data, h3_feature,
-                                           image_feature, number_feature,
-                                           sequence_feature, set_feature,
-                                           text_feature, timeseries_feature,
-                                           vector_feature)
+from tests.integration_tests.utils import (
+    audio_feature,
+    bag_feature,
+    binary_feature,
+    category_feature,
+    date_feature,
+    generate_data,
+    h3_feature,
+    image_feature,
+    LocalTestBackend,
+    number_feature,
+    sequence_feature,
+    set_feature,
+    text_feature,
+    timeseries_feature,
+    vector_feature,
+)
 
 
 @pytest.mark.integration_tests_e

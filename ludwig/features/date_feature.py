@@ -23,11 +23,14 @@ import torch
 from ludwig.constants import COLUMN, DATE, PROC_COLUMN
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.date_feature import DateInputFeatureConfig
-from ludwig.types import (FeatureConfigDict, FeatureMetadataDict,
-                          ModelConfigDict, PreprocessingConfigDict,
-                          TrainingSetMetadataDict)
-from ludwig.utils.date_utils import (create_vector_from_datetime_obj,
-                                     parse_datetime)
+from ludwig.types import (
+    FeatureConfigDict,
+    FeatureMetadataDict,
+    ModelConfigDict,
+    PreprocessingConfigDict,
+    TrainingSetMetadataDict,
+)
+from ludwig.utils.date_utils import create_vector_from_datetime_obj, parse_datetime
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)

@@ -2,9 +2,12 @@ import pytest
 import torch
 from torch.autograd import gradcheck
 
-from ludwig.utils.entmax.activations import (Entmax15, Sparsemax,
-                                             _entmax_threshold_and_support,
-                                             _sparsemax_threshold_and_support)
+from ludwig.utils.entmax.activations import (
+    _entmax_threshold_and_support,
+    _sparsemax_threshold_and_support,
+    Entmax15,
+    Sparsemax,
+)
 
 
 @pytest.mark.parametrize("dim", (0, 1, 2))

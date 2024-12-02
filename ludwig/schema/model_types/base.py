@@ -7,28 +7,39 @@ from marshmallow import ValidationError
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.config_validation.checks import get_config_check_registry
 from ludwig.config_validation.validation import check_schema
-from ludwig.constants import (BACKEND, COLUMN, DEPENDENCIES, ENCODER,
-                              INPUT_FEATURES, MODEL_ECD, NAME, OUTPUT_FEATURES,
-                              TIED)
+from ludwig.constants import (
+    BACKEND,
+    COLUMN,
+    DEPENDENCIES,
+    ENCODER,
+    INPUT_FEATURES,
+    MODEL_ECD,
+    NAME,
+    OUTPUT_FEATURES,
+    TIED,
+)
 from ludwig.error import ConfigValidationError
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.defaults.base import BaseDefaultsConfig
-from ludwig.schema.features.base import (BaseInputFeatureConfig,
-                                         BaseOutputFeatureConfig,
-                                         FeatureCollection)
+from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig, FeatureCollection
 from ludwig.schema.hyperopt import HyperoptConfig
 from ludwig.schema.model_types.utils import (
-    merge_fixed_preprocessing_params, merge_with_defaults,
-    sanitize_and_filter_combiner_entities_, set_derived_feature_columns_,
-    set_hyperopt_defaults_, set_llm_parameters, set_preprocessing_parameters,
-    set_tagger_decoder_parameters, set_validation_parameters)
+    merge_fixed_preprocessing_params,
+    merge_with_defaults,
+    sanitize_and_filter_combiner_entities_,
+    set_derived_feature_columns_,
+    set_hyperopt_defaults_,
+    set_llm_parameters,
+    set_preprocessing_parameters,
+    set_tagger_decoder_parameters,
+    set_validation_parameters,
+)
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.trainer import BaseTrainerConfig
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.types import ModelConfigDict
-from ludwig.utils.backward_compatibility import \
-    upgrade_config_dict_to_latest_version
+from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.data_utils import get_sanitized_feature_name, load_yaml
 from ludwig.utils.registry import Registry
 

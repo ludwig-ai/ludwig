@@ -1,9 +1,8 @@
 import pytest
 
 from ludwig.schema.hyperopt.search_algorithm import BaseSearchAlgorithmConfig
-from ludwig.schema.hyperopt.utils import (register_search_algorithm_config,
-                                          search_algorithm_config_registry)
-from ludwig.schema.utils import ProtectedString, ludwig_dataclass
+from ludwig.schema.hyperopt.utils import register_search_algorithm_config, search_algorithm_config_registry
+from ludwig.schema.utils import ludwig_dataclass, ProtectedString
 
 
 @pytest.fixture(

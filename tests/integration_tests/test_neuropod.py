@@ -26,9 +26,13 @@ from packaging.version import parse as parse_version
 from ludwig.api import LudwigModel
 from ludwig.constants import BATCH_SIZE, NAME, PREDICTIONS, TRAINER
 from ludwig.utils.neuropod_utils import export_neuropod
-from tests.integration_tests.utils import (LocalTestBackend, binary_feature,
-                                           category_feature, generate_data,
-                                           number_feature)
+from tests.integration_tests.utils import (
+    binary_feature,
+    category_feature,
+    generate_data,
+    LocalTestBackend,
+    number_feature,
+)
 
 
 @pytest.mark.skipif(platform.system() == "Windows", reason="Neuropod is not supported on Windows")

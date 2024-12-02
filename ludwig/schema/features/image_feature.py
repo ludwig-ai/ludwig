@@ -8,22 +8,20 @@ from ludwig.schema.decoders.utils import DecoderDataclassField
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.augmentation.base import BaseAugmentationConfig
-from ludwig.schema.features.augmentation.image import (
-    RandomHorizontalFlipConfig, RandomRotateConfig)
-from ludwig.schema.features.augmentation.utils import \
-    AugmentationDataclassField
-from ludwig.schema.features.base import (BaseInputFeatureConfig,
-                                         BaseOutputFeatureConfig)
+from ludwig.schema.features.augmentation.image import RandomHorizontalFlipConfig, RandomRotateConfig
+from ludwig.schema.features.augmentation.utils import AugmentationDataclassField
+from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
 from ludwig.schema.features.loss.loss import BaseLossConfig
 from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
-from ludwig.schema.features.preprocessing.utils import \
-    PreprocessingDataclassField
-from ludwig.schema.features.utils import (ecd_defaults_config_registry,
-                                          ecd_input_config_registry,
-                                          ecd_output_config_registry,
-                                          input_mixin_registry,
-                                          output_mixin_registry)
+from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
+from ludwig.schema.features.utils import (
+    ecd_defaults_config_registry,
+    ecd_input_config_registry,
+    ecd_output_config_registry,
+    input_mixin_registry,
+    output_mixin_registry,
+)
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass

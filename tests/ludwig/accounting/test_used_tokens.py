@@ -1,8 +1,6 @@
 import torch
 
-from ludwig.accounting.used_tokens import (get_used_tokens_for_ecd,
-                                           get_used_tokens_for_gbm,
-                                           get_used_tokens_for_llm)
+from ludwig.accounting.used_tokens import get_used_tokens_for_ecd, get_used_tokens_for_gbm, get_used_tokens_for_llm
 
 
 def test_get_used_tokens_for_gbm():

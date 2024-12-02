@@ -6,9 +6,20 @@ from numpy import nan_to_num
 from pandas import Series
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (BINARY, CATEGORY, COMBINER, CONFIG, HYPEROPT,
-                              IMBALANCE_DETECTION_RATIO, NAME, NUMBER,
-                              PARAMETERS, SEARCH_ALG, TRAINER, TYPE)
+from ludwig.constants import (
+    BINARY,
+    CATEGORY,
+    COMBINER,
+    CONFIG,
+    HYPEROPT,
+    IMBALANCE_DETECTION_RATIO,
+    NAME,
+    NUMBER,
+    PARAMETERS,
+    SEARCH_ALG,
+    TRAINER,
+    TYPE,
+)
 from ludwig.features.feature_registries import get_output_type_registry
 from ludwig.modules.metric_registry import get_metric_objective
 from ludwig.schema.combiners.utils import get_combiner_jsonschema

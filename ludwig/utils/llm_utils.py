@@ -1,18 +1,16 @@
 import copy
 import logging
 import tempfile
-from typing import TYPE_CHECKING, Dict, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple, TYPE_CHECKING, Union
 
 import torch
 import torch.nn.functional as F
 import transformers
 from bitsandbytes.nn.modules import Embedding
 from packaging import version
-from transformers import (AutoConfig, AutoModelForCausalLM, PreTrainedModel,
-                          PreTrainedTokenizer, TextStreamer)
+from transformers import AutoConfig, AutoModelForCausalLM, PreTrainedModel, PreTrainedTokenizer, TextStreamer
 
-from ludwig.constants import (IGNORE_INDEX_TOKEN_ID, LOGITS, PREDICTIONS,
-                              PROBABILITIES)
+from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, PREDICTIONS, PROBABILITIES
 from ludwig.schema.trainer import LLMTrainerConfig
 from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.logging_utils import log_once
@@ -160,8 +158,8 @@ def initialize_adapter(
             logger.info(f"Using pretrained adapter weights: {config_obj.adapter.pretrained_adapter_weights}")
 
             # Leave this import inline to support a minimal install of Ludwig
-            from peft import (MODEL_TYPE_TO_PEFT_MODEL_MAPPING,  # noqa
-                              PeftConfig)
+            from peft import MODEL_TYPE_TO_PEFT_MODEL_MAPPING  # noqa
+            from peft import PeftConfig
 
             peft_config = PeftConfig.from_pretrained(config_obj.adapter.pretrained_adapter_weights)
 
@@ -170,7 +168,7 @@ def initialize_adapter(
             )
         else:
             # Leave this import inline to support a minimal install of Ludwig
-            from peft import TaskType, get_peft_model  # noqa
+            from peft import get_peft_model, TaskType  # noqa
 
             # If no pretrained adapter is provided, we want to load untrained weights into the model
             peft_config = config_obj.adapter.to_config(

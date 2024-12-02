@@ -1,8 +1,7 @@
 from typing import Dict, Tuple, Union
 
 import pytest
-from marshmallow.exceptions import \
-    ValidationError as MarshmallowValidationError
+from marshmallow.exceptions import ValidationError as MarshmallowValidationError
 from marshmallow_dataclass import dataclass
 
 from ludwig.config_validation.validation import get_validator, validate

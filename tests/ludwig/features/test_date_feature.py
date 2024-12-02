@@ -6,8 +6,7 @@ import pytest
 import torch
 from dateutil.parser import parse
 
-from ludwig.constants import (ENCODER_OUTPUT, FILL_WITH_CONST,
-                              MISSING_VALUE_STRATEGY)
+from ludwig.constants import ENCODER_OUTPUT, FILL_WITH_CONST, MISSING_VALUE_STRATEGY
 from ludwig.features import date_feature
 from ludwig.features.date_feature import DateInputFeature
 from ludwig.schema.features.date_feature import DateInputFeatureConfig

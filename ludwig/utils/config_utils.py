@@ -1,13 +1,23 @@
 from typing import Any, Dict, List, Set, Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (DECODER, ENCODER, IMAGE, INPUT_FEATURES,
-                              MODEL_ECD, MODEL_LLM, MODEL_TYPE, PREPROCESSING,
-                              SEQUENCE, TEXT, TIMESERIES, TYPE)
+from ludwig.constants import (
+    DECODER,
+    ENCODER,
+    IMAGE,
+    INPUT_FEATURES,
+    MODEL_ECD,
+    MODEL_LLM,
+    MODEL_TYPE,
+    PREPROCESSING,
+    SEQUENCE,
+    TEXT,
+    TIMESERIES,
+    TYPE,
+)
 from ludwig.features.feature_registries import get_input_type_registry
 from ludwig.schema.model_config import ModelConfig
-from ludwig.types import (FeatureConfigDict, FeatureTypeDefaultsDict,
-                          PreprocessingConfigDict)
+from ludwig.types import FeatureConfigDict, FeatureTypeDefaultsDict, PreprocessingConfigDict
 
 
 @DeveloperAPI

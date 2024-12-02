@@ -21,24 +21,20 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
-from ludwig.constants import (ACCURACY, AUTO, BATCH_SIZE, EXECUTOR,
-                              MAX_CONCURRENT_TRIALS, TRAINER)
+from ludwig.constants import ACCURACY, AUTO, BATCH_SIZE, EXECUTOR, MAX_CONCURRENT_TRIALS, TRAINER
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
 from ludwig.schema.model_config import ModelConfig
-from tests.integration_tests.utils import (binary_feature,
-                                           create_data_set_to_use,
-                                           generate_data, number_feature)
+from tests.integration_tests.utils import binary_feature, create_data_set_to_use, generate_data, number_feature
 
 try:
     import ray
-    from ray.tune.syncer import SyncConfig, get_node_to_storage_syncer
+    from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
 
     from ludwig.backend.ray import RayBackend
-    from ludwig.hyperopt.execution import (RayTuneExecutor,
-                                           _get_relative_checkpoints_dir_parts)
+    from ludwig.hyperopt.execution import _get_relative_checkpoints_dir_parts, RayTuneExecutor
 except ImportError:
     ray = None
     RayTuneExecutor = object

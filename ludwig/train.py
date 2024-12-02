@@ -28,8 +28,7 @@ from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.print_utils import (get_logging_level_registry, print_ludwig,
-                                      query_yes_no)
+from ludwig.utils.print_utils import get_logging_level_registry, print_ludwig, query_yes_no
 
 logger = logging.getLogger(__name__)
 

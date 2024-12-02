@@ -2,8 +2,10 @@ import pytest
 
 from ludwig.utils.data_utils import load_json
 from tests.training_success.test_training_success import (
-    combiner_config_generator, defaults_config_generator,
-    ecd_trainer_config_generator)
+    combiner_config_generator,
+    defaults_config_generator,
+    ecd_trainer_config_generator,
+)
 
 
 def full_config_generator(generator_fn, *args):

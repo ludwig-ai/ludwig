@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List
 
-from dataclasses_json import LetterCase, dataclass_json
+from dataclasses_json import dataclass_json, LetterCase
 
 from ludwig.api_annotations import DeveloperAPI
 

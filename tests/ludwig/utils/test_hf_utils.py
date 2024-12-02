@@ -6,9 +6,11 @@ import pytest
 from transformers import AlbertModel, BertModel, BertTokenizer
 
 from ludwig.encoders.text_encoders import ALBERTEncoder, BERTEncoder
-from ludwig.utils.hf_utils import (load_pretrained_hf_model_from_hub,
-                                   load_pretrained_hf_model_with_hub_fallback,
-                                   upload_folder_to_hfhub)
+from ludwig.utils.hf_utils import (
+    load_pretrained_hf_model_from_hub,
+    load_pretrained_hf_model_with_hub_fallback,
+    upload_folder_to_hfhub,
+)
 
 
 @pytest.mark.parametrize(

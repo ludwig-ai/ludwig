@@ -15,9 +15,15 @@
 import pytest
 
 from tests.integration_tests.utils import (
-    category_feature, generate_data,
-    generate_output_features_with_dependencies, number_feature, run_experiment,
-    sequence_feature, set_feature, text_feature)
+    category_feature,
+    generate_data,
+    generate_output_features_with_dependencies,
+    number_feature,
+    run_experiment,
+    sequence_feature,
+    set_feature,
+    text_feature,
+)
 
 
 @pytest.mark.parametrize(

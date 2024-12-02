@@ -18,7 +18,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from ludwig.utils.torch_utils import LudwigModule, get_activation
+from ludwig.utils.torch_utils import get_activation, LudwigModule
 
 logger = logging.getLogger(__name__)
 

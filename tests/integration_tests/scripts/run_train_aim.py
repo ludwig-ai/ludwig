@@ -8,8 +8,7 @@ from unittest.mock import Mock
 import aim  # noqa
 
 from ludwig.contribs.aim import AimCallback
-from tests.integration_tests.utils import (category_feature, generate_data,
-                                           image_feature, run_experiment)
+from tests.integration_tests.utils import category_feature, generate_data, image_feature, run_experiment
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 PATH_ROOT = os.path.join(PATH_HERE, "..", "..", "..")

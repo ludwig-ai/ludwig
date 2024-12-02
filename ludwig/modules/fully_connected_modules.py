@@ -20,8 +20,7 @@ import torch
 from torch.nn import Dropout, Linear, ModuleList
 
 from ludwig.modules.normalization_modules import create_norm_layer
-from ludwig.utils.torch_utils import (LudwigModule, activations,
-                                      initializer_registry)
+from ludwig.utils.torch_utils import activations, initializer_registry, LudwigModule
 
 logger = logging.getLogger(__name__)
 

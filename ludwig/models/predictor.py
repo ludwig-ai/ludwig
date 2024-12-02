@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 from abc import ABC, abstractmethod
-from collections import OrderedDict, defaultdict
+from collections import defaultdict, OrderedDict
 from pprint import pformat
 from typing import Dict, List, Optional, Type
 
@@ -12,13 +12,11 @@ import psutil
 import torch
 from torch import nn
 
-from ludwig.constants import (COMBINED, LAST_HIDDEN, LOGITS, MODEL_ECD,
-                              MODEL_GBM, MODEL_LLM)
+from ludwig.constants import COMBINED, LAST_HIDDEN, LOGITS, MODEL_ECD, MODEL_GBM, MODEL_LLM
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.utils import convert_to_dict
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
-from ludwig.globals import (PREDICTIONS_PARQUET_FILE_NAME,
-                            TEST_STATISTICS_FILE_NAME, is_progressbar_disabled)
+from ludwig.globals import is_progressbar_disabled, PREDICTIONS_PARQUET_FILE_NAME, TEST_STATISTICS_FILE_NAME
 from ludwig.models.base import BaseModel
 from ludwig.progress_bar import LudwigProgressBar
 from ludwig.utils.data_utils import save_csv, save_json

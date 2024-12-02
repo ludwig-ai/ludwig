@@ -9,14 +9,13 @@ from ludwig.constants import ENCODER_OUTPUT, MODEL_ECD, NAME, PROC_COLUMN, TYPE
 from ludwig.features.feature_registries import get_input_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.models.base import BaseModel
-from ludwig.schema.features.base import (BaseInputFeatureConfig,
-                                         FeatureCollection)
+from ludwig.schema.features.base import BaseInputFeatureConfig, FeatureCollection
 from ludwig.schema.features.utils import get_input_feature_cls
 from ludwig.types import FeatureConfigDict, TrainingSetMetadataDict
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.dataframe_utils import from_numpy_dataset
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.torch_utils import LudwigModule, get_torch_device
+from ludwig.utils.torch_utils import get_torch_device, LudwigModule
 
 
 @DeveloperAPI

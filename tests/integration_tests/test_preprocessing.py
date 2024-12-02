@@ -16,20 +16,43 @@ import ludwig
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend
 from ludwig.callbacks import Callback
-from ludwig.constants import (BASE_MODEL, BATCH_SIZE, COLUMN, DECODER, EPOCHS,
-                              FULL, INPUT_FEATURES, MODEL_ECD, MODEL_LLM,
-                              MODEL_TYPE, NAME, OUTPUT_FEATURES, PREPROCESSING,
-                              PROC_COLUMN, PROMPT, SPLIT, TRAINER, TYPE)
+from ludwig.constants import (
+    BASE_MODEL,
+    BATCH_SIZE,
+    COLUMN,
+    DECODER,
+    EPOCHS,
+    FULL,
+    INPUT_FEATURES,
+    MODEL_ECD,
+    MODEL_LLM,
+    MODEL_TYPE,
+    NAME,
+    OUTPUT_FEATURES,
+    PREPROCESSING,
+    PROC_COLUMN,
+    PROMPT,
+    SPLIT,
+    TRAINER,
+    TYPE,
+)
 from ludwig.data.concatenate_datasets import concatenate_df
-from ludwig.data.preprocessing import (handle_features_with_prompt_config,
-                                       preprocess_for_prediction)
+from ludwig.data.preprocessing import handle_features_with_prompt_config, preprocess_for_prediction
 from ludwig.schema.llms.prompt import PromptConfig
 from ludwig.schema.model_types.base import ModelConfig
 from tests.integration_tests.utils import (
-    LocalTestBackend, assert_preprocessed_dataset_shape_and_dtype_for_feature,
-    audio_feature, binary_feature, category_feature, generate_data,
-    generate_data_as_dataframe, image_feature, number_feature,
-    sequence_feature, text_feature)
+    assert_preprocessed_dataset_shape_and_dtype_for_feature,
+    audio_feature,
+    binary_feature,
+    category_feature,
+    generate_data,
+    generate_data_as_dataframe,
+    image_feature,
+    LocalTestBackend,
+    number_feature,
+    sequence_feature,
+    text_feature,
+)
 
 NUM_EXAMPLES = 20
 

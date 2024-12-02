@@ -23,15 +23,16 @@ import pandas as pd
 import torch
 from torch import nn
 
-from ludwig.constants import (COLUMN, HIDDEN, LOGITS, NAME, NUMBER,
-                              PREDICTIONS, PROC_COLUMN)
-from ludwig.features.base_feature import (BaseFeatureMixin, InputFeature,
-                                          OutputFeature, PredictModule)
-from ludwig.schema.features.number_feature import (NumberInputFeatureConfig,
-                                                   NumberOutputFeatureConfig)
-from ludwig.types import (FeatureMetadataDict, FeaturePostProcessingOutputDict,
-                          ModelConfigDict, PreprocessingConfigDict,
-                          TrainingSetMetadataDict)
+from ludwig.constants import COLUMN, HIDDEN, LOGITS, NAME, NUMBER, PREDICTIONS, PROC_COLUMN
+from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
+from ludwig.schema.features.number_feature import NumberInputFeatureConfig, NumberOutputFeatureConfig
+from ludwig.types import (
+    FeatureMetadataDict,
+    FeaturePostProcessingOutputDict,
+    ModelConfigDict,
+    PreprocessingConfigDict,
+    TrainingSetMetadataDict,
+)
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.types import TorchscriptPreprocessingInput

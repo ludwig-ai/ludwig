@@ -11,22 +11,27 @@ import torch
 from ludwig import globals as global_vars
 from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
-from ludwig.constants import (BATCH_SIZE, CATEGORY, DEFAULTS, EPOCHS,
-                              INPUT_FEATURES, OUTPUT_FEATURES, PREPROCESSING,
-                              TRAINER, TRAINING)
+from ludwig.constants import (
+    BATCH_SIZE,
+    CATEGORY,
+    DEFAULTS,
+    EPOCHS,
+    INPUT_FEATURES,
+    OUTPUT_FEATURES,
+    PREPROCESSING,
+    TRAINER,
+    TRAINING,
+)
 from ludwig.contribs.mlflow import MlflowCallback
 from ludwig.experiment import experiment_cli
 from ludwig.features.number_feature import numeric_transformation_registry
-from ludwig.globals import (DESCRIPTION_FILE_NAME, MODEL_FILE_NAME,
-                            MODEL_WEIGHTS_FILE_NAME,
-                            TRAINING_PREPROC_FILE_NAME)
+from ludwig.globals import DESCRIPTION_FILE_NAME, MODEL_FILE_NAME, MODEL_WEIGHTS_FILE_NAME, TRAINING_PREPROC_FILE_NAME
 from ludwig.schema.optimizers import optimizer_registry
 from ludwig.utils.data_utils import load_json, replace_file_extension
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.package_utils import LazyLoader
 from tests.integration_tests import synthetic_test_data
-from tests.integration_tests.utils import (LocalTestBackend, category_feature,
-                                           generate_data)
+from tests.integration_tests.utils import category_feature, generate_data, LocalTestBackend
 
 mlflow = LazyLoader("mlflow", globals(), "mlflow")
 

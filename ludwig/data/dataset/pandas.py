@@ -17,7 +17,7 @@
 from __future__ import annotations
 
 import contextlib
-from typing import TYPE_CHECKING, Iterable
+from typing import Iterable, TYPE_CHECKING
 
 import numpy as np
 from pandas import DataFrame
@@ -30,8 +30,7 @@ from ludwig.data.sampler import DistributedSampler
 from ludwig.distributed import DistributedStrategy
 from ludwig.features.base_feature import BaseFeature
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, load_hdf5, save_hdf5
-from ludwig.utils.dataframe_utils import (from_numpy_dataset, to_numpy_dataset,
-                                          to_scalar_df)
+from ludwig.utils.dataframe_utils import from_numpy_dataset, to_numpy_dataset, to_scalar_df
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import download_h5
 from ludwig.utils.misc_utils import get_proc_features

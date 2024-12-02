@@ -6,18 +6,25 @@ import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import (BATCH_SIZE, BINARY, CATEGORY, MINIMUM_BATCH_SIZE,
-                              MODEL_ECD, MODEL_GBM, TYPE)
+from ludwig.constants import BATCH_SIZE, BINARY, CATEGORY, MINIMUM_BATCH_SIZE, MODEL_ECD, MODEL_GBM, TYPE
 from ludwig.explain.captum import IntegratedGradientsExplainer
 from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import Explanation
 from ludwig.explain.gbm import GBMExplainer
-from tests.integration_tests.utils import (LocalTestBackend, binary_feature,
-                                           category_feature, date_feature,
-                                           generate_data, image_feature,
-                                           number_feature, sequence_feature,
-                                           set_feature, text_feature,
-                                           timeseries_feature, vector_feature)
+from tests.integration_tests.utils import (
+    binary_feature,
+    category_feature,
+    date_feature,
+    generate_data,
+    image_feature,
+    LocalTestBackend,
+    number_feature,
+    sequence_feature,
+    set_feature,
+    text_feature,
+    timeseries_feature,
+    vector_feature,
+)
 
 try:
     from ludwig.explain.captum_ray import RayIntegratedGradientsExplainer

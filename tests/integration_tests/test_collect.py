@@ -19,13 +19,11 @@ import numpy as np
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.collect import (collect_activations, collect_weights,
-                            print_model_summary)
+from ludwig.collect import collect_activations, collect_weights, print_model_summary
 from ludwig.constants import BATCH_SIZE, ENCODER, TRAINER, TYPE
 from ludwig.globals import MODEL_FILE_NAME
 from ludwig.utils.torch_utils import get_torch_device
-from tests.integration_tests.utils import (ENCODERS, category_feature,
-                                           generate_data, sequence_feature)
+from tests.integration_tests.utils import category_feature, ENCODERS, generate_data, sequence_feature
 
 DEVICE = get_torch_device()
 

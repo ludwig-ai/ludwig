@@ -21,24 +21,37 @@ from typing import Dict, List, Union
 import numpy as np
 import torch
 
-from ludwig.constants import (COLUMN, LAST_PREDICTIONS, LENGTHS, NAME,
-                              PREDICTIONS, PROBABILITIES, PROBABILITY,
-                              PROC_COLUMN, SEQUENCE)
-from ludwig.features.base_feature import (BaseFeatureMixin, InputFeature,
-                                          OutputFeature, PredictModule)
-from ludwig.features.feature_utils import (compute_sequence_probability,
-                                           compute_token_probabilities)
-from ludwig.schema.features.sequence_feature import (
-    SequenceInputFeatureConfig, SequenceOutputFeatureConfig)
-from ludwig.types import (FeatureMetadataDict, FeaturePostProcessingOutputDict,
-                          ModelConfigDict, PreprocessingConfigDict,
-                          TrainingSetMetadataDict)
+from ludwig.constants import (
+    COLUMN,
+    LAST_PREDICTIONS,
+    LENGTHS,
+    NAME,
+    PREDICTIONS,
+    PROBABILITIES,
+    PROBABILITY,
+    PROC_COLUMN,
+    SEQUENCE,
+)
+from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
+from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
+from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig, SequenceOutputFeatureConfig
+from ludwig.types import (
+    FeatureMetadataDict,
+    FeaturePostProcessingOutputDict,
+    ModelConfigDict,
+    PreprocessingConfigDict,
+    TrainingSetMetadataDict,
+)
 from ludwig.utils import output_feature_utils
 from ludwig.utils.math_utils import softmax
-from ludwig.utils.strings_utils import (START_SYMBOL, STOP_SYMBOL,
-                                        UNKNOWN_SYMBOL, SpecialSymbol,
-                                        build_sequence_matrix,
-                                        create_vocabulary)
+from ludwig.utils.strings_utils import (
+    build_sequence_matrix,
+    create_vocabulary,
+    SpecialSymbol,
+    START_SYMBOL,
+    STOP_SYMBOL,
+    UNKNOWN_SYMBOL,
+)
 from ludwig.utils.tokenizers import get_tokenizer_from_registry
 from ludwig.utils.types import TorchscriptPreprocessingInput
 

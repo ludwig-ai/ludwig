@@ -3,11 +3,13 @@ from typing import Optional
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.defaults.gbm import GBMDefaultsConfig, GBMDefaultsField
-from ludwig.schema.features.base import (BaseInputFeatureConfig,
-                                         BaseOutputFeatureConfig,
-                                         FeatureCollection,
-                                         GBMInputFeatureSelection,
-                                         GBMOutputFeatureSelection)
+from ludwig.schema.features.base import (
+    BaseInputFeatureConfig,
+    BaseOutputFeatureConfig,
+    FeatureCollection,
+    GBMInputFeatureSelection,
+    GBMOutputFeatureSelection,
+)
 from ludwig.schema.hyperopt import HyperoptConfig, HyperoptField
 from ludwig.schema.model_types.base import ModelConfig, register_model_type
 from ludwig.schema.preprocessing import PreprocessingConfig, PreprocessingField

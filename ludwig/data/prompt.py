@@ -2,17 +2,15 @@ import json
 import logging
 import os
 import string
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Type
+from typing import Any, Dict, List, Optional, Set, Tuple, Type, TYPE_CHECKING
 
 import pandas as pd
 
 if TYPE_CHECKING:
     from ludwig.backend.base import Backend
 
-from ludwig.models.retrieval import (RetrievalModel, df_checksum,
-                                     get_retrieval_model)
-from ludwig.utils.fs_utils import (get_default_cache_location, makedirs,
-                                   path_exists)
+from ludwig.models.retrieval import df_checksum, get_retrieval_model, RetrievalModel
+from ludwig.utils.fs_utils import get_default_cache_location, makedirs, path_exists
 from ludwig.utils.types import DataFrame, Series
 
 logger = logging.getLogger(__name__)

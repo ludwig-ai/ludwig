@@ -9,10 +9,14 @@ from tqdm import tqdm
 
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import PublicAPI
-from ludwig.explain.captum import (ExplanationRunConfig,
-                                   IntegratedGradientsExplainer, get_baseline,
-                                   get_input_tensors, get_total_attribution,
-                                   retry_with_halved_batch_size)
+from ludwig.explain.captum import (
+    ExplanationRunConfig,
+    get_baseline,
+    get_input_tensors,
+    get_total_attribution,
+    IntegratedGradientsExplainer,
+    retry_with_halved_batch_size,
+)
 from ludwig.explain.explanation import ExplanationsResult
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.utils.torch_utils import get_torch_device

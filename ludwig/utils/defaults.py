@@ -25,8 +25,7 @@ from ludwig.features.feature_registries import get_input_type_registry
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema.model_config import ModelConfig
 from ludwig.schema.preprocessing import PreprocessingConfig
-from ludwig.utils.backward_compatibility import \
-    upgrade_config_dict_to_latest_version
+from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
 from ludwig.utils.fs_utils import open_file
 from ludwig.utils.print_utils import print_ludwig

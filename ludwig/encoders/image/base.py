@@ -23,14 +23,17 @@ from ludwig.constants import ENCODER_OUTPUT, ENCODER_OUTPUT_STATE, IMAGE
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.encoders.types import EncoderOutputDict
-from ludwig.modules.convolutional_modules import (Conv2DStack, ResNet,
-                                                  UNetDownStack)
+from ludwig.modules.convolutional_modules import Conv2DStack, ResNet, UNetDownStack
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.mlp_mixer_modules import MLPMixer
-from ludwig.schema.encoders.image.base import (ImageEncoderConfig,
-                                               MLPMixerConfig, ResNetConfig,
-                                               Stacked2DCNNConfig,
-                                               UNetEncoderConfig, ViTConfig)
+from ludwig.schema.encoders.image.base import (
+    ImageEncoderConfig,
+    MLPMixerConfig,
+    ResNetConfig,
+    Stacked2DCNNConfig,
+    UNetEncoderConfig,
+    ViTConfig,
+)
 from ludwig.utils.torch_utils import FreezeModule
 
 logger = logging.getLogger(__name__)

@@ -5,12 +5,11 @@ import pandas as pd
 import pytest
 
 from ludwig.constants import CHECKSUM, META, TEST, TRAINING, VALIDATION
-from ludwig.data.cache.manager import CacheManager, alphanum
+from ludwig.data.cache.manager import alphanum, CacheManager
 from ludwig.data.cache.types import CacheableDataframe, wrap
 from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.globals import TRAINING_PREPROC_FILE_NAME
-from tests.integration_tests.utils import (LocalTestBackend, category_feature,
-                                           sequence_feature)
+from tests.integration_tests.utils import category_feature, LocalTestBackend, sequence_feature
 
 
 @pytest.fixture

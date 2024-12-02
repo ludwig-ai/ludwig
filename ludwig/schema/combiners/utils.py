@@ -5,8 +5,7 @@ from ludwig.constants import TYPE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.metadata import COMBINER_METADATA
-from ludwig.schema.metadata.parameter_metadata import (
-    ParameterMetadata, convert_metadata_to_json)
+from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
 from ludwig.utils.registry import Registry
 
 DEFAULT_VALUE = "concat"

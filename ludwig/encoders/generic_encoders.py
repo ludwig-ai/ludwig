@@ -19,14 +19,12 @@ from typing import Optional, Type
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (BINARY, ENCODER_OUTPUT, NUMBER, TEXT, TIMESERIES,
-                              VECTOR)
+from ludwig.constants import BINARY, ENCODER_OUTPUT, NUMBER, TEXT, TIMESERIES, VECTOR
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.encoders.types import EncoderOutputDict
 from ludwig.modules.fully_connected_modules import FCStack
-from ludwig.schema.encoders.base import (BaseEncoderConfig, DenseEncoderConfig,
-                                         PassthroughEncoderConfig)
+from ludwig.schema.encoders.base import BaseEncoderConfig, DenseEncoderConfig, PassthroughEncoderConfig
 
 logger = logging.getLogger(__name__)
 

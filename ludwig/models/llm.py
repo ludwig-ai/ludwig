@@ -8,26 +8,29 @@ import torch
 from transformers import AutoConfig, GenerationConfig
 
 from ludwig.accounting.used_tokens import get_used_tokens_for_llm
-from ludwig.constants import (IGNORE_INDEX_TOKEN_ID, LOGITS, MODEL_LLM,
-                              PREDICTIONS, TEXT, USED_TOKENS)
+from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, MODEL_LLM, PREDICTIONS, TEXT, USED_TOKENS
 from ludwig.features.base_feature import ModuleWrapper, OutputFeature
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.features.text_feature import TextOutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
 from ludwig.modules.training_hooks import NEFTuneHook
-from ludwig.schema.features.base import (BaseOutputFeatureConfig,
-                                         FeatureCollection)
+from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollection
 from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
-from ludwig.utils.llm_quantization_utils import \
-    convert_quantized_linear_to_linear
+from ludwig.utils.llm_quantization_utils import convert_quantized_linear_to_linear
 from ludwig.utils.llm_utils import (
-    add_left_padding, generate_merged_ids, get_context_len,
+    add_left_padding,
+    generate_merged_ids,
+    get_context_len,
     get_realigned_target_and_prediction_tensors_for_inference,
-    initialize_adapter, load_pretrained_from_config,
-    pad_target_tensor_for_fine_tuning, remove_left_padding, to_device)
+    initialize_adapter,
+    load_pretrained_from_config,
+    pad_target_tensor_for_fine_tuning,
+    remove_left_padding,
+    to_device,
+)
 from ludwig.utils.logging_utils import log_once
 from ludwig.utils.output_feature_utils import set_output_feature_tensor
 from ludwig.utils.tokenizers import HFTokenizer

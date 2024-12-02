@@ -24,8 +24,7 @@ from typing import Dict, List, Optional, Set, Union
 import numpy as np
 from dateutil.parser import parse as parse_datetime
 
-from ludwig.constants import (PADDING_SYMBOL, START_SYMBOL, STOP_SYMBOL,
-                              UNKNOWN_SYMBOL)
+from ludwig.constants import PADDING_SYMBOL, START_SYMBOL, STOP_SYMBOL, UNKNOWN_SYMBOL
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.utils.fs_utils import open_file

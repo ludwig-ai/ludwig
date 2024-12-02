@@ -1,7 +1,7 @@
 from dataclasses import field
 from typing import Dict
 
-from marshmallow import ValidationError, fields
+from marshmallow import fields, ValidationError
 
 import ludwig.schema.utils as schema_utils
 from ludwig.api_annotations import DeveloperAPI

@@ -8,21 +8,29 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.constants import (BATCH_SIZE, ENCODER, LOSS, NAME, PREPROCESSING,
-                              TRAINER, TRAINING, TYPE)
+from ludwig.constants import BATCH_SIZE, ENCODER, LOSS, NAME, PREPROCESSING, TRAINER, TRAINING, TYPE
 from ludwig.data.split import get_splitter
 from ludwig.globals import MODEL_FILE_NAME
 from ludwig.modules.loss_modules import MSELoss
 from ludwig.schema.features.loss.loss import MSELossConfig
 from ludwig.utils.data_utils import read_csv
-from tests.integration_tests.utils import (LocalTestBackend, audio_feature,
-                                           bag_feature, binary_feature,
-                                           category_feature, date_feature,
-                                           generate_data, h3_feature,
-                                           image_feature, number_feature,
-                                           sequence_feature, set_feature,
-                                           text_feature, timeseries_feature,
-                                           vector_feature)
+from tests.integration_tests.utils import (
+    audio_feature,
+    bag_feature,
+    binary_feature,
+    category_feature,
+    date_feature,
+    generate_data,
+    h3_feature,
+    image_feature,
+    LocalTestBackend,
+    number_feature,
+    sequence_feature,
+    set_feature,
+    text_feature,
+    timeseries_feature,
+    vector_feature,
+)
 
 
 def test_model_load_from_checkpoint(tmpdir, csv_filename, tmp_path):

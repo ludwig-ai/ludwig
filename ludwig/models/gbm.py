@@ -12,8 +12,7 @@ from ludwig.constants import BINARY, LOGITS, MODEL_GBM, NUMBER, USED_TOKENS
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
-from ludwig.schema.features.base import (BaseOutputFeatureConfig,
-                                         FeatureCollection)
+from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollection
 from ludwig.schema.model_config import ModelConfig
 from ludwig.utils import output_feature_utils
 from ludwig.utils.fs_utils import path_exists

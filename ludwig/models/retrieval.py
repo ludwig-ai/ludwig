@@ -2,8 +2,7 @@ import hashlib
 import json
 import os
 from abc import ABC, abstractmethod
-from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type,
-                    Union)
+from typing import Any, Callable, Dict, List, Optional, Type, TYPE_CHECKING, Union
 
 import numpy as np
 import pandas as pd

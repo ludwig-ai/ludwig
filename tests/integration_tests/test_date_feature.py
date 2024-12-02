@@ -6,10 +6,21 @@ import pytest
 from dateutil.parser import parse
 
 from ludwig.api import LudwigModel
-from ludwig.constants import (BACKEND, BINARY, DATE, EPOCHS, FILL_WITH_CONST,
-                              INPUT_FEATURES, MISSING_VALUE_STRATEGY, NAME,
-                              OUTPUT_FEATURES, PREPROCESSING, RAY, TRAINER,
-                              TYPE)
+from ludwig.constants import (
+    BACKEND,
+    BINARY,
+    DATE,
+    EPOCHS,
+    FILL_WITH_CONST,
+    INPUT_FEATURES,
+    MISSING_VALUE_STRATEGY,
+    NAME,
+    OUTPUT_FEATURES,
+    PREPROCESSING,
+    RAY,
+    TRAINER,
+    TYPE,
+)
 from ludwig.utils.date_utils import create_vector_from_datetime_obj
 
 ray = pytest.importorskip("ray")

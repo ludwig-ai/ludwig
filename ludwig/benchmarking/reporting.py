@@ -6,9 +6,7 @@ import torch
 from torch._C._autograd import _KinetoEvent
 from torch.autograd import DeviceType, profiler_util
 
-from ludwig.benchmarking.profiler_dataclasses import (DeviceUsageMetrics,
-                                                      SystemResourceMetrics,
-                                                      TorchProfilerMetrics)
+from ludwig.benchmarking.profiler_dataclasses import DeviceUsageMetrics, SystemResourceMetrics, TorchProfilerMetrics
 from ludwig.constants import LUDWIG_TAG
 
 
