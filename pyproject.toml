@@ -154,7 +154,8 @@ serve = [
 tree = ["hummingbird-ml>=0.4.8", "lightgbm", "lightgbm-ray"]
 viz = [
     "hiplot",
-    "matplotlib>3.4,<3.9.0; python_version > '3.6'",
+    matplotlib>3.4; python_version > '3.6'",
+    #"matplotlib>3.4,<3.9.0; python_version > '3.6'",
     "matplotlib>=3.0,<3.4; python_version <= '3.6'",
     "ptitprince",
     "seaborn>=0.7,<0.12",
