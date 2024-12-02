@@ -10,7 +10,8 @@ from ludwig.constants import CATEGORY, LOGITS, PREDICTIONS, PROBABILITIES, TEXT
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.decoders.utils import extract_generated_tokens
-from ludwig.schema.decoders.llm_decoders import CategoryExtractorDecoderConfig, TextExtractorDecoderConfig
+from ludwig.schema.decoders.llm_decoders import (
+    CategoryExtractorDecoderConfig, TextExtractorDecoderConfig)
 from ludwig.utils.strings_utils import get_tokenizer
 
 logger = logging.getLogger(__name__)

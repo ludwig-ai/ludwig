@@ -1,14 +1,9 @@
 from typing import Optional
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (
-    DROP_ROW,
-    FILL_WITH_CONST,
-    FILL_WITH_MEAN,
-    MISSING_VALUE_STRATEGY_OPTIONS,
-    NUMBER,
-    PREPROCESSING,
-)
+from ludwig.constants import (DROP_ROW, FILL_WITH_CONST, FILL_WITH_MEAN,
+                              MISSING_VALUE_STRATEGY_OPTIONS, NUMBER,
+                              PREPROCESSING)
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor

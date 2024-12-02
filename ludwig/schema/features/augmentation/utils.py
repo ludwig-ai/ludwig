@@ -2,7 +2,7 @@ import copy
 from dataclasses import field
 from typing import Any, Dict, List, Optional, Union
 
-from marshmallow import fields, ValidationError
+from marshmallow import ValidationError, fields
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TYPE

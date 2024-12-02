@@ -11,33 +11,17 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (
-    AUDIO,
-    BAG,
-    BINARY,
-    CATEGORY,
-    DATE,
-    IMAGE,
-    INPUT_FEATURES,
-    POSTPROCESSOR,
-    PREDICTOR,
-    PREPROCESSOR,
-    SEQUENCE,
-    SET,
-    TEXT,
-    TIMESERIES,
-    TYPE,
-    VECTOR,
-)
+from ludwig.constants import (AUDIO, BAG, BINARY, CATEGORY, DATE, IMAGE,
+                              INPUT_FEATURES, POSTPROCESSOR, PREDICTOR,
+                              PREPROCESSOR, SEQUENCE, SET, TEXT, TIMESERIES,
+                              TYPE, VECTOR)
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset
-from ludwig.models.inference import (
-    _InferencePostprocessor,
-    _InferencePredictor,
-    _InferencePreprocessor,
-    InferenceModule,
-)
+from ludwig.models.inference import (InferenceModule, _InferencePostprocessor,
+                                     _InferencePredictor,
+                                     _InferencePreprocessor)
 from ludwig.types import ModelConfigDict
-from ludwig.utils.inference_utils import to_inference_module_input_from_dataframe
+from ludwig.utils.inference_utils import \
+    to_inference_module_input_from_dataframe
 from ludwig.utils.misc_utils import remove_empty_lines
 from ludwig.utils.torch_utils import model_size, place_on_device
 from ludwig.utils.types import TorchAudioTuple, TorchscriptPreprocessingInput

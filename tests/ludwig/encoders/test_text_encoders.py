@@ -8,22 +8,20 @@ import torch
 
 import ludwig.schema.encoders.utils as schema_encoders_utils
 from ludwig.api import LudwigModel
-from ludwig.constants import ENCODER, ENCODER_OUTPUT, MODEL_ECD, NAME, TEXT, TRAINER
+from ludwig.constants import (ENCODER, ENCODER_OUTPUT, MODEL_ECD, NAME, TEXT,
+                              TRAINER)
 from ludwig.encoders import text_encoders
 from ludwig.error import ConfigValidationError
 from ludwig.globals import MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.schema.model_config import ModelConfig
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.torch_utils import get_torch_device
-from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
-from tests.integration_tests.utils import (
-    category_feature,
-    clear_huggingface_cache,
-    generate_data,
-    HF_ENCODERS,
-    LocalTestBackend,
-    text_feature,
-)
+from tests.integration_tests.parameter_update_utils import \
+    check_module_parameters_updated
+from tests.integration_tests.utils import (HF_ENCODERS, LocalTestBackend,
+                                           category_feature,
+                                           clear_huggingface_cache,
+                                           generate_data, text_feature)
 
 DEVICE = get_torch_device()
 RANDOM_SEED = 1919

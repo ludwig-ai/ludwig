@@ -27,11 +27,8 @@ from ludwig.encoders.types import EncoderOutputDict
 from ludwig.modules.embedding_modules import Embed
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.category_encoders import (
-    CategoricalEmbedConfig,
-    CategoricalOneHotEncoderConfig,
-    CategoricalPassthroughEncoderConfig,
-    CategoricalSparseConfig,
-)
+    CategoricalEmbedConfig, CategoricalOneHotEncoderConfig,
+    CategoricalPassthroughEncoderConfig, CategoricalSparseConfig)
 
 logger = logging.getLogger(__name__)
 

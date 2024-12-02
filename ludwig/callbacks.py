@@ -18,7 +18,8 @@ from abc import ABC
 from typing import Any, Callable, Dict, List, Union
 
 from ludwig.api_annotations import PublicAPI
-from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainingSetMetadataDict
+from ludwig.types import (HyperoptConfigDict, ModelConfigDict,
+                          TrainingSetMetadataDict)
 
 
 @PublicAPI

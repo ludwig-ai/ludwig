@@ -26,7 +26,8 @@ from ludwig.encoders.types import EncoderOutputDict
 from ludwig.modules.embedding_modules import Embed
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.schema.encoders.base import BaseEncoderConfig
-from ludwig.schema.encoders.date_encoders import DateEmbedConfig, DateWaveConfig
+from ludwig.schema.encoders.date_encoders import (DateEmbedConfig,
+                                                  DateWaveConfig)
 from ludwig.utils import torch_utils
 
 logger = logging.getLogger(__name__)

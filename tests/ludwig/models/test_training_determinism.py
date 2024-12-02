@@ -7,22 +7,13 @@ import pytest
 from ludwig.api import LudwigModel
 from ludwig.constants import BATCH_SIZE, EVAL_BATCH_SIZE, TRAINER
 from ludwig.utils.numerical_test_utils import assert_all_finite
-from tests.integration_tests.utils import (
-    audio_feature,
-    bag_feature,
-    binary_feature,
-    category_feature,
-    date_feature,
-    generate_data,
-    h3_feature,
-    image_feature,
-    number_feature,
-    sequence_feature,
-    set_feature,
-    text_feature,
-    timeseries_feature,
-    vector_feature,
-)
+from tests.integration_tests.utils import (audio_feature, bag_feature,
+                                           binary_feature, category_feature,
+                                           date_feature, generate_data,
+                                           h3_feature, image_feature,
+                                           number_feature, sequence_feature,
+                                           set_feature, text_feature,
+                                           timeseries_feature, vector_feature)
 
 
 @pytest.mark.distributed

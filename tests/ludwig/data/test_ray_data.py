@@ -9,7 +9,8 @@ import pytest
 ray = pytest.importorskip("ray")  # noqa
 dask = pytest.importorskip("dask")  # noqa
 
-from ludwig.data.dataset.ray import RayDatasetBatcher, read_remote_parquet  # noqa
+from ludwig.data.dataset.ray import (RayDatasetBatcher,  # noqa
+                                     read_remote_parquet)
 
 # Mark the entire module as distributed
 pytestmark = pytest.mark.distributed

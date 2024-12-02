@@ -19,16 +19,15 @@ from typing import Dict, List, Union
 import numpy as np
 import torch
 
-from ludwig.constants import COLUMN, HIDDEN, LOGITS, NAME, PREDICTIONS, PROC_COLUMN, VECTOR
-from ludwig.features.base_feature import InputFeature, OutputFeature, PredictModule
-from ludwig.schema.features.vector_feature import VectorInputFeatureConfig, VectorOutputFeatureConfig
-from ludwig.types import (
-    FeatureMetadataDict,
-    FeaturePostProcessingOutputDict,
-    ModelConfigDict,
-    PreprocessingConfigDict,
-    TrainingSetMetadataDict,
-)
+from ludwig.constants import (COLUMN, HIDDEN, LOGITS, NAME, PREDICTIONS,
+                              PROC_COLUMN, VECTOR)
+from ludwig.features.base_feature import (InputFeature, OutputFeature,
+                                          PredictModule)
+from ludwig.schema.features.vector_feature import (VectorInputFeatureConfig,
+                                                   VectorOutputFeatureConfig)
+from ludwig.types import (FeatureMetadataDict, FeaturePostProcessingOutputDict,
+                          ModelConfigDict, PreprocessingConfigDict,
+                          TrainingSetMetadataDict)
 from ludwig.utils import output_feature_utils
 from ludwig.utils.types import TorchscriptPreprocessingInput
 

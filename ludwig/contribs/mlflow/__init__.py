@@ -6,9 +6,11 @@ import threading
 from ludwig.api_annotations import DeveloperAPI, PublicAPI
 from ludwig.callbacks import Callback
 from ludwig.constants import TRAINER
-from ludwig.globals import MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
+from ludwig.globals import (MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME,
+                            TRAIN_SET_METADATA_FILE_NAME)
 from ludwig.types import TrainingSetMetadataDict
-from ludwig.utils.data_utils import chunk_dict, flatten_dict, save_json, to_json_dict
+from ludwig.utils.data_utils import (chunk_dict, flatten_dict, save_json,
+                                     to_json_dict)
 from ludwig.utils.package_utils import LazyLoader
 
 mlflow = LazyLoader("mlflow", globals(), "mlflow")

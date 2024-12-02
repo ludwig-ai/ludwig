@@ -8,7 +8,8 @@ from typing import Optional
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import MAX_BATCH_SIZE_DATASET_FRACTION, MIN_POSSIBLE_BATCH_SIZE
+from ludwig.constants import (MAX_BATCH_SIZE_DATASET_FRACTION,
+                              MIN_POSSIBLE_BATCH_SIZE)
 
 logger = logging.getLogger(__name__)
 

@@ -2,12 +2,10 @@ import pytest
 import torch
 from transformers import AutoModelForCausalLM
 
-from ludwig.utils.model_utils import (
-    contains_nan_or_inf_tensors,
-    extract_tensors,
-    find_embedding_layer_with_path,
-    replace_tensors,
-)
+from ludwig.utils.model_utils import (contains_nan_or_inf_tensors,
+                                      extract_tensors,
+                                      find_embedding_layer_with_path,
+                                      replace_tensors)
 
 
 class SampleModel(torch.nn.Module):

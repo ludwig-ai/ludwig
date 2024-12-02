@@ -1,6 +1,6 @@
 from dataclasses import field
 
-from marshmallow import fields, ValidationError
+from marshmallow import ValidationError, fields
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils

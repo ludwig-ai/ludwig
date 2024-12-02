@@ -4,18 +4,13 @@ from typing import Dict
 import pytest
 import torch
 
-from ludwig.constants import (
-    BFILL,
-    CROP_OR_PAD,
-    ENCODER,
-    ENCODER_OUTPUT,
-    ENCODER_OUTPUT_STATE,
-    INTERPOLATE,
-    LOGITS,
-    TYPE,
-)
-from ludwig.features.image_feature import _ImagePreprocessing, ImageInputFeature, ImageOutputFeature
-from ludwig.schema.features.image_feature import ImageInputFeatureConfig, ImageOutputFeatureConfig
+from ludwig.constants import (BFILL, CROP_OR_PAD, ENCODER, ENCODER_OUTPUT,
+                              ENCODER_OUTPUT_STATE, INTERPOLATE, LOGITS, TYPE)
+from ludwig.features.image_feature import (ImageInputFeature,
+                                           ImageOutputFeature,
+                                           _ImagePreprocessing)
+from ludwig.schema.features.image_feature import (ImageInputFeatureConfig,
+                                                  ImageOutputFeatureConfig)
 from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.torch_utils import get_torch_device

@@ -855,17 +855,11 @@ class HFTokenizer(BaseTokenizer):
 
         # CodeGenTokenizer Used by Phi-2
         # GPTNeoXTokenizerFast Used by Pythia
-        from transformers import (
-            CodeGenTokenizer,
-            CodeGenTokenizerFast,
-            CodeLlamaTokenizer,
-            CodeLlamaTokenizerFast,
-            GPT2Tokenizer,
-            GPT2TokenizerFast,
-            GPTNeoXTokenizerFast,
-            LlamaTokenizer,
-            LlamaTokenizerFast,
-        )
+        from transformers import (CodeGenTokenizer, CodeGenTokenizerFast,
+                                  CodeLlamaTokenizer, CodeLlamaTokenizerFast,
+                                  GPT2Tokenizer, GPT2TokenizerFast,
+                                  GPTNeoXTokenizerFast, LlamaTokenizer,
+                                  LlamaTokenizerFast)
 
         # Tokenizers might have the pad token id attribute since they tend to use the same base class, but
         # it can be set to None so we check for this explicitly.

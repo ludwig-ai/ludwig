@@ -1,35 +1,29 @@
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (
-    LOSS,
-    MODEL_ECD,
-    MODEL_GBM,
-    MODEL_LLM,
-    NEXT_TOKEN_SOFTMAX_CROSS_ENTROPY,
-    SEQUENCE_SOFTMAX_CROSS_ENTROPY,
-    TEXT,
-)
+from ludwig.constants import (LOSS, MODEL_ECD, MODEL_GBM, MODEL_LLM,
+                              NEXT_TOKEN_SOFTMAX_CROSS_ENTROPY,
+                              SEQUENCE_SOFTMAX_CROSS_ENTROPY, TEXT)
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
-from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
+from ludwig.schema.features.base import (BaseInputFeatureConfig,
+                                         BaseOutputFeatureConfig)
 from ludwig.schema.features.loss.loss import BaseLossConfig
 from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
-from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
-from ludwig.schema.features.utils import (
-    ecd_defaults_config_registry,
-    ecd_input_config_registry,
-    ecd_output_config_registry,
-    gbm_defaults_config_registry,
-    gbm_input_config_registry,
-    input_mixin_registry,
-    llm_defaults_config_registry,
-    llm_input_config_registry,
-    llm_output_config_registry,
-    output_mixin_registry,
-)
+from ludwig.schema.features.preprocessing.utils import \
+    PreprocessingDataclassField
+from ludwig.schema.features.utils import (ecd_defaults_config_registry,
+                                          ecd_input_config_registry,
+                                          ecd_output_config_registry,
+                                          gbm_defaults_config_registry,
+                                          gbm_input_config_registry,
+                                          input_mixin_registry,
+                                          llm_defaults_config_registry,
+                                          llm_input_config_registry,
+                                          llm_output_config_registry,
+                                          output_mixin_registry)
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass

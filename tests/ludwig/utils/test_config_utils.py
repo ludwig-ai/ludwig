@@ -3,20 +3,9 @@ from typing import Any, Dict, List, Optional, Union
 
 import pytest
 
-from ludwig.constants import (
-    BASE_MODEL,
-    BINARY,
-    ENCODER,
-    INPUT_FEATURES,
-    MODEL_ECD,
-    MODEL_GBM,
-    MODEL_LLM,
-    MODEL_TYPE,
-    NAME,
-    OUTPUT_FEATURES,
-    TEXT,
-    TYPE,
-)
+from ludwig.constants import (BASE_MODEL, BINARY, ENCODER, INPUT_FEATURES,
+                              MODEL_ECD, MODEL_GBM, MODEL_LLM, MODEL_TYPE,
+                              NAME, OUTPUT_FEATURES, TEXT, TYPE)
 from ludwig.schema.encoders.text_encoders import BERTConfig
 from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.schema.features.preprocessing.text import TextPreprocessingConfig

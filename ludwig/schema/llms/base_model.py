@@ -2,7 +2,7 @@ import logging
 import os
 from dataclasses import field
 
-from marshmallow import fields, ValidationError
+from marshmallow import ValidationError, fields
 from transformers import AutoConfig
 
 from ludwig.api_annotations import DeveloperAPI

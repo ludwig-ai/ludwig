@@ -21,7 +21,8 @@ import numpy as np
 
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.globals import PREDICTIONS_SHAPES_FILE_NAME
-from ludwig.utils.data_utils import get_pa_schema, load_json, save_json, split_by_slices
+from ludwig.utils.data_utils import (get_pa_schema, load_json, save_json,
+                                     split_by_slices)
 from ludwig.utils.dataframe_utils import flatten_df, unflatten_df
 
 

@@ -14,8 +14,10 @@ from ludwig.constants import TRAINER
 from ludwig.contribs.mlflow import MlflowCallback
 from ludwig.export import export_mlflow
 from ludwig.globals import MODEL_FILE_NAME
-from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
-from tests.integration_tests.utils import category_feature, FakeRemoteBackend, generate_data, sequence_feature
+from ludwig.utils.backward_compatibility import \
+    upgrade_config_dict_to_latest_version
+from tests.integration_tests.utils import (FakeRemoteBackend, category_feature,
+                                           generate_data, sequence_feature)
 
 
 def run_mlflow_callback_test(mlflow_client, config, training_data, val_data, test_data, tmpdir, exp_name=None):

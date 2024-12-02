@@ -21,15 +21,17 @@ from typing import List, Optional, Union
 
 import pandas as pd
 
-from ludwig.api import kfold_cross_validate, LudwigModel
+from ludwig.api import LudwigModel, kfold_cross_validate
 from ludwig.backend import ALL_BACKENDS, Backend, initialize_backend
 from ludwig.callbacks import Callback
-from ludwig.constants import CONTINUE_PROMPT, FULL, HYPEROPT, HYPEROPT_WARNING, TEST, TRAINING, VALIDATION
+from ludwig.constants import (CONTINUE_PROMPT, FULL, HYPEROPT,
+                              HYPEROPT_WARNING, TEST, TRAINING, VALIDATION)
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import load_config_from_str, load_yaml, save_json
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.print_utils import get_logging_level_registry, print_ludwig, query_yes_no
+from ludwig.utils.print_utils import (get_logging_level_registry, print_ludwig,
+                                      query_yes_no)
 
 logger = logging.getLogger(__name__)
 

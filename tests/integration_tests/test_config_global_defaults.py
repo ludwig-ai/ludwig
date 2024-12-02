@@ -1,25 +1,13 @@
 import logging
 from typing import Dict, Tuple
 
-from ludwig.constants import (
-    BATCH_SIZE,
-    CATEGORY,
-    COMBINER,
-    DECODER,
-    DEFAULTS,
-    ENCODER,
-    EPOCHS,
-    FILL_WITH_CONST,
-    INPUT_FEATURES,
-    LOSS,
-    OUTPUT_FEATURES,
-    PREPROCESSING,
-    TEXT,
-    TRAINER,
-    TYPE,
-)
+from ludwig.constants import (BATCH_SIZE, CATEGORY, COMBINER, DECODER,
+                              DEFAULTS, ENCODER, EPOCHS, FILL_WITH_CONST,
+                              INPUT_FEATURES, LOSS, OUTPUT_FEATURES,
+                              PREPROCESSING, TEXT, TRAINER, TYPE)
 from ludwig.schema.model_config import ModelConfig
-from tests.integration_tests.utils import category_feature, generate_data, run_experiment, text_feature
+from tests.integration_tests.utils import (category_feature, generate_data,
+                                           run_experiment, text_feature)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

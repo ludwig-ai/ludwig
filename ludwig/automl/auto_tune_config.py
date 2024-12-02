@@ -13,21 +13,14 @@ except ImportError:
 
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend
-from ludwig.constants import (
-    AUTO,
-    AUTOML_DEFAULT_TEXT_ENCODER,
-    AUTOML_LARGE_TEXT_DATASET,
-    AUTOML_MAX_ROWS_PER_CHECKPOINT,
-    AUTOML_SMALLER_TEXT_ENCODER,
-    AUTOML_SMALLER_TEXT_LENGTH,
-    AUTOML_TEXT_ENCODER_MAX_TOKEN_LEN,
-    HYPEROPT,
-    MINIMUM_BATCH_SIZE,
-    PREPROCESSING,
-    SPACE,
-    TEXT,
-    TRAINER,
-)
+from ludwig.constants import (AUTO, AUTOML_DEFAULT_TEXT_ENCODER,
+                              AUTOML_LARGE_TEXT_DATASET,
+                              AUTOML_MAX_ROWS_PER_CHECKPOINT,
+                              AUTOML_SMALLER_TEXT_ENCODER,
+                              AUTOML_SMALLER_TEXT_LENGTH,
+                              AUTOML_TEXT_ENCODER_MAX_TOKEN_LEN, HYPEROPT,
+                              MINIMUM_BATCH_SIZE, PREPROCESSING, SPACE, TEXT,
+                              TRAINER)
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
 from ludwig.schema.model_config import ModelConfig

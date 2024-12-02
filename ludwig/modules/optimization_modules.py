@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 from dataclasses import asdict
-from typing import Dict, Optional, Tuple, Type, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, Optional, Tuple, Type
 
 import torch
 
@@ -21,7 +21,8 @@ from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import LudwigModule
 
 if TYPE_CHECKING:
-    from ludwig.schema.optimizers import BaseOptimizerConfig, GradientClippingConfig
+    from ludwig.schema.optimizers import (BaseOptimizerConfig,
+                                          GradientClippingConfig)
 
 
 def create_clipper(gradient_clipping_config: Optional["GradientClippingConfig"]):

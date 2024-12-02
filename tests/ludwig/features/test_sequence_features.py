@@ -5,11 +5,16 @@ import numpy as np
 import pytest
 import torch
 
-from ludwig.constants import ENCODER_OUTPUT, LAST_HIDDEN, LOGITS, SEQUENCE, TEXT, TYPE
-from ludwig.features.sequence_feature import _SequencePreprocessing, SequenceInputFeature, SequenceOutputFeature
+from ludwig.constants import (ENCODER_OUTPUT, LAST_HIDDEN, LOGITS, SEQUENCE,
+                              TEXT, TYPE)
+from ludwig.features.sequence_feature import (SequenceInputFeature,
+                                              SequenceOutputFeature,
+                                              _SequencePreprocessing)
 from ludwig.features.text_feature import TextInputFeature, TextOutputFeature
-from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig, SequenceOutputFeatureConfig
-from ludwig.schema.features.text_feature import ECDTextInputFeatureConfig, ECDTextOutputFeatureConfig
+from ludwig.schema.features.sequence_feature import (
+    SequenceInputFeatureConfig, SequenceOutputFeatureConfig)
+from ludwig.schema.features.text_feature import (ECDTextInputFeatureConfig,
+                                                 ECDTextOutputFeatureConfig)
 from ludwig.utils.torch_utils import get_torch_device
 from tests.integration_tests.utils import ENCODERS, sequence_feature
 

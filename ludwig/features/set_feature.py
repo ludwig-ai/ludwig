@@ -19,20 +19,20 @@ from typing import Any, Dict, List, Union
 import numpy as np
 import torch
 
-from ludwig.constants import COLUMN, HIDDEN, LOGITS, NAME, PREDICTIONS, PROBABILITIES, PROC_COLUMN, SET
-from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
+from ludwig.constants import (COLUMN, HIDDEN, LOGITS, NAME, PREDICTIONS,
+                              PROBABILITIES, PROC_COLUMN, SET)
+from ludwig.features.base_feature import (BaseFeatureMixin, InputFeature,
+                                          OutputFeature, PredictModule)
 from ludwig.features.feature_utils import set_str_to_idx
-from ludwig.schema.features.set_feature import SetInputFeatureConfig, SetOutputFeatureConfig
-from ludwig.types import (
-    FeatureMetadataDict,
-    FeaturePostProcessingOutputDict,
-    ModelConfigDict,
-    PreprocessingConfigDict,
-    TrainingSetMetadataDict,
-)
+from ludwig.schema.features.set_feature import (SetInputFeatureConfig,
+                                                SetOutputFeatureConfig)
+from ludwig.types import (FeatureMetadataDict, FeaturePostProcessingOutputDict,
+                          ModelConfigDict, PreprocessingConfigDict,
+                          TrainingSetMetadataDict)
 from ludwig.utils import output_feature_utils
-from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
-from ludwig.utils.tokenizers import get_tokenizer_from_registry, TORCHSCRIPT_COMPATIBLE_TOKENIZERS
+from ludwig.utils.strings_utils import UNKNOWN_SYMBOL, create_vocabulary
+from ludwig.utils.tokenizers import (TORCHSCRIPT_COMPATIBLE_TOKENIZERS,
+                                     get_tokenizer_from_registry)
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)

@@ -6,13 +6,10 @@ from unittest.mock import patch
 import pytest
 import torch
 
-from ludwig.utils.torch_utils import (
-    _get_torch_init_params,
-    _set_torch_init_params,
-    initialize_pytorch,
-    sequence_length_2D,
-    sequence_length_3D,
-)
+from ludwig.utils.torch_utils import (_get_torch_init_params,
+                                      _set_torch_init_params,
+                                      initialize_pytorch, sequence_length_2D,
+                                      sequence_length_3D)
 
 
 @pytest.mark.parametrize("input_sequence", [[[0, 1, 1], [2, 0, 0], [3, 3, 3]]])

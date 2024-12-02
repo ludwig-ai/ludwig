@@ -20,7 +20,7 @@ import time
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Any, Callable, Generator, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable, Generator
 
 import numpy as np
 import pandas as pd
@@ -282,7 +282,8 @@ class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
         model: BaseModel,
         **kwargs,
     ) -> BaseTrainer:  # type: ignore[override]
-        from ludwig.trainers.registry import get_llm_trainers_registry, get_trainers_registry
+        from ludwig.trainers.registry import (get_llm_trainers_registry,
+                                              get_trainers_registry)
 
         trainer_cls: type
         if model.type() == MODEL_LLM:

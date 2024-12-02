@@ -4,7 +4,8 @@ import torch
 from transformers import AutoTokenizer
 
 from ludwig.backend import LocalBackend
-from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, PREDICTIONS, PROBABILITIES
+from ludwig.constants import (IGNORE_INDEX_TOKEN_ID, LOGITS, PREDICTIONS,
+                              PROBABILITIES)
 from ludwig.features import text_feature
 
 TEST_MODEL_NAME = "hf-internal-testing/tiny-random-OPTForCausalLM"

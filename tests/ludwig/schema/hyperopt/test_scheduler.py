@@ -1,8 +1,9 @@
 import pytest
 
 from ludwig.schema.hyperopt.scheduler import BaseSchedulerConfig
-from ludwig.schema.hyperopt.utils import register_scheduler_config, scheduler_config_registry
-from ludwig.schema.utils import ludwig_dataclass, ProtectedString
+from ludwig.schema.hyperopt.utils import (register_scheduler_config,
+                                          scheduler_config_registry)
+from ludwig.schema.utils import ProtectedString, ludwig_dataclass
 
 
 @pytest.fixture(

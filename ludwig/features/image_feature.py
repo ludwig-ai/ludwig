@@ -27,70 +27,44 @@ from torchvision import transforms
 from torchvision.transforms import functional as F
 from torchvision.transforms.functional import normalize
 
-from ludwig.constants import (
-    CHECKSUM,
-    COLUMN,
-    ENCODER,
-    HEIGHT,
-    IMAGE,
-    IMAGENET1K,
-    INFER_IMAGE_DIMENSIONS,
-    INFER_IMAGE_MAX_HEIGHT,
-    INFER_IMAGE_MAX_WIDTH,
-    INFER_IMAGE_NUM_CLASSES,
-    INFER_IMAGE_SAMPLE_SIZE,
-    LOGITS,
-    NAME,
-    NUM_CHANNELS,
-    PREDICTIONS,
-    PREPROCESSING,
-    PROC_COLUMN,
-    REQUIRES_EQUAL_DIMENSIONS,
-    SRC,
-    TRAINING,
-    TYPE,
-    WIDTH,
-)
+from ludwig.constants import (CHECKSUM, COLUMN, ENCODER, HEIGHT, IMAGE,
+                              IMAGENET1K, INFER_IMAGE_DIMENSIONS,
+                              INFER_IMAGE_MAX_HEIGHT, INFER_IMAGE_MAX_WIDTH,
+                              INFER_IMAGE_NUM_CLASSES, INFER_IMAGE_SAMPLE_SIZE,
+                              LOGITS, NAME, NUM_CHANNELS, PREDICTIONS,
+                              PREPROCESSING, PROC_COLUMN,
+                              REQUIRES_EQUAL_DIMENSIONS, SRC, TRAINING, TYPE,
+                              WIDTH)
 from ludwig.data.cache.types import wrap
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.image.torchvision import TVModelVariant
-from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
+from ludwig.features.base_feature import (BaseFeatureMixin, InputFeature,
+                                          OutputFeature, PredictModule)
 from ludwig.schema.features.augmentation.base import BaseAugmentationConfig
 from ludwig.schema.features.augmentation.image import (
-    AutoAugmentationConfig,
-    RandomBlurConfig,
-    RandomBrightnessConfig,
-    RandomContrastConfig,
-    RandomHorizontalFlipConfig,
-    RandomRotateConfig,
-    RandomVerticalFlipConfig,
-)
-from ludwig.schema.features.image_feature import ImageInputFeatureConfig, ImageOutputFeatureConfig
-from ludwig.types import (
-    FeatureMetadataDict,
-    FeaturePostProcessingOutputDict,
-    ModelConfigDict,
-    PreprocessingConfigDict,
-    TrainingSetMetadataDict,
-)
+    AutoAugmentationConfig, RandomBlurConfig, RandomBrightnessConfig,
+    RandomContrastConfig, RandomHorizontalFlipConfig, RandomRotateConfig,
+    RandomVerticalFlipConfig)
+from ludwig.schema.features.image_feature import (ImageInputFeatureConfig,
+                                                  ImageOutputFeatureConfig)
+from ludwig.types import (FeatureMetadataDict, FeaturePostProcessingOutputDict,
+                          ModelConfigDict, PreprocessingConfigDict,
+                          TrainingSetMetadataDict)
 from ludwig.utils import output_feature_utils
-from ludwig.utils.augmentation_utils import get_augmentation_op, register_augmentation_op
+from ludwig.utils.augmentation_utils import (get_augmentation_op,
+                                             register_augmentation_op)
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.dataframe_utils import is_dask_series_or_df
 from ludwig.utils.fs_utils import has_remote_protocol, upload_h5
-from ludwig.utils.image_utils import (
-    get_class_mask_from_image,
-    get_gray_default_image,
-    get_image_from_class_mask,
-    get_unique_channels,
-    grayscale,
-    num_channels_in_image,
-    read_image_from_bytes_obj,
-    read_image_from_path,
-    resize_image,
-    ResizeChannels,
-    torchvision_model_registry,
-)
+from ludwig.utils.image_utils import (ResizeChannels,
+                                      get_class_mask_from_image,
+                                      get_gray_default_image,
+                                      get_image_from_class_mask,
+                                      get_unique_channels, grayscale,
+                                      num_channels_in_image,
+                                      read_image_from_bytes_obj,
+                                      read_image_from_path, resize_image,
+                                      torchvision_model_registry)
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
 

@@ -1,12 +1,14 @@
 import logging
 import os
 import warnings
-from typing import Any, Dict, List, Mapping, Optional, Tuple, TYPE_CHECKING, Union
+from typing import (TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple,
+                    Union)
 
 import deepspeed
 import deepspeed.comm
 import torch
-from deepspeed.utils.zero_to_fp32 import get_fp32_state_dict_from_zero_checkpoint
+from deepspeed.utils.zero_to_fp32 import \
+    get_fp32_state_dict_from_zero_checkpoint
 from packaging import version
 from torch import nn
 from torch.optim.optimizer import Optimizer

@@ -1,7 +1,8 @@
 import pytest
 
 from ludwig.constants import INPUT_FEATURES, NAME, OUTPUT_FEATURES, TYPE
-from ludwig.hyperopt.utils import log_warning_if_all_grid_type_parameters, substitute_parameters
+from ludwig.hyperopt.utils import (log_warning_if_all_grid_type_parameters,
+                                   substitute_parameters)
 from ludwig.schema.model_config import ModelConfig
 
 BASE_CONFIG = {

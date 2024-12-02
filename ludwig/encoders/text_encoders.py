@@ -16,7 +16,8 @@
 import contextlib
 import inspect
 import logging
-from typing import Any, Callable, Dict, List, Optional, Type, TYPE_CHECKING, TypeVar, Union
+from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type,
+                    TypeVar, Union)
 
 import numpy as np
 import torch
@@ -31,33 +32,25 @@ from ludwig.encoders.types import EncoderOutputDict
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.sequence_encoders import SequenceEncoderConfig
-from ludwig.schema.encoders.text_encoders import (
-    ALBERTConfig,
-    AutoTransformerConfig,
-    BERTConfig,
-    CamemBERTConfig,
-    CTRLConfig,
-    DebertaV2Config,
-    DistilBERTConfig,
-    ELECTRAConfig,
-    FlauBERTConfig,
-    GPT2Config,
-    GPTConfig,
-    LLMEncoderConfig,
-    LongformerConfig,
-    MT5Config,
-    RoBERTaConfig,
-    T5Config,
-    TfIdfEncoderConfig,
-    TransformerXLConfig,
-    XLMConfig,
-    XLMRoBERTaConfig,
-    XLNetConfig,
-)
+from ludwig.schema.encoders.text_encoders import (ALBERTConfig,
+                                                  AutoTransformerConfig,
+                                                  BERTConfig, CamemBERTConfig,
+                                                  CTRLConfig, DebertaV2Config,
+                                                  DistilBERTConfig,
+                                                  ELECTRAConfig,
+                                                  FlauBERTConfig, GPT2Config,
+                                                  GPTConfig, LLMEncoderConfig,
+                                                  LongformerConfig, MT5Config,
+                                                  RoBERTaConfig, T5Config,
+                                                  TfIdfEncoderConfig,
+                                                  TransformerXLConfig,
+                                                  XLMConfig, XLMRoBERTaConfig,
+                                                  XLNetConfig)
 from ludwig.schema.llms.peft import BaseAdapterConfig
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.hf_utils import load_pretrained_hf_model_with_hub_fallback
-from ludwig.utils.llm_utils import get_context_len, initialize_adapter, load_pretrained_from_config
+from ludwig.utils.llm_utils import (get_context_len, initialize_adapter,
+                                    load_pretrained_from_config)
 from ludwig.utils.tokenizers import HFTokenizer
 from ludwig.utils.torch_utils import FreezeModule
 

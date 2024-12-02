@@ -4,9 +4,12 @@ import numpy as np
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import MODEL_ECD, MODEL_GBM, PREPROCESSING, PROC_COLUMN, TRAINER
+from ludwig.constants import (MODEL_ECD, MODEL_GBM, PREPROCESSING, PROC_COLUMN,
+                              TRAINER)
 from tests.integration_tests.test_gbm import category_feature
-from tests.integration_tests.utils import binary_feature, generate_data, number_feature, run_test_suite, text_feature
+from tests.integration_tests.utils import (binary_feature, generate_data,
+                                           number_feature, run_test_suite,
+                                           text_feature)
 
 
 @pytest.mark.slow

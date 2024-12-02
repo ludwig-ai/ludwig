@@ -6,7 +6,7 @@ import pytest
 import torch
 
 from ludwig.constants import ENCODER_OUTPUT
-from ludwig.features.number_feature import _OutlierReplacer, NumberInputFeature
+from ludwig.features.number_feature import NumberInputFeature, _OutlierReplacer
 from ludwig.schema.features.number_feature import ECDNumberInputFeatureConfig
 from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils.misc_utils import merge_dict

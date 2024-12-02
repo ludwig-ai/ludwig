@@ -4,14 +4,9 @@ import pytest
 
 from ludwig.models.base import BaseModel
 from ludwig.schema.model_config import ModelConfig
-from tests.integration_tests.utils import (
-    category_feature,
-    generate_data,
-    number_feature,
-    run_experiment,
-    sequence_feature,
-    text_feature,
-)
+from tests.integration_tests.utils import (category_feature, generate_data,
+                                           number_feature, run_experiment,
+                                           sequence_feature, text_feature)
 
 # InputFeatureOptions namedtuple structure:
 # feature_type: input feature type, e.g., number, category, etc.

@@ -5,7 +5,8 @@ from typing import Any, Deque, Dict, List, Tuple, Union
 
 import pandas as pd
 
-from ludwig.config_sampling.parameter_sampling import handle_property_type, ParameterBaseTypes
+from ludwig.config_sampling.parameter_sampling import (ParameterBaseTypes,
+                                                       handle_property_type)
 from ludwig.constants import SEQUENCE, TEXT, TIMESERIES
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset_df
 from ludwig.schema.model_types.base import ModelConfig

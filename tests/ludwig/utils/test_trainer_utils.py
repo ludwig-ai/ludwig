@@ -6,7 +6,8 @@ import pytest
 from ludwig.constants import AUTO, BATCH_SIZE, COMBINED, LOSS
 from ludwig.features.category_feature import CategoryOutputFeature
 from ludwig.features.feature_utils import LudwigFeatureDict
-from ludwig.schema.features.category_feature import ECDCategoryOutputFeatureConfig
+from ludwig.schema.features.category_feature import \
+    ECDCategoryOutputFeatureConfig
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils import trainer_utils

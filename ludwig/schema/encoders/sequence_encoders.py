@@ -1,5 +1,5 @@
 from dataclasses import Field
-from typing import List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import AUDIO, SEQUENCE, TEXT, TIMESERIES
@@ -11,7 +11,8 @@ from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
 if TYPE_CHECKING:
-    from ludwig.schema.features.preprocessing.sequence import SequencePreprocessingConfig
+    from ludwig.schema.features.preprocessing.sequence import \
+        SequencePreprocessingConfig
 
 CONV_LAYERS_DESCRIPTION = """
 A list of dictionaries containing the parameters of all the convolutional layers.

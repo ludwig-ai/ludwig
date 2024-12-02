@@ -14,18 +14,24 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict, List, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Dict, List, Union
 
 import numpy as np
 import torch
 
-from ludwig.constants import COLUMN, HIDDEN, LOGITS, NAME, PREDICTIONS, PROC_COLUMN, TIMESERIES
-from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature, PredictModule
+from ludwig.constants import (COLUMN, HIDDEN, LOGITS, NAME, PREDICTIONS,
+                              PROC_COLUMN, TIMESERIES)
+from ludwig.features.base_feature import (BaseFeatureMixin, OutputFeature,
+                                          PredictModule)
 from ludwig.features.sequence_feature import SequenceInputFeature
-from ludwig.features.vector_feature import _VectorPostprocessing, _VectorPredict
-from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig, TimeseriesOutputFeatureConfig
-from ludwig.types import FeatureMetadataDict, ModelConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
-from ludwig.utils.tokenizers import get_tokenizer_from_registry, TORCHSCRIPT_COMPATIBLE_TOKENIZERS
+from ludwig.features.vector_feature import (_VectorPostprocessing,
+                                            _VectorPredict)
+from ludwig.schema.features.timeseries_feature import (
+    TimeseriesInputFeatureConfig, TimeseriesOutputFeatureConfig)
+from ludwig.types import (FeatureMetadataDict, ModelConfigDict,
+                          PreprocessingConfigDict, TrainingSetMetadataDict)
+from ludwig.utils.tokenizers import (TORCHSCRIPT_COMPATIBLE_TOKENIZERS,
+                                     get_tokenizer_from_registry)
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
 
 if TYPE_CHECKING:

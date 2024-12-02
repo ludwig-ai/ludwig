@@ -4,31 +4,30 @@ import pytest
 import torch
 
 from ludwig.constants import ENCODER_OUTPUT
-from ludwig.encoders.image.base import MLPMixerEncoder, ResNetEncoder, Stacked2DCNN, UNetEncoder, ViTEncoder
-from ludwig.encoders.image.torchvision import (
-    TVAlexNetEncoder,
-    TVConvNeXtEncoder,
-    TVDenseNetEncoder,
-    TVEfficientNetEncoder,
-    TVGoogLeNetEncoder,
-    TVInceptionV3Encoder,
-    TVMaxVitEncoder,
-    TVMNASNetEncoder,
-    TVMobileNetV2Encoder,
-    TVMobileNetV3Encoder,
-    TVRegNetEncoder,
-    TVResNetEncoder,
-    TVResNeXtEncoder,
-    TVShuffleNetV2Encoder,
-    TVSqueezeNetEncoder,
-    TVSwinTransformerEncoder,
-    TVVGGEncoder,
-    TVViTEncoder,
-    TVWideResNetEncoder,
-)
+from ludwig.encoders.image.base import (MLPMixerEncoder, ResNetEncoder,
+                                        Stacked2DCNN, UNetEncoder, ViTEncoder)
+from ludwig.encoders.image.torchvision import (TVAlexNetEncoder,
+                                               TVConvNeXtEncoder,
+                                               TVDenseNetEncoder,
+                                               TVEfficientNetEncoder,
+                                               TVGoogLeNetEncoder,
+                                               TVInceptionV3Encoder,
+                                               TVMaxVitEncoder,
+                                               TVMNASNetEncoder,
+                                               TVMobileNetV2Encoder,
+                                               TVMobileNetV3Encoder,
+                                               TVRegNetEncoder,
+                                               TVResNetEncoder,
+                                               TVResNeXtEncoder,
+                                               TVShuffleNetV2Encoder,
+                                               TVSqueezeNetEncoder,
+                                               TVSwinTransformerEncoder,
+                                               TVVGGEncoder, TVViTEncoder,
+                                               TVWideResNetEncoder)
 from ludwig.utils.image_utils import torchvision_model_registry
 from ludwig.utils.misc_utils import set_random_seed
-from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
+from tests.integration_tests.parameter_update_utils import \
+    check_module_parameters_updated
 
 RANDOM_SEED = 1919
 

@@ -8,16 +8,16 @@ import pytest
 import yaml
 
 from ludwig.api import LudwigModel
-from ludwig.config_sampling.explore_schema import combine_configs, ConfigOption, explore_properties
+from ludwig.config_sampling.explore_schema import (ConfigOption,
+                                                   combine_configs,
+                                                   explore_properties)
 from ludwig.config_validation.validation import get_schema
 from ludwig.types import ModelConfigDict
 
-from .configs import (
-    COMBINER_TYPE_TO_COMBINE_FN_MAP,
-    ECD_CONFIG_SECTION_TO_CONFIG,
-    FEATURE_TYPE_TO_CONFIG_FOR_DECODER_LOSS,
-    FEATURE_TYPE_TO_CONFIG_FOR_ENCODER_PREPROCESSING,
-)
+from .configs import (COMBINER_TYPE_TO_COMBINE_FN_MAP,
+                      ECD_CONFIG_SECTION_TO_CONFIG,
+                      FEATURE_TYPE_TO_CONFIG_FOR_DECODER_LOSS,
+                      FEATURE_TYPE_TO_CONFIG_FOR_ENCODER_PREPROCESSING)
 
 
 def defaults_config_generator(

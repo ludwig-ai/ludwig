@@ -1,16 +1,8 @@
 from typing import Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (
-    BFILL,
-    BINARY,
-    DROP_ROW,
-    FFILL,
-    FILL_WITH_FALSE,
-    FILL_WITH_MODE,
-    FILL_WITH_TRUE,
-    PREPROCESSING,
-)
+from ludwig.constants import (BFILL, BINARY, DROP_ROW, FFILL, FILL_WITH_FALSE,
+                              FILL_WITH_MODE, FILL_WITH_TRUE, PREPROCESSING)
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor

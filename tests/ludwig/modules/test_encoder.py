@@ -22,16 +22,13 @@ from ludwig.constants import ENCODER_OUTPUT
 from ludwig.data.dataset_synthesizer import build_vocab
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.image.base import MLPMixerEncoder, Stacked2DCNN
-from ludwig.encoders.sequence_encoders import (
-    ParallelCNN,
-    SequenceEmbedEncoder,
-    StackedCNN,
-    StackedCNNRNN,
-    StackedParallelCNN,
-    StackedRNN,
-)
+from ludwig.encoders.sequence_encoders import (ParallelCNN,
+                                               SequenceEmbedEncoder,
+                                               StackedCNN, StackedCNNRNN,
+                                               StackedParallelCNN, StackedRNN)
 from ludwig.utils.torch_utils import get_torch_device
-from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
+from tests.integration_tests.parameter_update_utils import \
+    check_module_parameters_updated
 
 DROPOUT = 0.5
 DEVICE = get_torch_device()

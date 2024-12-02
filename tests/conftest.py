@@ -21,19 +21,12 @@ from unittest import mock
 
 import pytest
 
-from ludwig.constants import (
-    BATCH_SIZE,
-    COMBINER,
-    EPOCHS,
-    HYPEROPT,
-    INPUT_FEATURES,
-    NAME,
-    OUTPUT_FEATURES,
-    TRAINER,
-    TYPE,
-)
+from ludwig.constants import (BATCH_SIZE, COMBINER, EPOCHS, HYPEROPT,
+                              INPUT_FEATURES, NAME, OUTPUT_FEATURES, TRAINER,
+                              TYPE)
 from ludwig.hyperopt.run import hyperopt
-from tests.integration_tests.utils import category_feature, generate_data, text_feature
+from tests.integration_tests.utils import (category_feature, generate_data,
+                                           text_feature)
 
 TEST_SUITE_TIMEOUT_S = int(os.environ.get("LUDWIG_TEST_SUITE_TIMEOUT_S", 3600))
 

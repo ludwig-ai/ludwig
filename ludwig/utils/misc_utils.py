@@ -21,7 +21,7 @@ import subprocess
 import weakref
 from collections import OrderedDict
 from collections.abc import Mapping
-from typing import Any, Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict
 
 import numpy
 import torch

@@ -11,12 +11,17 @@ import torchmetrics
 from ludwig.combiners.combiners import Combiner
 from ludwig.constants import COMBINED, LOSS, NAME
 from ludwig.encoders.base import Encoder
-from ludwig.features.base_feature import create_passthrough_input_feature, InputFeature, ModuleWrapper, OutputFeature
-from ludwig.features.feature_registries import get_input_type_registry, get_output_type_registry
+from ludwig.features.base_feature import (InputFeature, ModuleWrapper,
+                                          OutputFeature,
+                                          create_passthrough_input_feature)
+from ludwig.features.feature_registries import (get_input_type_registry,
+                                                get_output_type_registry)
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.modules.metric_modules import LudwigMetric
 from ludwig.modules.training_hooks import TrainingHook
-from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig, FeatureCollection
+from ludwig.schema.features.base import (BaseInputFeatureConfig,
+                                         BaseOutputFeatureConfig,
+                                         FeatureCollection)
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
 from ludwig.utils.misc_utils import get_from_registry

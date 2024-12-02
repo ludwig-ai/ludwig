@@ -3,7 +3,7 @@ import os
 
 import pytest
 import torch
-from torchvision.models import resnet18, ResNet18_Weights
+from torchvision.models import ResNet18_Weights, resnet18
 
 from ludwig.api import LudwigModel
 from ludwig.data.dataset_synthesizer import cli_synthesize_dataset

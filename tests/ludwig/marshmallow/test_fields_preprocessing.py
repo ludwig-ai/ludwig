@@ -1,9 +1,12 @@
 #! /usr/bin/env python
 
 
-from ludwig.schema.features.preprocessing.binary import BinaryPreprocessingConfig
-from ludwig.schema.features.preprocessing.category import CategoryPreprocessingConfig
-from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
+from ludwig.schema.features.preprocessing.binary import \
+    BinaryPreprocessingConfig
+from ludwig.schema.features.preprocessing.category import \
+    CategoryPreprocessingConfig
+from ludwig.schema.features.preprocessing.utils import \
+    PreprocessingDataclassField
 
 
 def get_marshmallow_from_dataclass_field(dfield):

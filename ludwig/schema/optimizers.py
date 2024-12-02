@@ -4,12 +4,13 @@ from typing import ClassVar, Dict, Optional, Tuple, Type
 
 import bitsandbytes as bnb
 import torch
-from marshmallow import fields, ValidationError
+from marshmallow import ValidationError, fields
 
 import ludwig.schema.utils as schema_utils
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema.metadata import OPTIMIZER_METADATA
-from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
+from ludwig.schema.metadata.parameter_metadata import (
+    ParameterMetadata, convert_metadata_to_json)
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 

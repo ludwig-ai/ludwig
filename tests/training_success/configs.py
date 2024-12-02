@@ -1,8 +1,6 @@
 from ludwig.config_sampling.explore_schema import (
-    combine_configs,
-    combine_configs_for_comparator_combiner,
-    combine_configs_for_sequence_combiner,
-)
+    combine_configs, combine_configs_for_comparator_combiner,
+    combine_configs_for_sequence_combiner)
 
 # A generic tabular to text config used to generate synthetic data and train a model on it.
 TABULAR_TO_TEXT = """

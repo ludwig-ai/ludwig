@@ -1,15 +1,13 @@
 import pytest
 
-from ludwig.constants import DEFAULTS, ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, SEQUENCE, TEXT, TIMESERIES, TYPE
+from ludwig.constants import (DEFAULTS, ENCODER, INPUT_FEATURES, NAME,
+                              OUTPUT_FEATURES, SEQUENCE, TEXT, TIMESERIES,
+                              TYPE)
 from ludwig.error import ConfigValidationError
 from ludwig.schema.model_config import ModelConfig
-from tests.integration_tests.utils import (
-    binary_feature,
-    number_feature,
-    sequence_feature,
-    text_feature,
-    timeseries_feature,
-)
+from tests.integration_tests.utils import (binary_feature, number_feature,
+                                           sequence_feature, text_feature,
+                                           timeseries_feature)
 
 
 @pytest.mark.parametrize("feature_type", [SEQUENCE, TEXT, TIMESERIES])

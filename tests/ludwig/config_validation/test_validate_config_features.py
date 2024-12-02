@@ -2,7 +2,8 @@ import pytest
 
 from ludwig.config_validation.validation import check_schema
 from ludwig.error import ConfigValidationError
-from tests.integration_tests.utils import binary_feature, category_feature, number_feature, text_feature
+from tests.integration_tests.utils import (binary_feature, category_feature,
+                                           number_feature, text_feature)
 
 
 def test_config_input_output_features():

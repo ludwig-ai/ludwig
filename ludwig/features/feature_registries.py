@@ -12,44 +12,41 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from typing import Any, Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (
-    AUDIO,
-    BAG,
-    BINARY,
-    CATEGORY,
-    CATEGORY_DISTRIBUTION,
-    DATE,
-    H3,
-    IMAGE,
-    NUMBER,
-    SEQUENCE,
-    SET,
-    TEXT,
-    TIMESERIES,
-    VECTOR,
-)
+from ludwig.constants import (AUDIO, BAG, BINARY, CATEGORY,
+                              CATEGORY_DISTRIBUTION, DATE, H3, IMAGE, NUMBER,
+                              SEQUENCE, SET, TEXT, TIMESERIES, VECTOR)
 from ludwig.features.audio_feature import AudioFeatureMixin, AudioInputFeature
 from ludwig.features.bag_feature import BagFeatureMixin, BagInputFeature
-from ludwig.features.binary_feature import BinaryFeatureMixin, BinaryInputFeature, BinaryOutputFeature
+from ludwig.features.binary_feature import (BinaryFeatureMixin,
+                                            BinaryInputFeature,
+                                            BinaryOutputFeature)
 from ludwig.features.category_feature import (
-    CategoryDistributionFeatureMixin,
-    CategoryDistributionOutputFeature,
-    CategoryFeatureMixin,
-    CategoryInputFeature,
-    CategoryOutputFeature,
-)
+    CategoryDistributionFeatureMixin, CategoryDistributionOutputFeature,
+    CategoryFeatureMixin, CategoryInputFeature, CategoryOutputFeature)
 from ludwig.features.date_feature import DateFeatureMixin, DateInputFeature
 from ludwig.features.h3_feature import H3FeatureMixin, H3InputFeature
-from ludwig.features.image_feature import ImageFeatureMixin, ImageInputFeature, ImageOutputFeature
-from ludwig.features.number_feature import NumberFeatureMixin, NumberInputFeature, NumberOutputFeature
-from ludwig.features.sequence_feature import SequenceFeatureMixin, SequenceInputFeature, SequenceOutputFeature
-from ludwig.features.set_feature import SetFeatureMixin, SetInputFeature, SetOutputFeature
-from ludwig.features.text_feature import TextFeatureMixin, TextInputFeature, TextOutputFeature
-from ludwig.features.timeseries_feature import TimeseriesFeatureMixin, TimeseriesInputFeature, TimeseriesOutputFeature
-from ludwig.features.vector_feature import VectorFeatureMixin, VectorInputFeature, VectorOutputFeature
+from ludwig.features.image_feature import (ImageFeatureMixin,
+                                           ImageInputFeature,
+                                           ImageOutputFeature)
+from ludwig.features.number_feature import (NumberFeatureMixin,
+                                            NumberInputFeature,
+                                            NumberOutputFeature)
+from ludwig.features.sequence_feature import (SequenceFeatureMixin,
+                                              SequenceInputFeature,
+                                              SequenceOutputFeature)
+from ludwig.features.set_feature import (SetFeatureMixin, SetInputFeature,
+                                         SetOutputFeature)
+from ludwig.features.text_feature import (TextFeatureMixin, TextInputFeature,
+                                          TextOutputFeature)
+from ludwig.features.timeseries_feature import (TimeseriesFeatureMixin,
+                                                TimeseriesInputFeature,
+                                                TimeseriesOutputFeature)
+from ludwig.features.vector_feature import (VectorFeatureMixin,
+                                            VectorInputFeature,
+                                            VectorOutputFeature)
 from ludwig.utils.misc_utils import get_from_registry
 
 if TYPE_CHECKING:

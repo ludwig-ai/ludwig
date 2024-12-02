@@ -19,9 +19,11 @@ from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 import torch
 
-from ludwig.constants import NAME, PREPROCESSING, SEQUENCE, TEXT, TIMESERIES, TYPE
+from ludwig.constants import (NAME, PREPROCESSING, SEQUENCE, TEXT, TIMESERIES,
+                              TYPE)
 from ludwig.utils.data_utils import hash_dict
-from ludwig.utils.strings_utils import get_tokenizer_from_registry, UNKNOWN_SYMBOL
+from ludwig.utils.strings_utils import (UNKNOWN_SYMBOL,
+                                        get_tokenizer_from_registry)
 
 SEQUENCE_TYPES = {SEQUENCE, TEXT, TIMESERIES}
 FEATURE_NAME_SUFFIX = "__ludwig"

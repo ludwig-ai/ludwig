@@ -34,32 +34,21 @@ import psutil
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import (
-    AUTO,
-    LOSS,
-    MAX_CPU_BATCH_SIZE,
-    MINIMIZE,
-    MODEL_ECD,
-    MODEL_LLM,
-    TEST,
-    TRAINING,
-    USED_TOKENS,
-    VALIDATION,
-)
+from ludwig.constants import (AUTO, LOSS, MAX_CPU_BATCH_SIZE, MINIMIZE,
+                              MODEL_ECD, MODEL_LLM, TEST, TRAINING,
+                              USED_TOKENS, VALIDATION)
 from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
-from ludwig.globals import (
-    is_progressbar_disabled,
-    MODEL_FILE_NAME,
-    MODEL_HYPERPARAMETERS_FILE_NAME,
-    TRAINING_CHECKPOINTS_DIR_PATH,
-    TRAINING_PROGRESS_TRACKER_FILE_NAME,
-)
+from ludwig.globals import (MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME,
+                            TRAINING_CHECKPOINTS_DIR_PATH,
+                            TRAINING_PROGRESS_TRACKER_FILE_NAME,
+                            is_progressbar_disabled)
 from ludwig.models.ecd import ECD
 from ludwig.models.llm import LLM
 from ludwig.models.predictor import Predictor
 from ludwig.modules.lr_scheduler import LRScheduler
-from ludwig.modules.metric_modules import get_improved_fn, get_initial_validation_value
+from ludwig.modules.metric_modules import (get_improved_fn,
+                                           get_initial_validation_value)
 from ludwig.modules.metric_registry import get_metric_objective
 from ludwig.modules.optimization_modules import create_clipper
 from ludwig.progress_bar import LudwigProgressBar
@@ -75,21 +64,18 @@ from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import path_exists
 from ludwig.utils.llm_utils import update_embedding_layer
-from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
+from ludwig.utils.metric_utils import TrainerMetric, get_metric_names
 from ludwig.utils.metrics_printed_table import print_metrics_table
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.model_utils import contains_nan_or_inf_tensors
 from ludwig.utils.torch_utils import get_torch_device
-from ludwig.utils.trainer_utils import (
-    append_metrics,
-    freeze_layers_regex,
-    get_final_steps_per_checkpoint,
-    get_latest_metrics_dict,
-    get_new_progress_tracker,
-    get_total_expected_checkpoints,
-    get_total_steps,
-    ProgressTracker,
-)
+from ludwig.utils.trainer_utils import (ProgressTracker, append_metrics,
+                                        freeze_layers_regex,
+                                        get_final_steps_per_checkpoint,
+                                        get_latest_metrics_dict,
+                                        get_new_progress_tracker,
+                                        get_total_expected_checkpoints,
+                                        get_total_steps)
 
 logger = logging.getLogger(__name__)
 

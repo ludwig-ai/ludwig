@@ -8,7 +8,8 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
-from tests.integration_tests.utils import create_data_set_to_use, RAY_BACKEND_CONFIG, spawn
+from tests.integration_tests.utils import (RAY_BACKEND_CONFIG,
+                                           create_data_set_to_use, spawn)
 
 try:
     import ray

@@ -11,7 +11,8 @@ from ludwig.constants import DECODER, ENCODER_OUTPUT_STATE, LOGITS
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
-from tests.integration_tests.utils import generate_data, run_experiment, sequence_feature
+from tests.integration_tests.utils import (generate_data, run_experiment,
+                                           sequence_feature)
 
 #
 # this test is focused on testing input sequence features with all encoders

@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List, Optional, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import MODEL_ECD, MODEL_GBM, TEXT
@@ -8,15 +8,19 @@ from ludwig.schema.encoders.sequence_encoders import SequenceEncoderConfig
 from ludwig.schema.encoders.text.hf_model_params import DebertaModelParams
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.llms.base_model import BaseModelDataclassField
-from ludwig.schema.llms.model_parameters import ModelParametersConfig, ModelParametersConfigField
+from ludwig.schema.llms.model_parameters import (ModelParametersConfig,
+                                                 ModelParametersConfigField)
 from ludwig.schema.llms.peft import AdapterDataclassField, BaseAdapterConfig
-from ludwig.schema.llms.quantization import QuantizationConfig, QuantizationConfigField
+from ludwig.schema.llms.quantization import (QuantizationConfig,
+                                             QuantizationConfigField)
 from ludwig.schema.metadata import ENCODER_METADATA
-from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY, ParameterMetadata
+from ludwig.schema.metadata.parameter_metadata import (INTERNAL_ONLY,
+                                                       ParameterMetadata)
 from ludwig.schema.utils import ludwig_dataclass
 
 if TYPE_CHECKING:
-    from ludwig.schema.features.preprocessing.text import TextPreprocessingConfig
+    from ludwig.schema.features.preprocessing.text import \
+        TextPreprocessingConfig
 
 
 class HFEncoderConfig(SequenceEncoderConfig):

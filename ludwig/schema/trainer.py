@@ -8,27 +8,18 @@ import torch._dynamo
 from packaging.version import parse as parse_version
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (
-    AUTO,
-    EFFECTIVE_BATCH_SIZE,
-    LOSS,
-    MAX_BATCH_SIZE,
-    MAX_POSSIBLE_BATCH_SIZE,
-    MODEL_ECD,
-    MODEL_GBM,
-    MODEL_LLM,
-    TRAINING,
-)
+from ludwig.constants import (AUTO, EFFECTIVE_BATCH_SIZE, LOSS, MAX_BATCH_SIZE,
+                              MAX_POSSIBLE_BATCH_SIZE, MODEL_ECD, MODEL_GBM,
+                              MODEL_LLM, TRAINING)
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.lr_scheduler import LRSchedulerConfig, LRSchedulerDataclassField
+from ludwig.schema.lr_scheduler import (LRSchedulerConfig,
+                                        LRSchedulerDataclassField)
 from ludwig.schema.metadata import TRAINER_METADATA
-from ludwig.schema.optimizers import (
-    BaseOptimizerConfig,
-    GradientClippingConfig,
-    GradientClippingDataclassField,
-    OptimizerDataclassField,
-)
+from ludwig.schema.optimizers import (BaseOptimizerConfig,
+                                      GradientClippingConfig,
+                                      GradientClippingDataclassField,
+                                      OptimizerDataclassField)
 from ludwig.schema.profiler import ProfilerConfig, ProfilerDataclassField
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
@@ -470,7 +461,8 @@ class ECDTrainerConfig(BaseTrainerConfig):
     )
 
     def update_batch_size_grad_accum(self, num_workers: int):
-        from ludwig.utils.trainer_utils import get_rendered_batch_size_grad_accum
+        from ludwig.utils.trainer_utils import \
+            get_rendered_batch_size_grad_accum
 
         self.batch_size, self.gradient_accumulation_steps = get_rendered_batch_size_grad_accum(self, num_workers)
 

@@ -2,26 +2,13 @@ import os
 
 import pytest
 
-from ludwig.constants import (
-    BATCH_SIZE,
-    DECODER,
-    ENCODER,
-    EPOCHS,
-    INPUT_FEATURES,
-    OUTPUT_FEATURES,
-    SEQUENCE,
-    TEXT,
-    TRAINER,
-    TYPE,
-)
-from tests.integration_tests.utils import (
-    create_data_set_to_use,
-    generate_data,
-    RAY_BACKEND_CONFIG,
-    sequence_feature,
-    text_feature,
-    train_with_backend,
-)
+from ludwig.constants import (BATCH_SIZE, DECODER, ENCODER, EPOCHS,
+                              INPUT_FEATURES, OUTPUT_FEATURES, SEQUENCE, TEXT,
+                              TRAINER, TYPE)
+from tests.integration_tests.utils import (RAY_BACKEND_CONFIG,
+                                           create_data_set_to_use,
+                                           generate_data, sequence_feature,
+                                           text_feature, train_with_backend)
 
 pytestmark = pytest.mark.integration_tests_c
 

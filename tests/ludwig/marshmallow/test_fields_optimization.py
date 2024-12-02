@@ -2,7 +2,8 @@
 from typing import Optional
 
 import pytest
-from marshmallow.exceptions import ValidationError as MarshmallowValidationError
+from marshmallow.exceptions import \
+    ValidationError as MarshmallowValidationError
 from marshmallow_dataclass import dataclass
 
 import ludwig.schema.optimizers as lso

@@ -20,32 +20,23 @@ from typing import Any, Dict, Optional
 import torch
 from torch import Tensor
 
-from ludwig.constants import (
-    ENCODER_OUTPUT,
-    ENCODER_OUTPUT_STATE,
-    HIDDEN,
-    LENGTHS,
-    LOGITS,
-    LOSS,
-    PREDICTIONS,
-    PROBABILITIES,
-)
+from ludwig.constants import (ENCODER_OUTPUT, ENCODER_OUTPUT_STATE, HIDDEN,
+                              LENGTHS, LOGITS, LOSS, PREDICTIONS,
+                              PROBABILITIES)
 from ludwig.decoders.registry import get_decoder_cls
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_utils import get_input_size_with_dependencies
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.loss_modules import create_loss
 from ludwig.modules.metric_modules import LossMetric, LudwigMetric, MeanMetric
-from ludwig.modules.metric_registry import get_metric_classes, get_metric_cls, get_metric_tensor_input
+from ludwig.modules.metric_registry import (get_metric_classes, get_metric_cls,
+                                            get_metric_tensor_input)
 from ludwig.modules.reduction_modules import SequenceReducer
-from ludwig.schema.features.base import BaseFeatureConfig, BaseOutputFeatureConfig
-from ludwig.types import (
-    FeatureConfigDict,
-    FeatureMetadataDict,
-    ModelConfigDict,
-    PreprocessingConfigDict,
-    TrainingSetMetadataDict,
-)
+from ludwig.schema.features.base import (BaseFeatureConfig,
+                                         BaseOutputFeatureConfig)
+from ludwig.types import (FeatureConfigDict, FeatureMetadataDict,
+                          ModelConfigDict, PreprocessingConfigDict,
+                          TrainingSetMetadataDict)
 from ludwig.utils import output_feature_utils
 from ludwig.utils.calibration import CalibrationModule
 from ludwig.utils.torch_utils import LudwigModule

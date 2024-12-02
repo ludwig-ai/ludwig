@@ -3,7 +3,8 @@ import pytest
 from ludwig.config_validation.validation import check_schema, get_schema
 from ludwig.constants import MODEL_ECD, TRAINER
 from ludwig.error import ConfigValidationError
-from tests.integration_tests.utils import binary_feature, category_feature, number_feature
+from tests.integration_tests.utils import (binary_feature, category_feature,
+                                           number_feature)
 
 
 def test_combiner_schema_is_not_empty_for_ECD():

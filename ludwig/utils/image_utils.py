@@ -24,7 +24,7 @@ import numpy as np
 import tifffile
 import torch
 import torchvision.transforms.functional as F
-from torchvision.io import decode_image, ImageReadMode
+from torchvision.io import ImageReadMode, decode_image
 from torchvision.models._api import WeightsEnum
 
 from ludwig.api_annotations import DeveloperAPI

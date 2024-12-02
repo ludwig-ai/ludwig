@@ -9,20 +9,15 @@ from ludwig.features.category_feature import CategoryOutputFeature
 from ludwig.features.set_feature import SetOutputFeature
 from ludwig.features.text_feature import TextOutputFeature
 from ludwig.modules import loss_modules
-from ludwig.schema.features.loss.loss import (
-    BWCEWLossConfig,
-    CORNLossConfig,
-    HuberLossConfig,
-    MAELossConfig,
-    MAPELossConfig,
-    MSELossConfig,
-    RMSELossConfig,
-    RMSPELossConfig,
-    SigmoidCrossEntropyLossConfig,
-    SoftmaxCrossEntropyLossConfig,
-)
+from ludwig.schema.features.loss.loss import (BWCEWLossConfig, CORNLossConfig,
+                                              HuberLossConfig, MAELossConfig,
+                                              MAPELossConfig, MSELossConfig,
+                                              RMSELossConfig, RMSPELossConfig,
+                                              SigmoidCrossEntropyLossConfig,
+                                              SoftmaxCrossEntropyLossConfig)
 from ludwig.schema.model_config import ModelConfig
-from tests.integration_tests.utils import category_feature, set_feature, text_feature
+from tests.integration_tests.utils import (category_feature, set_feature,
+                                           text_feature)
 
 
 def from_float(v: float) -> torch.Tensor:

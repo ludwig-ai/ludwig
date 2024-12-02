@@ -19,10 +19,13 @@ from functools import partial
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BINARY, CATEGORY, CATEGORY_DISTRIBUTION, LOSS, NUMBER, SET, TIMESERIES, TYPE, VECTOR
+from ludwig.constants import (BINARY, CATEGORY, CATEGORY_DISTRIBUTION, LOSS,
+                              NUMBER, SET, TIMESERIES, TYPE, VECTOR)
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
-from ludwig.schema.decoders.base import ClassifierConfig, PassthroughDecoderConfig, ProjectorConfig, RegressorConfig
+from ludwig.schema.decoders.base import (ClassifierConfig,
+                                         PassthroughDecoderConfig,
+                                         ProjectorConfig, RegressorConfig)
 from ludwig.utils.torch_utils import Dense, get_activation
 
 logger = logging.getLogger(__name__)

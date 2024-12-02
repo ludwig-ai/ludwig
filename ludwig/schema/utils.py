@@ -2,7 +2,7 @@ import copy
 import os
 import warnings
 from abc import ABC, abstractmethod
-from dataclasses import field, Field
+from dataclasses import Field, field
 from functools import lru_cache
 from typing import Any
 from typing import Dict as TDict
@@ -11,16 +11,19 @@ from typing import Optional, Set, Tuple, Type, TypeVar, Union
 
 import marshmallow_dataclass
 import yaml
-from marshmallow import EXCLUDE, fields, pre_load, schema, validate, ValidationError
+from marshmallow import (EXCLUDE, ValidationError, fields, pre_load, schema,
+                         validate)
 from marshmallow.utils import missing
 from marshmallow_dataclass import dataclass as m_dataclass
 from marshmallow_jsonschema import JSONSchema as js
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import ACTIVE, COLUMN, LUDWIG_SCHEMA_VALIDATION_POLICY, NAME, PROC_COLUMN, TYPE
+from ludwig.constants import (ACTIVE, COLUMN, LUDWIG_SCHEMA_VALIDATION_POLICY,
+                              NAME, PROC_COLUMN, TYPE)
 from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.schema.metadata import COMMON_METADATA
-from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
+from ludwig.schema.metadata.parameter_metadata import (
+    ParameterMetadata, convert_metadata_to_json)
 from ludwig.utils.misc_utils import scrub_creds
 from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import activations, initializer_registry
@@ -53,7 +56,8 @@ def load_trainer_with_kwargs(
     otherwise passes all other parameters through without change.
     """
     from ludwig.constants import MODEL_ECD, MODEL_GBM, MODEL_LLM
-    from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig, LLMTrainerConfig
+    from ludwig.schema.trainer import (ECDTrainerConfig, GBMTrainerConfig,
+                                       LLMTrainerConfig)
 
     # TODO: use registry pattern for trainers
     if model_type == MODEL_ECD:

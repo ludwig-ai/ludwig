@@ -2,31 +2,16 @@ import copy
 import logging
 import sys
 import warnings
-from typing import Any, Dict, List, Mapping, Set, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Set
 
 from marshmallow import ValidationError
 from transformers import AutoConfig
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (
-    CATEGORY,
-    COMBINED,
-    DECODER,
-    DEFAULTS,
-    ENCODER,
-    GRID_SEARCH,
-    INPUT_FEATURES,
-    LOSS,
-    MODEL_ECD,
-    MODEL_LLM,
-    OUTPUT_FEATURES,
-    PARAMETERS,
-    PREPROCESSING,
-    SEQUENCE,
-    SPACE,
-    TEXT,
-    TYPE,
-)
+from ludwig.constants import (CATEGORY, COMBINED, DECODER, DEFAULTS, ENCODER,
+                              GRID_SEARCH, INPUT_FEATURES, LOSS, MODEL_ECD,
+                              MODEL_LLM, OUTPUT_FEATURES, PARAMETERS,
+                              PREPROCESSING, SEQUENCE, SPACE, TEXT, TYPE)
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.schema.features.utils import output_config_registry
 from ludwig.schema.hyperopt.scheduler import BaseHyperbandSchedulerConfig
@@ -111,7 +96,8 @@ def set_validation_parameters(config: "ModelConfig"):
         else:
             # Determine the proper validation field for the user, like if the user specifies "accuracy" but forgets to
             # change the validation field from "combined" to the name of the feature that produces accuracy metrics.
-            from ludwig.utils.metric_utils import get_feature_to_metric_names_map
+            from ludwig.utils.metric_utils import \
+                get_feature_to_metric_names_map
 
             feature_to_metric_names_map = get_feature_to_metric_names_map(config.output_features.to_list())
             validation_field = None

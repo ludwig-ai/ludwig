@@ -5,7 +5,8 @@ from ludwig.constants import TRAINER
 from ludwig.error import ConfigValidationError
 from ludwig.schema.optimizers import optimizer_registry
 from ludwig.schema.trainer import ECDTrainerConfig
-from tests.integration_tests.utils import binary_feature, category_feature, number_feature
+from tests.integration_tests.utils import (binary_feature, category_feature,
+                                           number_feature)
 
 # Note: simple tests for now, but once we add dependent fields we can add tests for more complex relationships in this
 # file. Currently verifies that the nested fields work, as the others are covered by basic marshmallow validation:

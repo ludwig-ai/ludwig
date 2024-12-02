@@ -22,21 +22,16 @@ import pytest
 
 from ludwig import visualize
 from ludwig.api import LudwigModel, TrainingStats
-from ludwig.constants import BATCH_SIZE, ENCODER, NAME, PREDICTIONS, PROBABILITIES, PROBABILITY, TRAINER, TYPE
+from ludwig.constants import (BATCH_SIZE, ENCODER, NAME, PREDICTIONS,
+                              PROBABILITIES, PROBABILITY, TRAINER, TYPE)
 from ludwig.data.split import get_splitter
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.utils.data_utils import read_csv
-from tests.integration_tests.utils import (
-    bag_feature,
-    binary_feature,
-    category_feature,
-    generate_data,
-    LocalTestBackend,
-    number_feature,
-    sequence_feature,
-    set_feature,
-    text_feature,
-)
+from tests.integration_tests.utils import (LocalTestBackend, bag_feature,
+                                           binary_feature, category_feature,
+                                           generate_data, number_feature,
+                                           sequence_feature, set_feature,
+                                           text_feature)
 
 pytestmark = pytest.mark.integration_tests_c
 

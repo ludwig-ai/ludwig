@@ -29,20 +29,16 @@ import pytest
 
 from ludwig.constants import BATCH_SIZE, ENCODER, TRAINER, TYPE
 from ludwig.experiment import experiment_cli
-from ludwig.globals import DESCRIPTION_FILE_NAME, PREDICTIONS_PARQUET_FILE_NAME, TEST_STATISTICS_FILE_NAME
+from ludwig.globals import (DESCRIPTION_FILE_NAME,
+                            PREDICTIONS_PARQUET_FILE_NAME,
+                            TEST_STATISTICS_FILE_NAME)
 from ludwig.utils.data_utils import get_split_path
 from ludwig.visualize import _extract_ground_truth_values
 from tests.integration_tests.test_visualization_api import obtain_df_splits
-from tests.integration_tests.utils import (
-    bag_feature,
-    binary_feature,
-    category_feature,
-    generate_data,
-    number_feature,
-    sequence_feature,
-    set_feature,
-    text_feature,
-)
+from tests.integration_tests.utils import (bag_feature, binary_feature,
+                                           category_feature, generate_data,
+                                           number_feature, sequence_feature,
+                                           set_feature, text_feature)
 
 pytestmark = pytest.mark.integration_tests_c
 

@@ -5,23 +5,15 @@ from contextlib import nullcontext as no_error_raised
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import (
-    BASE_MODEL,
-    BATCH_SIZE,
-    EPOCHS,
-    GENERATION,
-    INPUT_FEATURES,
-    MODEL_LLM,
-    MODEL_TYPE,
-    OUTPUT_FEATURES,
-    TRAINER,
-    TYPE,
-)
+from ludwig.constants import (BASE_MODEL, BATCH_SIZE, EPOCHS, GENERATION,
+                              INPUT_FEATURES, MODEL_LLM, MODEL_TYPE,
+                              OUTPUT_FEATURES, TRAINER, TYPE)
 from ludwig.encoders.image.torchvision import TVEfficientNetEncoder
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.trainer_utils import freeze_layers_regex
-from tests.integration_tests.utils import category_feature, generate_data, image_feature, text_feature
+from tests.integration_tests.utils import (category_feature, generate_data,
+                                           image_feature, text_feature)
 
 RANDOM_SEED = 130
 

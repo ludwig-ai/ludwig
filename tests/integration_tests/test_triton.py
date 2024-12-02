@@ -23,19 +23,15 @@ from ludwig.api import LudwigModel
 from ludwig.constants import BATCH_SIZE, TRAINER
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset_df
 from ludwig.utils.data_utils import load_yaml
-from ludwig.utils.inference_utils import to_inference_module_input_from_dataframe
-from ludwig.utils.triton_utils import export_triton, get_inference_modules, POSTPROCESSOR, PREDICTOR, PREPROCESSOR
-from tests.integration_tests.utils import (
-    binary_feature,
-    category_feature,
-    generate_data,
-    LocalTestBackend,
-    number_feature,
-    sequence_feature,
-    set_feature,
-    text_feature,
-    vector_feature,
-)
+from ludwig.utils.inference_utils import \
+    to_inference_module_input_from_dataframe
+from ludwig.utils.triton_utils import (POSTPROCESSOR, PREDICTOR, PREPROCESSOR,
+                                       export_triton, get_inference_modules)
+from tests.integration_tests.utils import (LocalTestBackend, binary_feature,
+                                           category_feature, generate_data,
+                                           number_feature, sequence_feature,
+                                           set_feature, text_feature,
+                                           vector_feature)
 
 
 def test_triton_torchscript(csv_filename, tmpdir):

@@ -6,37 +6,21 @@ from marshmallow import fields, validate
 from rich.console import Console
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (
-    AUDIO,
-    BAG,
-    BINARY,
-    CATEGORY,
-    DATE,
-    H3,
-    IMAGE,
-    MODEL_ECD,
-    MODEL_GBM,
-    MODEL_LLM,
-    NUMBER,
-    SEQUENCE,
-    SET,
-    TEXT,
-    TIMESERIES,
-    VECTOR,
-)
+from ludwig.constants import (AUDIO, BAG, BINARY, CATEGORY, DATE, H3, IMAGE,
+                              MODEL_ECD, MODEL_GBM, MODEL_LLM, NUMBER,
+                              SEQUENCE, SET, TEXT, TIMESERIES, VECTOR)
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.features.utils import (
-    ecd_input_config_registry,
-    ecd_output_config_registry,
-    gbm_input_config_registry,
-    gbm_output_config_registry,
-    get_input_feature_jsonschema,
-    get_output_feature_jsonschema,
-    llm_input_config_registry,
-    llm_output_config_registry,
-)
-from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY, ParameterMetadata
+from ludwig.schema.features.utils import (ecd_input_config_registry,
+                                          ecd_output_config_registry,
+                                          gbm_input_config_registry,
+                                          gbm_output_config_registry,
+                                          get_input_feature_jsonschema,
+                                          get_output_feature_jsonschema,
+                                          llm_input_config_registry,
+                                          llm_output_config_registry)
+from ludwig.schema.metadata.parameter_metadata import (INTERNAL_ONLY,
+                                                       ParameterMetadata)
 from ludwig.schema.utils import ludwig_dataclass
 
 logger = logging.getLogger(__name__)

@@ -1,5 +1,7 @@
 from ludwig.schema.model_config import ModelConfig
-from ludwig.utils.config_utils import has_pretrained_encoder, has_trainable_encoder, has_unstructured_input_feature
+from ludwig.utils.config_utils import (has_pretrained_encoder,
+                                       has_trainable_encoder,
+                                       has_unstructured_input_feature)
 
 
 def get_auto_learning_rate(config: ModelConfig) -> float:

@@ -3,7 +3,7 @@ import os
 from typing import Optional
 
 from ludwig.constants import CHECKSUM, META, TEST, TRAINING, VALIDATION
-from ludwig.data.cache.types import alphanum, CacheableDataset
+from ludwig.data.cache.types import CacheableDataset, alphanum
 from ludwig.data.cache.util import calculate_checksum
 from ludwig.data.dataset.base import DatasetManager
 from ludwig.utils import data_utils

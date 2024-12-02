@@ -19,70 +19,32 @@ import warnings
 from typing import Any, Callable, Dict, List, Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (
-    AUDIO,
-    BIAS,
-    CLASS_WEIGHTS,
-    COLUMN,
-    CONV_BIAS,
-    CONV_USE_BIAS,
-    DECODER,
-    DEFAULT_BIAS,
-    DEFAULT_USE_BIAS,
-    DEFAULTS,
-    ENCODER,
-    EVAL_BATCH_SIZE,
-    EXECUTOR,
-    FORCE_SPLIT,
-    HEIGHT,
-    HYPEROPT,
-    IMAGE,
-    INPUT_FEATURES,
-    LOSS,
-    MISSING_VALUE_STRATEGY,
-    MODEL_ECD,
-    MODEL_GBM,
-    MODEL_TYPE,
-    NAME,
-    NUM_SAMPLES,
-    NUMBER,
-    OUTPUT_FEATURES,
-    PARAMETERS,
-    PREPROCESSING,
-    PROBABILITIES,
-    RANDOM,
-    RAY,
-    SAMPLER,
-    SCHEDULER,
-    SEARCH_ALG,
-    SEQUENCE,
-    SPLIT,
-    SPLIT_PROBABILITIES,
-    STRATIFY,
-    TEXT,
-    TIMESERIES,
-    TRAINER,
-    TRAINING,
-    TYPE,
-    USE_BIAS,
-    WIDTH,
-)
-from ludwig.features.feature_registries import get_base_type_registry, get_input_type_registry, get_output_type_registry
+from ludwig.constants import (AUDIO, BIAS, CLASS_WEIGHTS, COLUMN, CONV_BIAS,
+                              CONV_USE_BIAS, DECODER, DEFAULT_BIAS,
+                              DEFAULT_USE_BIAS, DEFAULTS, ENCODER,
+                              EVAL_BATCH_SIZE, EXECUTOR, FORCE_SPLIT, HEIGHT,
+                              HYPEROPT, IMAGE, INPUT_FEATURES, LOSS,
+                              MISSING_VALUE_STRATEGY, MODEL_ECD, MODEL_GBM,
+                              MODEL_TYPE, NAME, NUM_SAMPLES, NUMBER,
+                              OUTPUT_FEATURES, PARAMETERS, PREPROCESSING,
+                              PROBABILITIES, RANDOM, RAY, SAMPLER, SCHEDULER,
+                              SEARCH_ALG, SEQUENCE, SPLIT, SPLIT_PROBABILITIES,
+                              STRATIFY, TEXT, TIMESERIES, TRAINER, TRAINING,
+                              TYPE, USE_BIAS, WIDTH)
+from ludwig.features.feature_registries import (get_base_type_registry,
+                                                get_input_type_registry,
+                                                get_output_type_registry)
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema.defaults.gbm import GBMDefaultsConfig
 from ludwig.schema.encoders.utils import get_encoder_cls
-from ludwig.types import (
-    FeatureConfigDict,
-    FeatureTypeDefaultsDict,
-    HyperoptConfigDict,
-    ModelConfigDict,
-    PreprocessingConfigDict,
-    TrainerConfigDict,
-    TrainingSetMetadataDict,
-)
+from ludwig.types import (FeatureConfigDict, FeatureTypeDefaultsDict,
+                          HyperoptConfigDict, ModelConfigDict,
+                          PreprocessingConfigDict, TrainerConfigDict,
+                          TrainingSetMetadataDict)
 from ludwig.utils.metric_utils import TrainerMetric
 from ludwig.utils.misc_utils import get_from_registry, merge_dict
-from ludwig.utils.version_transformation import VersionTransformation, VersionTransformationRegistry
+from ludwig.utils.version_transformation import (VersionTransformation,
+                                                 VersionTransformationRegistry)
 
 config_transformation_registry = VersionTransformationRegistry()
 

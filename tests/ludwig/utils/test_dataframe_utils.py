@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ludwig.backend import create_backend, LOCAL_BACKEND
+from ludwig.backend import LOCAL_BACKEND, create_backend
 from ludwig.utils.dataframe_utils import to_numpy_dataset, to_scalar_df
 
 try:

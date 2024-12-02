@@ -23,9 +23,8 @@ import sys
 import tempfile
 import traceback
 import uuid
-
 # from distutils.util import strtobool
-from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Union
 
 import cloudpickle
 import numpy as np
@@ -37,32 +36,13 @@ from transformers import file_utils
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
-from ludwig.constants import (
-    AUDIO,
-    BAG,
-    BATCH_SIZE,
-    BINARY,
-    CATEGORY,
-    CATEGORY_DISTRIBUTION,
-    COLUMN,
-    DATE,
-    DECODER,
-    ENCODER,
-    H3,
-    IMAGE,
-    MODEL_ECD,
-    NAME,
-    NUMBER,
-    PROC_COLUMN,
-    SEQUENCE,
-    SET,
-    SPLIT,
-    TEXT,
-    TIMESERIES,
-    TRAINER,
-    VECTOR,
-)
-from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FORMATS
+from ludwig.constants import (AUDIO, BAG, BATCH_SIZE, BINARY, CATEGORY,
+                              CATEGORY_DISTRIBUTION, COLUMN, DATE, DECODER,
+                              ENCODER, H3, IMAGE, MODEL_ECD, NAME, NUMBER,
+                              PROC_COLUMN, SEQUENCE, SET, SPLIT, TEXT,
+                              TIMESERIES, TRAINER, VECTOR)
+from ludwig.data.dataset_synthesizer import (DATETIME_FORMATS,
+                                             build_synthetic_dataset)
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.globals import MODEL_FILE_NAME, PREDICTIONS_PARQUET_FILE_NAME
@@ -70,7 +50,8 @@ from ludwig.schema.encoders.text_encoders import HFEncoderConfig
 from ludwig.schema.encoders.utils import get_encoder_classes
 from ludwig.trainers.trainer import Trainer
 from ludwig.utils import fs_utils
-from ludwig.utils.data_utils import read_csv, replace_file_extension, use_credentials
+from ludwig.utils.data_utils import (read_csv, replace_file_extension,
+                                     use_credentials)
 
 if TYPE_CHECKING:
     from ludwig.data.dataset.base import Dataset

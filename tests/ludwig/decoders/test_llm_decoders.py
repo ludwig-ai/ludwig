@@ -1,7 +1,8 @@
 import pytest
 import torch
 
-from ludwig.constants import BACKEND, BASE_MODEL, GENERATION, INPUT_FEATURES, MODEL_TYPE, OUTPUT_FEATURES
+from ludwig.constants import (BACKEND, BASE_MODEL, GENERATION, INPUT_FEATURES,
+                              MODEL_TYPE, OUTPUT_FEATURES)
 from ludwig.decoders.llm_decoders import TextExtractorDecoder
 from ludwig.schema.model_config import ModelConfig
 from tests.integration_tests.utils import text_feature

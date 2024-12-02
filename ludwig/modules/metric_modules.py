@@ -22,80 +22,43 @@ from torch import Tensor, tensor
 from torchmetrics import MeanAbsoluteError, MeanAbsolutePercentageError
 from torchmetrics import MeanMetric as _MeanMetric
 from torchmetrics import MeanSquaredError, Metric
-from torchmetrics.classification import (
-    BinaryAccuracy,
-    BinaryAUROC,
-    BinaryPrecision,
-    BinaryRecall,
-    BinarySpecificity,
-    MulticlassAccuracy,
-    MulticlassAUROC,
-)
-from torchmetrics.functional.regression.r2 import _r2_score_compute, _r2_score_update
+from torchmetrics.classification import (BinaryAccuracy, BinaryAUROC,
+                                         BinaryPrecision, BinaryRecall,
+                                         BinarySpecificity, MulticlassAccuracy,
+                                         MulticlassAUROC)
+from torchmetrics.functional.regression.r2 import (_r2_score_compute,
+                                                   _r2_score_update)
 from torchmetrics.metric import jit_distributed_available
 from torchmetrics.text import BLEUScore, CharErrorRate, WordErrorRate
 from torchmetrics.text.perplexity import Perplexity
 from torchmetrics.text.rouge import ROUGEScore
 
-from ludwig.constants import (  # RESPONSE,
-    ACCURACY,
-    ACCURACY_MICRO,
-    BINARY,
-    BINARY_WEIGHTED_CROSS_ENTROPY,
-    CATEGORY,
-    CATEGORY_DISTRIBUTION,
-    CORN,
-    HITS_AT_K,
-    HUBER,
-    IGNORE_INDEX_TOKEN_ID,
-    IMAGE,
-    JACCARD,
-    LOGITS,
-    LOSS,
-    MAXIMIZE,
-    MEAN_ABSOLUTE_ERROR,
-    MEAN_ABSOLUTE_PERCENTAGE_ERROR,
-    MEAN_SQUARED_ERROR,
-    MINIMIZE,
-    NEXT_TOKEN_PERPLEXITY,
-    NUMBER,
-    PERPLEXITY,
-    PRECISION,
-    PREDICTIONS,
-    PROBABILITIES,
-    R2,
-    RECALL,
-    ROC_AUC,
-    ROOT_MEAN_SQUARED_ERROR,
-    ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
-    SEQUENCE,
-    SEQUENCE_ACCURACY,
-    SET,
-    SPECIFICITY,
-    TEXT,
-    TIMESERIES,
-    TOKEN_ACCURACY,
-    VECTOR,
-)
+from ludwig.constants import (ACCURACY, ACCURACY_MICRO, BINARY,  # RESPONSE,
+                              BINARY_WEIGHTED_CROSS_ENTROPY, CATEGORY,
+                              CATEGORY_DISTRIBUTION, CORN, HITS_AT_K, HUBER,
+                              IGNORE_INDEX_TOKEN_ID, IMAGE, JACCARD, LOGITS,
+                              LOSS, MAXIMIZE, MEAN_ABSOLUTE_ERROR,
+                              MEAN_ABSOLUTE_PERCENTAGE_ERROR,
+                              MEAN_SQUARED_ERROR, MINIMIZE,
+                              NEXT_TOKEN_PERPLEXITY, NUMBER, PERPLEXITY,
+                              PRECISION, PREDICTIONS, PROBABILITIES, R2,
+                              RECALL, ROC_AUC, ROOT_MEAN_SQUARED_ERROR,
+                              ROOT_MEAN_SQUARED_PERCENTAGE_ERROR, SEQUENCE,
+                              SEQUENCE_ACCURACY, SET, SPECIFICITY, TEXT,
+                              TIMESERIES, TOKEN_ACCURACY, VECTOR)
 from ludwig.distributed import get_current_dist_strategy
-from ludwig.modules.loss_modules import (
-    BWCEWLoss,
-    CORNLoss,
-    HuberLoss,
-    NextTokenSoftmaxCrossEntropyLoss,
-    SequenceSoftmaxCrossEntropyLoss,
-    SigmoidCrossEntropyLoss,
-    SoftmaxCrossEntropyLoss,
-)
-from ludwig.modules.metric_registry import get_metric_objective, get_metric_registry, register_metric
+from ludwig.modules.loss_modules import (BWCEWLoss, CORNLoss, HuberLoss,
+                                         NextTokenSoftmaxCrossEntropyLoss,
+                                         SequenceSoftmaxCrossEntropyLoss,
+                                         SigmoidCrossEntropyLoss,
+                                         SoftmaxCrossEntropyLoss)
+from ludwig.modules.metric_registry import (get_metric_objective,
+                                            get_metric_registry,
+                                            register_metric)
 from ludwig.schema.features.loss.loss import (
-    BWCEWLossConfig,
-    CORNLossConfig,
-    HuberLossConfig,
-    SequenceSoftmaxCrossEntropyLossConfig,
-    SigmoidCrossEntropyLossConfig,
-    SoftmaxCrossEntropyLossConfig,
-)
+    BWCEWLossConfig, CORNLossConfig, HuberLossConfig,
+    SequenceSoftmaxCrossEntropyLossConfig, SigmoidCrossEntropyLossConfig,
+    SoftmaxCrossEntropyLossConfig)
 from ludwig.utils.loss_utils import rmspe_loss
 from ludwig.utils.metric_utils import masked_correct_predictions
 from ludwig.utils.torch_utils import sequence_length_2D

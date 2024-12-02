@@ -5,17 +5,10 @@ from transformers import AutoConfig, AutoModelForCausalLM
 from ludwig.constants import LOGITS, PREDICTIONS, PROBABILITIES
 from ludwig.modules.training_hooks import NEFTuneHook
 from ludwig.utils.llm_utils import (
-    add_left_padding,
-    create_attention_mask,
-    FALLBACK_CONTEXT_LEN,
-    find_last_matching_index,
-    generate_merged_ids,
-    get_context_len,
+    FALLBACK_CONTEXT_LEN, add_left_padding, create_attention_mask,
+    find_last_matching_index, generate_merged_ids, get_context_len,
     get_realigned_target_and_prediction_tensors_for_inference,
-    has_padding_token,
-    pad_target_tensor_for_fine_tuning,
-    remove_left_padding,
-)
+    has_padding_token, pad_target_tensor_for_fine_tuning, remove_left_padding)
 from ludwig.utils.tokenizers import HFTokenizer
 
 pytestmark = [pytest.mark.llm]

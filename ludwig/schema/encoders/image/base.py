@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import IMAGE
@@ -10,7 +10,8 @@ from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.torch_utils import initializer_registry
 
 if TYPE_CHECKING:
-    from ludwig.schema.features.preprocessing.image import ImagePreprocessingConfig
+    from ludwig.schema.features.preprocessing.image import \
+        ImagePreprocessingConfig
 
 
 class ImageEncoderConfig(BaseEncoderConfig):

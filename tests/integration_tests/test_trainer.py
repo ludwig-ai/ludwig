@@ -11,29 +11,17 @@ from packaging.version import parse as parse_version
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
-from ludwig.constants import (
-    BATCH_SIZE,
-    EFFECTIVE_BATCH_SIZE,
-    EPOCHS,
-    EVAL_BATCH_SIZE,
-    INPUT_FEATURES,
-    MAX_BATCH_SIZE_DATASET_FRACTION,
-    OUTPUT_FEATURES,
-    TRAINER,
-)
+from ludwig.constants import (BATCH_SIZE, EFFECTIVE_BATCH_SIZE, EPOCHS,
+                              EVAL_BATCH_SIZE, INPUT_FEATURES,
+                              MAX_BATCH_SIZE_DATASET_FRACTION, OUTPUT_FEATURES,
+                              TRAINER)
 from ludwig.distributed import init_dist_strategy
 from ludwig.globals import MODEL_FILE_NAME
-from tests.integration_tests.utils import (
-    binary_feature,
-    category_feature,
-    generate_data,
-    LocalTestBackend,
-    number_feature,
-    RAY_BACKEND_CONFIG,
-    sequence_feature,
-    text_feature,
-    vector_feature,
-)
+from tests.integration_tests.utils import (RAY_BACKEND_CONFIG,
+                                           LocalTestBackend, binary_feature,
+                                           category_feature, generate_data,
+                                           number_feature, sequence_feature,
+                                           text_feature, vector_feature)
 
 try:
     from ludwig.backend.horovod import HorovodBackend

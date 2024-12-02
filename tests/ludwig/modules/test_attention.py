@@ -1,14 +1,13 @@
 import pytest
 import torch
 
-from ludwig.modules.attention_modules import (
-    FeedForwardAttentionReducer,
-    MultiHeadSelfAttention,
-    TransformerBlock,
-    TransformerStack,
-)
+from ludwig.modules.attention_modules import (FeedForwardAttentionReducer,
+                                              MultiHeadSelfAttention,
+                                              TransformerBlock,
+                                              TransformerStack)
 from ludwig.utils.misc_utils import set_random_seed
-from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
+from tests.integration_tests.parameter_update_utils import \
+    check_module_parameters_updated
 
 RANDOM_SEED = 1919
 

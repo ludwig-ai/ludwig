@@ -7,16 +7,9 @@ import pytest
 import ludwig.schema.hyperopt.parameter  # noqa: F401
 import ludwig.schema.hyperopt.scheduler  # noqa: F401
 import ludwig.schema.hyperopt.search_algorithm  # noqa: F401
-from ludwig.constants import (
-    EXECUTOR,
-    HYPEROPT,
-    INPUT_FEATURES,
-    OUTPUT_FEATURES,
-    PARAMETERS,
-    SCHEDULER,
-    SEARCH_ALG,
-    TYPE,
-)
+from ludwig.constants import (EXECUTOR, HYPEROPT, INPUT_FEATURES,
+                              OUTPUT_FEATURES, PARAMETERS, SCHEDULER,
+                              SEARCH_ALG, TYPE)
 from ludwig.error import ConfigValidationError
 from ludwig.schema.hyperopt import utils
 from ludwig.schema.model_types.base import ModelConfig

@@ -19,18 +19,11 @@ import pandas as pd
 import pytest
 
 from ludwig.constants import NAME
-from tests.integration_tests.utils import (
-    bag_feature,
-    binary_feature,
-    category_feature,
-    generate_data,
-    number_feature,
-    run_experiment,
-    sequence_feature,
-    set_feature,
-    text_feature,
-    vector_feature,
-)
+from tests.integration_tests.utils import (bag_feature, binary_feature,
+                                           category_feature, generate_data,
+                                           number_feature, run_experiment,
+                                           sequence_feature, set_feature,
+                                           text_feature, vector_feature)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

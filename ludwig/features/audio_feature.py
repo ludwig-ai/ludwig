@@ -22,26 +22,22 @@ import torch
 import torchaudio
 from packaging import version
 
-from ludwig.constants import AUDIO, AUDIO_FEATURE_KEYS, COLUMN, NAME, PREPROCESSING, PROC_COLUMN, SRC, TYPE
+from ludwig.constants import (AUDIO, AUDIO_FEATURE_KEYS, COLUMN, NAME,
+                              PREPROCESSING, PROC_COLUMN, SRC, TYPE)
 from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.schema.features.audio_feature import AudioInputFeatureConfig
-from ludwig.types import FeatureMetadataDict, ModelConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
-from ludwig.utils.audio_utils import (
-    calculate_mean,
-    calculate_var,
-    get_default_audio,
-    get_fbank,
-    get_group_delay,
-    get_length_in_samp,
-    get_max_length_stft_based,
-    get_non_symmetric_length,
-    get_phase_stft_magnitude,
-    get_stft_magnitude,
-    is_torch_audio_tuple,
-    read_audio_from_bytes_obj,
-    read_audio_from_path,
-)
+from ludwig.types import (FeatureMetadataDict, ModelConfigDict,
+                          PreprocessingConfigDict, TrainingSetMetadataDict)
+from ludwig.utils.audio_utils import (calculate_mean, calculate_var,
+                                      get_default_audio, get_fbank,
+                                      get_group_delay, get_length_in_samp,
+                                      get_max_length_stft_based,
+                                      get_non_symmetric_length,
+                                      get_phase_stft_magnitude,
+                                      get_stft_magnitude, is_torch_audio_tuple,
+                                      read_audio_from_bytes_obj,
+                                      read_audio_from_path)
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import set_default_value

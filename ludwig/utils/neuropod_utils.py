@@ -107,7 +107,8 @@ def _get_output_spec(model: LudwigModel) -> List[Dict[str, Any]]:
 @DeveloperAPI
 def export_neuropod(model: LudwigModel, neuropod_path: str, neuropod_model_name="ludwig_model"):
     try:
-        from neuropod.backends.torchscript.packager import create_torchscript_neuropod
+        from neuropod.backends.torchscript.packager import \
+            create_torchscript_neuropod
     except ImportError:
         raise RuntimeError('The "neuropod" package is not installed in your environment.')
 

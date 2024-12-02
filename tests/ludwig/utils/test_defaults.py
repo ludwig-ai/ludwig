@@ -2,46 +2,21 @@ import copy
 
 import pytest
 
-from ludwig.constants import (
-    CATEGORY,
-    COMBINER,
-    DECODER,
-    DEFAULTS,
-    DEPENDENCIES,
-    DROP_ROW,
-    EARLY_STOP,
-    ENCODER,
-    EXECUTOR,
-    FILL_WITH_MODE,
-    HYPEROPT,
-    INPUT_FEATURES,
-    LOSS,
-    MISSING_VALUE_STRATEGY,
-    MODEL_ECD,
-    MODEL_TYPE,
-    OUTPUT_FEATURES,
-    PREPROCESSING,
-    REDUCE_DEPENDENCIES,
-    REDUCE_INPUT,
-    SCHEDULER,
-    SUM,
-    TIED,
-    TOP_K,
-    TRAINER,
-    TYPE,
-)
+from ludwig.constants import (CATEGORY, COMBINER, DECODER, DEFAULTS,
+                              DEPENDENCIES, DROP_ROW, EARLY_STOP, ENCODER,
+                              EXECUTOR, FILL_WITH_MODE, HYPEROPT,
+                              INPUT_FEATURES, LOSS, MISSING_VALUE_STRATEGY,
+                              MODEL_ECD, MODEL_TYPE, OUTPUT_FEATURES,
+                              PREPROCESSING, REDUCE_DEPENDENCIES, REDUCE_INPUT,
+                              SCHEDULER, SUM, TIED, TOP_K, TRAINER, TYPE)
 from ludwig.schema.model_config import ModelConfig
 from ludwig.schema.trainer import ECDTrainerConfig
-from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
+from ludwig.utils.backward_compatibility import \
+    upgrade_config_dict_to_latest_version
 from ludwig.utils.misc_utils import merge_dict, set_default_values
-from tests.integration_tests.utils import (
-    binary_feature,
-    category_feature,
-    number_feature,
-    sequence_feature,
-    text_feature,
-    vector_feature,
-)
+from tests.integration_tests.utils import (binary_feature, category_feature,
+                                           number_feature, sequence_feature,
+                                           text_feature, vector_feature)
 
 HYPEROPT_CONFIG = {
     "parameters": {

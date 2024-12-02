@@ -28,7 +28,8 @@ import yaml
 from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.callbacks import Callback
-from ludwig.constants import BATCH_SIZE, COLUMN, ENCODER, H3, NAME, PREPROCESSING, TRAINER, TYPE
+from ludwig.constants import (BATCH_SIZE, COLUMN, ENCODER, H3, NAME,
+                              PREPROCESSING, TRAINER, TYPE)
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset_df
 from ludwig.data.preprocessing import preprocess_for_training
@@ -40,29 +41,13 @@ from ludwig.predict import predict_cli
 from ludwig.utils.data_utils import read_csv
 from ludwig.utils.defaults import default_random_seed
 from tests.integration_tests.utils import (
-    audio_feature,
-    bag_feature,
-    binary_feature,
-    category_distribution_feature,
-    category_feature,
-    create_data_set_to_use,
-    date_feature,
-    ENCODERS,
-    generate_data,
+    ENCODERS, TEXT_ENCODERS, LocalTestBackend, audio_feature, bag_feature,
+    binary_feature, category_distribution_feature, category_feature,
+    create_data_set_to_use, date_feature, generate_data,
     generate_output_features_with_dependencies,
-    generate_output_features_with_dependencies_complex,
-    h3_feature,
-    image_feature,
-    LocalTestBackend,
-    number_feature,
-    run_experiment,
-    sequence_feature,
-    set_feature,
-    TEXT_ENCODERS,
-    text_feature,
-    timeseries_feature,
-    vector_feature,
-)
+    generate_output_features_with_dependencies_complex, h3_feature,
+    image_feature, number_feature, run_experiment, sequence_feature,
+    set_feature, text_feature, timeseries_feature, vector_feature)
 
 pytestmark = pytest.mark.integration_tests_d
 

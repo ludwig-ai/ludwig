@@ -14,37 +14,20 @@ import yaml
 
 import ludwig.error as ludwig_error
 from ludwig.api import LudwigModel
-from ludwig.constants import (
-    ADAPTER,
-    BACKEND,
-    BASE_MODEL,
-    BATCH_SIZE,
-    COMBINER,
-    EPOCHS,
-    EVAL_BATCH_SIZE,
-    GENERATION,
-    INPUT_FEATURES,
-    MERGE_ADAPTER_INTO_BASE_MODEL,
-    MODEL_ECD,
-    MODEL_LLM,
-    MODEL_TYPE,
-    OUTPUT_FEATURES,
-    POSTPROCESSOR,
-    PREPROCESSING,
-    PRETRAINED_ADAPTER_WEIGHTS,
-    PROGRESSBAR,
-    PROMPT,
-    QUANTIZATION,
-    TARGET_MODULES,
-    TRAINER,
-    TYPE,
-)
+from ludwig.constants import (ADAPTER, BACKEND, BASE_MODEL, BATCH_SIZE,
+                              COMBINER, EPOCHS, EVAL_BATCH_SIZE, GENERATION,
+                              INPUT_FEATURES, MERGE_ADAPTER_INTO_BASE_MODEL,
+                              MODEL_ECD, MODEL_LLM, MODEL_TYPE,
+                              OUTPUT_FEATURES, POSTPROCESSOR, PREPROCESSING,
+                              PRETRAINED_ADAPTER_WEIGHTS, PROGRESSBAR, PROMPT,
+                              QUANTIZATION, TARGET_MODULES, TRAINER, TYPE)
 from ludwig.globals import MODEL_FILE_NAME, MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.llm import LLM
 from ludwig.schema.model_types.base import ModelConfig
 from ludwig.utils.fs_utils import list_file_names_in_directory
 from ludwig.utils.types import DataFrame
-from tests.integration_tests.utils import category_feature, generate_data, text_feature
+from tests.integration_tests.utils import (category_feature, generate_data,
+                                           text_feature)
 
 pytestmark = pytest.mark.llm
 

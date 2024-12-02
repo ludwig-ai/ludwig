@@ -28,16 +28,10 @@ from ludwig.constants import BATCH_SIZE, ENCODER, TRAINER, TYPE
 from ludwig.globals import MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.models.inference import InferenceModule
 from ludwig.utils.data_utils import read_csv
-from tests.integration_tests.utils import (
-    category_feature,
-    ENCODERS,
-    generate_data,
-    get_weights,
-    image_feature,
-    run_api_experiment,
-    sequence_feature,
-    text_feature,
-)
+from tests.integration_tests.utils import (ENCODERS, category_feature,
+                                           generate_data, get_weights,
+                                           image_feature, run_api_experiment,
+                                           sequence_feature, text_feature)
 
 
 def run_api_experiment_separated_datasets(input_features, output_features, data_csv):

@@ -25,14 +25,9 @@ import torch
 from ludwig.api import LudwigModel
 from ludwig.constants import BATCH_SIZE, DECODER, NAME, TRAINER
 from ludwig.globals import MODEL_FILE_NAME
-from tests.integration_tests.utils import (
-    binary_feature,
-    category_feature,
-    generate_data,
-    RAY_BACKEND_CONFIG,
-    set_feature,
-    text_feature,
-)
+from tests.integration_tests.utils import (RAY_BACKEND_CONFIG, binary_feature,
+                                           category_feature, generate_data,
+                                           set_feature, text_feature)
 
 
 def random_binary_logits(*args, num_predict_samples, **kwargs):

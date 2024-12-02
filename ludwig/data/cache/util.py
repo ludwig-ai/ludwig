@@ -1,5 +1,6 @@
 import ludwig
-from ludwig.constants import DEFAULTS, INPUT_FEATURES, OUTPUT_FEATURES, PREPROCESSING, PROC_COLUMN, TYPE
+from ludwig.constants import (DEFAULTS, INPUT_FEATURES, OUTPUT_FEATURES,
+                              PREPROCESSING, PROC_COLUMN, TYPE)
 from ludwig.data.cache.types import CacheableDataset
 from ludwig.types import ModelConfigDict
 from ludwig.utils.data_utils import hash_dict

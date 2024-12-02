@@ -3,7 +3,8 @@ import math
 from typing import Any, Callable, Dict
 
 from torch.optim import Optimizer
-from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts, LambdaLR, ReduceLROnPlateau, SequentialLR
+from torch.optim.lr_scheduler import (CosineAnnealingWarmRestarts, LambdaLR,
+                                      ReduceLROnPlateau, SequentialLR)
 
 from ludwig.constants import MINIMIZE, TRAINING, VALIDATION
 from ludwig.modules.metric_registry import get_metric_objective

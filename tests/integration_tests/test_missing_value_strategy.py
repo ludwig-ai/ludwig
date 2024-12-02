@@ -20,20 +20,14 @@ import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import BATCH_SIZE, COLUMN, DROP_ROW, FILL_WITH_MEAN, PREPROCESSING, PROC_COLUMN, TRAINER
+from ludwig.constants import (BATCH_SIZE, COLUMN, DROP_ROW, FILL_WITH_MEAN,
+                              PREPROCESSING, PROC_COLUMN, TRAINER)
 from ludwig.globals import MODEL_FILE_NAME
-from tests.integration_tests.utils import (
-    binary_feature,
-    category_feature,
-    generate_data,
-    LocalTestBackend,
-    number_feature,
-    read_csv_with_nan,
-    sequence_feature,
-    set_feature,
-    text_feature,
-    vector_feature,
-)
+from tests.integration_tests.utils import (LocalTestBackend, binary_feature,
+                                           category_feature, generate_data,
+                                           number_feature, read_csv_with_nan,
+                                           sequence_feature, set_feature,
+                                           text_feature, vector_feature)
 
 
 def test_missing_value_prediction(tmpdir, csv_filename):

@@ -6,30 +6,31 @@ import numpy as np
 import pytest
 import torch
 
-from ludwig.combiners.combiners import (
-    ComparatorCombiner,
-    ConcatCombiner,
-    ProjectAggregateCombiner,
-    SequenceCombiner,
-    SequenceConcatCombiner,
-    TabNetCombiner,
-    TabTransformerCombiner,
-    TransformerCombiner,
-)
-from ludwig.constants import CATEGORY, ENCODER_OUTPUT, ENCODER_OUTPUT_STATE, TYPE
+from ludwig.combiners.combiners import (ComparatorCombiner, ConcatCombiner,
+                                        ProjectAggregateCombiner,
+                                        SequenceCombiner,
+                                        SequenceConcatCombiner, TabNetCombiner,
+                                        TabTransformerCombiner,
+                                        TransformerCombiner)
+from ludwig.constants import (CATEGORY, ENCODER_OUTPUT, ENCODER_OUTPUT_STATE,
+                              TYPE)
 from ludwig.encoders.registry import get_sequence_encoder_registry
 from ludwig.schema.combiners.comparator import ComparatorCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
-from ludwig.schema.combiners.project_aggregate import ProjectAggregateCombinerConfig
+from ludwig.schema.combiners.project_aggregate import \
+    ProjectAggregateCombinerConfig
 from ludwig.schema.combiners.sequence import SequenceCombinerConfig
-from ludwig.schema.combiners.sequence_concat import SequenceConcatCombinerConfig
-from ludwig.schema.combiners.tab_transformer import TabTransformerCombinerConfig
+from ludwig.schema.combiners.sequence_concat import \
+    SequenceConcatCombinerConfig
+from ludwig.schema.combiners.tab_transformer import \
+    TabTransformerCombinerConfig
 from ludwig.schema.combiners.tabnet import TabNetCombinerConfig
 from ludwig.schema.combiners.transformer import TransformerCombinerConfig
 from ludwig.schema.utils import load_config
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.torch_utils import get_torch_device
-from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
+from tests.integration_tests.parameter_update_utils import \
+    check_module_parameters_updated
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

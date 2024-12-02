@@ -21,7 +21,8 @@ import pytest
 from ludwig.backend import initialize_backend
 from ludwig.constants import COLUMN, NAME, PROC_COLUMN
 from ludwig.features.feature_utils import compute_feature_hash
-from ludwig.features.number_feature import NumberFeatureMixin, numeric_transformation_registry
+from ludwig.features.number_feature import (NumberFeatureMixin,
+                                            numeric_transformation_registry)
 from ludwig.utils.types import DataFrame
 
 
