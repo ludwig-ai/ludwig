@@ -27,22 +27,31 @@ keywords = [
 dependencies = [
     "absl-py",
     "bitsandbytes<0.41.0",
+    "captum",
     "Cython>=0.25,<1.0",
+    "cloudpickle",
     "dataclasses-json",
     "datasets",
+    "fastapi",
     "filelock",
     "fsspec[http]<=2023.10.0",
     "getdaft==0.1.20",
     "gpustat",
     "h5py>=2.6,!=3.0.0",
+    "httpx",
     "html5lib",
+    "hummingbird",
+    "hummingbird.ml",
     "imagecodecs",
     "jsonschema>=4.5.0,<4.7",
     "kaggle",
+    "lightgbm",
     "lxml",
     "marshmallow",
     "marshmallow-dataclass==8.5.4",
     "marshmallow-jsonschema",
+    "matplotlib>=3.5,<3.8",
+    "mlflow",
     "nltk",
     "numpy==1.26",
     "openpyxl>=3.0.7",
@@ -50,6 +59,7 @@ dependencies = [
     "pandas",
     "protobuf",
     "psutil",
+    "ptitprince",
     "py-cpuinfo==9.0.0",
     "pyarrow<15.0.0",
     "pydantic<2.0",
@@ -80,6 +90,9 @@ dependencies = [
     "xlwt",
     "tifffile==2024.9.20",
     "onnx",
+    "wget",
+    "starlette",
+    "uvicorn"
 ]
 
 [project.optional-dependencies]
@@ -153,10 +166,9 @@ serve = [
 tree = ["hummingbird-ml>=0.4.8", "lightgbm", "lightgbm-ray"]
 viz = [
     "hiplot",
-    "matplotlib>3.4,<3.9.0; python_version > '3.6'",
-    "matplotlib>=3.0,<3.4; python_version <= '3.6'",
+    "matplotlib",
     "ptitprince",
-    "seaborn>=0.7,<0.12",
+    "seaborn",
 ]
 
 [project.urls]
@@ -195,6 +207,9 @@ ignore = [
     "E275",
     "E501",
 ]
+
+[tool.hatch.envs.test]
+dependencies = ["cloudpickle","matplotlib"]
 
 [tool.hatch.envs.lint]
 dependencies = ["flake8", "flake8-pyproject"]

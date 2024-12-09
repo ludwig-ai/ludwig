@@ -21,7 +21,7 @@ from typing import Dict, List
 
 import numpy as np
 import pandas as pd
-import ptitprince as pt
+#import ptitprince as pt
 from packaging import version
 
 from ludwig.constants import SPACE, TRAINING, VALIDATION
