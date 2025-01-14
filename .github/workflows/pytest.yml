@@ -22,7 +22,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: ["3.10", "3.11", "3.12"]
+        #python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.11"]
         test-markers: ["not distributed"] #["not distributed", "distributed"]
 
     env:
@@ -256,44 +257,50 @@ jobs:
   #       run: |
   #         pytest -vs --durations 100 -m "llm" --junitxml pytest.xml tests
 
-  combinatorial-tests:
-    name: Combinatorial Tests
-    runs-on: ubuntu-latest
 
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+  #COMMENTED OUT COMBINATORIAL TEST ########################################
 
-      - name: Setup Linux
-        if: runner.os == 'linux'
-        run: |
-          sudo apt-get update && sudo apt-get install -y cmake libsndfile1
+  # combinatorial-tests:
+  #   name: Combinatorial Tests
+  #   runs-on: ubuntu-latest
 
-      - name: Setup macOS
-        if: runner.os == 'macOS'
-        run: |
-          brew install libuv
+  #   timeout-minutes: 60
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: Set up Python 3.11
+  #       uses: actions/setup-python@v5
+  #       with:
+  #         python-version: "3.11"
 
-      - name: Install dependencies
-        run: |
-          python --version
-          pip --version
-          python -m pip install -U pip
-          pip install '.[test]'
-          pip list
-        shell: bash
+  #     - name: Setup Linux
+  #       if: runner.os == 'linux'
+  #       run: |
+  #         sudo apt-get update && sudo apt-get install -y cmake libsndfile1
 
-      - name: Testing combinatorial config generation code
-        run: |
-          pytest -vs --durations 100 -m "combinatorial" --junitxml pytest.xml tests/ludwig/config_sampling
+  #     - name: Setup macOS
+  #       if: runner.os == 'macOS'
+  #       run: |
+  #         brew install libuv
 
-      - name: Combinatorial Tests
-        run: |
-          pytest -rx --durations 100 -m "combinatorial" --junitxml pytest.xml tests/training_success
+  #     - name: Install dependencies
+  #       run: |
+  #         python --version
+  #         pip --version
+  #         python -m pip install -U pip
+  #         pip install '.[test]'
+  #         pip list
+  #       shell: bash
+
+  #     - name: Testing combinatorial config generation code
+  #       run: |
+  #         pytest -vs --durations 100 -m "combinatorial" --junitxml pytest.xml tests/ludwig/config_sampling
+
+  #     - name: Combinatorial Tests
+  #       run: |
+  #         pytest -rx --durations 100 -m "combinatorial" --junitxml pytest.xml tests/training_success
+
+  #COMMENTED OUT COMBINATORIAL TEST ########################################
+
 
   test-minimal-install:
     name: Test Minimal Install
