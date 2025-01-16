@@ -66,8 +66,8 @@ jobs:
 
       - name: Download longintrepr.h
         run: |
-          mkdir -p /usr/include/python3.11
-          curl -o /usr/include/python3.11/longintrepr.h https://raw.githubusercontent.com/python/cpython/refs/heads/main/Include/cpython/longintrepr.h
+          sudo mkdir -p /usr/include/python3.11
+          sudo curl -o /usr/include/python3.11/longintrepr.h https://raw.githubusercontent.com/python/cpython/refs/heads/main/Include/cpython/longintrepr.h
           
 
       - name: Install GPy
