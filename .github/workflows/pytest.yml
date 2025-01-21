@@ -103,6 +103,23 @@ jobs:
           pip list
         shell: bash
 
+      - name: Incremental dependency installation
+        run: |
+          pip install bayesian-optimization
+          pip install optuna
+          pip install ax-platform
+          pip install scikit-optimize
+          pip install --prefer-binary .[test]
+        shell: bash
+
+      - name: Debug dependency tree
+        run: |
+          python -m pip install pipdeptree
+          pipdeptree > dependency-tree.txt
+          cat dependency-tree.txt
+        shell: bash
+
+
       - name: Unit Tests
         run: |
           RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod and not llm" --junitxml pytest.xml tests/ludwig
