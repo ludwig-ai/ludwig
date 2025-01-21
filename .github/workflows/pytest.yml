@@ -70,11 +70,11 @@ jobs:
           sudo curl -o /usr/include/python3.11/longintrepr.h https://raw.githubusercontent.com/python/cpython/refs/heads/main/Include/cpython/longintrepr.h
           
 
-      - name: Install GPy
-        run: |
-          python -m pip install -U pip
-          pip install Cython==0.29.35
-          pip install GPy==1.10.0
+      # - name: Install GPy
+      #   run: |
+      #     python -m pip install -U pip
+      #     pip install Cython==0.29.35
+      #     pip install GPy==1.10.0
 
       - name: Setup macOS
         if: runner.os == 'macOS'
@@ -100,7 +100,8 @@ jobs:
           python -m pip install -U pip
           cmake --version
 
-          pip install --prefer-binary '.[test]'
+        #  #pip install --prefer-binary '.[test]'
+          pip install --prefer-binary .
           pip list
         shell: bash
 
