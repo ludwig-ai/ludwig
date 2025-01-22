@@ -105,31 +105,38 @@ jobs:
 
       - name: Incremental dependency installation
         run: |
-          pip install bayesian-optimization
+          pip install pytest
+          echo "Installed pytest successfully."
 
-          echo "-------------------------------"
-          echo "done with bayesian-optimization"
-          echo "-------------------------------"
+          pip install pytest-timeout
+          echo "Installed pytest-timeout successfully."
 
-          pip install optuna
+          pip install pytest-cov
+          echo "Installed pytest-cov successfully."
 
-          echo "-------------------------------"
-          echo "done with optuna"
-          echo "-------------------------------"
+          pip install tifffile
+          echo "Installed tifffile successfully."
 
-          pip install ax-platform
+          pip install wget
+          echo "Installed wget successfully."
 
-          echo "-------------------------------"
-          echo "done with ax-platform"
-          echo "-------------------------------"
+          pip install six>=1.13.0
+          echo "Installed six>=1.13.0 successfully."
 
-          pip install scikit-optimize
+          pip install aim
+          echo "Installed aim successfully."
 
-          echo "-------------------------------"
-          echo "scikit-optimize"
-          echo "-------------------------------"
+          pip install wandb
+          echo "Installed wandb successfully."
 
+          pip install comet_ml
+          echo "Installed comet_ml successfully."
 
+          pip install mlflow
+          echo "Installed mlflow successfully."
+
+          pip install sqlachemy<2
+          echo "Installed sqlachemy<2 successfully."
         shell: bash
 
       - name: Debug dependency tree
