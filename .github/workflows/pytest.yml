@@ -106,10 +106,30 @@ jobs:
       - name: Incremental dependency installation
         run: |
           pip install bayesian-optimization
+
+          echo "-------------------------------"
+          echo "done with bayesian-optimization"
+          echo "-------------------------------"
+
           pip install optuna
+
+          echo "-------------------------------"
+          echo "done with optuna"
+          echo "-------------------------------"
+
           pip install ax-platform
+
+          echo "-------------------------------"
+          echo "done with ax-platform"
+          echo "-------------------------------"
+
           pip install scikit-optimize
-          pip install --prefer-binary .[test]
+
+          echo "-------------------------------"
+          echo "scikit-optimize"
+          echo "-------------------------------"
+
+
         shell: bash
 
       - name: Debug dependency tree
