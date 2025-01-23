@@ -160,6 +160,52 @@ jobs:
           echo "Installed s3fs>=2022.8.2 successfully."
         shell: bash
 
+
+      - name: Install distributed, explain, and extra dependencies
+        run: |
+          # Distributed dependencies
+          pip install awscli
+          echo "Installed distributed dependency: awscli successfully."
+
+          pip install "dask[dataframe]<2023.4.0"
+          echo "Installed distributed dependency: dask[dataframe]<2023.4.0 successfully."
+
+          pip install "deepspeed!=0.11.0,<0.13.0"
+          echo "Installed distributed dependency: deepspeed!=0.11.0,<0.13.0 successfully."
+
+          pip install "getdaft[ray]==0.1.20"
+          echo "Installed distributed dependency: getdaft[ray]==0.1.20 successfully."
+
+          pip install GPUtil
+          echo "Installed distributed dependency: GPUtil successfully."
+
+          pip install pyarrow
+          echo "Installed distributed dependency: pyarrow successfully."
+
+          pip install "ray[default,data,serve,tune]==2.3.1"
+          echo "Installed distributed dependency: ray[default,data,serve,tune]==2.3.1 successfully."
+
+          pip install tblib
+          echo "Installed distributed dependency: tblib successfully."
+
+          pip install "tensorboardX<2.3"
+          echo "Installed distributed dependency: tensorboardX<2.3 successfully."
+
+          # Explain dependencies
+          pip install captum
+          echo "Installed explain dependency: captum successfully."
+
+          # Extra dependencies
+          pip install "horovod[pytorch]>=0.24.0,!=0.26.0"
+          echo "Installed extra dependency: horovod[pytorch]>=0.24.0,!=0.26.0 successfully."
+
+          pip install "modin[ray]"
+          echo "Installed extra dependency: modin[ray] successfully."
+
+          pip install "predibase>=2023.10.2"
+          echo "Installed extra dependency: predibase>=2023.10.2 successfully."
+
+
       - name: Debug dependency tree
         run: |
           python -m pip install pipdeptree
