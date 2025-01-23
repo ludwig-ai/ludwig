@@ -99,186 +99,187 @@ jobs:
           pip --version
           python -m pip install -U pip
           cmake --version
-          pip install --prefer-binary .
+        #  pip install --prefer-binary .
           pip list
         shell: bash
 
-      - name: Incremental dependency installation
-        run: |
-          pip install pytest
-          echo "Installed pytest successfully."
+      # - name: Incremental dependency installation
+      #   run: |
+      #     pip install pytest
+      #     echo "Installed pytest successfully."
 
-          pip install pytest-timeout
-          echo "Installed pytest-timeout successfully."
+      #     pip install pytest-timeout
+      #     echo "Installed pytest-timeout successfully."
 
-          pip install pytest-cov
-          echo "Installed pytest-cov successfully."
+      #     pip install pytest-cov
+      #     echo "Installed pytest-cov successfully."
 
-          pip install tifffile
-          echo "Installed tifffile successfully."
+      #     pip install tifffile
+      #     echo "Installed tifffile successfully."
 
-          pip install wget
-          echo "Installed wget successfully."
+      #     pip install wget
+      #     echo "Installed wget successfully."
 
-          pip install six>=1.13.0
-          echo "Installed six>=1.13.0 successfully."
+      #     pip install six>=1.13.0
+      #     echo "Installed six>=1.13.0 successfully."
 
-          pip install aim
-          echo "Installed aim successfully."
+      #     pip install aim
+      #     echo "Installed aim successfully."
 
-          pip install wandb
-          echo "Installed wandb successfully."
+      #     pip install wandb
+      #     echo "Installed wandb successfully."
 
-          pip install comet_ml
-          echo "Installed comet_ml successfully."
+      #     pip install comet_ml
+      #     echo "Installed comet_ml successfully."
 
-          pip install mlflow
-          echo "Installed mlflow successfully."
+      #     pip install mlflow
+      #     echo "Installed mlflow successfully."
 
-          pip install "sqlalchemy<2"
-          echo "Installed sqlalchemy<2 successfully."
+      #     pip install "sqlalchemy<2"
+      #     echo "Installed sqlalchemy<2 successfully."
 
-          pip install hpbandster
-          echo "Installed hpbandster successfully."
+      #     pip install hpbandster
+      #     echo "Installed hpbandster successfully."
 
-          pip install ConfigSpace==0.7.1
-          echo "Installed ConfigSpace==0.7.1 successfully."
+      #     pip install ConfigSpace==0.7.1
+      #     echo "Installed ConfigSpace==0.7.1 successfully."
 
-          pip install flaml[blendsearch]
-          echo "Installed flaml[blendsearch] successfully."
+      #     pip install flaml[blendsearch]
+      #     echo "Installed flaml[blendsearch] successfully."
 
-          pip install HEBO
-          echo "Installed HEBO successfully."
+      #     pip install HEBO
+      #     echo "Installed HEBO successfully."
 
-          pip install nevergrad
-          echo "Installed nevergrad successfully."
+      #     pip install nevergrad
+      #     echo "Installed nevergrad successfully."
 
-          pip install zoopt
-          echo "Installed zoopt successfully."
+      #     pip install zoopt
+      #     echo "Installed zoopt successfully."
 
-          pip install s3fs>=2022.8.2
-          echo "Installed s3fs>=2022.8.2 successfully."
-        shell: bash
-
-
-      - name: Install distributed, explain, and extra dependencies
-        run: |
-          # Distributed dependencies
-          pip install awscli
-          echo "Installed distributed dependency: awscli successfully."
-
-          pip install "dask[dataframe]<2023.4.0"
-          echo "Installed distributed dependency: dask[dataframe]<2023.4.0 successfully."
-
-          pip install "deepspeed!=0.11.0,<0.13.0"
-          echo "Installed distributed dependency: deepspeed!=0.11.0,<0.13.0 successfully."
-
-          pip install "getdaft[ray]==0.1.20"
-          echo "Installed distributed dependency: getdaft[ray]==0.1.20 successfully."
-
-          pip install GPUtil
-          echo "Installed distributed dependency: GPUtil successfully."
-
-          pip install pyarrow
-          echo "Installed distributed dependency: pyarrow successfully."
-
-          pip install "ray[default,data,serve,tune]==2.3.1"
-          echo "Installed distributed dependency: ray[default,data,serve,tune]==2.3.1 successfully."
-
-          pip install tblib
-          echo "Installed distributed dependency: tblib successfully."
-
-          pip install "tensorboardX<2.3"
-          echo "Installed distributed dependency: tensorboardX<2.3 successfully."
-
-          # Explain dependencies
-          pip install captum
-          echo "Installed explain dependency: captum successfully."
-
-          # Extra dependencies
-          pip install "horovod[pytorch]>=0.24.0,!=0.26.0"
-          echo "Installed extra dependency: horovod[pytorch]>=0.24.0,!=0.26.0 successfully."
-
-          pip install "modin[ray]"
-          echo "Installed extra dependency: modin[ray] successfully."
-
-          pip install "predibase>=2023.10.2"
-          echo "Installed extra dependency: predibase>=2023.10.2 successfully."
+      #     pip install s3fs>=2022.8.2
+      #     echo "Installed s3fs>=2022.8.2 successfully."
+      #   shell: bash
 
 
-      - name: Install hyperopt, llm, serve, tree, and viz dependencies
-        run: |
-          # Hyperopt dependencies
-          pip install hyperopt
-          echo "Installed hyperopt successfully."
+      # - name: Install distributed, explain, and extra dependencies
+      #   run: |
+      #     # Distributed dependencies
+      #     pip install awscli
+      #     echo "Installed distributed dependency: awscli successfully."
 
-          pip install "ray[default,tune]>=2.0.0"
-          echo "Installed hyperopt dependency: ray[default,tune]>=2.0.0 successfully."
+      #     pip install "dask[dataframe]<2023.4.0"
+      #     echo "Installed distributed dependency: dask[dataframe]<2023.4.0 successfully."
 
-          # LLM dependencies
-          pip install accelerate
-          echo "Installed llm dependency: accelerate successfully."
+      #     pip install "deepspeed!=0.11.0,<0.13.0"
+      #     echo "Installed distributed dependency: deepspeed!=0.11.0,<0.13.0 successfully."
 
-          pip install faiss-cpu
-          echo "Installed llm dependency: faiss-cpu successfully."
+      #     pip install "getdaft[ray]==0.1.20"
+      #     echo "Installed distributed dependency: getdaft[ray]==0.1.20 successfully."
 
-          pip install loralib
-          echo "Installed llm dependency: loralib successfully."
+      #     pip install GPUtil
+      #     echo "Installed distributed dependency: GPUtil successfully."
 
-          pip install "peft>=0.10.0"
-          echo "Installed llm dependency: peft>=0.10.0 successfully."
+      #     pip install pyarrow
+      #     echo "Installed distributed dependency: pyarrow successfully."
 
-          pip install sentence-transformers
-          echo "Installed llm dependency: sentence-transformers successfully."
+      #     pip install "ray[default,data,serve,tune]==2.3.1"
+      #     echo "Installed distributed dependency: ray[default,data,serve,tune]==2.3.1 successfully."
 
-          # Serve dependencies
-          pip install cartonml-nightly
-          echo "Installed serve dependency: cartonml-nightly successfully."
+      #     pip install tblib
+      #     echo "Installed distributed dependency: tblib successfully."
 
-          pip install fastapi
-          echo "Installed serve dependency: fastapi successfully."
+      #     pip install "tensorboardX<2.3"
+      #     echo "Installed distributed dependency: tensorboardX<2.3 successfully."
 
-          pip install httpx
-          echo "Installed serve dependency: httpx successfully."
+      #     # Explain dependencies
+      #     pip install captum
+      #     echo "Installed explain dependency: captum successfully."
 
-          pip install "neuropod==0.3.0rc6 ; platform_system != 'Windows' and python_version < '3.9'"
-          echo "Installed serve dependency: neuropod==0.3.0rc6 successfully (if applicable)."
+      #     # Extra dependencies
+      #     pip install "horovod[pytorch]>=0.24.0,!=0.26.0"
+      #     echo "Installed extra dependency: horovod[pytorch]>=0.24.0,!=0.26.0 successfully."
 
-          pip install python-multipart
-          echo "Installed serve dependency: python-multipart successfully."
+      #     pip install "modin[ray]"
+      #     echo "Installed extra dependency: modin[ray] successfully."
 
-          pip install uvicorn
-          echo "Installed serve dependency: uvicorn successfully."
+      #     pip install "predibase>=2023.10.2"
+      #     echo "Installed extra dependency: predibase>=2023.10.2 successfully."
 
-          pip install starlette
-          echo "Installed serve dependency: starlette successfully."
 
-          # Tree dependencies
-          pip install "hummingbird-ml>=0.4.8"
-          echo "Installed tree dependency: hummingbird-ml>=0.4.8 successfully."
+      # - name: Install hyperopt, llm, serve, tree, and viz dependencies
+      #   run: |
+      #     # Hyperopt dependencies
+      #     pip install hyperopt
+      #     echo "Installed hyperopt successfully."
 
-          pip install lightgbm
-          echo "Installed tree dependency: lightgbm successfully."
+      #     pip install "ray[default,tune]>=2.0.0"
+      #     echo "Installed hyperopt dependency: ray[default,tune]>=2.0.0 successfully."
 
-          pip install lightgbm-ray
-          echo "Installed tree dependency: lightgbm-ray successfully."
+      #     # LLM dependencies
+      #     pip install accelerate
+      #     echo "Installed llm dependency: accelerate successfully."
 
-          # Viz dependencies
-          pip install hiplot
-          echo "Installed viz dependency: hiplot successfully."
+      #     pip install faiss-cpu
+      #     echo "Installed llm dependency: faiss-cpu successfully."
 
-          pip install "matplotlib==3.9.3"
-          echo "Installed viz dependency: matplotlib==3.9.3 successfully."
+      #     pip install loralib
+      #     echo "Installed llm dependency: loralib successfully."
 
-          pip install ptitprince
-          echo "Installed viz dependency: ptitprince successfully."
+      #     pip install "peft>=0.10.0"
+      #     echo "Installed llm dependency: peft>=0.10.0 successfully."
 
-          pip install "seaborn>=0.7,<0.12"
-          echo "Installed viz dependency: seaborn>=0.7,<0.12 successfully."
+      #     pip install sentence-transformers
+      #     echo "Installed llm dependency: sentence-transformers successfully."
+
+      #     # Serve dependencies
+      #     pip install cartonml-nightly
+      #     echo "Installed serve dependency: cartonml-nightly successfully."
+
+      #     pip install fastapi
+      #     echo "Installed serve dependency: fastapi successfully."
+
+      #     pip install httpx
+      #     echo "Installed serve dependency: httpx successfully."
+
+      #     pip install "neuropod==0.3.0rc6 ; platform_system != 'Windows' and python_version < '3.9'"
+      #     echo "Installed serve dependency: neuropod==0.3.0rc6 successfully (if applicable)."
+
+      #     pip install python-multipart
+      #     echo "Installed serve dependency: python-multipart successfully."
+
+      #     pip install uvicorn
+      #     echo "Installed serve dependency: uvicorn successfully."
+
+      #     pip install starlette
+      #     echo "Installed serve dependency: starlette successfully."
+
+      #     # Tree dependencies
+      #     pip install "hummingbird-ml>=0.4.8"
+      #     echo "Installed tree dependency: hummingbird-ml>=0.4.8 successfully."
+
+      #     pip install lightgbm
+      #     echo "Installed tree dependency: lightgbm successfully."
+
+      #     pip install lightgbm-ray
+      #     echo "Installed tree dependency: lightgbm-ray successfully."
+
+      #     # Viz dependencies
+      #     pip install hiplot
+      #     echo "Installed viz dependency: hiplot successfully."
+
+      #     pip install "matplotlib==3.9.3"
+      #     echo "Installed viz dependency: matplotlib==3.9.3 successfully."
+
+      #     pip install ptitprince
+      #     echo "Installed viz dependency: ptitprince successfully."
+
+      #     pip install "seaborn>=0.7,<0.12"
+      #     echo "Installed viz dependency: seaborn>=0.7,<0.12 successfully."
 
       - name: Test install all
         run : |
-          pip install --prefer-binary .
+          pip install .[dev,test,benchmarking,distributed,explain,extra,hyperopt,llm,serve,tree,viz]
+
 
       - name: Debug dependency tree
         run: |
