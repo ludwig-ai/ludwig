@@ -206,6 +206,76 @@ jobs:
           echo "Installed extra dependency: predibase>=2023.10.2 successfully."
 
 
+      - name: Install hyperopt, llm, serve, tree, and viz dependencies
+        run: |
+          # Hyperopt dependencies
+          pip install hyperopt
+          echo "Installed hyperopt successfully."
+
+          pip install "ray[default,tune]>=2.0.0"
+          echo "Installed hyperopt dependency: ray[default,tune]>=2.0.0 successfully."
+
+          # LLM dependencies
+          pip install accelerate
+          echo "Installed llm dependency: accelerate successfully."
+
+          pip install faiss-cpu
+          echo "Installed llm dependency: faiss-cpu successfully."
+
+          pip install loralib
+          echo "Installed llm dependency: loralib successfully."
+
+          pip install "peft>=0.10.0"
+          echo "Installed llm dependency: peft>=0.10.0 successfully."
+
+          pip install sentence-transformers
+          echo "Installed llm dependency: sentence-transformers successfully."
+
+          # Serve dependencies
+          pip install cartonml-nightly
+          echo "Installed serve dependency: cartonml-nightly successfully."
+
+          pip install fastapi
+          echo "Installed serve dependency: fastapi successfully."
+
+          pip install httpx
+          echo "Installed serve dependency: httpx successfully."
+
+          pip install "neuropod==0.3.0rc6 ; platform_system != 'Windows' and python_version < '3.9'"
+          echo "Installed serve dependency: neuropod==0.3.0rc6 successfully (if applicable)."
+
+          pip install python-multipart
+          echo "Installed serve dependency: python-multipart successfully."
+
+          pip install uvicorn
+          echo "Installed serve dependency: uvicorn successfully."
+
+          pip install starlette
+          echo "Installed serve dependency: starlette successfully."
+
+          # Tree dependencies
+          pip install "hummingbird-ml>=0.4.8"
+          echo "Installed tree dependency: hummingbird-ml>=0.4.8 successfully."
+
+          pip install lightgbm
+          echo "Installed tree dependency: lightgbm successfully."
+
+          pip install lightgbm-ray
+          echo "Installed tree dependency: lightgbm-ray successfully."
+
+          # Viz dependencies
+          pip install hiplot
+          echo "Installed viz dependency: hiplot successfully."
+
+          pip install "matplotlib==3.9.3"
+          echo "Installed viz dependency: matplotlib==3.9.3 successfully."
+
+          pip install ptitprince
+          echo "Installed viz dependency: ptitprince successfully."
+
+          pip install "seaborn>=0.7,<0.12"
+          echo "Installed viz dependency: seaborn>=0.7,<0.12 successfully."
+
       - name: Debug dependency tree
         run: |
           python -m pip install pipdeptree
