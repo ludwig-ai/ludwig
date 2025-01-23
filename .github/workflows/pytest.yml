@@ -153,8 +153,8 @@ jobs:
           pip install nevergrad
           echo "Installed nevergrad successfully."
 
-          pip install zoopy
-          echo "Installed zoopy successfully."
+          pip install zoopt
+          echo "Installed zoopt successfully."
 
           pip install s3fs>=2022.8.2
           echo "Installed s3fs>=2022.8.2 successfully."
