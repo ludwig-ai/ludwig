@@ -99,7 +99,6 @@ jobs:
           pip --version
           python -m pip install -U pip
           cmake --version
-        #  pip install --prefer-binary .
           pip list
         shell: bash
 
