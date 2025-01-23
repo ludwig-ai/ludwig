@@ -135,7 +135,7 @@ jobs:
           pip install mlflow
           echo "Installed mlflow successfully."
 
-          pip install sqlalchemy<2
+          pip install "sqlalchemy<2"
           echo "Installed sqlalchemy<2 successfully."
 
           pip install hpbandster
