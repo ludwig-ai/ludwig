@@ -102,182 +102,207 @@ jobs:
           pip list
         shell: bash
 
-      # - name: Incremental dependency installation
-      #   run: |
-      #     pip install pytest
-      #     echo "Installed pytest successfully."
+      - name: Install Dependencies for Group: dev
+        run: |
+          pip install flake8
+          echo "Installed flake8 successfully."
 
-      #     pip install pytest-timeout
-      #     echo "Installed pytest-timeout successfully."
+          pip install flake8-pyproject
+          echo "Installed flake8-pyproject successfully."
 
-      #     pip install pytest-cov
-      #     echo "Installed pytest-cov successfully."
+          pip install pre-commit
+          echo "Installed pre-commit successfully."
 
-      #     pip install tifffile
-      #     echo "Installed tifffile successfully."
+          pip install setuptools
+          echo "Installed setuptools successfully."
 
-      #     pip install wget
-      #     echo "Installed wget successfully."
+      - name: Install Dependencies for Group: test
+        run: |
+          pip install pytest
+          echo "Installed pytest successfully."
 
-      #     pip install six>=1.13.0
-      #     echo "Installed six>=1.13.0 successfully."
+          pip install pytest-timeout
+          echo "Installed pytest-timeout successfully."
 
-      #     pip install aim
-      #     echo "Installed aim successfully."
+          pip install pytest-cov
+          echo "Installed pytest-cov successfully."
 
-      #     pip install wandb
-      #     echo "Installed wandb successfully."
+          pip install tifffile
+          echo "Installed tifffile successfully."
 
-      #     pip install comet_ml
-      #     echo "Installed comet_ml successfully."
+          pip install wget
+          echo "Installed wget successfully."
 
-      #     pip install mlflow
-      #     echo "Installed mlflow successfully."
+          pip install six>=1.13.0
+          echo "Installed six successfully."
 
-      #     pip install "sqlalchemy<2"
-      #     echo "Installed sqlalchemy<2 successfully."
+          pip install aim
+          echo "Installed aim successfully."
 
-      #     pip install hpbandster
-      #     echo "Installed hpbandster successfully."
+          pip install wandb
+          echo "Installed wandb successfully."
 
-      #     pip install ConfigSpace==0.7.1
-      #     echo "Installed ConfigSpace==0.7.1 successfully."
+          pip install comet_ml
+          echo "Installed comet_ml successfully."
 
-      #     pip install flaml[blendsearch]
-      #     echo "Installed flaml[blendsearch] successfully."
+          pip install mlflow
+          echo "Installed mlflow successfully."
 
-      #     pip install HEBO
-      #     echo "Installed HEBO successfully."
+          pip install sqlalchemy<2
+          echo "Installed sqlalchemy successfully."
 
-      #     pip install nevergrad
-      #     echo "Installed nevergrad successfully."
+          pip install hpbandster
+          echo "Installed hpbandster successfully."
 
-      #     pip install zoopt
-      #     echo "Installed zoopt successfully."
+          pip install ConfigSpace==0.7.1
+          echo "Installed ConfigSpace successfully."
 
-      #     pip install s3fs>=2022.8.2
-      #     echo "Installed s3fs>=2022.8.2 successfully."
-      #   shell: bash
+          pip install ax-platform
+          echo "Installed ax-platform successfully."
 
+          pip install bayesian-optimization
+          echo "Installed bayesian-optimization successfully."
 
-      # - name: Install distributed, explain, and extra dependencies
-      #   run: |
-      #     # Distributed dependencies
-      #     pip install awscli
-      #     echo "Installed distributed dependency: awscli successfully."
+          pip install flaml[blendsearch]
+          echo "Installed flaml[blendsearch] successfully."
 
-      #     pip install "dask[dataframe]<2023.4.0"
-      #     echo "Installed distributed dependency: dask[dataframe]<2023.4.0 successfully."
+          pip install HEBO
+          echo "Installed HEBO successfully."
 
-      #     pip install "deepspeed!=0.11.0,<0.13.0"
-      #     echo "Installed distributed dependency: deepspeed!=0.11.0,<0.13.0 successfully."
+          pip install nevergrad
+          echo "Installed nevergrad successfully."
 
-      #     pip install "getdaft[ray]==0.1.20"
-      #     echo "Installed distributed dependency: getdaft[ray]==0.1.20 successfully."
+          pip install optuna
+          echo "Installed optuna successfully."
 
-      #     pip install GPUtil
-      #     echo "Installed distributed dependency: GPUtil successfully."
+          pip install scikit-optimize
+          echo "Installed scikit-optimize successfully."
 
-      #     pip install pyarrow
-      #     echo "Installed distributed dependency: pyarrow successfully."
+          pip install zoopt
+          echo "Installed zoopt successfully."
 
-      #     pip install "ray[default,data,serve,tune]==2.3.1"
-      #     echo "Installed distributed dependency: ray[default,data,serve,tune]==2.3.1 successfully."
+      - name: Install Dependencies for Group: benchmarking
+        run: |
+          pip install s3fs>=2022.8.2
+          echo "Installed s3fs successfully."
 
-      #     pip install tblib
-      #     echo "Installed distributed dependency: tblib successfully."
+      - name: Install Dependencies for Group: distributed
+        run: |
+          pip install awscli
+          echo "Installed awscli successfully."
 
-      #     pip install "tensorboardX<2.3"
-      #     echo "Installed distributed dependency: tensorboardX<2.3 successfully."
+          pip install dask[dataframe]<2023.4.0
+          echo "Installed dask[dataframe] successfully."
 
-      #     # Explain dependencies
-      #     pip install captum
-      #     echo "Installed explain dependency: captum successfully."
+          pip install deepspeed!=0.11.0,<0.13.0
+          echo "Installed deepspeed successfully."
 
-      #     # Extra dependencies
-      #     pip install "horovod[pytorch]>=0.24.0,!=0.26.0"
-      #     echo "Installed extra dependency: horovod[pytorch]>=0.24.0,!=0.26.0 successfully."
+          pip install getdaft[ray]==0.1.20
+          echo "Installed getdaft[ray] successfully."
 
-      #     pip install "modin[ray]"
-      #     echo "Installed extra dependency: modin[ray] successfully."
+          pip install GPUtil
+          echo "Installed GPUtil successfully."
 
-      #     pip install "predibase>=2023.10.2"
-      #     echo "Installed extra dependency: predibase>=2023.10.2 successfully."
+          pip install pyarrow
+          echo "Installed pyarrow successfully."
 
+          pip install ray[default,data,serve,tune]==2.3.1
+          echo "Installed ray[default,data,serve,tune] successfully."
 
-      # - name: Install hyperopt, llm, serve, tree, and viz dependencies
-      #   run: |
-      #     # Hyperopt dependencies
-      #     pip install hyperopt
-      #     echo "Installed hyperopt successfully."
+          pip install tblib
+          echo "Installed tblib successfully."
 
-      #     pip install "ray[default,tune]>=2.0.0"
-      #     echo "Installed hyperopt dependency: ray[default,tune]>=2.0.0 successfully."
+          pip install tensorboardX<2.3
+          echo "Installed tensorboardX successfully."
 
-      #     # LLM dependencies
-      #     pip install accelerate
-      #     echo "Installed llm dependency: accelerate successfully."
+      - name: Install Dependencies for Group: explain
+        run: |
+          pip install captum
+          echo "Installed captum successfully."
 
-      #     pip install faiss-cpu
-      #     echo "Installed llm dependency: faiss-cpu successfully."
+      - name: Install Dependencies for Group: extra
+        run: |
+          pip install horovod[pytorch]>=0.24.0,!=0.26.0
+          echo "Installed horovod[pytorch] successfully."
 
-      #     pip install loralib
-      #     echo "Installed llm dependency: loralib successfully."
+          pip install modin[ray]
+          echo "Installed modin[ray] successfully."
 
-      #     pip install "peft>=0.10.0"
-      #     echo "Installed llm dependency: peft>=0.10.0 successfully."
+          pip install predibase>=2023.10.2
+          echo "Installed predibase successfully."
 
-      #     pip install sentence-transformers
-      #     echo "Installed llm dependency: sentence-transformers successfully."
+      - name: Install Dependencies for Group: hyperopt
+        run: |
+          pip install hyperopt
+          echo "Installed hyperopt successfully."
 
-      #     # Serve dependencies
-      #     pip install cartonml-nightly
-      #     echo "Installed serve dependency: cartonml-nightly successfully."
+          pip install ray[default,tune]>=2.0.0
+          echo "Installed ray[default,tune] successfully."
 
-      #     pip install fastapi
-      #     echo "Installed serve dependency: fastapi successfully."
+      - name: Install Dependencies for Group: llm
+        run: |
+          pip install accelerate
+          echo "Installed accelerate successfully."
 
-      #     pip install httpx
-      #     echo "Installed serve dependency: httpx successfully."
+          pip install faiss-cpu
+          echo "Installed faiss-cpu successfully."
 
-      #     pip install "neuropod==0.3.0rc6 ; platform_system != 'Windows' and python_version < '3.9'"
-      #     echo "Installed serve dependency: neuropod==0.3.0rc6 successfully (if applicable)."
+          pip install loralib
+          echo "Installed loralib successfully."
 
-      #     pip install python-multipart
-      #     echo "Installed serve dependency: python-multipart successfully."
+          pip install peft>=0.10.0
+          echo "Installed peft successfully."
 
-      #     pip install uvicorn
-      #     echo "Installed serve dependency: uvicorn successfully."
+          pip install sentence-transformers
+          echo "Installed sentence-transformers successfully."
 
-      #     pip install starlette
-      #     echo "Installed serve dependency: starlette successfully."
+      - name: Install Dependencies for Group: serve
+        run: |
+          pip install cartonml-nightly
+          echo "Installed cartonml-nightly successfully."
 
-      #     # Tree dependencies
-      #     pip install "hummingbird-ml>=0.4.8"
-      #     echo "Installed tree dependency: hummingbird-ml>=0.4.8 successfully."
+          pip install fastapi
+          echo "Installed fastapi successfully."
 
-      #     pip install lightgbm
-      #     echo "Installed tree dependency: lightgbm successfully."
+          pip install httpx
+          echo "Installed httpx successfully."
 
-      #     pip install lightgbm-ray
-      #     echo "Installed tree dependency: lightgbm-ray successfully."
+          pip install "neuropod==0.3.0rc6 ; platform_system != 'Windows' and python_version < '3.9'"
+          echo "Installed neuropod successfully."
 
-      #     # Viz dependencies
-      #     pip install hiplot
-      #     echo "Installed viz dependency: hiplot successfully."
+          pip install python-multipart
+          echo "Installed python-multipart successfully."
 
-      #     pip install "matplotlib==3.9.3"
-      #     echo "Installed viz dependency: matplotlib==3.9.3 successfully."
+          pip install uvicorn
+          echo "Installed uvicorn successfully."
 
-      #     pip install ptitprince
-      #     echo "Installed viz dependency: ptitprince successfully."
+          pip install starlette
+          echo "Installed starlette successfully."
 
-      #     pip install "seaborn>=0.7,<0.12"
-      #     echo "Installed viz dependency: seaborn>=0.7,<0.12 successfully."
+      - name: Install Dependencies for Group: tree
+        run: |
+          pip install hummingbird-ml>=0.4.8
+          echo "Installed hummingbird-ml successfully."
 
-      - name: Test install all
-        run : |
-          pip install .[dev,test,benchmarking,distributed,explain,extra,hyperopt,llm,serve,tree,viz]
+          pip install lightgbm
+          echo "Installed lightgbm successfully."
+
+          pip install lightgbm-ray
+          echo "Installed lightgbm-ray successfully."
+
+      - name: Install Dependencies for Group: viz
+        run: |
+          pip install hiplot
+          echo "Installed hiplot successfully."
+
+          pip install matplotlib==3.9.3
+          echo "Installed matplotlib successfully."
+
+          pip install ptitprince
+          echo "Installed ptitprince successfully."
+
+          pip install seaborn>=0.7,<0.12
+          echo "Installed seaborn successfully."
 
 
       - name: Debug dependency tree
