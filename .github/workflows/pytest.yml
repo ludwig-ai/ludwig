@@ -276,6 +276,10 @@ jobs:
           pip install "seaborn>=0.7,<0.12"
           echo "Installed viz dependency: seaborn>=0.7,<0.12 successfully."
 
+      - name: Test install all
+        run : |
+          pip install --prefer-binary .
+
       - name: Debug dependency tree
         run: |
           python -m pip install pipdeptree
