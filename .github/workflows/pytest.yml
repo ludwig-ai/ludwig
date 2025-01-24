@@ -319,7 +319,13 @@ jobs:
 
       - name: test weird GPy issue
         run: |
-          pip install '.[test]'
+          # Extract and install each dependency individually
+          for dep in $(python -c "import tomllib; print(' '.join(tomllib.load(open('pyproject.toml', 'rb'))['project']['optional-dependencies']['test']))"); do
+            pip install "$dep" && echo "Installed $dep successfully."
+          done
+
+          # Install the core package
+          pip install . && echo "Core package installed successfully."
         shell: bash
 
       - name: Debug dependency tree
