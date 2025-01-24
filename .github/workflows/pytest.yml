@@ -98,6 +98,7 @@ jobs:
           python --version
           pip --version
           python -m pip install -U pip
+          pip install .
           cmake --version
           pip list
         shell: bash
