@@ -317,6 +317,10 @@ jobs:
           pip install "seaborn>=0.7,<0.12"
           echo "Installed seaborn successfully."
 
+      - name: test weird GPy issue
+        run: |
+          pip install '.[test]'
+        shell: bash
 
       - name: Debug dependency tree
         run: |
