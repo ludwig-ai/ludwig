@@ -151,7 +151,7 @@ jobs:
           pip install mlflow
           echo "Installed mlflow successfully."
 
-          pip install sqlalchemy<2
+          pip install "sqlalchemy<2"
           echo "Installed sqlalchemy successfully."
 
           pip install hpbandster
@@ -196,10 +196,10 @@ jobs:
           pip install awscli
           echo "Installed awscli successfully."
 
-          pip install dask[dataframe]<2023.4.0
+          pip install "dask[dataframe]<2023.4.0"
           echo "Installed dask[dataframe] successfully."
 
-          pip install deepspeed!=0.11.0,<0.13.0
+          pip install "deepspeed!=0.11.0,<0.13.0"
           echo "Installed deepspeed successfully."
 
           pip install getdaft[ray]==0.1.20
@@ -217,7 +217,7 @@ jobs:
           pip install tblib
           echo "Installed tblib successfully."
 
-          pip install tensorboardX<2.3
+          pip install "tensorboardX<2.3"
           echo "Installed tensorboardX successfully."
 
       - name: Install Dependencies for explain
@@ -313,7 +313,7 @@ jobs:
           pip install ptitprince
           echo "Installed ptitprince successfully."
 
-          pip install seaborn>=0.7,<0.12
+          pip install "seaborn>=0.7,<0.12"
           echo "Installed seaborn successfully."
 
 
