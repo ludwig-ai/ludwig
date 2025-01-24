@@ -102,8 +102,10 @@ jobs:
           pip list
         shell: bash
 
-      - name: Install Dependencies for Group: dev
+      - name: Install Dependencies for dev
         run: |
+          echo "starting dev"
+
           pip install flake8
           echo "Installed flake8 successfully."
 
@@ -116,8 +118,9 @@ jobs:
           pip install setuptools
           echo "Installed setuptools successfully."
 
-      - name: Install Dependencies for Group: test
+      - name: Install Dependencies for test
         run: |
+          echo "starting test"
           pip install pytest
           echo "Installed pytest successfully."
 
@@ -181,13 +184,15 @@ jobs:
           pip install zoopt
           echo "Installed zoopt successfully."
 
-      - name: Install Dependencies for Group: benchmarking
+      - name: Install Dependencies for benchmarking
         run: |
+          echo "starting benchmarking"
           pip install s3fs>=2022.8.2
           echo "Installed s3fs successfully."
 
-      - name: Install Dependencies for Group: distributed
+      - name: Install Dependencies for distributed
         run: |
+          echo "starting distributed"
           pip install awscli
           echo "Installed awscli successfully."
 
@@ -215,13 +220,15 @@ jobs:
           pip install tensorboardX<2.3
           echo "Installed tensorboardX successfully."
 
-      - name: Install Dependencies for Group: explain
+      - name: Install Dependencies for explain
         run: |
+          echo "starting explain"
           pip install captum
           echo "Installed captum successfully."
 
-      - name: Install Dependencies for Group: extra
+      - name: Install Dependencies for extra
         run: |
+          echo "starting extra"
           pip install horovod[pytorch]>=0.24.0,!=0.26.0
           echo "Installed horovod[pytorch] successfully."
 
@@ -231,16 +238,18 @@ jobs:
           pip install predibase>=2023.10.2
           echo "Installed predibase successfully."
 
-      - name: Install Dependencies for Group: hyperopt
+      - name: Install Dependencies for hyperopt
         run: |
+          echo "starting hyperopt"
           pip install hyperopt
           echo "Installed hyperopt successfully."
 
           pip install ray[default,tune]>=2.0.0
           echo "Installed ray[default,tune] successfully."
 
-      - name: Install Dependencies for Group: llm
+      - name: Install Dependencies for llm
         run: |
+          echo "starting llm"
           pip install accelerate
           echo "Installed accelerate successfully."
 
@@ -256,8 +265,9 @@ jobs:
           pip install sentence-transformers
           echo "Installed sentence-transformers successfully."
 
-      - name: Install Dependencies for Group: serve
+      - name: Install Dependencies for serve
         run: |
+          echo "starting serve"
           pip install cartonml-nightly
           echo "Installed cartonml-nightly successfully."
 
@@ -279,8 +289,9 @@ jobs:
           pip install starlette
           echo "Installed starlette successfully."
 
-      - name: Install Dependencies for Group: tree
+      - name: Install Dependencies for tree
         run: |
+          echo "starting tree"
           pip install hummingbird-ml>=0.4.8
           echo "Installed hummingbird-ml successfully."
 
@@ -290,8 +301,9 @@ jobs:
           pip install lightgbm-ray
           echo "Installed lightgbm-ray successfully."
 
-      - name: Install Dependencies for Group: viz
+      - name: Install Dependencies for viz
         run: |
+          echo "starting viz"
           pip install hiplot
           echo "Installed hiplot successfully."
 
