@@ -2,7 +2,7 @@ import copy
 import os
 import warnings
 from abc import ABC, abstractmethod
-from dataclasses import field, Field
+from dataclasses import Field, field
 from functools import lru_cache
 from typing import Any
 from typing import Dict as TDict

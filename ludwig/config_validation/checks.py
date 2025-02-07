@@ -358,7 +358,8 @@ def check_hyperopt_parameter_dicts(config: "ModelConfig") -> None:  # noqa: F821
     if config.hyperopt is None:
         return
 
-    from ludwig.schema.hyperopt.utils import get_parameter_cls, parameter_config_registry  # noqa: F401
+    from ludwig.schema.hyperopt.utils import get_parameter_cls  # noqa: F401
+    from ludwig.schema.hyperopt.utils import parameter_config_registry
 
     for parameter, space in config.hyperopt.parameters.items():
         # skip nested hyperopt parameters

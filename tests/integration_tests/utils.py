@@ -23,7 +23,8 @@ import sys
 import tempfile
 import traceback
 import uuid
-#from distutils.util import strtobool
+
+# from distutils.util import strtobool
 from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING, Union
 
 import cloudpickle
@@ -123,14 +124,16 @@ class FakeRemoteTrainer(Trainer):
         with tempfile.TemporaryDirectory() as tmpdir:
             return super().train(*args, save_path=tmpdir, **kwargs)
 
+
 def str2bool(val):
     val = val.lower()
-    if val in ('y', 'yes', 't', 'true', 'on', '1'):
+    if val in ("y", "yes", "t", "true", "on", "1"):
         return 1
-    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
+    elif val in ("n", "no", "f", "false", "off", "0"):
         return 0
     else:
-        raise ValueError("invalid truth value {!r}".format(val))
+        raise ValueError(f"invalid truth value {val!r}")
+
 
 def parse_flag_from_env(key, default=False):
     try:

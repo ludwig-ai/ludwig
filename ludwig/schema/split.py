@@ -122,8 +122,8 @@ class DateTimeSplitConfig(BaseSplitConfig):
 class HashSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the hash splitting config.
 
-    This is useful for deterministically splitting on a unique ID. Even when additional rows are added to the dataset
-    in the future, each ID will retain its original split assignment.
+    This is useful for deterministically splitting on a unique ID. Even when additional rows are added to the dataset in
+    the future, each ID will retain its original split assignment.
 
     This approach does not guarantee that the split proportions will be assigned exactly, but the larger the dataset,
     the more closely the assignment should match the given proportions.

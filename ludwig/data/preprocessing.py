@@ -2086,12 +2086,12 @@ def _preprocess_file_for_training(
 
     :param features: list of all features (input + output)
     :param dataset: path to the data
-    :param training_set:  training data
+    :param training_set: training data
     :param validation_set: validation data
     :param test_set: test data
     :param training_set_metadata: train set metadata
-    :param skip_save_processed_input: if False, the pre-processed data is saved
-    as .hdf5 files in the same location as the csv files with the same names.
+    :param skip_save_processed_input: if False, the pre-processed data is saved as .hdf5 files in the same location as
+        the csv files with the same names.
     :param preprocessing_params: preprocessing parameters
     :param random_seed: random seed
     :return: training, test, validation datasets, training metadata

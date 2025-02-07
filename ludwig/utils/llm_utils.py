@@ -158,7 +158,8 @@ def initialize_adapter(
             logger.info(f"Using pretrained adapter weights: {config_obj.adapter.pretrained_adapter_weights}")
 
             # Leave this import inline to support a minimal install of Ludwig
-            from peft import MODEL_TYPE_TO_PEFT_MODEL_MAPPING, PeftConfig  # noqa
+            from peft import MODEL_TYPE_TO_PEFT_MODEL_MAPPING  # noqa
+            from peft import PeftConfig
 
             peft_config = PeftConfig.from_pretrained(config_obj.adapter.pretrained_adapter_weights)
 

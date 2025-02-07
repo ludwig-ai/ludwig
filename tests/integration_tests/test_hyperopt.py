@@ -62,7 +62,8 @@ from tests.integration_tests.utils import (
 
 ray = pytest.importorskip("ray")
 
-from ludwig.hyperopt.execution import get_build_hyperopt_executor, RayTuneExecutor  # noqa
+from ludwig.hyperopt.execution import RayTuneExecutor  # noqa
+from ludwig.hyperopt.execution import get_build_hyperopt_executor
 
 pytestmark = [pytest.mark.distributed, pytest.mark.integration_tests_a]
 

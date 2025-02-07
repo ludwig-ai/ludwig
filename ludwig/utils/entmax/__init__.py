@@ -1,6 +1,6 @@
 __version__ = "1.1.dev0"
 
-from ludwig.utils.entmax.activations import entmax15, Entmax15, sparsemax, Sparsemax
+from ludwig.utils.entmax.activations import Entmax15, entmax15, Sparsemax, sparsemax
 from ludwig.utils.entmax.losses import (
     entmax15_loss,
     Entmax15Loss,

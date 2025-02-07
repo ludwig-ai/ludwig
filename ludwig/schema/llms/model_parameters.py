@@ -12,10 +12,9 @@ class RoPEScalingConfig(schema_utils.BaseMarshmallowConfig):
     """Dynamic RoPE-scaling (rotary position embeddings) to extend the context length of LLM like LLaMA, GPT-NeoX,
     or Falcon.
 
-    This parameter is a dictionary containing the scaling configuration
-    for the RoPE embeddings. Currently supports three scaling strategies: linear and dynamic. Their
-    scaling factor must be an float greater than 1. The expected format is {'type': strategy name,
-    'factor': scaling factor}
+    This parameter is a dictionary containing the scaling configuration for the RoPE embeddings. Currently supports
+    three scaling strategies: linear and dynamic. Their scaling factor must be an float greater than 1. The expected
+    format is {'type': strategy name, 'factor': scaling factor}
     """
 
     def __post_init__(self):
