@@ -71,12 +71,12 @@ ______________________________________________________________________
 
 ### model_configs_for_dataset
 
-Gets a dictionary of model configs for the specified dataset.  Keys are the config names, and may
+Gets a dictionary of model configs for the specified dataset. Keys are the config names, and may
 contain the special keys:
 
-- `default` - The default config for the dataset.  Should train to decent performance under 10 minutes on a typical
+- `default` - The default config for the dataset. Should train to decent performance under 10 minutes on a typical
   laptop without GPU.
-- `best` - The best known config for the dataset.  Should be replaced when a better config is found.  This is a good
+- `best` - The best known config for the dataset. Should be replaced when a better config is found. This is a good
   opportunity for contributions, if you find a better one please check it in and open a PR!
 
 **Example:**
@@ -118,7 +118,7 @@ To check programmatically, datasets have an `.is_kaggle_dataset` property.
 Datasets are first downloaded into `LUDWIG_CACHE`, which may be set as an environment variable and defaults to
 `$HOME/.ludwig_cache`.
 
-Datasets are automatically loaded, processed, and re-saved as parquet files.  The processed dataset is saved in
+Datasets are automatically loaded, processed, and re-saved as parquet files. The processed dataset is saved in
 LUDWIG_CACHE.
 
 If the dataset contains media files including images or audio, media files are saved in subdirectories and referenced by

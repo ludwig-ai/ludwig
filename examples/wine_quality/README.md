@@ -5,7 +5,7 @@ Demonstrates how to use Ludwig's defaults section introduced in v0.6.
 ### Preparatory Steps
 
 - Create `data` directory
-- Download [Kaggle wine quality data set](https://www.kaggle.com/rajyellow46/wine-quality) into the `data` directory.  Directory should
+- Download [Kaggle wine quality data set](https://www.kaggle.com/rajyellow46/wine-quality) into the `data` directory. Directory should
   appear as follows:
 
 ```

@@ -67,7 +67,7 @@ pip install ludwig
 [Horovod](https://github.com/horovod/horovod)를 통해 분산 학습이 지원되며, `pip install ludwig[horovod]` 또는 `HOROVOD_GPU_OPERATIONS=NCCL pip install ludwig[horovod]` 와 같이 GPU 환경에서 설치가 가능합니다.
 설치 가능한 옵션들을 더 확인하고 싶으시다면 Horovod's [installation guide](https://horovod.readthedocs.io/en/stable/install_include.html) 를 참고하시기 바랍니다.
 
-추가하려는 package들은  `pip install ludwig[extra1,extra2,...]` 의 명령어를 통해 설치가 가능합니다. 예를 들어, `pip install ludwig[text,viz]` 와 같은 조합으로 설치가 가능합니다. 모든 파일들을 한 번에 설치하려면 `pip install ludwig[full]`을 사용하면 됩니다.
+추가하려는 package들은 `pip install ludwig[extra1,extra2,...]` 의 명령어를 통해 설치가 가능합니다. 예를 들어, `pip install ludwig[text,viz]` 와 같은 조합으로 설치가 가능합니다. 모든 파일들을 한 번에 설치하려면 `pip install ludwig[full]`을 사용하면 됩니다.
 
 소스코드를 repository에서 build하려는 개발자들은 아래와 같은 방법을 사용하면 됩니다.
 

@@ -32,7 +32,7 @@ TORCHSCRIPT_COMPATIBLE_TOKENIZERS = {"space", "space_punct", "comma", "underscor
 TORCHTEXT_0_12_0_TOKENIZERS = {"sentencepiece", "clip", "gpt2bpe"}
 TORCHTEXT_0_13_0_TOKENIZERS = {"bert"}
 
-HF_TOKENIZER_SAMPLE_INPUTS = ["UNwant\u00E9d,running", "ah\u535A\u63A8zz", " \tHeLLo!how  \n Are yoU? [UNK]"]
+HF_TOKENIZER_SAMPLE_INPUTS = ["UNwant\u00e9d,running", "ah\u535a\u63a8zz", " \tHeLLo!how  \n Are yoU? [UNK]"]
 
 
 class BaseTokenizer:
@@ -1004,7 +1004,6 @@ tokenizer_registry = {
     "multi_lemmatize_filter": MultiLemmatizeFilterTokenizer,
     "multi_lemmatize_remove_stopwords": MultiLemmatizeRemoveStopwordsTokenizer,
 }
-
 """torchtext 0.12.0 tokenizers.
 
 Only available with torchtext>=0.12.0.
@@ -1178,8 +1177,8 @@ class BERTTokenizer(torch.nn.Module):
         If the is_hf_tokenizer flag is set to True, then the output follows the HF convention, i.e. the output is an
         List[List[int]] of tokens and the cls and sep tokens are automatically added as the start and stop symbols.
 
-        If the is_hf_tokenizer flag is set to False, then the output follows the Ludwig convention, i.e. the output
-        is a List[List[str]] of tokens.
+        If the is_hf_tokenizer flag is set to False, then the output follows the Ludwig convention, i.e. the output is a
+        List[List[str]] of tokens.
         """
         if isinstance(v, torch.Tensor):
             raise ValueError(f"Unsupported input: {v}")

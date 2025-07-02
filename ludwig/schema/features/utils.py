@@ -18,13 +18,11 @@ llm_output_config_registry = output_config_registries[MODEL_LLM]
 
 input_mixin_registry = Registry()
 output_mixin_registry = Registry()
-
 """
 As of Ludwig v0.7, ECD models support the full range of feature parameters available in Ludwig, so any feature schema
 can be registered into it. See `BinaryDefaultsConfig` for an example.
 """
 ecd_defaults_config_registry = Registry()
-
 """
 As of Ludwig v0.7, GBM models only support certain feature types and those features may only contain preprocessing
 parameters (in comparison, ECD features can specify encoders and other parameters). This is why the two model types have

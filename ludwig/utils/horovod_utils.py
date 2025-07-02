@@ -45,14 +45,13 @@ def has_horovodrun():
 def gather_all_tensors(result: torch.Tensor, group: Optional[Any] = None) -> List[torch.Tensor]:
     """Function to gather all tensors from several processes onto a list that is broadcast to all processes.
 
-    Works on tensors that have the same number of dimensions, but where each dimension may differ. In this case
-    tensors are padded, gathered and then trimmed to secure equal workload for all processes.
+    Works on tensors that have the same number of dimensions, but where each dimension may differ. In this case tensors
+    are padded, gathered and then trimmed to secure equal workload for all processes.
 
     :param result: the value to sync
     :param group: the process group to gather results from (not supported: always uses world)
-
-    :return: list with size equal to the process group where gathered_result[i]
-             corresponds to result tensor from process i
+    :return: list with size equal to the process group where gathered_result[i] corresponds to result tensor from
+        process i
     """
     if group is not None:
         raise ValueError("Horovod does not support allgather using a subcommunicator at this time. " "Unset `group`.")

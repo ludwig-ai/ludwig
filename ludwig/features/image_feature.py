@@ -465,27 +465,20 @@ class ImageFeatureMixin(BaseFeatureMixin):
         standardize_image: str,
         channel_class_map: torch.Tensor,
     ) -> Optional[np.ndarray]:
-        """
-        :param img_entry Union[bytes, torch.Tensor, np.ndarray, str]: if str file path to the
-            image else torch.Tensor of the image itself
-        :param img_width: expected width of the image
-        :param img_height: expected height of the image
-        :param should_resize: Should the image be resized?
-        :param resize_method: type of resizing method
-        :param num_channels: expected number of channels in the first image
-        :param user_specified_num_channels: did the user specify num channels?
-        :param standardize_image: specifies whether to standarize image with imagenet1k specifications
-        :param channel_class_map: A tensor mapping channel values to classes, where dim=0 is the class
-        :return: image object as a numpy array
+        """:param img_entry Union[bytes, torch.Tensor, np.ndarray, str]: if str file path to the image else
+        torch.Tensor of the image itself :param img_width: expected width of the image :param img_height: expected
+        height of the image :param should_resize: Should the image be resized? :param resize_method: type of
+        resizing method :param num_channels: expected number of channels in the first image :param
+        user_specified_num_channels: did the user specify num channels? :param standardize_image: specifies whether
+        to standarize image with imagenet1k specifications :param channel_class_map: A tensor mapping channel
+        values to classes, where dim=0 is the class :return: image object as a numpy array.
 
-        Helper method to read and resize an image according to model definition.
-        If the user doesn't specify a number of channels, we use the first image
-        in the dataset as the source of truth. If any image in the dataset
-        doesn't have the same number of channels as the first image,
-        raise an exception.
+        Helper method to read and resize an image according to model definition. If the user doesn't specify a number of
+        channels, we use the first image in the dataset as the source of truth. If any image in the dataset doesn't have
+        the same number of channels as the first image, raise an exception.
 
-        If the user specifies a number of channels, we try to convert all the
-        images to the specifications by dropping channels/padding 0 channels
+        If the user specifies a number of channels, we try to convert all the images to the specifications by dropping
+        channels/padding 0 channels
         """
 
         if isinstance(img_entry, bytes):
@@ -905,9 +898,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
             average_file_size = None
 
             # save weight specification in preprocessing section
-            preprocessing_parameters[
-                "torchvision_model_default_weights"
-            ] = f"{torchvision_parameters.model_weights.DEFAULT}"
+            preprocessing_parameters["torchvision_model_default_weights"] = (
+                f"{torchvision_parameters.model_weights.DEFAULT}"
+            )
 
             # add torchvision model id to preprocessing section for torchscript
             preprocessing_parameters["torchvision_model_type"] = model_type

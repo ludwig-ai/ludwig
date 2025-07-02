@@ -16,7 +16,7 @@ The Titanic dataset is hosted by Kaggle, and as such Ludwig will need to authent
 | multiple_model_training.py   | Trains two models and generates a visualization for results of training.       |
 | model_training_results.ipynb | Example for extracting training statistics and generate custom visualizations. |
 
-Enter `python simple_model_training.py` will train a single model.  Results of model training will be stored in this location.
+Enter `python simple_model_training.py` will train a single model. Results of model training will be stored in this location.
 
 ```
 ./results/
@@ -24,7 +24,7 @@ Enter `python simple_model_training.py` will train a single model.  Results of m
 ```
 
 Enter `python multiple_model_training.py` will train two models and generate standard Ludwig visualizations comparing the
-two models.  Results will in the following directories:
+two models. Results will in the following directories:
 
 ```
 ./results/

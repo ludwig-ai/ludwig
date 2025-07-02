@@ -75,7 +75,7 @@ TrainerMetric = namedtuple("TrainerMetric", ("epoch", "step", "value"))
 
 
 def reduce_trainer_metrics_dict(
-    dict_dict_trainer_metrics: Dict[str, Dict[str, List[TrainerMetric]]]
+    dict_dict_trainer_metrics: Dict[str, Dict[str, List[TrainerMetric]]],
 ) -> Dict[str, Dict[str, List[float]]]:
     """Reduces Dict[feature_name, Dict[metric_name, List[TrainerMetric]]] to Dict[feature_name, Dict[metric_name,
     List[float]]].
