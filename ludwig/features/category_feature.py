@@ -420,8 +420,12 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 class_weights_list = [class_weights[s] for s in idx2str]
                 feature_config.loss.class_weights = class_weights_list
 
+        if isinstance(feature_config.loss, dict):
+            has_class_similarities = "class_similarities" in feature_config.loss
+        else:
+            has_class_similarities = getattr(feature_config.loss, "class_similarities", None) is not None
         if feature_config.loss.class_similarities_temperature > 0:
-            if "class_similarities" in feature_config.loss:
+            if has_class_similarities:
                 similarities = feature_config.loss.class_similarities
                 temperature = feature_config.loss.class_similarities_temperature
 
