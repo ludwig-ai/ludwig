@@ -3,6 +3,8 @@ from typing import Dict, List, Type, Union
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.encoders.base import Encoder
 from ludwig.utils.registry import Registry
+from ludwig.constants import IMAGE
+# Removed direct import of LudwigCAFormerEncoder to avoid circular dependency.
 
 _encoder_registry = Registry()
 _sequence_encoder_registry = Registry()
@@ -41,6 +43,8 @@ def register_encoder(name: str, features: Union[str, List[str]]):
         return cls
 
     return wrap
+
+
 
 
 def get_encoder_cls(feature: str, name: str) -> Type[Encoder]:
