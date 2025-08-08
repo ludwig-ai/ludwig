@@ -1,4 +1,4 @@
-chore(pre-commit): fix mdformat hook by adding gfm plugin and pinning markdown-it-py<3.0.0
+chore(pre-commit): fix mdformat hook by adding gfm plugin and pinning markdown-it-py\<3.0.0
 
 ## Explanation
 
