@@ -54,6 +54,8 @@ class Stacked2DCNN(ImageEncoder):
         conv_layers: Optional[List[Dict]] = None,
         num_conv_layers: Optional[int] = None,
         num_channels: int = None,
+        # Optional custom CAFormer backbone (e.g. caformer_s18, caformer_s36, caformer_m36, caformer_b36)
+        custom_model: Optional[str] = None,
         out_channels: int = 32,
         kernel_size: Union[int, Tuple[int]] = 3,
         stride: Union[int, Tuple[int]] = 1,
@@ -86,6 +88,35 @@ class Stacked2DCNN(ImageEncoder):
     ):
         super().__init__()
         self.config = encoder_config
+
+        self._use_caformer = False
+        self._output_shape_override: Optional[torch.Size] = None
+        if custom_model and isinstance(custom_model, str) and custom_model.startswith("caformer_"):
+            try:
+                from caformer_setup_backup.caformer_stacked_cnn import CAFormerStackedCNN
+                # Instantiate CAFormer encoder (it internally handles resizing / channel adapting)
+                self.caformer_encoder = CAFormerStackedCNN(
+                    height=height if height is not None else 224,
+                    width=width if width is not None else 224,
+                    num_channels=num_channels if num_channels is not None else 3,
+                    output_size=output_size,
+                    custom_model=custom_model,
+                    use_pretrained=True,
+                    trainable=True,
+                )
+                self._use_caformer = True
+                # Override forward dynamically
+                self.forward = self._forward_caformer  # type: ignore
+                # Store output shape
+                if hasattr(self.caformer_encoder, "output_shape"):
+                    # CAFormerStackedCNN.output_shape returns a list
+                    shape_list = self.caformer_encoder.output_shape
+                    if isinstance(shape_list, (list, tuple)):
+                        self._output_shape_override = torch.Size(shape_list)
+                logger.info(f"Using CAFormer backbone '{custom_model}' in place of stacked_cnn.")
+            except Exception as e:
+                logger.error(f"Failed to initialize CAFormer encoder '{custom_model}': {e}")
+                raise
 
         logger.debug(f" {self.name}")
 
@@ -144,6 +175,16 @@ class Stacked2DCNN(ImageEncoder):
             default_dropout=fc_dropout,
         )
 
+    def _forward_caformer(self, inputs: torch.Tensor) -> EncoderOutputDict:
+        """
+        Forward pass when a CAFormer backbone is used.
+        CAFormerStackedCNN.forward returns a dict with key 'encoder_output'.
+        """
+        if not hasattr(self, "caformer_encoder"):
+            raise RuntimeError("CAFormer encoder not initialized despite _use_caformer=True.")
+        out = self.caformer_encoder(inputs)
+        return {ENCODER_OUTPUT: out.get("encoder_output")}
+
     def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
         """
         :param inputs: The inputs fed into the encoder.
@@ -162,6 +203,8 @@ class Stacked2DCNN(ImageEncoder):
 
     @property
     def output_shape(self) -> torch.Size:
+        if self._output_shape_override is not None:
+            return self._output_shape_override
         return self.fc_stack.output_shape
 
     @property

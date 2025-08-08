@@ -33,6 +33,15 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
         description=ENCODER_METADATA["Stacked2DCNN"]["type"].long_description,
     )
 
+    # Added to enable CAFormer integration via stacked_cnn encoder.
+    custom_model: Optional[str] = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="If set to one of ['caformer_s18','caformer_s36','caformer_m36','caformer_b36'], "
+        "the standard stacked_cnn encoder will be dynamically replaced at runtime by a CAFormer backbone "
+        "defined in caformer_setup_backup. Requires calling the patch utility prior to model construction.",
+    )
+
     conv_dropout: Optional[int] = schema_utils.FloatRange(
         default=0.0,
         min=0,

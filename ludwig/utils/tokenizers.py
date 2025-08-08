@@ -18,7 +18,23 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Union
 
 import torch
-import torchtext
+# Make torchtext optional: guard import to allow pure vision use-cases (e.g., CAFormer image encoder) without binary wheels.
+try:
+    import torchtext  # type: ignore
+    TORCHTEXT_AVAILABLE = True
+except Exception as e:
+    TORCHTEXT_AVAILABLE = False
+    logger = logging.getLogger(__name__)
+    logger.warning(f"torchtext import failed, disabling torchtext-based tokenizers: {e}")
+    class _TorchTextStub:  # Minimal stub so attribute access does not immediately crash unless actually used.
+        __version__ = "0.0.0"
+        class transforms:  # empty namespace
+            pass
+        class utils:
+            @staticmethod
+            def get_asset_local_path(path):
+                raise RuntimeError("torchtext unavailable (stubbed).")
+    torchtext = _TorchTextStub()  # type: ignore
 
 from ludwig.constants import PADDING_SYMBOL, UNKNOWN_SYMBOL
 from ludwig.utils.data_utils import load_json
