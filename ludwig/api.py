@@ -1725,7 +1725,7 @@ class LudwigModel:
                 `(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)`.
 
         # Raises:
-            RuntimeError: An error occured while preprocessing the data. Examples include training dataset
+            RuntimeError: An error occurred while preprocessing the data. Examples include training dataset
                 being empty after preprocessing, lazy loading not being supported with RayBackend, etc.
         """
         print_boxed("PREPROCESSING")
