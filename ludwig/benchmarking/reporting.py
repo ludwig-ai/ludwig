@@ -141,9 +141,7 @@ def get_resource_usage_report(
     return info
 
 
-def get_all_events(
-    kineto_events: List[_KinetoEvent], function_events: profiler_util.EventList
-) -> Tuple[
+def get_all_events(kineto_events: List[_KinetoEvent], function_events: profiler_util.EventList) -> Tuple[
     List[_KinetoEvent],
     List[profiler_util.FunctionEvent],
     List[List[Union[_KinetoEvent, bool]]],

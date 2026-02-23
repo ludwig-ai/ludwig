@@ -214,7 +214,7 @@ def experiment_cli(
             allow_parallel_threads=allow_parallel_threads,
             callbacks=callbacks,
         )
-    (eval_stats, train_stats, preprocessed_data, output_directory) = model.experiment(
+    eval_stats, train_stats, preprocessed_data, output_directory = model.experiment(
         dataset=dataset,
         training_set=training_set,
         validation_set=validation_set,
@@ -257,19 +257,16 @@ def kfold_cross_validate_cli(
 
     # Inputs
     :param k_fold: (int) number of folds to create for the cross-validation
-    :param config: (Union[str, dict], default: None) a dictionary or file path
-            containing model configuration. Refer to the [User Guide]
-           (http://ludwig.ai/user_guide/#model-config) for details.
+    :param config: (Union[str, dict], default: None) a dictionary or file path containing model configuration. Refer to
+        the [User Guide] (http://ludwig.ai/user_guide/#model-config) for details.
     :param dataset: (string, default: None)
     :param output_directory: (string, default: 'results')
     :param random_seed: (int) Random seed used k-fold splits.
-    :param skip_save_k_fold_split_indices: (boolean, default: False) Disables
-            saving k-fold split indices
-
+    :param skip_save_k_fold_split_indices: (boolean, default: False) Disables saving k-fold split indices
     :return: None
     """
 
-    (kfold_cv_stats, kfold_split_indices) = kfold_cross_validate(
+    kfold_cv_stats, kfold_split_indices = kfold_cross_validate(
         k_fold,
         config=config,
         dataset=dataset,

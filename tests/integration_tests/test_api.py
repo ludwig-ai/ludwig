@@ -781,8 +781,7 @@ def test_constant_metadata(tmpdir):
     ],
 )
 def test_llm_template_too_long(tmpdir, input_max_sequence_length, global_max_sequence_length, expect_raise):
-    zero_shot_config = yaml.safe_load(
-        f"""
+    zero_shot_config = yaml.safe_load(f"""
   model_type: llm
   base_model: hf-internal-testing/tiny-random-GPTJForCausalLM
 
@@ -798,8 +797,7 @@ def test_llm_template_too_long(tmpdir, input_max_sequence_length, global_max_seq
 
   preprocessing:
     global_max_sequence_length: {global_max_sequence_length}
-  """
-    )
+  """)
     zero_shot_config["prompt"] = {}
     zero_shot_config["prompt"][
         "template"

@@ -28,8 +28,8 @@ If applicable, add screenshots to help explain your problem.
 
 **Environment (please complete the following information):**
 
-- OS: \[e.g. iOS\]
-- Version \[e.g. 22\]
+- OS: [e.g. iOS]
+- Version [e.g. 22]
 - Python version
 - Ludwig version
 

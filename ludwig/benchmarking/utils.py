@@ -175,13 +175,11 @@ def validate_benchmarking_config(benchmarking_config: Dict[str, Any]) -> None:
     ):
         raise ValueError("You must either specify a global experiment name or an experiment name for each experiment.")
     if "export" not in benchmarking_config:
-        raise ValueError(
-            """You must specify export parameters. Example:
+        raise ValueError("""You must specify export parameters. Example:
             export:
               export_artifacts: true
               export_base_path: s3://benchmarking.us-west-2.ludwig.com/bench/    # include the slash at the end.
-        """
-        )
+        """)
     if "experiments" not in benchmarking_config:
         raise ValueError("You must specify a list of experiments.")
     for experiment in benchmarking_config["experiments"]:

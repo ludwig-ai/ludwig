@@ -49,7 +49,7 @@ Work on your self-assigned issue and eventually create a Pull Request.
    pip install -e .
    ```
 
-   The above command will install only the packages in "requirements.txt" in the developer mode.  If you would like to
+   The above command will install only the packages in "requirements.txt" in the developer mode. If you would like to
    be able to potentially make changes to the overall Ludwig codebase, then use the following command:
 
    ```bash
@@ -93,9 +93,9 @@ Work on your self-assigned issue and eventually create a Pull Request.
 
 1. Finally, if during the installation of `horovod`, the exception `ModuleNotFoundError: No module named 'packaging'`
    occurs, you may need to disable `horovod` (that means you will need train with another backend, just not `horovod`).
-   To do that, edit the file `requirements_extra.txt` and comment out the line that begins with `horovod`.  After that,
-   please execute the long `pip install` command given in the previous step.  With these work-around provisions, your
-   installation should run to completion successfully.  If you are still having difficulty, please reach out with the
+   To do that, edit the file `requirements_extra.txt` and comment out the line that begins with `horovod`. After that,
+   please execute the long `pip install` command given in the previous step. With these work-around provisions, your
+   installation should run to completion successfully. If you are still having difficulty, please reach out with the
    specifics of your environment in the Ludwig Community [Discord](https://discord.gg/CBgdrGnZjy).
 
 1. Develop features on your branch.

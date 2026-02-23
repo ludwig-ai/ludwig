@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """This script updates all golden JSON files containing expected data types."""
+
 import json
 
 from ludwig.automl import create_auto_config

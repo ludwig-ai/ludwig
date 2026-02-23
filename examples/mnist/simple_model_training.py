@@ -26,7 +26,7 @@ model = LudwigModel(config, logging_level=logging.INFO)
 training_set, test_set, _ = mnist.load(split=True)
 
 # initiate model training
-(train_stats, _, output_directory) = model.train(  # training statistics  # location for training results saved to disk
+train_stats, _, output_directory = model.train(  # training statistics  # location for training results saved to disk
     training_set=training_set,
     test_set=test_set,
     experiment_name="simple_image_experiment",

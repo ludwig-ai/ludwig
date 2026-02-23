@@ -1293,8 +1293,7 @@ def test_llm_encoding(llm_encoder_config, adapter, quantization, tmpdir):
 
 def test_llm_batch_size_tuning():
     dataset = pd.DataFrame({"instruction": ["a"] * 100, "output": ["a"] * 100})
-    config = yaml.safe_load(
-        """
+    config = yaml.safe_load("""
     model_type: llm
     input_features:
         - name: instruction
@@ -1318,8 +1317,7 @@ def test_llm_batch_size_tuning():
     backend:
         type: local
     base_model: HuggingFaceH4/tiny-random-LlamaForCausalLM
-        """
-    )
+        """)
     model = LudwigModel(config=config)
     model.train(dataset=dataset)
     assert model.config_obj.trainer.batch_size > 1

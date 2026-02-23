@@ -27,7 +27,7 @@ pred_set = df[0:1]  # prediction hold-out 1 image
 data_set = df[1:]  # train,test,validate on remaining images
 
 # initiate model training
-(train_stats, _, output_directory) = model.train(  # training statistics  # location for training results saved to disk
+train_stats, _, output_directory = model.train(  # training statistics  # location for training results saved to disk
     dataset=data_set,
     experiment_name="simple_image_experiment",
     model_name="single_model",

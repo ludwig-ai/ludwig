@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """Trains twitter bots using tabular and text features only, no images."""
+
 import logging
 import os
 import shutil
@@ -20,8 +21,7 @@ if __name__ == "__main__":
     # Loads the dataset
     training_set, val_set, test_set = twitter_bots.load(split=True)
 
-    config = yaml.safe_load(
-        """
+    config = yaml.safe_load("""
 input_features:
   - name: created_at
     type: date
@@ -77,8 +77,7 @@ defaults:
       tokenizer: space_punct
       max_sequence_length: 16
 model_type: ecd
-        """
-    )
+        """)
 
     model = LudwigModel(config, logging_level=logging.INFO)
 

@@ -198,8 +198,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
             stripped_value = value.strip()
             if stripped_value in metadata["str2idx"]:
                 return metadata["str2idx"][stripped_value]
-            logger.warning(
-                f"""
+            logger.warning(f"""
                 Encountered unknown symbol '{stripped_value}' for '{column.name}' during category
                 feature preprocessing. This should never happen during training. If this happens during
                 inference, this may be an indication that not all possible symbols were present in your
@@ -208,8 +207,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
                 size, {len(metadata["str2idx"])}, which will ensure that the model is architected and
                 trained with an UNKNOWN symbol. Returning the index for the most frequent symbol,
                 {metadata["idx2str"][fallback_symbol_idx]}, instead.
-                """
-            )
+                """)
             return fallback_symbol_idx
 
         # No unknown symbol in Metadata from preprocessing means that all values

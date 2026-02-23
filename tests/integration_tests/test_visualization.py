@@ -80,8 +80,7 @@ def get_output_feature_name(experiment_dir, output_feature=0):
 
     :param experiment_dir: Path to the experiment directory
     :param output_feature: position of the output feature the description.json
-    :return output_feature_name: name of the first output feature name
-                        from the experiment
+    :return output_feature_name: name of the first output feature name from the experiment
     """
     description_file = os.path.join(experiment_dir, DESCRIPTION_FILE_NAME)
     with open(description_file, "rb") as f:
@@ -179,8 +178,7 @@ def test_visualization_confusion_matrix_output_saved(csv_filename):
 def test_visualization_compare_performance_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
 
-    Compare performance between two models. To reduce test complexity
-    one model is compared to it self.
+    Compare performance between two models. To reduce test complexity one model is compared to it self.
 
     :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
