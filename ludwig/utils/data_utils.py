@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import base64
+import math
 import collections.abc
 import contextlib
 import csv
@@ -428,8 +429,20 @@ def load_json(data_fp):
     return data
 
 
+def _sanitize_for_json(obj):
+    """Recursively replace float inf/-inf/nan with None for JSON compliance."""
+    if isinstance(obj, float) and (math.isinf(obj) or math.isnan(obj)):
+        return None
+    elif isinstance(obj, dict):
+        return {k: _sanitize_for_json(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [_sanitize_for_json(v) for v in obj]
+    return obj
+
+
 @DeveloperAPI
 def save_json(data_fp, data, sort_keys=True, indent=4):
+    data = _sanitize_for_json(data)
     with open_file(data_fp, "w") as output_file:
         json.dump(data, output_file, cls=NumpyEncoder, sort_keys=sort_keys, indent=indent)
 
