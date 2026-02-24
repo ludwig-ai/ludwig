@@ -275,7 +275,6 @@ AUDIO_FEATURE_KEYS = [
 BASE_MODEL = "base_model"
 MODEL_TYPE = "model_type"
 MODEL_ECD = "ecd"
-MODEL_GBM = "gbm"
 MODEL_LLM = "llm"
 DASK_MODULE_NAME = "dask.dataframe"
 LUDWIG_VERSION = "ludwig_version"
