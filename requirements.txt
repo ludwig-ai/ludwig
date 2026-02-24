@@ -37,11 +37,6 @@ retry
 sacremoses
 sentencepiece
 
-# requirements for daft
-# NOTE: daft needs to be <0.2 because of deprecation of fsspec argument in Daft
-# Pinned for consistency with ludwig-ray docker image.
-getdaft==0.1.20
-
 # requirement for various paged and 8-bit optimizers
 bitsandbytes<0.41.0
 

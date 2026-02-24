@@ -10,13 +10,12 @@ mlflow
 # For testing optional Ray Tune Search Algorithms
 # search_alg: bohb
 hpbandster
-ConfigSpace==0.7.1
+ConfigSpace>=1.0
 
 # search_alg: ax
 ax-platform
 
-# Pinning because aimstack does not support 2.x.x - https://github.com/aimhubio/aim/issues/2514
-sqlalchemy<2
+sqlalchemy
 
 # search_alg: bayesopt
 bayesian-optimization

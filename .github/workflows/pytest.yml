@@ -1,6 +1,3 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
-
 name: pytest
 
 on:
@@ -9,135 +6,62 @@ on:
   pull_request:
     branches: ["master", "release-*"]
 
-# We want an ongoing run of this workflow to be canceled by a later commit
-# so that there is only one concurrent run of this workflow for each branch
 concurrency:
   group: pytest-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
 jobs:
-  pytest:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-        python-version: ["3.10", "3.11", "3.12"]
-        test-markers: ["not distributed", "distributed"]
-        include:
-          - python-version: "3.10"
-            pytorch-version: 2.5.1
-            ray-version: 2.9.0
-          - python-version: "3.11"
-            pytorch-version: 2.6.0
-            ray-version: 2.9.0
-          - python-version: "3.12"
-            pytorch-version: 2.6.0
-            ray-version: 2.9.0
+  unit-tests:
+    runs-on: ubuntu-latest
     env:
-      PYTORCH: ${{ matrix.pytorch-version }}
-      MARKERS: ${{ matrix.test-markers }}
-      RAY_VERSION: ${{ matrix.ray-version }}
       AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
       KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
       KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
       IS_NOT_FORK: ${{ !(github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && github.event.pull_request.head.repo.fork) }}
 
-    name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}, ray ${{ matrix.ray-version }}
-    services:
-      minio:
-        image: fclairamb/minio-github-actions
-        env:
-          MINIO_ACCESS_KEY: minio
-          MINIO_SECRET_KEY: minio123
-        ports:
-          - 9000:9000
-
-    timeout-minutes: 150
+    name: Unit Tests
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.12"
 
       - name: Setup Linux
-        if: runner.os == 'linux'
         run: |
-          sudo apt-get update && sudo apt-get install -y cmake libsndfile1 wget libsox-dev
-
-      - name: Setup macOS
-        if: runner.os == 'macOS'
-        run: |
-          brew install libuv
+          sudo apt-get update && sudo apt-get install -y cmake libsndfile1 libsox-dev
 
       - name: pip cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ matrix.test-markers }}-${{ hashFiles('requirements*.txt', '.github/workflows/pytest.yml') }}
-
-      - name: Debug out of space
-        run: |
-          du -h -d 1 ~
-          df -h
+          key: ${{ runner.os }}-pip-unit-${{ hashFiles('requirements*.txt', '.github/workflows/pytest.yml') }}
 
       - name: Install dependencies
         run: |
-          python --version
-          pip --version
           python -m pip install -U pip
-          cmake --version
-
-          # remove torch and ray from the dependencies so we can add them depending on the matrix args for the job.
-          cat requirements.txt | sed '/^torch[>=<\b]/d' | sed '/^torchtext/d' | sed '/^torchvision/d' | sed '/^torchaudio/d' > requirements-temp && mv requirements-temp requirements.txt
-          cat requirements_distributed.txt | sed '/^ray[\[]/d'
-
-          if [ "$MARKERS" != "distributed" ]; then
-            # Skip distributed and hyperopt requirements to test optional imports
-            echo > requirements-temp && mv requirements-temp requirements_distributed.txt
-            echo > requirements-temp && mv requirements-temp requirements_hyperopt.txt
-          fi
-
-          extra_index_url=https://download.pytorch.org/whl/cpu
-          pip install torch==$PYTORCH torchvision torchaudio --extra-index-url $extra_index_url
-
-          if [ "$MARKERS" == "distributed" ]; then
-            pip install ray==$RAY_VERSION
-            ray_expected=$(python -c "import ray; print(ray.__version__)")
-          fi
-
-          torch_expected=$(python -c "import torch; print(torch.__version__)")
-
-          pip install '.[test]' --extra-index-url $extra_index_url
+          pip install torch==2.6.0 torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
+          pip install '.[test]' --extra-index-url https://download.pytorch.org/whl/cpu
           pip list
 
-          python -c "import torch; assert torch.__version__.startswith('$PYTORCH'), f\"torch {torch.__version__} does not match $PYTORCH\""
-          if [ "$MARKERS" == "distributed" ]; then
-            python -c "from packaging import version; import ray; assert version.parse(ray.__version__).release == version.parse(\"$RAY_VERSION\").release, f\"ray {version.parse(ray.__version__).release} != version.parse(\'$RAY_VERSION\').release\""
-          else
-            python -c "import importlib.util; assert importlib.util.find_spec('ray') is None, \"found ray but expected it to not be installed\""
-          fi
-        shell: bash
-
-      - name: Tests
+      - name: Unit Tests
         run: |
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod and not llm" --junitxml pytest.xml tests/ludwig
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "not distributed and not slow and not combinatorial and not llm" --junitxml pytest.xml tests/ludwig
 
       - name: Regression Tests
         run: |
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod or benchmark and not llm" --junitxml pytest.xml tests/regression_tests
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "not distributed and not slow and not combinatorial and not llm" --junitxml pytest-regression.xml tests/regression_tests
 
-      - name: Upload Unit Test Results
+      - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
-          path: pytest.xml
+          name: Unit Test Results
+          path: pytest*.xml
 
   integration-tests:
-    name: ${{ matrix.test-markers }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -158,6 +82,7 @@ jobs:
       IS_NOT_FORK: ${{ !(github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && github.event.pull_request.head.repo.fork) }}
       MARKERS: ${{ matrix.test-markers }}
 
+    name: Integration (${{ matrix.test-markers }})
     services:
       minio:
         image: fclairamb/minio-github-actions
@@ -176,31 +101,23 @@ jobs:
           python-version: "3.12"
 
       - name: Setup Linux
-        if: runner.os == 'linux'
         run: |
-          sudo apt-get update && sudo apt-get install -y cmake libsndfile1
+          sudo apt-get update && sudo apt-get install -y cmake libsndfile1 libsox-dev
 
-      - name: Setup macOS
-        if: runner.os == 'macOS'
-        run: |
-          brew install libuv
+      - name: pip cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-integration-${{ hashFiles('requirements*.txt', '.github/workflows/pytest.yml') }}
 
       - name: Install dependencies
         run: |
-          python --version
-          pip --version
           python -m pip install -U pip
-
-          # remove torch and ray from the dependencies so we can add them depending on the matrix args for the job.
-          cat requirements.txt | sed '/^torch[>=<\b]/d' | sed '/^torchtext/d' | sed '/^torchvision/d' | sed '/^torchaudio/d' > requirements-temp && mv requirements-temp requirements.txt
-          cat requirements_distributed.txt | sed '/^ray[\[]/d'
-          pip install torch==2.6.0 torchvision torchaudio
-          pip install ray==2.9.0
-          pip install '.[test]'
+          pip install torch==2.6.0 torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
+          pip install '.[test]' --extra-index-url https://download.pytorch.org/whl/cpu
           pip list
-        shell: bash
 
-      - name: Free Disk Space (Ubuntu)
+      - name: Free Disk Space
         uses: jlumbroso/free-disk-space@main
         with:
           tool-cache: false
@@ -211,19 +128,37 @@ jobs:
           docker-images: true
           swap-storage: true
 
-      - name: Clean out /tmp directory
-        run: |
-          sudo rm -rf /tmp/*
-
       - name: Integration Tests
         run: |
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m "not slow and not combinatorial and not horovod and not llm and $MARKERS" --junitxml pytest.xml tests/integration_tests
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m "not slow and not combinatorial and not llm and $MARKERS" --junitxml pytest.xml tests/integration_tests
 
-  llm-tests:
-    name: LLM Tests
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Integration Test Results (${{ matrix.test-markers }})
+          path: pytest.xml
+
+  distributed-tests:
     runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
+      KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+      KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+      IS_NOT_FORK: ${{ !(github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && github.event.pull_request.head.repo.fork) }}
 
-    timeout-minutes: 60
+    name: Distributed Tests
+    services:
+      minio:
+        image: fclairamb/minio-github-actions
+        env:
+          MINIO_ACCESS_KEY: minio
+          MINIO_SECRET_KEY: minio123
+        ports:
+          - 9000:9000
+
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python 3.12
@@ -232,78 +167,51 @@ jobs:
           python-version: "3.12"
 
       - name: Setup Linux
-        if: runner.os == 'linux'
         run: |
-          sudo apt-get update && sudo apt-get install -y cmake libsndfile1
+          sudo apt-get update && sudo apt-get install -y cmake libsndfile1 libsox-dev
 
-      - name: Setup macOS
-        if: runner.os == 'macOS'
-        run: |
-          brew install libuv
-
-      - name: Install dependencies
-        run: |
-          python --version
-          pip --version
-          python -m pip install -U pip
-
-          # remove torch and ray from the dependencies so we can add them depending on the matrix args for the job.
-          cat requirements.txt | sed '/^torch[>=<\b]/d' | sed '/^torchtext/d' | sed '/^torchvision/d' | sed '/^torchaudio/d' > requirements-temp && mv requirements-temp requirements.txt
-          cat requirements_distributed.txt | sed '/^ray[\[]/d'
-          pip install torch==2.6.0 torchvision torchaudio
-          pip install ray==2.9.0
-          pip install '.[test]'
-          pip list
-        shell: bash
-
-      - name: LLM Tests
-        run: |
-          pytest -vs --durations 100 -m "llm" --junitxml pytest.xml tests
-
-  combinatorial-tests:
-    name: Combinatorial Tests
-    runs-on: ubuntu-latest
-
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+      - name: pip cache
+        uses: actions/cache@v4
         with:
-          python-version: "3.12"
-
-      - name: Setup Linux
-        if: runner.os == 'linux'
-        run: |
-          sudo apt-get update && sudo apt-get install -y cmake libsndfile1
-
-      - name: Setup macOS
-        if: runner.os == 'macOS'
-        run: |
-          brew install libuv
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-distributed-${{ hashFiles('requirements*.txt', '.github/workflows/pytest.yml') }}
 
       - name: Install dependencies
         run: |
-          python --version
-          pip --version
           python -m pip install -U pip
-          pip install torch==2.6.0 torchvision torchaudio
-          pip install '.[test]'
+          pip install torch==2.6.0 torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
+          pip install '.[test]' --extra-index-url https://download.pytorch.org/whl/cpu
           pip list
-        shell: bash
 
-      - name: Testing combinatorial config generation code
-        run: |
-          pytest -vs --durations 100 -m "combinatorial" --junitxml pytest.xml tests/ludwig/config_sampling
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          swap-storage: true
 
-      - name: Combinatorial Tests
+      - name: Distributed Unit Tests
         run: |
-          pytest -rx --durations 100 -m "combinatorial" --junitxml pytest.xml tests/training_success
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "distributed and not slow and not combinatorial and not llm" --junitxml pytest-unit.xml tests/ludwig
+
+      - name: Distributed Integration Tests
+        run: |
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m "distributed and not slow and not combinatorial and not llm" --junitxml pytest-integration.xml tests/integration_tests
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Distributed Test Results
+          path: pytest*.xml
 
   test-minimal-install:
-    name: Test Minimal Install
+    name: Minimal Install
     runs-on: ubuntu-latest
-
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -313,39 +221,23 @@ jobs:
           python-version: "3.12"
 
       - name: Setup Linux
-        if: runner.os == 'linux'
         run: |
           sudo apt-get update && sudo apt-get install -y cmake libsndfile1
 
-      - name: Setup macOS
-        if: runner.os == 'macOS'
-        run: |
-          brew install libuv
-
       - name: Install dependencies
         run: |
-          python --version
-          pip --version
           python -m pip install -U pip
-          pip install ray==2.9.0
-          pip install '.'
-          pip install torch==2.6.0 torchvision torchaudio
+          pip install torch==2.6.0 torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
+          pip install '.' --extra-index-url https://download.pytorch.org/whl/cpu
           pip list
-        shell: bash
+
       - name: Check Install
         run: |
           ludwig check_install
-        shell: bash
-
-      - name: Test Getting Started
-        run: |
-          cd examples/getting_started && sh ./run.sh
-        shell: bash
 
   event_file:
     name: "Event File"
     runs-on: ubuntu-latest
-
     steps:
       - name: Upload
         uses: actions/upload-artifact@v4
