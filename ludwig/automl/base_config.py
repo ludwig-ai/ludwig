@@ -255,7 +255,7 @@ def get_reference_configs() -> dict:
     return reference_configs
 
 
-def get_dataset_info(df: Union[pd.DataFrame, dd.core.DataFrame]) -> DatasetInfo:
+def get_dataset_info(df: Union[pd.DataFrame, dd.DataFrame]) -> DatasetInfo:
     """Constructs FieldInfo objects for each feature in dataset. These objects are used for downstream type
     inference.
 

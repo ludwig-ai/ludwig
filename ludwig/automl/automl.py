@@ -109,7 +109,7 @@ class AutoTrainResults:
 
 @PublicAPI
 def auto_train(
-    dataset: Union[str, pd.DataFrame, dd.core.DataFrame],
+    dataset: Union[str, pd.DataFrame, dd.DataFrame],
     target: str,
     time_limit_s: Union[int, float],
     output_directory: str = OUTPUT_DIR,
@@ -125,7 +125,7 @@ def auto_train(
     All batch and learning rate tuning is done @ training time.
 
     # Inputs
-    :param dataset: (str, pd.DataFrame, dd.core.DataFrame) data source to train over.
+    :param dataset: (str, pd.DataFrame, dd.DataFrame) data source to train over.
     :param target: (str) name of target feature
     :param time_limit_s: (int, float) total time allocated to auto_train. acts
                         as the stopping parameter
@@ -159,7 +159,7 @@ def auto_train(
 
 @PublicAPI
 def create_auto_config(
-    dataset: Union[str, pd.DataFrame, dd.core.DataFrame, DatasetInfo],
+    dataset: Union[str, pd.DataFrame, dd.DataFrame, DatasetInfo],
     target: Union[str, List[str]],
     time_limit_s: Union[int, float],
     tune_for_memory: bool = False,
@@ -173,7 +173,7 @@ def create_auto_config(
     target in the given time limit.
 
     # Inputs
-    :param dataset: (str, pd.DataFrame, dd.core.DataFrame, DatasetInfo) data source to train over.
+    :param dataset: (str, pd.DataFrame, dd.DataFrame, DatasetInfo) data source to train over.
     :param target: (str, List[str]) name of target feature
     :param time_limit_s: (int, float) total time allocated to auto_train. acts
                          as the stopping parameter
@@ -249,7 +249,7 @@ def create_features_config(
 
 @PublicAPI
 def train_with_config(
-    dataset: Union[str, pd.DataFrame, dd.core.DataFrame],
+    dataset: Union[str, pd.DataFrame, dd.DataFrame],
     config: dict,
     output_directory: str = OUTPUT_DIR,
     random_seed: int = default_random_seed,
@@ -390,7 +390,7 @@ def _model_select(
 
 def _train(
     config: Dict,
-    dataset: Union[str, pd.DataFrame, dd.core.DataFrame],
+    dataset: Union[str, pd.DataFrame, dd.DataFrame],
     output_directory: str,
     model_name: str,
     random_seed: int,

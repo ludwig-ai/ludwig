@@ -151,7 +151,7 @@ class TemperatureScaling(CalibrationModule):
         super().__init__()
         self.num_classes = 2 if binary else num_classes
         self.binary = binary
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = "cuda" if torch.cuda.is_available() and torch.cuda.device_count() > 0 else "cpu"
         self.temperature = nn.Parameter(torch.ones(1), requires_grad=False).to(self.device)
 
     def train_calibration(
@@ -244,7 +244,7 @@ class MatrixScaling(CalibrationModule):
     def __init__(self, num_classes: int = 2, off_diagonal_l2: float = 0.01, mu: float = None):
         super().__init__()
         self.num_classes = num_classes
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = "cuda" if torch.cuda.is_available() and torch.cuda.device_count() > 0 else "cpu"
         self.w = nn.Parameter(torch.eye(self.num_classes), requires_grad=False).to(self.device)
         self.b = nn.Parameter(torch.zeros(self.num_classes), requires_grad=False).to(self.device)
         self.off_diagonal_l2 = off_diagonal_l2
@@ -306,7 +306,7 @@ class MatrixScaling(CalibrationModule):
         Described in "Beyond temperature scaling: Obtaining well-calibrated multiclass probabilities with Dirichlet
         calibration" https://proceedings.neurips.cc/paper/2019/file/8ca01ea920679a0fe3728441494041b9-Paper.pdf
         """
-        off_diagonal_entries = torch.masked_select(self.w, ~torch.eye(self.num_classes, dtype=bool))
+        off_diagonal_entries = torch.masked_select(self.w, ~torch.eye(self.num_classes, dtype=bool, device=self.w.device))
         weight_matrix_loss = self.off_diagonal_l2 * torch.linalg.vector_norm(off_diagonal_entries)
         bias_vector_loss = self.mu * torch.linalg.vector_norm(self.b, 2)
         return bias_vector_loss + weight_matrix_loss

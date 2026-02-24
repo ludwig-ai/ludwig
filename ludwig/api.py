@@ -1811,7 +1811,7 @@ class LudwigModel:
         ludwig_model = LudwigModel.load(model_dir)
         ```
         """
-        # Initialize Horovod and PyTorch before calling `broadcast()` to prevent initializing
+        # Initialize PyTorch before calling `broadcast()` to prevent initializing
         # Torch with default parameters
         backend_param = backend
         backend = initialize_backend(backend)

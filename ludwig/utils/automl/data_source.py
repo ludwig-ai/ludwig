@@ -133,6 +133,6 @@ class DaskDataSource(DataframeSource):
 
 @DeveloperAPI
 def wrap_data_source(df: DataFrame) -> DataSource:
-    if isinstance(df, dd.core.DataFrame):
+    if isinstance(df, dd.DataFrame):
         return DaskDataSource(df)
     return DataframeSource(df)

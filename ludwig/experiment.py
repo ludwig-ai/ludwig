@@ -497,7 +497,7 @@ def cli(sys_argv):
         "-b",
         "--backend",
         help="specifies backend to use for parallel / distributed execution, "
-        "defaults to local execution or Horovod if called using horovodrun",
+        "defaults to local execution",
         choices=ALL_BACKENDS,
     )
     parser.add_argument(

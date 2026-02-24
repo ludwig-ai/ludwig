@@ -175,7 +175,8 @@ def print_model_summary(model_path: str, **kwargs) -> None:
     :return: (`None`)
     """
     model = LudwigModel.load(model_path)
-    # Model's dict inputs are wrapped in a list, required by torchinfo.
+    # Move model to CPU for torchinfo summary to avoid device mismatch issues.
+    model.model.cpu()
     logger.info(torchinfo.summary(model.model, input_data=[model.model.get_model_inputs()], depth=20))
 
     logger.info("\nModules:\n")
@@ -333,7 +334,7 @@ def cli_collect_activations(sys_argv):
         "-b",
         "--backend",
         help="specifies backend to use for parallel / distributed execution, "
-        "defaults to local execution or Horovod if called using horovodrun",
+        "defaults to local execution",
         choices=ALL_BACKENDS,
     )
     parser.add_argument(

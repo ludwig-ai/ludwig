@@ -9,7 +9,7 @@ import psutil
 try:
     import GPUtil
 except ImportError:
-    raise ImportError(" ray is not installed. In order to use auto_train please run pip install ludwig[ray]")
+    raise ImportError("GPUtil is not installed. In order to use auto_train please run pip install ludwig[ray]")
 
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend
