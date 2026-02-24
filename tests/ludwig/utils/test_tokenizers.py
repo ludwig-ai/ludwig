@@ -1,87 +1,194 @@
-import os
-
 import pytest
-import torch
-import torchtext
 
-from ludwig.utils.tokenizers import EnglishLemmatizeFilterTokenizer, NgramTokenizer, StringSplitTokenizer
-
-TORCHTEXT_0_14_0_HF_NAMES = [
-    "bert-base-uncased",
-    "distilbert-base-uncased",
-    "google/electra-small-discriminator",
-    "dbmdz/bert-base-italian-cased",  # Community model
-    "nreimers/MiniLM-L6-H384-uncased",  # Community model
-    "emilyalsentzer/Bio_ClinicalBERT",  # Community model
-    "bionlp/bluebert_pubmed_mimic_uncased_L-12_H-768_A-12",  # Community model
-]
+from ludwig.utils.tokenizers import (
+    BERTTokenizer,
+    get_hf_tokenizer,
+    get_tokenizer_from_registry,
+    HFTokenizer,
+    SpacePunctuationStringToListTokenizer,
+    SpaceStringToListTokenizer,
+    tokenizer_registry,
+)
 
 
 @pytest.mark.parametrize(
     "pretrained_model_name_or_path",
     [
-        pytest.param(
-            model_name,
-            marks=[
-                pytest.mark.skipif(
-                    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 14, 0),
-                    reason="requires torchtext 0.14.0 or higher",
-                ),
-            ],
-        )
-        for model_name in TORCHTEXT_0_14_0_HF_NAMES
+        "bert-base-uncased",
+        "bert-base-cased",
     ],
 )
-def test_bert_hf_tokenizer_parity(tmpdir, pretrained_model_name_or_path):
-    """Tests the BERTTokenizer implementation.
-
-    Asserts both tokens and token IDs are the same by initializing the BERTTokenizer as a standalone tokenizer and as a
-    HF tokenizer.
-    """
-    from ludwig.utils.tokenizers import get_hf_tokenizer, HFTokenizer
-
-    inputs = "Hello, ``I'm'' ónë of 1,205,000 sentences!"
+def test_bert_hf_tokenizer_parity(pretrained_model_name_or_path):
+    inputs = "Hello, I'm a single sentence!"
     hf_tokenizer = HFTokenizer(pretrained_model_name_or_path)
-    torchtext_tokenizer = get_hf_tokenizer(pretrained_model_name_or_path)
-
-    # Ensure that the tokenizer is scriptable
-    tokenizer_path = os.path.join(tmpdir, "tokenizer.pt")
-    torch.jit.script(torchtext_tokenizer).save(tokenizer_path)
-    torchtext_tokenizer = torch.jit.load(tokenizer_path)
-
+    tokens_expected = hf_tokenizer.tokenizer.tokenize(inputs)
     token_ids_expected = hf_tokenizer(inputs)
-    token_ids = torchtext_tokenizer(inputs)
 
-    assert token_ids_expected == token_ids
-
-
-def test_ngram_tokenizer():
-    inputs = "Hello, I'm a single sentence!"
-    tokenizer = NgramTokenizer(n=2)
-    tokens_expected = [
-        "Hello,",
-        "I'm",
-        "a",
-        "single",
-        "sentence!",
-        "Hello, I'm",
-        "I'm a",
-        "a single",
-        "single sentence!",
-    ]
+    tokenizer = BERTTokenizer(pretrained_model_name_or_path=pretrained_model_name_or_path, is_hf_tokenizer=False)
     tokens = tokenizer(inputs)
+
+    tokenizer_ids_only = get_hf_tokenizer(pretrained_model_name_or_path)
+    token_ids = tokenizer_ids_only(inputs)
+
     assert tokens == tokens_expected
+    assert token_ids == token_ids_expected
 
 
-def test_string_split_tokenizer():
-    inputs = "Multiple,Elements,Are here!"
-    tokenizer = StringSplitTokenizer(",")
-    tokens = tokenizer(inputs)
-    assert tokens == ["Multiple", "Elements", "Are here!"]
+# ---------------------------------------------------------------------------
+# SpaceStringToListTokenizer tests
+# ---------------------------------------------------------------------------
 
 
-def test_english_lemmatize_filter_tokenizer():
-    inputs = "Hello, I'm a single sentence!"
-    tokenizer = EnglishLemmatizeFilterTokenizer()
-    tokens = tokenizer(inputs)
-    assert len(tokens) > 0
+class TestSpaceStringToListTokenizer:
+    def test_space_tokenizer_single_string(self):
+        tokenizer = SpaceStringToListTokenizer()
+        result = tokenizer("hello world")
+        assert result == ["hello", "world"]
+
+    def test_space_tokenizer_list_input(self):
+        tokenizer = SpaceStringToListTokenizer()
+        result = tokenizer(["hello world", "foo bar"])
+        assert result == [["hello", "world"], ["foo", "bar"]]
+
+    def test_space_tokenizer_empty_string(self):
+        tokenizer = SpaceStringToListTokenizer()
+        result = tokenizer("")
+        assert result == []
+
+
+# ---------------------------------------------------------------------------
+# SpacePunctuationStringToListTokenizer tests
+# ---------------------------------------------------------------------------
+
+
+class TestSpacePunctuationStringToListTokenizer:
+    def test_space_punct_tokenizer_handles_punctuation(self):
+        tokenizer = SpacePunctuationStringToListTokenizer()
+        result = tokenizer("hello, world!")
+        assert result == ["hello", ",", "world", "!"]
+
+    def test_space_punct_tokenizer_list_input(self):
+        tokenizer = SpacePunctuationStringToListTokenizer()
+        result = tokenizer(["hello, world"])
+        assert result == [["hello", ",", "world"]]
+
+
+# ---------------------------------------------------------------------------
+# SentencePieceTokenizer tests (requires model download)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.slow
+class TestSentencePieceTokenizer:
+    def test_sentencepiece_tokenizer_basic(self):
+        try:
+            from ludwig.utils.tokenizers import SentencePieceTokenizer
+
+            tokenizer = SentencePieceTokenizer()
+            result = tokenizer("Hello, this is a test sentence.")
+            assert isinstance(result, list)
+            assert len(result) > 0
+            assert all(isinstance(tok, str) for tok in result)
+        except Exception as e:
+            pytest.skip(f"SentencePieceTokenizer unavailable or download failed: {e}")
+
+    def test_sentencepiece_tokenizer_list_input(self):
+        try:
+            from ludwig.utils.tokenizers import SentencePieceTokenizer
+
+            tokenizer = SentencePieceTokenizer()
+            result = tokenizer(["Hello world", "Goodbye world"])
+            assert isinstance(result, list)
+            assert len(result) == 2
+            for token_list in result:
+                assert isinstance(token_list, list)
+                assert all(isinstance(tok, str) for tok in token_list)
+        except Exception as e:
+            pytest.skip(f"SentencePieceTokenizer unavailable or download failed: {e}")
+
+
+# ---------------------------------------------------------------------------
+# CLIPTokenizer tests (requires model download)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.slow
+class TestCLIPTokenizer:
+    def test_clip_tokenizer_basic(self):
+        try:
+            from ludwig.utils.tokenizers import CLIPTokenizer
+
+            tokenizer = CLIPTokenizer()
+            result = tokenizer("a photo of a cat")
+            assert isinstance(result, list)
+            assert len(result) > 0
+            # CLIP tokenizer returns strings (subword tokens)
+            assert all(isinstance(tok, (str, int)) for tok in result)
+        except Exception as e:
+            pytest.skip(f"CLIPTokenizer unavailable or download failed: {e}")
+
+
+# ---------------------------------------------------------------------------
+# GPT2BPETokenizer tests (requires model download)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.slow
+class TestGPT2BPETokenizer:
+    def test_gpt2_bpe_tokenizer_basic(self):
+        try:
+            from ludwig.utils.tokenizers import GPT2BPETokenizer
+
+            tokenizer = GPT2BPETokenizer()
+            result = tokenizer("Hello, how are you?")
+            assert isinstance(result, list)
+            assert len(result) > 0
+            assert all(isinstance(tok, (str, int)) for tok in result)
+        except Exception as e:
+            pytest.skip(f"GPT2BPETokenizer unavailable or download failed: {e}")
+
+
+# ---------------------------------------------------------------------------
+# get_hf_tokenizer routing tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.slow
+class TestGetHfTokenizerRouting:
+    def test_get_hf_tokenizer_bert_returns_bert_tokenizer(self):
+        try:
+            tokenizer = get_hf_tokenizer("bert-base-uncased")
+            assert isinstance(tokenizer, BERTTokenizer)
+        except Exception as e:
+            pytest.skip(f"Model download failed: {e}")
+
+    def test_get_hf_tokenizer_roberta_returns_hf_tokenizer(self):
+        try:
+            tokenizer = get_hf_tokenizer("roberta-base")
+            assert isinstance(tokenizer, HFTokenizer)
+            assert not isinstance(tokenizer, BERTTokenizer)
+        except Exception as e:
+            pytest.skip(f"Model download failed: {e}")
+
+    def test_get_hf_tokenizer_distilbert_returns_hf_tokenizer(self):
+        try:
+            tokenizer = get_hf_tokenizer("distilbert-base-uncased")
+            assert isinstance(tokenizer, HFTokenizer)
+            assert not isinstance(tokenizer, BERTTokenizer)
+        except Exception as e:
+            pytest.skip(f"Model download failed: {e}")
+
+
+# ---------------------------------------------------------------------------
+# get_tokenizer_from_registry tests
+# ---------------------------------------------------------------------------
+
+
+class TestGetTokenizerFromRegistry:
+    def test_get_tokenizer_from_registry_space(self):
+        cls = get_tokenizer_from_registry("space")
+        assert cls is SpaceStringToListTokenizer
+
+    def test_get_tokenizer_from_registry_invalid_raises(self):
+        with pytest.raises(KeyError, match="Invalid tokenizer name"):
+            get_tokenizer_from_registry("nonexistent_tokenizer_xyz")

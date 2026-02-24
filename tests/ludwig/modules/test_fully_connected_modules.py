@@ -87,4 +87,4 @@ def test_fc_stack_no_layers_behaves_like_passthrough():
 
     assert list(output_tensor.shape[1:]) == [first_layer_input_size]
     assert output_tensor.shape[1:] == fc_stack.output_shape
-    assert np.all(np.isclose(input_tensor, output_tensor))
+    assert np.all(np.isclose(input_tensor.cpu().detach(), output_tensor.cpu().detach()))

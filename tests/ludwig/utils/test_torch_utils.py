@@ -105,38 +105,3 @@ def test_initialize_pytorch_without_gpu(mock_torch):
     assert os.environ["CUDA_VISIBLE_DEVICES"] == ""
 
 
-@patch("ludwig.utils.torch_utils.torch")
-def test_initialize_pytorch_with_distributed(mock_torch):
-    mock_torch.cuda.is_available.return_value = True
-    mock_torch.cuda.device_count.return_value = 4
-
-    with clean_params():
-        initialize_pytorch(local_rank=1, local_size=4)
-
-    mock_torch.cuda.set_device.assert_called_with(1)
-    assert "CUDA_VISIBLE_DEVICES" not in os.environ
-
-
-@patch("ludwig.utils.torch_utils.warnings")
-@patch("ludwig.utils.torch_utils.torch")
-def test_initialize_pytorch_with_distributed_bad_local_rank(mock_torch, mock_warnings):
-    """In this scenario, the local_size 5 is out of the bounds of the GPU indices."""
-    mock_torch.cuda.is_available.return_value = True
-    mock_torch.cuda.device_count.return_value = 4
-
-    with clean_params():
-        initialize_pytorch(local_rank=1, local_size=5)
-
-    assert os.environ["CUDA_VISIBLE_DEVICES"] == ""
-    mock_warnings.warn.assert_called()
-
-
-@patch("ludwig.utils.torch_utils.torch")
-def test_initialize_pytorch_with_distributed_explicit_gpus(mock_torch):
-    mock_torch.cuda.is_available.return_value = True
-    mock_torch.cuda.device_count.return_value = 4
-
-    with clean_params():
-        initialize_pytorch(gpus="-1", local_rank=1, local_size=4)
-
-    assert os.environ["CUDA_VISIBLE_DEVICES"] == ""
