@@ -57,9 +57,9 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
     trainer: BaseTrainerConfig
     preprocessing: PreprocessingConfig
     defaults: BaseDefaultsConfig
-    hyperopt: Optional[HyperoptConfig] = None
+    hyperopt: HyperoptConfig | None = None
 
-    backend: Dict[str, Any] = schema_utils.Dict()  # TODO(jeffkinnison): Add backend schema
+    backend: dict[str, Any] = schema_utils.Dict()  # TODO(jeffkinnison): Add backend schema
     ludwig_version: str = schema_utils.ProtectedString(LUDWIG_VERSION)
 
     def __post_init__(self):
@@ -148,14 +148,14 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
     def from_yaml(config_path: str) -> "ModelConfig":
         return ModelConfig.from_dict(load_yaml(config_path))
 
-    def get_feature_names(self) -> Set[str]:
+    def get_feature_names(self) -> set[str]:
         """Returns a set of all feature names."""
         feature_names = set()
         feature_names.update([f.column for f in self.input_features])
         feature_names.update([f.column for f in self.output_features])
         return feature_names
 
-    def get_feature_config(self, feature_column_name: str) -> Optional[BaseInputFeatureConfig]:
+    def get_feature_config(self, feature_column_name: str) -> BaseInputFeatureConfig | None:
         """Returns the feature config for the given feature name."""
         for feature in self.input_features:
             if feature.column == feature_column_name:
@@ -174,7 +174,7 @@ def register_model_type(name: str):
     return wrap
 
 
-def _merge_encoder_cache_params(preprocessing_params: Dict[str, Any], encoder_params: Dict[str, Any]) -> Dict[str, Any]:
+def _merge_encoder_cache_params(preprocessing_params: dict[str, Any], encoder_params: dict[str, Any]) -> dict[str, Any]:
     if preprocessing_params.get("cache_encoder_embeddings"):
         preprocessing_params[ENCODER] = encoder_params
     return preprocessing_params

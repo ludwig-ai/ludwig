@@ -36,7 +36,7 @@ def get_marshmallow_field_class_name(field):
 
 
 @DeveloperAPI
-def load_config(cls: Type["BaseMarshmallowConfig"], **kwargs) -> "BaseMarshmallowConfig":  # noqa 0821
+def load_config(cls: type["BaseMarshmallowConfig"], **kwargs) -> "BaseMarshmallowConfig":  # noqa 0821
     """Takes a marshmallow class and instantiates it with the given keyword args as parameters."""
     assert_is_a_marshmallow_class(cls)
     schema = cls.Schema()
@@ -46,7 +46,7 @@ def load_config(cls: Type["BaseMarshmallowConfig"], **kwargs) -> "BaseMarshmallo
 @DeveloperAPI
 def load_trainer_with_kwargs(
     model_type: str, kwargs: dict
-) -> Tuple["BaseMarshmallowConfig", TDict[str, Any]]:  # noqa: F821
+) -> tuple["BaseMarshmallowConfig", TDict[str, Any]]:  # noqa: F821
     """Special case of `load_config_with_kwargs` for the trainer schemas.
 
     In particular, it chooses the correct default type for an incoming config (if it doesn't have one already), but
@@ -65,8 +65,8 @@ def load_trainer_with_kwargs(
 
 @DeveloperAPI
 def load_config_with_kwargs(
-    cls: Type["BaseMarshmallowConfig"], kwargs_overrides
-) -> Tuple["BaseMarshmallowConfig", TDict[str, Any]]:  # noqa 0821
+    cls: type["BaseMarshmallowConfig"], kwargs_overrides
+) -> tuple["BaseMarshmallowConfig", TDict[str, Any]]:  # noqa 0821
     """Instatiates an instance of the marshmallow class and kwargs overrides instantiantes the schema.
 
     Returns a tuple of config, and a dictionary of any keys in kwargs_overrides which are not present in config.
@@ -122,7 +122,7 @@ def create_cond(if_pred: TDict, then_pred: TDict):
 
 
 @DeveloperAPI
-def remove_duplicate_fields(properties: dict, fields: Optional[TList[str]] = None) -> None:
+def remove_duplicate_fields(properties: dict, fields: TList[str] | None = None) -> None:
     """Util function for removing duplicated schema elements. For example, input feature json schema mapping has a
     type param defined directly on the json schema, but also has a parameter defined on the schema class. We need
     both -
@@ -198,13 +198,13 @@ class BaseMarshmallowConfig(ABC):
         return copy_data
 
     @classmethod
-    def from_dict(cls: Type[ConfigT], d: TDict[str, Any]) -> ConfigT:
+    def from_dict(cls: type[ConfigT], d: TDict[str, Any]) -> ConfigT:
         schema = cls.get_class_schema()()
         return schema.load(d)
 
     @classmethod
     @lru_cache(maxsize=None)
-    def get_valid_field_names(cls) -> Set[str]:
+    def get_valid_field_names(cls) -> set[str]:
         schema = cls.get_class_schema()()
         return set(schema.fields.keys())
 
@@ -253,9 +253,7 @@ def InitializerOptions(default: str = "xavier_uniform", description="", paramete
 
 
 @DeveloperAPI
-def ActivationOptions(
-    default: Union[str, None] = "relu", description=None, parameter_metadata: ParameterMetadata = None
-):
+def ActivationOptions(default: str | None = "relu", description=None, parameter_metadata: ParameterMetadata = None):
     """Utility wrapper that returns a `StringOptions` field with keys from `activations` registry."""
     description = description or "Default activation function applied to the output of the fully connected layers."
     parameter_metadata = parameter_metadata or COMMON_METADATA["activation"]
@@ -269,7 +267,7 @@ def ActivationOptions(
 
 
 @DeveloperAPI
-def ReductionOptions(default: Union[None, str] = None, description="", parameter_metadata: ParameterMetadata = None):
+def ReductionOptions(default: None | str = None, description="", parameter_metadata: ParameterMetadata = None):
     """Utility wrapper that returns a `StringOptions` field with keys from `reduce_mode_registry`."""
     return StringOptions(
         list(reduce_mode_registry.keys()),
@@ -282,7 +280,7 @@ def ReductionOptions(default: Union[None, str] = None, description="", parameter
 
 @DeveloperAPI
 def RegularizerOptions(
-    default: Union[None, str],
+    default: None | str,
     allow_none: bool = False,
     description="",
     parameter_metadata: ParameterMetadata = None,
@@ -300,7 +298,7 @@ def RegularizerOptions(
 @DeveloperAPI
 def String(
     description: str,
-    default: Union[None, str],
+    default: None | str,
     allow_none: bool = False,
     pattern: str = None,
     parameter_metadata: ParameterMetadata = None,
@@ -333,7 +331,7 @@ def String(
 @DeveloperAPI
 def StringOptions(
     options: TList[str],
-    default: Union[None, str],
+    default: None | str,
     allow_none: bool = False,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
@@ -396,7 +394,7 @@ def ProtectedString(
 @DeveloperAPI
 def IntegerOptions(
     options: TList[int],
-    default: Union[None, int],
+    default: None | int,
     allow_none: bool = False,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
@@ -463,7 +461,7 @@ def Boolean(default: bool, description: str = "", parameter_metadata: ParameterM
 
 @DeveloperAPI
 def Integer(
-    default: Union[None, int],
+    default: None | int,
     allow_none=False,
     description="",
     parameter_metadata: ParameterMetadata = None,
@@ -494,7 +492,7 @@ def Integer(
 @DeveloperAPI
 def PositiveInteger(
     description: str,
-    default: Union[None, int],
+    default: None | int,
     allow_none: bool = False,
     parameter_metadata: ParameterMetadata = None,
 ):
@@ -529,7 +527,7 @@ def PositiveInteger(
 @DeveloperAPI
 def NonNegativeInteger(
     description: str,
-    default: Union[None, int],
+    default: None | int,
     allow_none: bool = False,
     parameter_metadata: ParameterMetadata = None,
 ):
@@ -564,7 +562,7 @@ def NonNegativeInteger(
 @DeveloperAPI
 def IntegerRange(
     description: str,
-    default: Union[None, int],
+    default: None | int,
     allow_none: bool = False,
     parameter_metadata: ParameterMetadata = None,
     min: int = None,
@@ -602,7 +600,7 @@ def IntegerRange(
 
 @DeveloperAPI
 def Float(
-    default: Union[None, int],
+    default: None | int,
     allow_none=False,
     description="",
     parameter_metadata: ParameterMetadata = None,
@@ -631,10 +629,10 @@ def Float(
 
 @DeveloperAPI
 def NonNegativeFloat(
-    default: Union[None, float],
+    default: None | float,
     allow_none: bool = False,
     description: str = "",
-    max: Optional[float] = None,
+    max: float | None = None,
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be nonnegative."""
@@ -665,7 +663,7 @@ def NonNegativeFloat(
 
 @DeveloperAPI
 def FloatRange(
-    default: Union[None, float],
+    default: None | float,
     allow_none: bool = False,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
@@ -703,7 +701,7 @@ def FloatRange(
 
 @DeveloperAPI
 def Dict(
-    default: Union[None, TDict] = None,
+    default: None | TDict = None,
     allow_none: bool = True,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
@@ -740,9 +738,9 @@ def Dict(
 
 @DeveloperAPI
 def List(
-    list_type: Union[Type[str], Type[int], Type[float], Type[list]] = str,
-    inner_type: Union[Type[str], Type[int], Type[float], Type[dict]] = float,
-    default: Union[None, TList[Any]] = None,
+    list_type: type[str] | type[int] | type[float] | type[list] = str,
+    inner_type: type[str] | type[int] | type[float] | type[dict] = float,
+    default: None | TList[Any] = None,
     allow_none: bool = True,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
@@ -800,7 +798,7 @@ def List(
 
 @DeveloperAPI
 def DictList(
-    default: Union[None, TList[TDict]] = None,
+    default: None | TList[TDict] = None,
     allow_none: bool = True,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
@@ -973,10 +971,10 @@ def InitializerOrDict(
 @DeveloperAPI
 def FloatRangeTupleDataclassField(
     n: int = 2,
-    default: Union[Tuple, None] = (0.9, 0.999),
+    default: tuple | None = (0.9, 0.999),
     allow_none: bool = False,
-    min: Union[int, None] = 0,
-    max: Union[int, None] = 1,
+    min: int | None = 0,
+    max: int | None = 1,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
@@ -1015,7 +1013,7 @@ def FloatRangeTupleDataclassField(
                 "description": "Valid options for FloatRangeTupleDataclassField.",
             }
 
-    def validate_range(data: Tuple):
+    def validate_range(data: tuple):
         if isinstance(data, tuple) and all([isinstance(x, float) or isinstance(x, int) for x in data]):
             minmax_checks = []
             if min is not None:
@@ -1192,7 +1190,7 @@ class TypeSelection(fields.Field):
     def __init__(
         self,
         registry: Registry,
-        default_value: Optional[str] = None,
+        default_value: str | None = None,
         key: str = "type",
         description: str = "",
         parameter_metadata: ParameterMetadata = None,
@@ -1246,7 +1244,7 @@ class TypeSelection(fields.Field):
     def str_value_to_object(self, value: str) -> str:
         return {self.key: value}
 
-    def get_schema_from_registry(self, key: str) -> Type[BaseMarshmallowConfig]:
+    def get_schema_from_registry(self, key: str) -> type[BaseMarshmallowConfig]:
         return self.registry[key]
 
     # TODO: Maybe need to plumb 'required' through here
@@ -1265,7 +1263,7 @@ class TypeSelection(fields.Field):
 class DictMarshmallowField(fields.Field):
     def __init__(
         self,
-        cls: Type[BaseMarshmallowConfig],
+        cls: type[BaseMarshmallowConfig],
         allow_none: bool = True,
         default_missing: bool = False,
         description: str = "",

@@ -93,7 +93,7 @@ def test_bwcew_loss(
     preds: torch.Tensor,
     target: torch.Tensor,
     confidence_penalty: float,
-    positive_class_weight: Optional[float],
+    positive_class_weight: float | None,
     robust_lambda: int,
     output: torch.Tensor,
 ):
@@ -134,9 +134,7 @@ def test_sigmoid_cross_entropy_loss(preds: torch.Tensor, target: torch.Tensor, o
 )
 @pytest.mark.parametrize("preds", [torch.arange(6).reshape(3, 2).float()])
 @pytest.mark.parametrize("target", [torch.arange(6, 12).reshape(3, 2).float()])
-def test_huber_loss(
-    preds: torch.Tensor, target: torch.Tensor, delta: float, output: Union[torch.Tensor, Type[Exception]]
-):
+def test_huber_loss(preds: torch.Tensor, target: torch.Tensor, delta: float, output: torch.Tensor | type[Exception]):
     with pytest.raises(output) if not isinstance(output, torch.Tensor) else contextlib.nullcontext():
         loss = loss_modules.HuberLoss(HuberLossConfig.from_dict({"delta": delta}))
         value = loss(preds, target)

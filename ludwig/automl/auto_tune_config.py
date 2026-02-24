@@ -151,13 +151,13 @@ def get_new_params(current_param_values, hyperparam_search_space, params_to_modi
     return current_param_values
 
 
-def _update_text_encoder(input_features: List, old_text_encoder: str, new_text_encoder: str) -> None:
+def _update_text_encoder(input_features: list, old_text_encoder: str, new_text_encoder: str) -> None:
     for feature in input_features:
         if feature["type"] == TEXT and feature["encoder"] == old_text_encoder:
             feature["encoder"] = new_text_encoder
 
 
-def _get_text_feature_min_usable_length(input_features: List, training_set_metadata) -> int:
+def _get_text_feature_min_usable_length(input_features: list, training_set_metadata) -> int:
     """Returns min of AUTOML_SMALLER_TEXT_LENGTH and lowest 99th percentile sequence length over text features."""
     min_usable_length = AUTOML_SMALLER_TEXT_LENGTH
     for feature in input_features:

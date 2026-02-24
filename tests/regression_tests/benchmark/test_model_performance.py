@@ -27,7 +27,7 @@ def update_skipped_configs_issues(config_filename):
         SKIPPED_CONFIG_ISSUES[config_filename] = "Requires credentials. Can't run from a forked repo."
 
 
-def get_test_config_filenames() -> List[str]:
+def get_test_config_filenames() -> list[str]:
     """Return list of the config filenames used for benchmarking."""
     benchmark_directory = "/".join(__file__.split("/")[:-1] + ["configs"])
     return [config_fp for config_fp in os.listdir(benchmark_directory)]
@@ -74,7 +74,7 @@ def test_performance(config_filename, tmpdir):
     if err is not None:
         raise err
 
-    expected_metrics: List[ExpectedMetric] = [
+    expected_metrics: list[ExpectedMetric] = [
         ExpectedMetric.from_dict(expected_metric) for expected_metric in expected_metrics_dict["metrics"]
     ]
     for expected_metric in expected_metrics:

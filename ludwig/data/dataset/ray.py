@@ -54,9 +54,9 @@ class RayDataset(Dataset):
 
     def __init__(
         self,
-        df: Union[str, DataFrame],
-        features: Dict[str, Dict],
-        training_set_metadata: Dict[str, Any],
+        df: str | DataFrame,
+        features: dict[str, dict],
+        training_set_metadata: dict[str, Any],
         backend: Backend,
     ):
         self.df_engine = backend.df_engine
@@ -73,8 +73,8 @@ class RayDataset(Dataset):
     ) -> RayNativeDataset:
         """Returns a ray.data.Dataset, optionally shuffled.
 
-        In modern Ray (2.5+), datasets use lazy execution by default,
-        so there's no need for explicit windowing or pipelining.
+        In modern Ray (2.5+), datasets use lazy execution by default, so there's no need for explicit windowing or
+        pipelining.
         """
         ds = self.ds
         if shuffle:
@@ -113,15 +113,15 @@ class RayDatasetManager(DatasetManager):
     def __init__(self, backend):
         self.backend = backend
 
-    def create(self, dataset: Union[str, DataFrame], config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
+    def create(self, dataset: str | DataFrame, config: dict[str, Any], training_set_metadata: dict[str, Any]):
         return RayDataset(dataset, get_proc_features(config), training_set_metadata, self.backend)
 
     def save(
         self,
         cache_path: str,
         dataset: DataFrame,
-        config: Dict[str, Any],
-        training_set_metadata: Dict[str, Any],
+        config: dict[str, Any],
+        training_set_metadata: dict[str, Any],
         tag: str,
     ):
         self.backend.df_engine.to_parquet(dataset, cache_path)
@@ -141,8 +141,8 @@ class RayDatasetShard(Dataset):
     def __init__(
         self,
         dataset_shard,
-        features: Dict[str, Dict],
-        training_set_metadata: Dict[str, Any],
+        features: dict[str, dict],
+        training_set_metadata: dict[str, Any],
     ):
         self.dataset_shard = dataset_shard
         self.features = features
@@ -177,8 +177,8 @@ class _BaseBatcher(Batcher):
 
     def __init__(
         self,
-        features: Dict[str, Dict],
-        training_set_metadata: Dict[str, Any],
+        features: dict[str, dict],
+        training_set_metadata: dict[str, Any],
         batch_size: int,
         samples_per_epoch: int,
     ):
@@ -254,7 +254,7 @@ class _BaseBatcher(Batcher):
 
         return to_tensors
 
-    def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:
+    def _prepare_batch(self, batch: pd.DataFrame) -> dict[str, np.ndarray]:
         res = {}
         for c in self.columns:
             if self.features[c][TYPE] not in _SCALAR_TYPES:
@@ -275,8 +275,8 @@ class RayDatasetBatcher(_BaseBatcher):
     def __init__(
         self,
         dataset: RayNativeDataset,
-        features: Dict[str, Dict],
-        training_set_metadata: Dict[str, Any],
+        features: dict[str, dict],
+        training_set_metadata: dict[str, Any],
         batch_size: int,
         samples_per_epoch: int,
     ):
@@ -322,8 +322,8 @@ class RayDatasetShardBatcher(_BaseBatcher):
     def __init__(
         self,
         data_iterator,
-        features: Dict[str, Dict],
-        training_set_metadata: Dict[str, Any],
+        features: dict[str, dict],
+        training_set_metadata: dict[str, Any],
         batch_size: int,
         samples_per_epoch: int,
     ):
@@ -344,7 +344,9 @@ class RayDatasetShardBatcher(_BaseBatcher):
 
         def producer():
             for batch in self.data_iterator.iter_batches(
-                batch_size=batch_size, batch_format="pandas", prefetch_batches=1,
+                batch_size=batch_size,
+                batch_format="pandas",
+                prefetch_batches=1,
             ):
                 batch = to_tensors(batch)
                 res = self._prepare_batch(batch)

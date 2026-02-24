@@ -23,7 +23,7 @@ for any params it includes that are not present in your schema config.
 @ludwig_dataclass
 class DebertaModelParams(schema_utils.BaseMarshmallowConfig):
     @classmethod
-    def get_hf_config_param_names(cls) -> Set[str]:
+    def get_hf_config_param_names(cls) -> set[str]:
         return DebertaModelParams.get_valid_field_names()
 
     # Model architecture params for training from scratch
@@ -118,7 +118,7 @@ class DebertaModelParams(schema_utils.BaseMarshmallowConfig):
         description="Whether add absolute position embedding to content embedding.",
     )
 
-    pos_att_type: List[str] = schema_utils.List(
+    pos_att_type: list[str] = schema_utils.List(
         default=["p2c", "c2p"],
         description=(
             "The type of relative position attention, it can be a combination of `['p2c', 'c2p']`, e.g. `['p2c']`, "

@@ -38,7 +38,7 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
         description=COMBINER_METADATA["comparator"]["type"].long_description,
     )
 
-    entity_1: List[str] = schema_utils.List(
+    entity_1: list[str] = schema_utils.List(
         default=None,
         description=(
             "The list of input feature names `[feature_1, feature_2, ...]` constituting the first entity to compare. "
@@ -47,7 +47,7 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["comparator"]["entity_1"],
     )
 
-    entity_2: List[str] = schema_utils.List(
+    entity_2: list[str] = schema_utils.List(
         default=None,
         description=(
             "The list of input feature names `[feature_1, feature_2, ...]` constituting the second entity to compare. "
@@ -66,9 +66,9 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["comparator"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
+    bias_initializer: str | dict = common_fields.BiasInitializerField()
 
-    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField()
+    weights_initializer: str | dict = common_fields.WeightsInitializerField()
 
     num_fc_layers: int = common_fields.NumFCLayersField(default=1)
 
@@ -78,8 +78,8 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["comparator"]["output_size"],
     )
 
-    norm: Optional[str] = common_fields.NormField()
+    norm: str | None = common_fields.NormField()
 
-    norm_params: Optional[dict] = common_fields.NormParamsField()
+    norm_params: dict | None = common_fields.NormParamsField()
 
-    fc_layers: Optional[List[Dict[str, Any]]] = common_fields.FCLayersField()
+    fc_layers: list[dict[str, Any]] | None = common_fields.FCLayersField()

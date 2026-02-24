@@ -22,5 +22,5 @@ class TrialResults:
 
 @dataclass
 class HyperoptResults:
-    ordered_trials: List[TrialResults]
+    ordered_trials: list[TrialResults]
     experiment_analysis: ExperimentAnalysis

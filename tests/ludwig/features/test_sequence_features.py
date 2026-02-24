@@ -19,7 +19,7 @@ VOCAB_SIZE = 64
 
 
 @pytest.fixture(scope="module")
-def input_sequence() -> Tuple[torch.Tensor, List]:
+def input_sequence() -> tuple[torch.Tensor, list]:
     # generates a realistic looking synthetic sequence tensor, i.e.
     # each sequence will have non-zero tokens at the beginning with
     # trailing zero tokens, including a max length token with a single

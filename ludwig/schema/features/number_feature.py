@@ -103,7 +103,7 @@ class NumberOutputFeatureConfig(NumberOutputFeatureConfigMixin, BaseOutputFeatur
 
     type: str = schema_utils.ProtectedString(NUMBER)
 
-    clip: Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
+    clip: list[int] | tuple[int] = schema_utils.FloatRangeTupleDataclassField(
         n=2,
         default=None,
         allow_none=True,

@@ -17,7 +17,7 @@ DEVICE = get_torch_device()
 @pytest.mark.parametrize("vocab", [["a", "b", "c", "d", "e", "f", "g", "h"]])
 @pytest.mark.parametrize("embedding_size", [10])
 @pytest.mark.parametrize("representation", ["dense", "sparse"])
-def test_set_encoder(vocab: List[str], embedding_size: int, representation: str, num_fc_layers: int, dropout: float):
+def test_set_encoder(vocab: list[str], embedding_size: int, representation: str, num_fc_layers: int, dropout: float):
     # make repeatable
     torch.manual_seed(RANDOM_SEED)
 

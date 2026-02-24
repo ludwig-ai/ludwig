@@ -52,7 +52,7 @@ class Splitter(ABC):
     @abstractmethod
     def split(
         self, df: DataFrame, backend: Backend, random_seed: int = default_random_seed
-    ) -> Tuple[DataFrame, DataFrame, DataFrame]:
+    ) -> tuple[DataFrame, DataFrame, DataFrame]:
         pass
 
     def validate(self, config: ModelConfigDict):
@@ -62,17 +62,17 @@ class Splitter(ABC):
         return True
 
     @property
-    def required_columns(self) -> List[str]:
+    def required_columns(self) -> list[str]:
         """Returns the list of columns that are required for splitting."""
         return []
 
 
 def _make_divisions_ensure_minimum_rows(
-    divisions: List[int],
+    divisions: list[int],
     n_examples: int,
     min_val_rows: int = MIN_DATASET_SPLIT_ROWS,
     min_test_rows: int = MIN_DATASET_SPLIT_ROWS,
-) -> List[int]:
+) -> list[int]:
     """Revises divisions to ensure no dataset split has too few examples."""
     result = list(divisions)
     n = [dn - dm for dm, dn in zip((0,) + divisions, divisions + (n_examples,))]  # Number of examples in each split.
@@ -86,7 +86,7 @@ def _make_divisions_ensure_minimum_rows(
     return result
 
 
-def _split_divisions_with_min_rows(n_rows: int, probabilities: List[float]) -> List[int]:
+def _split_divisions_with_min_rows(n_rows: int, probabilities: list[float]) -> list[int]:
     """Generates splits for a dataset of n_rows into train, validation, and test sets according to split
     probabilities, also ensuring that at least min_val_rows or min_test_rows are present in each nonempty split.
 
@@ -104,12 +104,12 @@ def _split_divisions_with_min_rows(n_rows: int, probabilities: List[float]) -> L
 
 @split_registry.register("random", default=True)
 class RandomSplitter(Splitter):
-    def __init__(self, probabilities: List[float] = DEFAULT_PROBABILITIES, **kwargs):
+    def __init__(self, probabilities: list[float] = DEFAULT_PROBABILITIES, **kwargs):
         self.probabilities = probabilities
 
     def split(
         self, df: DataFrame, backend: Backend, random_seed: float = default_random_seed
-    ) -> Tuple[DataFrame, DataFrame, DataFrame]:
+    ) -> tuple[DataFrame, DataFrame, DataFrame]:
         probabilities = self.probabilities
         if not backend.df_engine.partitioned:
             divisions = _split_divisions_with_min_rows(len(df), probabilities)
@@ -139,14 +139,14 @@ class FixedSplitter(Splitter):
 
     def split(
         self, df: DataFrame, backend: Backend, random_seed: float = default_random_seed
-    ) -> Tuple[DataFrame, DataFrame, DataFrame]:
+    ) -> tuple[DataFrame, DataFrame, DataFrame]:
         df[self.column] = df[self.column].astype(np.int8)
         dfs = split_dataset_ttv(df, self.column)
         train, test, val = tuple(df.drop(columns=self.column) if df is not None else None for df in dfs)
         return train, val, test
 
     @property
-    def required_columns(self) -> List[str]:
+    def required_columns(self) -> list[str]:
         return [self.column]
 
     @staticmethod
@@ -155,8 +155,8 @@ class FixedSplitter(Splitter):
 
 
 def stratify_split_dataframe(
-    df: DataFrame, column: str, probabilities: List[float], backend: Backend, random_seed: float
-) -> Tuple[DataFrame, DataFrame, DataFrame]:
+    df: DataFrame, column: str, probabilities: list[float], backend: Backend, random_seed: float
+) -> tuple[DataFrame, DataFrame, DataFrame]:
     """Splits a dataframe into train, validation, and test sets based on the values of a column.
 
     The column must be categorical (including binary). The split is stratified, meaning that the proportion of each
@@ -191,13 +191,13 @@ def stratify_split_dataframe(
 
 @split_registry.register("stratify")
 class StratifySplitter(Splitter):
-    def __init__(self, column: str, probabilities: List[float] = DEFAULT_PROBABILITIES, **kwargs):
+    def __init__(self, column: str, probabilities: list[float] = DEFAULT_PROBABILITIES, **kwargs):
         self.column = column
         self.probabilities = probabilities
 
     def split(
         self, df: DataFrame, backend: Backend, random_seed: float = default_random_seed
-    ) -> Tuple[DataFrame, DataFrame, DataFrame]:
+    ) -> tuple[DataFrame, DataFrame, DataFrame]:
         if not backend.df_engine.partitioned:
             return stratify_split_dataframe(df, self.column, self.probabilities, backend, random_seed)
 
@@ -240,7 +240,7 @@ class StratifySplitter(Splitter):
         return self.probabilities[split_index] > 0
 
     @property
-    def required_columns(self) -> List[str]:
+    def required_columns(self) -> list[str]:
         return [self.column]
 
     @staticmethod
@@ -253,8 +253,8 @@ class DatetimeSplitter(Splitter):
     def __init__(
         self,
         column: str,
-        probabilities: List[float] = DEFAULT_PROBABILITIES,
-        datetime_format: Optional[str] = None,
+        probabilities: list[float] = DEFAULT_PROBABILITIES,
+        datetime_format: str | None = None,
         fill_value: str = "",
         **kwargs,
     ):
@@ -265,7 +265,7 @@ class DatetimeSplitter(Splitter):
 
     def split(
         self, df: DataFrame, backend: Backend, random_seed: float = default_random_seed
-    ) -> Tuple[DataFrame, DataFrame, DataFrame]:
+    ) -> tuple[DataFrame, DataFrame, DataFrame]:
         # In case the split column was preprocessed by Ludwig into a list, convert it back to a
         # datetime string for the sort and split
         def list_to_date_str(x):
@@ -309,7 +309,7 @@ class DatetimeSplitter(Splitter):
         return self.probabilities[split_index] > 0
 
     @property
-    def required_columns(self) -> List[str]:
+    def required_columns(self) -> list[str]:
         return [self.column]
 
     @staticmethod
@@ -322,7 +322,7 @@ class HashSplitter(Splitter):
     def __init__(
         self,
         column: str,
-        probabilities: List[float] = DEFAULT_PROBABILITIES,
+        probabilities: list[float] = DEFAULT_PROBABILITIES,
         **kwargs,
     ):
         self.column = column
@@ -330,7 +330,7 @@ class HashSplitter(Splitter):
 
     def split(
         self, df: DataFrame, backend: Backend, random_seed: float = default_random_seed
-    ) -> Tuple[DataFrame, DataFrame, DataFrame]:
+    ) -> tuple[DataFrame, DataFrame, DataFrame]:
         # Maximum value of the hash function crc32
         max_value = 2**32
         thresholds = [v * max_value for v in self.probabilities]
@@ -354,7 +354,7 @@ class HashSplitter(Splitter):
         return self.probabilities[split_index] > 0
 
     @property
-    def required_columns(self) -> List[str]:
+    def required_columns(self) -> list[str]:
         return [self.column]
 
     @staticmethod
@@ -363,7 +363,7 @@ class HashSplitter(Splitter):
 
 
 @DeveloperAPI
-def get_splitter(type: Optional[str] = None, **kwargs) -> Splitter:
+def get_splitter(type: str | None = None, **kwargs) -> Splitter:
     splitter_cls = split_registry.get(type)
     if splitter_cls is None:
         return ValueError(f"Invalid split type: {type}")
@@ -376,9 +376,9 @@ def split_dataset(
     global_preprocessing_parameters: PreprocessingConfigDict,
     backend: Backend,
     random_seed: float = default_random_seed,
-) -> Tuple[DataFrame, DataFrame, DataFrame]:
+) -> tuple[DataFrame, DataFrame, DataFrame]:
     splitter = get_splitter(**global_preprocessing_parameters.get(SPLIT, {}))
-    datasets: Tuple[DataFrame, DataFrame, DataFrame] = splitter.split(df, backend, random_seed)
+    datasets: tuple[DataFrame, DataFrame, DataFrame] = splitter.split(df, backend, random_seed)
     if len(datasets[0].columns) == 0:
         raise ValueError(
             "Encountered an empty training set while splitting data. Please double check the preprocessing split "

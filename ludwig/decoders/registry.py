@@ -13,7 +13,7 @@ def get_decoder_registry() -> Registry:
 
 
 @DeveloperAPI
-def register_decoder(name: str, features: Union[str, List[str]]):
+def register_decoder(name: str, features: str | list[str]):
     if isinstance(features, str):
         features = [features]
 
@@ -28,10 +28,10 @@ def register_decoder(name: str, features: Union[str, List[str]]):
 
 
 @DeveloperAPI
-def get_decoder_cls(feature: str, name: str) -> Type[Decoder]:
+def get_decoder_cls(feature: str, name: str) -> type[Decoder]:
     return get_decoder_registry()[feature][name]
 
 
 @DeveloperAPI
-def get_decoder_classes(feature: str) -> Dict[str, Type[Decoder]]:
+def get_decoder_classes(feature: str) -> dict[str, type[Decoder]]:
     return get_decoder_registry()[feature]

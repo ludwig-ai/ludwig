@@ -11,7 +11,7 @@ OUTPUT_SIZE = 8
 
 @pytest.mark.parametrize("virtual_batch_size", [None, BATCH_SIZE // 2, BATCH_SIZE - 14, BATCH_SIZE - 10])
 @pytest.mark.parametrize("mode", [True, False])  # training (True) or eval(False)
-def test_ghostbatchnormalization(mode: bool, virtual_batch_size: Optional[int]) -> None:
+def test_ghostbatchnormalization(mode: bool, virtual_batch_size: int | None) -> None:
     # setup up GhostBatchNormalization layer
     ghost_batch_norm = GhostBatchNormalization(OUTPUT_SIZE, virtual_batch_size=virtual_batch_size)
 

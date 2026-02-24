@@ -22,9 +22,7 @@ from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 
 
 class KDDCup2009Loader(DatasetLoader):
-    def __init__(
-        self, config: DatasetConfig, cache_dir: Optional[str] = None, task_name="", include_test_download=False
-    ):
+    def __init__(self, config: DatasetConfig, cache_dir: str | None = None, task_name="", include_test_download=False):
         super().__init__(config, cache_dir=cache_dir)
         self.task_name = task_name
         self.include_test_download = include_test_download
@@ -134,7 +132,7 @@ class KDDAppetencyLoader(KDDCup2009Loader):
     https://www.kdd.org/kdd-cup/view/kdd-cup-2009/Data
     """
 
-    def __init__(self, config: DatasetConfig, cache_dir: Optional[str] = None, include_test_download=False):
+    def __init__(self, config: DatasetConfig, cache_dir: str | None = None, include_test_download=False):
         super().__init__(
             config, cache_dir=cache_dir, task_name="appetency", include_test_download=include_test_download
         )
@@ -146,7 +144,7 @@ class KDDChurnLoader(KDDCup2009Loader):
     https://www.kdd.org/kdd-cup/view/kdd-cup-2009/Data
     """
 
-    def __init__(self, config: DatasetConfig, cache_dir: Optional[str] = None, include_test_download=False):
+    def __init__(self, config: DatasetConfig, cache_dir: str | None = None, include_test_download=False):
         super().__init__(config, cache_dir=cache_dir, task_name="churn", include_test_download=include_test_download)
 
 
@@ -156,7 +154,7 @@ class KDDUpsellingLoader(KDDCup2009Loader):
     https://www.kdd.org/kdd-cup/view/kdd-cup-2009/Data
     """
 
-    def __init__(self, config: DatasetConfig, cache_dir: Optional[str] = None, include_test_download=False):
+    def __init__(self, config: DatasetConfig, cache_dir: str | None = None, include_test_download=False):
         super().__init__(
             config, cache_dir=cache_dir, task_name="upselling", include_test_download=include_test_download
         )

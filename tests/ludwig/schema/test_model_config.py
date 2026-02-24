@@ -840,7 +840,7 @@ def test_llm_base_model_config_error(base_model_config):
         (8, QuantizationConfig(bits=8)),
     ],
 )
-def test_llm_quantization_config(bits: Optional[int], expected_qconfig: Optional[QuantizationConfig]):
+def test_llm_quantization_config(bits: int | None, expected_qconfig: QuantizationConfig | None):
     config = {
         MODEL_TYPE: MODEL_LLM,
         BASE_MODEL: "bigscience/bloomz-3b",
@@ -866,7 +866,7 @@ def test_llm_quantization_config(bits: Optional[int], expected_qconfig: Optional
     ],
 )
 def test_llm_rope_scaling_failure_modes(
-    rope_scaling_config: Union[None, Dict[str, Any]],
+    rope_scaling_config: None | dict[str, Any],
 ):
     config = {
         MODEL_TYPE: MODEL_LLM,

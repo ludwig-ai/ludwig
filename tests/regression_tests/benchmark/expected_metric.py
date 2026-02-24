@@ -14,7 +14,7 @@ class ExpectedMetric:
     metric_name: str
 
     # Expected metric value.
-    expected_value: Union[int, float]
+    expected_value: int | float
 
     # The percentage change that would trigger a notification/failure.
     tolerance_percentage: float

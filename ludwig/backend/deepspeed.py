@@ -13,10 +13,10 @@ class DeepSpeedBackend(DataParallelBackend):
 
     def __init__(
         self,
-        zero_optimization: Optional[Dict[str, Any]] = None,
-        fp16: Optional[Dict[str, Any]] = None,
-        bf16: Optional[Dict[str, Any]] = None,
-        compression_training: Optional[Dict[str, Any]] = None,
+        zero_optimization: dict[str, Any] | None = None,
+        fp16: dict[str, Any] | None = None,
+        bf16: dict[str, Any] | None = None,
+        compression_training: dict[str, Any] | None = None,
         **kwargs
     ):
         super().__init__(**kwargs)
@@ -41,5 +41,5 @@ class DeepSpeedBackend(DataParallelBackend):
         # TODO(travis): need to fix checkpoint saving/loading for DeepSpeed to enable tuning
         return False
 
-    def tune_batch_size(self, evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+    def tune_batch_size(self, evaluator_cls: type[BatchSizeEvaluator], dataset_len: int) -> int:
         return FALLBACK_BATCH_SIZE

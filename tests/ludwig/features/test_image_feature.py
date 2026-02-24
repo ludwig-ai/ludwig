@@ -78,7 +78,7 @@ def image_config():
         ("mlp_mixer", 32, 32, 3),
     ],
 )
-def test_image_input_feature(image_config: Dict, encoder: str, height: int, width: int, num_channels: int) -> None:
+def test_image_input_feature(image_config: dict, encoder: str, height: int, width: int, num_channels: int) -> None:
     # setup image input feature definition
     image_def = deepcopy(image_config)
     image_def[ENCODER][TYPE] = encoder

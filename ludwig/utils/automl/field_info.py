@@ -13,7 +13,7 @@ class FieldInfo:
     name: str
     dtype: str
     key: str = None
-    distinct_values: List = None
+    distinct_values: list = None
     distinct_values_balance: float = 1.0
     num_distinct_values: int = 0
     nonnull_values: int = 0

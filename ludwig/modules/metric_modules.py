@@ -14,15 +14,17 @@
 # ==============================================================================
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any, Optional
 
 import torch
 import torchmetrics.functional as metrics_F
 from torch import Tensor, tensor
-from torchmetrics.classification import BinaryAccuracy
 from torchmetrics import MeanAbsoluteError
 from torchmetrics import MeanMetric as _MeanMetric
 from torchmetrics import MeanSquaredError, Metric
+from torchmetrics.classification import BinaryAccuracy
+
 from ludwig.constants import (
     ACCURACY,
     BINARY,
@@ -63,8 +65,13 @@ logger = logging.getLogger(__name__)
 
 
 _METRIC_INIT_KWARGS = {
-    "compute_on_step", "dist_sync_on_step", "process_group", "dist_sync_fn",
-    "distributed_available_fn", "sync_on_compute", "compute_with_cache",
+    "compute_on_step",
+    "dist_sync_on_step",
+    "process_group",
+    "dist_sync_fn",
+    "distributed_available_fn",
+    "sync_on_compute",
+    "compute_with_cache",
 }
 
 
@@ -344,7 +351,7 @@ class BWCEWLMetric(LossMetric):
 
     def __init__(
         self,
-        positive_class_weight: Optional[Tensor] = None,
+        positive_class_weight: Tensor | None = None,
         robust_lambda: int = 0,
         confidence_penalty: int = 0,
         **kwargs,

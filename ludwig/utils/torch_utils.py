@@ -13,7 +13,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import ENCODER_OUTPUT
 from ludwig.utils.strings_utils import SpecialSymbol
 
-_TORCH_INIT_PARAMS: Optional[Tuple] = None
+_TORCH_INIT_PARAMS: tuple | None = None
 
 
 @DeveloperAPI
@@ -60,9 +60,7 @@ def place_on_device(x, device):
 def sequence_length_2D(sequence: torch.Tensor) -> torch.Tensor:
     """Returns the number of non-padding elements per sequence in batch.
 
-    :param sequence: (torch.Tensor) A 2D tensor of shape [batch size x max sequence length].
-
-    # Return
+    :param sequence: (torch.Tensor) A 2D tensor of shape [batch size x max sequence length].  # Return
     :returns: (torch.Tensor) The count on non-zero elements per sequence.
     """
     used = (sequence != SpecialSymbol.PADDING.value).type(torch.int32)
@@ -74,9 +72,7 @@ def sequence_length_2D(sequence: torch.Tensor) -> torch.Tensor:
 def sequence_length_3D(sequence: torch.Tensor) -> torch.Tensor:
     """Returns the number of non-zero elements per sequence in batch.
 
-    :param sequence: (torch.Tensor) A 3D tensor of shape [batch size x max sequence length x hidden size].
-
-    # Return
+    :param sequence: (torch.Tensor) A 3D tensor of shape [batch size x max sequence length x hidden size].  # Return
     :returns: (torch.Tensor) The count on non-zero elements per sequence.
     """
     used = torch.sign(torch.amax(torch.abs(sequence), dim=2))
@@ -86,15 +82,13 @@ def sequence_length_3D(sequence: torch.Tensor) -> torch.Tensor:
 
 
 @DeveloperAPI
-def sequence_mask(lengths: torch.Tensor, maxlen: Optional[int] = None, dtype: torch.dtype = torch.bool):
+def sequence_mask(lengths: torch.Tensor, maxlen: int | None = None, dtype: torch.dtype = torch.bool):
     """Returns a mask of shape (batch_size x maxlen), where mask[i] is True for each element up to lengths[i],
     otherwise False i.e. if maxlen=5 and lengths[i] = 3, mask[i] = [True, True True, False False].
 
     :param lengths: (torch.Tensor) A 1d integer tensor of shape [batch size].
     :param maxlen: (Optional[int]) The maximum sequence length.  If not specified, the max(lengths) is used.
-    :param dtype: (type) The type to output.
-
-    # Return
+    :param dtype: (type) The type to output.  # Return
     :returns: (torch.Tensor) A sequence mask tensor of shape (batch_size x maxlen).
     """
     if maxlen is None:
@@ -295,8 +289,8 @@ class Dense(LudwigModule):
 
 @DeveloperAPI
 def initialize_pytorch(
-    gpus: Optional[Union[int, str, List[int]]] = None,
-    gpu_memory_limit: Optional[float] = None,
+    gpus: int | str | list[int] | None = None,
+    gpu_memory_limit: float | None = None,
     allow_parallel_threads: bool = True,
 ):
     param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads)
@@ -344,12 +338,12 @@ def initialize_pytorch(
     _set_torch_init_params(param_tuple)
 
 
-def _set_torch_init_params(params: Optional[Tuple]):
+def _set_torch_init_params(params: tuple | None):
     global _TORCH_INIT_PARAMS
     _TORCH_INIT_PARAMS = params
 
 
-def _get_torch_init_params() -> Optional[Tuple]:
+def _get_torch_init_params() -> tuple | None:
     return _TORCH_INIT_PARAMS
 
 

@@ -56,7 +56,7 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[NUMBER][PREPROCESSING]["normalization"],
     )
 
-    outlier_strategy: Optional[str] = schema_utils.StringOptions(
+    outlier_strategy: str | None = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS + [FILL_WITH_MEAN, None],
         default=None,
         allow_none=True,
@@ -69,7 +69,7 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[NUMBER][PREPROCESSING]["outlier_strategy"],
     )
 
-    outlier_threshold: Optional[float] = schema_utils.FloatRange(
+    outlier_threshold: float | None = schema_utils.FloatRange(
         default=3.0,
         allow_none=False,
         min=0.0,

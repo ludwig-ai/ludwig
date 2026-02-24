@@ -43,7 +43,7 @@ class LudwigProgressBar:
     def __init__(
         self,
         report_to_ray: bool,
-        config: Dict,
+        config: dict,
         is_coordinator: bool,
     ) -> None:
         """Constructor for the LudwigProgressBar class.

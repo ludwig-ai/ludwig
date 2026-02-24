@@ -49,7 +49,7 @@ def set_str_to_idx(set_string, feature_dict, tokenizer_name):
 
 
 def compute_token_probabilities(
-    probabilities: Union[list, tuple, np.ndarray],
+    probabilities: list | tuple | np.ndarray,
 ) -> np.ndarray:
     """Gets the maximum probability per timestep.
 
@@ -83,7 +83,7 @@ def compute_token_probabilities(
 
 def compute_sequence_probability(
     sequence_probabilities: np.ndarray,
-    max_sequence_length: Optional[int] = None,
+    max_sequence_length: int | None = None,
     return_log_prob: bool = True,
 ) -> float:
     """Computes the sequence level probability.
@@ -126,7 +126,7 @@ def compute_feature_hash(feature: dict) -> str:
 
 
 def get_input_size_with_dependencies(
-    combiner_output_size: int, dependencies: List[str], other_output_features  # Dict[str, "OutputFeature"]
+    combiner_output_size: int, dependencies: list[str], other_output_features  # Dict[str, "OutputFeature"]
 ):
     """Returns the input size for the first layer of this output feature's FC stack, accounting for dependencies on
     other output features.
@@ -193,20 +193,20 @@ class LudwigFeatureDict(torch.nn.Module):
     def __iter__(self) -> None:
         return iter(self.keys())
 
-    def keys(self) -> List[str]:
+    def keys(self) -> list[str]:
         return [
             get_name_from_module_dict_key(feature_name)
             for feature_name in self.internal_key_to_original_name_map.keys()
         ]
 
-    def values(self) -> List[torch.nn.Module]:
+    def values(self) -> list[torch.nn.Module]:
         return [module for _, module in self.module_dict.items()]
 
-    def items(self) -> List[Tuple[str, torch.nn.Module]]:
+    def items(self) -> list[tuple[str, torch.nn.Module]]:
         return [
             (get_name_from_module_dict_key(feature_name), module) for feature_name, module in self.module_dict.items()
         ]
 
-    def update(self, modules: Dict[str, torch.nn.Module]) -> None:
+    def update(self, modules: dict[str, torch.nn.Module]) -> None:
         for feature_name, module in modules.items():
             self.set(feature_name, module)

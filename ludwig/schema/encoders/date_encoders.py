@@ -93,7 +93,7 @@ class DateEmbedConfig(BaseEncoderConfig):
     )
 
     # TODO (Connor): Add nesting logic for fc_layers, see fully_connected_module.py
-    fc_layers: List[dict] = schema_utils.DictList(
+    fc_layers: list[dict] = schema_utils.DictList(
         default=None,
         description="List of dictionaries containing the parameters for each fully connected layer.",
         parameter_metadata=ENCODER_METADATA["DateEmbed"]["fc_layers"],
@@ -171,7 +171,7 @@ class DateWaveConfig(BaseEncoderConfig):
     )
 
     # TODO (Connor): Add nesting logic for fc_layers, see fully_connected_module.py
-    fc_layers: List[dict] = schema_utils.DictList(
+    fc_layers: list[dict] = schema_utils.DictList(
         default=None,
         description="List of dictionaries containing the parameters for each fully connected layer.",
         parameter_metadata=ENCODER_METADATA["DateWave"]["fc_layers"],

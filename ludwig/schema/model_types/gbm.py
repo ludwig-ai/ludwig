@@ -31,4 +31,4 @@ class GBMModelConfig(ModelConfig):
     trainer: GBMTrainerConfig = GBMTrainerField().get_default_field()
     preprocessing: PreprocessingConfig = PreprocessingField().get_default_field()
     defaults: GBMDefaultsConfig = GBMDefaultsField().get_default_field()
-    hyperopt: Optional[HyperoptConfig] = HyperoptField().get_default_field()
+    hyperopt: HyperoptConfig | None = HyperoptField().get_default_field()

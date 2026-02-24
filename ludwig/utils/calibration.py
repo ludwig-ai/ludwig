@@ -33,7 +33,7 @@ calibration_registry = Registry()
 
 
 @DeveloperAPI
-def register_calibration(name: str, features: Union[str, List[str]], default=False):
+def register_calibration(name: str, features: str | list[str], default=False):
     """Registers a calibration implementation for a list of features."""
     if isinstance(features, str):
         features = [features]
@@ -52,7 +52,7 @@ def register_calibration(name: str, features: Union[str, List[str]], default=Fal
 
 
 @DeveloperAPI
-def get_calibration_cls(feature: str, calibration_method: str) -> Type["CalibrationModule"]:
+def get_calibration_cls(feature: str, calibration_method: str) -> type["CalibrationModule"]:
     """Get calibration class for specified feature type and calibration method."""
     if not calibration_method:
         return None
@@ -125,7 +125,7 @@ class CalibrationResult:
 class CalibrationModule(nn.Module, ABC):
     @abstractmethod
     def train_calibration(
-        self, logits: Union[torch.Tensor, np.ndarray], labels: Union[torch.Tensor, np.ndarray]
+        self, logits: torch.Tensor | np.ndarray, labels: torch.Tensor | np.ndarray
     ) -> CalibrationResult:
         """Calibrate output probabilities using logits and labels from validation set."""
         return NotImplementedError()
@@ -155,7 +155,7 @@ class TemperatureScaling(CalibrationModule):
         self.temperature = nn.Parameter(torch.ones(1), requires_grad=False).to(self.device)
 
     def train_calibration(
-        self, logits: Union[torch.Tensor, np.ndarray], labels: Union[torch.Tensor, np.ndarray]
+        self, logits: torch.Tensor | np.ndarray, labels: torch.Tensor | np.ndarray
     ) -> CalibrationResult:
         logits = torch.as_tensor(logits, dtype=torch.float32, device=self.device)
         labels = torch.as_tensor(labels, dtype=torch.int64, device=self.device)
@@ -251,7 +251,7 @@ class MatrixScaling(CalibrationModule):
         self.mu = off_diagonal_l2 if mu is None else mu
 
     def train_calibration(
-        self, logits: Union[torch.Tensor, np.ndarray], labels: Union[torch.Tensor, np.ndarray]
+        self, logits: torch.Tensor | np.ndarray, labels: torch.Tensor | np.ndarray
     ) -> CalibrationResult:
         logits = torch.as_tensor(logits, dtype=torch.float32, device=self.device)
         labels = torch.as_tensor(labels, dtype=torch.int64, device=self.device)
@@ -304,9 +304,12 @@ class MatrixScaling(CalibrationModule):
         """Off-Diagonal and Intercept Regularisation (ODIR).
 
         Described in "Beyond temperature scaling: Obtaining well-calibrated multiclass probabilities with Dirichlet
-        calibration" https://proceedings.neurips.cc/paper/2019/file/8ca01ea920679a0fe3728441494041b9-Paper.pdf
+        calibration"
+        https://proceedings.neurips.cc/paper/2019/file/8ca01ea920679a0fe3728441494041b9-Paper.pdf
         """
-        off_diagonal_entries = torch.masked_select(self.w, ~torch.eye(self.num_classes, dtype=bool, device=self.w.device))
+        off_diagonal_entries = torch.masked_select(
+            self.w, ~torch.eye(self.num_classes, dtype=bool, device=self.w.device)
+        )
         weight_matrix_loss = self.off_diagonal_l2 * torch.linalg.vector_norm(off_diagonal_entries)
         bias_vector_loss = self.mu * torch.linalg.vector_norm(self.b, 2)
         return bias_vector_loss + weight_matrix_loss

@@ -9,7 +9,7 @@ import scipy
 from ludwig.utils.types import DataFrame
 
 
-def _negative_sample_user(interaction_row: np.array, neg_pos_ratio: int, extra_samples: int) -> Tuple[List[int], int]:
+def _negative_sample_user(interaction_row: np.array, neg_pos_ratio: int, extra_samples: int) -> tuple[list[int], int]:
     """Returns a list of negative item indices for given user-item interactions.
 
     If there are not enough negative items, takes all of them and adds the difference to the extra_samples

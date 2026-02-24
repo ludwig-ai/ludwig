@@ -1,8 +1,9 @@
 """Checks that are not easily covered by marshmallow JSON schema validation like parameter interdependencies."""
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from re import findall
-from typing import Callable, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from transformers import AutoConfig
 

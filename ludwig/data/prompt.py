@@ -44,12 +44,12 @@ ASSISTANT:
 
 
 def index_column(
-    retrieval_config: Dict[str, Any],
+    retrieval_config: dict[str, Any],
     col_name: str,
-    dataset_cols: Dict[str, Series],
+    dataset_cols: dict[str, Series],
     backend: "Backend",
-    split_col: Optional[Series] = None,
-) -> Tuple[RetrievalModel, str]:
+    split_col: Series | None = None,
+) -> tuple[RetrievalModel, str]:
     """Indexes a column for sample retrieval via embedding index lookup.
 
     This function indexes a column and saves the index artifact to disk. If an index name is provided as part of the
@@ -123,9 +123,9 @@ def format_input_with_prompt(
     dataset_df: DataFrame,
     backend: "Backend",
     task_str: str,
-    retrieval_model: Optional[RetrievalModel] = None,
+    retrieval_model: RetrievalModel | None = None,
     k: int = -1,
-    template: Optional[str] = None,
+    template: str | None = None,
 ) -> Series:
     """Returns a new Series with the input column data formatted with the prompt.
 
@@ -204,7 +204,7 @@ def format_input_with_prompt(
 
 
 def _validate_prompt_template(
-    template_fields: Set[str], task: Optional[str], is_few_shot: bool, columns: List[str], input_col_name: str
+    template_fields: set[str], task: str | None, is_few_shot: bool, columns: list[str], input_col_name: str
 ):
     """Validates that the template contains the necessary fields for the prompt."""
     if is_few_shot and CONTEXT not in template_fields:
@@ -225,7 +225,7 @@ def _validate_prompt_template(
         )
 
 
-def _get_template_fields(template: str) -> Tuple[Set[str], Dict[str, Type]]:
+def _get_template_fields(template: str) -> tuple[set[str], dict[str, type]]:
     """Returns the fields in the template."""
     parsed = [t for t in string.Formatter().parse(template) if t[1] is not None]
     field_set = {field for _, field, _, _ in parsed}
@@ -233,7 +233,7 @@ def _get_template_fields(template: str) -> Tuple[Set[str], Dict[str, Type]]:
     return field_set, dtype_map
 
 
-def _get_dtype(format_spec: str) -> Type:
+def _get_dtype(format_spec: str) -> type:
     # We need to prepare data in the row for different formatting options.
     # If you have a number like 0.1234 in the DF and you want to format it like {number:.2f} it will fail if the
     # number is represented as a string in the DF. So we need to cast it to a float before formatting.

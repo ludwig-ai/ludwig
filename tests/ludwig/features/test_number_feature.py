@@ -22,7 +22,7 @@ def number_config():
 
 
 def test_number_input_feature(
-    number_config: Dict,
+    number_config: dict,
 ) -> None:
     # setup image input feature definition
     number_def = deepcopy(number_config)

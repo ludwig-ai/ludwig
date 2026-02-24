@@ -38,19 +38,19 @@ logger = logging.getLogger(__name__)
 
 def collect_activations(
     model_path: str,
-    layers: List[str],
+    layers: list[str],
     dataset: str,
     data_format: str = None,
     split: str = FULL,
     batch_size: int = 128,
     output_directory: str = "results",
-    gpus: List[str] = None,
-    gpu_memory_limit: Optional[float] = None,
+    gpus: list[str] = None,
+    gpu_memory_limit: float | None = None,
     allow_parallel_threads: bool = True,
-    callbacks: List[Callback] = None,
-    backend: Union[Backend, str] = None,
+    callbacks: list[Callback] = None,
+    backend: Backend | str = None,
     **kwargs,
-) -> List[str]:
+) -> list[str]:
     """Uses the pretrained model to collect the tensors corresponding to a datapoint in the dataset. Saves the
     tensors to the experiment directory.
 
@@ -121,7 +121,7 @@ def collect_activations(
     return saved_filenames
 
 
-def collect_weights(model_path: str, tensors: List[str], output_directory: str = "results", **kwargs) -> List[str]:
+def collect_weights(model_path: str, tensors: list[str], output_directory: str = "results", **kwargs) -> list[str]:
     """Loads a pretrained model and collects weights.
 
     # Inputs
@@ -333,8 +333,7 @@ def cli_collect_activations(sys_argv):
     parser.add_argument(
         "-b",
         "--backend",
-        help="specifies backend to use for parallel / distributed execution, "
-        "defaults to local execution",
+        help="specifies backend to use for parallel / distributed execution, " "defaults to local execution",
         choices=ALL_BACKENDS,
     )
     parser.add_argument(

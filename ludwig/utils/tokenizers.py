@@ -53,21 +53,21 @@ class SpaceStringToListTokenizer(torch.nn.Module):
     def __init__(self, **kwargs):
         super().__init__()
 
-    def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:
+    def forward(self, v: str | list[str] | torch.Tensor) -> Any:
         if isinstance(v, torch.Tensor):
             raise ValueError(f"Unsupported input: {v}")
 
-        inputs: List[str] = []
+        inputs: list[str] = []
         # Ludwig calls map on List[str] objects, so we need to handle individual strings as well.
         if isinstance(v, str):
             inputs.append(v)
         else:
             inputs.extend(v)
 
-        tokens: List[List[str]] = []
+        tokens: list[list[str]] = []
         for sequence in inputs:
             split_sequence = sequence.strip().split(" ")
-            token_sequence: List[str] = []
+            token_sequence: list[str] = []
             for token in split_sequence:
                 if len(token) > 0:
                     token_sequence.append(token)
@@ -85,21 +85,21 @@ class SpacePunctuationStringToListTokenizer(torch.nn.Module):
     def is_regex_w(self, c: str) -> bool:
         return c.isalnum() or c == "_"
 
-    def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:
+    def forward(self, v: str | list[str] | torch.Tensor) -> Any:
         if isinstance(v, torch.Tensor):
             raise ValueError(f"Unsupported input: {v}")
 
-        inputs: List[str] = []
+        inputs: list[str] = []
         # Ludwig calls map on List[str] objects, so we need to handle individual strings as well.
         if isinstance(v, str):
             inputs.append(v)
         else:
             inputs.extend(v)
 
-        tokens: List[List[str]] = []
+        tokens: list[list[str]] = []
         for sequence in inputs:
-            token_sequence: List[str] = []
-            word: List[str] = []
+            token_sequence: list[str] = []
+            word: list[str] = []
             for c in sequence:
                 if self.is_regex_w(c):
                     word.append(c)
@@ -898,7 +898,7 @@ tokenizer_registry = {
 class SentencePieceTokenizer(torch.nn.Module):
     """SentencePiece tokenizer using HuggingFace transformers (XLMR-based)."""
 
-    def __init__(self, pretrained_model_name_or_path: Optional[str] = None, **kwargs):
+    def __init__(self, pretrained_model_name_or_path: str | None = None, **kwargs):
         super().__init__()
         from transformers import AutoTokenizer
 
@@ -906,7 +906,7 @@ class SentencePieceTokenizer(torch.nn.Module):
             pretrained_model_name_or_path = "xlm-roberta-base"
         self.tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path)
 
-    def forward(self, v: Union[str, List[str], torch.Tensor]):
+    def forward(self, v: str | list[str] | torch.Tensor):
         if isinstance(v, torch.Tensor):
             raise ValueError(f"Unsupported input: {v}")
         if isinstance(v, str):
@@ -917,7 +917,7 @@ class SentencePieceTokenizer(torch.nn.Module):
 class CLIPTokenizer(torch.nn.Module):
     """CLIP tokenizer using HuggingFace transformers."""
 
-    def __init__(self, pretrained_model_name_or_path: Optional[str] = None, **kwargs):
+    def __init__(self, pretrained_model_name_or_path: str | None = None, **kwargs):
         super().__init__()
         from transformers import CLIPTokenizer as HFCLIPTokenizer
 
@@ -937,7 +937,7 @@ class CLIPTokenizer(torch.nn.Module):
 class GPT2BPETokenizer(torch.nn.Module):
     """GPT-2 BPE tokenizer using HuggingFace transformers."""
 
-    def __init__(self, pretrained_model_name_or_path: Optional[str] = None, **kwargs):
+    def __init__(self, pretrained_model_name_or_path: str | None = None, **kwargs):
         super().__init__()
         from transformers import GPT2Tokenizer
 
@@ -959,10 +959,10 @@ class BERTTokenizer(torch.nn.Module):
 
     def __init__(
         self,
-        vocab_file: Optional[str] = None,
-        pretrained_model_name_or_path: Optional[str] = None,
-        is_hf_tokenizer: Optional[bool] = False,
-        do_lower_case: Optional[bool] = None,
+        vocab_file: str | None = None,
+        pretrained_model_name_or_path: str | None = None,
+        is_hf_tokenizer: bool | None = False,
+        do_lower_case: bool | None = None,
         **kwargs,
     ):
         super().__init__()
@@ -973,9 +973,7 @@ class BERTTokenizer(torch.nn.Module):
         tokenizer_kwargs = {}
         if do_lower_case is not None:
             tokenizer_kwargs["do_lower_case"] = do_lower_case
-        self.tokenizer = BertTokenizer.from_pretrained(
-            pretrained_model_name_or_path, **tokenizer_kwargs
-        )
+        self.tokenizer = BertTokenizer.from_pretrained(pretrained_model_name_or_path, **tokenizer_kwargs)
         self.is_hf_tokenizer = is_hf_tokenizer
         self.pad_token = self.tokenizer.pad_token
         self.unk_token = self.tokenizer.unk_token

@@ -31,7 +31,7 @@ def number_feature():
     return feature
 
 
-def get_test_data(backend: str) -> Tuple[DataFrame, DataFrame]:
+def get_test_data(backend: str) -> tuple[DataFrame, DataFrame]:
     """Returns test data for the given backend."""
     data_df = pd.DataFrame(pd.Series([2, 4, 6, 8, 10]), columns=["x"])
     proc_df = pd.DataFrame(columns=["x"])

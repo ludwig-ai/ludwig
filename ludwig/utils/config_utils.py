@@ -23,7 +23,7 @@ from ludwig.types import FeatureConfigDict, FeatureTypeDefaultsDict, Preprocessi
 @DeveloperAPI
 def get_feature_type_parameter_values_from_section(
     config: ModelConfig, features_section: str, feature_type: str, parameter_name: str
-) -> Set:
+) -> set:
     """Returns the set of all parameter values used for the given features_section, feature_type, and
     parameter_name."""
     parameter_values = set()
@@ -105,7 +105,7 @@ def has_pretrained_encoder(config: ModelConfig) -> bool:
     return False
 
 
-def config_uses_llm(config: Union[Dict[str, Any], ModelConfig]) -> bool:
+def config_uses_llm(config: dict[str, Any] | ModelConfig) -> bool:
     """Determine if a config uses an LLM.
 
     Args:
@@ -144,7 +144,7 @@ def config_uses_llm(config: Union[Dict[str, Any], ModelConfig]) -> bool:
     return uses_llm
 
 
-def get_quantization(config: Union[Dict[str, Any], ModelConfig]) -> List[Union[int, None]]:
+def get_quantization(config: dict[str, Any] | ModelConfig) -> list[int | None]:
     """Get the quantization specified in a config at any level.
 
     Args:

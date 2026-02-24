@@ -12,18 +12,19 @@ import threading
 import time
 import traceback
 import uuid
+from collections.abc import Callable
 from functools import lru_cache
 from inspect import signature
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import ray
 from ray import tune
-from ray.tune import ExperimentAnalysis, register_trainable, Stopper
+from ray.train import Checkpoint
+from ray.tune import ExperimentAnalysis, PlacementGroupFactory, register_trainable, Stopper
 from ray.tune.schedulers.resource_changing_scheduler import DistributeResources, ResourceChangingScheduler
-from ray.tune.search import BasicVariantGenerator, ConcurrencyLimiter
+from ray.tune.search import BasicVariantGenerator, ConcurrencyLimiter, SEARCH_ALG_IMPORT
 from ray.tune.utils import wait_for_gpu
-from ray.tune import PlacementGroupFactory
 from ray.util.queue import Queue as RayQueue
 
 from ludwig.api import LudwigModel
@@ -41,10 +42,6 @@ from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import has_remote_protocol, safe_move_file
 from ludwig.utils.misc_utils import get_from_registry
 
-from ray.train import Checkpoint
-from ray.tune.search import SEARCH_ALG_IMPORT
-
-
 logger = logging.getLogger(__name__)
 
 
@@ -55,25 +52,15 @@ def _patch_bohb_configspace_conversion():
     Ray Tune's BOHB integration still passes `q=...`, so we patch the converter to drop it.
     """
     try:
+        # Check if ConfigSpace 1.x (no 'q' parameter)
+        import inspect
         import math
 
         import ConfigSpace
         from ray.tune.search.bohb.bohb_search import TuneBOHB
+        from ray.tune.search.sample import Categorical, Domain, Float, Integer, LogUniform, Normal, Quantized, Uniform
         from ray.tune.search.variant_generator import parse_spec_vars
-        from ray.tune.search.sample import (
-            Categorical,
-            Domain,
-            Float,
-            Integer,
-            LogUniform,
-            Normal,
-            Quantized,
-            Uniform,
-        )
         from ray.tune.utils import flatten_dict
-
-        # Check if ConfigSpace 1.x (no 'q' parameter)
-        import inspect
 
         sig = inspect.signature(ConfigSpace.UniformFloatHyperparameter.__init__)
         if "q" in sig.parameters:
@@ -84,8 +71,7 @@ def _patch_bohb_configspace_conversion():
             resolved_vars, domain_vars, grid_vars = parse_spec_vars(spec)
             if grid_vars:
                 raise ValueError(
-                    "Grid search parameters cannot be automatically converted "
-                    "to a TuneBOHB search space."
+                    "Grid search parameters cannot be automatically converted " "to a TuneBOHB search space."
                 )
             spec = flatten_dict(spec, prevent_delimiter=True)
             resolved_vars, domain_vars, grid_vars = parse_spec_vars(spec)
@@ -195,7 +181,7 @@ def _get_relative_checkpoints_dir_parts(path: Path):
 def ray_resource_allocation_function(
     trial_runner: "trial_runner.TrialRunner",  # noqa
     trial: "Trial",  # noqa
-    result: Dict[str, Any],
+    result: dict[str, Any],
     scheduler: "ResourceChangingScheduler",
 ):
     """Determine resources to allocate to running trials."""
@@ -215,6 +201,7 @@ def ray_resource_allocation_function(
 
 def _create_tune_checkpoint(save_path):
     """Create a Ray Tune Checkpoint from a model save path."""
+
     def ignore_dot_files(src, files):
         return [f for f in files if f.startswith(".")]
 
@@ -240,14 +227,14 @@ class RayTuneExecutor:
         metric: str,
         goal: str,
         split: str,
-        search_alg: Optional[Dict] = None,
+        search_alg: dict | None = None,
         cpu_resources_per_trial: int = None,
         gpu_resources_per_trial: int = None,
         kubernetes_namespace: str = None,
-        time_budget_s: Union[int, float, datetime.timedelta] = None,
-        max_concurrent_trials: Optional[int] = None,
+        time_budget_s: int | float | datetime.timedelta = None,
+        max_concurrent_trials: int | None = None,
         num_samples: int = 1,
-        scheduler: Optional[Dict] = None,
+        scheduler: dict | None = None,
         **kwargs,
     ) -> None:
         if ray is None:
@@ -275,7 +262,7 @@ class RayTuneExecutor:
         # Head node is the node to which all checkpoints are synced if running on a K8s cluster.
         self.head_node_ip = ray.util.get_node_ip_address()
 
-    def _get_search_space(self, parameters: Dict) -> Tuple[Dict, Dict]:
+    def _get_search_space(self, parameters: dict) -> tuple[dict, dict]:
         """Encode search space parameters as JSON with context for decoding."""
         config = {}
         ctx = {}
@@ -302,7 +289,7 @@ class RayTuneExecutor:
         return config, ctx
 
     @staticmethod
-    def encode_values(param: str, values: Dict, ctx: Dict) -> Dict:
+    def encode_values(param: str, values: dict, ctx: dict) -> dict:
         """JSON encodes any search spaces whose values are lists / dicts.
 
         Only applies to grid search and choice options.  See here for details:
@@ -317,7 +304,7 @@ class RayTuneExecutor:
         return values
 
     @staticmethod
-    def decode_values(config: Dict, ctx: Dict) -> Dict:
+    def decode_values(config: dict, ctx: dict) -> dict:
         """Decode config values with the decode function in the context.
 
         Uses the identity function if no encoding is needed.
@@ -366,7 +353,7 @@ class RayTuneExecutor:
         else:
             raise RuntimeError("Unable to obtain metric score from missing training (validation) statistics")
 
-    def get_metric_score_from_eval_stats(self, eval_stats) -> Union[float, list]:
+    def get_metric_score_from_eval_stats(self, eval_stats) -> float | list:
         stats = eval_stats[self.output_feature]
         for metric_part in self.metric.split("."):
             if isinstance(stats, dict):
@@ -410,7 +397,7 @@ class RayTuneExecutor:
     def _gpu_resources_per_trial_non_none(self):
         return self.gpu_resources_per_trial if self.gpu_resources_per_trial is not None else 0
 
-    def _get_remote_checkpoint_dir(self, trial_dir: Path) -> Optional[Union[str, Tuple[str, str]]]:
+    def _get_remote_checkpoint_dir(self, trial_dir: Path) -> str | tuple[str, str] | None:
         """Get the path to remote checkpoint directory."""
         if self.sync_config is None:
             return None
@@ -628,7 +615,7 @@ class RayTuneExecutor:
                 self.last_steps = 0
                 self.resume_ckpt_dir = None
 
-            def _get_remote_checkpoint_dir(self) -> Optional[Union[str, Tuple[str, str]]]:
+            def _get_remote_checkpoint_dir(self) -> str | tuple[str, str] | None:
                 # sync client has to be recreated to avoid issues with serialization
                 return tune_executor._get_remote_checkpoint_dir(trial_dir)
 
@@ -643,7 +630,7 @@ class RayTuneExecutor:
                 # For non-Ray backend, report metrics + checkpoint together
                 report(progress_tracker, save_path=save_path)
 
-            def on_train_start(self, model, config: Dict[str, Any], config_fp: Union[str, None]):
+            def on_train_start(self, model, config: dict[str, Any], config_fp: str | None):
                 if is_using_ray_backend and checkpoint_dir:
                     # Store the checkpoint directory path for syncing to the trainer worker.
                     self.resume_ckpt_dir = checkpoint_dir
@@ -765,14 +752,16 @@ class RayTuneExecutor:
         train_stats, eval_stats = stats.pop()
 
         metric_score = self.get_metric_score(train_stats)
-        tune.report(metrics={
-            "parameters": json.dumps(config, cls=NumpyEncoder),
-            "metric_score": metric_score,
-            "training_stats": json.dumps(train_stats, cls=NumpyEncoder),
-            "eval_stats": json.dumps(eval_stats, cls=NumpyEncoder),
-            "trial_id": tune.get_context().get_trial_id(),
-            "trial_dir": str(tune.get_context().get_trial_dir()),
-        })
+        tune.report(
+            metrics={
+                "parameters": json.dumps(config, cls=NumpyEncoder),
+                "metric_score": metric_score,
+                "training_stats": json.dumps(train_stats, cls=NumpyEncoder),
+                "eval_stats": json.dumps(eval_stats, cls=NumpyEncoder),
+                "trial_id": tune.get_context().get_trial_id(),
+                "trial_dir": str(tune.get_context().get_trial_dir()),
+            }
+        )
 
     def execute(
         self,
@@ -1030,7 +1019,7 @@ class RayTuneExecutor:
 class CallbackStopper(Stopper):
     """Ray Tune Stopper that triggers the entire job to stop if one callback returns True."""
 
-    def __init__(self, callbacks: Optional[List[Callback]]):
+    def __init__(self, callbacks: list[Callback] | None):
         self.callbacks = callbacks or []
 
     def __call__(self, trial_id, result):
@@ -1050,7 +1039,7 @@ def get_build_hyperopt_executor(executor_type):
 executor_registry = {"ray": RayTuneExecutor}
 
 
-def set_values(params: Dict[str, Any], model_dict: Dict[str, Any]):
+def set_values(params: dict[str, Any], model_dict: dict[str, Any]):
     for key, value in params.items():
         if isinstance(value, dict):
             for sub_key, sub_value in value.items():

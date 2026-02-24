@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 def hyperopt_cli(
-    config: Union[str, dict],
+    config: str | dict,
     dataset: str = None,
     training_set: str = None,
     validation_set: str = None,
@@ -53,11 +53,11 @@ def hyperopt_cli(
     skip_save_eval_stats: bool = False,
     skip_save_hyperopt_statistics: bool = False,
     output_directory: str = "results",
-    gpus: Union[str, int, List[int]] = None,
-    gpu_memory_limit: Optional[float] = None,
+    gpus: str | int | list[int] = None,
+    gpu_memory_limit: float | None = None,
     allow_parallel_threads: bool = True,
-    callbacks: List[Callback] = None,
-    backend: Union[Backend, str] = None,
+    callbacks: list[Callback] = None,
+    backend: Backend | str = None,
     random_seed: int = default_random_seed,
     hyperopt_log_verbosity: int = 3,
     **kwargs,
@@ -382,8 +382,7 @@ def cli(sys_argv):
     parser.add_argument(
         "-b",
         "--backend",
-        help="specifies backend to use for parallel / distributed execution, "
-        "defaults to local execution",
+        help="specifies backend to use for parallel / distributed execution, " "defaults to local execution",
         choices=ALL_BACKENDS,
     )
     parser.add_argument(

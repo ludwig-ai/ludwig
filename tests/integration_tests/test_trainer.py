@@ -8,7 +8,6 @@ from ludwig.constants import BATCH_SIZE, EVAL_BATCH_SIZE, LEARNING_RATE, TRAINER
 from tests.integration_tests.utils import category_feature, generate_data, LocalTestBackend, sequence_feature
 
 
-
 @pytest.mark.parametrize("eval_batch_size", ["auto", None, 128])
 def test_tune_batch_size_and_lr(tmpdir, eval_batch_size):
     input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
@@ -69,8 +68,6 @@ def test_tune_batch_size_and_lr(tmpdir, eval_batch_size):
 
     # loaded model should retain the tuned params
     check_postconditions(model)
-
-
 
 
 def test_changing_parameters_on_plateau(tmpdir):

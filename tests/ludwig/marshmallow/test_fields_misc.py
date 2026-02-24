@@ -45,7 +45,7 @@ def test_Embed():
     # Test simple schema creation:
     @dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
-        foo: Union[None, str, int] = schema_utils.Embed()
+        foo: None | str | int = schema_utils.Embed()
 
     # Test null/empty loading cases:
     assert CustomTestSchema.Schema().load({}).foo is None
@@ -77,7 +77,7 @@ def test_InitializerOrDict():
     # Test simple schema creation:
     @dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
-        foo: Union[None, str, Dict] = schema_utils.InitializerOrDict()
+        foo: None | str | dict = schema_utils.InitializerOrDict()
 
     # Test invalid non-dict loads:
     with pytest.raises(MarshmallowValidationError):
@@ -114,7 +114,7 @@ def test_FloatRangeTupleDataclassField():
     # Test default schema creation:
     @dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
-        foo: Tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(allow_none=True)
+        foo: tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(allow_none=True)
 
     # Test empty load:
     assert CustomTestSchema.Schema().load({}).foo == (0.9, 0.999)
@@ -129,7 +129,7 @@ def test_FloatRangeTupleDataclassField():
     # Test non-default schema (N=3, other custom metadata):
     @dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
-        foo: Tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(n=3, default=(1, 1, 1), min=-10, max=10)
+        foo: tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(n=3, default=(1, 1, 1), min=-10, max=10)
 
     assert CustomTestSchema.Schema().load({}).foo == (1, 1, 1)
     assert CustomTestSchema.Schema().load({"foo": [2, 2, 2]}).foo == (2, 2, 2)
@@ -139,7 +139,7 @@ def test_FloatRangeTupleDataclassField():
 def test_OneOfOptionsField():
     @dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
-        foo: Union[float, str] = schema_utils.OneOfOptionsField(
+        foo: float | str = schema_utils.OneOfOptionsField(
             default=0.1,
             description="",
             allow_none=False,
@@ -162,7 +162,7 @@ def test_OneOfOptionsField():
     # Reverse the order and allow none (via StringOptions):
     @dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
-        foo: Union[None, float, str] = schema_utils.OneOfOptionsField(
+        foo: None | float | str = schema_utils.OneOfOptionsField(
             default="placeholder",
             description="",
             field_options=[
@@ -191,7 +191,7 @@ def test_OneOfOptionsField():
 def test_OneOfOptionsField_allows_none():
     @dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
-        foo: Union[float, str] = schema_utils.OneOfOptionsField(
+        foo: float | str = schema_utils.OneOfOptionsField(
             default=None,
             allow_none=True,
             description="",
@@ -217,7 +217,7 @@ def test_OneOfOptionsField_allows_none_fails_if_multiple_fields_allow_none():
 
         @dataclass
         class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
-            foo: Union[float, str] = schema_utils.OneOfOptionsField(
+            foo: float | str = schema_utils.OneOfOptionsField(
                 default=None,
                 description="",
                 field_options=[
@@ -230,7 +230,7 @@ def test_OneOfOptionsField_allows_none_fails_if_multiple_fields_allow_none():
 def test_OneOfOptionsField_allows_none_one_field_allows_none():
     @dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
-        foo: Union[float, str] = schema_utils.OneOfOptionsField(
+        foo: float | str = schema_utils.OneOfOptionsField(
             default=None,
             description="",
             field_options=[

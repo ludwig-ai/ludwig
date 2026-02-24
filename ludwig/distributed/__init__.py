@@ -43,7 +43,7 @@ STRATEGIES = {
 _current_strategy: DistributedStrategy = None
 
 
-def init_dist_strategy(strategy: Union[str, Dict[str, Any]], **kwargs) -> DistributedStrategy:
+def init_dist_strategy(strategy: str | dict[str, Any], **kwargs) -> DistributedStrategy:
     global _current_strategy
     if isinstance(strategy, dict):
         dtype = strategy.pop("type", None)
@@ -60,7 +60,7 @@ def get_current_dist_strategy() -> DistributedStrategy:
     return _current_strategy
 
 
-def get_dist_strategy(strategy: Union[str, Dict[str, Any]]) -> Type[DistributedStrategy]:
+def get_dist_strategy(strategy: str | dict[str, Any]) -> type[DistributedStrategy]:
     name = strategy
     if isinstance(strategy, dict):
         name = strategy["type"]

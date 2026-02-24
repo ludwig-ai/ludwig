@@ -36,7 +36,7 @@ class SSTLoader(DatasetLoader):
     def __init__(
         self,
         config: DatasetConfig,
-        cache_dir: Optional[str] = None,
+        cache_dir: str | None = None,
         include_subtrees=False,
         discard_neutral=False,
         convert_parentheses=True,
@@ -52,7 +52,7 @@ class SSTLoader(DatasetLoader):
     def get_sentiment_label(id2sent, phrase_id):
         raise NotImplementedError
 
-    def transform_files(self, file_paths: List[str]) -> List[str]:
+    def transform_files(self, file_paths: list[str]) -> list[str]:
         # maybe this should be
 
         """Load dataset files into a dataframe."""
@@ -178,7 +178,7 @@ class SST2Loader(SSTLoader):
     def __init__(
         self,
         config: DatasetConfig,
-        cache_dir: Optional[str] = None,
+        cache_dir: str | None = None,
         include_subtrees=False,
         convert_parentheses=True,
         remove_duplicates=False,
@@ -220,7 +220,7 @@ class SST3Loader(SSTLoader):
     def __init__(
         self,
         config: DatasetConfig,
-        cache_dir: Optional[str] = None,
+        cache_dir: str | None = None,
         include_subtrees=False,
         convert_parentheses=True,
         remove_duplicates=False,
@@ -263,7 +263,7 @@ class SST5Loader(SSTLoader):
     def __init__(
         self,
         config: DatasetConfig,
-        cache_dir: Optional[str] = None,
+        cache_dir: str | None = None,
         include_subtrees=False,
         convert_parentheses=True,
         remove_duplicates=False,
@@ -312,7 +312,7 @@ def get_sentence_idcs_in_split(datasplit: pd.DataFrame, split_id: int):
     return set(datasplit[datasplit["splitset_label"] == split_id]["sentence_index"])
 
 
-def get_sentences_with_idcs(sentences: pd.DataFrame, sentences_idcs: Set[int]):
+def get_sentences_with_idcs(sentences: pd.DataFrame, sentences_idcs: set[int]):
     """Given a set of sentence indices, returns the corresponding sentences texts in sentences."""
     criterion = sentences["sentence_index"].map(lambda x: x in sentences_idcs)
     return sentences[criterion]["sentence"].tolist()

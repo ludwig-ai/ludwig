@@ -2,7 +2,8 @@ import contextlib
 import logging
 import os
 import socket
-from typing import Any, Callable, Dict, Optional, Tuple, Type, TYPE_CHECKING, Union
+from collections.abc import Callable
+from typing import Any, Dict, Optional, Tuple, Type, TYPE_CHECKING, Union
 
 import torch
 import torch.distributed as dist
@@ -38,7 +39,7 @@ class DDPStrategy(DistributedStrategy):
         model: nn.Module,
         trainer_config: "ECDTrainerConfig",
         base_learning_rate: float,
-    ) -> Tuple[nn.Module, Optimizer]:
+    ) -> tuple[nn.Module, Optimizer]:
         return DDP(model), create_optimizer(model, trainer_config.optimizer, base_learning_rate)
 
     def size(self) -> int:
@@ -72,7 +73,7 @@ class DDPStrategy(DistributedStrategy):
         # TODO(travis): open question if this is needed to ensure all workers using same optimizer state
         pass
 
-    def broadcast_object(self, v: Any, name: Optional[str] = None) -> Any:
+    def broadcast_object(self, v: Any, name: str | None = None) -> Any:
         output = [v]
         dist.broadcast_object_list(output)
         return output[0]
@@ -98,17 +99,17 @@ class DDPStrategy(DistributedStrategy):
         return dist.is_available() and dist.is_initialized()
 
     @classmethod
-    def gather_all_tensors_fn(cls) -> Optional[Callable]:
+    def gather_all_tensors_fn(cls) -> Callable | None:
         return gather_all_tensors
 
     @classmethod
-    def get_ray_trainer_backend(cls, **kwargs) -> Optional[Any]:
+    def get_ray_trainer_backend(cls, **kwargs) -> Any | None:
         from ray.train.torch import TorchConfig
 
         return TorchConfig()
 
     @classmethod
-    def get_trainer_cls(cls, backend_config: BackendConfig) -> Tuple[Type[DataParallelTrainer], Dict[str, Any]]:
+    def get_trainer_cls(cls, backend_config: BackendConfig) -> tuple[type[DataParallelTrainer], dict[str, Any]]:
         return TorchTrainer, dict(torch_config=backend_config)
 
     def shutdown(self):
@@ -123,14 +124,14 @@ class DDPStrategy(DistributedStrategy):
         self,
         dist_model: nn.Module,
         model: nn.Module,
-        optimizer: Optional[Optimizer] = None,
+        optimizer: Optimizer | None = None,
         scheduler: Optional["LRScheduler"] = None,
     ) -> "Checkpoint":
         from ludwig.utils.checkpoint_utils import MultiNodeCheckpoint
 
         return MultiNodeCheckpoint(self, model, optimizer, scheduler)
 
-    def to_device(self, model: Union["BaseModel", DDP], device: Optional[torch.device] = None) -> nn.Module:
+    def to_device(self, model: Union["BaseModel", DDP], device: torch.device | None = None) -> nn.Module:
         try:
             return model.to_device(device if device is not None else get_torch_device())
         except AttributeError:
@@ -138,7 +139,7 @@ class DDPStrategy(DistributedStrategy):
             return model
 
 
-def local_rank_and_size() -> Tuple[int, int]:
+def local_rank_and_size() -> tuple[int, int]:
     # DeepSpeed CLI and other tools may set these environment variables for us.
     local_rank, local_size = os.environ.get("LOCAL_RANK"), os.environ.get("LOCAL_SIZE")
     if local_rank is not None and local_size is not None:

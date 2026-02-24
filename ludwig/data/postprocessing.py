@@ -81,7 +81,7 @@ def _save_as_numpy(predictions, output_directory, saved_keys, backend):
             saved_keys.add(k)
 
 
-def convert_dict_to_df(predictions: Dict[str, Dict[str, Union[List[Any], torch.Tensor, np.array]]]) -> pd.DataFrame:
+def convert_dict_to_df(predictions: dict[str, dict[str, list[Any] | torch.Tensor | np.array]]) -> pd.DataFrame:
     """Converts a dictionary of predictions into a pandas DataFrame.
 
     Example format of predictions dictionary:

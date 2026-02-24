@@ -155,7 +155,7 @@ def test_triton_torchscript(csv_filename, tmpdir):
             raise ValueError("Value should be either List[str] or torch.Tensor.")
 
 
-def get_test_config_filenames() -> List[str]:
+def get_test_config_filenames() -> list[str]:
     """Return list of the config filenames used for Triton export."""
     configs_directory = "/".join(__file__.split("/")[:-1] + ["test_triton_configs"])
     return [os.path.join(configs_directory, config_fp) for config_fp in os.listdir(configs_directory)]

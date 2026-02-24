@@ -33,8 +33,8 @@ _MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION = set()
 @default_retry(tries=8)
 def load_pretrained_from_config(
     config_obj: Union["LLMModelConfig", "LLMEncoderConfig"],
-    model_config: Optional[AutoConfig] = None,
-    weights_save_path: Optional[str] = None,
+    model_config: AutoConfig | None = None,
+    weights_save_path: str | None = None,
 ) -> PreTrainedModel:
     load_kwargs = {}
     if config_obj.quantization:
@@ -67,10 +67,10 @@ def load_pretrained_from_config(
 
 def to_device(
     model: PreTrainedModel,
-    device: Union[str, torch.DeviceObjType],
+    device: str | torch.DeviceObjType,
     config_obj: "LLMModelConfig",  # noqa F821
     curr_device: torch.DeviceObjType,
-) -> Tuple[PreTrainedModel, torch.DeviceObjType]:
+) -> tuple[PreTrainedModel, torch.DeviceObjType]:
     """Move an LLM to the requested device, accounting for sharding and adapters.
 
     Args:
@@ -375,11 +375,11 @@ def find_last_matching_index(tensor_a: torch.Tensor, tensor_b: torch.Tensor):
 
 
 def pad_target_tensor_for_fine_tuning(
-    targets: Dict[str, torch.Tensor],
-    predictions: Dict[str, torch.Tensor],
+    targets: dict[str, torch.Tensor],
+    predictions: dict[str, torch.Tensor],
     model_inputs: torch.Tensor,
     of_name: str,
-) -> Dict[str, torch.Tensor]:
+) -> dict[str, torch.Tensor]:
     """Pad and adjust target tensors for fine-tuning LLMS models.
 
     This function is used to pad and adjust the target tensors with IGNORE_INDEX_TOKEN_ID based on the model inputs and
@@ -489,8 +489,8 @@ def generate_merged_ids(
 
 
 def _get_decoded_targets_and_predictions(
-    targets: Dict[str, torch.Tensor],
-    predictions: Dict[str, Dict[str, torch.Tensor]],
+    targets: dict[str, torch.Tensor],
+    predictions: dict[str, dict[str, torch.Tensor]],
     tokenizer: PreTrainedTokenizer,
     of_name: str,
 ):
@@ -507,12 +507,12 @@ def _get_decoded_targets_and_predictions(
 
 
 def get_realigned_target_and_prediction_tensors_for_inference(
-    targets: Dict[str, torch.Tensor],
-    predictions: Dict[str, Dict[str, torch.Tensor]],
+    targets: dict[str, torch.Tensor],
+    predictions: dict[str, dict[str, torch.Tensor]],
     of_name: str,
     tokenizer: PreTrainedTokenizer,
     pad_value: int = None,
-) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
+) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]:
     """Realigns the target tensor with the predictions.
 
     This is necessary for text metrics that require the target and prediction to be of the same length.

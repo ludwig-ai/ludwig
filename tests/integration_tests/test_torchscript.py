@@ -434,7 +434,7 @@ def test_torchscript_e2e_date(tmpdir, csv_filename):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
-@pytest.mark.parametrize("vector_type", [torch.Tensor, List[torch.Tensor]])
+@pytest.mark.parametrize("vector_type", [torch.Tensor, list[torch.Tensor]])
 def test_torchscript_preproc_vector_alternative_type(tmpdir, csv_filename, vector_type):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     feature = vector_feature()

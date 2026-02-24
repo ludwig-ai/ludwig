@@ -29,14 +29,14 @@ DEVICE = get_torch_device()
 
 
 def embedding_matrix(
-    vocab: List[str],
+    vocab: list[str],
     embedding_size: int,
     representation: str = "dense",
     embeddings_trainable: bool = True,
-    pretrained_embeddings: Optional[str] = None,
+    pretrained_embeddings: str | None = None,
     force_embedding_size: bool = False,
-    embedding_initializer: Optional[Union[str, Dict]] = None,
-) -> Tuple[nn.Module, int]:
+    embedding_initializer: str | dict | None = None,
+) -> tuple[nn.Module, int]:
     """Returns initialized torch.nn.Embedding module and embedding size."""
 
     vocab_size = len(vocab)
@@ -85,15 +85,15 @@ def embedding_matrix(
 
 
 def embedding_matrix_on_device(
-    vocab: List[str],
+    vocab: list[str],
     embedding_size: int,
     representation: str = "dense",
     embeddings_trainable: bool = True,
-    pretrained_embeddings: Optional[str] = None,
+    pretrained_embeddings: str | None = None,
     force_embedding_size: bool = False,
     embeddings_on_cpu: bool = False,
-    embedding_initializer: Optional[str] = None,
-) -> Tuple[nn.Module, int]:
+    embedding_initializer: str | None = None,
+) -> tuple[nn.Module, int]:
     embeddings, embedding_size = embedding_matrix(
         vocab,
         embedding_size,
@@ -116,15 +116,15 @@ class Embed(LudwigModule):
 
     def __init__(
         self,
-        vocab: List[str],
+        vocab: list[str],
         embedding_size: int,
         representation: str = "dense",
         embeddings_trainable: bool = True,
-        pretrained_embeddings: Optional[str] = None,
+        pretrained_embeddings: str | None = None,
         force_embedding_size: bool = False,
         embeddings_on_cpu: bool = False,
         dropout: float = 0.0,
-        embedding_initializer: Optional[Union[str, Dict]] = None,
+        embedding_initializer: str | dict | None = None,
     ):
         super().__init__()
         self.supports_masking = True
@@ -146,7 +146,7 @@ class Embed(LudwigModule):
         else:
             self.dropout = None
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> torch.Tensor:
         if inputs.ndim != 2 or inputs.shape[1] != 1:
             raise RuntimeError(
                 f"Embed only takes inputs of shape [batch x 1]. Received inputs with size: {inputs.size()}"
@@ -171,15 +171,15 @@ class EmbedSet(LudwigModule):
 
     def __init__(
         self,
-        vocab: List[str],
+        vocab: list[str],
         embedding_size: int,
         representation: str = "dense",
         embeddings_trainable: bool = True,
-        pretrained_embeddings: Optional[str] = None,
+        pretrained_embeddings: str | None = None,
         force_embedding_size: bool = False,
         embeddings_on_cpu: bool = False,
         dropout: float = 0.0,
-        embedding_initializer: Optional[Union[str, Dict]] = None,
+        embedding_initializer: str | dict | None = None,
         aggregation_function: str = "sum",
     ):
         super().__init__()
@@ -211,7 +211,7 @@ class EmbedSet(LudwigModule):
 
         self.register_buffer("vocab_indices", torch.arange(self.vocab_size))
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> torch.Tensor:
         """
         Params:
             inputs: Boolean multi-hot tensor of size [batch x vocab_size], where
@@ -247,15 +247,15 @@ class EmbedWeighted(LudwigModule):
 
     def __init__(
         self,
-        vocab: List[str],
+        vocab: list[str],
         embedding_size: int,
         representation: str = "dense",
         embeddings_trainable: bool = True,
-        pretrained_embeddings: Optional[str] = None,
+        pretrained_embeddings: str | None = None,
         force_embedding_size: bool = False,
         embeddings_on_cpu: bool = False,
         dropout: float = 0.0,
-        embedding_initializer: Optional[str] = None,
+        embedding_initializer: str | None = None,
     ):
         super().__init__()
 
@@ -278,7 +278,7 @@ class EmbedWeighted(LudwigModule):
 
         self.register_buffer("vocab_indices", torch.arange(self.vocab_size, dtype=torch.int32))
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> torch.Tensor:
         """
         Params:
             inputs: Tensor of frequencies, where inputs[b, i] represents
@@ -373,16 +373,16 @@ class EmbedWeighted(LudwigModule):
 class EmbedSequence(LudwigModule):
     def __init__(
         self,
-        vocab: List[str],
+        vocab: list[str],
         embedding_size: int,
         max_sequence_length: int,
         representation: str = "dense",
         embeddings_trainable: bool = True,
-        pretrained_embeddings: Optional[str] = None,
+        pretrained_embeddings: str | None = None,
         force_embedding_size: bool = False,
         embeddings_on_cpu: bool = False,
         dropout: float = 0.0,
-        embedding_initializer: Optional[str] = None,
+        embedding_initializer: str | None = None,
     ):
         super().__init__()
         self.supports_masking = True
@@ -405,7 +405,7 @@ class EmbedSequence(LudwigModule):
         else:
             self.dropout = None
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None):
         if inputs.dtype not in [torch.int, torch.long]:
             raise RuntimeError(
                 f"Expected tensor of type torch.int or torch.long as input." f"Received {inputs.dtype} instead."
@@ -467,7 +467,7 @@ class TokenAndPositionEmbedding(LudwigModule):
     def output_shape(self) -> torch.Size:
         return self.token_embed.output_shape
 
-    def forward(self, inputs, mask: Optional[torch.Tensor] = None):
+    def forward(self, inputs, mask: torch.Tensor | None = None):
         positions_hidden = self.position_embed(self.positions)
         token_hidden = self.token_embed(inputs)
         return token_hidden + positions_hidden

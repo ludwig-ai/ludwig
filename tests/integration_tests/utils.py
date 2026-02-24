@@ -448,9 +448,8 @@ def run_experiment(
     running an experiment.
 
     :param input_features: list of input feature dictionaries
-    :param output_features: list of output feature dictionaries
-    **kwargs you may also pass extra parameters to the experiment as keyword
-    arguments
+    :param output_features: list of output feature dictionaries **kwargs you may also pass extra parameters to the
+        experiment as keyword arguments
     :return: None
     """
     if input_features is None and output_features is None and config is None:
@@ -569,12 +568,12 @@ def spawn(fn):
     return wrapped_fn
 
 
-def get_weights(model: torch.nn.Module) -> List[torch.Tensor]:
+def get_weights(model: torch.nn.Module) -> list[torch.Tensor]:
     return [param.data for param in model.parameters()]
 
 
 def has_no_grad(
-    val: Union[np.ndarray, torch.Tensor, str, list],
+    val: np.ndarray | torch.Tensor | str | list,
 ):
     """Checks if two values are close to each other."""
     if isinstance(val, list):
@@ -585,8 +584,8 @@ def has_no_grad(
 
 
 def is_all_close(
-    val1: Union[np.ndarray, torch.Tensor, str, list],
-    val2: Union[np.ndarray, torch.Tensor, str, list],
+    val1: np.ndarray | torch.Tensor | str | list,
+    val2: np.ndarray | torch.Tensor | str | list,
     tolerance=1e-4,
 ):
     """Checks if two values are close to each other."""
@@ -601,7 +600,7 @@ def is_all_close(
     return val1.shape == val2.shape and np.allclose(val1, val2, atol=tolerance)
 
 
-def is_all_tensors_cuda(val: Union[np.ndarray, torch.Tensor, str, list]) -> bool:
+def is_all_tensors_cuda(val: np.ndarray | torch.Tensor | str | list) -> bool:
     if isinstance(val, list):
         return all(is_all_tensors_cuda(v) for v in val)
 
@@ -773,7 +772,7 @@ def create_data_set_to_use(data_format, raw_data, nan_percent=0.0):
 
 
 def augment_dataset_with_none(
-    df: pd.DataFrame, first_row_none: bool = False, last_row_none: bool = False, nan_cols: List = []
+    df: pd.DataFrame, first_row_none: bool = False, last_row_none: bool = False, nan_cols: list = []
 ) -> pd.DataFrame:
     """Optionally sets the first and last rows of nan_cols of the given dataframe to nan.
 

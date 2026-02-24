@@ -52,14 +52,14 @@ class UNetDecoderConfig(ImageDecoderConfig):
         parameter_metadata=DECODER_METADATA["UNetDecoder"]["width"],
     )
 
-    num_channels: Optional[int] = schema_utils.NonNegativeInteger(
+    num_channels: int | None = schema_utils.NonNegativeInteger(
         default=None,
         allow_none=True,
         description="Number of channels in the output image. ",
         parameter_metadata=DECODER_METADATA["UNetDecoder"]["num_channels"],
     )
 
-    conv_norm: Optional[str] = schema_utils.StringOptions(
+    conv_norm: str | None = schema_utils.StringOptions(
         ["batch"],
         default="batch",
         allow_none=True,
@@ -67,7 +67,7 @@ class UNetDecoderConfig(ImageDecoderConfig):
         parameter_metadata=DECODER_METADATA["UNetDecoder"]["conv_norm"],
     )
 
-    num_classes: Optional[int] = schema_utils.NonNegativeInteger(
+    num_classes: int | None = schema_utils.NonNegativeInteger(
         default=None,
         allow_none=True,
         description="Number of classes to predict in the output. ",

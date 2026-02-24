@@ -37,7 +37,7 @@ class ImagePreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["computed_fill_value"],
     )
 
-    height: Optional[int] = schema_utils.PositiveInteger(
+    height: int | None = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="The image height in pixels. If this parameter is set, images will be resized to the specified "
@@ -46,7 +46,7 @@ class ImagePreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["height"],
     )
 
-    width: Optional[int] = schema_utils.PositiveInteger(
+    width: int | None = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="The image width in pixels. If this parameter is set, images will be resized to the specified "
@@ -111,7 +111,7 @@ class ImagePreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["infer_image_sample_size"],
     )
 
-    standardize_image: Union[str, None] = schema_utils.StringOptions(
+    standardize_image: str | None = schema_utils.StringOptions(
         [IMAGENET1K],
         default=None,
         allow_none=True,

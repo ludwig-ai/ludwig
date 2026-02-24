@@ -34,22 +34,21 @@ logger = logging.getLogger(__name__)
 
 
 def preprocess_cli(
-    preprocessing_config: Union[str, dict] = None,
-    dataset: Union[str, dict, pd.DataFrame] = None,
-    training_set: Union[str, dict, pd.DataFrame] = None,
-    validation_set: Union[str, dict, pd.DataFrame] = None,
-    test_set: Union[str, dict, pd.DataFrame] = None,
-    training_set_metadata: Union[str, dict] = None,
+    preprocessing_config: str | dict = None,
+    dataset: str | dict | pd.DataFrame = None,
+    training_set: str | dict | pd.DataFrame = None,
+    validation_set: str | dict | pd.DataFrame = None,
+    test_set: str | dict | pd.DataFrame = None,
+    training_set_metadata: str | dict = None,
     data_format: str = None,
     random_seed: int = default_random_seed,
     logging_level: int = logging.INFO,
-    callbacks: List[Callback] = None,
-    backend: Union[Backend, str] = None,
+    callbacks: list[Callback] = None,
+    backend: Backend | str = None,
     **kwargs
 ) -> None:
-    """*train* defines the entire training procedure used by Ludwig's
-    internals. Requires most of the parameters that are taken into the model.
-    Builds a full ludwig model and performs the training.
+    """*train* defines the entire training procedure used by Ludwig's internals. Requires most of the parameters
+    that are taken into the model. Builds a full ludwig model and performs the training.
 
     :param preprocessing_config: (Union[str, dict]) in-memory representation of
             config or string path to a YAML config file.
@@ -248,8 +247,7 @@ def cli(sys_argv):
     parser.add_argument(
         "-b",
         "--backend",
-        help="specifies backend to use for parallel / distributed execution, "
-        "defaults to local execution",
+        help="specifies backend to use for parallel / distributed execution, " "defaults to local execution",
         choices=ALL_BACKENDS,
     )
     parser.add_argument(

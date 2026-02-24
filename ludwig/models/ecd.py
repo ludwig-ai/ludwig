@@ -71,9 +71,9 @@ class ECD(BaseModel):
 
     def encode(
         self,
-        inputs: Union[
-            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
-        ],
+        inputs: (
+            dict[str, torch.Tensor] | dict[str, np.ndarray] | tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]
+        ),
     ):
         # Convert inputs to tensors.
         for input_feature_name, input_values in inputs.items():
@@ -114,11 +114,11 @@ class ECD(BaseModel):
 
     def forward(
         self,
-        inputs: Union[
-            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
-        ],
+        inputs: (
+            dict[str, torch.Tensor] | dict[str, np.ndarray] | tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]
+        ),
         mask=None,
-    ) -> Dict[str, torch.Tensor]:
+    ) -> dict[str, torch.Tensor]:
         """Forward pass of the model.
 
         Args:

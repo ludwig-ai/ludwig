@@ -91,9 +91,9 @@ class DenseEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["DenseEncoder"]["use_bias"],
     )
 
-    bias_initializer: Union[str, dict] = common_fields.BiasInitializerField()
+    bias_initializer: str | dict = common_fields.BiasInitializerField()
 
-    weights_initializer: Union[str, dict] = common_fields.WeightsInitializerField()
+    weights_initializer: str | dict = common_fields.WeightsInitializerField()
 
     norm: str = common_fields.NormField()
 
@@ -101,4 +101,4 @@ class DenseEncoderConfig(BaseEncoderConfig):
 
     num_layers: int = common_fields.NumFCLayersField(default=1, non_zero=True)
 
-    fc_layers: List[dict] = common_fields.FCLayersField()
+    fc_layers: list[dict] = common_fields.FCLayersField()

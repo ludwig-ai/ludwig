@@ -49,7 +49,7 @@ class ImageInputFeatureConfigMixin(BaseMarshmallowConfig):
         default="stacked_cnn",
     )
 
-    augmentation: List[BaseAugmentationConfig] = AugmentationDataclassField(
+    augmentation: list[BaseAugmentationConfig] = AugmentationDataclassField(
         feature_type=IMAGE,
         default=False,
         default_augmentations=AUGMENTATION_DEFAULT_OPERATIONS,

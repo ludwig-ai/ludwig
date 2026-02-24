@@ -15,7 +15,8 @@
 # ==============================================================================
 
 from abc import ABC
-from typing import Any, Callable, Dict, List, Union
+from collections.abc import Callable
+from typing import Any, Dict, List, Union
 
 from ludwig.api_annotations import PublicAPI
 from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainingSetMetadataDict
@@ -23,7 +24,7 @@ from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainingSetMetadat
 
 @PublicAPI
 class Callback(ABC):
-    def on_cmdline(self, cmd: str, *args: List[str]):
+    def on_cmdline(self, cmd: str, *args: list[str]):
         """Called when Ludwig is run on the command line with the callback enabled.
 
         :param cmd: The Ludwig subcommand being run, ex. "train", "evaluate", "predict", ...
@@ -48,7 +49,7 @@ class Callback(ABC):
         :param test_set: The test set.
         :type test_set: ludwig.dataset.base.Dataset
         :param training_set_metadata: Values inferred from the training set, including preprocessing settings,
-                                      vocabularies, feature statistics, etc. Same as training_set_metadata.json.
+            vocabularies, feature statistics, etc. Same as training_set_metadata.json.
         """
 
         pass
@@ -127,7 +128,7 @@ class Callback(ABC):
         experiment_name: str,
         model_name: str,
         output_directory: str,
-        resume_directory: Union[str, None],
+        resume_directory: str | None,
     ):
         """Called after preprocessing, but before the creation of the model and trainer objects.
 
@@ -144,7 +145,7 @@ class Callback(ABC):
         self,
         model,
         config: ModelConfigDict,
-        config_fp: Union[str, None],
+        config_fp: str | None,
     ):
         """Called after creation of trainer, before the start of training.
 
@@ -368,13 +369,12 @@ class Callback(ABC):
         """
         pass
 
-    def prepare_ray_tune(self, train_fn: Callable, tune_config: Dict[str, Any], tune_callbacks: List[Callable]):
+    def prepare_ray_tune(self, train_fn: Callable, tune_config: dict[str, Any], tune_callbacks: list[Callable]):
         """Configures Ray Tune callback and config.
 
         :param train_fn: The function which runs the experiment trial.
         :param tune_config: The ray tune configuration dictionary.
         :param tune_callbacks: List of callbacks (not used yet).
-
         :returns: Tuple[Callable, Dict] The train_fn and tune_config, which will be passed to ray tune.
         """
         return train_fn, tune_config

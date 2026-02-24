@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 def export_torchscript(
-    model_path: str, model_only: bool = False, output_path: Optional[str] = None, device: Optional[str] = None, **kwargs
+    model_path: str, model_only: bool = False, output_path: str | None = None, device: str | None = None, **kwargs
 ) -> None:
     """Exports a model to torchscript.
 

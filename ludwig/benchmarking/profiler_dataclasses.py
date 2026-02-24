@@ -65,7 +65,7 @@ class SystemResourceMetrics:
     average_global_cpu_utilization: float
 
     # Per device usage. Dictionary containing max and average memory used per device.
-    device_usage: Dict[str, DeviceUsageMetrics]
+    device_usage: dict[str, DeviceUsageMetrics]
 
 
 @dataclass
@@ -80,10 +80,10 @@ class TorchProfilerMetrics:
     num_oom_events: int
 
     # Per device usage by torch ops. Dictionary containing max and average memory used per device.
-    device_usage: Dict[str, DeviceUsageMetrics]
+    device_usage: dict[str, DeviceUsageMetrics]
 
 
-def profiler_dataclass_to_flat_dict(data: Union[SystemResourceMetrics, TorchProfilerMetrics]) -> Dict:
+def profiler_dataclass_to_flat_dict(data: SystemResourceMetrics | TorchProfilerMetrics) -> dict:
     """Returns a flat dictionary representation, with the device_usage key removed."""
     nested_dict = dataclasses.asdict(data)
     nested_dict[""] = nested_dict.pop("device_usage")

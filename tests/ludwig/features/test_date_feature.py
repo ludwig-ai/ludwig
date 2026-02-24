@@ -63,7 +63,7 @@ def test_date_to_list(date_str, datetime_format, expected_list):
 
 
 @pytest.fixture(scope="module")
-def reference_date_list() -> List[int]:
+def reference_date_list() -> list[int]:
     return create_vector_from_datetime_obj(datetime.utcfromtimestamp(1691600953.443032))
 
 
@@ -73,7 +73,7 @@ def fill_value() -> str:
 
 
 @pytest.fixture(scope="module")
-def fill_value_list(fill_value: str) -> List[int]:
+def fill_value_list(fill_value: str) -> list[int]:
     return create_vector_from_datetime_obj(parse(fill_value))
 
 
@@ -101,7 +101,7 @@ def fill_value_list(fill_value: str) -> List[int]:
         pytest.param(None, None, "fill_value_list", id="NoneType error"),
     ],
 )
-def test_date_to_list_numeric(timestamp: Any, datetime_format: str, expected_list: List[int], fill_value: str, request):
+def test_date_to_list_numeric(timestamp: Any, datetime_format: str, expected_list: list[int], fill_value: str, request):
     """Test that numeric datetime formats are converted correctly.
 
     Currently, we support int, float, and string representations of POSIX timestamps in seconds and milliseconds. Valid

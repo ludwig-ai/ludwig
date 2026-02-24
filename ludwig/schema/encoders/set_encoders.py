@@ -42,7 +42,7 @@ class SetSparseEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["representation"],
     )
 
-    vocab: List[str] = schema_utils.List(
+    vocab: list[str] = schema_utils.List(
         default=None,
         description="Vocabulary of the encoder",
         parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["vocab"],
@@ -132,7 +132,7 @@ class SetSparseEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["num_fc_layers"],
     )
 
-    fc_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
+    fc_layers: list[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
         default=None,
         description="List of dictionaries containing the parameters for each fully connected layer.",
         parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["fc_layers"],

@@ -67,7 +67,7 @@ def get_model_type(config: dict) -> str:
 # If the automl model type matches that of any reference models, set the initial point_to_evaluate
 # in the automl hyperparameter search to the config of the reference model with the closest-matching
 # input number columns ratio.  This model config "transfer learning" can improve the automl search.
-def _add_transfer_config(base_config: Dict, ref_configs: Dict) -> Dict:
+def _add_transfer_config(base_config: dict, ref_configs: dict) -> dict:
     base_model_type = base_config[COMBINER][TYPE]
     base_model_numeric_ratio = _get_ratio_numeric_input_features(base_config["input_features"])
     min_numeric_ratio_distance = 1.0
@@ -93,7 +93,7 @@ def _add_transfer_config(base_config: Dict, ref_configs: Dict) -> Dict:
     return base_config
 
 
-def _get_ratio_numeric_input_features(input_features: Dict) -> float:
+def _get_ratio_numeric_input_features(input_features: dict) -> float:
     num_input_features = len(input_features)
     num_numeric_input = 0
     for input_feature in input_features:
@@ -105,8 +105,8 @@ def _get_ratio_numeric_input_features(input_features: Dict) -> float:
 # Update point_to_evaluate w/option value from dataset_config for options in hyperopt_params.
 # Also, add option value to associated categories list if it is not already included.
 def _add_option_to_evaluate(
-    point_to_evaluate: Dict, dataset_config: Dict, hyperopt_params: Dict, option_type: str
-) -> Dict:
+    point_to_evaluate: dict, dataset_config: dict, hyperopt_params: dict, option_type: str
+) -> dict:
     options = dataset_config[option_type]
     for option in options.keys():
         option_param = option_type + "." + option

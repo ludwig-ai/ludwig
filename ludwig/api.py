@@ -144,9 +144,9 @@ class TrainingStats:  # noqa F821
     This class replaces those while preserving dict and tuple-like behavior (unpacking, [] access).
     """
 
-    training: Dict[str, Any]
-    validation: Dict[str, Any]
-    test: Dict[str, Any]
+    training: dict[str, Any]
+    validation: dict[str, Any]
+    test: dict[str, Any]
     evaluation_frequency: EvaluationFrequency = dataclasses.field(default_factory=EvaluationFrequency)
 
     # TODO(daniel): deprecate multiple return value unpacking and dictionary-style element access
@@ -275,13 +275,13 @@ class LudwigModel:
 
     def __init__(
         self,
-        config: Union[str, dict],
+        config: str | dict,
         logging_level: int = logging.ERROR,
-        backend: Optional[Union[Backend, str]] = None,
-        gpus: Optional[Union[str, int, List[int]]] = None,
-        gpu_memory_limit: Optional[float] = None,
+        backend: Backend | str | None = None,
+        gpus: str | int | list[int] | None = None,
+        gpu_memory_limit: float | None = None,
         allow_parallel_threads: bool = True,
-        callbacks: Optional[List[Callback]] = None,
+        callbacks: list[Callback] | None = None,
     ) -> None:
         """Constructor for the Ludwig Model class.
 
@@ -334,7 +334,7 @@ class LudwigModel:
 
         # setup model
         self.model = None
-        self.training_set_metadata: Optional[Dict[str, dict]] = None
+        self.training_set_metadata: dict[str, dict] | None = None
 
         # online training state
         self._online_trainer = None
@@ -362,22 +362,22 @@ class LudwigModel:
 
     def train(
         self,
-        dataset: Optional[Union[str, dict, pd.DataFrame]] = None,
-        training_set: Optional[Union[str, dict, pd.DataFrame, Dataset]] = None,
-        validation_set: Optional[Union[str, dict, pd.DataFrame, Dataset]] = None,
-        test_set: Optional[Union[str, dict, pd.DataFrame, Dataset]] = None,
-        training_set_metadata: Optional[Union[str, dict]] = None,
-        data_format: Optional[str] = None,
+        dataset: str | dict | pd.DataFrame | None = None,
+        training_set: str | dict | pd.DataFrame | Dataset | None = None,
+        validation_set: str | dict | pd.DataFrame | Dataset | None = None,
+        test_set: str | dict | pd.DataFrame | Dataset | None = None,
+        training_set_metadata: str | dict | None = None,
+        data_format: str | None = None,
         experiment_name: str = "api_experiment",
         model_name: str = "run",
-        model_resume_path: Optional[str] = None,
+        model_resume_path: str | None = None,
         skip_save_training_description: bool = False,
         skip_save_training_statistics: bool = False,
         skip_save_model: bool = False,
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
         skip_save_processed_input: bool = False,
-        output_directory: Optional[str] = "results",
+        output_directory: str | None = "results",
         random_seed: int = default_random_seed,
         **kwargs,
     ) -> TrainingResults:
@@ -787,8 +787,8 @@ class LudwigModel:
 
     def train_online(
         self,
-        dataset: Union[str, dict, pd.DataFrame],
-        training_set_metadata: Optional[Union[str, dict]] = None,
+        dataset: str | dict | pd.DataFrame,
+        training_set_metadata: str | dict | None = None,
         data_format: str = "auto",
         random_seed: int = default_random_seed,
     ) -> None:
@@ -969,10 +969,10 @@ class LudwigModel:
 
     def generate(
         self,
-        input_strings: Union[str, List[str]],
-        generation_config: Optional[dict] = None,
-        streaming: Optional[bool] = False,
-    ) -> Union[str, List[str]]:
+        input_strings: str | list[str],
+        generation_config: dict | None = None,
+        streaming: bool | None = False,
+    ) -> str | list[str]:
         """A simple generate() method that directly uses the underlying transformers library to generate text.
 
         Args:
@@ -1020,7 +1020,7 @@ class LudwigModel:
 
     def _generate_streaming_outputs(
         self,
-        input_strings: Union[str, List[str]],
+        input_strings: str | list[str],
         input_ids: torch.Tensor,
         attention_mask: torch.Tensor,
         streamer: TextStreamer,
@@ -1056,7 +1056,7 @@ class LudwigModel:
 
     def _generate_non_streaming_outputs(
         self,
-        _input_strings: Union[str, List[str]],
+        _input_strings: str | list[str],
         input_ids: torch.Tensor,
         attention_mask: torch.Tensor,
     ) -> torch.Tensor:
@@ -1083,18 +1083,18 @@ class LudwigModel:
 
     def predict(
         self,
-        dataset: Optional[Union[str, dict, pd.DataFrame]] = None,
+        dataset: str | dict | pd.DataFrame | None = None,
         data_format: str = None,
         split: str = FULL,
         batch_size: int = 128,
-        generation_config: Optional[dict] = None,
+        generation_config: dict | None = None,
         skip_save_unprocessed_output: bool = True,
         skip_save_predictions: bool = True,
         output_directory: str = "results",
-        return_type: Union[str, dict, pd.DataFrame] = pd.DataFrame,
-        callbacks: Optional[List[Callback]] = None,
+        return_type: str | dict | pd.DataFrame = pd.DataFrame,
+        callbacks: list[Callback] | None = None,
         **kwargs,
-    ) -> Tuple[Union[dict, pd.DataFrame], str]:
+    ) -> tuple[dict | pd.DataFrame, str]:
         """Using a trained model, make predictions from the provided dataset.
 
         # Inputs
@@ -1188,19 +1188,19 @@ class LudwigModel:
 
     def evaluate(
         self,
-        dataset: Optional[Union[str, dict, pd.DataFrame]] = None,
-        data_format: Optional[str] = None,
+        dataset: str | dict | pd.DataFrame | None = None,
+        data_format: str | None = None,
         split: str = FULL,
-        batch_size: Optional[int] = None,
+        batch_size: int | None = None,
         skip_save_unprocessed_output: bool = True,
         skip_save_predictions: bool = True,
         skip_save_eval_stats: bool = True,
         collect_predictions: bool = False,
         collect_overall_stats: bool = False,
         output_directory: str = "results",
-        return_type: Union[str, dict, pd.DataFrame] = pd.DataFrame,
+        return_type: str | dict | pd.DataFrame = pd.DataFrame,
         **kwargs,
-    ) -> Tuple[dict, Union[dict, pd.DataFrame], str]:
+    ) -> tuple[dict, dict | pd.DataFrame, str]:
         """This function is used to predict the output variables given the input variables using the trained model
         and compute test statistics like performance measures, confusion matrices and the like.
 
@@ -1346,9 +1346,9 @@ class LudwigModel:
     def forecast(
         self,
         dataset: DataFrame,
-        data_format: Optional[str] = None,
+        data_format: str | None = None,
         horizon: int = 1,
-        output_directory: Optional[str] = None,
+        output_directory: str | None = None,
         output_format: str = "parquet",
     ) -> DataFrame:
         # TODO(travis): WIP
@@ -1412,15 +1412,15 @@ class LudwigModel:
 
     def experiment(
         self,
-        dataset: Optional[Union[str, dict, pd.DataFrame]] = None,
-        training_set: Optional[Union[str, dict, pd.DataFrame]] = None,
-        validation_set: Optional[Union[str, dict, pd.DataFrame]] = None,
-        test_set: Optional[Union[str, dict, pd.DataFrame]] = None,
-        training_set_metadata: Optional[Union[str, dict]] = None,
-        data_format: Optional[str] = None,
+        dataset: str | dict | pd.DataFrame | None = None,
+        training_set: str | dict | pd.DataFrame | None = None,
+        validation_set: str | dict | pd.DataFrame | None = None,
+        test_set: str | dict | pd.DataFrame | None = None,
+        training_set_metadata: str | dict | None = None,
+        data_format: str | None = None,
         experiment_name: str = "experiment",
         model_name: str = "run",
-        model_resume_path: Optional[str] = None,
+        model_resume_path: str | None = None,
         eval_split: str = TEST,
         skip_save_training_description: bool = False,
         skip_save_training_statistics: bool = False,
@@ -1436,7 +1436,7 @@ class LudwigModel:
         output_directory: str = "results",
         random_seed: int = default_random_seed,
         **kwargs,
-    ) -> Tuple[Optional[dict], TrainingStats, PreprocessedDataset, str]:
+    ) -> tuple[dict | None, TrainingStats, PreprocessedDataset, str]:
         """Trains a model on a dataset's training and validation splits and uses it to predict on the test split.
         It saves the trained model and the statistics of training and testing.
 
@@ -1603,7 +1603,7 @@ class LudwigModel:
 
         return eval_stats, train_stats, preprocessed_data, output_directory
 
-    def collect_weights(self, tensor_names: List[str] = None, **kwargs) -> list:
+    def collect_weights(self, tensor_names: list[str] = None, **kwargs) -> list:
         """Load a pre-trained model and collect the tensors with a specific name.
 
         # Inputs
@@ -1619,9 +1619,9 @@ class LudwigModel:
 
     def collect_activations(
         self,
-        layer_names: List[str],
-        dataset: Union[str, Dict[str, list], pd.DataFrame],
-        data_format: Optional[str] = None,
+        layer_names: list[str],
+        dataset: str | dict[str, list] | pd.DataFrame,
+        data_format: str | None = None,
         split: str = FULL,
         batch_size: int = 128,
         **kwargs,
@@ -1674,12 +1674,12 @@ class LudwigModel:
 
     def preprocess(
         self,
-        dataset: Optional[Union[str, dict, pd.DataFrame]] = None,
-        training_set: Optional[Union[str, dict, pd.DataFrame]] = None,
-        validation_set: Optional[Union[str, dict, pd.DataFrame]] = None,
-        test_set: Optional[Union[str, dict, pd.DataFrame]] = None,
-        training_set_metadata: Optional[Union[str, dict]] = None,
-        data_format: Optional[str] = None,
+        dataset: str | dict | pd.DataFrame | None = None,
+        training_set: str | dict | pd.DataFrame | None = None,
+        validation_set: str | dict | pd.DataFrame | None = None,
+        test_set: str | dict | pd.DataFrame | None = None,
+        training_set_metadata: str | dict | None = None,
+        data_format: str | None = None,
         skip_save_processed_input: bool = True,
         random_seed: int = default_random_seed,
         **kwargs,
@@ -1767,11 +1767,11 @@ class LudwigModel:
     def load(
         model_dir: str,
         logging_level: int = logging.ERROR,
-        backend: Optional[Union[Backend, str]] = None,
-        gpus: Optional[Union[str, int, List[int]]] = None,
-        gpu_memory_limit: Optional[float] = None,
+        backend: Backend | str | None = None,
+        gpus: str | int | list[int] | None = None,
+        gpu_memory_limit: float | None = None,
         allow_parallel_threads: bool = True,
-        callbacks: List[Callback] = None,
+        callbacks: list[Callback] = None,
         from_checkpoint: bool = False,
     ) -> "LudwigModel":  # return is an instance of ludwig.api.LudwigModel class
         """This function allows for loading pretrained models.
@@ -1935,7 +1935,7 @@ class LudwigModel:
         repo_type: str = "model",
         private: bool = False,
         commit_message: str = "Upload trained [Ludwig](https://ludwig.ai/latest/) model weights",
-        commit_description: Optional[str] = None,
+        commit_description: str | None = None,
     ) -> bool:
         """Uploads trained model artifacts to the HuggingFace Hub.
 
@@ -2008,16 +2008,16 @@ class LudwigModel:
     def to_torchscript(
         self,
         model_only: bool = False,
-        device: Optional[TorchDevice] = None,
+        device: TorchDevice | None = None,
     ):
         """Converts the trained model to Torchscript.
 
         # Inputs
 
         :param  model_only (bool, optional): If True, only the ECD model will be converted to Torchscript. Else,
-            preprocessing and postprocessing steps will also be converted to Torchscript.
-        :param device (TorchDevice, optional): If None, the model will be converted to Torchscript on the same device to
-            ensure maximum model parity.
+        preprocessing and postprocessing steps will also be converted to Torchscript. :param device (TorchDevice,
+        optional): If None, the model will be converted to Torchscript on the same device to     ensure maximum model
+        parity.
 
         # Returns
 
@@ -2039,7 +2039,7 @@ class LudwigModel:
         self,
         save_path: str,
         model_only: bool = False,
-        device: Optional[TorchDevice] = None,
+        device: TorchDevice | None = None,
     ):
         """Saves the Torchscript model to disk.
 
@@ -2081,16 +2081,13 @@ class LudwigModel:
             torch.cuda.empty_cache()
 
     @staticmethod
-    def create_model(config_obj: Union[ModelConfig, dict], random_seed: int = default_random_seed) -> BaseModel:
+    def create_model(config_obj: ModelConfig | dict, random_seed: int = default_random_seed) -> BaseModel:
         """Instantiates BaseModel object.
 
         # Inputs
         :param config_obj: (Union[Config, dict]) Ludwig config object
-        :param random_seed: (int, default: ludwig default random seed) Random
-            seed used for weights initialization,
-            splits and any other random function.
-
-        # Return
+        :param random_seed: (int, default: ludwig default random seed) Random seed used for weights initialization,
+            splits and any other random function. # Return
         :return: (ludwig.models.BaseModel) Instance of the Ludwig model object.
         """
         if isinstance(config_obj, dict):
@@ -2136,7 +2133,7 @@ class LudwigModel:
 
         # Return
 
-            :return (bool): whether merge_and_unload should be done.
+        :return (bool): whether merge_and_unload should be done.
         """
         # TODO: In the future, it may be possible to move up the model type check into the BaseModel class.
         return self.config_obj.model_type == MODEL_LLM and self.model.is_merge_and_unload_set()
@@ -2145,7 +2142,7 @@ class LudwigModel:
 @PublicAPI
 def kfold_cross_validate(
     num_folds: int,
-    config: Union[dict, str],
+    config: dict | str,
     dataset: str = None,
     data_format: str = None,
     skip_save_training_description: bool = False,
@@ -2160,13 +2157,13 @@ def kfold_cross_validate(
     skip_collect_overall_stats: bool = False,
     output_directory: str = "results",
     random_seed: int = default_random_seed,
-    gpus: Optional[Union[str, int, List[int]]] = None,
-    gpu_memory_limit: Optional[float] = None,
+    gpus: str | int | list[int] | None = None,
+    gpu_memory_limit: float | None = None,
     allow_parallel_threads: bool = True,
-    backend: Optional[Union[Backend, str]] = None,
+    backend: Backend | str | None = None,
     logging_level: int = logging.INFO,
     **kwargs,
-) -> Tuple[dict, dict]:
+) -> tuple[dict, dict]:
     """Performs k-fold cross validation and returns result data structures.
 
     # Inputs
@@ -2366,7 +2363,7 @@ def kfold_cross_validate(
     return kfold_cv_stats, kfold_split_indices
 
 
-def _get_compute_description(backend) -> Dict:
+def _get_compute_description(backend) -> dict:
     """Returns the compute description for the backend."""
     compute_description = {"num_nodes": backend.num_nodes}
 

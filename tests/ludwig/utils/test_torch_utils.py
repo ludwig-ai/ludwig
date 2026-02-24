@@ -17,14 +17,14 @@ from ludwig.utils.torch_utils import (
 
 @pytest.mark.parametrize("input_sequence", [[[0, 1, 1], [2, 0, 0], [3, 3, 3]]])
 @pytest.mark.parametrize("expected_output", [[3, 2, 3]])
-def test_sequence_length_2D(input_sequence: List[List[int]], expected_output: List[int]):
+def test_sequence_length_2D(input_sequence: list[list[int]], expected_output: list[int]):
     output_seq_length = sequence_length_2D(torch.tensor(input_sequence))
     assert torch.equal(torch.tensor(expected_output), output_seq_length)
 
 
 @pytest.mark.parametrize("input_sequence", [[[[-1, 0, 1], [1, -2, 0]], [[0, 0, 0], [3, 0, -2]]]])
 @pytest.mark.parametrize("expected_output", [[2, 1]])
-def test_sequence_length_3D(input_sequence: List[List[List[int]]], expected_output: List[int]):
+def test_sequence_length_3D(input_sequence: list[list[list[int]]], expected_output: list[int]):
     input_sequence = torch.tensor(input_sequence, dtype=torch.int32)
     expected_output = torch.tensor(expected_output, dtype=torch.int32)
     output_seq_length = sequence_length_3D(input_sequence)
@@ -103,5 +103,3 @@ def test_initialize_pytorch_without_gpu(mock_torch):
     with clean_params():
         initialize_pytorch(gpus=-1)
     assert os.environ["CUDA_VISIBLE_DEVICES"] == ""
-
-

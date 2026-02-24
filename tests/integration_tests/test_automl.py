@@ -44,7 +44,7 @@ def test_create_auto_config(tune_for_memory, test_data, ray_cluster_2cpu):
     df = dd.read_csv(dataset_csv)
     config = create_auto_config(df, targets, time_limit_s=600, tune_for_memory=tune_for_memory, backend="ray")
 
-    def to_name_set(features: List[Dict[str, Any]]) -> Set[str]:
+    def to_name_set(features: list[dict[str, Any]]) -> set[str]:
         return {feature[NAME] for feature in features}
 
     assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)

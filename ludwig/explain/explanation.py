@@ -19,7 +19,7 @@ class FeatureAttribution:
     attribution: float
 
     # (Optional) The attribution for each token in the input feature as an array of shape (seq_len, 2).
-    token_attributions: List[Tuple[str, float]] = None
+    token_attributions: list[tuple[str, float]] = None
 
 
 @DeveloperAPI
@@ -28,9 +28,9 @@ class LabelExplanation:
     """Stores the feature attributions for a single label in the target feature's vocab."""
 
     # The attribution for each input feature.
-    feature_attributions: List[FeatureAttribution] = field(default_factory=list)
+    feature_attributions: list[FeatureAttribution] = field(default_factory=list)
 
-    def add(self, feature_name: str, attribution: float, token_attributions: List[Tuple[str, float]] = None):
+    def add(self, feature_name: str, attribution: float, token_attributions: list[tuple[str, float]] = None):
         """Add the attribution for a single input feature."""
         self.feature_attributions.append(FeatureAttribution(feature_name, attribution, token_attributions))
 
@@ -50,13 +50,13 @@ class Explanation:
     target: str
 
     # The explanations for each label in the vocab of the target feature.
-    label_explanations: List[LabelExplanation] = field(default_factory=list)
+    label_explanations: list[LabelExplanation] = field(default_factory=list)
 
     def add(
         self,
-        feat_names: List[str],
+        feat_names: list[str],
         feat_attributions: npt.NDArray[np.float64],
-        feat_to_token_attributions: Dict[str, List[Tuple[str, float]]] = None,
+        feat_to_token_attributions: dict[str, list[tuple[str, float]]] = None,
         prepend: bool = False,
     ):
         """Add the feature attributions for a single label."""
@@ -92,7 +92,7 @@ class ExplanationsResult:
 
     # A list of explanations, one for each row in the input data.
     # Each explanation contains the feature attributions for each label in the target feature's vocab.
-    row_explanations: List[Explanation]
+    row_explanations: list[Explanation]
 
     # Expected value for each label in the target feature's vocab.
-    expected_values: List[float]
+    expected_values: list[float]

@@ -93,7 +93,7 @@ SCHEDULERS_FOR_TESTING = [
 ]
 
 
-def _setup_ludwig_config(dataset_fp: str) -> Tuple[Dict, str]:
+def _setup_ludwig_config(dataset_fp: str) -> tuple[dict, str]:
     input_features = [
         text_feature(name="utterance", encoder={"reduce_output": "sum"}),
         category_feature(encoder={"vocab_size": 3}),
@@ -115,7 +115,7 @@ def _setup_ludwig_config(dataset_fp: str) -> Tuple[Dict, str]:
     return config, rel_path
 
 
-def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, Any]:
+def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> tuple[dict, Any]:
     input_features = [
         text_feature(name="title", encoder={TYPE: "parallel_cnn"}),
         text_feature(name="summary"),
@@ -161,13 +161,13 @@ def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, Any]
     return config, rel_path, num_filters_search_space, embedding_size_search_space, reduce_input_search_space
 
 
-def _get_trial_parameter_value(parameter_key: str, trial_row: str) -> Union[str, None]:
+def _get_trial_parameter_value(parameter_key: str, trial_row: str) -> str | None:
     """Returns the parameter value from the Ray trial row."""
     return trial_row[f"config/{parameter_key}"]
 
 
 @contextlib.contextmanager
-def ray_start(num_cpus: Optional[int] = None, num_gpus: Optional[int] = None):
+def ray_start(num_cpus: int | None = None, num_gpus: int | None = None):
     res = ray.init(
         num_cpus=num_cpus,
         num_gpus=num_gpus,

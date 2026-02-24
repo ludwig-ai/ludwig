@@ -25,9 +25,9 @@ def upload_cli(
     repo_type: str = "model",
     private: bool = False,
     commit_message: str = "Upload trained [Ludwig](https://ludwig.ai/latest/) model weights",
-    commit_description: Optional[str] = None,
-    dataset_file: Optional[str] = None,
-    dataset_name: Optional[str] = None,
+    commit_description: str | None = None,
+    dataset_file: str | None = None,
+    dataset_name: str | None = None,
     **kwargs,
 ) -> None:
     """Create an empty repo on the HuggingFace Hub and upload trained model artifacts to that repo.

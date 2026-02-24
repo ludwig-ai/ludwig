@@ -39,9 +39,9 @@ class _VectorPreprocessing(torch.nn.Module):
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         if torch.jit.isinstance(v, torch.Tensor):
             out = v
-        elif torch.jit.isinstance(v, List[torch.Tensor]):
+        elif torch.jit.isinstance(v, list[torch.Tensor]):
             out = torch.stack(v)
-        elif torch.jit.isinstance(v, List[str]):
+        elif torch.jit.isinstance(v, list[str]):
             vectors = []
             for sample in v:
                 vector = torch.tensor([float(x) for x in sample.split()], dtype=torch.float32)
@@ -61,7 +61,7 @@ class _VectorPostprocessing(torch.nn.Module):
         self.predictions_key = PREDICTIONS
         self.logits_key = LOGITS
 
-    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> FeaturePostProcessingOutputDict:
+    def forward(self, preds: dict[str, torch.Tensor], feature_name: str) -> FeaturePostProcessingOutputDict:
         predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
         logits = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.logits_key)
 
@@ -69,7 +69,7 @@ class _VectorPostprocessing(torch.nn.Module):
 
 
 class _VectorPredict(PredictModule):
-    def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: dict[str, torch.Tensor], feature_name: str) -> dict[str, torch.Tensor]:
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
 
         return {self.predictions_key: logits, self.logits_key: logits}
@@ -185,8 +185,8 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     def __init__(
         self,
-        output_feature_config: Union[VectorOutputFeatureConfig, Dict],
-        output_features: Dict[str, OutputFeature],
+        output_feature_config: VectorOutputFeatureConfig | dict,
+        output_features: dict[str, OutputFeature],
         **kwargs,
     ):
         self.vector_size = output_feature_config.vector_size

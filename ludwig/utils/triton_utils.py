@@ -167,7 +167,7 @@ def _get_type_map(dtype: str) -> str:
     }[dtype]
 
 
-def to_triton_dimension(content: Union[List[str], List[torch.Tensor], List[TorchAudioTuple], torch.Tensor]):
+def to_triton_dimension(content: list[str] | list[torch.Tensor] | list[TorchAudioTuple] | torch.Tensor):
     # todo (Wael): tests for all types.
     if isinstance(content, list) and content:
         if isinstance(content[0], str):
@@ -177,7 +177,7 @@ def to_triton_dimension(content: Union[List[str], List[torch.Tensor], List[Torch
     return [-1]
 
 
-def to_triton_type(content: Union[List[str], List[torch.Tensor], List[TorchAudioTuple], torch.Tensor]):
+def to_triton_type(content: list[str] | list[torch.Tensor] | list[TorchAudioTuple] | torch.Tensor):
     # todo (Wael): tests for all types.
     if isinstance(content, list) and content:
         if isinstance(content[0], str):
@@ -195,7 +195,7 @@ class TritonArtifact:
     model_name: str
 
     # Model version.
-    model_version: Union[int, str]
+    model_version: int | str
 
     # Triton backend (e.g. "pytorch_libtorch").
     platform: str
@@ -222,7 +222,7 @@ class TritonConfigFeature:
     ludwig_type: str
 
     # The data contents of the feature.
-    content: Union[TorchscriptPreprocessingInput, torch.Tensor]
+    content: TorchscriptPreprocessingInput | torch.Tensor
 
     # One of PREPROCESSOR, PREDICTOR, POSTPROCESSOR.
     inference_stage: str
@@ -278,10 +278,10 @@ class TritonMaster:
     """Provides access to the Triton Config and the scripted module."""
 
     # The inference module.
-    module: Union[_InferencePreprocessor, _InferencePredictor, _InferencePostprocessor]
+    module: _InferencePreprocessor | _InferencePredictor | _InferencePostprocessor
 
     # An input for the module that will help determine the input and output dimensions.
-    input_data_example: Dict[str, Union[TorchscriptPreprocessingInput, torch.Tensor]]
+    input_data_example: dict[str, TorchscriptPreprocessingInput | torch.Tensor]
 
     # One of PREPROCESSOR, PREDICTOR, POSTPROCESSOR.
     inference_stage: str
@@ -299,7 +299,7 @@ class TritonMaster:
     output_path: str
 
     # Triton model version.
-    model_version: Union[int, str]
+    model_version: int | str
 
     # Ludwig config.
     ludwig_config: ModelConfigDict
@@ -319,12 +319,12 @@ class TritonMaster:
         self.base_path = os.path.join(self.output_path, self.full_model_name)
         os.makedirs(self.base_path, exist_ok=True)
 
-        self.output_data_example: Dict[str, Union[TorchscriptPreprocessingInput, torch.Tensor]] = self.module(
+        self.output_data_example: dict[str, TorchscriptPreprocessingInput | torch.Tensor] = self.module(
             self.input_data_example
         )
 
         # generate input and output features.
-        self.input_features: List[TritonConfigFeature] = []
+        self.input_features: list[TritonConfigFeature] = []
         for i, (feature_name, content) in enumerate(self.input_data_example.items()):
             ludwig_type = "tensor"
             if self.inference_stage == PREPROCESSOR:
@@ -333,7 +333,7 @@ class TritonMaster:
                 TritonConfigFeature(feature_name, ludwig_type, content, self.inference_stage, INPUT, i)
             )
 
-        self.output_features: List[TritonConfigFeature] = []
+        self.output_features: list[TritonConfigFeature] = []
         for i, (feature_name, content) in enumerate(self.output_data_example.items()):
             ludwig_type = "tensor"
             self.output_features.append(
@@ -434,19 +434,19 @@ class TritonEnsembleConfig:
     output_path: str
 
     # Triton model version.
-    model_version: Union[int, str]
+    model_version: int | str
 
     def __post_init__(self):
         self.ensemble_model_name = self.model_name
         self.base_path = os.path.join(self.output_path, self.ensemble_model_name)
         os.makedirs(self.base_path, exist_ok=True)
 
-    def _get_ensemble_scheduling_input_maps(self, triton_features: List[TritonConfigFeature]) -> str:
+    def _get_ensemble_scheduling_input_maps(self, triton_features: list[TritonConfigFeature]) -> str:
         return "".join(
             ENSEMBLE_SCHEDULING_INPUT_MAP.format(key=feature.key, value=feature.value) for feature in triton_features
         )
 
-    def _get_ensemble_scheduling_output_maps(self, triton_features: List[TritonConfigFeature]) -> str:
+    def _get_ensemble_scheduling_output_maps(self, triton_features: list[TritonConfigFeature]) -> str:
         return "".join(
             ENSEMBLE_SCHEDULING_OUTPUT_MAP.format(key=feature.key, value=feature.value) for feature in triton_features
         )
@@ -458,7 +458,7 @@ class TritonEnsembleConfig:
             output_maps=self._get_ensemble_scheduling_output_maps(triton_master.output_features),
         )
 
-    def _get_ensemble_spec(self, triton_features: List[TritonConfigFeature]) -> str:
+    def _get_ensemble_spec(self, triton_features: list[TritonConfigFeature]) -> str:
         spec = []
         for feature in triton_features:
             spec.append(
@@ -538,10 +538,10 @@ class TritonConfig:
     full_model_name: str
 
     # Input features of the model.
-    input_features: List[TritonConfigFeature]
+    input_features: list[TritonConfigFeature]
 
     # Output features of the model.
-    output_features: List[TritonConfigFeature]
+    output_features: list[TritonConfigFeature]
 
     # Max batch size of the model. (Triton config param).
     max_batch_size: int
@@ -558,7 +558,7 @@ class TritonConfig:
     # One of PREPROCESSOR, PREDICTOR, POSTPROCESSOR.
     inference_stage: str
 
-    def _get_triton_spec(self, triton_features: List[TritonConfigFeature]) -> str:
+    def _get_triton_spec(self, triton_features: list[TritonConfigFeature]) -> str:
         spec = []
         for feature in triton_features:
             spec.append(
@@ -612,13 +612,13 @@ class TritonModel:
     """Enables the scripting and export of a model."""
 
     # The inference module.
-    module: Union[_InferencePreprocessor, _InferencePredictor, _InferencePostprocessor]
+    module: _InferencePreprocessor | _InferencePredictor | _InferencePostprocessor
 
     # Input features of the model.
-    input_features: List[TritonConfigFeature]
+    input_features: list[TritonConfigFeature]
 
     # Output features of the model.
-    output_features: List[TritonConfigFeature]
+    output_features: list[TritonConfigFeature]
 
     # One of PREPROCESSOR, PREDICTOR, POSTPROCESSOR.
     inference_stage: str
@@ -630,17 +630,17 @@ class TritonModel:
             POSTPROCESSOR: "torch.Tensor",
         }[self.inference_stage]
 
-    def _get_input_signature(self, triton_features: List[TritonConfigFeature]) -> str:
+    def _get_input_signature(self, triton_features: list[TritonConfigFeature]) -> str:
         elems = [
             f"{feature.wrapper_signature_name}: {feature._get_wrapper_signature_type()}" for feature in triton_features
         ]
         return ", ".join(elems)
 
-    def _get_input_dict(self, triton_features: List[TritonConfigFeature]) -> str:
+    def _get_input_dict(self, triton_features: list[TritonConfigFeature]) -> str:
         elems = [f'"{feature.name}": {feature.wrapper_signature_name}' for feature in triton_features]
         return "{" + ", ".join(elems) + "}"
 
-    def _get_output_tuple(self, triton_features: List[TritonConfigFeature]) -> str:
+    def _get_output_tuple(self, triton_features: list[TritonConfigFeature]) -> str:
         elems = [f'results["{feature.name}"]' for feature in triton_features]
         return "(" + ", ".join(elems) + ",)"
 
@@ -675,7 +675,7 @@ def get_device_types_and_counts(
     predictor_device_type: str,
     predictor_num_instances: int,
     postprocessor_num_instances: int,
-) -> Tuple[List[str], List[int]]:
+) -> tuple[list[str], list[int]]:
     """Retrun device types and instance counts for each of the three inference modules."""
     if predictor_device_type not in ["cuda", "cpu"]:
         raise ValueError('Invalid predictor device type. Choose one of ["cpu", "cuda"].')
@@ -689,7 +689,7 @@ def get_device_types_and_counts(
     return device_types, device_counts
 
 
-def get_inference_modules(model: LudwigModel, predictor_device_type: str) -> List[torch.jit.ScriptModule]:
+def get_inference_modules(model: LudwigModel, predictor_device_type: str) -> list[torch.jit.ScriptModule]:
     """Return the three inference modules."""
     inference_module = InferenceModule.from_ludwig_model(
         model.model, model.config, model.training_set_metadata, device=predictor_device_type
@@ -698,8 +698,8 @@ def get_inference_modules(model: LudwigModel, predictor_device_type: str) -> Lis
 
 
 def get_example_input(
-    model: LudwigModel, device_types: List[str], data_example: Union[None, pd.DataFrame]
-) -> Dict[str, TorchscriptPreprocessingInput]:
+    model: LudwigModel, device_types: list[str], data_example: None | pd.DataFrame
+) -> dict[str, TorchscriptPreprocessingInput]:
     """Return an inference module-compatible input example.
 
     Generates a synthetic example if one is not provided.
@@ -724,23 +724,22 @@ def clean_up_synthetic_data():
 @DeveloperAPI
 def export_triton(
     model: LudwigModel,
-    data_example: Optional[pd.DataFrame] = None,
-    output_path: Optional[str] = "model_repository",
-    model_name: Optional[str] = "ludwig_model",
-    model_version: Optional[Union[int, str]] = 1,
-    preprocessor_num_instances: Optional[int] = 1,
-    predictor_device_type: Optional[str] = "cpu",
-    predictor_num_instances: Optional[int] = 1,
-    postprocessor_num_instances: Optional[int] = 1,
-    predictor_max_batch_size: Optional[int] = 64,
-    max_queue_delay_microseconds: Optional[int] = 100,
-) -> List[TritonArtifact]:
+    data_example: pd.DataFrame | None = None,
+    output_path: str | None = "model_repository",
+    model_name: str | None = "ludwig_model",
+    model_version: int | str | None = 1,
+    preprocessor_num_instances: int | None = 1,
+    predictor_device_type: str | None = "cpu",
+    predictor_num_instances: int | None = 1,
+    postprocessor_num_instances: int | None = 1,
+    predictor_max_batch_size: int | None = 64,
+    max_queue_delay_microseconds: int | None = 100,
+) -> list[TritonArtifact]:
     """Exports a torchscript model to a output path that serves as a repository for Triton Inference Server.
 
     # Inputs
     :param model: (LudwigModel) A ludwig model.
-    :param data_example: (pd.DataFrame) an example from the dataset.
-        Used to get dimensions throughout the pipeline.
+    :param data_example: (pd.DataFrame) an example from the dataset. Used to get dimensions throughout the pipeline.
     :param output_path: (str) The output path for the model repository.
     :param model_name: (str) The optional model name.
     :param model_version: (Union[int,str]) The optional model verison.
@@ -749,9 +748,7 @@ def export_triton(
     :param predictor_num_instances: (int) number of instances for the predictor.
     :param postprocessor_num_instances: (int) number of instances for the postprocessor (on CPU).
     :param predictor_max_batch_size: (int) max_batch_size parameter for the predictor Triton config.
-    :param max_queue_delay_microseconds: (int) max_queue_delay_microseconds for all Triton configs.
-
-    # Return
+    :param max_queue_delay_microseconds: (int) max_queue_delay_microseconds for all Triton configs.  # Return
     :return: (List[TritonArtifact]) list of TritonArtifacts that contains information about exported artifacts.
     """
 

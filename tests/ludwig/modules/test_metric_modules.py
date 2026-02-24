@@ -3,11 +3,7 @@ import torch
 
 from ludwig.constants import ACCURACY, LOSS, ROC_AUC, ROOT_MEAN_SQUARED_ERROR
 from ludwig.modules import metric_modules
-from ludwig.modules.metric_modules import (
-    get_best_function,
-    get_improved_fun,
-    get_initial_validation_value,
-)
+from ludwig.modules.metric_modules import get_best_function, get_improved_fun, get_initial_validation_value
 
 
 @pytest.mark.parametrize("preds", [torch.arange(6).reshape(3, 2).float()])

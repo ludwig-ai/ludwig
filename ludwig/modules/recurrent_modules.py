@@ -36,7 +36,7 @@ class RecurrentStack(LudwigModule):
         input_size: int = None,
         hidden_size: int = 256,
         cell_type: str = "rnn",
-        max_sequence_length: Optional[int] = None,
+        max_sequence_length: int | None = None,
         num_layers: int = 1,
         bidirectional: bool = False,
         use_bias: bool = True,

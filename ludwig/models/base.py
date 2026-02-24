@@ -57,7 +57,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         self._eval_additional_losses_metrics = ModuleWrapper(torchmetrics.MeanMetric())
 
         # ================ Training Hook Handles ================
-        self._forward_hook_handles: List[TrainingHook] = []
+        self._forward_hook_handles: list[TrainingHook] = []
 
     def create_feature_dict(self) -> LudwigFeatureDict:
         """Creates and returns a LudwigFeatureDict."""
@@ -73,7 +73,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
             feature._eval_loss_metric.module = feature._eval_loss_metric.module.to(device)
 
     @classmethod
-    def build_inputs(cls, input_feature_configs: FeatureCollection[BaseInputFeatureConfig]) -> Dict[str, InputFeature]:
+    def build_inputs(cls, input_feature_configs: FeatureCollection[BaseInputFeatureConfig]) -> dict[str, InputFeature]:
         """Builds and returns input features in topological order."""
         input_features = OrderedDict()
         input_features_def = topological_sort_feature_dependencies(input_feature_configs.to_list())
@@ -85,7 +85,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
 
     @staticmethod
     def build_single_input(
-        feature_config: BaseInputFeatureConfig, other_input_features: Optional[Dict[str, InputFeature]]
+        feature_config: BaseInputFeatureConfig, other_input_features: dict[str, InputFeature] | None
     ) -> InputFeature:
         """Builds a single input feature from the input feature definition."""
         logger.debug(f"Input {feature_config.type} feature {feature_config.name}")
@@ -101,7 +101,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
     @classmethod
     def build_outputs(
         cls, output_feature_configs: FeatureCollection[BaseOutputFeatureConfig], combiner: Combiner
-    ) -> Dict[str, OutputFeature]:
+    ) -> dict[str, OutputFeature]:
         """Builds and returns output features in topological order."""
         output_features_def = topological_sort_feature_dependencies(output_feature_configs.to_list())
         output_features = {}
@@ -117,7 +117,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
 
     @staticmethod
     def build_single_output(
-        feature_config: BaseOutputFeatureConfig, output_features: Optional[Dict[str, OutputFeature]]
+        feature_config: BaseOutputFeatureConfig, output_features: dict[str, OutputFeature] | None
     ) -> OutputFeature:
         """Builds a single output feature from the output feature definition."""
         logger.debug(f"Output {feature_config.type} feature {feature_config.name}")
@@ -142,7 +142,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
             total_size += tnsr[1].detach().cpu().numpy().size
         return total_size
 
-    def to_torchscript(self, device: Optional[TorchDevice] = None):
+    def to_torchscript(self, device: TorchDevice | None = None):
         """Converts the ECD model as a TorchScript model."""
         if device is None:
             device = DEVICE
@@ -155,7 +155,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         # We set strict=False to enable dict inputs and outputs.
         return torch.jit.trace(model_to_script, model_inputs_to_script, strict=False)
 
-    def save_torchscript(self, save_path, device: Optional[TorchDevice] = None):
+    def save_torchscript(self, save_path, device: TorchDevice | None = None):
         """Saves the ECD model as a TorchScript model."""
         if device is None:
             device = DEVICE
@@ -172,11 +172,11 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
     @abstractmethod
     def forward(
         self,
-        inputs: Union[
-            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
-        ],
+        inputs: (
+            dict[str, torch.Tensor] | dict[str, np.ndarray] | tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]
+        ),
         mask=None,
-    ) -> Dict[str, torch.Tensor]:
+    ) -> dict[str, torch.Tensor]:
         """Forward pass of the model.
 
         Args:
@@ -195,7 +195,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         outputs = self(inputs)
         return self.outputs_to_predictions(outputs)
 
-    def outputs_to_predictions(self, outputs: Dict[str, torch.Tensor]) -> Dict[str, Dict[str, torch.Tensor]]:
+    def outputs_to_predictions(self, outputs: dict[str, torch.Tensor]) -> dict[str, dict[str, torch.Tensor]]:
         """Returns the model's predictions given the raw model outputs."""
         predictions = {}
         for of_name in self.output_features:
@@ -216,9 +216,9 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         self,
         targets,
         predictions,
-        regularization_type: Optional[str] = None,
-        regularization_lambda: Optional[float] = None,
-    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        regularization_type: str | None = None,
+        regularization_lambda: float | None = None,
+    ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
         """Computes the training loss for the model.
 
         Args:
@@ -291,7 +291,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
     def eval_additional_losses_metrics(self) -> LudwigMetric:
         return self._eval_additional_losses_metrics.module
 
-    def get_metrics(self) -> Dict[str, Dict[str, float]]:
+    def get_metrics(self) -> dict[str, dict[str, float]]:
         """Returns a dictionary of metrics for each output feature of the model."""
         all_of_metrics = {}
         for of_name, of_obj in self.output_features.items():
@@ -340,7 +340,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         """Returns init arguments for constructing this model."""
 
     @contextlib.contextmanager
-    def use_generation_config(self, generation_config: Dict[str, Any]):
+    def use_generation_config(self, generation_config: dict[str, Any]):
         if generation_config is not None:
             raise NotImplementedError(f"{self.__class__.__name__} does not support generation_config. ")
         yield
@@ -355,7 +355,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
             handle.deactivate_hook()
 
 
-def create_input_feature(feature_config: BaseInputFeatureConfig, encoder_obj: Optional[Encoder]) -> InputFeature:
+def create_input_feature(feature_config: BaseInputFeatureConfig, encoder_obj: Encoder | None) -> InputFeature:
     input_feature_cls = get_from_registry(feature_config.type, get_input_type_registry())
     input_feature = input_feature_cls(feature_config, encoder_obj=encoder_obj)
     if not feature_config.encoder.skip:

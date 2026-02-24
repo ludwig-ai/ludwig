@@ -16,7 +16,7 @@ encoder_config_registry = Registry()
 
 
 @DeveloperAPI
-def register_encoder_config(name: str, features: Union[str, List[str]], model_types: Optional[List[str]] = None):
+def register_encoder_config(name: str, features: str | list[str], model_types: list[str] | None = None):
     if model_types is None:
         model_types = [MODEL_ECD]
 
@@ -41,12 +41,12 @@ def get_encoder_cls(model_type: str, feature: str, name: str):
 
 
 @DeveloperAPI
-def get_encoder_classes(model_type: str, feature: str) -> Dict[str, Type["BaseEncoderConfig"]]:
+def get_encoder_classes(model_type: str, feature: str) -> dict[str, type["BaseEncoderConfig"]]:
     return encoder_config_registry[(model_type, feature)]
 
 
 @DeveloperAPI
-def get_encoder_descriptions(model_type: str, feature_type: str) -> Dict[str, Any]:
+def get_encoder_descriptions(model_type: str, feature_type: str) -> dict[str, Any]:
     """This function returns a dictionary of encoder descriptions available at the type selection.
 
     The process works as follows - 1) Get a dictionary of valid encoders from the encoder config registry,
@@ -74,7 +74,7 @@ def get_encoder_descriptions(model_type: str, feature_type: str) -> Dict[str, An
 
 
 @DeveloperAPI
-def get_encoder_conds(encoder_classes: Dict[str, Type["BaseEncoderConfig"]]) -> List[Dict[str, Any]]:
+def get_encoder_conds(encoder_classes: dict[str, type["BaseEncoderConfig"]]) -> list[dict[str, Any]]:
     """Returns a JSON schema of conditionals to validate against encoder types for specific feature types."""
     conds = []
     for encoder_type, encoder_cls in encoder_classes.items():
@@ -90,7 +90,7 @@ def get_encoder_conds(encoder_classes: Dict[str, Type["BaseEncoderConfig"]]) -> 
 
 @DeveloperAPI
 def EncoderDataclassField(
-    model_type: str, feature_type: str, default: str, description: str = "", blocklist: List[str] = []
+    model_type: str, feature_type: str, default: str, description: str = "", blocklist: list[str] = []
 ) -> Field:
     """Custom dataclass field that when used inside a dataclass will allow the user to specify an encoder config.
 
@@ -104,7 +104,7 @@ def EncoderDataclassField(
                 registry=encoder_registry, default_value=default, description=description, allow_str_value=True
             )
 
-        def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
+        def get_schema_from_registry(self, key: str) -> type[schema_utils.BaseMarshmallowConfig]:
             return encoder_registry[key]
 
         def _jsonschema_type_mapping(self):

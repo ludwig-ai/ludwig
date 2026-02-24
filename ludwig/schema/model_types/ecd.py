@@ -35,4 +35,4 @@ class ECDModelConfig(ModelConfig):
     trainer: ECDTrainerConfig = ECDTrainerField().get_default_field()
     preprocessing: PreprocessingConfig = PreprocessingField().get_default_field()
     defaults: ECDDefaultsConfig = ECDDefaultsField().get_default_field()
-    hyperopt: Optional[HyperoptConfig] = HyperoptField().get_default_field()
+    hyperopt: HyperoptConfig | None = HyperoptField().get_default_field()

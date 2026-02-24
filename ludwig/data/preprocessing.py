@@ -1370,7 +1370,7 @@ def build_dataset(
 
 
 def embed_fixed_features(
-    dataset: DataFrame, feature_configs: List[FeatureConfigDict], metadata: TrainingSetMetadataDict, backend: Backend
+    dataset: DataFrame, feature_configs: list[FeatureConfigDict], metadata: TrainingSetMetadataDict, backend: Backend
 ) -> DataFrame:
     """Transforms every input feature with cacheable encoder embeddings into its encoded form and updates
     metadata."""
@@ -1419,8 +1419,8 @@ def _get_sampled_dataset_df(dataset_df, df_engine, sample_ratio, sample_size, ra
 
 
 def get_features_with_cacheable_fixed_embeddings(
-    feature_configs: List[FeatureConfigDict], metadata: TrainingSetMetadataDict
-) -> List[FeatureConfigDict]:
+    feature_configs: list[FeatureConfigDict], metadata: TrainingSetMetadataDict
+) -> list[FeatureConfigDict]:
     """Returns list of features with `cache_encoder_embeddings=True` set in the preprocessing config."""
     features_to_encode = []
     for feature_config in feature_configs:
@@ -1475,11 +1475,11 @@ def merge_preprocessing(
 
 
 def build_preprocessing_parameters(
-    dataset_cols: Dict[str, Series],
-    feature_configs: List[FeatureConfigDict],
+    dataset_cols: dict[str, Series],
+    feature_configs: list[FeatureConfigDict],
     global_preprocessing_parameters: PreprocessingConfigDict,
     backend: Backend,
-    metadata: Optional[TrainingSetMetadataDict] = None,
+    metadata: TrainingSetMetadataDict | None = None,
 ) -> PreprocessingConfigDict:
     if metadata is None:
         metadata = {}
@@ -1529,9 +1529,9 @@ def is_input_feature(feature_config: FeatureConfigDict) -> bool:
 def build_metadata(
     config: ModelConfigDict,
     metadata: TrainingSetMetadataDict,
-    feature_name_to_preprocessing_parameters: Dict[str, PreprocessingConfigDict],
-    dataset_cols: Dict[str, Series],
-    feature_configs: List[FeatureConfigDict],
+    feature_name_to_preprocessing_parameters: dict[str, PreprocessingConfigDict],
+    dataset_cols: dict[str, Series],
+    feature_configs: list[FeatureConfigDict],
     backend: Backend,
 ) -> TrainingSetMetadataDict:
     for feature_config in feature_configs:
@@ -1553,11 +1553,11 @@ def build_metadata(
 
 def build_data(
     input_cols: DataFrame,
-    feature_configs: List[Dict],
-    training_set_metadata: Dict,
+    feature_configs: list[dict],
+    training_set_metadata: dict,
     backend: Backend,
     skip_save_processed_input: bool,
-) -> Dict[str, DataFrame]:
+) -> dict[str, DataFrame]:
     """Preprocesses the input dataframe columns, handles missing values, and potentially adds metadata to
     training_set_metadata.
 
@@ -1600,8 +1600,8 @@ def build_data(
 
 def balance_data(
     dataset_df: DataFrame,
-    output_features: List[Dict],
-    preprocessing_parameters: Dict,
+    output_features: list[dict],
+    preprocessing_parameters: dict,
     backend: Backend,
     random_seed: int,
 ):
@@ -1725,7 +1725,7 @@ def handle_outliers(dataset_cols, feature, preprocessing_parameters: Preprocessi
 
 
 def _handle_missing_values(
-    dataset_cols, feature, missing_value_strategy: str, computed_fill_value: Optional[float], backend
+    dataset_cols, feature, missing_value_strategy: str, computed_fill_value: float | None, backend
 ):
     if (
         missing_value_strategy in {FILL_WITH_CONST, FILL_WITH_MODE, FILL_WITH_MEAN, FILL_WITH_FALSE, FILL_WITH_TRUE}
@@ -1770,10 +1770,10 @@ def _handle_missing_values(
 def handle_features_with_prompt_config(
     config: ModelConfigDict,
     dataset_df: DataFrame,
-    features: List[FeatureConfigDict],
+    features: list[FeatureConfigDict],
     backend: Backend,
-    split_col: Optional[Series] = None,
-) -> Dict[str, Series]:
+    split_col: Series | None = None,
+) -> dict[str, Series]:
     """Updates (in-place) dataset columns with prompt configurations containing a non-None task parameter.
 
     Dataset columns that are updated here are enriched to have prompts as specified by the prompt configuration.
@@ -1836,7 +1836,7 @@ def handle_features_with_prompt_config(
     return dataset_cols
 
 
-def _get_prompt_config(config: ModelConfigDict, input_feature_config: Dict) -> Dict:
+def _get_prompt_config(config: ModelConfigDict, input_feature_config: dict) -> dict:
     if input_feature_config[TYPE] != TEXT:
         # Prompt config is only applied to text features
         return None
@@ -1851,7 +1851,7 @@ def _get_prompt_config(config: ModelConfigDict, input_feature_config: Dict) -> D
     return None
 
 
-def _has_prompt_section(config: Dict) -> bool:
+def _has_prompt_section(config: dict) -> bool:
     return "prompt" in config and (config["prompt"]["template"] is not None or config["prompt"]["task"] is not None)
 
 
@@ -1903,7 +1903,7 @@ def preprocess_for_training(
     backend=LOCAL_BACKEND,
     random_seed=default_random_seed,
     callbacks=None,
-) -> Tuple[Dataset, Dataset, Dataset, TrainingSetMetadataDict]:
+) -> tuple[Dataset, Dataset, Dataset, TrainingSetMetadataDict]:
     """Returns training, val and test datasets with training set metadata."""
 
     # sanity check to make sure some data source is provided
@@ -2091,12 +2091,12 @@ def _preprocess_file_for_training(
 
     :param features: list of all features (input + output)
     :param dataset: path to the data
-    :param training_set:  training data
+    :param training_set: training data
     :param validation_set: validation data
     :param test_set: test data
     :param training_set_metadata: train set metadata
-    :param skip_save_processed_input: if False, the pre-processed data is saved
-    as .hdf5 files in the same location as the csv files with the same names.
+    :param skip_save_processed_input: if False, the pre-processed data is saved as .hdf5 files in the same location as
+        the csv files with the same names.
     :param preprocessing_params: preprocessing parameters
     :param random_seed: random seed
     :return: training, test, validation datasets, training metadata

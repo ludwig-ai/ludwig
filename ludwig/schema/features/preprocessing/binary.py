@@ -41,7 +41,7 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[BINARY][PREPROCESSING]["fallback_true_label"],
     )
 
-    fill_value: Union[int, float, str] = schema_utils.OneOfOptionsField(
+    fill_value: int | float | str = schema_utils.OneOfOptionsField(
         default=None,
         allow_none=True,
         field_options=[
@@ -53,7 +53,7 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[BINARY][PREPROCESSING]["fill_value"],
     )
 
-    computed_fill_value: Union[int, float, str] = schema_utils.OneOfOptionsField(
+    computed_fill_value: int | float | str = schema_utils.OneOfOptionsField(
         default=None,
         allow_none=True,
         field_options=[

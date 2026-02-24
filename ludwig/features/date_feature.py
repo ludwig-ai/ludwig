@@ -43,7 +43,7 @@ class _DatePreprocessing(torch.nn.Module):
         super().__init__()
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
-        if torch.jit.isinstance(v, List[torch.Tensor]):
+        if torch.jit.isinstance(v, list[torch.Tensor]):
             v = torch.stack(v)
 
         if torch.jit.isinstance(v, torch.Tensor):
@@ -107,7 +107,7 @@ class DateFeatureMixin(BaseFeatureMixin):
     def add_feature_data(
         feature_config: FeatureConfigDict,
         input_df: DataFrame,
-        proc_df: Dict[str, DataFrame],
+        proc_df: dict[str, DataFrame],
         metadata: TrainingSetMetadataDict,
         preprocessing_parameters: PreprocessingConfigDict,
         backend,  # Union[Backend, str]

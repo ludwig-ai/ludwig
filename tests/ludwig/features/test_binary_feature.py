@@ -23,7 +23,7 @@ def binary_config():
 
 
 @pytest.mark.parametrize("encoder", ["passthrough", "dense"])
-def test_binary_input_feature(binary_config: Dict, encoder: str):
+def test_binary_input_feature(binary_config: dict, encoder: str):
     binary_config.update({ENCODER: {"type": encoder}})
     binary_config, _ = load_config_with_kwargs(BinaryInputFeatureConfig, binary_config)
     binary_input_feature = BinaryInputFeature(binary_config).to(DEVICE)

@@ -1,7 +1,8 @@
 import logging
 import os
 import warnings
-from typing import Any, Dict, List, Mapping, Optional, Tuple, TYPE_CHECKING, Union
+from collections.abc import Mapping
+from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
 
 import deepspeed
 import deepspeed.comm
@@ -43,10 +44,10 @@ warnings.filterwarnings(
 class DeepSpeedStrategy(DDPStrategy):
     def __init__(
         self,
-        zero_optimization: Optional[Dict[str, Any]] = None,
-        fp16: Optional[Dict[str, Any]] = None,
-        bf16: Optional[Dict[str, Any]] = None,
-        compression_training: Optional[Dict[str, Any]] = None,
+        zero_optimization: dict[str, Any] | None = None,
+        fp16: dict[str, Any] | None = None,
+        bf16: dict[str, Any] | None = None,
+        compression_training: dict[str, Any] | None = None,
         **kwargs
     ):
         # If we're initializing from a `deepspeed` CLI command, deepspeed will have already been initialized, as
@@ -76,7 +77,7 @@ class DeepSpeedStrategy(DDPStrategy):
         model: nn.Module,
         trainer_config: "ECDTrainerConfig",
         base_learning_rate: float,
-    ) -> Tuple[nn.Module, Optimizer]:
+    ) -> tuple[nn.Module, Optimizer]:
         # If `batch_size=auto`, we set to MIN_POSSIBLE_BATCH_SIZE temporarily until auto-tuning adjusts it`
         # We can really set it to be whatever we want, as it will be overridden by the auto-tuning.
         batch_size = (
@@ -126,7 +127,7 @@ class DeepSpeedStrategy(DDPStrategy):
         model_engine = deepspeed.init_inference(model=model, config=ds_config)
         return model_engine
 
-    def to_device(self, model: nn.Module, device: Optional[torch.device] = None) -> nn.Module:
+    def to_device(self, model: nn.Module, device: torch.device | None = None) -> nn.Module:
         return model
 
     def backward(self, loss: torch.Tensor, model: nn.Module):
@@ -190,17 +191,17 @@ class DeepSpeedStrategy(DDPStrategy):
         self,
         dist_model: nn.Module,
         model: nn.Module,
-        optimizer: Optional[Optimizer] = None,
+        optimizer: Optimizer | None = None,
         scheduler: Optional["LRScheduler"] = None,
     ) -> Checkpoint:
         return DeepSpeedCheckpoint(self, dist_model, optimizer, scheduler)
 
     @classmethod
-    def extract_model_for_serialization(cls, model: nn.Module) -> Union[nn.Module, Tuple[nn.Module, List[Dict]]]:
+    def extract_model_for_serialization(cls, model: nn.Module) -> nn.Module | tuple[nn.Module, list[dict]]:
         return extract_tensors(model)
 
     @classmethod
-    def replace_model_from_serialization(cls, state: Union[nn.Module, Tuple[nn.Module, List[Dict]]]) -> nn.Module:
+    def replace_model_from_serialization(cls, state: nn.Module | tuple[nn.Module, list[dict]]) -> nn.Module:
         assert isinstance(state, tuple)
         model, model_weights = state
         replace_tensors(model, model_weights, torch.device("cpu"))
@@ -213,7 +214,7 @@ class DeepSpeedCheckpoint(Checkpoint):
             # Checkpoints need to be written on every rank, but the directory only needs to be created once per node.
             super().prepare(directory)
 
-    def load(self, save_path: str, device: Optional[torch.device] = None) -> bool:
+    def load(self, save_path: str, device: torch.device | None = None) -> bool:
         """Load a checkpoint.
 
         For DeepSpeed, we need every worker to independently load back the model weights, as the checkpoints themselves
@@ -247,7 +248,7 @@ class DeepSpeedCheckpoint(Checkpoint):
 
         self.model.save_checkpoint(save_path, client_state=client_state, **kwargs)
 
-    def get_state_for_inference(self, save_path: str, device: Optional[torch.device] = None) -> Mapping[str, Any]:
+    def get_state_for_inference(self, save_path: str, device: torch.device | None = None) -> Mapping[str, Any]:
         if self.model.zero_optimization_stage() == 3:
             return get_fp32_state_dict_from_zero_checkpoint(save_path)
 

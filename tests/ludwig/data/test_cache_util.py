@@ -12,7 +12,7 @@ from ludwig.types import FeatureConfigDict, ModelConfigDict
 from ludwig.utils.misc_utils import merge_dict
 
 
-def _gen_config(input_features: List[FeatureConfigDict]) -> ModelConfigDict:
+def _gen_config(input_features: list[FeatureConfigDict]) -> ModelConfigDict:
     return {INPUT_FEATURES: input_features, OUTPUT_FEATURES: [{"name": "out1", "type": "binary"}]}
 
 
@@ -52,7 +52,7 @@ def _gen_config(input_features: List[FeatureConfigDict]) -> ModelConfigDict:
         ),
     ],
 )
-def test_calculate_checksum(input_features: List[FeatureConfigDict], diff: List[FeatureConfigDict], expected: bool):
+def test_calculate_checksum(input_features: list[FeatureConfigDict], diff: list[FeatureConfigDict], expected: bool):
     config = _gen_config(input_features)
 
     diff_features = [merge_dict(f, df) for f, df in zip(input_features, diff)]

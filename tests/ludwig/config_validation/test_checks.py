@@ -2,9 +2,7 @@
 
 Note that all testing should be done with the public API, rather than individual checks.
 
-```
-ModelConfig.from_dict(config)
-```
+``` ModelConfig.from_dict(config) ```
 """
 
 import contextlib
@@ -156,9 +154,7 @@ def test_unsupported_features_config():
         (0, None, False),
     ],
 )
-def test_comparator_fc_layer_config(
-    num_fc_layers: Optional[int], fc_layers: Optional[Dict[str, Any]], expect_success: bool
-):
+def test_comparator_fc_layer_config(num_fc_layers: int | None, fc_layers: dict[str, Any] | None, expect_success: bool):
     config = {
         "input_features": [
             {"name": "in1", "type": "category"},
@@ -214,7 +210,7 @@ def test_dense_binary_encoder_0_layer():
         (["a1"], ["b1"], False),
     ],
 )
-def test_comparator_combiner_entities(entity_1: List[str], entity_2: List[str], expected: bool):
+def test_comparator_combiner_entities(entity_1: list[str], entity_2: list[str], expected: bool):
     config = {
         "input_features": [
             {"name": "a1", "type": "category"},

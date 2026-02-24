@@ -45,7 +45,7 @@ class CategoricalEmbedConfig(BaseEncoderConfig):
 
     dropout: float = common_fields.DropoutField()
 
-    vocab: List[str] = common_fields.VocabField()
+    vocab: list[str] = common_fields.VocabField()
 
     embedding_initializer: str = common_fields.EmbeddingInitializerField()
 
@@ -81,7 +81,7 @@ class CategoricalSparseConfig(BaseEncoderConfig):
 
     dropout: float = common_fields.DropoutField()
 
-    vocab: List[str] = common_fields.VocabField()
+    vocab: list[str] = common_fields.VocabField()
 
     embedding_initializer: str = common_fields.EmbeddingInitializerField()
 
@@ -106,7 +106,7 @@ class CategoricalOneHotEncoderConfig(BaseEncoderConfig):
         description="Type of encoder.",
     )
 
-    vocab: List[str] = common_fields.VocabField()
+    vocab: list[str] = common_fields.VocabField()
 
     def set_fixed_preprocessing_params(self, model_type: str, preprocessing: "CategoryPreprocessingConfig"):
         if model_type == MODEL_GBM:

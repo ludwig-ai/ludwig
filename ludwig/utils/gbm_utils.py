@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Dict, Tuple, Union
+from typing import Dict, Tuple, Union
 
 import lightgbm as lgb
 import numpy as np
@@ -30,7 +31,7 @@ def sigmoid(x: npt.NDArray) -> npt.NDArray:
     return 1.0 / (1.0 + np.exp(-x))
 
 
-def log_loss_objective(y_true: npt.NDArray, y_pred: npt.NDArray) -> Tuple[npt.NDArray, npt.NDArray]:
+def log_loss_objective(y_true: npt.NDArray, y_pred: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
     """Binary objective function for LightGBM. Computes the logistic loss.
 
     Args:
@@ -66,7 +67,7 @@ def softmax(x: npt.NDArray) -> npt.NDArray:
 
 def multiclass_objective(
     y_true: npt.NDArray, y_pred: npt.NDArray, weight: npt.NDArray = None
-) -> Tuple[npt.NDArray, npt.NDArray]:
+) -> tuple[npt.NDArray, npt.NDArray]:
     """Multi-class objective function for LightGBM. Computes the softmax cross-entropy loss.
 
     Args:
@@ -180,7 +181,7 @@ def reshape_logits(output_feature: OutputFeature, logits: torch.Tensor) -> torch
     return logits
 
 
-def logits_to_predictions(model: BaseModel, train_logits: torch.Tensor) -> Dict[str, Dict[str, torch.Tensor]]:
+def logits_to_predictions(model: BaseModel, train_logits: torch.Tensor) -> dict[str, dict[str, torch.Tensor]]:
     """Convert the logits of the model to Ludwig predictions.
 
     Args:
@@ -200,7 +201,7 @@ def get_targets(
     output_feature: BaseFeatureMixin,
     device: str,
     actor_rank: int = 0,
-) -> Dict[str, torch.Tensor]:
+) -> dict[str, torch.Tensor]:
     """Get the targets of the training data.
 
     Args:

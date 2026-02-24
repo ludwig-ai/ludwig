@@ -43,7 +43,7 @@ def set_config():
     }
 
 
-def test_set_input_feature(set_config: Dict) -> None:
+def test_set_input_feature(set_config: dict) -> None:
     # setup image input feature definition
     set_def = deepcopy(set_config)
 

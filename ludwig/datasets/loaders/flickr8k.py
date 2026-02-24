@@ -21,7 +21,7 @@ from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 
 
 class Flickr8kLoader(DatasetLoader):
-    def transform_files(self, file_paths: List[str]) -> List[str]:
+    def transform_files(self, file_paths: list[str]) -> list[str]:
         # create a dictionary matching image_path --> list of captions
         image_to_caption = defaultdict(list)
         with open(f"{self.raw_dataset_dir}/Flickr8k.token.txt") as captions_file:

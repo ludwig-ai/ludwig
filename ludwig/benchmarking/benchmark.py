@@ -27,7 +27,7 @@ from ludwig.utils.data_utils import load_yaml
 logger = logging.getLogger()
 
 
-def setup_experiment(experiment: Dict[str, str]) -> Dict[Any, Any]:
+def setup_experiment(experiment: dict[str, str]) -> dict[Any, Any]:
     """Set up the backend and load the Ludwig config.
 
     Args:
@@ -54,7 +54,7 @@ def setup_experiment(experiment: Dict[str, str]) -> Dict[Any, Any]:
     return model_config
 
 
-def benchmark_one(experiment: Dict[str, Union[str, Dict[str, str]]]) -> None:
+def benchmark_one(experiment: dict[str, str | dict[str, str]]) -> None:
     """Run a Ludwig exepriment and track metrics given a dataset name.
 
     Args:
@@ -110,7 +110,7 @@ def benchmark_one(experiment: Dict[str, Union[str, Dict[str, str]]]) -> None:
         delete_model_checkpoints(experiment["experiment_name"])
 
 
-def benchmark(benchmarking_config: Union[Dict[str, Any], str]) -> Dict[str, Tuple[BenchmarkingResult, Exception]]:
+def benchmark(benchmarking_config: dict[str, Any] | str) -> dict[str, tuple[BenchmarkingResult, Exception]]:
     """Launch benchmarking suite from a benchmarking config.
 
     Args:

@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 def read_binary_files_with_index(
-    paths_and_idxs: List[Tuple[Optional[str], int]],
+    paths_and_idxs: list[tuple[str | None, int]],
     filesystem: Optional["pyarrow.fs.FileSystem"] = None,
 ) -> "ray.data.Dataset":
     """Read binary files into a Ray Dataset, handling None paths and HTTP URLs.
@@ -32,7 +32,7 @@ def read_binary_files_with_index(
         A ray.data.Dataset with "data" and "idx" columns.
     """
 
-    def _read_file(path: Optional[str], idx: int) -> dict:
+    def _read_file(path: str | None, idx: int) -> dict:
         if path is None:
             return {"data": None, "idx": idx}
         elif is_http(path):

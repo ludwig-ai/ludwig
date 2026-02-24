@@ -195,7 +195,7 @@ def _merge_hyperopt_with_trainer(config: dict) -> None:
         scheduler["max_t"] = epochs  # run scheduler until trainer epochs limit hit
 
 
-def apply_global_defaults(config: Dict[str, Any], feature_dict: Dict[str, Any], config_feature_group: str):
+def apply_global_defaults(config: dict[str, Any], feature_dict: dict[str, Any], config_feature_group: str):
     """Updates feature_dict belonging to an input or output feature using global encoder, decoder and loss related
     default parameters specified in the Ludwig config.
 

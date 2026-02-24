@@ -62,9 +62,9 @@ logger = logging.getLogger(__name__)
 
 def get_decoded_targets_and_predictions(
     targets: Tensor,
-    predictions: Dict[str, Tensor],
+    predictions: dict[str, Tensor],
     tokenizer: PreTrainedTokenizer,
-) -> Tuple[List[str], List[str]]:
+) -> tuple[list[str], list[str]]:
     """Returns the decoded targets and predictions, accounting for IGNORE_INDEX_TOKEN_ID."""
     sanitized_targets = torch.where(targets != IGNORE_INDEX_TOKEN_ID, targets, tokenizer.pad_token_id)
     sanitized_predictions = torch.where(
@@ -78,8 +78,8 @@ def get_decoded_targets_and_predictions(
 
 
 def _get_metadata_reconciled_max_sequence_length(
-    preprocessing_parameters: Dict, vocabulary: Vocabulary
-) -> Tuple[int, int]:
+    preprocessing_parameters: dict, vocabulary: Vocabulary
+) -> tuple[int, int]:
     """Reconciles the different ways sequence length can be specified in preprocessing parameters.
 
     If the max sequence length is explicitly specified, we use the minimum of the true maximum sequence length and
@@ -303,8 +303,8 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     def __init__(
         self,
-        output_feature_config: Union[TextOutputFeatureConfig, Dict],
-        output_features: Dict[str, OutputFeature],
+        output_feature_config: TextOutputFeatureConfig | dict,
+        output_features: dict[str, OutputFeature],
         **kwargs,
     ):
         super().__init__(output_feature_config, output_features, **kwargs)
@@ -320,8 +320,8 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     def update_metrics(
         self,
         targets: Tensor,
-        predictions: Dict[str, Tensor],
-        tokenizer: Optional[PreTrainedTokenizer] = None,
+        predictions: dict[str, Tensor],
+        tokenizer: PreTrainedTokenizer | None = None,
     ) -> None:
         """Updates metrics with the given targets and predictions.
 

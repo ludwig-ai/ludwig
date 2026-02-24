@@ -19,7 +19,7 @@ logger = logging.getLogger()
 
 def summarize_metrics(
     bench_config_path: str, base_experiment: str, experimental_experiment: str, download_base_path: str
-) -> Tuple[List[str], List[MetricsDiff], List[List[ResourceUsageDiff]]]:
+) -> tuple[list[str], list[MetricsDiff], list[list[ResourceUsageDiff]]]:
     """Build metric and resource usage diffs from experiment artifacts.
 
     bench_config_path: bench config file path. Can be the same one that was used to run
@@ -52,7 +52,7 @@ def summarize_metrics(
 
 
 def export_and_print(
-    dataset_list: List[str], metric_diffs: List[MetricsDiff], resource_usage_diffs: List[List[ResourceUsageDiff]]
+    dataset_list: list[str], metric_diffs: list[MetricsDiff], resource_usage_diffs: list[list[ResourceUsageDiff]]
 ) -> None:
     """Export to CSV and print a diff of performance and resource usage metrics of two experiments.
 

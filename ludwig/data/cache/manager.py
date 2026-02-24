@@ -95,7 +95,7 @@ class CacheManager:
     def __init__(
         self,
         dataset_manager: DatasetManager,
-        cache_dir: Optional[str] = None,
+        cache_dir: str | None = None,
     ):
         self._dataset_manager = dataset_manager
         self._cache_dir = cache_dir
@@ -103,10 +103,10 @@ class CacheManager:
     def get_dataset_cache(
         self,
         config: dict,
-        dataset: Optional[CacheableDataset] = None,
-        training_set: Optional[CacheableDataset] = None,
-        test_set: Optional[CacheableDataset] = None,
-        validation_set: Optional[CacheableDataset] = None,
+        dataset: CacheableDataset | None = None,
+        training_set: CacheableDataset | None = None,
+        test_set: CacheableDataset | None = None,
+        validation_set: CacheableDataset | None = None,
     ) -> DatasetCache:
         if dataset is not None:
             key = self.get_cache_key(dataset, config)
@@ -130,7 +130,7 @@ class CacheManager:
     def get_cache_key(self, dataset: CacheableDataset, config: dict) -> str:
         return calculate_checksum(dataset, config)
 
-    def get_cache_path(self, dataset: Optional[CacheableDataset], key: str, tag: str, ext: Optional[str] = None) -> str:
+    def get_cache_path(self, dataset: CacheableDataset | None, key: str, tag: str, ext: str | None = None) -> str:
         if self._cache_dir is None and dataset is not None:
             # Use the input dataset filename (minus the extension) as the cache path
             stem = dataset.get_cache_path()
@@ -143,7 +143,7 @@ class CacheManager:
         cache_fname = f"{stem}.{tag}.{ext}"
         return os.path.join(self.get_cache_directory(dataset), cache_fname)
 
-    def get_cache_directory(self, dataset: Optional[CacheableDataset]) -> str:
+    def get_cache_directory(self, dataset: CacheableDataset | None) -> str:
         if self._cache_dir is None:
             if dataset is None:
                 return os.getcwd()

@@ -1,5 +1,6 @@
 import argparse
-from typing import List, Sequence, Type
+from collections.abc import Sequence
+from typing import List, Type
 
 import pytest
 
@@ -20,7 +21,7 @@ from ludwig.contribs.wandb import WandbCallback
         (["--wandb"], [WandbCallback]),
     ],
 )
-def test_add_contrib_callback_args(sys_argv: Sequence[str], expected: List[Type]):
+def test_add_contrib_callback_args(sys_argv: Sequence[str], expected: list[type]):
     parser = argparse.ArgumentParser()
     add_contrib_callback_args(parser)
     args = parser.parse_args(sys_argv)

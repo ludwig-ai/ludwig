@@ -10,7 +10,7 @@ from ludwig.schema.hyperopt import utils as hyperopt_utils
 from ludwig.schema.utils import ludwig_dataclass
 
 
-def points_to_evaluate_field(description: Optional[str] = None) -> fields.Field:
+def points_to_evaluate_field(description: str | None = None) -> fields.Field:
     return schema_utils.DictList(
         description=description
         or (
@@ -21,7 +21,7 @@ def points_to_evaluate_field(description: Optional[str] = None) -> fields.Field:
     )
 
 
-def evaluated_rewards_field(description: Optional[str] = None) -> fields.Field:
+def evaluated_rewards_field(description: str | None = None) -> fields.Field:
     return schema_utils.List(
         description=description
         or (
@@ -73,7 +73,7 @@ class BaseSearchAlgorithmConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-def SearchAlgorithmDataclassField(description: str = "", default: Dict = {"type": "variant_generator"}):
+def SearchAlgorithmDataclassField(description: str = "", default: dict = {"type": "variant_generator"}):
     class SearchAlgorithmMarshmallowField(fields.Field):
         def _deserialize(self, value, attr, data, **kwargs):
             if isinstance(value, dict):
@@ -126,7 +126,7 @@ def SearchAlgorithmDataclassField(description: str = "", default: Dict = {"type"
 class BasicVariantSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.StringOptions(options=["random", "variant_generator"], default="random", allow_none=False)
 
-    points_to_evaluate: Optional[List[Dict]] = schema_utils.DictList(
+    points_to_evaluate: list[dict] | None = schema_utils.DictList(
         description=(
             "Initial parameter suggestions to be run first. This is for when you already have some good parameters "
             "you want to run first to help the algorithm make better suggestions for future parameters. Needs to be "
@@ -166,7 +166,7 @@ class BasicVariantSAConfig(BaseSearchAlgorithmConfig):
 class AxSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("ax")
 
-    space: Optional[List[Dict]] = schema_utils.DictList(
+    space: list[dict] | None = schema_utils.DictList(
         description=(
             r"Parameters in the experiment search space. Required elements in the dictionaries are: \“name\” (name of "
             r"this parameter, string), \“type\” (type of the parameter: \“range\”, \“fixed\”, or \“choice\”, string), "
@@ -175,13 +175,13 @@ class AxSAConfig(BaseSearchAlgorithmConfig):
         )
     )
 
-    points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
+    points_to_evaluate: list[dict] | None = points_to_evaluate_field()
 
-    parameter_constraints: Optional[List] = schema_utils.List(
+    parameter_constraints: list | None = schema_utils.List(
         description=r"Parameter constraints, such as \“x3 >= x4\” or \“x3 + x4 >= 2\”."
     )
 
-    outcome_constraints: Optional[List] = schema_utils.List(
+    outcome_constraints: list | None = schema_utils.List(
         description=r"Outcome constraints of form \“metric_name >= bound\”, like \“m1 <= 3.\”"
     )
 
@@ -194,15 +194,15 @@ class AxSAConfig(BaseSearchAlgorithmConfig):
 class BayesOptSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("bayesopt")
 
-    space: Optional[Dict] = schema_utils.Dict(
+    space: dict | None = schema_utils.Dict(
         description=(
             "Continuous search space. Parameters will be sampled from this space which will be used to run trials"
         )
     )
 
-    points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
+    points_to_evaluate: list[dict] | None = points_to_evaluate_field()
 
-    utility_kwargs: Optional[Dict] = schema_utils.Dict(
+    utility_kwargs: dict | None = schema_utils.Dict(
         description=(
             "Parameters to define the utility function. The default value is a dictionary with three keys: "
             "- kind: ucb (Upper Confidence Bound) - kappa: 2.576 - xi: 0.0"
@@ -252,18 +252,18 @@ class BlendsearchSAConfig(BaseSearchAlgorithmConfig):
 class BOHBSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("bohb")
 
-    space: Optional[Dict] = schema_utils.Dict(
+    space: dict | None = schema_utils.Dict(
         description=(
             "Continuous ConfigSpace search space. Parameters will be sampled from this space which will be used "
             "to run trials."
         )
     )
 
-    bohb_config: Optional[Dict] = schema_utils.Dict(description="configuration for HpBandSter BOHB algorithm")
+    bohb_config: dict | None = schema_utils.Dict(description="configuration for HpBandSter BOHB algorithm")
 
-    points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
+    points_to_evaluate: list[dict] | None = points_to_evaluate_field()
 
-    seed: Optional[int] = schema_utils.Integer(
+    seed: int | None = schema_utils.Integer(
         default=None,
         allow_none=True,
         description=(
@@ -297,7 +297,7 @@ class CFOSAConfig(BaseSearchAlgorithmConfig):
 class DragonflySAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("dragonfly")
 
-    optimizer: Optional[str] = schema_utils.StringOptions(
+    optimizer: str | None = schema_utils.StringOptions(
         options=["random", "bandit", "genetic"],
         default=None,
         allow_none=True,
@@ -307,7 +307,7 @@ class DragonflySAConfig(BaseSearchAlgorithmConfig):
         ),
     )
 
-    domain: Optional[str] = schema_utils.StringOptions(
+    domain: str | None = schema_utils.StringOptions(
         options=["cartesian", "euclidean"],
         default=None,
         allow_none=True,
@@ -317,7 +317,7 @@ class DragonflySAConfig(BaseSearchAlgorithmConfig):
         ),
     )
 
-    space: Optional[List[Dict]] = schema_utils.DictList(
+    space: list[dict] | None = schema_utils.DictList(
         description=(
             "Search space. Should only be set if you don't pass an optimizer as the `optimizer` argument. Defines the "
             "search space and requires a `domain` to be set. Can be automatically converted from the `param_space` "
@@ -325,11 +325,11 @@ class DragonflySAConfig(BaseSearchAlgorithmConfig):
         )
     )
 
-    points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
+    points_to_evaluate: list[dict] | None = points_to_evaluate_field()
 
-    evaluated_rewards: Optional[List] = evaluated_rewards_field()
+    evaluated_rewards: list | None = evaluated_rewards_field()
 
-    random_state_seed: Optional[int] = schema_utils.Integer(
+    random_state_seed: int | None = schema_utils.Integer(
         default=None,
         allow_none=True,
         description=(
@@ -347,15 +347,15 @@ class DragonflySAConfig(BaseSearchAlgorithmConfig):
 class HEBOSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("hebo")
 
-    space: Optional[List[Dict]] = schema_utils.DictList(
+    space: list[dict] | None = schema_utils.DictList(
         description="A dict mapping parameter names to Tune search spaces or a HEBO DesignSpace object."
     )
 
-    points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
+    points_to_evaluate: list[dict] | None = points_to_evaluate_field()
 
-    evaluated_rewards: Optional[List] = evaluated_rewards_field()
+    evaluated_rewards: list | None = evaluated_rewards_field()
 
-    random_state_seed: Optional[int] = schema_utils.Integer(
+    random_state_seed: int | None = schema_utils.Integer(
         default=None,
         allow_none=True,
         description=(
@@ -381,14 +381,14 @@ class HEBOSAConfig(BaseSearchAlgorithmConfig):
 class HyperoptSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("hyperopt")
 
-    space: Optional[List[Dict]] = schema_utils.DictList(
+    space: list[dict] | None = schema_utils.DictList(
         description=(
             "HyperOpt configuration. Parameters will be sampled from this configuration and will be used to override "
             "parameters generated in the variant generation process."
         )
     )
 
-    points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
+    points_to_evaluate: list[dict] | None = points_to_evaluate_field()
 
     n_initial_points: int = schema_utils.PositiveInteger(
         default=20,
@@ -398,7 +398,7 @@ class HyperoptSAConfig(BaseSearchAlgorithmConfig):
         ),
     )
 
-    random_state_seed: Optional[int] = schema_utils.Integer(
+    random_state_seed: int | None = schema_utils.Integer(
         default=None,
         allow_none=True,
         description=("Seed for reproducible results. Defaults to None."),
@@ -427,18 +427,16 @@ class NevergradSAConfig(BaseSearchAlgorithmConfig):
     # optimizer: Optional[str] = None
 
     # TODO: Add schemas for nevergrad optimizer kwargs
-    optimizer_kwargs: Optional[Dict] = schema_utils.Dict(
-        description="Kwargs passed in when instantiating the optimizer."
-    )
+    optimizer_kwargs: dict | None = schema_utils.Dict(description="Kwargs passed in when instantiating the optimizer.")
 
-    space: Optional[List[Dict]] = schema_utils.DictList(
+    space: list[dict] | None = schema_utils.DictList(
         description=(
             "Nevergrad parametrization to be passed to optimizer on instantiation, or list of parameter names if you "
             "passed an optimizer object."
         )
     )
 
-    points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
+    points_to_evaluate: list[dict] | None = points_to_evaluate_field()
 
 
 @DeveloperAPI
@@ -449,7 +447,7 @@ class NevergradSAConfig(BaseSearchAlgorithmConfig):
 class OptunaSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("optuna")
 
-    space: Optional[Dict] = schema_utils.Dict(
+    space: dict | None = schema_utils.Dict(
         description=(
             "Hyperparameter search space definition for Optuna's sampler. This can be either a dict with parameter "
             "names as keys and optuna.distributions as values, or a Callable - in which case, it should be a "
@@ -460,12 +458,12 @@ class OptunaSAConfig(BaseSearchAlgorithmConfig):
         )
     )
 
-    points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
+    points_to_evaluate: list[dict] | None = points_to_evaluate_field()
 
     # TODO: Add a registry of Optuna samplers schemas
     # sampler = None
 
-    seed: Optional[int] = schema_utils.Integer(
+    seed: int | None = schema_utils.Integer(
         default=None,
         allow_none=True,
         description=(
@@ -474,7 +472,7 @@ class OptunaSAConfig(BaseSearchAlgorithmConfig):
         ),
     )
 
-    evaluated_rewards: Optional[List] = evaluated_rewards_field()
+    evaluated_rewards: list | None = evaluated_rewards_field()
 
 
 @DeveloperAPI
@@ -484,7 +482,7 @@ class SkoptSAConfig(BaseSearchAlgorithmConfig):
 
     optimizer = None
 
-    space: Optional[Dict] = schema_utils.Dict(
+    space: dict | None = schema_utils.Dict(
         description=(
             "A dict mapping parameter names to valid parameters, i.e. tuples for numerical parameters and lists "
             "for categorical parameters. If you passed an optimizer instance as the optimizer argument, this should "
@@ -492,9 +490,9 @@ class SkoptSAConfig(BaseSearchAlgorithmConfig):
         )
     )
 
-    points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
+    points_to_evaluate: list[dict] | None = points_to_evaluate_field()
 
-    evaluated_rewards: Optional[List] = evaluated_rewards_field(
+    evaluated_rewards: list | None = evaluated_rewards_field(
         description=(
             "If you have previously evaluated the parameters passed in as points_to_evaluate you can avoid "
             "re-running those trials by passing in the reward attributes as a list so the optimiser can be told the "
@@ -521,11 +519,11 @@ class ZooptSAConfig(BaseSearchAlgorithmConfig):
         description="To specify an algorithm in zoopt you want to use. Only support ASRacos currently.",
     )
 
-    budget: Optional[int] = schema_utils.PositiveInteger(
+    budget: int | None = schema_utils.PositiveInteger(
         default=None, allow_none=True, description="Optional. Number of samples."
     )
 
-    dim_dict: Optional[Dict] = schema_utils.Dict(
+    dim_dict: dict | None = schema_utils.Dict(
         description=(
             "Dimension dictionary. For continuous dimensions: (continuous, search_range, precision); For discrete "
             "dimensions: (discrete, search_range, has_order); For grid dimensions: (grid, grid_list). More details "
@@ -533,7 +531,7 @@ class ZooptSAConfig(BaseSearchAlgorithmConfig):
         )
     )
 
-    points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
+    points_to_evaluate: list[dict] | None = points_to_evaluate_field()
 
     parallel_num: int = schema_utils.PositiveInteger(
         default=1,

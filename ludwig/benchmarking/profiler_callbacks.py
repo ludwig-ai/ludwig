@@ -11,7 +11,7 @@ from ludwig.constants import EVALUATION, PREPROCESSING, TRAINING
 class LudwigProfilerCallback(Callback):
     """Class that defines the methods necessary to hook into process."""
 
-    def __init__(self, experiment: Dict[str, Any]):
+    def __init__(self, experiment: dict[str, Any]):
         self.experiment_name = experiment["experiment_name"]
         self.use_torch_profiler = experiment["profiler"]["use_torch_profiler"]
         self.logging_interval = experiment["profiler"]["logging_interval"]

@@ -38,7 +38,7 @@ class UNetDecoder(Decoder):
         width: int,
         num_channels: int = 1,
         num_classes: int = 2,
-        conv_norm: Optional[str] = None,
+        conv_norm: str | None = None,
         decoder_config=None,
         **kwargs,
     ):
@@ -63,7 +63,7 @@ class UNetDecoder(Decoder):
         self.input_reshape.insert(0, -1)
         self._output_shape = (height, width)
 
-    def forward(self, combiner_outputs: Dict[str, torch.Tensor], target: torch.Tensor):
+    def forward(self, combiner_outputs: dict[str, torch.Tensor], target: torch.Tensor):
         hidden = combiner_outputs[HIDDEN]
         skips = combiner_outputs[ENCODER_OUTPUT_STATE]
 
@@ -79,7 +79,7 @@ class UNetDecoder(Decoder):
         return {LOGITS, PREDICTIONS}
 
     @staticmethod
-    def get_schema_cls() -> Type[ImageDecoderConfig]:
+    def get_schema_cls() -> type[ImageDecoderConfig]:
         return UNetDecoderConfig
 
     @property

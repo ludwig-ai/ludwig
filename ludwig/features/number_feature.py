@@ -59,7 +59,7 @@ class NumberTransformer(nn.Module, ABC):
 
     @staticmethod
     @abstractmethod
-    def fit_transform_params(column: np.ndarray, backend: Any) -> Dict[str, Any]:
+    def fit_transform_params(column: np.ndarray, backend: Any) -> dict[str, Any]:
         pass
 
 
@@ -90,7 +90,7 @@ class ZScoreTransformer(NumberTransformer):
         return x * self.sigma + self.mu
 
     @staticmethod
-    def fit_transform_params(column: np.ndarray, backend: "Backend") -> Dict[str, Any]:  # noqa
+    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict[str, Any]:  # noqa
         compute = backend.df_engine.compute
         return {
             "mean": compute(column.astype(np.float32).mean()),
@@ -125,7 +125,7 @@ class MinMaxTransformer(NumberTransformer):
         return x * self.range + self.min_value
 
     @staticmethod
-    def fit_transform_params(column: np.ndarray, backend: "Backend") -> Dict[str, Any]:  # noqa
+    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict[str, Any]:  # noqa
         compute = backend.df_engine.compute
         return {
             "min": compute(column.astype(np.float32).min()),
@@ -163,7 +163,7 @@ class InterQuartileTransformer(NumberTransformer):
         return x * self.interquartile_range + self.q2
 
     @staticmethod
-    def fit_transform_params(column: np.ndarray, backend: "Backend") -> Dict[str, Any]:  # noqa
+    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict[str, Any]:  # noqa
         # backend.df_engine.compute is not used here because `percentile` is not parallelized in dask.
         # We compute the percentile directly.
         return {
@@ -196,7 +196,7 @@ class Log1pTransformer(NumberTransformer):
         return torch.expm1(x)
 
     @staticmethod
-    def fit_transform_params(column: np.ndarray, backend: "Backend") -> Dict[str, Any]:  # noqa
+    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict[str, Any]:  # noqa
         return {}
 
 
@@ -217,7 +217,7 @@ class IdentityTransformer(NumberTransformer):
         return x
 
     @staticmethod
-    def fit_transform_params(column: np.ndarray, backend: "Backend") -> Dict[str, Any]:  # noqa
+    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict[str, Any]:  # noqa
         return {}
 
 
@@ -283,7 +283,7 @@ class _NumberPostprocessing(torch.nn.Module):
         self.numeric_transformer = get_transformer(metadata, metadata["preprocessing"])
         self.predictions_key = PREDICTIONS
 
-    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> FeaturePostProcessingOutputDict:
+    def forward(self, preds: dict[str, torch.Tensor], feature_name: str) -> FeaturePostProcessingOutputDict:
         predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
 
         return {self.predictions_key: self.numeric_transformer.inverse_transform_inference(predictions)}
@@ -294,7 +294,7 @@ class _NumberPredict(PredictModule):
         super().__init__()
         self.clip = clip
 
-    def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: dict[str, torch.Tensor], feature_name: str) -> dict[str, torch.Tensor]:
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
         predictions = logits
 
@@ -428,8 +428,8 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
 class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
     def __init__(
         self,
-        output_feature_config: Union[NumberOutputFeatureConfig, Dict],
-        output_features: Dict[str, OutputFeature],
+        output_feature_config: NumberOutputFeatureConfig | dict,
+        output_features: dict[str, OutputFeature],
         **kwargs,
     ):
         self.clip = output_feature_config.clip

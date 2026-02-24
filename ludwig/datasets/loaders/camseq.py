@@ -22,7 +22,7 @@ from ludwig.utils.fs_utils import makedirs
 
 
 class CamseqLoader(DatasetLoader):
-    def transform_files(self, file_paths: List[str]) -> List[str]:
+    def transform_files(self, file_paths: list[str]) -> list[str]:
         if not os.path.exists(self.processed_dataset_dir):
             os.makedirs(self.processed_dataset_dir)
 
@@ -47,7 +47,7 @@ class CamseqLoader(DatasetLoader):
 
         return super().transform_files(data_files)
 
-    def load_unprocessed_dataframe(self, file_paths: List[str]) -> pd.DataFrame:
+    def load_unprocessed_dataframe(self, file_paths: list[str]) -> pd.DataFrame:
         """Creates a dataframe of image paths and mask paths."""
         images_dir = os.path.join(self.processed_dataset_dir, "images")
         masks_dir = os.path.join(self.processed_dataset_dir, "masks")

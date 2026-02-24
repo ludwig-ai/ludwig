@@ -77,7 +77,7 @@ TABULAR_TYPES = {CATEGORY, NUMBER, BINARY}
 
 
 class AutoTrainResults:
-    def __init__(self, experiment_analysis: ExperimentAnalysis, creds: Dict[str, Any] = None):
+    def __init__(self, experiment_analysis: ExperimentAnalysis, creds: dict[str, Any] = None):
         self._experiment_analysis = experiment_analysis
         self._creds = creds
 
@@ -90,7 +90,7 @@ class AutoTrainResults:
         return self._experiment_analysis.best_trial.trial_id
 
     @property
-    def best_model(self) -> Optional[LudwigModel]:
+    def best_model(self) -> LudwigModel | None:
         checkpoint = self._experiment_analysis.best_checkpoint
         if checkpoint is None:
             logger.warning("No best model found")
@@ -109,12 +109,12 @@ class AutoTrainResults:
 
 @PublicAPI
 def auto_train(
-    dataset: Union[str, pd.DataFrame, dd.DataFrame],
+    dataset: str | pd.DataFrame | dd.DataFrame,
     target: str,
-    time_limit_s: Union[int, float],
+    time_limit_s: int | float,
     output_directory: str = OUTPUT_DIR,
     tune_for_memory: bool = False,
-    user_config: Dict = None,
+    user_config: dict = None,
     random_seed: int = default_random_seed,
     use_reference_config: bool = False,
     **kwargs,
@@ -159,15 +159,15 @@ def auto_train(
 
 @PublicAPI
 def create_auto_config(
-    dataset: Union[str, pd.DataFrame, dd.DataFrame, DatasetInfo],
-    target: Union[str, List[str]],
-    time_limit_s: Union[int, float],
+    dataset: str | pd.DataFrame | dd.DataFrame | DatasetInfo,
+    target: str | list[str],
+    time_limit_s: int | float,
     tune_for_memory: bool = False,
-    user_config: Dict = None,
+    user_config: dict = None,
     random_seed: int = default_random_seed,
     imbalance_threshold: float = 0.9,
     use_reference_config: bool = False,
-    backend: Union[Backend, str] = None,
+    backend: Backend | str = None,
 ) -> ModelConfigDict:
     """Returns an auto-generated Ludwig config with the intent of training the best model on given given dataset /
     target in the given time limit.
@@ -219,14 +219,14 @@ def create_auto_config(
 def create_automl_config_for_features(
     features_config: ModelConfigDict,
     dataset_info: DatasetInfo,
-    target: Union[str, List[str]],
-    time_limit_s: Union[int, float],
+    target: str | list[str],
+    time_limit_s: int | float,
     tune_for_memory: bool = False,
-    user_config: Dict = None,
+    user_config: dict = None,
     random_seed: int = default_random_seed,
     imbalance_threshold: float = 0.9,
     use_reference_config: bool = False,
-    backend: Union[Backend, str] = None,
+    backend: Backend | str = None,
 ) -> ModelConfigDict:
     default_configs = create_default_config(
         features_config, dataset_info, target, time_limit_s, random_seed, imbalance_threshold, backend
@@ -242,14 +242,14 @@ def create_automl_config_for_features(
 @PublicAPI
 def create_features_config(
     dataset_info: DatasetInfo,
-    target_name: Union[str, List[str]] = None,
+    target_name: str | list[str] = None,
 ) -> ModelConfigDict:
     return get_features_config(dataset_info.fields, dataset_info.row_count, target_name)
 
 
 @PublicAPI
 def train_with_config(
-    dataset: Union[str, pd.DataFrame, dd.DataFrame],
+    dataset: str | pd.DataFrame | dd.DataFrame,
     config: dict,
     output_directory: str = OUTPUT_DIR,
     random_seed: int = default_random_seed,
@@ -389,8 +389,8 @@ def _model_select(
 
 
 def _train(
-    config: Dict,
-    dataset: Union[str, pd.DataFrame, dd.DataFrame],
+    config: dict,
+    dataset: str | pd.DataFrame | dd.DataFrame,
     output_directory: str,
     model_name: str,
     random_seed: int,
@@ -410,8 +410,8 @@ def _train(
 
 def init_config(
     dataset: str,
-    target: Union[str, List[str]],
-    time_limit_s: Union[int, float],
+    target: str | list[str],
+    time_limit_s: int | float,
     tune_for_memory: bool = False,
     suggested: bool = False,
     hyperopt: bool = False,

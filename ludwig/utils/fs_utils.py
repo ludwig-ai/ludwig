@@ -87,7 +87,7 @@ def upgrade_http(urlpath):
 
 @DeveloperAPI
 @functools.lru_cache(maxsize=32)
-def get_bytes_obj_from_path(path: str) -> Optional[bytes]:
+def get_bytes_obj_from_path(path: str) -> bytes | None:
     if is_http(path):
         try:
             return get_bytes_obj_from_http_path(path)
@@ -389,9 +389,9 @@ class file_lock(contextlib.AbstractContextManager):
 
 
 @DeveloperAPI
-def list_file_names_in_directory(directory_name: str) -> List[str]:
+def list_file_names_in_directory(directory_name: str) -> list[str]:
     file_path: pathlib.Path  # noqa [F842]  # incorrect flagging of "local variable is annotated but never used"
-    file_names: List[str] = [
+    file_names: list[str] = [
         file_path.name for file_path in pathlib.Path(directory_name).iterdir() if file_path.is_file()
     ]
     return file_names

@@ -114,7 +114,7 @@ def test_carton_torchscript(csv_filename, tmpdir):
     loop = asyncio.get_event_loop()
     carton_model = loop.run_until_complete(load())
 
-    def to_input(s: pd.Series) -> Union[List[str], torch.Tensor]:
+    def to_input(s: pd.Series) -> list[str] | torch.Tensor:
         if s.dtype == "object":
             return np.array(s.to_list())
         return s.to_numpy().astype(np.float32)

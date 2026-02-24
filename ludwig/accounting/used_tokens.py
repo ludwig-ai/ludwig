@@ -3,7 +3,7 @@ from typing import Dict, Union
 import torch
 
 
-def get_used_tokens_for_gbm(inputs: Union[torch.Tensor, Dict[str, torch.Tensor]]) -> int:
+def get_used_tokens_for_gbm(inputs: torch.Tensor | dict[str, torch.Tensor]) -> int:
     """Returns the number of used tokens for a GBM model.
 
     The number of used tokens is:
@@ -21,7 +21,7 @@ def get_used_tokens_for_gbm(inputs: Union[torch.Tensor, Dict[str, torch.Tensor]]
     return len(inputs.keys()) + 1
 
 
-def get_used_tokens_for_ecd(inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor]) -> int:
+def get_used_tokens_for_ecd(inputs: dict[str, torch.Tensor], targets: dict[str, torch.Tensor]) -> int:
     """Returns the number of used tokens for an ECD model.
 
     The number of used tokens is the total size of the input and output tensors, which corresponds to 1 token for

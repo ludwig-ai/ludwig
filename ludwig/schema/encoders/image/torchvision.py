@@ -17,7 +17,7 @@ class TVBaseEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["TVBaseEncoder"]["use_pretrained"],
     )
 
-    model_cache_dir: Optional[str] = schema_utils.String(
+    model_cache_dir: str | None = schema_utils.String(
         default=None,
         allow_none=True,
         description="Directory path to cache pretrained model weights.",
@@ -350,7 +350,7 @@ class TVViTEncoderConfig(TVBaseEncoderConfig):
 class TVVGGEncoderConfig(TVBaseEncoderConfig):
     type: str = schema_utils.ProtectedString("vgg", description="Type of encoder.")
 
-    model_variant: Union[int, str] = schema_utils.OneOfOptionsField(
+    model_variant: int | str = schema_utils.OneOfOptionsField(
         default=11,
         description="Pretrained model variant to use.",
         field_options=[

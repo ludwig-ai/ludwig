@@ -10,10 +10,10 @@ from ludwig.utils.data_utils import load_json, load_yaml
 @dataclass
 class BenchmarkingResult:
     # The Ludwig benchmarking config.
-    benchmarking_config: Dict[str, Any]
+    benchmarking_config: dict[str, Any]
 
     # The config for one experiment.
-    experiment_config: Dict[str, Any]
+    experiment_config: dict[str, Any]
 
     # The Ludwig config used to run the experiment.
     ludwig_config: ModelConfigDict
@@ -22,19 +22,19 @@ class BenchmarkingResult:
     process_config_file: str
 
     # Loaded `description.json` file.
-    description: Dict[str, Any]
+    description: dict[str, Any]
 
     # Loaded `test_statistics.json` file.
-    test_statistics: Dict[str, Any]
+    test_statistics: dict[str, Any]
 
     # Loaded `training_statistics.json` file.
-    training_statistics: Dict[str, Any]
+    training_statistics: dict[str, Any]
 
     # Loaded `model_hyperparameters.json` file.
-    model_hyperparameters: Dict[str, Any]
+    model_hyperparameters: dict[str, Any]
 
     # Loaded `training_progress.json` file.
-    training_progress: Dict[str, Any]
+    training_progress: dict[str, Any]
 
     # Loaded `training_set_metadata.json` file.
     training_set_metadata: TrainingSetMetadataDict

@@ -14,7 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 import contextlib
-from typing import Iterable, Optional
+from collections.abc import Iterable
+from typing import Optional
 
 import numpy as np
 from pandas import DataFrame
@@ -37,7 +38,7 @@ class PandasDataset(Dataset):
         self.size = len(dataset)
         self.dataset = to_numpy_dataset(dataset)
 
-    def to_df(self, features: Optional[Iterable[BaseFeature]] = None) -> DataFrame:
+    def to_df(self, features: Iterable[BaseFeature] | None = None) -> DataFrame:
         """Convert the dataset to a Pandas DataFrame."""
         if features:
             return from_numpy_dataset({feature.feature_name: self.dataset[feature.proc_column] for feature in features})

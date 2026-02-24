@@ -22,7 +22,7 @@ from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 
 
 class ForestCoverLoader(DatasetLoader):
-    def __init__(self, config: DatasetConfig, cache_dir: Optional[str] = None, use_tabnet_split=True):
+    def __init__(self, config: DatasetConfig, cache_dir: str | None = None, use_tabnet_split=True):
         super().__init__(config, cache_dir=cache_dir)
         self.use_tabnet_split = use_tabnet_split
 

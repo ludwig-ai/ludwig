@@ -1,6 +1,7 @@
 import contextlib
 import logging
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TYPE_CHECKING
+from collections.abc import Callable
+from typing import Any, Dict, List, Optional, Tuple, Type, TYPE_CHECKING
 
 import horovod.torch as hvd
 import ray
@@ -34,7 +35,7 @@ class HorovodStrategy(DistributedStrategy):
         model: nn.Module,
         trainer_config: "ECDTrainerConfig",
         base_learning_rate: float,
-    ) -> Tuple[nn.Module, Optimizer]:
+    ) -> tuple[nn.Module, Optimizer]:
         optimizer = create_optimizer(model, trainer_config.optimizer, base_learning_rate)
         grad_accum_steps = (
             trainer_config.gradient_accumulation_steps if trainer_config.gradient_accumulation_steps != AUTO else 1
@@ -73,7 +74,7 @@ class HorovodStrategy(DistributedStrategy):
     def sync_optimizer(self, optimizer: Optimizer):
         hvd.broadcast_optimizer_state(optimizer, root_rank=0)
 
-    def broadcast_object(self, v: Any, name: Optional[str] = None) -> Any:
+    def broadcast_object(self, v: Any, name: str | None = None) -> Any:
         return hvd.broadcast_object(v, name=name)
 
     def wait_optimizer_synced(self, optimizer: _DistributedOptimizer):
@@ -93,11 +94,11 @@ class HorovodStrategy(DistributedStrategy):
         return is_distributed_available()
 
     @classmethod
-    def gather_all_tensors_fn(cls) -> Optional[Callable]:
+    def gather_all_tensors_fn(cls) -> Callable | None:
         return gather_all_tensors
 
     @classmethod
-    def get_ray_trainer_backend(cls, nics: Optional[List[str]] = None, **kwargs) -> Optional[Any]:
+    def get_ray_trainer_backend(cls, nics: list[str] | None = None, **kwargs) -> Any | None:
         from ray.train.horovod import HorovodConfig
 
         # Explicitly override network interfaces Horovod will attempt to use
@@ -106,7 +107,7 @@ class HorovodStrategy(DistributedStrategy):
         return HorovodConfig(nics=nics)
 
     @classmethod
-    def get_trainer_cls(cls, backend_config: BackendConfig) -> Tuple[Type[DataParallelTrainer], Dict[str, Any]]:
+    def get_trainer_cls(cls, backend_config: BackendConfig) -> tuple[type[DataParallelTrainer], dict[str, Any]]:
         if not _ray220:
             from ludwig.distributed._ray_210_compat import HorovodTrainerRay210
 

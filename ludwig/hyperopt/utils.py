@@ -139,7 +139,7 @@ def feature_dict_to_list(config: ModelConfigDict) -> ModelConfigDict:
 
 def substitute_parameters(
     config: ModelConfigDict,
-    parameters: Dict[str, Any],
+    parameters: dict[str, Any],
 ):
     """Update Ludwig config with parameters sampled from the Hyperopt sampler."""
 

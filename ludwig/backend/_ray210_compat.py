@@ -1,7 +1,8 @@
 # Implements https://github.com/ray-project/ray/pull/30598 ahead of Ray 2.2 release.
 
 import math
-from typing import Any, Callable, Dict, Optional, Type, TYPE_CHECKING, Union
+from collections.abc import Callable
+from typing import Any, Dict, Optional, Type, TYPE_CHECKING, Union
 
 import ray
 from ray.air.config import RunConfig
@@ -19,30 +20,31 @@ if TYPE_CHECKING:
 class TunerRay210(Tuner):
     """HACK(geoffrey): This is a temporary fix to support Ray 2.1.0.
 
-    Specifically, this Tuner ensures that TunerInternalRay210 is called by the class.
-    For more details, see TunerInternalRay210.
+    Specifically, this Tuner ensures that TunerInternalRay210 is called by the class. For more details, see
+    TunerInternalRay210.
     """
 
     def __init__(
         self,
-        trainable: Optional[
+        trainable: None
+        | (
             Union[
                 str,
                 Callable,
-                Type[Trainable],
+                type[Trainable],
                 "BaseTrainer",
             ]
-        ] = None,
+        ) = None,
         *,
-        param_space: Optional[Dict[str, Any]] = None,
-        tune_config: Optional[TuneConfig] = None,
-        run_config: Optional[RunConfig] = None,
+        param_space: dict[str, Any] | None = None,
+        tune_config: TuneConfig | None = None,
+        run_config: RunConfig | None = None,
         # This is internal only arg.
         # Only for dogfooding purposes. We can slowly promote these args
         # to RunConfig or TuneConfig as needed.
         # TODO(xwjiang): Remove this later.
-        _tuner_kwargs: Optional[Dict] = None,
-        _tuner_internal: Optional[TunerInternal] = None,
+        _tuner_kwargs: dict | None = None,
+        _tuner_internal: TunerInternal | None = None,
     ):
         """Configure and construct a tune run."""
         kwargs = locals().copy()
@@ -120,8 +122,9 @@ class TunerRay210(Tuner):
 class TunerInternalRay210(TunerInternal):
     """HACK(geoffrey): This is a temporary fix to support Ray 2.1.0.
 
-    This TunerInternal ensures that a division by zero is avoided when running zero-CPU hyperopt trials.
-    This is fixed in ray>=2.2 (but not ray<=2.1) here: https://github.com/ray-project/ray/pull/30598
+    This TunerInternal ensures that a division by zero is avoided when running zero-CPU hyperopt trials. This is fixed
+    in ray>=2.2 (but not ray<=2.1) here:
+    https://github.com/ray-project/ray/pull/30598
     """
 
     def _expected_utilization(self, cpus_per_trial, cpus_total):

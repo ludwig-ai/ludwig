@@ -17,13 +17,13 @@ logger = logging.getLogger(__name__)
 
 def forecast_cli(
     model_path: str,
-    dataset: Union[str, dict, pd.DataFrame] = None,
-    data_format: Optional[str] = None,
+    dataset: str | dict | pd.DataFrame = None,
+    data_format: str | None = None,
     horizon: int = 1,
-    output_directory: Optional[str] = None,
+    output_directory: str | None = None,
     output_format: str = "parquet",
-    callbacks: List[Callback] = None,
-    backend: Union[Backend, str] = None,
+    callbacks: list[Callback] = None,
+    backend: Backend | str = None,
     logging_level: int = logging.INFO,
     **kwargs,
 ) -> None:

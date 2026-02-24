@@ -1,4 +1,5 @@
-from typing import Callable, List, Optional, Tuple, Type
+from collections.abc import Callable
+from typing import List, Optional, Tuple, Type
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.utils.registry import Registry
@@ -12,7 +13,7 @@ search_algorithm_random_state_field_registry = Registry()
 
 
 @DeveloperAPI
-def get_parameter_cls(name: str) -> Type["BaseParameterConfig"]:  # noqa: F821
+def get_parameter_cls(name: str) -> type["BaseParameterConfig"]:  # noqa: F821
     """Get a registered hyperopt parameter config class by name.
 
     Args:
@@ -25,7 +26,7 @@ def get_parameter_cls(name: str) -> Type["BaseParameterConfig"]:  # noqa: F821
 
 
 @DeveloperAPI
-def get_scheduler_cls(name: str) -> Type["BaseSchedulerConfig"]:  # noqa: F821
+def get_scheduler_cls(name: str) -> type["BaseSchedulerConfig"]:  # noqa: F821
     """Get a registered hyperopt scheduler config class by name.
 
     Args:
@@ -38,7 +39,7 @@ def get_scheduler_cls(name: str) -> Type["BaseSchedulerConfig"]:  # noqa: F821
 
 
 @DeveloperAPI
-def get_scheduler_dependencies(name: str) -> List[str]:
+def get_scheduler_dependencies(name: str) -> list[str]:
     """Get the list of dependencies for a registered hyperopt scheduler.
 
     Args:
@@ -51,7 +52,7 @@ def get_scheduler_dependencies(name: str) -> List[str]:
 
 
 @DeveloperAPI
-def get_search_algorithm_cls(name: str) -> Type["BaseSearchAlgorithmConfig"]:  # noqa: F821
+def get_search_algorithm_cls(name: str) -> type["BaseSearchAlgorithmConfig"]:  # noqa: F821
     """Get a registered hyperopt search algorithm config class by name.
 
     Args:
@@ -64,7 +65,7 @@ def get_search_algorithm_cls(name: str) -> Type["BaseSearchAlgorithmConfig"]:  #
 
 
 @DeveloperAPI
-def get_search_algorithm_dependencies(name: str) -> List[str]:
+def get_search_algorithm_dependencies(name: str) -> list[str]:
     """Get the list of dependencies for a registered hyperopt search algorithm.
 
     Args:
@@ -100,7 +101,7 @@ def register_parameter_config(name: str) -> Callable:
         Wrapper function to decorate a `BaseParameterConfig` subclass
     """
 
-    def wrap(cls: Type["BaseParameterConfig"]) -> Type["BaseParameterConfig"]:  # noqa: F821
+    def wrap(cls: type["BaseParameterConfig"]) -> type["BaseParameterConfig"]:  # noqa: F821
         """Add a parameter config class to the registry.
 
         Args:
@@ -116,7 +117,7 @@ def register_parameter_config(name: str) -> Callable:
 
 
 @DeveloperAPI
-def register_scheduler_config(name: str, dependencies: Optional[List[Tuple[str]]] = None):
+def register_scheduler_config(name: str, dependencies: list[tuple[str]] | None = None):
     """Register a scheduler config class by name.
 
     Args:
@@ -128,7 +129,7 @@ def register_scheduler_config(name: str, dependencies: Optional[List[Tuple[str]]
         Wrapper function to decorate a `BaseSchedulerConfig` subclass
     """
 
-    def wrap(scheduler_config: Type["BaseSchedulerConfig"]) -> Type["BaseSchedulerConfig"]:  # noqa: F821
+    def wrap(scheduler_config: type["BaseSchedulerConfig"]) -> type["BaseSchedulerConfig"]:  # noqa: F821
         """Add a parameter config class to the registry.
 
         Args:
@@ -147,7 +148,7 @@ def register_scheduler_config(name: str, dependencies: Optional[List[Tuple[str]]
 # TODO: create a search alg metadata class to register in place of individual metadata args
 @DeveloperAPI
 def register_search_algorithm_config(
-    name: str, random_state_field: Optional[str] = None, dependencies: Optional[List[Tuple[str, str]]] = None
+    name: str, random_state_field: str | None = None, dependencies: list[tuple[str, str]] | None = None
 ) -> Callable:
     """Register a search algorithm config class by name.
 
@@ -161,7 +162,7 @@ def register_search_algorithm_config(
         Wrapper function to decorate a `BaseSearchAlgorithmConfig` subclass
     """
 
-    def wrap(cls: Type["BaseSearchAlgorithmConfig"]) -> Type["BaseSearchAlgorithmConfig"]:  # noqa: F821
+    def wrap(cls: type["BaseSearchAlgorithmConfig"]) -> type["BaseSearchAlgorithmConfig"]:  # noqa: F821
         search_algorithm_config_registry[name] = cls
         search_algorithm_dependencies_registry[name] = dependencies if dependencies is not None else []
         search_algorithm_random_state_field_registry[name] = random_state_field

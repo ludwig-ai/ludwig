@@ -82,7 +82,7 @@ class DaskEngine(DataFrameEngine):
     def set_parallelism(self, parallelism):
         self._parallelism = parallelism
 
-    def df_like(self, df: dd.DataFrame, proc_cols: Dict[str, dd.Series]):
+    def df_like(self, df: dd.DataFrame, proc_cols: dict[str, dd.Series]):
         """Outer joins the given DataFrame with the given processed columns.
 
         NOTE: If any of the processed columns have been repartitioned, the original index is replaced with a

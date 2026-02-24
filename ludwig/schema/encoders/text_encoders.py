@@ -1,4 +1,5 @@
-from typing import Callable, Dict, List, Optional, TYPE_CHECKING, Union
+from collections.abc import Callable
+from typing import Dict, List, Optional, TYPE_CHECKING, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import MODEL_ECD, MODEL_GBM, TEXT
@@ -64,7 +65,7 @@ class HFEncoderImplConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["HFEncoder"]["trainable"],
     )
 
-    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+    adapter: BaseAdapterConfig | None = AdapterDataclassField()
 
     pretrained_kwargs: dict = schema_utils.Dict(
         default=None,
@@ -143,7 +144,7 @@ class ALBERTConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ALBERT"]["trainable"],
     )
 
-    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+    adapter: BaseAdapterConfig | None = AdapterDataclassField()
 
     reduce_output: str = schema_utils.String(
         default="cls_pooled",
@@ -344,7 +345,7 @@ class MT5Config(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["MT5"]["trainable"],
     )
 
-    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+    adapter: BaseAdapterConfig | None = AdapterDataclassField()
 
     reduce_output: str = schema_utils.String(
         default="sum",
@@ -542,7 +543,7 @@ class XLMRoBERTaConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["XLMRoBERTa"]["trainable"],
     )
 
-    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+    adapter: BaseAdapterConfig | None = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -649,7 +650,7 @@ class BERTConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["BERT"]["trainable"],
     )
 
-    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+    adapter: BaseAdapterConfig | None = AdapterDataclassField()
 
     reduce_output: str = schema_utils.String(
         default="cls_pooled",
@@ -694,7 +695,7 @@ class BERTConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["BERT"]["intermediate_size"],
     )
 
-    hidden_act: Union[str, Callable] = schema_utils.StringOptions(  # TODO: add support for callable
+    hidden_act: str | Callable = schema_utils.StringOptions(  # TODO: add support for callable
         ["gelu", "relu", "silu", "gelu_new"],
         default="gelu",
         description="The non-linear activation function (function or string) in the encoder and pooler.",
@@ -855,7 +856,7 @@ class XLMConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["XLM"]["trainable"],
     )
 
-    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+    adapter: BaseAdapterConfig | None = AdapterDataclassField()
 
     reduce_output: str = schema_utils.String(
         default="sum",
@@ -1112,7 +1113,7 @@ class GPTConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["GPT"]["trainable"],
     )
 
-    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+    adapter: BaseAdapterConfig | None = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -1249,7 +1250,7 @@ class GPT2Config(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["GPT2"]["trainable"],
     )
 
-    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+    adapter: BaseAdapterConfig | None = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -1412,7 +1413,7 @@ class RoBERTaConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["RoBERTa"]["trainable"],
     )
 
-    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+    adapter: BaseAdapterConfig | None = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -1506,7 +1507,7 @@ class TransformerXLConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["TransformerXL"]["trainable"],
     )
 
-    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+    adapter: BaseAdapterConfig | None = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -1521,7 +1522,7 @@ class TransformerXLConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["TransformerXL"]["vocab_size"],
     )
 
-    cutoffs: List[int] = schema_utils.List(
+    cutoffs: list[int] = schema_utils.List(
         int,
         default=[20000, 40000, 200000],
         description="Cutoffs for the adaptive softmax.",
@@ -1737,7 +1738,7 @@ class XLNetConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["XLNet"]["trainable"],
     )
 
-    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+    adapter: BaseAdapterConfig | None = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -1980,7 +1981,7 @@ class DistilBERTConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["DistilBERT"]["trainable"],
     )
 
-    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+    adapter: BaseAdapterConfig | None = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -2046,7 +2047,7 @@ class DistilBERTConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["DistilBERT"]["attention_dropout"],
     )
 
-    activation: Union[str, Callable] = schema_utils.StringOptions(  # TODO: Add support for callable
+    activation: str | Callable = schema_utils.StringOptions(  # TODO: Add support for callable
         ["gelu", "relu", "silu", "gelu_new"],
         default="gelu",
         description="The non-linear activation function (function or string) in the encoder and pooler. If string, "
@@ -2139,7 +2140,7 @@ class CTRLConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["CTRL"]["trainable"],
     )
 
-    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+    adapter: BaseAdapterConfig | None = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -2284,7 +2285,7 @@ class CamemBERTConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["trainable"],
     )
 
-    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+    adapter: BaseAdapterConfig | None = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -2322,7 +2323,7 @@ class CamemBERTConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["intermediate_size"],
     )
 
-    hidden_act: Union[str, Callable] = schema_utils.StringOptions(  # TODO: add support for callable
+    hidden_act: str | Callable = schema_utils.StringOptions(  # TODO: add support for callable
         ["gelu", "relu", "silu", "gelu_new"],
         default="gelu",
         description="The non-linear activation function (function or string) in the encoder and pooler.",
@@ -2459,7 +2460,7 @@ class T5Config(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["T5"]["trainable"],
     )
 
-    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+    adapter: BaseAdapterConfig | None = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -2608,7 +2609,7 @@ class FlauBERTConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["trainable"],
     )
 
-    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+    adapter: BaseAdapterConfig | None = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -2851,7 +2852,7 @@ class ELECTRAConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ELECTRA"]["trainable"],
     )
 
-    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+    adapter: BaseAdapterConfig | None = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -2896,7 +2897,7 @@ class ELECTRAConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ELECTRA"]["intermediate_size"],
     )
 
-    hidden_act: Union[str, Callable] = schema_utils.StringOptions(  # TODO: add support for callable
+    hidden_act: str | Callable = schema_utils.StringOptions(  # TODO: add support for callable
         ["gelu", "relu", "silu", "gelu_new"],
         default="gelu",
         description="The non-linear activation function (function or string) in the encoder and pooler.",
@@ -2996,7 +2997,7 @@ class LongformerConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Longformer"]["use_pretrained"],
     )
 
-    attention_window: Union[List[int], int] = schema_utils.OneOfOptionsField(
+    attention_window: list[int] | int = schema_utils.OneOfOptionsField(
         default=512,
         allow_none=False,
         description="Size of an attention window around each token. If an int, use the same size for all layers. To "
@@ -3040,7 +3041,7 @@ class LongformerConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Longformer"]["trainable"],
     )
 
-    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+    adapter: BaseAdapterConfig | None = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -3127,7 +3128,7 @@ class AutoTransformerConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["AutoTransformer"]["trainable"],
     )
 
-    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+    adapter: BaseAdapterConfig | None = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -3160,7 +3161,7 @@ class TfIdfEncoderConfig(SequenceEncoderConfig):
 
     max_sequence_length: int = schema_utils.Integer(default=None, allow_none=True, parameter_metadata=INTERNAL_ONLY)
 
-    str2idf: Dict[str, int] = schema_utils.Dict(parameter_metadata=INTERNAL_ONLY)
+    str2idf: dict[str, int] = schema_utils.Dict(parameter_metadata=INTERNAL_ONLY)
 
     vocab: list = schema_utils.List(default=None, parameter_metadata=INTERNAL_ONLY)
 
@@ -3182,6 +3183,6 @@ class LLMEncoderConfig(SequenceEncoderConfig):
     type: str = schema_utils.ProtectedString("llm")
     base_model: str = BaseModelDataclassField()
     max_sequence_length: int = schema_utils.Integer(default=None, allow_none=True, parameter_metadata=INTERNAL_ONLY)
-    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
-    quantization: Optional[QuantizationConfig] = QuantizationConfigField().get_default_field()
-    model_parameters: Optional[ModelParametersConfig] = ModelParametersConfigField().get_default_field()
+    adapter: BaseAdapterConfig | None = AdapterDataclassField()
+    quantization: QuantizationConfig | None = QuantizationConfigField().get_default_field()
+    model_parameters: ModelParametersConfig | None = ModelParametersConfigField().get_default_field()

@@ -16,7 +16,7 @@ metric_tensor_input_registry = Registry()
 
 def register_metric(
     name: str,
-    feature_types: Union[str, List[str]],
+    feature_types: str | list[str],
     objective: Literal[MINIMIZE, MAXIMIZE],
     output_feature_tensor_name: Literal[PREDICTIONS, PROBABILITIES, LOGITS],
 ):
@@ -45,7 +45,7 @@ def register_metric(
     return wrap
 
 
-def get_metric_classes(feature_type: str) -> Dict[str, "LudwigMetric"]:
+def get_metric_classes(feature_type: str) -> dict[str, "LudwigMetric"]:
     return metric_feature_type_registry[feature_type]
 
 
@@ -69,12 +69,12 @@ def get_metric(metric_name: str) -> "LudwigMetric":  # noqa
 
 
 @DeveloperAPI
-def get_metrics_for_type(feature_type: str) -> Dict[str, "LudwigMetric"]:  # noqa
+def get_metrics_for_type(feature_type: str) -> dict[str, "LudwigMetric"]:  # noqa
     return get_metric_feature_type_registry()[feature_type]
 
 
 @DeveloperAPI
-def get_metric_names_for_type(feature_type: str) -> List[str]:
+def get_metric_names_for_type(feature_type: str) -> list[str]:
     return sorted(list(get_metric_feature_type_registry()[feature_type].keys()))
 
 

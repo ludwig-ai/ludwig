@@ -55,7 +55,7 @@ def PoolFunctionField(default: str = "max") -> Field:
     )
 
 
-def PoolSizeField(default: Optional[int] = None) -> Field:
+def PoolSizeField(default: int | None = None) -> Field:
     return schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
@@ -194,7 +194,7 @@ class ParallelCNNConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["conv_params"]["num_conv_layers"],
     )
 
-    conv_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for conv_layers
+    conv_layers: list[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for conv_layers
         default=None,
         description=CONV_LAYERS_DESCRIPTION,
         parameter_metadata=ENCODER_METADATA["conv_params"]["conv_layers"],
@@ -235,7 +235,7 @@ class ParallelCNNConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["num_fc_layers"],
     )
 
-    fc_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
+    fc_layers: list[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
         default=None,
         description="List of dictionaries containing the parameters for each fully connected layer.",
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["fc_layers"],
@@ -274,7 +274,7 @@ class StackedCNNConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["conv_params"]["num_conv_layers"],
     )
 
-    conv_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for conv_layers
+    conv_layers: list[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for conv_layers
         default=None,
         description=CONV_LAYERS_DESCRIPTION,
         parameter_metadata=ENCODER_METADATA["conv_params"]["conv_layers"],
@@ -374,7 +374,7 @@ class StackedCNNConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["num_fc_layers"],
     )
 
-    fc_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
+    fc_layers: list[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
         default=None,
         description="List of dictionaries containing the parameters for each fully connected layer.",
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["fc_layers"],
@@ -414,7 +414,7 @@ class StackedParallelCNNConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["num_stacked_layers"],
     )
 
-    stacked_layers: List[dict] = schema_utils.DictList(
+    stacked_layers: list[dict] = schema_utils.DictList(
         default=None,
         description="a nested list of lists of dictionaries containing the parameters of the stack of parallel "
         "convolutional layers. The length of the list determines the number of stacked parallel "
@@ -484,7 +484,7 @@ class StackedParallelCNNConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["num_fc_layers"],
     )
 
-    fc_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
+    fc_layers: list[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
         default=None,
         description="List of dictionaries containing the parameters for each fully connected layer.",
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["fc_layers"],
@@ -610,7 +610,7 @@ class StackedRNNConfig(SequenceEncoderConfig):
 
     fc_dropout: float = common_fields.DropoutField()
 
-    fc_layers: List[dict] = common_fields.FCLayersField()
+    fc_layers: list[dict] = common_fields.FCLayersField()
 
 
 @DeveloperAPI
@@ -681,7 +681,7 @@ class StackedCNNRNNConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["conv_params"]["num_conv_layers"],
     )
 
-    conv_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for conv_layers
+    conv_layers: list[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for conv_layers
         default=None,
         description=CONV_LAYERS_DESCRIPTION,
         parameter_metadata=ENCODER_METADATA["conv_params"]["conv_layers"],
@@ -801,7 +801,7 @@ class StackedCNNRNNConfig(SequenceEncoderConfig):
 
     fc_dropout: float = common_fields.DropoutField()
 
-    fc_layers: List[dict] = common_fields.FCLayersField()
+    fc_layers: list[dict] = common_fields.FCLayersField()
 
 
 @DeveloperAPI
@@ -894,4 +894,4 @@ class StackedTransformerConfig(SequenceEncoderConfig):
 
     fc_dropout: float = common_fields.DropoutField()
 
-    fc_layers: List[dict] = common_fields.FCLayersField()
+    fc_layers: list[dict] = common_fields.FCLayersField()

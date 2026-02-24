@@ -11,12 +11,12 @@ from ludwig.utils.registry import Registry
 DEFAULT_VALUE = "concat"
 DESCRIPTION = "Select the combiner type."
 
-combiner_config_registry = Registry[Type[BaseCombinerConfig]]()
+combiner_config_registry = Registry[type[BaseCombinerConfig]]()
 
 
 @DeveloperAPI
 def register_combiner_config(name: str):
-    def wrap(cls: Type[BaseCombinerConfig]):
+    def wrap(cls: type[BaseCombinerConfig]):
         combiner_config_registry[name] = cls
         return cls
 
@@ -76,7 +76,7 @@ def get_combiner_descriptions():
 
 
 @DeveloperAPI
-def get_combiner_conds() -> List[Dict[str, Any]]:
+def get_combiner_conds() -> list[dict[str, Any]]:
     """Returns a list of if-then JSON clauses for each combiner type in `combiner_registry` and its properties'
     constraints."""
     combiner_types = sorted(list(combiner_config_registry.keys()))
@@ -99,7 +99,7 @@ class CombinerSelection(schema_utils.TypeSelection):
 
         super().__init__(registry=combiner_config_registry, default_value=DEFAULT_VALUE, description=DESCRIPTION)
 
-    def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
+    def get_schema_from_registry(self, key: str) -> type[schema_utils.BaseMarshmallowConfig]:
         return self.registry[key]
 
     def _jsonschema_type_mapping(self):

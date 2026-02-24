@@ -158,9 +158,8 @@ def log_model(
 ):
     """Log a Ludwig model as an MLflow artifact for the current run.
 
-    Saves the model locally in MLflow format, then logs it as a run artifact
-    using mlflow.log_artifacts(). This ensures the model appears as a run artifact
-    (compatible with MLflow 3.x where Model.log() uses the model registry instead).
+    Saves the model locally in MLflow format, then logs it as a run artifact using mlflow.log_artifacts(). This ensures
+    the model appears as a run artifact (compatible with MLflow 3.x where Model.log() uses the model registry instead).
     """
     with tempfile.TemporaryDirectory() as tmpdir:
         local_path = os.path.join(tmpdir, "model")

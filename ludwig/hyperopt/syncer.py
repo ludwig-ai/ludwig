@@ -1,4 +1,5 @@
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
+from typing import Any, Dict, List, Optional, Tuple
 
 from ray.tune.syncer import _BackgroundSyncer
 
@@ -7,25 +8,25 @@ from ludwig.utils.fs_utils import delete, download, upload
 
 
 class RemoteSyncer(_BackgroundSyncer):
-    def __init__(self, sync_period: float = 300.0, creds: Optional[Dict[str, Any]] = None):
+    def __init__(self, sync_period: float = 300.0, creds: dict[str, Any] | None = None):
         super().__init__(sync_period=sync_period)
         self.creds = creds
 
-    def _sync_up_command(self, local_path: str, uri: str, exclude: Optional[List] = None) -> Tuple[Callable, Dict]:
+    def _sync_up_command(self, local_path: str, uri: str, exclude: list | None = None) -> tuple[Callable, dict]:
         def upload_cmd(*args, **kwargs):
             with use_credentials(self.creds):
                 return upload(*args, **kwargs)
 
         return upload_cmd, dict(lpath=local_path, rpath=uri)
 
-    def _sync_down_command(self, uri: str, local_path: str) -> Tuple[Callable, Dict]:
+    def _sync_down_command(self, uri: str, local_path: str) -> tuple[Callable, dict]:
         def download_cmd(*args, **kwargs):
             with use_credentials(self.creds):
                 return download(*args, **kwargs)
 
         return download_cmd, dict(rpath=uri, lpath=local_path)
 
-    def _delete_command(self, uri: str) -> Tuple[Callable, Dict]:
+    def _delete_command(self, uri: str) -> tuple[Callable, dict]:
         def delete_cmd(*args, **kwargs):
             with use_credentials(self.creds):
                 return delete(*args, **kwargs)

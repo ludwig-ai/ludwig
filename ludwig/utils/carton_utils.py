@@ -70,7 +70,7 @@ def generate_carton_torchscript(model: LudwigModel):
     return scripted_module
 
 
-def _get_input_spec(model: LudwigModel) -> List[Dict[str, Any]]:
+def _get_input_spec(model: LudwigModel) -> list[dict[str, Any]]:
     from cartonml import TensorSpec
 
     spec = []
@@ -84,7 +84,7 @@ def _get_input_spec(model: LudwigModel) -> List[Dict[str, Any]]:
     return spec
 
 
-def _get_output_spec(model: LudwigModel) -> List[Dict[str, Any]]:
+def _get_output_spec(model: LudwigModel) -> list[dict[str, Any]]:
     from cartonml import TensorSpec
 
     spec = []

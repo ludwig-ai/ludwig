@@ -22,9 +22,7 @@ def infer_type(field: FieldInfo, missing_value_percent: float, row_count: int) -
     # Inputs
     :param field: (FieldInfo) object describing field
     :param missing_value_percent: (float) percent of missing values in the column
-    :param row_count: (int) total number of entries in original dataset
-
-    # Return
+    :param row_count: (int) total number of entries in original dataset  # Return
     :return: (str) feature type
     """
     if field.dtype == DATE or field.dtype.startswith("datetime"):
@@ -72,7 +70,7 @@ def infer_type(field: FieldInfo, missing_value_percent: float, row_count: int) -
 
 @DeveloperAPI
 def should_exclude(
-    idx: int, field: FieldInfo, dtype: str, column_count: int, row_count: int, targets: Set[str]
+    idx: int, field: FieldInfo, dtype: str, column_count: int, row_count: int, targets: set[str]
 ) -> bool:
     if field.key == "PRI":
         logging.info(f"Exclude {field.name} ({dtype}): primary key")

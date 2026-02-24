@@ -179,7 +179,7 @@ def build_synthetic_dataset_df(dataset_size: int, config: ModelConfigDict) -> pd
 
 
 @DeveloperAPI
-def build_synthetic_dataset(dataset_size: int, features: List[dict], outdir: str = "."):
+def build_synthetic_dataset(dataset_size: int, features: list[dict], outdir: str = "."):
     """Synthesizes a dataset for testing purposes.
 
     :param dataset_size: (int) size of the dataset
@@ -226,7 +226,7 @@ def build_synthetic_dataset(dataset_size: int, features: List[dict], outdir: str
         yield generate_datapoint(features=features, outdir=outdir)
 
 
-def generate_datapoint(features: List[Dict], outdir: str) -> Union[str, int, bool]:
+def generate_datapoint(features: list[dict], outdir: str) -> str | int | bool:
     """Returns a synthetic example containing features specified by the features spec.
 
     `outdir` is only used for generating synthetic image and synthetic audio features. Otherwise, it is unused.
@@ -243,7 +243,7 @@ def generate_datapoint(features: List[Dict], outdir: str) -> Union[str, int, boo
     return datapoint
 
 
-def generate_category(feature, outdir: Optional[str] = None) -> str:
+def generate_category(feature, outdir: str | None = None) -> str:
     """Returns a random category.
 
     `outdir` is unused.
@@ -252,7 +252,7 @@ def generate_category(feature, outdir: Optional[str] = None) -> str:
     return random.choice(encoder_or_decoder["idx2str"])
 
 
-def generate_number(feature, outdir: Optional[str] = None) -> int:
+def generate_number(feature, outdir: str | None = None) -> int:
     """Returns a random number.
 
     `outdir` is unused.
@@ -260,7 +260,7 @@ def generate_number(feature, outdir: Optional[str] = None) -> int:
     return random.uniform(feature["min"] if "min" in feature else 0, feature["max"] if "max" in feature else 1)
 
 
-def generate_binary(feature, outdir: Optional[str] = None) -> bool:
+def generate_binary(feature, outdir: str | None = None) -> bool:
     """Returns a random boolean.
 
     `outdir` is unused.
@@ -270,7 +270,7 @@ def generate_binary(feature, outdir: Optional[str] = None) -> bool:
     return np.random.choice(choices, p=[1 - p, p])
 
 
-def generate_sequence(feature, outdir: Optional[str] = None) -> str:
+def generate_sequence(feature, outdir: str | None = None) -> str:
     """Returns a random sequence.
 
     `outdir` is unused.
@@ -286,7 +286,7 @@ def generate_sequence(feature, outdir: Optional[str] = None) -> str:
     return " ".join(sequence)
 
 
-def generate_set(feature, outdir: Optional[str] = None) -> str:
+def generate_set(feature, outdir: str | None = None) -> str:
     """Returns a random set.
 
     `outdir` is unused.
@@ -298,7 +298,7 @@ def generate_set(feature, outdir: Optional[str] = None) -> str:
     return " ".join(list(set(elems)))
 
 
-def generate_bag(feature, outdir: Optional[str] = None) -> str:
+def generate_bag(feature, outdir: str | None = None) -> str:
     """Returns a random bag.
 
     `outdir` is unused.
@@ -310,7 +310,7 @@ def generate_bag(feature, outdir: Optional[str] = None) -> str:
     return " ".join(elems)
 
 
-def generate_text(feature, outdir: Optional[str] = None) -> str:
+def generate_text(feature, outdir: str | None = None) -> str:
     """Returns random text.
 
     `outdir` is unused.
@@ -323,7 +323,7 @@ def generate_text(feature, outdir: Optional[str] = None) -> str:
     return " ".join(text)
 
 
-def generate_timeseries(feature, max_len=10, outdir: Optional[str] = None) -> str:
+def generate_timeseries(feature, max_len=10, outdir: str | None = None) -> str:
     """Returns a random timeseries.
 
     `outdir` is unused.
@@ -423,7 +423,7 @@ def generate_image(feature, outdir: str, save_as_numpy: bool = False) -> str:
     return image_dest_path
 
 
-def generate_datetime(feature, outdir: Optional[str] = None) -> str:
+def generate_datetime(feature, outdir: str | None = None) -> str:
     """Generates a random date time, picking a format among different types.
 
     If no format is specified, the first one is used.
@@ -446,7 +446,7 @@ def generate_datetime(feature, outdir: Optional[str] = None) -> str:
     return datetime_generation_format.format(y=y, Y=Y, m=m, d=d, H=H, M=M, S=S)
 
 
-def generate_h3(feature, outdir: Optional[str] = None) -> str:
+def generate_h3(feature, outdir: str | None = None) -> str:
     """Returns a random h3.
 
     `outdir` is unused.
@@ -464,7 +464,7 @@ def generate_h3(feature, outdir: Optional[str] = None) -> str:
     return components_to_h3(h3_components)
 
 
-def generate_vector(feature, outdir: Optional[str] = None) -> str:
+def generate_vector(feature, outdir: str | None = None) -> str:
     """Returns a random vector.
 
     `outdir` is unused.
@@ -477,7 +477,7 @@ def generate_vector(feature, outdir: Optional[str] = None) -> str:
     return " ".join([str(100 * random.random()) for _ in range(vector_size)])
 
 
-def generate_category_distribution(feature, outdir: Optional[str] = None) -> str:
+def generate_category_distribution(feature, outdir: str | None = None) -> str:
     """Returns a random category distribution.
 
     `outdir` is unused.
@@ -536,7 +536,7 @@ def cycle_binary(feature):
 cyclers_registry = {"category": cycle_category, "binary": cycle_binary}
 
 
-def cli_synthesize_dataset(dataset_size: int, features: List[dict], output_path: str, **kwargs) -> None:
+def cli_synthesize_dataset(dataset_size: int, features: list[dict], output_path: str, **kwargs) -> None:
     """Symthesizes a dataset for testing purposes.
 
     :param dataset_size: (int) size of the dataset

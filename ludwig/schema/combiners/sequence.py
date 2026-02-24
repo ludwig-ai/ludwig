@@ -29,7 +29,7 @@ class SequenceCombinerConfig(BaseCombinerConfig):
         description=COMBINER_METADATA["sequence"]["type"].long_description,
     )
 
-    main_sequence_feature: Optional[str] = schema_utils.String(
+    main_sequence_feature: str | None = schema_utils.String(
         default=None,
         allow_none=True,
         description=MAIN_SEQUENCE_FEATURE_DESCRIPTION,
@@ -45,7 +45,7 @@ class SequenceCombinerConfig(BaseCombinerConfig):
         blocklist=_2D_SEQUENCE_ENCODERS,
     )
 
-    reduce_output: Optional[str] = schema_utils.ReductionOptions(
+    reduce_output: str | None = schema_utils.ReductionOptions(
         default=None,
         description="Strategy to use to aggregate the embeddings of the items of the set.",
         parameter_metadata=COMBINER_METADATA["sequence"]["reduce_output"],

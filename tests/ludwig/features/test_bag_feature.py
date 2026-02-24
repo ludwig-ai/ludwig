@@ -36,7 +36,7 @@ def bag_config():
 
 
 @pytest.mark.parametrize("encoder", ["embed"])
-def test_bag_input_feature(bag_config: Dict, encoder: str) -> None:
+def test_bag_input_feature(bag_config: dict, encoder: str) -> None:
     bag_config[ENCODER].update({"type": encoder})
     bag_config, _ = load_config_with_kwargs(BagInputFeatureConfig, bag_config)
     bag_input_feature = BagInputFeature(bag_config).to(DEVICE)

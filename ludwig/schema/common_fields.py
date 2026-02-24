@@ -63,7 +63,7 @@ def NumFCLayersField(
 
 
 def NormField(
-    default: Optional[str] = None, description: str = None, parameter_metadata: ParameterMetadata = None
+    default: str | None = None, description: str = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     description = description or "Default normalization applied at the beginnging of fully connected layers."
     parameter_metadata = parameter_metadata or COMMON_METADATA["norm"]
@@ -137,7 +137,7 @@ def WeightsInitializerField(
 
 
 def EmbeddingInitializerField(
-    default: Optional[str] = None, description: str = None, parameter_metadata: ParameterMetadata = None
+    default: str | None = None, description: str = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     description = description or "Initializer for the embedding matrix."
     parameter_metadata = parameter_metadata or COMMON_METADATA["embedding_initializer"]
@@ -202,7 +202,7 @@ def EmbeddingsTrainableField(
 
 
 def PretrainedEmbeddingsField(
-    default: Optional[str] = None, description: str = None, parameter_metadata: ParameterMetadata = None
+    default: str | None = None, description: str = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     description = description or (
         "Path to a file containing pretrained embeddings. By default `dense` embeddings are initialized "
@@ -223,7 +223,7 @@ def PretrainedEmbeddingsField(
 
 
 def MaxSequenceLengthField(
-    default: Optional[int] = None, description: str = None, parameter_metadata: ParameterMetadata = None
+    default: int | None = None, description: str = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     description = description or "[internal] Maximum sequence length from preprocessing."
     parameter_metadata = parameter_metadata or COMMON_METADATA["max_sequence_length"]
@@ -236,7 +236,7 @@ def MaxSequenceLengthField(
 
 
 def VocabField(
-    default: Optional[list] = None, description: str = None, parameter_metadata: ParameterMetadata = None
+    default: list | None = None, description: str = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     description = description or "[internal] Vocabulary for the encoder from preprocessing."
     parameter_metadata = parameter_metadata or COMMON_METADATA["vocab"]
@@ -248,7 +248,7 @@ def VocabField(
 
 
 def VocabSizeField(
-    default: Optional[list] = None, description: str = None, parameter_metadata: ParameterMetadata = None
+    default: list | None = None, description: str = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     description = description or "[internal] Size of the vocabulary from preprocessing."
     parameter_metadata = parameter_metadata or COMMON_METADATA["vocab_size"]
@@ -277,7 +277,7 @@ def RepresentationField(
 
 
 def ReduceOutputField(
-    default: Optional[str] = "sum", description: str = None, parameter_metadata: ParameterMetadata = None
+    default: str | None = "sum", description: str = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     description = description or (
         "How to reduce the output tensor along the `s` sequence length dimension if the rank of the "

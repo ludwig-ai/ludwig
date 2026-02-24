@@ -70,7 +70,7 @@ class _CategoryPreprocessing(torch.nn.Module):
             self.unk = 0
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
-        if not torch.jit.isinstance(v, List[str]):
+        if not torch.jit.isinstance(v, list[str]):
             raise ValueError(f"Unsupported input: {v}")
 
         indices = [self.str2idx.get(s.strip(), self.unk) for s in v]
@@ -85,7 +85,7 @@ class _CategoryPostprocessing(torch.nn.Module):
         self.predictions_key = PREDICTIONS
         self.probabilities_key = PROBABILITIES
 
-    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> FeaturePostProcessingOutputDict:
+    def forward(self, preds: dict[str, torch.Tensor], feature_name: str) -> FeaturePostProcessingOutputDict:
         predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
         probabilities = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.probabilities_key)
 
@@ -107,7 +107,7 @@ class _CategoryPredict(PredictModule):
         # https://github.com/Raschka-research-group/coral-pytorch/blob/main/coral_pytorch/dataset.py#L123
         self.use_cumulative_probs = use_cumulative_probs
 
-    def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: dict[str, torch.Tensor], feature_name: str) -> dict[str, torch.Tensor]:
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
 
         if self.use_cumulative_probs:
@@ -326,8 +326,8 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     def __init__(
         self,
-        output_feature_config: Union[CategoryOutputFeatureConfig, Dict],
-        output_features: Dict[str, OutputFeature],
+        output_feature_config: CategoryOutputFeatureConfig | dict,
+        output_features: dict[str, OutputFeature],
         **kwargs,
     ):
         self.num_classes = output_feature_config.num_classes

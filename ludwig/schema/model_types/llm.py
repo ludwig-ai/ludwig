@@ -37,8 +37,8 @@ class LLMModelConfig(ModelConfig):
     output_features: FeatureCollection[BaseOutputFeatureConfig] = LLMOutputFeatureSelection().get_list_field()
 
     preprocessing: PreprocessingConfig = PreprocessingField().get_default_field()
-    defaults: Optional[LLMDefaultsConfig] = LLMDefaultsField().get_default_field()
-    hyperopt: Optional[HyperoptConfig] = HyperoptField().get_default_field()
+    defaults: LLMDefaultsConfig | None = LLMDefaultsField().get_default_field()
+    hyperopt: HyperoptConfig | None = HyperoptField().get_default_field()
 
     prompt: PromptConfig = PromptConfigField().get_default_field()
 
@@ -49,6 +49,6 @@ class LLMModelConfig(ModelConfig):
 
     generation: LLMGenerationConfig = LLMGenerationConfigField().get_default_field()
 
-    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
-    quantization: Optional[QuantizationConfig] = QuantizationConfigField().get_default_field()
-    model_parameters: Optional[ModelParametersConfig] = ModelParametersConfigField().get_default_field()
+    adapter: BaseAdapterConfig | None = AdapterDataclassField()
+    quantization: QuantizationConfig | None = QuantizationConfigField().get_default_field()
+    model_parameters: ModelParametersConfig | None = ModelParametersConfigField().get_default_field()

@@ -12,10 +12,9 @@ class RoPEScalingConfig(schema_utils.BaseMarshmallowConfig):
     """Dynamic RoPE-scaling (rotary position embeddings) to extend the context length of LLM like LLaMA, GPT-NeoX,
     or Falcon.
 
-    This parameter is a dictionary containing the scaling configuration
-    for the RoPE embeddings. Currently supports three scaling strategies: linear and dynamic. Their
-    scaling factor must be an float greater than 1. The expected format is {'type': strategy name,
-    'factor': scaling factor}
+    This parameter is a dictionary containing the scaling configuration for the RoPE embeddings. Currently supports
+    three scaling strategies: linear and dynamic. Their scaling factor must be an float greater than 1. The expected
+    format is {'type': strategy name, 'factor': scaling factor}
     """
 
     def __post_init__(self):
@@ -30,14 +29,14 @@ class RoPEScalingConfig(schema_utils.BaseMarshmallowConfig):
                 f"When using `rope_scaling`, `factor` must be specified and be > 1. Got {self.factor}."
             )
 
-    type: Optional[str] = schema_utils.StringOptions(
+    type: str | None = schema_utils.StringOptions(
         options=["linear", "dynamic"],
         default=None,
         allow_none=True,
         description="Currently supports two strategies: linear and dynamic scaling.",
     )
 
-    factor: Optional[float] = schema_utils.FloatRange(
+    factor: float | None = schema_utils.FloatRange(
         default=None,
         allow_none=True,
         min=1.0,
@@ -60,7 +59,7 @@ class RoPEScalingConfigField(schema_utils.DictMarshmallowField):
 class ModelParametersConfig(schema_utils.BaseMarshmallowConfig):
     rope_scaling: RoPEScalingConfig = RoPEScalingConfigField().get_default_field()
 
-    neftune_noise_alpha: Optional[int] = schema_utils.IntegerRange(
+    neftune_noise_alpha: int | None = schema_utils.IntegerRange(
         default=0,
         min=0,
         allow_none=True,

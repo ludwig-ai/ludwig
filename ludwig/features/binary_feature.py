@@ -52,10 +52,10 @@ class _BinaryPreprocessing(torch.nn.Module):
         self.should_lower = str2bool is None
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
-        if torch.jit.isinstance(v, List[Tuple[torch.Tensor, int]]):
+        if torch.jit.isinstance(v, list[tuple[torch.Tensor, int]]):
             raise ValueError(f"Unsupported input: {v}")
 
-        if torch.jit.isinstance(v, List[torch.Tensor]):
+        if torch.jit.isinstance(v, list[torch.Tensor]):
             v = torch.stack(v)
 
         if torch.jit.isinstance(v, torch.Tensor):
@@ -76,7 +76,7 @@ class _BinaryPostprocessing(torch.nn.Module):
         self.predictions_key = PREDICTIONS
         self.probabilities_key = PROBABILITIES
 
-    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> FeaturePostProcessingOutputDict:
+    def forward(self, preds: dict[str, torch.Tensor], feature_name: str) -> FeaturePostProcessingOutputDict:
         predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
         probabilities = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.probabilities_key)
 
@@ -98,7 +98,7 @@ class _BinaryPredict(PredictModule):
         self.threshold = threshold
         self.calibration_module = calibration_module
 
-    def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: dict[str, torch.Tensor], feature_name: str) -> dict[str, torch.Tensor]:
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
 
         if self.calibration_module is not None:
@@ -181,7 +181,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
     def add_feature_data(
         feature_config: FeatureConfigDict,
         input_df: DataFrame,
-        proc_df: Dict[str, DataFrame],
+        proc_df: dict[str, DataFrame],
         metadata: TrainingSetMetadataDict,
         preprocessing_parameters: PreprocessingConfigDict,
         backend,
@@ -264,8 +264,8 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     def __init__(
         self,
-        output_feature_config: Union[BinaryOutputFeatureConfig, Dict],
-        output_features: Dict[str, OutputFeature],
+        output_feature_config: BinaryOutputFeatureConfig | dict,
+        output_features: dict[str, OutputFeature],
         **kwargs,
     ):
         self.threshold = output_feature_config.threshold

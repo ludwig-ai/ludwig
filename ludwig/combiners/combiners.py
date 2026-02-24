@@ -57,7 +57,7 @@ class Handle:
     an attribute of the combiner, and lead to shape mismatch errors when we go to load a saved checkpoint.
     """
 
-    input_features: Dict[str, "InputFeature"]
+    input_features: dict[str, "InputFeature"]
 
 
 @DeveloperAPI
@@ -69,7 +69,7 @@ class Combiner(LudwigModule, ABC):
     outputs.     get_schema_cls()  must returns the class of the corresponding schema for the combiner type.
     """
 
-    def __init__(self, input_features: Dict[str, "InputFeature"]):
+    def __init__(self, input_features: dict[str, "InputFeature"]):
         super().__init__()
         self.handle = Handle(input_features)
 
@@ -84,7 +84,7 @@ class Combiner(LudwigModule, ABC):
         return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
 
     @property
-    def input_shape(self) -> Dict:
+    def input_shape(self) -> dict:
         # input to combiner is a dictionary of the input features encoder
         # outputs, this property returns dictionary of output shapes for each
         # input feature's encoder output shapes.
@@ -104,11 +104,11 @@ class Combiner(LudwigModule, ABC):
         return output_tensor["combiner_output"].size()[1:]
 
 
-combiner_impl_registry = Registry[Type[Combiner]]()
+combiner_impl_registry = Registry[type[Combiner]]()
 
 
-def register_combiner(config_cls: Type[BaseCombinerConfig]):
-    def wrap(cls: Type[Combiner]):
+def register_combiner(config_cls: type[BaseCombinerConfig]):
+    def wrap(cls: type[Combiner]):
         combiner_impl_registry[config_cls] = cls
         return cls
 
@@ -121,7 +121,7 @@ def create_combiner(config: BaseCombinerConfig, **kwargs) -> Combiner:
 
 @register_combiner(ConcatCombinerConfig)
 class ConcatCombiner(Combiner):
-    def __init__(self, input_features: Dict[str, "InputFeature"] = None, config: ConcatCombinerConfig = None, **kwargs):
+    def __init__(self, input_features: dict[str, "InputFeature"] = None, config: ConcatCombinerConfig = None, **kwargs):
         super().__init__(input_features)
         self.name = "ConcatCombiner"
         logger.debug(f" {self.name}")
@@ -156,7 +156,7 @@ class ConcatCombiner(Combiner):
         if input_features and len(input_features) == 1 and self.fc_layers is None:
             self.supports_masking = True
 
-    def forward(self, inputs: Dict) -> Dict:  # encoder outputs
+    def forward(self, inputs: dict) -> dict:  # encoder outputs
         encoder_outputs = [inputs[k][ENCODER_OUTPUT] for k in inputs]
 
         # ================ Flatten ================
@@ -190,7 +190,7 @@ class ConcatCombiner(Combiner):
 @register_combiner(SequenceConcatCombinerConfig)
 class SequenceConcatCombiner(Combiner):
     def __init__(
-        self, input_features: Dict[str, "InputFeature"], config: SequenceConcatCombinerConfig = None, **kwargs
+        self, input_features: dict[str, "InputFeature"], config: SequenceConcatCombinerConfig = None, **kwargs
     ):
         super().__init__(input_features)
         self.name = "SequenceConcatCombiner"
@@ -227,7 +227,7 @@ class SequenceConcatCombiner(Combiner):
         ]  # output shape not input shape
         return torch.Size([seq_size, sum(shapes)])
 
-    def forward(self, inputs: Dict) -> Dict:  # encoder outputs
+    def forward(self, inputs: dict) -> dict:  # encoder outputs
         if self.main_sequence_feature is None or self.main_sequence_feature not in inputs:
             for if_name, if_outputs in inputs.items():
                 # todo: when https://github.com/ludwig-ai/ludwig/issues/810 is closed
@@ -330,7 +330,7 @@ class SequenceConcatCombiner(Combiner):
 
 @register_combiner(SequenceCombinerConfig)
 class SequenceCombiner(Combiner):
-    def __init__(self, input_features: Dict[str, "InputFeature"], config: SequenceCombinerConfig = None, **kwargs):
+    def __init__(self, input_features: dict[str, "InputFeature"], config: SequenceCombinerConfig = None, **kwargs):
         super().__init__(input_features)
         self.name = "SequenceCombiner"
         logger.debug(f" {self.name}")
@@ -376,7 +376,7 @@ class SequenceCombiner(Combiner):
         ]  # output shape not input shape
         return torch.Size([seq_size, sum(shapes)])
 
-    def forward(self, inputs: Dict) -> Dict:  # encoder outputs
+    def forward(self, inputs: dict) -> dict:  # encoder outputs
         # ================ Concat ================
         hidden = self.combiner(inputs)
 
@@ -394,7 +394,7 @@ class SequenceCombiner(Combiner):
 @register_combiner(TabNetCombinerConfig)
 class TabNetCombiner(Combiner):
     def __init__(
-        self, input_features: Dict[str, "InputFeature"], config: TabNetCombinerConfig = None, **kwargs
+        self, input_features: dict[str, "InputFeature"], config: TabNetCombinerConfig = None, **kwargs
     ) -> None:
         super().__init__(input_features)
         self.name = "TabNetCombiner"
@@ -434,7 +434,7 @@ class TabNetCombiner(Combiner):
     def forward(
         self,
         inputs: torch.Tensor,  # encoder outputs
-    ) -> Dict:
+    ) -> dict:
         encoder_outputs = [inputs[k][ENCODER_OUTPUT] for k in inputs]
 
         # ================ Flatten ================
@@ -473,7 +473,7 @@ class TabNetCombiner(Combiner):
 @register_combiner(TransformerCombinerConfig)
 class TransformerCombiner(Combiner):
     def __init__(
-        self, input_features: Dict[str, "InputFeature"] = None, config: TransformerCombinerConfig = None, **kwargs
+        self, input_features: dict[str, "InputFeature"] = None, config: TransformerCombinerConfig = None, **kwargs
     ):
         super().__init__(input_features)
         self.name = "TransformerCombiner"
@@ -535,7 +535,7 @@ class TransformerCombiner(Combiner):
     def forward(
         self,
         inputs,  # encoder outputs
-    ) -> Dict:
+    ) -> dict:
         encoder_outputs = [inputs[k][ENCODER_OUTPUT] for k in inputs]
 
         # ================ Flatten ================
@@ -570,7 +570,7 @@ class TransformerCombiner(Combiner):
 @register_combiner(TabTransformerCombinerConfig)
 class TabTransformerCombiner(Combiner):
     def __init__(
-        self, input_features: Dict[str, "InputFeature"] = None, config: TabTransformerCombinerConfig = None, **kwargs
+        self, input_features: dict[str, "InputFeature"] = None, config: TabTransformerCombinerConfig = None, **kwargs
     ):
         super().__init__(input_features)
         self.name = "TabTransformerCombiner"
@@ -698,8 +698,8 @@ class TabTransformerCombiner(Combiner):
 
     def forward(
         self,
-        inputs: Dict,  # encoder outputs
-    ) -> Dict:
+        inputs: dict,  # encoder outputs
+    ) -> dict:
         unembeddable_encoder_outputs = [inputs[k][ENCODER_OUTPUT] for k in inputs if k in self.unembeddable_features]
         embeddable_encoder_outputs = [inputs[k][ENCODER_OUTPUT] for k in inputs if k in self.embeddable_features]
 
@@ -773,7 +773,7 @@ class TabTransformerCombiner(Combiner):
 class ComparatorCombiner(Combiner):
     def __init__(
         self,
-        input_features: Dict[str, "InputFeature"],
+        input_features: dict[str, "InputFeature"],
         config: ComparatorCombinerConfig = None,
         **kwargs,
     ):
@@ -842,8 +842,8 @@ class ComparatorCombiner(Combiner):
 
     def forward(
         self,
-        inputs: Dict,  # encoder outputs
-    ) -> Dict[str, torch.Tensor]:  # encoder outputs
+        inputs: dict,  # encoder outputs
+    ) -> dict[str, torch.Tensor]:  # encoder outputs
         if inputs.keys() != self.required_inputs:
             raise ValueError(f"Missing inputs {self.required_inputs - set(inputs.keys())}")
 
@@ -913,7 +913,7 @@ class ComparatorCombiner(Combiner):
 @register_combiner(ProjectAggregateCombinerConfig)
 class ProjectAggregateCombiner(Combiner):
     def __init__(
-        self, input_features: Dict[str, "InputFeature"] = None, config: ProjectAggregateCombinerConfig = None, **kwargs
+        self, input_features: dict[str, "InputFeature"] = None, config: ProjectAggregateCombinerConfig = None, **kwargs
     ):
         super().__init__(input_features)
         self.name = "ProjectAggregateCombiner"
@@ -962,7 +962,7 @@ class ProjectAggregateCombiner(Combiner):
         if input_features and len(input_features) == 1 and self.fc_layers is None:
             self.supports_masking = True
 
-    def forward(self, inputs: Dict) -> Dict:  # encoder outputs
+    def forward(self, inputs: dict) -> dict:  # encoder outputs
         encoder_outputs = [inputs[k][ENCODER_OUTPUT] for k in inputs]
 
         # ================ Flatten ================

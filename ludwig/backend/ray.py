@@ -19,8 +19,9 @@ import copy
 import logging
 import os
 import tempfile
+from collections.abc import Callable
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 
 import dask
 import numpy as np
@@ -48,7 +49,11 @@ from ludwig.data.dataframe.base import DataFrameEngine
 
 try:
     from ludwig.data.dataset.ray import (
-        _SCALAR_TYPES, cast_as_tensor_dtype, RayDataset, RayDatasetManager, RayDatasetShard,
+        _SCALAR_TYPES,
+        cast_as_tensor_dtype,
+        RayDataset,
+        RayDatasetManager,
+        RayDatasetShard,
     )
 except (ImportError, AttributeError):
     _SCALAR_TYPES = cast_as_tensor_dtype = RayDataset = RayDatasetManager = RayDatasetShard = None
@@ -76,7 +81,7 @@ def _num_nodes() -> int:
     return len(node_resources)
 
 
-def get_trainer_kwargs(**kwargs) -> Dict[str, Any]:
+def get_trainer_kwargs(**kwargs) -> dict[str, Any]:
     kwargs = copy.deepcopy(kwargs)
 
     # Our goal is to have a worker per resource used for training.
@@ -144,10 +149,10 @@ def _get_df_engine(processor):
 
 
 def train_fn(
-    executable_kwargs: Dict[str, Any] = None,
+    executable_kwargs: dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
-    training_set_metadata: Dict[str, Any] = None,
-    features: Dict[str, Dict] = None,
+    training_set_metadata: dict[str, Any] = None,
+    features: dict[str, dict] = None,
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
@@ -208,12 +213,12 @@ def train_fn(
 @ray.remote
 def tune_batch_size_fn(
     dataset: RayDataset = None,
-    data_loader_kwargs: Dict[str, Any] = None,
-    executable_kwargs: Dict[str, Any] = None,
+    data_loader_kwargs: dict[str, Any] = None,
+    executable_kwargs: dict[str, Any] = None,
     model: ECD = None,  # noqa: F821
-    ludwig_config: Dict[str, Any] = None,
-    training_set_metadata: Dict[str, Any] = None,
-    features: Dict[str, Dict] = None,
+    ludwig_config: dict[str, Any] = None,
+    training_set_metadata: dict[str, Any] = None,
+    features: dict[str, dict] = None,
     **kwargs,
 ) -> int:
     # Pin GPU before loading the model to prevent memory leaking onto other devices
@@ -239,12 +244,12 @@ def tune_batch_size_fn(
 @ray.remote
 def tune_learning_rate_fn(
     dataset: RayDataset,
-    config: Dict[str, Any],
-    data_loader_kwargs: Dict[str, Any] = None,
-    executable_kwargs: Dict[str, Any] = None,
+    config: dict[str, Any],
+    data_loader_kwargs: dict[str, Any] = None,
+    executable_kwargs: dict[str, Any] = None,
     model: ECD = None,  # noqa: F821
-    training_set_metadata: Dict[str, Any] = None,
-    features: Dict[str, Dict] = None,
+    training_set_metadata: dict[str, Any] = None,
+    features: dict[str, dict] = None,
     **kwargs,
 ) -> float:
     # Pin GPU before loading the model to prevent memory leaking onto other devices
@@ -275,11 +280,11 @@ class TqdmCallback(rt.UserCallback):
         super().__init__()
         self.progess_bars = {}
 
-    def after_report(self, run_context, metrics: List[Dict], checkpoint=None) -> None:
+    def after_report(self, run_context, metrics: list[dict], checkpoint=None) -> None:
         """Called every time ray.train.report is called from subprocesses.
 
-        In Ray 2.x, metrics is a list of metric dicts (one per worker).
-        We look for progress_bar data from the coordinator worker.
+        In Ray 2.x, metrics is a list of metric dicts (one per worker). We look for progress_bar data from the
+        coordinator worker.
         """
         for result in metrics:
             progress_bar_opts = result.get("progress_bar")
@@ -320,7 +325,7 @@ def spread_env(use_gpu: bool = False, num_workers: int = 1, **kwargs):
             del os.environ[TRAIN_ENABLE_WORKER_SPREAD_ENV]
 
 
-def _build_scaling_config(trainer_kwargs: Dict[str, Any]) -> ScalingConfig:
+def _build_scaling_config(trainer_kwargs: dict[str, Any]) -> ScalingConfig:
     """Convert legacy trainer kwargs to a Ray ScalingConfig."""
     return ScalingConfig(
         num_workers=trainer_kwargs.get("num_workers", 1),
@@ -329,9 +334,7 @@ def _build_scaling_config(trainer_kwargs: Dict[str, Any]) -> ScalingConfig:
     )
 
 
-def run_train_remote(
-    train_loop, trainer_kwargs: Dict[str, Any], callbacks=None, datasets=None, train_loop_config=None
-):
+def run_train_remote(train_loop, trainer_kwargs: dict[str, Any], callbacks=None, datasets=None, train_loop_config=None):
     """Run a distributed training function using Ray TorchTrainer."""
     resolved_kwargs = get_trainer_kwargs(**trainer_kwargs)
 
@@ -360,9 +363,9 @@ class RayTrainerV2(BaseTrainer):
     def __init__(
         self,
         model: BaseModel,
-        trainer_kwargs: Dict[str, Any],
-        data_loader_kwargs: Dict[str, Any],
-        executable_kwargs: Dict[str, Any],
+        trainer_kwargs: dict[str, Any],
+        data_loader_kwargs: dict[str, Any],
+        executable_kwargs: dict[str, Any],
         **kwargs,
     ):
         self.model = model.cpu()
@@ -379,8 +382,8 @@ class RayTrainerV2(BaseTrainer):
     def train(
         self,
         training_set: RayDataset,
-        validation_set: Optional[RayDataset] = None,
-        test_set: Optional[RayDataset] = None,
+        validation_set: RayDataset | None = None,
+        test_set: RayDataset | None = None,
         **kwargs,
     ):
         executable_kwargs = self.executable_kwargs
@@ -429,7 +432,7 @@ class RayTrainerV2(BaseTrainer):
 
     def tune_batch_size(
         self,
-        config: Dict[str, Any],
+        config: dict[str, Any],
         training_set: RayDataset,
         **kwargs,
     ) -> int:
@@ -489,7 +492,7 @@ class RayTrainerV2(BaseTrainer):
         self.config.eval_batch_size = value
 
     @property
-    def resources_per_worker(self) -> Dict[str, Any]:
+    def resources_per_worker(self) -> dict[str, Any]:
         trainer_kwargs = get_trainer_kwargs(**self.trainer_kwargs)
         return trainer_kwargs.get("resources_per_worker", {})
 
@@ -509,10 +512,10 @@ class RayTrainerV2(BaseTrainer):
 
 
 def eval_fn(
-    predictor_kwargs: Dict[str, Any] = None,
+    predictor_kwargs: dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
-    training_set_metadata: Dict[str, Any] = None,
-    features: Dict[str, Dict] = None,
+    training_set_metadata: dict[str, Any] = None,
+    features: dict[str, dict] = None,
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
@@ -553,10 +556,10 @@ class RayPredictor(BasePredictor):
         self.model = model.cpu()
         self.df_engine = df_engine
 
-    def get_trainer_kwargs(self) -> Dict[str, Any]:
+    def get_trainer_kwargs(self) -> dict[str, Any]:
         return get_trainer_kwargs(**self.trainer_kwargs)
 
-    def get_resources_per_worker(self) -> Tuple[int, int]:
+    def get_resources_per_worker(self) -> tuple[int, int]:
         trainer_kwargs = self.get_trainer_kwargs()
         resources_per_worker = trainer_kwargs.get("resources_per_worker", {})
         num_gpus = resources_per_worker.get("GPU", 0)
@@ -668,10 +671,10 @@ class RayPredictor(BasePredictor):
     def get_batch_infer_model(
         self,
         model: "LudwigModel",  # noqa: F821
-        predictor_kwargs: Dict[str, Any],
-        output_columns: List[str],
-        features: Dict[str, Dict],
-        training_set_metadata: Dict[str, Any],
+        predictor_kwargs: dict[str, Any],
+        output_columns: list[str],
+        features: dict[str, dict],
+        training_set_metadata: dict[str, Any],
         *args,
         **kwargs,
     ):
@@ -700,7 +703,7 @@ class RayPredictor(BasePredictor):
                 ordered_predictions = predictions[self.output_columns]
                 return ordered_predictions
 
-            def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:
+            def _prepare_batch(self, batch: pd.DataFrame) -> dict[str, np.ndarray]:
                 res = {}
                 for c in self.features.keys():
                     if self.features[c][TYPE] not in _SCALAR_TYPES:
@@ -830,9 +833,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 f"Set preprocessing config `in_memory: True` for feature {feature[NAME]}"
             )
 
-    def read_binary_files(
-        self, column: Series, map_fn: Optional[Callable] = None, file_size: Optional[int] = None
-    ) -> Series:
+    def read_binary_files(self, column: Series, map_fn: Callable | None = None, file_size: int | None = None) -> Series:
         column = column.fillna(np.nan).replace([np.nan], [None])  # normalize NaNs to None
 
         # Assume that the list of filenames is small enough to fit in memory. Should be true unless there

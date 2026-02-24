@@ -1,6 +1,7 @@
 import logging
+from collections.abc import Iterable
 from dataclasses import Field, field
-from typing import Any, Dict, Generic, Iterable, List, Optional, Tuple, TypeVar
+from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar
 
 from marshmallow import fields, validate
 from rich.console import Console
@@ -162,7 +163,7 @@ class BaseOutputFeatureConfig(BaseFeatureConfig):
         parameter_metadata=INTERNAL_ONLY,
     )
 
-    dependencies: List[str] = schema_utils.List(
+    dependencies: list[str] = schema_utils.List(
         default=[],
         description="List of input features that this feature depends on.",
     )
@@ -191,19 +192,19 @@ T = TypeVar("T", bound=BaseFeatureConfig)
 
 
 class FeatureCollection(Generic[T], schema_utils.ListSerializable):
-    def __init__(self, features: List[T]):
+    def __init__(self, features: list[T]):
         self._features = features
         self._name_to_feature = {f.name: f for f in features}
         for k, v in self._name_to_feature.items():
             setattr(self, k, v)
 
-    def to_list(self) -> List[Dict[str, Any]]:
+    def to_list(self) -> list[dict[str, Any]]:
         out_list = []
         for feature in self._features:
             out_list.append(feature.to_dict())
         return out_list
 
-    def items(self) -> Iterable[Tuple[str, T]]:
+    def items(self) -> Iterable[tuple[str, T]]:
         return self._name_to_feature.items()
 
     def __iter__(self):
@@ -220,7 +221,7 @@ class FeatureCollection(Generic[T], schema_utils.ListSerializable):
 
 
 class FeatureList(fields.List):
-    def _serialize(self, value, attr, obj, **kwargs) -> Optional[List[Any]]:
+    def _serialize(self, value, attr, obj, **kwargs) -> list[Any] | None:
         if value is None:
             return None
 
@@ -236,8 +237,8 @@ class FeaturesTypeSelection(schema_utils.TypeSelection):
     def __init__(
         self,
         *args,
-        min_length: Optional[int] = 1,
-        max_length: Optional[int] = None,
+        min_length: int | None = 1,
+        max_length: int | None = None,
         supplementary_metadata=None,
         **kwargs,
     ):

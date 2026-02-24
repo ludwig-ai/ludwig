@@ -908,8 +908,8 @@ def roc_curves(
 
 
 def precision_recall_curves_plot(
-    precision_recalls: Dict[str, List[float]],
-    model_names: List[str],
+    precision_recalls: dict[str, list[float]],
+    model_names: list[str],
     title: str = None,
     filename: str = None,
     callbacks=None,

@@ -108,9 +108,9 @@ def train_data_gray_scale():
 def run_augmentation_training(
     train_data: str = "",
     backend: str = "local",
-    encoder: Dict = None,
-    preprocessing: Dict = None,
-    augmentation_pipeline_ops: List[Dict] = None,
+    encoder: dict = None,
+    preprocessing: dict = None,
+    augmentation_pipeline_ops: list[dict] = None,
 ):
     # unpack training data
     train_fp, input_features, output_features = train_data

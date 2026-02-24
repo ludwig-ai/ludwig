@@ -355,7 +355,7 @@ def test_init_config(tmpdir):
 
     config = load_yaml(output_config_path)
 
-    def to_name_set(features: List[Dict[str, Any]]) -> Set[str]:
+    def to_name_set(features: list[dict[str, Any]]) -> set[str]:
         return {feature[NAME] for feature in features}
 
     assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)

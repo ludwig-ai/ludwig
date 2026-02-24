@@ -435,7 +435,7 @@ def save_json(data_fp, data, sort_keys=True, indent=4):
 
 
 @DeveloperAPI
-def hash_dict(d: dict, max_length: Union[int, None] = 6) -> bytes:
+def hash_dict(d: dict, max_length: int | None = 6) -> bytes:
     """Function that maps a dictionary into a unique hash.
 
     Known limitation: All values and keys of the dict must have an ordering. If not, there's no guarantee to obtain the
@@ -545,7 +545,7 @@ def save_array(data_fp, array):
 
 # TODO(shreya): Confirm types of args
 @DeveloperAPI
-def load_pretrained_embeddings(embeddings_path: str, vocab: List[str]) -> np.ndarray:
+def load_pretrained_embeddings(embeddings_path: str, vocab: list[str]) -> np.ndarray:
     """Create an embedding matrix of all words in vocab."""
     embeddings, embeddings_size = load_glove(embeddings_path, return_embedding_size=True)
 
@@ -570,7 +570,7 @@ def load_pretrained_embeddings(embeddings_path: str, vocab: List[str]) -> np.nda
 
 @DeveloperAPI
 @functools.lru_cache(1)
-def load_glove(file_path: str, return_embedding_size: bool = False) -> Dict[str, np.ndarray]:
+def load_glove(file_path: str, return_embedding_size: bool = False) -> dict[str, np.ndarray]:
     """Loads Glove embeddings for each word.
 
     Returns:
@@ -614,14 +614,14 @@ def load_glove(file_path: str, return_embedding_size: bool = False) -> Dict[str,
 
 
 @DeveloperAPI
-def split_data(split: float, data: List) -> Tuple[List, List]:
+def split_data(split: float, data: list) -> tuple[list, list]:
     split_length = int(round(split * len(data)))
     random.shuffle(data)
     return data[:split_length], data[split_length:]
 
 
 @DeveloperAPI
-def split_by_slices(slices: List[Any], n: int, probabilities: List[float]) -> List[Any]:
+def split_by_slices(slices: list[Any], n: int, probabilities: list[float]) -> list[Any]:
     splits = []
     indices = cumsum([int(x * n) for x in probabilities])
     start = 0
@@ -700,14 +700,12 @@ def class_counts(dataset, labels_field):
 def load_from_file(file_name, field=None, dtype=int, ground_truth_split=2):
     """Load experiment data from supported file formats.
 
-    Experiment data can be test/train statistics, model predictions,
-    probability, ground truth,  ground truth metadata.
+    Experiment data can be test/train statistics, model predictions, probability, ground truth,  ground truth metadata.
     :param file_name: Path to file to be loaded
     :param field: Target Prediction field.
     :param dtype:
-    :param ground_truth_split: Ground truth split filter where 0 is train 1 is
-    validation and 2 is test split. By default test split is used when loading
-    ground truth from hdf5.
+    :param ground_truth_split: Ground truth split filter where 0 is train 1 is validation and 2 is test split. By
+        default test split is used when loading ground truth from hdf5.
     :return: Experiment data as array
     """
     if file_name.endswith(".hdf5") and field is not None:
@@ -753,7 +751,7 @@ def add_sequence_feature_column(df, col_name, seq_length):
     delimited strings composed of preceding values of the same column up to seq_length. For example values of the
     i-th row of the new column will be a space-delimited string of df[col_name][i-seq_length].
 
-     :param df: input dataframe
+    :param df: input dataframe
     :param col_name: column name containing sequential data
     :param seq_length: length of an array of preceeding column values to use
     """

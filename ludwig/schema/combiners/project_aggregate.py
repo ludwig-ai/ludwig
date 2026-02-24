@@ -55,19 +55,19 @@ class ProjectAggregateCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["project_aggregate"]["output_size"],
     )
 
-    norm: Optional[str] = schema_utils.StringOptions(
+    norm: str | None = schema_utils.StringOptions(
         ["batch", "layer"],
         default="layer",
         description="Normalization to apply to each projection and fully connected layer.",
         parameter_metadata=COMBINER_METADATA["project_aggregate"]["norm"],
     )
 
-    norm_params: Optional[dict] = schema_utils.Dict(
+    norm_params: dict | None = schema_utils.Dict(
         description="Parameters of the normalization to apply to each projection and fully connected layer.",
         parameter_metadata=COMBINER_METADATA["project_aggregate"]["norm_params"],
     )
 
-    fc_layers: Optional[List[Dict[str, Any]]] = schema_utils.DictList(
+    fc_layers: list[dict[str, Any]] | None = schema_utils.DictList(
         description="Full specification of the fully connected layers after the aggregation. It should be a list of "
         "dict, each dict representing one layer of the fully connected layer stack. ",
         parameter_metadata=COMBINER_METADATA["project_aggregate"]["fc_layers"],
@@ -79,13 +79,13 @@ class ProjectAggregateCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["project_aggregate"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
+    bias_initializer: str | dict = schema_utils.InitializerOrDict(
         default="zeros",
         description="Initializer to use for the bias of the projection and for the fully connected layers.",
         parameter_metadata=COMBINER_METADATA["project_aggregate"]["bias_initializer"],
     )
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
+    weights_initializer: str | dict = schema_utils.InitializerOrDict(
         default="xavier_uniform",
         description="Initializer to use for the weights of the projection and for the fully connected layers.",
         parameter_metadata=COMBINER_METADATA["project_aggregate"]["weights_initializer"],

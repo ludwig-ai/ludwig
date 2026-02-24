@@ -267,16 +267,13 @@ class IntegratedGradientsExplainer(Explainer):
 
 def get_input_tensors(
     model: LudwigModel, input_set: pd.DataFrame, run_config: ExplanationRunConfig
-) -> List[torch.Tensor]:
+) -> list[torch.Tensor]:
     """Convert the input data into a list of variables, one for each input feature.
 
     # Inputs
 
     :param model: The LudwigModel to use for encoding.
-    :param input_set: The input data to encode of shape [batch size, num input features].
-
-    # Return
-
+    :param input_set: The input data to encode of shape [batch size, num input features].  # Return
     :return: A list of variables, one for each input feature. Shape of each variable is [batch size, embedding size].
     """
     # Ignore sample_ratio and sample_size from the model config, since we want to explain all the data.
@@ -344,7 +341,7 @@ def get_input_tensors(
     return tensors
 
 
-def get_baseline(model: LudwigModel, sample_encoded: List[Variable]) -> List[torch.Tensor]:
+def get_baseline(model: LudwigModel, sample_encoded: list[Variable]) -> list[torch.Tensor]:
     # TODO(travis): pre-compute this during training from the full training dataset.
     input_features: LudwigFeatureDict = model.model.input_features
 
@@ -375,12 +372,12 @@ def get_baseline(model: LudwigModel, sample_encoded: List[Variable]) -> List[tor
 def get_total_attribution(
     model: LudwigModel,
     target_feature_name: str,
-    target_idx: Optional[int],
-    feature_inputs: List[Variable],
-    baseline: List[torch.Tensor],
+    target_idx: int | None,
+    feature_inputs: list[Variable],
+    baseline: list[torch.Tensor],
     nsamples: int,
     run_config: ExplanationRunConfig,
-) -> Tuple[npt.NDArray[np.float64], Dict[str, List[List[Tuple[str, float]]]]]:
+) -> tuple[npt.NDArray[np.float64], dict[str, list[list[tuple[str, float]]]]]:
     """Compute the total attribution for each input feature for each row in the input data.
 
     Args:
@@ -498,7 +495,7 @@ def get_token_attributions(
     feature_name: str,
     input_ids: torch.Tensor,
     token_attributions: torch.Tensor,
-) -> List[List[Tuple[str, float]]]:
+) -> list[list[tuple[str, float]]]:
     """Convert token-level attributions to an array of token-attribution pairs of shape.
 
     [batch_size, sequence_length, 2].

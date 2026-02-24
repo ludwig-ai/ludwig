@@ -30,7 +30,7 @@ class ExecutorConfig(schema_utils.BaseMarshmallowConfig):
         default=3600, allow_none=True, description="The number of seconds for the entire hyperopt run."
     )
 
-    trial_driver_resources: Dict[str, float] = schema_utils.Dict(
+    trial_driver_resources: dict[str, float] = schema_utils.Dict(
         default=None,
         description=(
             "The resources reserved by each trial driver. This differs from cpu_resources_per_trial and "
@@ -47,7 +47,7 @@ class ExecutorConfig(schema_utils.BaseMarshmallowConfig):
         default=0, description="The number of GPU devices allocated to each trial"
     )
 
-    kubernetes_namespace: Optional[str] = schema_utils.String(
+    kubernetes_namespace: str | None = schema_utils.String(
         default=None,
         allow_none=True,
         description=(
@@ -56,7 +56,7 @@ class ExecutorConfig(schema_utils.BaseMarshmallowConfig):
         ),
     )
 
-    max_concurrent_trials: Union[str, int, None] = schema_utils.OneOfOptionsField(
+    max_concurrent_trials: str | int | None = schema_utils.OneOfOptionsField(
         default="auto",
         allow_none=True,
         description=("The maximum number of trials to train concurrently. Defaults to auto if not specified."),
@@ -77,7 +77,7 @@ class ExecutorConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-def ExecutorDataclassField(description: str, default: Dict = {}):
+def ExecutorDataclassField(description: str, default: dict = {}):
     class ExecutorMarshmallowField(fields.Field):
         def _deserialize(self, value, attr, data, **kwargs):
             if isinstance(value, dict):

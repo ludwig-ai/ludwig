@@ -24,7 +24,7 @@ from ludwig.utils.torch_utils import get_torch_device
 
 @PublicAPI(stability="experimental")
 class RayIntegratedGradientsExplainer(IntegratedGradientsExplainer):
-    def __init__(self, *args, resources_per_task: Dict[str, Any] = None, num_workers: int = 1, **kwargs):
+    def __init__(self, *args, resources_per_task: dict[str, Any] = None, num_workers: int = 1, **kwargs):
         super().__init__(*args, **kwargs)
         self.resources_per_task = resources_per_task or {}
         self.num_workers = num_workers
@@ -163,7 +163,7 @@ class RayIntegratedGradientsExplainer(IntegratedGradientsExplainer):
 @ray.remote(max_calls=1)
 def get_input_tensors_task(
     model: LudwigModel, df: pd.DataFrame, run_config: ExplanationRunConfig
-) -> Tuple[List[Variable], ExplanationRunConfig]:
+) -> tuple[list[Variable], ExplanationRunConfig]:
     model.model.unskip()
     model.model.to(get_torch_device())
     try:
@@ -177,12 +177,12 @@ def get_input_tensors_task(
 def get_total_attribution_task(
     model: LudwigModel,
     target_feature_name: str,
-    target_indices: List[Optional[int]],
-    inputs_encoded: List[Variable],
-    baseline: List[Variable],
+    target_indices: list[int | None],
+    inputs_encoded: list[Variable],
+    baseline: list[Variable],
     nsamples: int,
     run_config: ExplanationRunConfig,
-) -> List[np.array]:
+) -> list[np.array]:
     model.model.unskip()
     model.model.to(get_torch_device())
     try:

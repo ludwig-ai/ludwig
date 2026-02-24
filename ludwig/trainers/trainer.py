@@ -82,10 +82,10 @@ class Trainer(BaseTrainer):
         skip_save_model: bool = False,
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
-        callbacks: List = None,
+        callbacks: list = None,
         report_tqdm_to_ray=False,
         random_seed: float = default_random_seed,
-        device: Optional[str] = None,
+        device: str | None = None,
         **kwargs,
     ):
         """Trains a model with a set of options and hyperparameters listed below. Customizable.
@@ -196,8 +196,8 @@ class Trainer(BaseTrainer):
             )
 
     def train_step(
-        self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor]
-    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        self, inputs: dict[str, torch.Tensor], targets: dict[str, torch.Tensor]
+    ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
         """Performs a single training step.
 
         Params:
@@ -313,7 +313,6 @@ class Trainer(BaseTrainer):
         """Function to be used by tune_batch_size."""
         self.model.train()  # Sets model training mode.
         with dataset.initialize_batcher(batch_size=batch_size, should_shuffle=False) as batcher:
-
             step_count = 0
             while not batcher.last_batch() and step_count < total_steps:
                 batch = batcher.next_batch()
@@ -378,9 +377,7 @@ class Trainer(BaseTrainer):
                 return None
 
         self.model.train()  # Sets model training mode.
-        with training_set.initialize_batcher(
-            batch_size=self.batch_size, should_shuffle=self.should_shuffle
-        ) as batcher:
+        with training_set.initialize_batcher(batch_size=self.batch_size, should_shuffle=self.should_shuffle) as batcher:
             step_count = 0
             while epoch < self.epochs and step_count < total_training_steps and not diverging:
                 batcher.set_epoch(epoch, self.batch_size)
@@ -443,7 +440,7 @@ class Trainer(BaseTrainer):
 
     def tune_batch_size(
         self,
-        config: Dict[str, Any],
+        config: dict[str, Any],
         training_set: Dataset,
         random_seed: int = default_random_seed,
         max_trials: int = 20,
@@ -518,7 +515,7 @@ class Trainer(BaseTrainer):
         metrics_names,
         save_path,
         loss: torch.Tensor,
-        all_losses: Dict[str, torch.Tensor],
+        all_losses: dict[str, torch.Tensor],
         early_stopping_steps: int,
     ) -> bool:
         """Runs evaluation over training, validation, and test sets.
@@ -994,10 +991,7 @@ class Trainer(BaseTrainer):
 
     def train_online(self, dataset):
         self.model.train()  # Sets model training mode.
-        with dataset.initialize_batcher(
-            batch_size=self.batch_size, should_shuffle=self.should_shuffle
-        ) as batcher:
-
+        with dataset.initialize_batcher(batch_size=self.batch_size, should_shuffle=self.should_shuffle) as batcher:
             # training step loop
             progress_bar_config = {
                 "desc": "Training online",
@@ -1041,9 +1035,7 @@ class Trainer(BaseTrainer):
         return self._validation_metric
 
     def evaluation(self, dataset, dataset_name, metrics_log, tables, batch_size, progress_tracker):
-        predictor = Predictor(
-            self.model, batch_size=batch_size, report_tqdm_to_ray=self.report_tqdm_to_ray
-        )
+        predictor = Predictor(self.model, batch_size=batch_size, report_tqdm_to_ray=self.report_tqdm_to_ray)
         metrics, predictions = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
         append_metrics(self.model, dataset_name, metrics, metrics_log, tables, progress_tracker)
@@ -1219,7 +1211,6 @@ class Trainer(BaseTrainer):
     ):
         """Uses the progress tracker to determine if the learning rate should be reduced."""
         if not (progress_tracker.num_reductions_learning_rate >= reduce_learning_rate_on_plateau):
-
             if reduce_learning_rate_eval_split == TRAINING:
                 split_metrics = progress_tracker.train_metrics
             elif reduce_learning_rate_eval_split == VALIDATION:
@@ -1283,7 +1274,6 @@ class Trainer(BaseTrainer):
             not progress_tracker.num_increases_batch_size >= increase_batch_size_on_plateau
             and not progress_tracker.batch_size == increase_batch_size_on_plateau_max
         ):
-
             if increase_batch_size_eval_split == TRAINING:
                 split_metrics = progress_tracker.train_metrics
             elif increase_batch_size_eval_split == VALIDATION:
@@ -1372,5 +1362,3 @@ class RemoteTrainer(Trainer):
         import ray.train as rt
 
         return rt.get_context().get_local_rank()
-
-

@@ -64,16 +64,16 @@ class DictWrapper:
     def __iter__(self) -> None:
         return iter(self.obj.keys())
 
-    def keys(self) -> List[str]:
+    def keys(self) -> list[str]:
         return self.obj.keys()
 
-    def values(self) -> List[torch.nn.Module]:
+    def values(self) -> list[torch.nn.Module]:
         return self.obj.values()
 
-    def items(self) -> List[Tuple[str, torch.nn.Module]]:
+    def items(self) -> list[tuple[str, torch.nn.Module]]:
         return self.obj.items()
 
-    def update(self, modules: Dict[str, torch.nn.Module]) -> None:
+    def update(self, modules: dict[str, torch.nn.Module]) -> None:
         self.obj.update(modules)
 
 
@@ -158,7 +158,7 @@ class LLM(BaseModel):
         return DictWrapper(LudwigFeatureDict())
 
     @contextlib.contextmanager
-    def use_generation_config(self, generation_config_dict: Optional[Dict[str, Any]] = None):
+    def use_generation_config(self, generation_config_dict: dict[str, Any] | None = None):
         """Sets the generation config for the model."""
         # Save the original generation config so that we can reset it if/when we change it when self.generation gets is
         # dynamically mutated during 1-off predict calls after fine-tuning.
@@ -173,7 +173,7 @@ class LLM(BaseModel):
         finally:
             self._set_generation_config(original_generation_config_dict)
 
-    def _set_generation_config(self, new_generation_config_dict: Dict[str, Any]):
+    def _set_generation_config(self, new_generation_config_dict: dict[str, Any]):
         self.generation = GenerationConfig(**new_generation_config_dict)
         # We need to manually set the pad_token_id to the tokenizer's pad_token_id for certain models like GPT and
         # CodeLlama to avoid getting an error. This workaround can be found here:
@@ -224,7 +224,7 @@ class LLM(BaseModel):
     @classmethod
     def build_outputs(
         cls, output_feature_configs: FeatureCollection[BaseOutputFeatureConfig], input_size: int
-    ) -> Dict[str, OutputFeature]:
+    ) -> dict[str, OutputFeature]:
         """Builds and returns output feature."""
         # TODO: only single task currently
         if len(output_feature_configs) > 1:
@@ -241,11 +241,11 @@ class LLM(BaseModel):
 
     def forward(
         self,
-        inputs: Union[
-            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
-        ],
+        inputs: (
+            dict[str, torch.Tensor] | dict[str, np.ndarray] | tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]
+        ),
         mask=None,
-    ) -> Dict[str, torch.Tensor]:
+    ) -> dict[str, torch.Tensor]:
         """Produces logits tensor for finetuning the model.
 
         Args:
@@ -307,11 +307,11 @@ class LLM(BaseModel):
 
     def generate(
         self,
-        inputs: Union[
-            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
-        ],
+        inputs: (
+            dict[str, torch.Tensor] | dict[str, np.ndarray] | tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]
+        ),
         mask=None,
-    ) -> Dict[str, torch.Tensor]:
+    ) -> dict[str, torch.Tensor]:
         """Generates tokens using the model."""
         log_once(f"For generating text, using: {self.generation}")
         input_ids, _ = self._unpack_inputs(inputs)
@@ -364,7 +364,7 @@ class LLM(BaseModel):
 
         # Return
 
-            :return (bool): whether merge_and_unload should be done.
+        :return (bool): whether merge_and_unload should be done.
         """
         return (
             self.config_obj.adapter is not None
@@ -389,10 +389,10 @@ class LLM(BaseModel):
 
     def _unpack_inputs(
         self,
-        inputs: Union[
-            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
-        ],
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        inputs: (
+            dict[str, torch.Tensor] | dict[str, np.ndarray] | tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]
+        ),
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         """Converts input tensors to input ids."""
         if isinstance(inputs, tuple):
             inputs, targets = inputs
@@ -414,14 +414,14 @@ class LLM(BaseModel):
 
     def get_input_ids(
         self,
-        inputs: Union[
-            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
-        ],
+        inputs: (
+            dict[str, torch.Tensor] | dict[str, np.ndarray] | tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]
+        ),
     ) -> torch.Tensor:
         """Returns the input ids for the text feature input."""
         return inputs[self.config_obj.input_features[0].name].type(torch.int32)
 
-    def get_target_ids(self, outputs: Dict[str, torch.Tensor]) -> torch.Tensor:
+    def get_target_ids(self, outputs: dict[str, torch.Tensor]) -> torch.Tensor:
         """Returns the output ids for the text feature output."""
         return outputs[self.config_obj.output_features[0].name].type(torch.int32)
 
@@ -470,9 +470,9 @@ class LLM(BaseModel):
         self,
         targets,
         predictions,
-        regularization_type: Optional[str] = None,
-        regularization_lambda: Optional[float] = None,
-    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        regularization_type: str | None = None,
+        regularization_lambda: float | None = None,
+    ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
         """Computes the training loss for the model.
 
         Args:
@@ -549,7 +549,7 @@ class LLM(BaseModel):
 
         return eval_loss, additional_loss
 
-    def outputs_to_predictions(self, outputs: Dict[str, torch.Tensor]) -> Dict[str, Dict[str, torch.Tensor]]:
+    def outputs_to_predictions(self, outputs: dict[str, torch.Tensor]) -> dict[str, dict[str, torch.Tensor]]:
         """Returns the model's predictions for each output feature."""
         predictions = {}
         for of_name in self.output_features:
@@ -658,8 +658,8 @@ class LLM(BaseModel):
         )
 
     def _update_target_tensor_for_finetuning(
-        self, targets: Dict[str, torch.Tensor], predictions: Dict[str, torch.Tensor], of_name: str
-    ) -> Dict[str, torch.Tensor]:
+        self, targets: dict[str, torch.Tensor], predictions: dict[str, torch.Tensor], of_name: str
+    ) -> dict[str, torch.Tensor]:
         """Update target tensor for fine-tuning.
 
         This method removes left padding from target tensors, adds a eos token to the end of the target tensors,

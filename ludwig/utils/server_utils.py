@@ -11,7 +11,7 @@ from starlette.responses import JSONResponse
 from ludwig.utils.data_utils import NumpyEncoder
 
 
-def serialize_payload(data_source: Union[pd.DataFrame, pd.Series]) -> tuple:
+def serialize_payload(data_source: pd.DataFrame | pd.Series) -> tuple:
     """
     Generates two dictionaries to be sent via REST API for Ludwig prediction
     service.
@@ -157,7 +157,7 @@ def deserialize_request(form) -> tuple:
 
 
 class NumpyJSONResponse(JSONResponse):
-    def render(self, content: Dict[str, Any]) -> str:
+    def render(self, content: dict[str, Any]) -> str:
         """Override the default JSONResponse behavior to encode numpy arrays.
 
         Args:

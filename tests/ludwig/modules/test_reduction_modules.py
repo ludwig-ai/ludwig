@@ -11,7 +11,7 @@ DEVICE = get_torch_device()
 
 @pytest.mark.parametrize("reduce_mode", ["last", "sum", "mean", "avg", "max", "concat", "attention", None])
 @pytest.mark.parametrize("test_input_shape", [(16, 1, 4), (4, 10, 16)])
-def test_sequence_reducer(reduce_mode: str, test_input_shape: Tuple[int, ...]):
+def test_sequence_reducer(reduce_mode: str, test_input_shape: tuple[int, ...]):
     (batch_size, max_sequence_length, encoding_size) = test_input_shape
     sequence_reducer = reduction_modules.SequenceReducer(
         reduce_mode=reduce_mode, max_sequence_length=max_sequence_length, encoding_size=encoding_size

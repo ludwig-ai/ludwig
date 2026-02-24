@@ -80,7 +80,6 @@ class Predictor(BasePredictor):
 
         with torch.no_grad():
             with dataset.initialize_batcher(self._batch_size, should_shuffle=False) as batcher:
-
                 progress_bar_config = {
                     "desc": "Prediction" if dataset_name is None else f"Prediction {dataset_name: <5.5}",
                     "total": batcher.steps_per_epoch,
@@ -122,7 +121,7 @@ class Predictor(BasePredictor):
         self.model.train(prev_model_training_mode)
         return from_numpy_dataset(predictions)
 
-    def _predict(self, model: BaseModel, batch: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+    def _predict(self, model: BaseModel, batch: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
         """Predict a batch of data.
 
         Params:

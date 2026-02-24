@@ -47,7 +47,7 @@ class CategoricalPassthroughEncoder(Encoder):
         self.input_size = input_size
         self.identity = nn.Identity()
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         """
         :param inputs: The inputs fed into the encoder.
                Shape: [batch x 1]
@@ -55,7 +55,7 @@ class CategoricalPassthroughEncoder(Encoder):
         return {"encoder_output": self.identity(inputs.float())}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return CategoricalPassthroughEncoderConfig
 
     @property
@@ -75,13 +75,13 @@ class CategoricalPassthroughEncoder(Encoder):
 class CategoricalEmbedEncoder(Encoder):
     def __init__(
         self,
-        vocab: List[str],
+        vocab: list[str],
         embedding_size: int = 50,
         embeddings_trainable: bool = True,
-        pretrained_embeddings: Optional[str] = None,
+        pretrained_embeddings: str | None = None,
         embeddings_on_cpu: bool = False,
         dropout: float = 0.0,
-        embedding_initializer: Optional[Union[str, Dict]] = None,
+        embedding_initializer: str | dict | None = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -114,7 +114,7 @@ class CategoricalEmbedEncoder(Encoder):
         return {ENCODER_OUTPUT: embedded}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return CategoricalEmbedConfig
 
     @property
@@ -131,12 +131,12 @@ class CategoricalEmbedEncoder(Encoder):
 class CategoricalSparseEncoder(Encoder):
     def __init__(
         self,
-        vocab: List[str],
+        vocab: list[str],
         embeddings_trainable: bool = False,
-        pretrained_embeddings: Optional[str] = None,
+        pretrained_embeddings: str | None = None,
         embeddings_on_cpu: bool = False,
         dropout: float = 0.0,
-        embedding_initializer: Optional[Union[str, Dict]] = None,
+        embedding_initializer: str | dict | None = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -169,7 +169,7 @@ class CategoricalSparseEncoder(Encoder):
         return {ENCODER_OUTPUT: embedded}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return CategoricalSparseConfig
 
     @property
@@ -186,7 +186,7 @@ class CategoricalSparseEncoder(Encoder):
 class CategoricalOneHotEncoder(Encoder):
     def __init__(
         self,
-        vocab: List[str],
+        vocab: list[str],
         encoder_config=None,
         **kwargs,
     ):
@@ -197,7 +197,7 @@ class CategoricalOneHotEncoder(Encoder):
         self.vocab_size = len(vocab)
         self.identity = nn.Identity()
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         """
         :param inputs: The inputs fed into the encoder.
                Shape: [batch, 1] or [batch]
@@ -209,7 +209,7 @@ class CategoricalOneHotEncoder(Encoder):
         return {"encoder_output": outputs}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return CategoricalOneHotEncoderConfig
 
     @property
