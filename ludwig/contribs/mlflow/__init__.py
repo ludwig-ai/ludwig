@@ -188,15 +188,23 @@ class MlflowCallback(Callback):
         pass
 
     def prepare_ray_tune(self, train_fn, tune_config, tune_callbacks):
-        from ray.tune.integration.mlflow import mlflow_mixin
+        from functools import wraps
 
-        return mlflow_mixin(train_fn), {
+        from ray.air.integrations.mlflow import setup_mlflow
+
+        mlflow_config = {
+            "experiment_id": self.experiment_id,
+            "experiment_name": self.experiment_name,
+            "tracking_uri": mlflow.get_tracking_uri(),
+        }
+
+        @wraps(train_fn)
+        def wrapper(config, **kwargs):
+            setup_mlflow(config, **mlflow_config)
+            return train_fn(config, **kwargs)
+
+        return wrapper, {
             **tune_config,
-            "mlflow": {
-                "experiment_id": self.experiment_id,
-                "experiment_name": self.experiment_name,
-                "tracking_uri": mlflow.get_tracking_uri(),
-            },
         }
 
     def _log_params(self, params):
@@ -256,7 +264,12 @@ def _log_mlflow(log_metrics, steps, save_path, should_continue, log_artifacts: b
 
 
 def _log_artifacts(output_directory):
-    for fname in os.listdir(output_directory):
+    try:
+        contents = os.listdir(output_directory)
+    except FileNotFoundError:
+        logger.warning(f"_log_artifacts: output_directory does not exist: {output_directory}")
+        return
+    for fname in contents:
         lpath = os.path.join(output_directory, fname)
         if fname == MODEL_FILE_NAME:
             _log_model(lpath)
