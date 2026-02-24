@@ -109,7 +109,7 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         description="Whether to enable profiling of the training process using torch.profiler.profile.",
     )
 
-    profiler: Optional[ProfilerConfig] = ProfilerDataclassField(
+    profiler: ProfilerConfig | None = ProfilerDataclassField(
         description="Parameter values for profiling config.",
         default={},
     )
@@ -170,7 +170,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
                     f"`layers_to_freeze_regex` ({self.layers_to_freeze_regex}) must be a valid regular expression."
                 )
 
-    learning_rate: Union[float, str] = schema_utils.OneOfOptionsField(
+    learning_rate: float | str = schema_utils.OneOfOptionsField(
         default=0.001,
         allow_none=False,
         description=(
@@ -231,7 +231,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["steps_per_checkpoint"],
     )
 
-    effective_batch_size: Union[int, str] = schema_utils.OneOfOptionsField(
+    effective_batch_size: int | str = schema_utils.OneOfOptionsField(
         default=AUTO,
         allow_none=False,
         description=(
@@ -250,7 +250,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
         ],
     )
 
-    batch_size: Union[int, str] = schema_utils.OneOfOptionsField(
+    batch_size: int | str = schema_utils.OneOfOptionsField(
         default=AUTO,
         allow_none=False,
         description=(
@@ -276,7 +276,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA[MODEL_ECD][MAX_BATCH_SIZE],
     )
 
-    gradient_accumulation_steps: Union[int, str] = schema_utils.OneOfOptionsField(
+    gradient_accumulation_steps: int | str = schema_utils.OneOfOptionsField(
         default=AUTO,
         allow_none=False,
         description="Number of steps to accumulate gradients over before performing a weight update.",
@@ -297,7 +297,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["early_stop"],
     )
 
-    eval_batch_size: Union[None, int, str] = schema_utils.OneOfOptionsField(
+    eval_batch_size: None | int | str = schema_utils.OneOfOptionsField(
         default=None,
         allow_none=True,
         description=(
@@ -356,7 +356,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["optimizer"],
     )
 
-    regularization_type: Optional[str] = schema_utils.RegularizerOptions(
+    regularization_type: str | None = schema_utils.RegularizerOptions(
         default="l2",
         allow_none=True,
         description="Type of regularization.",
@@ -407,7 +407,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["increase_batch_size_eval_split"],
     )
 
-    gradient_clipping: Optional[GradientClippingConfig] = GradientClippingDataclassField(
+    gradient_clipping: GradientClippingConfig | None = GradientClippingDataclassField(
         description="Parameter values for gradient clipping.",
         default={},
     )
@@ -474,7 +474,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 class LLMTrainerConfig(BaseTrainerConfig):
     """Base class for all LLM trainer configs."""
 
-    learning_rate: Union[float, str] = schema_utils.OneOfOptionsField(
+    learning_rate: float | str = schema_utils.OneOfOptionsField(
         default=0.0002,
         allow_none=False,
         description=(
@@ -582,7 +582,7 @@ class FineTuneTrainerConfig(ECDTrainerConfig):
         description="Base learning rate used for training in the LLM trainer.",
     )
 
-    batch_size: Union[int, str, None] = schema_utils.OneOfOptionsField(
+    batch_size: int | str | None = schema_utils.OneOfOptionsField(
         default=1,
         allow_none=False,
         description=(
@@ -595,7 +595,7 @@ class FineTuneTrainerConfig(ECDTrainerConfig):
         ],
     )
 
-    eval_batch_size: Union[int, str, None] = schema_utils.OneOfOptionsField(
+    eval_batch_size: int | str | None = schema_utils.OneOfOptionsField(
         default=2,
         allow_none=True,
         description=(
@@ -675,7 +675,7 @@ def LLMTrainerDataclassField(default="none", description=""):
                 description=description,
             )
 
-        def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
+        def get_schema_from_registry(self, key: str) -> type[schema_utils.BaseMarshmallowConfig]:
             return get_llm_trainer_cls(key)
 
         def _jsonschema_type_mapping(self):
