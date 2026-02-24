@@ -20,7 +20,6 @@ import os
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend, LocalBackend
-from ludwig.utils.horovod_utils import has_horovodrun
 
 logger = logging.getLogger(__name__)
 
@@ -31,11 +30,10 @@ LOCAL_BACKEND = LocalBackend.shared_instance()
 
 LOCAL = "local"
 DASK = "dask"
-HOROVOD = "horovod"
 DEEPSPEED = "deepspeed"
 RAY = "ray"
 
-ALL_BACKENDS = [LOCAL, DASK, HOROVOD, DEEPSPEED, RAY]
+ALL_BACKENDS = [LOCAL, DASK, DEEPSPEED, RAY]
 
 
 def _has_ray():
@@ -63,12 +61,6 @@ def get_local_backend(**kwargs):
     return LocalBackend(**kwargs)
 
 
-def create_horovod_backend(**kwargs):
-    from ludwig.backend.horovod import HorovodBackend
-
-    return HorovodBackend(**kwargs)
-
-
 def create_deepspeed_backend(**kwargs):
     from ludwig.backend.deepspeed import DeepSpeedBackend
 
@@ -83,7 +75,6 @@ def create_ray_backend(**kwargs):
 
 backend_registry = {
     LOCAL: get_local_backend,
-    HOROVOD: create_horovod_backend,
     DEEPSPEED: create_deepspeed_backend,
     RAY: create_ray_backend,
     None: get_local_backend,
@@ -97,8 +88,6 @@ def create_backend(type, **kwargs):
 
     if type is None and _has_ray():
         type = RAY
-    elif type is None and has_horovodrun():
-        type = HOROVOD
 
     return backend_registry[type](**kwargs)
 
