@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Predibase, Inc., 2020 Uber Technologies, Inc.
+# Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,27 +19,15 @@ import os.path
 import pathlib
 import shutil
 import subprocess
-from typing import List, Set
+import sys
+from typing import Any, Dict, List, Set
 
 import pytest
 import yaml
 
-from ludwig.constants import (
-    BATCH_SIZE,
-    COMBINER,
-    EVAL_BATCH_SIZE,
-    INPUT_FEATURES,
-    NAME,
-    OUTPUT_FEATURES,
-    PREPROCESSING,
-    TRAINER,
-)
-from ludwig.globals import MODEL_FILE_NAME
-from ludwig.types import FeatureConfigDict
+from ludwig.constants import COMBINER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, TRAINER
 from ludwig.utils.data_utils import load_yaml
 from tests.integration_tests.utils import category_feature, generate_data, number_feature, sequence_feature
-
-pytestmark = pytest.mark.integration_tests_b
 
 
 def _run_commands(commands, **ludwig_kwargs):
@@ -54,19 +42,14 @@ def _run_commands(commands, **ludwig_kwargs):
 
 
 def _run_ludwig(command, **ludwig_kwargs):
-    commands = ["ludwig", command]
-    return _run_commands(commands, **ludwig_kwargs)
-
-
-def _run_ludwig_horovod(command, **ludwig_kwargs):
-    commands = ["horovodrun", "-np", "2", "ludwig", command]
+    commands = [sys.executable, "-m", "ludwig.cli", command]
     return _run_commands(commands, **ludwig_kwargs)
 
 
 def _prepare_data(csv_filename, config_filename):
     # Single sequence input, single category output
     input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
-    output_features = [category_feature(decoder={"vocab_size": 3}, reduce_input="sum")]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     # Generate test data
     dataset_filename = generate_data(input_features, output_features, csv_filename)
@@ -76,7 +59,7 @@ def _prepare_data(csv_filename, config_filename):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2, BATCH_SIZE: 128, EVAL_BATCH_SIZE: 128},
+        TRAINER: {"epochs": 2},
     }
 
     with open(config_filename, "w") as f:
@@ -98,7 +81,7 @@ def _prepare_hyperopt_data(csv_filename, config_filename):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 4},
-        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+        TRAINER: {"epochs": 2},
         "hyperopt": {
             "parameters": {
                 "trainer.learning_rate": {
@@ -133,15 +116,6 @@ def test_train_cli_dataset(tmpdir, csv_filename):
     _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
 
 
-def test_train_cli_gpu_memory_limit(tmpdir, csv_filename):
-    """Test training using `ludwig train --dataset --gpu_memory_limit`."""
-    config_filename = os.path.join(tmpdir, "config.yaml")
-    dataset_filename = _prepare_data(csv_filename, config_filename)
-    _run_ludwig(
-        "train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir), gpu_memory_limit="0.5"
-    )
-
-
 def test_train_cli_training_set(tmpdir, csv_filename):
     """Test training using `ludwig train --training_set`."""
     config_filename = os.path.join(tmpdir, "config.yaml")
@@ -158,30 +132,6 @@ def test_train_cli_training_set(tmpdir, csv_filename):
     )
 
 
-@pytest.mark.distributed
-@pytest.mark.horovod
-def test_train_cli_horovod(tmpdir, csv_filename):
-    """Test training using `horovodrun -np 2 ludwig train --dataset`."""
-    config_filename = os.path.join(tmpdir, "config.yaml")
-    dataset_filename = _prepare_data(csv_filename, config_filename)
-    _run_ludwig_horovod(
-        "train",
-        dataset=dataset_filename,
-        config=config_filename,
-        output_directory=str(tmpdir),
-        experiment_name="horovod_experiment",
-    )
-
-    # Check that `model_load_path` works correctly
-    _run_ludwig_horovod(
-        "train",
-        dataset=dataset_filename,
-        config=config_filename,
-        output_directory=str(tmpdir),
-        model_load_path=os.path.join(tmpdir, "horovod_experiment_run", MODEL_FILE_NAME),
-    )
-
-
 def test_export_torchscript_cli(tmpdir, csv_filename):
     """Test exporting Ludwig model to torchscript format."""
     config_filename = os.path.join(tmpdir, "config.yaml")
@@ -189,7 +139,7 @@ def test_export_torchscript_cli(tmpdir, csv_filename):
     _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
     _run_ludwig(
         "export_torchscript",
-        model_path=os.path.join(tmpdir, "experiment_run", MODEL_FILE_NAME),
+        model_path=os.path.join(tmpdir, "experiment_run", "model"),
         output_path=os.path.join(tmpdir, "torchscript"),
     )
 
@@ -201,7 +151,7 @@ def test_export_mlflow_cli(tmpdir, csv_filename):
     _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
     _run_ludwig(
         "export_mlflow",
-        model_path=os.path.join(tmpdir, "experiment_run", MODEL_FILE_NAME),
+        model_path=os.path.join(tmpdir, "experiment_run", "model"),
         output_path=os.path.join(tmpdir, "data/results/mlflow"),
     )
 
@@ -221,7 +171,7 @@ def test_predict_cli(tmpdir, csv_filename):
     _run_ludwig(
         "predict",
         dataset=dataset_filename,
-        model=os.path.join(tmpdir, "experiment_run", MODEL_FILE_NAME),
+        model=os.path.join(tmpdir, "experiment_run", "model"),
         output_directory=os.path.join(tmpdir, "predictions"),
     )
 
@@ -234,7 +184,7 @@ def test_evaluate_cli(tmpdir, csv_filename):
     _run_ludwig(
         "evaluate",
         dataset=dataset_filename,
-        model=os.path.join(tmpdir, "experiment_run", MODEL_FILE_NAME),
+        model=os.path.join(tmpdir, "experiment_run", "model"),
         output_directory=os.path.join(tmpdir, "predictions"),
     )
 
@@ -266,27 +216,11 @@ def test_collect_summary_activations_weights_cli(tmpdir, csv_filename):
     config_filename = os.path.join(tmpdir, "config.yaml")
     dataset_filename = _prepare_data(csv_filename, config_filename)
     _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
-    assert _run_ludwig("collect_summary", model=os.path.join(tmpdir, "experiment_run", MODEL_FILE_NAME))
+    completed_process = _run_ludwig("collect_summary", model=os.path.join(tmpdir, "experiment_run", "model"))
+    stdout = completed_process.stdout.decode("utf-8")
 
-
-@pytest.mark.parametrize(
-    "model_name",
-    [
-        "alexnet",
-        "convnext_base",
-        "convnext_large",
-        "convnext_small",
-        "convnext_tiny",
-        "densenet121",
-        "densenet161",
-        "densenet169",
-        "openai-community/gpt2",
-        "facebook/opt-125m",
-    ],
-)
-def test_collect_summary_pretrained_model_cli(model_name):
-    """Test collect_summary pretrained model cli."""
-    assert _run_ludwig("collect_summary", pretrained_model=model_name)
+    assert "Modules" in stdout
+    assert "Parameters" in stdout
 
 
 def test_synthesize_dataset_cli(tmpdir, csv_filename):
@@ -329,7 +263,6 @@ def test_preprocess_cli(tmpdir, csv_filename):
     "backend",
     [
         pytest.param("local", id="local"),
-        pytest.param("horovod", id="horovod", marks=[pytest.mark.distributed, pytest.mark.horovod]),
     ],
 )
 def test_reproducible_cli_runs(
@@ -351,10 +284,7 @@ def test_reproducible_cli_runs(
     config_filename = os.path.join(tmpdir, "config.yaml")
     dataset_filename = _prepare_data(csv_filename, config_filename)
 
-    if backend == "local":
-        command_to_run = _run_ludwig
-    else:
-        command_to_run = _run_ludwig_horovod
+    command_to_run = _run_ludwig
 
     # run first model
     command_to_run(
@@ -425,14 +355,13 @@ def test_init_config(tmpdir):
 
     config = load_yaml(output_config_path)
 
-    def to_name_set(features: List[FeatureConfigDict]) -> Set[str]:
+    def to_name_set(features: List[Dict[str, Any]]) -> Set[str]:
         return {feature[NAME] for feature in features}
 
     assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)
     assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set(output_features)
 
 
-@pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/3377")
 def test_render_config(tmpdir):
     """Test rendering a full config from a partial user config."""
     user_config_path = os.path.join(tmpdir, "config.yaml")

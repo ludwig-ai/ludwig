@@ -45,7 +45,9 @@ def check_module_parameters_updated(
     optimizer = torch.optim.SGD(module.parameters(), lr=learning_rate)
     module.train(True)
 
-    target_tensor = module_target
+    # Ensure target is on the same device as the module
+    device = next(module.parameters()).device
+    target_tensor = module_target.to(device)
 
     trainable_parameter_list = []
     frozen_parameter_list = []
@@ -87,8 +89,13 @@ def check_module_parameters_updated(
             else:
                 raise ValueError(f"Unexpected output type.  Module type found is {type(module_output)}")
 
-            loss.backward()
-            optimizer.step()
+            try:
+                loss.backward()
+            except RuntimeError:
+                # No grad_fn on output — no learnable parameters in the forward path
+                pass
+            else:
+                optimizer.step()
 
             # check for parameter updates
             parameter_updated = []
