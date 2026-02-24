@@ -2,9 +2,8 @@ pytest
 pytest-timeout
 tifffile
 wget
-six>=1.13.0
 aim
-wandb<0.12.11
+wandb
 comet_ml
 mlflow
 
@@ -24,10 +23,6 @@ bayesian-optimization
 
 # search_alg: cfo and blendsearch
 flaml[blendsearch]
-
-# Disabling due to numpy installation failure https://github.com/ludwig-ai/ludwig/actions/runs/4737879639/jobs/8411146481
-# search_alg: dragonfly
-# dragonfly-opt
 
 # search_alg: hebo
 HEBO

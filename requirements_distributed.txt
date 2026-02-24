@@ -1,10 +1,9 @@
 # requirements for dask
-dask[dataframe]<2023.4.0
-pyarrow
+dask[dataframe]
+pyarrow>=14.0
 
 # requirements for ray
-ray[default,data,serve,tune]==2.3.1
-tensorboardX<2.3
+ray[default,data,serve,tune]>=2.9
 GPUtil
 tblib
 awscli

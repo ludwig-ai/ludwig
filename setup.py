@@ -27,9 +27,6 @@ with open(path.join(here, "requirements_distributed.txt"), encoding="utf-8") as 
 with open(path.join(here, "requirements_hyperopt.txt"), encoding="utf-8") as f:
     extra_requirements["hyperopt"] = [line.strip() for line in f if line]
 
-with open(path.join(here, "requirements_tree.txt"), encoding="utf-8") as f:
-    extra_requirements["tree"] = [line.strip() for line in f if line]
-
 with open(path.join(here, "requirements_llm.txt"), encoding="utf-8") as f:
     extra_requirements["llm"] = [line.strip() for line in f if line]
 
@@ -60,7 +57,7 @@ setup(
     license="Apache 2.0",
     keywords="ludwig deep learning deep_learning machine machine_learning natural language processing computer vision",
     packages=find_packages(exclude=["contrib", "docs", "tests"]),
-    python_requires=">=3.8",
+    python_requires=">=3.10",
     include_package_data=True,
     package_data={"ludwig": ["etc/*", "examples/*.py"]},
     install_requires=requirements,

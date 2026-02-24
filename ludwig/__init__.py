@@ -14,6 +14,12 @@
 # ==============================================================================
 import logging
 import sys
+import warnings
+
+# Suppress pkg_resources deprecation warnings from marshmallow-jsonschema
+# (unmaintained dependency that still uses deprecated setuptools API)
+warnings.filterwarnings("ignore", message=".*pkg_resources.*", category=UserWarning)
+warnings.filterwarnings("ignore", message=".*pkg_resources.*", category=DeprecationWarning)
 
 from ludwig.globals import LUDWIG_VERSION as __version__  # noqa
 

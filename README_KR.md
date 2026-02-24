@@ -59,13 +59,12 @@ pip install ludwig
 - `ludwig[audio]` for audio and speech dependencies.
 - `ludwig[image]` for image dependencies.
 - `ludwig[hyperopt]` for hyperparameter optimization dependencies.
-- `ludwig[horovod]` for distributed training dependencies.
+- `ludwig[distributed]` for distributed training dependencies.
 - `ludwig[serve]` for serving dependencies.
 - `ludwig[viz]` for visualization dependencies.
 - `ludwig[test]` for dependencies needed for testing.
 
-[Horovod](https://github.com/horovod/horovod)를 통해 분산 학습이 지원되며, `pip install ludwig[horovod]` 또는 `HOROVOD_GPU_OPERATIONS=NCCL pip install ludwig[horovod]` 와 같이 GPU 환경에서 설치가 가능합니다.
-설치 가능한 옵션들을 더 확인하고 싶으시다면 Horovod's [installation guide](https://horovod.readthedocs.io/en/stable/install_include.html) 를 참고하시기 바랍니다.
+[Ray](https://www.ray.io/)를 통해 분산 학습이 지원되며, `pip install ludwig[distributed]`와 같이 설치가 가능합니다.
 
 추가하려는 package들은  `pip install ludwig[extra1,extra2,...]` 의 명령어를 통해 설치가 가능합니다. 예를 들어, `pip install ludwig[text,viz]` 와 같은 조합으로 설치가 가능합니다. 모든 파일들을 한 번에 설치하려면 `pip install ludwig[full]`을 사용하면 됩니다.
 
@@ -177,7 +176,7 @@ ludwig visualize --visualization learning_curves --training_statistics path/to/t
 
 ## Distributed Training
 
-사용자는 [Horovod](https://github.com/horovod/horovod)를 통해 사용자가 훈련시킨 모델을 배포할 수 있고 여러 GPU가 있는 단일 기계 및 여러 GPU가 있는 다중 기계를 통해 학습하는 것을 허용합니다. 더 자세한 정보를 알고 싶으시다면 [User Guide](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/distributed_training/)를 확인해 주시기 바랍니다.
+사용자는 [Ray](https://www.ray.io/)를 통해 사용자가 훈련시킨 모델을 배포할 수 있고 여러 GPU가 있는 단일 기계 및 여러 GPU가 있는 다중 기계를 통해 학습하는 것을 허용합니다. 더 자세한 정보를 알고 싶으시다면 [User Guide](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/distributed_training/)를 확인해 주시기 바랍니다.
 
 ## Prediction and Evaluation
 
