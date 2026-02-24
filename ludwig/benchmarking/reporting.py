@@ -43,9 +43,9 @@ def get_device_memory_usage(
     :param memory_events: list of memory events.
     """
     mem_records_acc = profiler_util.MemRecordsAcc(memory_events)
-    records_in_interval = mem_records_acc.in_interval(
-        kineto_event.start_us(), kineto_event.start_us() + kineto_event.duration_us()
-    )
+    start_us = kineto_event.start_ns() / 1000
+    end_us = start_us + kineto_event.duration_ns() / 1000
+    records_in_interval = mem_records_acc.in_interval(start_us, end_us)
     memory_so_far = defaultdict(int)
     count_so_far = defaultdict(int)
     average_so_far = defaultdict(float)
@@ -71,9 +71,9 @@ def get_torch_op_time(events: List[profiler_util.FunctionEvent], attr: str) -> U
     """Get time torch operators spent executing for a list of events.
 
     :param events: list of events.
-    :param attr: a FunctionEvent attribute. Expecting one of "cpu_time_total", "cuda_time_total".
+    :param attr: a FunctionEvent attribute. Expecting one of "cpu_time_total", "device_time_total".
     """
-    if attr not in ["cpu_time_total", "cuda_time_total"]:
+    if attr not in ["cpu_time_total", "device_time_total"]:
         return -1
 
     total = 0
@@ -88,20 +88,20 @@ def get_torch_op_time(events: List[profiler_util.FunctionEvent], attr: str) -> U
 
 
 def get_device_run_durations(function_event: profiler_util.FunctionEvent) -> Tuple[float, float]:
-    """Get CPU and CUDA run durations for an event.
+    """Get CPU and device run durations for an event.
 
     :param function_event: a function event instance.
     """
     torch_cpu_time = get_torch_op_time(function_event.cpu_children, "cpu_time_total")
-    torch_cuda_time = get_torch_op_time(function_event.cpu_children, "cuda_time_total")
-    return torch_cpu_time, torch_cuda_time
+    torch_device_time = get_torch_op_time(function_event.cpu_children, "device_time_total")
+    return torch_cpu_time, torch_device_time
 
 
 def get_num_oom_events(kineto_event: _KinetoEvent, out_of_memory_events: List[List[Union[_KinetoEvent, bool]]]) -> int:
     oom_records_acc = profiler_util.MemRecordsAcc(out_of_memory_events)
-    records_in_interval = oom_records_acc.in_interval(
-        kineto_event.start_us(), kineto_event.start_us() + kineto_event.duration_us()
-    )
+    start_us = kineto_event.start_ns() / 1000
+    end_us = start_us + kineto_event.duration_ns() / 1000
+    records_in_interval = oom_records_acc.in_interval(start_us, end_us)
     return len(list(records_in_interval))
 
 

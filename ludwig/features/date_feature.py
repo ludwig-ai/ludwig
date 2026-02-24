@@ -117,7 +117,7 @@ class DateFeatureMixin(BaseFeatureMixin):
         proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.map_objects(
             input_df[feature_config[COLUMN]],
             lambda x: np.array(
-                DateFeatureMixin.date_to_list(x, datetime_format, preprocessing_parameters), dtype=np.int16
+                DateFeatureMixin.date_to_list(x, datetime_format, preprocessing_parameters), dtype=np.int32
             ),
         )
         return proc_df
@@ -140,7 +140,7 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
 
     @property
     def input_dtype(self):
-        return torch.int16
+        return torch.int32
 
     @property
     def input_shape(self) -> torch.Size:

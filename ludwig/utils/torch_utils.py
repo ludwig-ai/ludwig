@@ -18,7 +18,7 @@ _TORCH_INIT_PARAMS: Optional[Tuple] = None
 
 @DeveloperAPI
 def get_torch_device():
-    if torch.cuda.is_available():
+    if torch.cuda.is_available() and torch.cuda.device_count() > 0:
         return "cuda"
 
     if bool(os.environ.get("LUDWIG_ENABLE_MPS")):
@@ -298,10 +298,8 @@ def initialize_pytorch(
     gpus: Optional[Union[int, str, List[int]]] = None,
     gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
-    local_rank: int = 0,
-    local_size: int = 1,
 ):
-    param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads, local_rank, local_size)
+    param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads)
     if _TORCH_INIT_PARAMS is not None:
         if _TORCH_INIT_PARAMS != param_tuple:
             warnings.warn(
@@ -316,22 +314,9 @@ def initialize_pytorch(
     if not allow_parallel_threads:
         torch.set_num_threads(1)
         torch.set_num_interop_threads(1)
-        if torch.cuda.is_available():
+        if torch.cuda.is_available() and torch.cuda.device_count() > 0:
             torch.backends.cudnn.deterministic = True
             torch.backends.cudnn.benchmark = False
-
-    gpu_device_count = torch.cuda.device_count()
-    if local_size > 1 and gpus is None:
-        if 0 < gpu_device_count < local_size:
-            warnings.warn(
-                f"Distributed: disabling GPU support! This host is running with "
-                f"{local_size} worker processes but only {gpu_device_count} "
-                f"GPUs. To enable GPU training, reduce the number of worker processes "
-                f"on this host to match the number of GPUs."
-            )
-            gpus = [-1]
-        else:
-            gpus = [local_rank]
 
     if isinstance(gpus, int):
         gpus = [gpus]
@@ -342,7 +327,7 @@ def initialize_pytorch(
     if gpus and len(gpus) == 1 and gpus[0] == -1:
         # CUDA_VISIBLE_DEVICES syntax for disabling all GPUs
         os.environ["CUDA_VISIBLE_DEVICES"] = ""
-    elif torch.cuda.is_available():
+    elif torch.cuda.is_available() and torch.cuda.device_count() > 0:
         # Set visible devices so GPU utilization is isolated
         # (no GPU contention between workers).
         if gpus is not None:
@@ -353,7 +338,7 @@ def initialize_pytorch(
 
         # Limit the amount of memory that can be consumed per GPU
         if gpu_memory_limit is not None:
-            for gpu in gpus or range(gpu_device_count):
+            for gpu in gpus or range(torch.cuda.device_count()):
                 torch.cuda.memory.set_per_process_memory_fraction(gpu_memory_limit, gpu)
 
     _set_torch_init_params(param_tuple)

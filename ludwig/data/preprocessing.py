@@ -121,6 +121,9 @@ from ludwig.utils.fs_utils import file_lock, path_exists
 from ludwig.utils.misc_utils import get_from_registry, merge_dict
 from ludwig.utils.types import DataFrame, Series
 
+# Opt-in to future pandas behavior: fillna/ffill/bfill will no longer silently downcast dtypes
+pd.set_option("future.no_silent_downcasting", True)
+
 REPARTITIONING_FEATURE_TYPES = {"image", "audio"}
 
 logger = logging.getLogger(__name__)
@@ -1349,7 +1352,7 @@ def build_dataset(
     col_name_to_dtype = {}
     for col_name, col in proc_cols.items():
         # if col is a list of list-like objects, we assume the internal dtype of each col[i] remains unchanged.
-        if type(col) is list and type(col[0]) in {list, np.ndarray, torch.Tensor}:
+        if isinstance(col, list) and isinstance(col[0], (list, np.ndarray, torch.Tensor)):
             continue
         col_name_to_dtype[col_name] = col.dtype
     dataset = dataset.astype(col_name_to_dtype)
@@ -1732,18 +1735,20 @@ def _handle_missing_values(
             computed_fill_value,
         )
     elif missing_value_strategy in {BFILL, FFILL}:
-        dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
-            method=missing_value_strategy,
-        )
+        if missing_value_strategy == BFILL:
+            dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].bfill()
+        else:
+            dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].ffill()
 
         # If the first few rows or last few rows of a dataset is a NaN, it will still be a NaN after ffill or bfill are
         # applied. This causes downstream errors with Dask (https://github.com/ludwig-ai/ludwig/issues/2452)
         # To get around this issue, apply the primary missing value strategy (say bfill) first, and then follow it
         # up with the other missing value strategy (ffill) to ensure all NaNs are filled
         if backend.df_engine.compute(dataset_cols[feature[COLUMN]].isna().sum()) > 0:
-            dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
-                method=BFILL if missing_value_strategy == FFILL else FFILL,
-            )
+            if missing_value_strategy == FFILL:
+                dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].bfill()
+            else:
+                dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].ffill()
     elif missing_value_strategy == DROP_ROW:
         # Here we only drop from this series, but after preprocessing we'll do a second
         # round of dropping NA values from the entire output dataframe, which will

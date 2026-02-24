@@ -54,7 +54,7 @@ try:
     import dask
     import dask.dataframe as dd
 
-    DASK_DF_FORMATS = {dd.core.DataFrame}
+    DASK_DF_FORMATS = {dd.DataFrame}
 except ImportError:
     DASK_DF_FORMATS = set()
     dd = None
@@ -828,14 +828,14 @@ class NumpyEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, (set, tuple)):
             return list(o)
+        elif isinstance(o, np.bool_):
+            return bool(o)
         elif isinstance(o, np.integer):
             return int(o)
         elif isinstance(o, np.floating):
             return float(o)
         elif isinstance(o, np.ndarray):
             return o.tolist()
-        elif isinstance(o, np.bool_):
-            return bool(o)
         elif dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
         else:
@@ -884,8 +884,8 @@ def figure_data_format_dataset(dataset):
         return figure_data_format_dataset(dataset.unwrap())
     elif isinstance(dataset, pd.DataFrame):
         return pd.DataFrame
-    elif dd and isinstance(dataset, dd.core.DataFrame):
-        return dd.core.DataFrame
+    elif dd and isinstance(dataset, dd.DataFrame):
+        return dd.DataFrame
     elif isinstance(dataset, dict):
         return dict
     elif isinstance(dataset, str):

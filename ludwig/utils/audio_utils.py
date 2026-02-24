@@ -85,12 +85,7 @@ def read_audio_from_path(path: str) -> Optional[TorchAudioTuple]:
 def read_audio_from_bytes_obj(bytes_obj: bytes) -> Optional[TorchAudioTuple]:
     try:
         f = BytesIO(bytes_obj)
-        if _TORCH_AUDIO_210:
-            return torchaudio.load(f, backend="sox")
-        elif _TORCH_AUDIO_201:
-            return torchaudio.backend.sox_io_backend.load(f)
-        else:
-            return torchaudio.backend.sox_backend.load(f)
+        return torchaudio.load(f)
     except Exception as e:
         logger.warning(e)
         return None

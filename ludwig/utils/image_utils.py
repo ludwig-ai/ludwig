@@ -29,6 +29,7 @@ from torchvision.models._api import WeightsEnum
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CROP_OR_PAD, IMAGE_MAX_CLASSES, INTERPOLATE
+from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
 from ludwig.utils.registry import Registry
 
@@ -86,9 +87,37 @@ def get_average_image(image_lst: List[np.ndarray]) -> np.array:
 
 @DeveloperAPI
 def is_bytes_image(bytes_obj) -> bool:
-    import imghdr
+    """Check if a bytes object is an image using PIL."""
+    try:
+        from io import BytesIO
 
-    return imghdr.what(None, bytes_obj) is not None
+        from PIL import Image
+
+        if isinstance(bytes_obj, bytes):
+            bytes_obj = BytesIO(bytes_obj)
+        Image.open(bytes_obj).verify()
+        return True
+    except Exception:
+        return False
+
+
+def is_image(src_path: str, img_entry: Union[bytes, str], column: str) -> bool:
+    if not isinstance(img_entry, str):
+        return False
+    try:
+        from io import BytesIO
+
+        from PIL import Image
+
+        path = get_abs_path(src_path, img_entry)
+        bytes_obj = get_bytes_obj_from_path(path)
+        if isinstance(bytes_obj, bytes):
+            bytes_obj = BytesIO(bytes_obj)
+        Image.open(bytes_obj).verify()
+        return True
+    except Exception as e:
+        logger.warning(f"While assessing potential image in is_image() for column {column}, encountered exception: {e}")
+        return False
 
 
 @DeveloperAPI
@@ -446,12 +475,12 @@ def to_np_tuple(prop: Union[int, Iterable]) -> np.ndarray:
     height_stride = 2 and width_stride = 3. stride=2 gets converted into
     np.array([2, 2]).
     """
-    if type(prop) is int:
+    if isinstance(prop, int):
         return np.ones(2).astype(int) * prop
+    elif isinstance(prop, np.ndarray) and prop.size == 2:
+        return prop.astype(int)
     elif isinstance(prop, Iterable) and len(prop) == 2:
         return np.array(list(prop)).astype(int)
-    elif type(prop) is np.ndarray and prop.size == 2:
-        return prop.astype(int)
     else:
         raise TypeError(f"prop must be int or iterable of length 2, but is {prop}.")
 

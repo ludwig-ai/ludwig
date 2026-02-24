@@ -68,16 +68,6 @@ class MultiHeadSelfAttention(LudwigModule):
         self.value_dense = nn.Linear(input_size, hidden_size)
         self.combine_heads = nn.Linear(hidden_size, hidden_size)
 
-    def attention(self, query, key, value, mask=None):
-        score = torch.matmul(query, key.permute(0, 1, 3, 2))
-        dim_key = torch.tensor(key.shape[-1]).type(torch.float32)
-        scaled_score = score / torch.sqrt(dim_key)
-        if mask:
-            scaled_score = mask * scaled_score
-        weights = F.softmax(scaled_score, dim=-1)
-        output = torch.matmul(weights, value)
-        return output, weights
-
     def separate_heads(self, inputs, batch_size):
         inputs = torch.reshape(inputs, (batch_size, -1, self.num_heads, self.projection_dim))
         return torch.permute(inputs, (0, 2, 1, 3))
@@ -91,7 +81,8 @@ class MultiHeadSelfAttention(LudwigModule):
         query = self.separate_heads(query, batch_size)  # (batch_size, num_heads, seq_len, projection_dim)
         key = self.separate_heads(key, batch_size)  # (batch_size, num_heads, seq_len, projection_dim)
         value = self.separate_heads(value, batch_size)  # (batch_size, num_heads, seq_len, projection_dim)
-        outputs, weights = self.attention(query, key, value, mask=mask)
+        attn_mask = mask if mask is not None else None
+        outputs = F.scaled_dot_product_attention(query, key, value, attn_mask=attn_mask)
         outputs = torch.permute(outputs, (0, 2, 1, 3))  # (batch_size, seq_len, num_heads, projection_dim)
         concat_outputs = torch.reshape(outputs, (batch_size, -1, self.embedding_size))  # (batch_size, seq_len, h)
         projected_outputs = self.combine_heads(concat_outputs)  # (batch_size, seq_len, h)

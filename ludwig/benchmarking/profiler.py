@@ -220,7 +220,10 @@ class LudwigProfiler(contextlib.ContextDecorator):
         try:
             self.queue.put(STOP_MESSAGE)
             self.t.join()
-            self.info = self.queue.get()
+            result = self.queue.get()
+            # If monitor thread crashed, result may be a string instead of dict
+            if isinstance(result, dict):
+                self.info = result
             # recording in microseconds to be in line with torch profiler time recording.
             self.info["end_time"] = time.perf_counter_ns() / 1000
             self.info["end_disk_usage"] = shutil.disk_usage(os.path.expanduser("~")).used

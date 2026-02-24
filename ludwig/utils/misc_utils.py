@@ -42,7 +42,7 @@ def set_random_seed(random_seed):
     random.seed(random_seed)
     numpy.random.seed(random_seed)
     torch.manual_seed(random_seed)
-    if torch.cuda.is_available():
+    if torch.cuda.is_available() and torch.cuda.device_count() > 0:
         torch.cuda.manual_seed(random_seed)
 
 

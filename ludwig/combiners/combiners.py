@@ -639,7 +639,12 @@ class TabTransformerCombiner(Combiner):
         for i_f in self.unembeddable_features:
             concatenated_unembeddable_encoders_size += input_features.get(i_f).output_shape[0]
 
-        self.layer_norm = torch.nn.LayerNorm(concatenated_unembeddable_encoders_size)
+        # Skip LayerNorm when normalizing a single value — LayerNorm(1) always
+        # outputs zero which kills gradients for all downstream parameters.
+        if concatenated_unembeddable_encoders_size > 1:
+            self.layer_norm = torch.nn.LayerNorm(concatenated_unembeddable_encoders_size)
+        else:
+            self.layer_norm = torch.nn.Identity()
 
         logger.debug("  TransformerStack")
         self.transformer_stack = TransformerStack(
@@ -891,10 +896,8 @@ class ComparatorCombiner(Combiner):
         element_wise_mul = e1_hidden * e2_hidden  # [bs, output_size]
         dot_product = torch.sum(element_wise_mul, 1, keepdim=True)  # [bs, 1]
         abs_diff = torch.abs(e1_hidden - e2_hidden)  # [bs, output_size]
-        bilinear_prod = torch.bmm(
-            torch.mm(e1_hidden, self.bilinear_weights).unsqueeze(1), e2_hidden.unsqueeze(-1)
-        ).squeeze(
-            -1
+        bilinear_prod = torch.sum(
+            torch.mm(e1_hidden, self.bilinear_weights) * e2_hidden, dim=1, keepdim=True
         )  # [bs, 1]
 
         logger.debug(
