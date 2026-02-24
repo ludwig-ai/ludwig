@@ -298,6 +298,10 @@ def hyperopt(
         parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
     )
 
+    # Explicitly default to a local backend to avoid picking up Ray
+    # backend from the environment.
+    backend = backend or config_dict.get("backend") or "local"
+    backend = initialize_backend(backend)
     if not (
         isinstance(backend, LocalBackend)
         or (isinstance(hyperopt_executor, RayTuneExecutor) and isinstance(backend, RayBackend))
