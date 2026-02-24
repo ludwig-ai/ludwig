@@ -416,14 +416,10 @@ class ViTEncoder(ImageEncoder):
         self.transformer = FreezeModule(transformer, frozen=not trainable)
 
         self._output_shape = (transformer.config.hidden_size,)
-        self.output_attentions = output_attentions
 
     def forward(self, inputs: torch.Tensor, head_mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
-        output = self.transformer.module(inputs, head_mask=head_mask, output_attentions=self.output_attentions)
-        return_dict: EncoderOutputDict = {ENCODER_OUTPUT: output.pooler_output}
-        if self.output_attentions:
-            return_dict["attentions"] = output.attentions
-        return return_dict
+        output = self.transformer.module(inputs, head_mask=head_mask)
+        return {ENCODER_OUTPUT: output.pooler_output}
 
     @staticmethod
     def get_schema_cls() -> Type[ImageEncoderConfig]:
