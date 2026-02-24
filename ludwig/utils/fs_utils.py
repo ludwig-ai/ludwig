@@ -289,8 +289,7 @@ def upload_output_directory(url):
         yield None, None
         return
 
-    protocol, _ = split_protocol(url)
-    if protocol is not None:
+    if has_remote_protocol(url):
         # To avoid extra network load, write all output files locally at runtime,
         # then upload to the remote fs at the end.
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -314,9 +313,10 @@ def upload_output_directory(url):
             # Upload to remote when finished
             put_fn()
     else:
-        makedirs(url, exist_ok=True)
-        # Just use the output directory directly if using a local filesystem
-        yield url, None
+        # For local paths (including file:// URIs), use the path directly.
+        _, local_path = get_fs_and_path(url)
+        makedirs(local_path, exist_ok=True)
+        yield local_path, None
 
 
 @DeveloperAPI

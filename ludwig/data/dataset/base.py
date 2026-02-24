@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Copyright (c) 2023 Predibase, Inc., 2020 Uber Technologies, Inc.
+# Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,63 +14,42 @@
 # limitations under the License.
 # ==============================================================================
 
-from __future__ import annotations
-
 import contextlib
 from abc import ABC, abstractmethod
-from typing import Iterable
-
-from ludwig.data.batcher.base import Batcher
-from ludwig.distributed import DistributedStrategy
-from ludwig.features.base_feature import BaseFeature
-from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.types import DataFrame
 
 
 class Dataset(ABC):
     @abstractmethod
-    def __len__(self) -> int:
+    def __len__(self):
         raise NotImplementedError()
 
     @contextlib.contextmanager
     @abstractmethod
-    def initialize_batcher(
-        self,
-        batch_size: int = 128,
-        should_shuffle: bool = True,
-        random_seed: int = default_random_seed,
-        ignore_last: bool = False,
-        distributed: DistributedStrategy = None,
-    ) -> Batcher:
+    def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False):
         raise NotImplementedError()
 
-    @abstractmethod
-    def to_df(self, features: Iterable[BaseFeature] | None = None) -> DataFrame:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def to_scalar_df(self, features: Iterable[BaseFeature] | None = None) -> DataFrame:
+    def to_df(self):
         raise NotImplementedError()
 
     @property
-    def in_memory_size_bytes(self) -> int:
+    def in_memory_size_bytes(self):
         raise NotImplementedError()
 
 
 class DatasetManager(ABC):
     @abstractmethod
-    def create(self, dataset, config, training_set_metadata) -> Dataset:
+    def create(self, dataset, config, training_set_metadata):
         raise NotImplementedError()
 
     @abstractmethod
-    def save(self, cache_path, dataset, config, training_set_metadata, tag) -> Dataset:
+    def save(self, cache_path, dataset, config, training_set_metadata, tag):
         raise NotImplementedError()
 
     @abstractmethod
-    def can_cache(self, skip_save_processed_input) -> bool:
+    def can_cache(self, skip_save_processed_input):
         raise NotImplementedError()
 
     @property
     @abstractmethod
-    def data_format(self) -> str:
+    def data_format(self):
         raise NotImplementedError()

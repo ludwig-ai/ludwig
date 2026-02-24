@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Copyright (c) 2023 Predibase, Inc., 2020 Uber Technologies, Inc.
+# Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,71 +17,57 @@
 import contextlib
 import copy
 import logging
+import os
+import tempfile
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, TYPE_CHECKING
 
 import dask
 import numpy as np
 import pandas as pd
 import ray
+import ray.train as rt
 import torch
 import tqdm
-from packaging import version
+from fsspec.config import conf
+from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray import ObjectRef
-from ray.air import session
-from ray.air.checkpoint import Checkpoint
-from ray.air.config import DatasetConfig, RunConfig, ScalingConfig
-from ray.air.result import Result
-from ray.train.base_trainer import TrainingFailedError
-from ray.train.torch import TorchCheckpoint
-from ray.train.trainer import BaseTrainer as RayBaseTrainer
-from ray.tune.tuner import Tuner
+from ray.train import Checkpoint, RunConfig, ScalingConfig
+from ray.train.constants import TRAIN_ENABLE_WORKER_SPREAD_ENV
+from ray.train.torch import TorchConfig, TorchTrainer
 from ray.util.dask import ray_dask_get
 from ray.util.placement_group import placement_group, remove_placement_group
 
-from ludwig.api_annotations import DeveloperAPI
+if TYPE_CHECKING:
+    from ludwig.api import LudwigModel
+
 from ludwig.backend.base import Backend, RemoteTrainingMixin
-from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, MODEL_LLM, NAME, PROC_COLUMN
+from ludwig.backend.datasource import read_binary_files_with_index
+from ludwig.constants import MODEL_ECD, NAME, PREPROCESSING, PROC_COLUMN, TYPE
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.data.dataframe.dask import tensor_extension_casting
-from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
-from ludwig.distributed import (
-    DistributedStrategy,
-    get_default_strategy_name,
-    get_dist_strategy,
-    init_dist_strategy,
-    LocalStrategy,
-)
+
+try:
+    from ludwig.data.dataset.ray import (
+        _SCALAR_TYPES, cast_as_tensor_dtype, RayDataset, RayDatasetManager, RayDatasetShard,
+    )
+except (ImportError, AttributeError):
+    _SCALAR_TYPES = cast_as_tensor_dtype = RayDataset = RayDatasetManager = RayDatasetShard = None
 from ludwig.models.base import BaseModel
-from ludwig.models.predictor import BasePredictor, get_output_columns, get_predictor_cls
-from ludwig.schema.trainer import ECDTrainerConfig, FineTuneTrainerConfig
-from ludwig.trainers.registry import (
-    get_llm_ray_trainers_registry,
-    get_ray_trainers_registry,
-    register_llm_ray_trainer,
-    register_ray_trainer,
-)
-from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer, Trainer
-from ludwig.trainers.trainer_llm import RemoteLLMFineTuneTrainer, RemoteLLMTrainer
-from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainerConfigDict, TrainingSetMetadataDict
-from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
-from ludwig.utils.dataframe_utils import is_dask_series_or_df, set_index_name
+from ludwig.models.ecd import ECD
+from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
+from ludwig.schema.trainer import ECDTrainerConfig
+from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
+from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
+from ludwig.utils.data_utils import use_credentials
+from ludwig.utils.dataframe_utils import set_index_name
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.system_utils import Resources
-from ludwig.utils.torch_utils import initialize_pytorch
-from ludwig.utils.types import DataFrame, Series
-
-_ray220 = version.parse(ray.__version__) >= version.parse("2.2.0")
-_ray230 = version.parse(ray.__version__) >= version.parse("2.3.0")
-
-if not _ray220:
-    from ludwig.backend._ray210_compat import TunerRay210
+from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
+from ludwig.utils.types import Series
 
 logger = logging.getLogger(__name__)
 
-
-RAY_DEFAULT_PARALLELISM = 200
 FIFTEEN_MINS_IN_S = 15 * 60
 
 
@@ -90,7 +76,7 @@ def _num_nodes() -> int:
     return len(node_resources)
 
 
-def get_trainer_kwargs(**kwargs) -> TrainerConfigDict:
+def get_trainer_kwargs(**kwargs) -> Dict[str, Any]:
     kwargs = copy.deepcopy(kwargs)
 
     # Our goal is to have a worker per resource used for training.
@@ -102,15 +88,11 @@ def get_trainer_kwargs(**kwargs) -> TrainerConfigDict:
     else:
         num_workers = _num_nodes()
 
-    strategy = kwargs.pop("strategy", get_default_strategy_name())
-    backend = get_dist_strategy(strategy).get_ray_trainer_backend(**kwargs)
-
-    # Remove params used by strategy but not the trainer here
+    # Remove nics if present (legacy option)
     kwargs.pop("nics", None)
 
     defaults = dict(
-        backend=backend,
-        strategy=strategy,
+        backend=TorchConfig(),
         num_workers=num_workers,
         use_gpu=use_gpu,
         resources_per_worker={
@@ -161,287 +143,219 @@ def _get_df_engine(processor):
     return engine_cls(**processor_kwargs)
 
 
-def _local_size() -> int:
-    return torch.cuda.device_count() if torch.cuda.is_available() else 1
-
-
 def train_fn(
-    distributed_strategy: Union[str, Dict[str, Any]],
     executable_kwargs: Dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
-    remote_trainer_cls: Type[BaseTrainer] = None,  # noqa: F821
-    training_set_metadata: TrainingSetMetadataDict = None,
+    training_set_metadata: Dict[str, Any] = None,
     features: Dict[str, Dict] = None,
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    initialize_pytorch(local_rank=session.get_local_rank(), local_size=_local_size())
-    distributed = init_dist_strategy(distributed_strategy)
+    initialize_pytorch()
+
+    train_shard = RayDatasetShard(
+        rt.get_dataset_shard("train"),
+        features,
+        training_set_metadata,
+    )
+
     try:
-        train_shard = RayDatasetShard(
-            session.get_dataset_shard("train"),
+        val_shard = rt.get_dataset_shard("val")
+    except KeyError:
+        val_shard = None
+
+    if val_shard is not None:
+        val_shard = RayDatasetShard(
+            val_shard,
             features,
             training_set_metadata,
         )
 
-        try:
-            val_shard = session.get_dataset_shard("val")
-        except KeyError:
-            val_shard = None
+    try:
+        test_shard = rt.get_dataset_shard("test")
+    except KeyError:
+        test_shard = None
 
-        if val_shard is not None:
-            val_shard = RayDatasetShard(val_shard, features, training_set_metadata)
-
-        try:
-            test_shard = session.get_dataset_shard("test")
-        except KeyError:
-            test_shard = None
-
-        if test_shard is not None:
-            test_shard = RayDatasetShard(test_shard, features, training_set_metadata)
-
-        # Deserialize the model (minus weights) from Plasma
-        # Extract the weights from Plasma (without copying data)
-        # Load the weights back into the model in-place on the current device (CPU)
-        model = distributed.replace_model_from_serialization(ray.get(model_ref))
-        model = distributed.to_device(model)
-
-        trainer = remote_trainer_cls(
-            model=model,
-            distributed=distributed,
-            report_tqdm_to_ray=True,
-            **executable_kwargs,
-        )
-        results = trainer.train(train_shard, val_shard, test_shard, return_state_dict=True, **kwargs)
-        torch.cuda.empty_cache()
-
-        # Passing objects containing Torch tensors as metrics is not supported as it will throw an
-        # exception on deserialization, so create a checkpoint and return via session.report() along
-        # with the path of the checkpoint
-        ckpt = Checkpoint.from_dict({"state_dict": results})
-        torch_ckpt = TorchCheckpoint.from_checkpoint(ckpt)
-
-        # The checkpoint is put in the object store and then retrieved by the Trainable actor to be reported to Tune.
-        # It is also persisted on disk by the Trainable (and synced to cloud, if configured to do so)
-        # The result object returned from trainer.fit() contains the metrics from the last session.report() call.
-        # So, make a final call to session.report with the train_results object above.
-        session.report(
-            metrics={
-                "validation_field": trainer.validation_field,
-                "validation_metric": trainer.validation_metric,
-            },
-            checkpoint=torch_ckpt,
+    if test_shard is not None:
+        test_shard = RayDatasetShard(
+            test_shard,
+            features,
+            training_set_metadata,
         )
 
-    except Exception:
-        logger.exception("Exception raised during training by one of the workers")
-        raise
+    model = ray.get(model_ref)
+    device = get_torch_device()
+    model = model.to(device)
 
-    finally:
-        distributed.shutdown()
+    trainer = RemoteTrainer(model=model, report_tqdm_to_ray=True, **executable_kwargs)
+    results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
+
+    if results is not None:
+        # only return the model state dict back to the head node.
+        trained_model, *args = results
+        results = (trained_model.cpu().state_dict(), *args)
+
+    torch.cuda.empty_cache()
+
+    # Save results to a checkpoint so the driver can retrieve them.
+    # In Ray Train 2.x, result.metrics is only populated when a checkpoint is provided.
+    train_results = results, trainer.validation_field, trainer.validation_metric
+    with tempfile.TemporaryDirectory() as tmpdir:
+        torch.save(train_results, os.path.join(tmpdir, "train_results.pt"))
+        rt.report(metrics={}, checkpoint=Checkpoint.from_directory(tmpdir))
 
 
+@ray.remote
 def tune_batch_size_fn(
-    distributed_strategy: str,
     dataset: RayDataset = None,
+    data_loader_kwargs: Dict[str, Any] = None,
     executable_kwargs: Dict[str, Any] = None,
-    model_ref: ObjectRef = None,
-    ludwig_config: ModelConfigDict = None,
-    training_set_metadata: TrainingSetMetadataDict = None,
+    model: ECD = None,  # noqa: F821
+    ludwig_config: Dict[str, Any] = None,
+    training_set_metadata: Dict[str, Any] = None,
     features: Dict[str, Dict] = None,
-    remote_trainer_cls: Callable[[], Trainer] = None,
-    tune_for_training: bool = True,
     **kwargs,
-):
+) -> int:
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    initialize_pytorch(local_rank=session.get_local_rank(), local_size=_local_size())
-    distributed = init_dist_strategy(distributed_strategy)
+    initialize_pytorch()
+
     try:
+        ds = dataset.to_ray_dataset(shuffle=False)
         train_shard = RayDatasetShard(
-            dataset.ds,
+            ds,
             features,
             training_set_metadata,
         )
 
-        model = ray.get(model_ref)
-        model = distributed.to_device(model)
+        device = get_torch_device()
+        model = model.to(device)
 
-        def on_best_batch_size_updated(best_batch_size: int, best_samples_per_sec: float, count: int):
-            session.report(
-                metrics=dict(best_batch_size=best_batch_size),
-            )
-
-        trainer: Trainer = remote_trainer_cls(model=model, distributed=distributed, **executable_kwargs)
-        best_batch_size = trainer.tune_batch_size(
-            ludwig_config,
-            train_shard,
-            snapshot_weights=False,
-            on_best_batch_size_updated=on_best_batch_size_updated,
-            tune_for_training=tune_for_training,
-            **kwargs,
-        )
-        session.report(
-            metrics=dict(best_batch_size=best_batch_size),
-        )
+        trainer = RemoteTrainer(model=model, **executable_kwargs)
+        return trainer.tune_batch_size(ludwig_config, train_shard, **kwargs)
     finally:
         torch.cuda.empty_cache()
-        distributed.shutdown()
 
 
-@DeveloperAPI
-class TqdmCallback(ray.tune.callback.Callback):
-    """Class for a custom Ray callback that updates tqdm progress bars in the driver process."""
+@ray.remote
+def tune_learning_rate_fn(
+    dataset: RayDataset,
+    config: Dict[str, Any],
+    data_loader_kwargs: Dict[str, Any] = None,
+    executable_kwargs: Dict[str, Any] = None,
+    model: ECD = None,  # noqa: F821
+    training_set_metadata: Dict[str, Any] = None,
+    features: Dict[str, Dict] = None,
+    **kwargs,
+) -> float:
+    # Pin GPU before loading the model to prevent memory leaking onto other devices
+    initialize_pytorch()
+
+    try:
+        ds = dataset.to_ray_dataset(shuffle=False)
+        train_shard = RayDatasetShard(
+            ds,
+            features,
+            training_set_metadata,
+        )
+
+        device = get_torch_device()
+        model = model.to(device)
+
+        trainer = RemoteTrainer(model=model, **executable_kwargs)
+        return trainer.tune_learning_rate(config, train_shard, **kwargs)
+    finally:
+        torch.cuda.empty_cache()
+
+
+class TqdmCallback(rt.UserCallback):
+    """Class for a custom ray callback that updates tqdm progress bars in the driver process."""
 
     def __init__(self) -> None:
         """Constructor for TqdmCallback."""
         super().__init__()
-        self.progress_bars = {}
+        self.progess_bars = {}
 
-    def on_trial_result(self, iteration, trials, trial, result, **info):
-        """Called after receiving a result from a trial
-        https://docs.ray.io/en/latest/_modules/ray/tune/callback.html#Callback.on_trial_result."""
-        progress_bar_opts = result.get("progress_bar")
-        if not progress_bar_opts:
-            return
-        # Skip commands received by non-coordinators
-        if not progress_bar_opts["is_coordinator"]:
-            return
-        _id = progress_bar_opts["id"]
-        action = progress_bar_opts.pop("action")
-        if action == "create":
-            progress_bar_config = progress_bar_opts.get("config")
-            self.progress_bars[_id] = tqdm.tqdm(**progress_bar_config)
-        elif action == "close":
-            self.progress_bars[_id].close()
-        elif action == "update":
-            update_by = progress_bar_opts.pop("update_by")
-            self.progress_bars[_id].update(update_by)
-        elif action == "set_postfix":
-            postfix = progress_bar_opts.pop("postfix")
-            self.progress_bars[_id].set_postfix(postfix)
+    def after_report(self, run_context, metrics: List[Dict], checkpoint=None) -> None:
+        """Called every time ray.train.report is called from subprocesses.
+
+        In Ray 2.x, metrics is a list of metric dicts (one per worker).
+        We look for progress_bar data from the coordinator worker.
+        """
+        for result in metrics:
+            progress_bar_opts = result.get("progress_bar")
+            if not progress_bar_opts:
+                continue
+            # Skip commands received by non-coordinators
+            if not progress_bar_opts["is_coordinator"]:
+                continue
+            _id = progress_bar_opts["id"]
+            action = progress_bar_opts.get("action")
+            if action == "create":
+                progress_bar_config = progress_bar_opts.get("config")
+                self.progess_bars[_id] = tqdm.tqdm(**progress_bar_config)
+            elif action == "close":
+                if _id in self.progess_bars:
+                    self.progess_bars[_id].close()
+            elif action == "update":
+                update_by = progress_bar_opts.get("update_by", 1)
+                if _id in self.progess_bars:
+                    self.progess_bars[_id].update(update_by)
 
 
 @contextlib.contextmanager
-def create_runner(**kwargs):
-    trainer_kwargs = get_trainer_kwargs(**kwargs)
-    yield RayAirRunner(trainer_kwargs)
+def spread_env(use_gpu: bool = False, num_workers: int = 1, **kwargs):
+    if TRAIN_ENABLE_WORKER_SPREAD_ENV in os.environ:
+        # User set this explicitly, so honor their selection
+        yield
+        return
+
+    try:
+        if not use_gpu and num_workers > 1:
+            # When doing CPU-only training, default to a SPREAD policy to avoid
+            # packing too many workers on a single machine
+            os.environ[TRAIN_ENABLE_WORKER_SPREAD_ENV] = "1"
+        yield
+    finally:
+        if TRAIN_ENABLE_WORKER_SPREAD_ENV in os.environ:
+            del os.environ[TRAIN_ENABLE_WORKER_SPREAD_ENV]
 
 
-def fit_no_exception(trainer: RayBaseTrainer) -> Result:
-    trainable = trainer.as_trainable()
+def _build_scaling_config(trainer_kwargs: Dict[str, Any]) -> ScalingConfig:
+    """Convert legacy trainer kwargs to a Ray ScalingConfig."""
+    return ScalingConfig(
+        num_workers=trainer_kwargs.get("num_workers", 1),
+        use_gpu=trainer_kwargs.get("use_gpu", False),
+        resources_per_worker=trainer_kwargs.get("resources_per_worker"),
+    )
 
-    kwargs = dict(trainable=trainable, run_config=trainer.run_config)
-    tuner = Tuner(**kwargs) if _ray220 else TunerRay210(**kwargs)
-    result_grid = tuner.fit()
-    assert len(result_grid) == 1
 
-    result = result_grid[0]
+def run_train_remote(
+    train_loop, trainer_kwargs: Dict[str, Any], callbacks=None, datasets=None, train_loop_config=None
+):
+    """Run a distributed training function using Ray TorchTrainer."""
+    resolved_kwargs = get_trainer_kwargs(**trainer_kwargs)
+
+    scaling_config = _build_scaling_config(resolved_kwargs)
+    torch_config = resolved_kwargs.get("backend", TorchConfig())
+
+    run_config_kwargs = {}
+    if callbacks:
+        run_config_kwargs["callbacks"] = callbacks
+
+    with spread_env(**resolved_kwargs):
+        torch_trainer = TorchTrainer(
+            train_loop_per_worker=train_loop,
+            train_loop_config=train_loop_config,
+            torch_config=torch_config,
+            scaling_config=scaling_config,
+            run_config=RunConfig(**run_config_kwargs),
+            datasets=datasets,
+        )
+        result = torch_trainer.fit()
     return result
 
 
-def raise_result_error(result: Result):
-    from ray.tune.error import TuneError
-
-    try:
-        raise result.error
-    except TuneError as e:
-        raise TrainingFailedError from e
-
-
-class RayAirRunner:
-    def __init__(self, trainer_kwargs: Dict[str, Any]) -> None:
-        trainer_kwargs = copy.copy(trainer_kwargs)
-        self.backend_config = trainer_kwargs.pop("backend", None)
-        self.strategy = trainer_kwargs.pop("strategy", get_default_strategy_name())
-        self.dist_strategy = get_dist_strategy(self.strategy)
-
-        if "max_retries" in trainer_kwargs:
-            logger.warning("`max_retries` is no longer supported as a trainer argument in Ray backend. Ignoring it.")
-            del trainer_kwargs["max_retries"]
-
-        # When training on GPU, you want to pack workers together to limit network latency during
-        # allreduce. Conversely, for CPU training you want to spread out the workers to limit
-        # CPU and memory contention and avoid too many workers on a single machine.
-        strategy = "PACK" if trainer_kwargs.get("use_gpu", False) else "SPREAD"
-        # Ray Tune automatically creates a PlacementGroupFactory from the ScalingConfig internally
-        self.scaling_config = ScalingConfig(
-            placement_strategy=strategy,
-            # Override the default of 1 to prevent unnecessary CPU usage.
-            trainer_resources={"CPU": 0},
-            **trainer_kwargs,
-        )
-
-    def _get_dataset_configs(
-        self,
-        datasets: Dict[str, Any],
-        stream_window_size: Dict[str, Union[None, float]],
-        data_loader_kwargs: Dict[str, Any],
-    ) -> Dict[str, DatasetConfig]:
-        """Generates DatasetConfigs for each dataset passed into the trainer."""
-        dataset_configs = {}
-        for dataset_name, _ in datasets.items():
-            if _ray230:
-                # DatasetConfig.use_stream_api and DatasetConfig.stream_window_size have been removed as of Ray 2.3.
-                # We need to use DatasetConfig.max_object_store_memory_fraction instead -> default to 20% when windowing
-                # is enabled unless the end user specifies a different fraction.
-                # https://docs.ray.io/en/master/ray-air/check-ingest.html?highlight=max_object_store_memory_fraction#enabling-streaming-ingest # noqa
-                dataset_conf = DatasetConfig(
-                    split=True,
-                    max_object_store_memory_fraction=stream_window_size.get(dataset_name),
-                )
-            else:
-                dataset_conf = DatasetConfig(
-                    split=True,
-                    use_stream_api=True,
-                    stream_window_size=stream_window_size.get(dataset_name),
-                )
-
-            if dataset_name == "train":
-                # Mark train dataset as always required
-                dataset_conf.required = True
-                # Check data loader kwargs to see if shuffle should be enabled for the
-                # train dataset. global_shuffle is False by default for all other datasets.
-                dataset_conf.global_shuffle = data_loader_kwargs.get("shuffle", True)
-            dataset_configs[dataset_name] = dataset_conf
-        return dataset_configs
-
-    def run(
-        self,
-        train_loop_per_worker: Callable,
-        config: Dict[str, Any],
-        dataset: Dict[str, Any] = None,
-        data_loader_kwargs: Dict[str, Any] = None,
-        stream_window_size: Dict[str, Union[None, float]] = None,
-        callbacks: List[Any] = None,
-        exception_on_error: bool = True,
-    ) -> Result:
-        dataset_config = None
-        if dataset is not None:
-            data_loader_kwargs = data_loader_kwargs or {}
-            stream_window_size = stream_window_size or {}
-            dataset_config = self._get_dataset_configs(dataset, stream_window_size, data_loader_kwargs)
-
-        callbacks = callbacks or []
-
-        trainer_cls, kwargs = self.dist_strategy.get_trainer_cls(self.backend_config)
-        train_loop_config = {**config, "distributed_strategy": self.strategy}
-        trainer = trainer_cls(
-            train_loop_per_worker=train_loop_per_worker,
-            train_loop_config=train_loop_config,
-            datasets=dataset,
-            scaling_config=self.scaling_config,
-            dataset_config=dataset_config,
-            run_config=RunConfig(callbacks=callbacks, verbose=0),
-            **kwargs,
-        )
-
-        if exception_on_error:
-            return trainer.fit()
-        else:
-            return fit_no_exception(trainer)
-
-
-@register_ray_trainer(MODEL_ECD, default=True)
+@register_ray_trainer("trainer", MODEL_ECD, default=True)
 class RayTrainerV2(BaseTrainer):
     def __init__(
         self,
@@ -452,15 +366,11 @@ class RayTrainerV2(BaseTrainer):
         **kwargs,
     ):
         self.model = model.cpu()
-        self.data_loader_kwargs = data_loader_kwargs or {}
+        self.data_loader_kwargs = data_loader_kwargs
         self.executable_kwargs = executable_kwargs
         self.trainer_kwargs = trainer_kwargs
         self._validation_field = None
         self._validation_metric = None
-
-    @property
-    def remote_trainer_cls(self):
-        return RemoteTrainer
 
     @staticmethod
     def get_schema_cls():
@@ -474,63 +384,40 @@ class RayTrainerV2(BaseTrainer):
         **kwargs,
     ):
         executable_kwargs = self.executable_kwargs
+
         kwargs = {
             "training_set_metadata": training_set.training_set_metadata,
             "features": training_set.features,
             **kwargs,
         }
 
-        dataset = {"train": training_set.ds}
-        stream_window_size = {"train": training_set.window_size_bytes}
+        dataset = {"train": training_set.to_ray_dataset(shuffle=True)}
         if validation_set is not None:
-            dataset["val"] = validation_set.ds
-            stream_window_size["val"] = validation_set.window_size_bytes
+            dataset["val"] = validation_set.to_ray_dataset(shuffle=False)
         if test_set is not None:
-            dataset["test"] = test_set.ds
-            stream_window_size["test"] = test_set.window_size_bytes
+            dataset["test"] = test_set.to_ray_dataset(shuffle=False)
 
-        with create_runner(**self.trainer_kwargs) as runner:
-            # Extract weights as numpy tensors and place them in the Ray object store.
-            # If we store the weights of a model as NumPy arrays on Plasma, we can access those
-            # weights directly out of Plasma’s shared memory segments, without making any copies.
-            # This enables zero copy model loading on each training worker using shared
-            # memory from the Ray object store for model initialization.
-            dist_strategy = runner.dist_strategy
-            model_ref = ray.put(dist_strategy.extract_model_for_serialization(self.model))
-            trainer_results = runner.run(
-                lambda config: train_fn(**config),
-                config={
-                    "executable_kwargs": executable_kwargs,
-                    "model_ref": model_ref,
-                    "remote_trainer_cls": self.remote_trainer_cls,
-                    **kwargs,
-                },
-                callbacks=[TqdmCallback()],
-                data_loader_kwargs=self.data_loader_kwargs,
-                dataset=dataset,
-                stream_window_size=stream_window_size,
-            )
+        train_loop_config = {"executable_kwargs": executable_kwargs, "model_ref": ray.put(self.model), **kwargs}
 
-        # re-register the weights of the model object in the main process
-        self.model = dist_strategy.replace_model_from_serialization(ray.get(model_ref))
+        def _train_loop(config):
+            train_fn(**config)
 
-        # ensure module is initialized exactly as it is in the trainer process
-        # so that the state dict can be loaded back into the model correctly.
-        self.model.prepare_for_training()
+        result = run_train_remote(
+            _train_loop,
+            trainer_kwargs=self.trainer_kwargs,
+            callbacks=[TqdmCallback()],
+            datasets=dataset,
+            train_loop_config=train_loop_config,
+        )
 
-        # Set validation field and metric used by trainer
-        self._validation_field = trainer_results.metrics["validation_field"]
-        self._validation_metric = trainer_results.metrics["validation_metric"]
-
-        # Load model from checkpoint
-        ckpt = TorchCheckpoint.from_checkpoint(trainer_results.checkpoint)
-        results = ckpt.to_dict()["state_dict"]
+        # Load training results from the checkpoint saved by train_fn
+        with result.checkpoint.as_directory() as tmpdir:
+            train_results = torch.load(os.path.join(tmpdir, "train_results.pt"), weights_only=False)
+        results, self._validation_field, self._validation_metric = train_results
 
         # load state dict back into the model
-        # use `strict=False` to account for PEFT training, where the saved state in the checkpoint
-        # might only contain the PEFT layers that were modified during training
         state_dict, *args = results
-        self.model.load_state_dict(state_dict, strict=False)
+        self.model.load_state_dict(state_dict)
         results = (self.model, *args)
 
         return results
@@ -542,34 +429,36 @@ class RayTrainerV2(BaseTrainer):
 
     def tune_batch_size(
         self,
-        config: ModelConfigDict,
+        config: Dict[str, Any],
         training_set: RayDataset,
-        tune_for_training: bool = True,
         **kwargs,
     ) -> int:
-        with create_runner(**self.trainer_kwargs) as runner:
-            result = runner.run(
-                lambda config: tune_batch_size_fn(**config),
-                config=dict(
-                    dataset=training_set,
-                    executable_kwargs=self.executable_kwargs,
-                    model_ref=ray.put(self.model),
-                    remote_trainer_cls=self.remote_trainer_cls,
-                    ludwig_config=config,
-                    training_set_metadata=training_set.training_set_metadata,
-                    features=training_set.features,
-                    tune_for_training=tune_for_training,
-                    **kwargs,
-                ),
-                exception_on_error=False,
+        return ray.get(
+            tune_batch_size_fn.options(num_cpus=self.num_cpus, num_gpus=self.num_gpus).remote(
+                dataset=training_set,
+                data_loader_kwargs=self.data_loader_kwargs,
+                executable_kwargs=self.executable_kwargs,
+                model=ray.put(self.model),
+                ludwig_config=config,
+                training_set_metadata=training_set.training_set_metadata,
+                features=training_set.features,
+                **kwargs,
             )
+        )
 
-        best_batch_size = result.metrics.get("best_batch_size")
-        if best_batch_size is None:
-            raise_result_error(result)
-        elif result.error:
-            logger.warning(f"Exception raised during batch size tuning. Error: {str(result.error)}")
-        return best_batch_size
+    def tune_learning_rate(self, config, training_set: RayDataset, **kwargs) -> float:
+        return ray.get(
+            tune_learning_rate_fn.options(num_cpus=self.num_cpus, num_gpus=self.num_gpus).remote(
+                dataset=training_set,
+                config=config,
+                data_loader_kwargs=self.data_loader_kwargs,
+                executable_kwargs=self.executable_kwargs,
+                model=ray.put(self.model),
+                training_set_metadata=training_set.training_set_metadata,
+                features=training_set.features,
+                **kwargs,
+            )
+        )
 
     @property
     def validation_field(self):
@@ -600,14 +489,6 @@ class RayTrainerV2(BaseTrainer):
         self.config.eval_batch_size = value
 
     @property
-    def gradient_accumulation_steps(self) -> int:
-        return self.config.gradient_accumulation_steps
-
-    @gradient_accumulation_steps.setter
-    def gradient_accumulation_steps(self, value: int):
-        self.config.gradient_accumulation_steps = value
-
-    @property
     def resources_per_worker(self) -> Dict[str, Any]:
         trainer_kwargs = get_trainer_kwargs(**self.trainer_kwargs)
         return trainer_kwargs.get("resources_per_worker", {})
@@ -620,83 +501,49 @@ class RayTrainerV2(BaseTrainer):
     def num_gpus(self) -> int:
         return self.resources_per_worker.get("GPU", 0)
 
+    def set_base_learning_rate(self, learning_rate: float):
+        self.config.learning_rate = learning_rate
+
     def shutdown(self):
         pass
 
 
-@register_ray_trainer(MODEL_LLM)
-class RayLLMTrainer(RayTrainerV2):
-    @property
-    def remote_trainer_cls(self):
-        return RemoteLLMTrainer
-
-
-@register_llm_ray_trainer("finetune")
-class RayLLMFineTuneTrainer(RayTrainerV2):
-    @property
-    def get_schema_cls():
-        return FineTuneTrainerConfig
-
-    @property
-    def remote_trainer_cls(self):
-        return RemoteLLMFineTuneTrainer
-
-
 def eval_fn(
-    distributed_strategy: Union[str, Dict[str, Any]],
     predictor_kwargs: Dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
-    training_set_metadata: TrainingSetMetadataDict = None,
+    training_set_metadata: Dict[str, Any] = None,
     features: Dict[str, Dict] = None,
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    initialize_pytorch(local_rank=session.get_local_rank(), local_size=_local_size())
-    distributed = init_dist_strategy(distributed_strategy)
+    initialize_pytorch()
+
     try:
         eval_shard = RayDatasetShard(
-            session.get_dataset_shard("eval"),
+            rt.get_dataset_shard("eval"),
             features,
             training_set_metadata,
         )
 
-        # Deserialize the model (minus weights) from Plasma
-        # Extract the weights from Plasma (without copying data)
-        # Load the weights back into the model in-place on the current device (CPU)
-        model = distributed.replace_model_from_serialization(ray.get(model_ref))
-        model = distributed.to_device(model)
+        model = ray.get(model_ref)
+        device = get_torch_device()
+        model = model.to(device)
 
-        # have to wrap here because we are passing into predictor directly.
-        # This is in contrast creating the predictor in the trainer class and
-        # passing in the model post-wrap.
-        dist_model = distributed.prepare_for_inference(model)
+        predictor = RemotePredictor(model=model, report_tqdm_to_ray=True, **predictor_kwargs)
+        eval_results = predictor.batch_evaluation(eval_shard, **kwargs)
 
-        predictor = get_predictor_cls(model.type())(
-            dist_model=dist_model,
-            distributed=distributed,
-            report_tqdm_to_ray=True,
-            remote=True,
-            model=model,
-            **predictor_kwargs,
-        )
-        results = predictor.batch_evaluation(eval_shard, **kwargs)
-
-        # The result object returned from trainer.fit() contains the metrics from the last session.report() call.
-        # So, make a final call to session.report with the eval_results object above.
-        session.report(metrics={"eval_results": results})
+        # Save results to a checkpoint so the driver can retrieve them.
+        # In Ray Train 2.x, result.metrics is only populated when a checkpoint is provided.
+        with tempfile.TemporaryDirectory() as tmpdir:
+            torch.save(eval_results, os.path.join(tmpdir, "eval_results.pt"))
+            rt.report(metrics={}, checkpoint=Checkpoint.from_directory(tmpdir))
     finally:
         torch.cuda.empty_cache()
-        distributed.shutdown()
 
 
 class RayPredictor(BasePredictor):
     def __init__(
-        self,
-        model: BaseModel,
-        df_engine: DataFrameEngine,
-        trainer_kwargs,
-        data_loader_kwargs,
-        **predictor_kwargs,
+        self, model: BaseModel, df_engine: DataFrameEngine, trainer_kwargs, data_loader_kwargs, **predictor_kwargs
     ):
         self.batch_size = predictor_kwargs["batch_size"]
         self.trainer_kwargs = trainer_kwargs
@@ -716,48 +563,44 @@ class RayPredictor(BasePredictor):
         num_cpus = resources_per_worker.get("CPU", (1 if num_gpus == 0 else 0))
         return num_cpus, num_gpus
 
-    def batch_predict(
-        self, dataset: RayDataset, *args, collect_logits: bool = False, model_ref: ObjectRef = None, **kwargs
-    ):
+    def batch_predict(self, dataset: RayDataset, *args, collect_logits: bool = False, **kwargs):
         self._check_dataset(dataset)
 
         predictor_kwargs = self.predictor_kwargs
         output_columns = get_output_columns(self.model.output_features, include_logits=collect_logits)
-
-        num_cpus, num_gpus = self.get_resources_per_worker()
-
-        distributed_strategy = self.trainer_kwargs.get("strategy", get_default_strategy_name())
-        if self.model.type() == MODEL_LLM:
-            # make sure all gpus available in a single node are used by a single worker during batch predict
-            num_gpus = int(max(n["Resources"].get("GPU", 0) for n in ray.nodes()))
-        dist_strategy = get_dist_strategy(distributed_strategy)
-
-        # reuse model ref if provided
-        if model_ref is None:
-            model_ref = ray.put(dist_strategy.extract_model_for_serialization(self.model))
-
         batch_predictor = self.get_batch_infer_model(
-            model_ref,
+            self.model,
             predictor_kwargs,
             output_columns,
             dataset.features,
             dataset.training_set_metadata,
             *args,
             collect_logits=collect_logits,
-            dist_strategy=dist_strategy,
             **kwargs,
         )
 
-        with tensor_extension_casting(False):
-            predictions = dataset.ds.map_batches(
-                batch_predictor,
-                batch_size=self.batch_size,
-                compute="actors",
-                batch_format="pandas",
-                num_cpus=num_cpus,
-                num_gpus=num_gpus,
-            )
-            predictions = self.df_engine.from_ray_dataset(predictions)
+        columns = [f.proc_column for f in self.model.input_features.values()]
+
+        def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
+            for c in columns:
+                df[c] = cast_as_tensor_dtype(df[c])
+            return df
+
+        num_cpus, num_gpus = self.get_resources_per_worker()
+
+        predictions = dataset.ds.map_batches(to_tensors, batch_format="pandas").map_batches(
+            batch_predictor,
+            batch_size=self.batch_size,
+            compute=ray.data.ActorPoolStrategy(),
+            batch_format="pandas",
+            num_cpus=num_cpus,
+            num_gpus=num_gpus,
+        )
+
+        predictions = self.df_engine.from_ray_dataset(predictions)
+
+        for of_feature in self.model.output_features.values():
+            predictions = of_feature.unflatten(predictions)
 
         return predictions
 
@@ -771,37 +614,42 @@ class RayPredictor(BasePredictor):
         collect_logits=False,
         **kwargs,
     ):
-        # We need to be in a Horovod context to collect the aggregated metrics, since it relies on collective
-        # communication ops. However, Horovod is not suitable for transforming one big dataset to another. For that
-        # we will use Ray Datasets. Therefore, we break this up into two separate steps, and two passes over the
-        # dataset. In the future, we can explore ways to combine these into a single step to reduce IO.
-        with create_runner(**self.trainer_kwargs) as runner:
-            dist_strategy = runner.dist_strategy
-            model_ref = ray.put(dist_strategy.extract_model_for_serialization(self.model))
-            # Collect eval metrics by distributing work across nodes / gpus with Horovod
-            datasets = {"eval": dataset.ds}
-            stream_window_size = {"eval": dataset.window_size_bytes}
-            predictor_kwargs = {**self.predictor_kwargs, "collect_predictions": False}
-            eval_results = runner.run(
-                lambda config: eval_fn(**config),
-                config={
-                    "predictor_kwargs": predictor_kwargs,
-                    "model_ref": model_ref,
-                    "training_set_metadata": dataset.training_set_metadata,
-                    "features": dataset.features,
-                    **kwargs,
-                },
-                dataset=datasets,
-                data_loader_kwargs=self.data_loader_kwargs,
-                stream_window_size=stream_window_size,
-            )
+        # We need to be in a distributed context to collect the aggregated metrics, since it relies on collective
+        # communication ops. However, distributed training is not suitable for transforming one big dataset to another.
+        # For that we will use Ray Datasets. Therefore, we break this up into two separate steps, and two passes over
+        # the dataset. In the future, we can explore ways to combine these into a single step to reduce IO.
+        # Collect eval metrics by distributing work across nodes / gpus
+        datasets = {"eval": dataset.to_ray_dataset(shuffle=False)}
+        predictor_kwargs = {
+            **self.predictor_kwargs,
+            "collect_predictions": False,
+        }
+        eval_loop_config = {
+            "predictor_kwargs": predictor_kwargs,
+            "model_ref": ray.put(self.model),
+            "training_set_metadata": dataset.training_set_metadata,
+            "features": dataset.features,
+            **kwargs,
+        }
 
-        eval_stats = eval_results.metrics["eval_results"][0]
+        def _eval_loop(config):
+            eval_fn(**config)
+
+        result = run_train_remote(
+            _eval_loop,
+            trainer_kwargs=self.trainer_kwargs,
+            datasets=datasets,
+            train_loop_config=eval_loop_config,
+        )
+
+        # Load eval results from the checkpoint saved by eval_fn
+        with result.checkpoint.as_directory() as tmpdir:
+            eval_stats, _ = torch.load(os.path.join(tmpdir, "eval_results.pt"), weights_only=False)
 
         predictions = None
         if collect_predictions:
             # Collect eval predictions by using Ray Datasets to transform partitions of the data in parallel
-            predictions = self.batch_predict(dataset, collect_logits=collect_logits, model_ref=model_ref)
+            predictions = self.batch_predict(dataset, collect_logits=collect_logits)
 
         return eval_stats, predictions
 
@@ -819,24 +667,21 @@ class RayPredictor(BasePredictor):
 
     def get_batch_infer_model(
         self,
-        model_ref: ObjectRef,  # noqa: F821
+        model: "LudwigModel",  # noqa: F821
         predictor_kwargs: Dict[str, Any],
         output_columns: List[str],
         features: Dict[str, Dict],
-        training_set_metadata: TrainingSetMetadataDict,
-        dist_strategy: DistributedStrategy,
+        training_set_metadata: Dict[str, Any],
         *args,
         **kwargs,
     ):
+        model_ref = ray.put(model)
+
         class BatchInferModel:
             def __init__(self):
-                # only use passed in distributed strategy for loading the model into the worker
-                model = dist_strategy.replace_model_from_serialization(ray.get(model_ref))
-
-                # use local strategy for model sharding and batch inference
-                distributed = LocalStrategy()
-                model = distributed.to_device(model)
-                dist_model = distributed.prepare_for_inference(model)
+                model = ray.get(model_ref)
+                device = get_torch_device()
+                self.model = model.to(device)
 
                 self.output_columns = output_columns
                 self.features = features
@@ -844,24 +689,21 @@ class RayPredictor(BasePredictor):
                 self.reshape_map = {
                     f[PROC_COLUMN]: training_set_metadata[f[NAME]].get("reshape") for f in features.values()
                 }
-
-                # do not use distributed strategy for batch inference
-                predictor = get_predictor_cls(model.type())(
-                    dist_model, distributed=distributed, model=model, **predictor_kwargs
-                )
+                predictor = Predictor(model, **predictor_kwargs)
                 self.predict = partial(predictor.predict_single, *args, **kwargs)
 
             def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
                 dataset = self._prepare_batch(df)
                 predictions = self.predict(batch=dataset).set_index(df.index)
+                for output_feature in self.model.output_features.values():
+                    predictions = output_feature.flatten(predictions)
                 ordered_predictions = predictions[self.output_columns]
                 return ordered_predictions
 
-            # TODO(travis): consolidate with implementation in data/ray.py
             def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:
                 res = {}
                 for c in self.features.keys():
-                    if batch[c].values.dtype == "object":
+                    if self.features[c][TYPE] not in _SCALAR_TYPES:
                         # Ensure columns stacked instead of turned into np.array([np.array, ...], dtype=object) objects
                         res[c] = np.stack(batch[c].values)
                     else:
@@ -880,14 +722,7 @@ class RayPredictor(BasePredictor):
 class RayBackend(RemoteTrainingMixin, Backend):
     BACKEND_TYPE = "ray"
 
-    def __init__(
-        self,
-        processor=None,
-        trainer=None,
-        loader=None,
-        preprocessor_kwargs=None,
-        **kwargs,
-    ):
+    def __init__(self, processor=None, trainer=None, loader=None, preprocessor_kwargs=None, **kwargs):
         super().__init__(dataset_manager=RayDatasetManager(self), **kwargs)
         self._preprocessor_kwargs = preprocessor_kwargs or {}
         self._df_engine = _get_df_engine(processor)
@@ -902,6 +737,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
         dask.config.set(scheduler=ray_dask_get)
         # Disable placement groups on dask
         dask.config.set(annotations={"ray_remote_args": {"placement_group": None}})
+        # Prevent Dask from converting object-dtype columns to PyArrow strings,
+        # which corrupts binary data, numpy arrays, and complex Python objects.
+        dask.config.set({"dataframe.convert-string": False})
 
     def generate_bundles(self, num_cpu):
         # Ray requires that each bundle be scheduleable on a single node.
@@ -949,21 +787,19 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
     def create_trainer(self, model: BaseModel, **kwargs) -> "BaseTrainer":  # noqa: F821
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
+        trainers_for_model = get_from_registry(model.type(), ray_trainers_registry)
 
-        if model.type() == MODEL_LLM:
-            trainer_config = kwargs.get("config")
-            trainer_cls = get_from_registry(trainer_config.type, get_llm_ray_trainers_registry())
-        else:
-            trainer_cls = get_from_registry(model.type(), get_ray_trainers_registry())
+        config: ECDTrainerConfig = kwargs["config"]
+        trainer_cls = get_from_registry(config.type, trainers_for_model)
 
+        # Deep copy to workaround https://github.com/ray-project/ray/issues/24139
         all_kwargs = {
             "model": model,
-            "trainer_kwargs": self._distributed_kwargs,
+            "trainer_kwargs": copy.deepcopy(self._distributed_kwargs),
             "data_loader_kwargs": self._data_loader_kwargs,
             "executable_kwargs": executable_kwargs,
         }
         all_kwargs.update(kwargs)
-
         return trainer_cls(**all_kwargs)
 
     def create_predictor(self, model: BaseModel, **kwargs):
@@ -971,18 +807,13 @@ class RayBackend(RemoteTrainingMixin, Backend):
         return RayPredictor(
             model,
             self.df_engine,
-            self._distributed_kwargs,
+            copy.deepcopy(self._distributed_kwargs),
             self._data_loader_kwargs,
             **executable_kwargs,
         )
 
-    @property
-    def distributed_kwargs(self):
-        return self._distributed_kwargs
-
-    @distributed_kwargs.setter
-    def distributed_kwargs(self, value):
-        self._distributed_kwargs = value
+    def set_distributed_kwargs(self, **kwargs):
+        self._distributed_kwargs = kwargs
 
     @property
     def df_engine(self):
@@ -992,88 +823,64 @@ class RayBackend(RemoteTrainingMixin, Backend):
     def supports_multiprocessing(self):
         return False
 
-    def read_binary_files(
-        self,
-        column: Series,
-        map_fn: Optional[Callable] = None,
-        file_size: Optional[int] = None,
-    ) -> Series:
-        # normalize NaNs to None
-        column = column.fillna(np.nan).replace([np.nan], [None])
+    def check_lazy_load_supported(self, feature):
+        if not feature[PREPROCESSING]["in_memory"]:
+            raise ValueError(
+                f"RayBackend does not support lazy loading of data files at train time. "
+                f"Set preprocessing config `in_memory: True` for feature {feature[NAME]}"
+            )
 
+    def read_binary_files(
+        self, column: Series, map_fn: Optional[Callable] = None, file_size: Optional[int] = None
+    ) -> Series:
+        column = column.fillna(np.nan).replace([np.nan], [None])  # normalize NaNs to None
+
+        # Assume that the list of filenames is small enough to fit in memory. Should be true unless there
+        # are literally billions of filenames.
+        # TODO(travis): determine if there is a performance penalty to passing in individual files instead of
+        #  a directory. If so, we can do some preprocessing to determine if it makes sense to read the full directory
+        #  then filter out files as a postprocessing step (depending on the ratio of included to excluded files in
+        #  the directory). Based on a preliminary look at how Ray handles directory expansion to files, it looks like
+        #  there should not be any difference between providing a directory versus a list of files.
         pd_column = self.df_engine.compute(column)
         fnames = pd_column.values.tolist()
+        idxs = pd_column.index.tolist()
 
         # Sample a filename to extract the filesystem info
         sample_fname = fnames[0]
         if isinstance(sample_fname, str):
-            try:
-                import daft
-            except ImportError:
-                raise ImportError(
-                    " daft is not installed. "
-                    "In order to download binary files (like images/audio/..) please run "
-                    "pip install ludwig[distributed]"
-                )
+            fs, _ = get_fs_and_path(sample_fname)
+            filesystem = PyFileSystem(FSSpecHandler(fs))
 
-            # Set the runner for executing Daft dataframes to a Ray cluster
-            # Prevent re-initialization errors if the runner is already set
-            # This can happen if there are 2 or more audio/image columns
-            assert ray.is_initialized(), "Ray should be initialized by Ludwig already at application start"
-            daft.context.set_runner_ray(address="auto", noop_if_initialized=True)
-
-            # Convert Dask Series to Dask Dataframe
-            # This is needed because Daft only supports Dataframes, not Series
-            # See https://www.getdaft.io/projects/docs/en/latest/api_docs/doc_gen/dataframe_methods/daft.DataFrame.to_dask_dataframe.html # noqa: E501
-            df = column.to_frame(name=column.name)
-            df["idx"] = column.index
-
-            is_dask_df = is_dask_series_or_df(df, self)
-
-            if is_dask_df:
-                df = daft.from_dask_dataframe(df)
-            else:
-                df = daft.from_pandas(df)
-
-            df = df.select("idx", column.name)
-
-            if map_fn is None:
-                # Download binary files in parallel
-                fs, _ = get_fs_and_path(sample_fname)
-                df = df.with_column(
-                    column.name,
-                    df[column.name].url.download(
-                        # Use 16 worker threads to maximize image read throughput over each partition
-                        max_connections=16,
-                        # On error, replace value with a Null and just log the error
-                        on_error="null",
-                        fs=fs,
-                    ),
-                )
-            else:
-                df = df.with_column(column.name, df[column.name].apply(map_fn, return_dtype=daft.DataType.python()))
-
-            # Executes and convert Daft Dataframe to Dask DataFrame or Pandas Dataframe
-            # Note: During conversion back to dask, this preserves partitioning
-            if is_dask_df:
-                df = df.to_dask_dataframe()
-                df = self.df_engine.persist(df)
-            else:
-                df = df.to_pandas()
+            paths_and_idxs = list(zip(fnames, idxs))
+            ds = read_binary_files_with_index(paths_and_idxs, filesystem=filesystem)
+            # Rename "data" column to "value" for downstream compatibility
+            ds = ds.rename_columns({"data": "value"})
         else:
             # Assume the path has already been read in, so just convert directly to a dataset
             # Name the column "value" to match the behavior of the above
-            df = column.to_frame(name=column.name)
-            df["idx"] = df.index
+            column_df = column.to_frame(name="value")
+            column_df["idx"] = column_df.index
+            ds = self.df_engine.to_ray_dataset(column_df)
 
-            if map_fn is not None:
-                df[column.name] = self.df_engine.map_objects(df[column.name], map_fn)
+        # Collect the Ray Dataset to pandas to avoid Arrow's string coercion
+        # for binary/object columns (to_dask() converts bytes to string[pyarrow],
+        # corrupting binary data and complex Python objects).
+        pdf = ds.to_pandas()
 
-        df = df.set_index("idx", drop=True)
-        df = self.df_engine.map_partitions(
-            df, lambda pd_df: set_index_name(pd_df, column.index.name), meta={column.name: "object"}
-        )
+        if map_fn is not None:
+            with use_credentials(conf):
+                pdf["value"] = pdf["value"].map(map_fn)
 
+        pdf = pdf.rename(columns={"value": column.name})
+        if "idx" in pdf.columns:
+            pdf = pdf.set_index("idx", drop=True)
+            pdf.index.name = column.index.name
+
+        # Convert to Dask for downstream compatibility.
+        # Note: dataframe.convert-string is disabled globally in RayBackend.initialize()
+        # to prevent object-dtype columns from being coerced to PyArrow strings.
+        df = self.df_engine.from_pandas(pdf)
         return df[column.name]
 
     @property
@@ -1082,76 +889,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
             return 1
         return len(ray.nodes())
 
-    @property
-    def num_training_workers(self) -> int:
-        trainer_kwargs = get_trainer_kwargs(**self._distributed_kwargs)
-        return trainer_kwargs["num_workers"]
-
     def get_available_resources(self) -> Resources:
         resources = ray.cluster_resources()
         return Resources(cpus=resources.get("CPU", 0), gpus=resources.get("GPU", 0))
-
-    def max_concurrent_trials(self, hyperopt_config: HyperoptConfigDict) -> Union[int, None]:
-        cpus_per_trial = hyperopt_config[EXECUTOR].get(CPU_RESOURCES_PER_TRIAL, 1)
-        num_cpus_available = self.get_available_resources().cpus
-
-        # No actors will compete for ray datasets tasks dataset tasks are cpu bound
-        if cpus_per_trial == 0:
-            return None
-
-        if num_cpus_available < 2:
-            logger.warning(
-                "At least 2 CPUs are required for hyperopt when using a RayBackend, but only found "
-                f"{num_cpus_available}. If you are not using an auto-scaling Ray cluster, your hyperopt "
-                "trials may hang."
-            )
-
-        # Ray requires at least 1 free CPU to ensure trials don't stall
-        max_possible_trials = int(num_cpus_available // cpus_per_trial) - 1
-
-        # Users may be using an autoscaling cluster, so return None
-        if max_possible_trials < 1:
-            logger.warning(
-                f"Hyperopt trials will request {cpus_per_trial} CPUs in addition to CPUs needed for Ray Datasets, "
-                f" but only {num_cpus_available} CPUs are currently available. If you are not using an auto-scaling "
-                " Ray cluster, your hyperopt trials may hang."
-            )
-            return None
-
-        return max_possible_trials
-
-    def tune_batch_size(self, evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
-        return ray.get(
-            _tune_batch_size_fn.options(**self._get_transform_kwargs()).remote(
-                evaluator_cls,
-                dataset_len,
-            )
-        )
-
-    def batch_transform(self, df: DataFrame, batch_size: int, transform_fn: Callable, name: str = None) -> DataFrame:
-        ds = self.df_engine.to_ray_dataset(df)
-        with tensor_extension_casting(False):
-            ds = ds.map_batches(
-                transform_fn,
-                batch_size=batch_size,
-                compute="actors",
-                batch_format="pandas",
-                **self._get_transform_kwargs(),
-            )
-            return self.df_engine.from_ray_dataset(ds)
-
-    def _get_transform_kwargs(self) -> Dict[str, Any]:
-        trainer_kwargs = get_trainer_kwargs(**self._distributed_kwargs)
-        resources_per_worker = trainer_kwargs.get("resources_per_worker", {})
-        num_gpus = resources_per_worker.get("GPU", 0)
-        num_cpus = resources_per_worker.get("CPU", (1 if num_gpus == 0 else 0))
-        return dict(num_cpus=num_cpus, num_gpus=num_gpus)
-
-
-@ray.remote(max_calls=1)
-def _tune_batch_size_fn(evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
-    evaluator = evaluator_cls()
-    return evaluator.select_best_batch_size(dataset_len)
 
 
 def initialize_ray():

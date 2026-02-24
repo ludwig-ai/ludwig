@@ -161,6 +161,9 @@ class ECD(BaseModel):
         """Saves the model to the given path."""
         weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
         torch.save(self.state_dict(), weights_save_path)
+        # Ensure the file is fully flushed to disk before any other process reads it
+        with open(weights_save_path, "rb") as f:
+            os.fsync(f.fileno())
 
     def load(self, save_path):
         """Loads the model from the given path."""

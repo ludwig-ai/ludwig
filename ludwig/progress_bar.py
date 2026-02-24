@@ -4,15 +4,14 @@ from typing import Dict
 import tqdm
 
 try:
-    from ray.air import session
+    import ray.train as rt
 except ImportError:
-    session = None
+    rt = None
 
 
 class LudwigProgressBarActions:
     CREATE = "create"
     UPDATE = "update"
-    SET_POSTFIX = "set_postfix"
     CLOSE = "close"
 
 
@@ -21,7 +20,7 @@ class LudwigProgressBar:
 
     # Inputs
 
-    :param report_to_ray: (bool) use the ray.air.session method
+    :param report_to_ray: (bool) use the ray.train.report method
         to report progress to the ray driver. If false then this behaves as a normal tqdm
         progress bar
     :param config: (dict) the tqdm configs used for the progress bar. See https://github.com/tqdm/tqdm#parameters
@@ -51,7 +50,7 @@ class LudwigProgressBar:
 
         # Inputs
 
-        :param report_to_ray: (bool) use the ray.air.session method
+        :param report_to_ray: (bool) use the ray.train.report method
             to report progress to the ray driver. If false then this behaves as a normal tqdm
             progress bar
         :param config: (dict) the tqdm configs used for the progress bar. See https://github.com/tqdm/tqdm#parameters
@@ -62,7 +61,7 @@ class LudwigProgressBar:
 
         :return: (None) `None`
         """
-        if report_to_ray and session is None:
+        if report_to_ray and rt is None:
             raise ValueError("Set report_to_ray=True but ray is not installed. Run `pip install ray`")
 
         self.id = str(uuid.uuid4())[-8:]
@@ -82,29 +81,16 @@ class LudwigProgressBar:
                 self.config.pop("file")
             # All processes need to call ray.train.report since ray has a lock that blocks
             # a process when calling report if there are processes that haven't called it. Similar
-            # to a distributed checkpoint. Therefore we pass the flag to the driver
-            session.report(
+            # to a distributed checkpoint. Therefore we pass the flag to the driver.
+            # In Ray 2.x, rt.report() only accepts metrics and checkpoint kwargs,
+            # so we pass progress_bar data inside the metrics dict.
+            rt.report(
                 metrics={
                     "progress_bar": {
                         "id": self.id,
                         "config": self.config,
                         "action": LudwigProgressBarActions.CREATE,
                         "is_coordinator": self.is_coordinator,
-                    }
-                }
-            )
-
-    def set_postfix(self, postfix: Dict):
-        if self.progress_bar:
-            self.progress_bar.set_postfix(postfix)
-        elif self.report_to_ray:
-            session.report(
-                metrics={
-                    "progress_bar": {
-                        "id": self.id,
-                        "postfix": postfix,
-                        "is_coordinator": self.is_coordinator,
-                        "action": LudwigProgressBarActions.SET_POSTFIX,
                     }
                 }
             )
@@ -124,7 +110,7 @@ class LudwigProgressBar:
         if self.progress_bar:
             self.progress_bar.update(steps)
         elif self.report_to_ray:
-            session.report(
+            rt.report(
                 metrics={
                     "progress_bar": {
                         "id": self.id,
@@ -145,7 +131,7 @@ class LudwigProgressBar:
         if self.progress_bar:
             self.progress_bar.close()
         elif self.report_to_ray:
-            session.report(
+            rt.report(
                 metrics={
                     "progress_bar": {
                         "id": self.id,

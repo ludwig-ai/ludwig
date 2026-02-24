@@ -96,8 +96,8 @@ class DaskEngine(DataFrameEngine):
         repartitioned_cols = {}
         for k, v in proc_cols.items():
             if v.npartitions == dataset.npartitions:
-                # Outer join cols with equal partitions
-                v.divisions = dataset.divisions
+                # Outer join cols with equal partitions.
+                # Dask aligns by index automatically, so no need to force divisions.
                 dataset[k] = v
             else:
                 # If partitions have changed (e.g. due to conversion from Ray dataset), we handle separately
@@ -116,8 +116,8 @@ class DaskEngine(DataFrameEngine):
             new_divisions = proc_col_with_max_npartitions.divisions
 
             # Repartition all columns to have the same divisions
-            dataset = dataset.repartition(new_divisions)
-            repartitioned_cols = {k: v.repartition(new_divisions) for k, v in repartitioned_cols.items()}
+            dataset = dataset.repartition(divisions=new_divisions)
+            repartitioned_cols = {k: v.repartition(divisions=new_divisions) for k, v in repartitioned_cols.items()}
 
             # Outer join the remaining columns
             for k, v in repartitioned_cols.items():
@@ -127,7 +127,7 @@ class DaskEngine(DataFrameEngine):
 
     def parallelize(self, data):
         if self.parallelism:
-            return data.repartition(self.parallelism)
+            return data.repartition(npartitions=self.parallelism)
         return data
 
     def persist(self, data):
@@ -136,7 +136,7 @@ class DaskEngine(DataFrameEngine):
         return data.persist(optimize_graph=False) if self._persist else data
 
     def concat(self, dfs):
-        return self.df_lib.multi.concat(dfs)
+        return self.df_lib.concat(dfs)
 
     def compute(self, data):
         return data.compute()
@@ -146,11 +146,11 @@ class DaskEngine(DataFrameEngine):
         return dd.from_pandas(df, npartitions=parallelism)
 
     def map_objects(self, series, map_fn, meta=None):
-        meta = meta if meta is not None else ("data", "object")
+        meta = meta if meta is not None else (series.name, "object")
         return series.map(map_fn, meta=meta)
 
     def map_partitions(self, series, map_fn, meta=None):
-        meta = meta if meta is not None else ("data", "object")
+        meta = meta if meta is not None else (series.name, "object")
         return series.map_partitions(map_fn, meta=meta)
 
     def map_batches(self, series, map_fn, enable_tensor_extension_casting=True):
@@ -171,11 +171,16 @@ class DaskEngine(DataFrameEngine):
             return ds.to_dask()
 
     def apply_objects(self, df, apply_fn, meta=None):
-        meta = meta if meta is not None else ("data", "object")
+        meta = meta if meta is not None else ("result", "object")
         return df.apply(apply_fn, axis=1, meta=meta)
 
     def reduce_objects(self, series, reduce_fn):
-        return series.reduction(reduce_fn, aggregate=reduce_fn, meta=("data", "object")).compute()[0]
+        result = series.reduction(reduce_fn, aggregate=reduce_fn, meta=(series.name, "object")).compute()
+        # The result type depends on the Dask version and what reduce_fn returns.
+        # Access the scalar value safely regardless of return type.
+        if hasattr(result, "iloc"):
+            return result.iloc[0]
+        return result
 
     def split(self, df, probabilities):
         # Split the DataFrame proprotionately along partitions. This is an inexact solution designed
@@ -188,7 +193,7 @@ class DaskEngine(DataFrameEngine):
         min_prob = min(probabilities)
         min_partitions = int(1 / min_prob)
         if df.npartitions < min_partitions:
-            df = df.repartition(min_partitions)
+            df = df.repartition(npartitions=min_partitions)
 
         n = df.npartitions
         slices = df.partitions
@@ -208,6 +213,9 @@ class DaskEngine(DataFrameEngine):
                 empty_partition = df.get_partition(ix)
             else:
                 df_delayed_new.append(df_delayed[ix])
+        if not df_delayed_new:
+            # All partitions are empty, return a single empty partition
+            return empty_partition
         df = dd.from_delayed(df_delayed_new, meta=empty_partition)
         return df
 

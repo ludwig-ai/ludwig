@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Copyright (c) 2023 Predibase, Inc., 2020 Uber Technologies, Inc.
+# Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,33 +18,24 @@ import math
 
 import numpy as np
 
-from ludwig.distributed import DistributedStrategy
-from ludwig.utils.defaults import default_random_seed
-
 
 class DistributedSampler:
     """Adapted from `torch.utils.data.distributed.DistributedSampler`."""
 
-    def __init__(
-        self,
-        dataset_size: int,
-        shuffle: bool = True,
-        random_seed: int = default_random_seed,
-        distributed: DistributedStrategy = None,
-    ):
+    def __init__(self, dataset_size, shuffle=True, seed=0):
         self.dataset_size = dataset_size
-        self.num_replicas = distributed.size() if distributed else 1
-        self.rank = distributed.rank() if distributed else 0
+        self.num_replicas = 1
+        self.rank = 0
         self.epoch = 0
         self.num_samples = int(math.ceil(self.dataset_size * 1.0 / self.num_replicas))
         self.total_size = self.num_samples * self.num_replicas
         self.shuffle = shuffle
-        self.random_seed = random_seed
+        self.seed = seed
 
     def __iter__(self):
         if self.shuffle:
             # deterministically shuffle based on epoch and seed
-            indices = np.random.RandomState(seed=self.random_seed + self.epoch).permutation(self.dataset_size).tolist()
+            indices = np.random.RandomState(seed=self.seed + self.epoch).permutation(self.dataset_size).tolist()
         else:
             indices = list(range(self.dataset_size))
 

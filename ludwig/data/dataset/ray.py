@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Copyright (c) 2023 Predibase, Inc., 2019 Uber Technologies, Inc.
+# Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,84 +14,50 @@
 # limitations under the License.
 # ==============================================================================
 import contextlib
-import logging
 import math
 import queue
 import threading
 from functools import lru_cache
-from typing import Dict, Iterable, Iterator, Literal, Optional, Union
+from typing import Any, Dict, Union
 
 import numpy as np
 import pandas as pd
-import ray
-import torch
-from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
-from pyarrow.lib import ArrowInvalid
+from ray.data import Dataset as RayNativeDataset
 from ray.data import read_parquet
-from ray.data.dataset_pipeline import DatasetPipeline
+from ray.data.extensions import TensorArray
 
-from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend
-from ludwig.constants import NAME
+from ludwig.constants import BINARY, CATEGORY, NAME, NUMBER, TYPE
 from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
-from ludwig.distributed import DistributedStrategy
-from ludwig.features.base_feature import BaseFeature
-from ludwig.types import FeatureConfigDict, ModelConfigDict, TrainingSetMetadataDict
-from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP, from_numpy_dataset, to_numpy_dataset
-from ludwig.utils.dataframe_utils import to_scalar_df
+from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_proc_features
-from ludwig.utils.types import DataFrame
+from ludwig.utils.types import DataFrame, Series
 
-logger = logging.getLogger(__name__)
-
-_ray_230 = version.parse(ray.__version__) >= version.parse("2.3.0")
+_SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 
 
-@DeveloperAPI
-@default_retry()
+def cast_as_tensor_dtype(series: Series) -> Series:
+    return TensorArray(series)
+
+
 def read_remote_parquet(path: str):
     fs, path = get_fs_and_path(path)
-
-    # Fix for https://github.com/ludwig-ai/ludwig/issues/3440
-    # Parquet file reads will fail with `pyarrow.lib.ArrowInvalid` under the following conditions:
-    #     1) The Parquet data is in multi-file format
-    #     2) A relative filepath is passed to the read function
-    #     3) A filesystem object is passed to the read function
-    # The issue can be resolved by either:
-    #     1) Passing an absolute filepath
-    #     2) Not passing a filesystem object
-    try:
-        df = read_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
-    except ArrowInvalid:
-        df = read_parquet(path)
-    return df
+    return read_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
 
 
-@DeveloperAPI
 class RayDataset(Dataset):
-    """Wrapper around ray.data.Dataset.
-
-    Args:
-        df: The data to wrap
-        features: Feature-level config indexed by feature name
-        training_set_metadata: Additional training set information
-        backend: The local/distributed compute coordinator
-        window_size_bytes: The requested size of a dataset window in bytes. If "auto", sets the window size relative to
-            the dataset size and object store size. If not specified, no windowing will occur.
-    """
+    """Wrapper around ray.data.Dataset."""
 
     def __init__(
         self,
         df: Union[str, DataFrame],
-        features: Dict[str, FeatureConfigDict],
-        training_set_metadata: TrainingSetMetadataDict,
+        features: Dict[str, Dict],
+        training_set_metadata: Dict[str, Any],
         backend: Backend,
-        window_size_bytes: Optional[Union[int, Literal["auto"]]] = None,
     ):
         self.df_engine = backend.df_engine
         self.ds = self.df_engine.to_ray_dataset(df) if not isinstance(df, str) else read_remote_parquet(df)
@@ -99,54 +65,33 @@ class RayDataset(Dataset):
         self.training_set_metadata = training_set_metadata
         self.data_hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         self.data_parquet_fp = training_set_metadata.get(DATA_TRAIN_PARQUET_FP)
-        self._processed_data_fp = df if isinstance(df, str) else None
-        self.window_size_bytes = self.get_window_size_bytes(window_size_bytes)
 
-    def get_window_size_bytes(self, window_size_bytes: Optional[Union[int, Literal["auto"]]] = None) -> int:
-        """Return this dataset's window size in bytes, or translate auto-windowing into bytes."""
-        # If user has specified a window size, use it as-is.
-        if isinstance(window_size_bytes, int):
-            return window_size_bytes
+    def to_ray_dataset(
+        self,
+        shuffle: bool = True,
+        shuffle_seed: int = default_random_seed,
+    ) -> RayNativeDataset:
+        """Returns a ray.data.Dataset, optionally shuffled.
 
-        # If the user requests auto window sizing and the dataset is large,
-        # set the window size to `<available memory> // 5`.
-        elif window_size_bytes == "auto":
-            ds_memory_size = self.in_memory_size_bytes
-            cluster_memory_size = ray.cluster_resources()["object_store_memory"]
-            if ds_memory_size > cluster_memory_size // 5:
-                # TODO: Add link to windowing docs.
-                logger.info(
-                    "In-memory dataset size is greater than 20%% of object store memory. "
-                    "Enabling windowed shuffling of data to prevent chances of OOMs. "
-                )
-                if _ray_230:
-                    # In Ray nightly (>= 2.3), window size is specified as either -1 or a percentage
-                    # from 0 to 1. Default to always using 20% of object store memory.
-                    return 0.2
-                return int(cluster_memory_size // 5)
-
-        # By default, set to -1 so that an infinite window size
-        # will be used which effectively results in bulk data ingestion
-        return -1
+        In modern Ray (2.5+), datasets use lazy execution by default,
+        so there's no need for explicit windowing or pipelining.
+        """
+        ds = self.ds
+        if shuffle:
+            ds = ds.random_shuffle(seed=shuffle_seed)
+        return ds
 
     @contextlib.contextmanager
-    def initialize_batcher(
-        self,
-        batch_size=128,
-        should_shuffle=True,
-        random_seed=0,
-        ignore_last=False,
-        distributed=None,
-        augmentation_pipeline=None,
-    ):
+    def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False):
+        ds = self.ds
+        if should_shuffle:
+            ds = ds.random_shuffle(seed=seed)
         yield RayDatasetBatcher(
-            self.ds.repeat().iter_datasets(),
+            ds,
             self.features,
             self.training_set_metadata,
             batch_size,
             self.size,
-            ignore_last,
-            augmentation_pipeline=augmentation_pipeline,
         )
 
     def __len__(self):
@@ -157,66 +102,26 @@ class RayDataset(Dataset):
         return len(self)
 
     @property
-    def processed_data_fp(self) -> Optional[str]:
-        return self._processed_data_fp
-
-    @property
     def in_memory_size_bytes(self):
-        """Memory size may be unknown, so return 0 incase size_bytes() returns None
-        https://docs.ray.io/en/releases-1.12.1/_modules/ray/data/dataset.html#Dataset.size_bytes."""
         return self.ds.size_bytes() if self.ds is not None else 0
 
-    def to_df(self, features: Optional[Iterable[BaseFeature]] = None):
-        ds = self.filter_features(features)
-        return self.df_engine.from_ray_dataset(ds)
-
-    def to_scalar_df(self, features: Optional[Iterable[BaseFeature]] = None) -> DataFrame:
-        return self.df_engine.from_ray_dataset(self.to_scalar(features))
-
-    def filter_features(self, features: Optional[Iterable[BaseFeature]] = None):
-        if features is None:
-            return self.ds
-        feat_cols = [f.proc_column for f in features]
-        return self.ds.map_batches(lambda df: df[feat_cols], batch_size=None)
-
-    def to_scalar(self, features: Optional[Iterable[BaseFeature]] = None) -> DataFrame:
-        ds = self.filter_features(features)
-        return ds.map_batches(lambda df: to_scalar_df(df), batch_size=None)
-
-    def repartition(self, num_blocks: int):
-        """Repartition the dataset into the specified number of blocks.
-
-        This operation occurs in place and overwrites `self.ds` with a
-        new repartitioned dataset.
-        Args:
-            num_blocks: Number of blocks in the repartitioned data.
-        """
-        self.ds = self.ds.repartition(num_blocks=num_blocks)
+    def to_df(self):
+        return self.df_engine.from_ray_dataset(self.ds)
 
 
-@DeveloperAPI
 class RayDatasetManager(DatasetManager):
     def __init__(self, backend):
         self.backend = backend
 
-    def create(
-        self,
-        dataset: Union[str, DataFrame],
-        config: ModelConfigDict,
-        training_set_metadata: TrainingSetMetadataDict,
-    ) -> "RayDataset":
-        """Create a new Ray dataset with config."""
-        window_size_bytes = self.backend._data_loader_kwargs.get("window_size_bytes", None)
-        return RayDataset(
-            dataset, get_proc_features(config), training_set_metadata, self.backend, window_size_bytes=window_size_bytes
-        )
+    def create(self, dataset: Union[str, DataFrame], config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
+        return RayDataset(dataset, get_proc_features(config), training_set_metadata, self.backend)
 
     def save(
         self,
         cache_path: str,
         dataset: DataFrame,
-        config: ModelConfigDict,
-        training_set_metadata: TrainingSetMetadataDict,
+        config: Dict[str, Any],
+        training_set_metadata: Dict[str, Any],
         tag: str,
     ):
         self.backend.df_engine.to_parquet(dataset, cache_path)
@@ -230,101 +135,59 @@ class RayDatasetManager(DatasetManager):
         return "parquet"
 
 
-@DeveloperAPI
 class RayDatasetShard(Dataset):
+    """Wraps a Ray DataIterator (from ray.train.get_dataset_shard) for distributed training."""
+
     def __init__(
         self,
-        dataset_shard: DatasetPipeline,
-        features: Dict[str, FeatureConfigDict],
-        training_set_metadata: TrainingSetMetadataDict,
+        dataset_shard,
+        features: Dict[str, Dict],
+        training_set_metadata: Dict[str, Any],
     ):
         self.dataset_shard = dataset_shard
         self.features = features
         self.training_set_metadata = training_set_metadata
-        self.create_epoch_iter()
-
-    def create_epoch_iter(self) -> None:
-        if _ray_230:
-            # In Ray >= 2.3, session.get_dataset_shard() returns a DatasetIterator object.
-            if isinstance(self.dataset_shard, ray.data.DatasetIterator):
-                if hasattr(self.dataset_shard, "_base_dataset_pipeline"):
-                    # Dataset shard is a DatasetIterator that was created from a DatasetPipeline object.
-                    # Retrieve the base object that was used to create the DatasetIterator so that we can
-                    # create the iter_epochs() like in Ray <= 2.2.
-                    self.epoch_iter = self.dataset_shard._base_dataset_pipeline.iter_epochs()
-                    return
-        else:
-            # In Ray <= 2.2, session.get_dataset_shard() returns a DatasetPipeline object.
-            if isinstance(self.dataset_shard, DatasetPipeline):
-                # Dataset shard is a DatasetPipeline during training. The Ray Dataset is converted to a
-                # DatasetPipeline by the DatasetConfig in the Trainer and is available in the train_fn
-                self.epoch_iter = self.dataset_shard.iter_epochs()
-                return
-
-        # Here, dataset shard is a RayDataset object during auto batch size tuning or learning rate tuning
-        # since it does not come from within the RayTrainer's train_fn.
-        # Convert Ray Dataset to a DatasetPipeline object before enabling epoch iteration
-        # In this scenario, there is no need to worry about windowing, shuffling etc.
-        self.epoch_iter = self.dataset_shard.repeat().iter_epochs()
 
     @contextlib.contextmanager
-    def initialize_batcher(
-        self,
-        batch_size: int = 128,
-        should_shuffle: bool = True,
-        random_seed: int = default_random_seed,
-        ignore_last: bool = False,
-        distributed: DistributedStrategy = None,
-        augmentation_pipeline=None,
-    ):
-        yield RayDatasetBatcher(
-            self.epoch_iter,
+    def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False):
+        yield RayDatasetShardBatcher(
+            self.dataset_shard,
             self.features,
             self.training_set_metadata,
             batch_size,
             self.size,
-            ignore_last,
-            augmentation_pipeline=augmentation_pipeline,
         )
 
     @lru_cache(1)
     def __len__(self):
-        return next(self.epoch_iter).count()
+        # TODO(travis): find way to avoid calling this, as it's expensive
+        # DataIterator doesn't have a direct count method; use iter to count
+        count = 0
+        for batch in self.dataset_shard.iter_batches(batch_size=4096, batch_format="pandas"):
+            count += len(batch)
+        return count
 
     @property
     def size(self):
         return len(self)
 
-    def to_df(self, features: Optional[Iterable[BaseFeature]] = None):
-        raise NotImplementedError()
 
-    def to_scalar_df(self, features: Optional[Iterable[BaseFeature]] = None) -> DataFrame:
-        raise NotImplementedError()
+class _BaseBatcher(Batcher):
+    """Shared batching logic for preparing batches from pandas DataFrames."""
 
-
-@DeveloperAPI
-class RayDatasetBatcher(Batcher):
     def __init__(
         self,
-        dataset_epoch_iterator: Iterator[DatasetPipeline],
         features: Dict[str, Dict],
-        training_set_metadata: TrainingSetMetadataDict,
+        training_set_metadata: Dict[str, Any],
         batch_size: int,
         samples_per_epoch: int,
-        ignore_last: bool = False,
-        # TODO: figure out correct typing for augmentation_pipeline after refactoring is done
-        augmentation_pipeline=None,
     ):
-        self.dataset_epoch_iterator = dataset_epoch_iterator
         self.batch_size = batch_size
         self.samples_per_epoch = samples_per_epoch
         self.training_set_metadata = training_set_metadata
-        self.ignore_last = ignore_last
-        self.augmentation_pipeline = augmentation_pipeline
 
         self.features = features
         self.columns = list(features.keys())
-        self._sample_feature_name = self.columns[0]
         self.reshape_map = {
             proc_column: training_set_metadata[feature[NAME]].get("reshape")
             for proc_column, feature in features.items()
@@ -335,7 +198,6 @@ class RayDatasetBatcher(Batcher):
         self._next_batch = None
         self._last_batch = False
         self._step = 0
-        self._fetch_next_epoch()
 
     def next_batch(self):
         if self.last_batch():
@@ -363,22 +225,6 @@ class RayDatasetBatcher(Batcher):
     def steps_per_epoch(self):
         return math.ceil(self.samples_per_epoch / self.batch_size)
 
-    def _fetch_next_epoch(self):
-        pipeline = next(self.dataset_epoch_iterator)
-
-        read_parallelism = 1
-        if read_parallelism == 1:
-            self.dataset_batch_iter = self._create_async_reader(pipeline)
-        elif read_parallelism > 1:
-            # TODO: consider removing this. doesn't work currently and read performance seems generally
-            #  very good with 1 parallelism
-            self.dataset_batch_iter = self._create_async_parallel_reader(pipeline, read_parallelism)
-        else:
-            self.dataset_batch_iter = self._create_sync_reader(pipeline)
-
-        self._step = 0
-        self._fetch_next_batch()
-
     def _fetch_next_batch(self):
         if self.dataset_batch_iter is None:
             self._last_batch = True
@@ -387,18 +233,31 @@ class RayDatasetBatcher(Batcher):
         self._last_batch = False
         try:
             self._next_batch = next(self.dataset_batch_iter)
-            # If the batch has only one row and self.ignore_last, skip the batch
-            # to prevent batchnorm / dropout related Torch errors
-            if self.batch_size > 1 and self.ignore_last and len(self._next_batch[self._sample_feature_name]) == 1:
-                raise StopIteration
         except StopIteration:
             self._last_batch = True
+
+    def _fetch_next_epoch(self):
+        raise NotImplementedError
+
+    def _to_tensors_fn(self):
+        columns = self.columns
+        features = self.features
+
+        def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
+            for c in columns:
+                # do not convert scalar columns: https://github.com/ray-project/ray/issues/20825
+                if features[c][TYPE] not in _SCALAR_TYPES:
+                    df[c] = cast_as_tensor_dtype(df[c])
+                elif features[c][TYPE] == BINARY:
+                    df[c] = df[c].astype(np.bool_)
+            return df
+
+        return to_tensors
 
     def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:
         res = {}
         for c in self.columns:
-            if batch[c].values.dtype == "object":
-                # Ensure columns stacked instead of turned into np.array([np.array, ...], dtype=object) objects
+            if self.features[c][TYPE] not in _SCALAR_TYPES:
                 res[c] = np.stack(batch[c].values)
             else:
                 res[c] = batch[c].to_numpy()
@@ -409,64 +268,46 @@ class RayDatasetBatcher(Batcher):
                 res[c] = res[c].reshape((-1, *reshape))
         return res
 
-    def _augment_batch_fn(self):
-        augmentation_pipeline = self.augmentation_pipeline
 
-        def augment_batch(df: pd.DataFrame) -> pd.DataFrame:
-            # df is pandas dataframe, where each column is Series, to use data as arrays
-            # convert dataframe to dict of arrays
-            dict_of_arrays = to_numpy_dataset(df)
+class RayDatasetBatcher(_BaseBatcher):
+    """Batcher for a full ray.data.Dataset (used by non-distributed/local Ray training)."""
 
-            if augmentation_pipeline:
-                for c, augmentations in augmentation_pipeline.items():
-                    # TODO: convert to debug message when done with development
-                    logger.info(f"RayDatasetBatcher applying augmentation pipeline to batch for feature {c}")
+    def __init__(
+        self,
+        dataset: RayNativeDataset,
+        features: Dict[str, Dict],
+        training_set_metadata: Dict[str, Any],
+        batch_size: int,
+        samples_per_epoch: int,
+    ):
+        self.dataset = dataset
+        super().__init__(features, training_set_metadata, batch_size, samples_per_epoch)
+        self._fetch_next_epoch()
 
-                    # apply augmentation pipeline operations to the batch of np.array
-                    dict_of_arrays[c] = augmentations(torch.tensor(dict_of_arrays[c])).numpy()
+    def _fetch_next_epoch(self):
+        """Create an async reader over the dataset for one epoch."""
+        self.dataset_batch_iter = self._create_async_reader(self.dataset)
+        self._step = 0
+        self._fetch_next_batch()
 
-            # convert dict of arrays back to dataframe
-            df = from_numpy_dataset(dict_of_arrays)
-            return df
-
-        return augment_batch
-
-    def _create_sync_reader(self, pipeline: DatasetPipeline):
-        def sync_read():
-            for batch in pipeline.iter_batches(prefetch_blocks=0, batch_size=self.batch_size, batch_format="pandas"):
-                yield self._prepare_batch(batch)
-
-        return sync_read()
-
-    def _create_async_reader(self, pipeline: DatasetPipeline):
+    def _create_async_reader(self, dataset: RayNativeDataset):
         q = queue.Queue(maxsize=100)
         batch_size = self.batch_size
-        augment_batch = self._augment_batch_fn()
+        to_tensors = self._to_tensors_fn()
 
         def producer():
-            nonlocal pipeline
-
-            try:
-                # if augmentation is specified, setup prefetching batch of data
-                if self.augmentation_pipeline:
-                    pipeline = pipeline.map_batches(augment_batch, batch_size=batch_size, batch_format="pandas")
-
-                for batch in pipeline.iter_batches(prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"):
-                    res = self._prepare_batch(batch)
-                    q.put(res)
-                q.put(None)
-            except Exception as e:
-                # Ensure any exceptions raised in this background thread are raised on the main thread
-                q.put(e)
+            for batch in dataset.map_batches(to_tensors, batch_format="pandas").iter_batches(
+                prefetch_batches=1, batch_size=batch_size, batch_format="pandas"
+            ):
+                res = self._prepare_batch(batch)
+                q.put(res)
+            q.put(None)
 
         def async_read():
             t = threading.Thread(target=producer)
             t.start()
             while True:
                 batch = q.get(block=True)
-                if isinstance(batch, Exception):
-                    # Raise any exceptions from the producer thread
-                    raise batch
                 if batch is None:
                     break
                 yield batch
@@ -474,34 +315,50 @@ class RayDatasetBatcher(Batcher):
 
         return async_read()
 
-    def _create_async_parallel_reader(self, pipeline: DatasetPipeline, num_threads: int):
+
+class RayDatasetShardBatcher(_BaseBatcher):
+    """Batcher for a Ray DataIterator shard (used in distributed training workers)."""
+
+    def __init__(
+        self,
+        data_iterator,
+        features: Dict[str, Dict],
+        training_set_metadata: Dict[str, Any],
+        batch_size: int,
+        samples_per_epoch: int,
+    ):
+        self.data_iterator = data_iterator
+        super().__init__(features, training_set_metadata, batch_size, samples_per_epoch)
+        self._fetch_next_epoch()
+
+    def _fetch_next_epoch(self):
+        """Create an async reader from the DataIterator for one epoch."""
+        self.dataset_batch_iter = self._create_async_reader()
+        self._step = 0
+        self._fetch_next_batch()
+
+    def _create_async_reader(self):
         q = queue.Queue(maxsize=100)
-
         batch_size = self.batch_size
+        to_tensors = self._to_tensors_fn()
 
-        splits = pipeline.split(n=num_threads)
-
-        def producer(i):
-            for batch in splits[i].iter_batches(prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"):
+        def producer():
+            for batch in self.data_iterator.iter_batches(
+                batch_size=batch_size, batch_format="pandas", prefetch_batches=1,
+            ):
+                batch = to_tensors(batch)
                 res = self._prepare_batch(batch)
                 q.put(res)
             q.put(None)
 
-        def async_parallel_read():
-            threads = [threading.Thread(target=producer, args=(i,)) for i in range(num_threads)]
-            for t in threads:
-                t.start()
-
-            active_threads = num_threads
+        def async_read():
+            t = threading.Thread(target=producer)
+            t.start()
             while True:
                 batch = q.get(block=True)
                 if batch is None:
-                    active_threads -= 1
-                    if active_threads == 0:
-                        break
+                    break
                 yield batch
+            t.join()
 
-            for t in threads:
-                t.join()
-
-        return async_parallel_read()
+        return async_read()

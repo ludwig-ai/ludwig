@@ -127,8 +127,9 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
 
     def get_model_inputs(self):
         """Returns a dict of feature name -> sample model input."""
+        device = next(self.parameters()).device
         inputs = {
-            input_feature_name: input_feature.create_sample_input()
+            input_feature_name: input_feature.create_sample_input().to(device)
             for input_feature_name, input_feature in self.input_features.items()
         }
         return inputs

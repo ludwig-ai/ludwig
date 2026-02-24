@@ -4,25 +4,27 @@ import sys
 from abc import ABC, abstractmethod
 from collections import defaultdict, OrderedDict
 from pprint import pformat
-from typing import Dict, List, Optional, Type
+from typing import Dict
 
 import numpy as np
 import pandas as pd
 import psutil
 import torch
-from torch import nn
 
-from ludwig.constants import COMBINED, LAST_HIDDEN, LOGITS, MODEL_ECD, MODEL_GBM, MODEL_LLM
+from ludwig.constants import COMBINED, LAST_HIDDEN, LOGITS
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.utils import convert_to_dict
-from ludwig.distributed.base import DistributedStrategy, LocalStrategy
-from ludwig.globals import is_progressbar_disabled, PREDICTIONS_PARQUET_FILE_NAME, TEST_STATISTICS_FILE_NAME
+from ludwig.globals import (
+    is_progressbar_disabled,
+    PREDICTIONS_PARQUET_FILE_NAME,
+    PREDICTIONS_SHAPES_FILE_NAME,
+    TEST_STATISTICS_FILE_NAME,
+)
 from ludwig.models.base import BaseModel
 from ludwig.progress_bar import LudwigProgressBar
 from ludwig.utils.data_utils import save_csv, save_json
-from ludwig.utils.dataframe_utils import from_numpy_dataset
+from ludwig.utils.dataframe_utils import flatten_df, from_numpy_dataset
 from ludwig.utils.print_utils import repr_ordered_dict
-from ludwig.utils.registry import Registry
 from ludwig.utils.strings_utils import make_safe_filename
 from ludwig.utils.torch_utils import get_torch_device
 
@@ -62,74 +64,23 @@ class BasePredictor(ABC):
         self.shutdown()
 
 
-_predictor_registry = Registry[BasePredictor]()
-
-
-def register_predictor(model_types: List[str]):
-    def wrap(cls):
-        for model_type in model_types:
-            _predictor_registry[model_type] = cls
-        return cls
-
-    return wrap
-
-
-def get_predictor_cls(model_type: str) -> Type[BasePredictor]:
-    return _predictor_registry[model_type]
-
-
-@register_predictor([MODEL_ECD, MODEL_GBM])
 class Predictor(BasePredictor):
     """Predictor is a class that uses a model to predict and evaluate."""
 
-    def __init__(
-        self,
-        dist_model: nn.Module,
-        batch_size: int = 128,
-        distributed: DistributedStrategy = None,
-        report_tqdm_to_ray: bool = False,
-        model: Optional[BaseModel] = None,
-        remote: bool = False,
-        **kwargs,
-    ):
-        """
-        :param dist_model: model to use for prediction, post-wrap for distributed training
-        :param batch_size: batch size to use for prediction
-        :param distributed: distributed strategy to use for prediction
-        :param report_tqdm_to_ray: whether to report tqdm progress to Ray
-        :param model: Ludwig BaseModel before being wrapped for distributed training.
-            Used to call Ludwig helper functions.
-        """
-        model = model or dist_model
-        assert isinstance(model, BaseModel)
-
+    def __init__(self, model: BaseModel, batch_size=128, report_tqdm_to_ray=False, **kwargs):
         self._batch_size = batch_size
-        self._distributed = distributed if distributed is not None else LocalStrategy()
         self.report_tqdm_to_ray = report_tqdm_to_ray
 
-        device = get_torch_device()
-        if model.type() == MODEL_GBM:
-            # TODO (jeffkinnison): revert to using the requested device for GBMs when device usage is fixed
-            device = "cpu"
-            dist_model = dist_model.to(device)
-
-        self.device = device
-        self.dist_model = dist_model
-        self.model = model
-        self.model.metrics_to_device(device)
-
-        if remote:
-            # Only return results from rank 0 to reduce network overhead
-            self.batch_predict = self._distributed.return_first(self.batch_predict)
-            self.batch_evaluation = self._distributed.return_first(self.batch_evaluation)
+        self.device = get_torch_device()
+        self.model = model.to(self.device)
 
     def batch_predict(self, dataset: Dataset, dataset_name: str = None, collect_logits: bool = False):
-        self.dist_model = self._distributed.to_device(self.dist_model)
-        prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        self.dist_model.eval()  # set model to eval mode
+        prev_model_training_mode = self.model.training  # store previous model training mode
+        self.model.eval()  # set model to eval mode
 
         with torch.no_grad():
             with dataset.initialize_batcher(self._batch_size, should_shuffle=False) as batcher:
+
                 progress_bar_config = {
                     "desc": "Prediction" if dataset_name is None else f"Prediction {dataset_name: <5.5}",
                     "total": batcher.steps_per_epoch,
@@ -140,7 +91,7 @@ class Predictor(BasePredictor):
                 predictions = defaultdict(list)
                 while not batcher.last_batch():
                     batch = batcher.next_batch()
-                    preds = self._predict(batch)
+                    preds = self._predict(self.model, batch)
                     self._accumulate_preds(
                         preds, predictions, exclude_pred_set={LAST_HIDDEN} if collect_logits else EXCLUDE_PRED_SET
                     )
@@ -151,27 +102,27 @@ class Predictor(BasePredictor):
         # consolidate predictions from each batch to a single tensor
         self._concat_preds(predictions)
 
-        self.dist_model.train(prev_model_training_mode)
+        self.model.train(prev_model_training_mode)
 
         return from_numpy_dataset(predictions)
 
     def predict_single(self, batch, collect_logits: bool = False):
-        prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        self.dist_model.eval()  # set model to eval mode
+        prev_model_training_mode = self.model.training  # store previous model training mode
+        self.model.eval()  # set model to eval mode
 
         with torch.no_grad():
             predictions = defaultdict(list)
-            preds = self._predict(batch)
+            preds = self._predict(self.model, batch)
             self._accumulate_preds(
                 preds, predictions, exclude_pred_set={LAST_HIDDEN} if collect_logits else EXCLUDE_PRED_SET
             )
             self._concat_preds(predictions)
 
         # reset model to its original training mode
-        self.dist_model.train(prev_model_training_mode)
+        self.model.train(prev_model_training_mode)
         return from_numpy_dataset(predictions)
 
-    def _predict(self, batch: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+    def _predict(self, model: BaseModel, batch: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
         """Predict a batch of data.
 
         Params:
@@ -183,11 +134,10 @@ class Predictor(BasePredictor):
         """
         inputs = {
             i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(self.device)
-            for i_feat in self.model.input_features.values()
+            for i_feat in model.input_features.values()
         }
 
-        outputs = self._predict_on_inputs(inputs)
-        return self.model.outputs_to_predictions(outputs)
+        return model.predict_step(inputs)
 
     def _accumulate_preds(self, preds, predictions, exclude_pred_set=EXCLUDE_PRED_SET):
         # accumulate predictions from batch for each output feature
@@ -195,13 +145,13 @@ class Predictor(BasePredictor):
             for pred_name, pred_values in of_preds.items():
                 if pred_name not in exclude_pred_set:
                     key = f"{of_name}_{pred_name}"
-                    predictions[key].append(pred_values.detach().cpu())
+                    predictions[key].append(pred_values)
 
     def _concat_preds(self, predictions):
         for key, pred_value_list in predictions.items():
-            # Without detaching, a runtime error is raised since pred_value_list
+            # Without cloning and detaching, a runtime error is raised since pred_value_list
             # is a tensor that requires grad.
-            predictions[key] = torch.cat(pred_value_list, dim=0).numpy()
+            predictions[key] = torch.cat(pred_value_list, dim=0).clone().detach().cpu().numpy()
 
     def batch_evaluation(self, dataset, collect_predictions=False, collect_logits=False, dataset_name=None):
         """Batch evaluate model on dataset.
@@ -216,14 +166,11 @@ class Predictor(BasePredictor):
             model config. The keys of the predictions dictionary depend on which values are requested by the caller:
             collect_predictions, collect_logits.
         """
-        self.dist_model = self._distributed.to_device(self.dist_model)
-        prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        self.dist_model.eval()  # set model to eval mode
+        prev_model_training_mode = self.model.training  # store previous model training mode
+        self.model.eval()  # set model to eval mode
 
         with torch.no_grad():
-            with dataset.initialize_batcher(
-                self._batch_size, should_shuffle=False, distributed=self._distributed
-            ) as batcher:
+            with dataset.initialize_batcher(self._batch_size, should_shuffle=False) as batcher:
                 progress_bar_config = {
                     "desc": "Evaluation" if dataset_name is None else f"Evaluation {dataset_name: <5.5}",
                     "total": batcher.steps_per_epoch,
@@ -234,17 +181,7 @@ class Predictor(BasePredictor):
                 progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, self.is_coordinator())
 
                 predictions = defaultdict(list)
-                eval_steps = (
-                    self.dist_model.config_obj.trainer.eval_steps
-                    if hasattr(self.dist_model, "config_obj")
-                    and hasattr(self.dist_model.config_obj.trainer, "eval_steps")
-                    else None
-                )
-                eval_steps_counter = 0
                 while not batcher.last_batch():
-                    if eval_steps and eval_steps_counter >= eval_steps:
-                        logger.info(f"Reached evaluation step {eval_steps}. Ending evaluation.")
-                        break
                     batch = batcher.next_batch()
                     logger.debug(
                         f"evaluation for {dataset_name}: obtained next batch "
@@ -263,9 +200,7 @@ class Predictor(BasePredictor):
                         for o_feat in self.model.output_features.values()
                     }
 
-                    outputs = self._predict_on_inputs(inputs)
-                    preds = self.model.outputs_to_predictions(outputs)
-                    self.model.update_metrics(targets, preds)
+                    preds = self.model.evaluation_step(inputs, targets)
 
                     # accumulate predictions from batch for each output feature
                     if collect_predictions:
@@ -274,22 +209,23 @@ class Predictor(BasePredictor):
                         )
 
                     progress_bar.update(1)
-                    eval_steps_counter += 1
                     if self.is_coordinator():
                         logger.debug(
                             f"evaluation for {dataset_name}: completed batch {progress_bar.total_steps} "
                             f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                         )
+
                 progress_bar.close()
 
             # consolidate predictions from each batch to a single tensor
             if collect_predictions:
-                self._concat_preds(predictions)
+                for key, pred_value_list in predictions.items():
+                    predictions[key] = torch.cat(pred_value_list, dim=0).clone().detach().cpu().numpy()
 
             metrics = self.model.get_metrics()
             self.model.reset_metrics()
 
-            self.dist_model.train(prev_model_training_mode)  # Restores previous model training mode.
+            self.model.train(prev_model_training_mode)  # Restores previous model training mode.
 
             return metrics, from_numpy_dataset(predictions)
 
@@ -297,13 +233,11 @@ class Predictor(BasePredictor):
         if bucketing_field:
             raise ValueError("BucketedBatcher is not supported yet")
 
-        prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        self.dist_model.eval()  # set model to eval mode
+        prev_model_training_mode = self.model.training  # store previous model training mode
+        self.model.eval()  # set model to eval mode
 
         with torch.no_grad():
-            with dataset.initialize_batcher(
-                self._batch_size, should_shuffle=False, distributed=self._distributed
-            ) as batcher:
+            with dataset.initialize_batcher(self._batch_size, should_shuffle=False) as batcher:
                 progress_bar_config = {
                     "desc": "Collecting Tensors",
                     "total": batcher.steps_per_epoch,
@@ -322,140 +256,23 @@ class Predictor(BasePredictor):
                         )
                         for i_feat in self.model.input_features.values()
                     }
-                    outputs = self._predict_on_inputs(inputs)
+                    outputs = self.model(inputs)
                     collected_tensors = [(concat_name, tensor) for concat_name, tensor in outputs.items()]
                     progress_bar.update(1)
 
                 progress_bar.close()
 
-        self.dist_model.train(prev_model_training_mode)  # Restores previous model training mode.
+        self.model.train(prev_model_training_mode)  # Restores previous model training mode.
 
         return collected_tensors
 
-    def _predict_on_inputs(self, inputs: Dict) -> Dict:
-        return self.dist_model(inputs)
-
     def is_coordinator(self):
-        return self._distributed.rank() == 0
+        return True
 
 
-@register_predictor([MODEL_LLM])
-class LlmPredictor(Predictor):
-    def _predict_on_inputs(self, inputs: Dict) -> Dict:
-        return self.dist_model.generate(inputs)
-
-
-class LlmFineTunePredictor(Predictor):
-    def batch_evaluation(self, dataset, collect_predictions=False, collect_logits=False, dataset_name=None):
-        """Batch evaluate model on dataset.
-
-        Params:
-            dataset (Union[str, dict, pandas.DataFrame]): source containing the entire dataset to be evaluated.
-            collect_predictions: Return model predictions.
-            collect_logits: Return model logits and final layer activations.
-
-        Returns:
-            Tuple of dictionaries of (metrics, predictions, input/target/output dictionary). The keys of metrics are
-            determined by the metrics in the model config. The keys of the predictions dictionary depend on which values
-            are requested by the caller: collect_predictions, collect_logits. The keys of the input/target/output
-            dictionary are "inputs", "targets", and "outputs". The values of each of these keys are dictionaries of
-            feature names to lists of tensors. The tensors are the inputs, targets, and outputs for each batch.
-        """
-        prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        self.dist_model.eval()  # set model to eval mode
-        example_inputs = defaultdict(list)
-        example_targets = defaultdict(list)
-        example_outputs = defaultdict(list)
-        with torch.no_grad():
-            with dataset.initialize_batcher(
-                self._batch_size, should_shuffle=False, distributed=self._distributed
-            ) as batcher:
-                progress_bar_config = {
-                    "desc": "Evaluation" if dataset_name is None else f"Evaluation {dataset_name: <5.5}",
-                    "total": batcher.steps_per_epoch,
-                    "file": sys.stdout,
-                    "disable": is_progressbar_disabled(),
-                    "position": 0,  # Necessary to disable extra new line artifacts in training logs.
-                }
-                progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, self.is_coordinator())
-
-                predictions = defaultdict(list)
-                eval_steps = (
-                    self.dist_model.config_obj.trainer.eval_steps
-                    if hasattr(self.dist_model, "config_obj")
-                    and hasattr(self.dist_model.config_obj.trainer, "eval_steps")
-                    else None
-                )
-                eval_steps_counter = 0
-                while not batcher.last_batch():
-                    if eval_steps and eval_steps_counter >= eval_steps:
-                        logger.info(f"Reached evaluation step {eval_steps}. Ending evaluation.")
-                        break
-                    batch = batcher.next_batch()
-                    logger.debug(
-                        f"evaluation for {dataset_name}: obtained next batch "
-                        f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
-                    )
-                    inputs = {
-                        i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(
-                            self.device
-                        )
-                        for i_feat in self.model.input_features.values()
-                    }
-                    targets = {
-                        o_feat.feature_name: torch.from_numpy(np.array(batch[o_feat.proc_column], copy=True)).to(
-                            self.device
-                        )
-                        for o_feat in self.model.output_features.values()
-                    }
-
-                    outputs = self._predict_on_inputs((inputs, targets))
-                    preds = self.model.outputs_to_predictions(outputs)
-
-                    for key in inputs:
-                        example_inputs[key].extend(inputs[key])
-                    for key in targets:
-                        example_targets[key].extend(targets[key])
-                    for key in preds:
-                        example_outputs[key].extend(preds[key]["predictions"])
-
-                    # Need to pass through a custom fine-tune metric function because we need to transform
-                    # the targets into the right format for loss calculation (requires padding with -100s to the left)
-                    # and other tensor alignment.
-                    self.model.update_metrics_finetune_llm(targets, preds)
-
-                    # accumulate predictions from batch for each output feature
-                    if collect_predictions:
-                        self._accumulate_preds(
-                            preds, predictions, exclude_pred_set={LAST_HIDDEN} if collect_logits else EXCLUDE_PRED_SET
-                        )
-
-                    progress_bar.update(1)
-                    eval_steps_counter += 1
-                    if self.is_coordinator():
-                        logger.debug(
-                            f"evaluation for {dataset_name}: completed batch {progress_bar.total_steps} "
-                            f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
-                        )
-
-                progress_bar.close()
-
-            # consolidate predictions from each batch to a single tensor
-            if collect_predictions:
-                for key, pred_value_list in predictions.items():
-                    predictions[key] = torch.cat(pred_value_list, dim=0).detach().cpu().numpy()
-
-            metrics = self.model.get_metrics()
-            self.model.reset_metrics()
-
-            input_target_output_dict = {
-                "inputs": example_inputs,
-                "targets": example_targets,
-                "outputs": example_outputs,
-            }
-
-            self.dist_model.train(prev_model_training_mode)  # Restores previous model training mode.
-            return metrics, from_numpy_dataset(predictions), input_target_output_dict
+class RemotePredictor(Predictor):
+    def __init__(self, model: BaseModel, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
+        super().__init__(model, **kwargs)
 
 
 def calculate_overall_stats(output_features, predictions, dataset, training_set_metadata):
@@ -491,9 +308,9 @@ def save_prediction_outputs(
     output_directory,
     backend,
 ):
-    backend.df_engine.write_predictions(
-        postprocessed_output, os.path.join(output_directory, PREDICTIONS_PARQUET_FILE_NAME)
-    )
+    postprocessed_output, column_shapes = flatten_df(postprocessed_output, backend)
+    backend.df_engine.to_parquet(postprocessed_output, os.path.join(output_directory, PREDICTIONS_PARQUET_FILE_NAME))
+    save_json(os.path.join(output_directory, PREDICTIONS_SHAPES_FILE_NAME), column_shapes)
     if not backend.df_engine.partitioned:
         # csv can only be written out for unpartitioned df format (i.e., pandas)
         postprocessed_dict = convert_to_dict(postprocessed_output, output_features)

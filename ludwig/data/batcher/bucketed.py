@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Copyright (c) 2023 Predibase, Inc., 2019 Uber Technologies, Inc.
+# Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -122,17 +122,8 @@ class BucketedBatcher(Batcher):
 # todo future: reintroduce the bucketed batcher
 # def initialize_batcher(dataset, batch_size=128, bucketing_field=None,
 #                        input_features=None, preprocessing=None,
-#                        should_shuffle=True, ignore_last=False, distributed=None):
-#     if distributed:
-#         batcher = DistributedBatcher(
-#             dataset,
-#             distributed.rank(),
-#             distributed,
-#             batch_size,
-#             should_shuffle=should_shuffle,
-#             ignore_last=ignore_last
-#         )
-#     elif bucketing_field is not None:
+#                        should_shuffle=True, ignore_last=False):
+#     if bucketing_field is not None:
 #         bucketing_feature = [
 #             feature for feature in input_features if
 #             feature[NAME] == bucketing_field
