@@ -612,9 +612,10 @@ class FineTuneTrainerConfig(ECDTrainerConfig):
 
 @DeveloperAPI
 def get_model_type_jsonschema(model_type: str = MODEL_ECD):
-    enum = [MODEL_ECD]
-    elif model_type == MODEL_LLM:
+    if model_type == MODEL_LLM:
         enum = [MODEL_LLM]
+    else:
+        enum = [MODEL_ECD]
 
     return {
         "type": "string",
