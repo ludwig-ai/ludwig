@@ -718,6 +718,7 @@ def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_stra
 def test_llm_lora_finetuning_merge_and_unload_quantized_accelerate_required(
     csv_filename, finetune_strategy, adapter_args, quantization, error_raised
 ):
+    pytest.importorskip("bitsandbytes", reason="bitsandbytes required for quantization tests")
     input_features: list[dict] = [text_feature(name="input", encoder={"type": "passthrough"})]
     output_features: list[dict] = [text_feature(name="output")]
 
@@ -822,12 +823,9 @@ quantization section from your Ludwig configuration."""
                 "adapter_model.safetensors",
                 "config.json",
                 "generation_config.json",
-                "merges.txt",
                 "model.safetensors",
-                "special_tokens_map.json",
                 "tokenizer.json",
                 "tokenizer_config.json",
-                "vocab.json",
             ],
             id="lora_default_merged",
         ),
@@ -854,12 +852,9 @@ quantization section from your Ludwig configuration."""
                 "adapter_model.safetensors",
                 "config.json",
                 "generation_config.json",
-                "merges.txt",
                 "model.safetensors",
-                "special_tokens_map.json",
                 "tokenizer.json",
                 "tokenizer_config.json",
-                "vocab.json",
             ],
             id="lora_custom_merged",
         ),
@@ -1008,7 +1003,7 @@ def test_llama_rope_scaling():
         },
         "model_parameters": {
             "rope_scaling": {
-                "type": "dynamic",
+                "rope_type": "dynamic",
                 "factor": 2.0,
             }
         },
@@ -1017,7 +1012,7 @@ def test_llama_rope_scaling():
     model = LLM(config_obj)
 
     assert model.model.config.rope_scaling
-    assert model.model.config.rope_scaling["type"] == "dynamic"
+    assert model.model.config.rope_scaling["rope_type"] == "dynamic"
     assert model.model.config.rope_scaling["factor"] == 2.0
 
 
@@ -1258,6 +1253,8 @@ def llm_encoder_config() -> dict[str, Any]:
     ids=["FFT", "LoRA", "LoRA 4-bit", "LoRA 8-bit", "AdaLoRA", "AdaLoRA 4-bit", "AdaLoRA 8-bit"],
 )
 def test_llm_encoding(llm_encoder_config, adapter, quantization, tmpdir):
+    if quantization:
+        pytest.importorskip("bitsandbytes", reason="bitsandbytes required for quantization tests")
     if (
         _finetune_strategy_requires_cuda(
             finetune_strategy_name="lora" if adapter else None, quantization_args=quantization
