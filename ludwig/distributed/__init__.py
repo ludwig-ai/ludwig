@@ -1,4 +1,4 @@
-from typing import Any, Dict, Type, Union
+from typing import Any
 
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 
@@ -21,12 +21,6 @@ def load_deepspeed():
     return DeepSpeedStrategy
 
 
-def load_horovod():
-    from ludwig.distributed.horovod import HorovodStrategy
-
-    return HorovodStrategy
-
-
 def load_local():
     return LocalStrategy
 
@@ -35,7 +29,6 @@ STRATEGIES = {
     "ddp": load_ddp,
     "fsdp": load_fsdp,
     "deepspeed": load_deepspeed,
-    "horovod": load_horovod,
     "local": load_local,
 }
 

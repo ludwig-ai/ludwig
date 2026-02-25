@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 
 class DistributedStrategy(ABC):
-    """Interface that wraps a distributed training framework (Horovod, DDP).
+    """Interface that wraps a distributed training framework (DDP, FSDP, DeepSpeed).
 
     Distributed strategies modify the model and/or optimizer to coordinate gradient updates among multiple workers
     running in parallel. In most cases, these are using collective communication libraries pass messages between

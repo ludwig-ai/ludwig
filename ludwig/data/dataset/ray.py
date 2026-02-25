@@ -18,7 +18,7 @@ import math
 import queue
 import threading
 from functools import lru_cache
-from typing import Any, Dict, Union
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -82,10 +82,10 @@ class RayDataset(Dataset):
         return ds
 
     @contextlib.contextmanager
-    def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False):
+    def initialize_batcher(self, batch_size=128, should_shuffle=True, random_seed=0, ignore_last=False, **kwargs):
         ds = self.ds
         if should_shuffle:
-            ds = ds.random_shuffle(seed=seed)
+            ds = ds.random_shuffle(seed=random_seed)
         yield RayDatasetBatcher(
             ds,
             self.features,
@@ -105,8 +105,13 @@ class RayDataset(Dataset):
     def in_memory_size_bytes(self):
         return self.ds.size_bytes() if self.ds is not None else 0
 
-    def to_df(self):
+    def to_df(self, features=None):
         return self.df_engine.from_ray_dataset(self.ds)
+
+    def to_scalar_df(self, features=None):
+        from ludwig.utils.dataframe_utils import to_scalar_df
+
+        return to_scalar_df(self.to_df(features))
 
 
 class RayDatasetManager(DatasetManager):
@@ -149,7 +154,7 @@ class RayDatasetShard(Dataset):
         self.training_set_metadata = training_set_metadata
 
     @contextlib.contextmanager
-    def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False):
+    def initialize_batcher(self, batch_size=128, should_shuffle=True, random_seed=0, ignore_last=False, **kwargs):
         yield RayDatasetShardBatcher(
             self.dataset_shard,
             self.features,
@@ -170,6 +175,12 @@ class RayDatasetShard(Dataset):
     @property
     def size(self):
         return len(self)
+
+    def to_df(self, features=None):
+        raise NotImplementedError("RayDatasetShard does not support to_df; use full RayDataset instead.")
+
+    def to_scalar_df(self, features=None):
+        raise NotImplementedError("RayDatasetShard does not support to_scalar_df; use full RayDataset instead.")
 
 
 class _BaseBatcher(Batcher):

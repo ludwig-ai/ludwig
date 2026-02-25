@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import os
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -81,7 +81,7 @@ def _save_as_numpy(predictions, output_directory, saved_keys, backend):
             saved_keys.add(k)
 
 
-def convert_dict_to_df(predictions: dict[str, dict[str, list[Any] | torch.Tensor | np.array]]) -> pd.DataFrame:
+def convert_dict_to_df(predictions: dict[str, dict[str, list[Any] | torch.Tensor | np.ndarray]]) -> pd.DataFrame:
     """Converts a dictionary of predictions into a pandas DataFrame.
 
     Example format of predictions dictionary:

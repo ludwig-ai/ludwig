@@ -17,7 +17,6 @@ import contextlib
 import logging
 import warnings
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -1432,9 +1431,7 @@ def get_features_with_cacheable_fixed_embeddings(
                 if preprocessing.get("cache_encoder_embeddings"):
                     # TODO(travis): passing in MODEL_ECD is a hack here that can be removed once we move to using
                     # the config object everywhere in preprocessing. Then we won't need to do the lookup on the
-                    # encoder schema at all. This hack works for now because all encoders are supported by ECD, so
-                    # there is no chance of a GBM model using an encoder not supported by ECD, but this could change
-                    # in the future.
+                    # encoder schema at all.
                     encoder_class = get_encoder_cls(MODEL_ECD, feature_config[TYPE], encoder_params[TYPE])
                     encoder = encoder_class.from_dict(encoder_params)
                     if not encoder.can_cache_embeddings():

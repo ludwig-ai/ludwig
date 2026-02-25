@@ -21,7 +21,7 @@ import os
 import tempfile
 from collections.abc import Callable
 from functools import partial
-from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 import dask
 import numpy as np
@@ -59,12 +59,11 @@ except (ImportError, AttributeError):
     _SCALAR_TYPES = cast_as_tensor_dtype = RayDataset = RayDatasetManager = RayDatasetShard = None
 from ludwig.models.base import BaseModel
 from ludwig.models.ecd import ECD
-from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
+from ludwig.models.predictor import BasePredictor, get_output_columns, get_predictor_cls, Predictor
 from ludwig.schema.trainer import ECDTrainerConfig
-from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
+from ludwig.trainers.registry import get_ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.data_utils import use_credentials
-from ludwig.utils.dataframe_utils import set_index_name
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.system_utils import Resources
@@ -148,6 +147,24 @@ def _get_df_engine(processor):
     return engine_cls(**processor_kwargs)
 
 
+def _make_picklable(obj):
+    """Recursively convert defaultdicts (which contain unpicklable lambdas) to regular dicts."""
+    from collections import defaultdict
+
+    if isinstance(obj, defaultdict):
+        return {k: _make_picklable(v) for k, v in obj.items()}
+    elif isinstance(obj, dict):
+        return {k: _make_picklable(v) for k, v in obj.items()}
+    elif isinstance(obj, tuple) and hasattr(obj, "_fields"):
+        # NamedTuple: reconstruct with the same field names
+        return type(obj)(**{f: _make_picklable(getattr(obj, f)) for f in obj._fields})
+    elif isinstance(obj, list):
+        return [_make_picklable(item) for item in obj]
+    elif isinstance(obj, tuple):
+        return tuple(_make_picklable(item) for item in obj)
+    return obj
+
+
 def train_fn(
     executable_kwargs: dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
@@ -155,8 +172,18 @@ def train_fn(
     features: dict[str, dict] = None,
     **kwargs,
 ):
+    """Ray Train worker function for distributed training.
+
+    Runs inside each Ray worker process. Loads the model from an object ref, wraps dataset shards, trains, and saves
+    results to a Ray checkpoint so the driver can retrieve them (Ray Train 2.x requires a checkpoint for metrics).
+    """
     # Pin GPU before loading the model to prevent memory leaking onto other devices
     initialize_pytorch()
+
+    # Initialize a local distributed strategy so metric modules can sync.
+    from ludwig.distributed import init_dist_strategy
+
+    init_dist_strategy("local")
 
     train_shard = RayDatasetShard(
         rt.get_dataset_shard("train"),
@@ -205,6 +232,8 @@ def train_fn(
     # Save results to a checkpoint so the driver can retrieve them.
     # In Ray Train 2.x, result.metrics is only populated when a checkpoint is provided.
     train_results = results, trainer.validation_field, trainer.validation_metric
+    # Convert defaultdicts to regular dicts so they can be pickled by torch.save.
+    train_results = _make_picklable(train_results)
     with tempfile.TemporaryDirectory() as tmpdir:
         torch.save(train_results, os.path.join(tmpdir, "train_results.pt"))
         rt.report(metrics={}, checkpoint=Checkpoint.from_directory(tmpdir))
@@ -358,7 +387,7 @@ def run_train_remote(train_loop, trainer_kwargs: dict[str, Any], callbacks=None,
     return result
 
 
-@register_ray_trainer("trainer", MODEL_ECD, default=True)
+@register_ray_trainer(MODEL_ECD, default=True)
 class RayTrainerV2(BaseTrainer):
     def __init__(
         self,
@@ -518,8 +547,18 @@ def eval_fn(
     features: dict[str, dict] = None,
     **kwargs,
 ):
+    """Ray Train worker function for distributed evaluation.
+
+    Runs inside each Ray worker process. Loads the model from an object ref, wraps the eval dataset shard, runs
+    prediction and evaluation, and saves results to a Ray checkpoint for driver retrieval.
+    """
     # Pin GPU before loading the model to prevent memory leaking onto other devices
     initialize_pytorch()
+
+    # Initialize a local distributed strategy so metric modules can sync.
+    from ludwig.distributed import init_dist_strategy
+
+    init_dist_strategy("local")
 
     try:
         eval_shard = RayDatasetShard(
@@ -532,11 +571,13 @@ def eval_fn(
         device = get_torch_device()
         model = model.to(device)
 
-        predictor = RemotePredictor(model=model, report_tqdm_to_ray=True, **predictor_kwargs)
+        predictor_cls = get_predictor_cls(model.type())
+        predictor = predictor_cls(dist_model=model, model=model, report_tqdm_to_ray=True, **predictor_kwargs)
         eval_results = predictor.batch_evaluation(eval_shard, **kwargs)
 
         # Save results to a checkpoint so the driver can retrieve them.
         # In Ray Train 2.x, result.metrics is only populated when a checkpoint is provided.
+        eval_results = _make_picklable(eval_results)
         with tempfile.TemporaryDirectory() as tmpdir:
             torch.save(eval_results, os.path.join(tmpdir, "eval_results.pt"))
             rt.report(metrics={}, checkpoint=Checkpoint.from_directory(tmpdir))
@@ -601,9 +642,6 @@ class RayPredictor(BasePredictor):
         )
 
         predictions = self.df_engine.from_ray_dataset(predictions)
-
-        for of_feature in self.model.output_features.values():
-            predictions = of_feature.unflatten(predictions)
 
         return predictions
 
@@ -692,14 +730,12 @@ class RayPredictor(BasePredictor):
                 self.reshape_map = {
                     f[PROC_COLUMN]: training_set_metadata[f[NAME]].get("reshape") for f in features.values()
                 }
-                predictor = Predictor(model, **predictor_kwargs)
+                predictor = Predictor(dist_model=model, model=model, **predictor_kwargs)
                 self.predict = partial(predictor.predict_single, *args, **kwargs)
 
             def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
                 dataset = self._prepare_batch(df)
                 predictions = self.predict(batch=dataset).set_index(df.index)
-                for output_feature in self.model.output_features.values():
-                    predictions = output_feature.flatten(predictions)
                 ordered_predictions = predictions[self.output_columns]
                 return ordered_predictions
 
@@ -790,10 +826,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
     def create_trainer(self, model: BaseModel, **kwargs) -> "BaseTrainer":  # noqa: F821
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
-        trainers_for_model = get_from_registry(model.type(), ray_trainers_registry)
-
-        config: ECDTrainerConfig = kwargs["config"]
-        trainer_cls = get_from_registry(config.type, trainers_for_model)
+        trainer_cls = get_from_registry(model.type(), get_ray_trainers_registry())
 
         # Deep copy to workaround https://github.com/ray-project/ray/issues/24139
         all_kwargs = {
@@ -889,6 +922,35 @@ class RayBackend(RemoteTrainingMixin, Backend):
         if not ray.is_initialized():
             return 1
         return len(ray.nodes())
+
+    @property
+    def num_training_workers(self) -> int:
+        return self._distributed_kwargs.get("num_workers", 1)
+
+    def max_concurrent_trials(self, hyperopt_config) -> int | None:
+        # Limit concurrency based on available resources to avoid deadlocks between
+        # Ray Tune trials and the Ray Datasets used internally for distributed training.
+        resources = self.get_available_resources()
+        num_cpus_per_trial = self._distributed_kwargs.get("resources_per_worker", {}).get("CPU", 1)
+        num_workers = self._distributed_kwargs.get("num_workers", 1)
+        cpus_per_trial = num_cpus_per_trial * num_workers
+        if cpus_per_trial > 0 and resources.cpus > 0:
+            return max(1, int(resources.cpus // cpus_per_trial))
+        return None
+
+    def tune_batch_size(self, evaluator_cls, dataset_len: int) -> int:
+        evaluator = evaluator_cls()
+        return evaluator.select_best_batch_size(dataset_len)
+
+    def batch_transform(self, df, batch_size: int, transform_fn, name: str | None = None):
+        name = name or "Batch Transform"
+        from ludwig.utils.dataframe_utils import from_batches, to_batches
+
+        batches = to_batches(df, batch_size)
+        transform = transform_fn()
+        out_batches = [transform(batch.reset_index(drop=True)) for batch in batches]
+        out_df = from_batches(out_batches).reset_index(drop=True)
+        return out_df
 
     def get_available_resources(self) -> Resources:
         resources = ray.cluster_resources()
