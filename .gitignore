@@ -140,3 +140,9 @@ examples/*/visualizations/
 
 # benchmarking configs
 ludwig/benchmarking/configs/
+
+# Aim tracking
+.aim/
+
+# Comet
+.comet.config
