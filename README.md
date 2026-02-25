@@ -39,7 +39,7 @@ Ludwig is hosted by the
 
 # 💾 Installation
 
-Install from PyPi. Be aware that Ludwig requires Python 3.8+.
+Install from PyPi. Be aware that Ludwig requires Python 3.10+.
 
 ```shell
 pip install ludwig
@@ -55,7 +55,7 @@ Please see [contributing](https://github.com/ludwig-ai/ludwig/blob/master/CONTRI
 
 # 🚂 Getting Started
 
-Want to take a quick peek at some of the Ludwig 0.8 features? Check out this Colab Notebook 🚀 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1lB4ALmEyvcMycE3Mlnsd7I3bc0zxvk39)
+Want to take a quick peek at some of Ludwig's features? Check out this Colab Notebook 🚀 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1lB4ALmEyvcMycE3Mlnsd7I3bc0zxvk39)
 
 Looking to fine-tune Llama-2 or Mistral? Check out these notebooks:
 
