@@ -3,7 +3,6 @@ import os
 import warnings
 from abc import abstractmethod
 from functools import lru_cache
-from typing import List, Optional, Tuple, Union
 
 import torch
 from torch import nn
@@ -19,6 +18,9 @@ _TORCH_INIT_PARAMS: tuple | None = None
 @DeveloperAPI
 def get_torch_device():
     if torch.cuda.is_available() and torch.cuda.device_count() > 0:
+        # Use cublasLt for batched GEMM operations. The default cublas library has known
+        # bugs with cublasSgemmStridedBatched on certain GPU/driver combinations.
+        torch.backends.cuda.preferred_blas_library("cublaslt")
         return "cuda"
 
     if bool(os.environ.get("LUDWIG_ENABLE_MPS")):
