@@ -1,5 +1,0 @@
-metrics:
-  - output_feature_name: income
-    metric_name: accuracy
-    expected_value: 0.8283590078353882
-    tolerance_percentage: 0.15

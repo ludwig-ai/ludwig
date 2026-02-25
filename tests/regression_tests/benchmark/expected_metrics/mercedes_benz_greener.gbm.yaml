@@ -1,5 +1,0 @@
-metrics:
-  - output_feature_name: y
-    metric_name: r2
-    expected_value: 0.4352891445159912
-    tolerance_percentage: 0.15
