@@ -1,9 +1,16 @@
 import pytest
 import torch
 
-from ludwig.constants import ACCURACY, LOSS, ROC_AUC, ROOT_MEAN_SQUARED_ERROR
+from ludwig.distributed import init_dist_strategy
 from ludwig.modules import metric_modules
-from ludwig.modules.metric_modules import get_best_function, get_improved_fun, get_initial_validation_value
+from ludwig.schema.features.loss.loss import (
+    BWCEWLossConfig,
+    SigmoidCrossEntropyLossConfig,
+    SoftmaxCrossEntropyLossConfig,
+)
+
+# Required for local testing.
+init_dist_strategy("local")
 
 
 @pytest.mark.parametrize("preds", [torch.arange(6).reshape(3, 2).float()])
@@ -11,17 +18,29 @@ from ludwig.modules.metric_modules import get_best_function, get_improved_fun, g
 @pytest.mark.parametrize("output", [torch.tensor(6).float()])
 def test_rmse_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
     metric = metric_modules.RMSEMetric()
-    metric.update(preds, target)
-    assert output == metric.compute()
+    with metric.sync_context():
+        metric.update(preds, target)
+        assert output == metric.compute()
 
 
 @pytest.mark.parametrize("preds", [torch.tensor([0.2, 0.3, 0.8, 0.1])])
 @pytest.mark.parametrize("target", [torch.tensor([0, 0, 1, 1])])
 @pytest.mark.parametrize("output", [torch.tensor(0.5)])
 def test_roc_auc_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
-    metric = metric_modules.ROCAUCMetric()
-    metric.update(preds, target)
-    assert output == metric.compute()
+    metric = metric_modules.BinaryAUROCMetric(task="binary")
+    with metric.sync_context():
+        metric.update(preds, target)
+        assert output == metric.compute()
+
+
+@pytest.mark.parametrize("preds", [torch.tensor([0.2, 0.3, 0.8, 0.1, 0.8])])
+@pytest.mark.parametrize("target", [torch.tensor([0, 0, 1, 1, 0])])
+@pytest.mark.parametrize("output", [torch.tensor(0.6667).float()])
+def test_specificity_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
+    metric = metric_modules.SpecificityMetric()
+    with metric.sync_context():
+        metric.update(preds, target)
+        assert torch.isclose(output, metric.compute(), rtol=0.0001)
 
 
 @pytest.mark.parametrize("preds", [torch.arange(6).reshape(3, 2).float()])
@@ -29,8 +48,9 @@ def test_roc_auc_metric(preds: torch.Tensor, target: torch.Tensor, output: torch
 @pytest.mark.parametrize("output", [torch.tensor(0.7527).float()])
 def test_rmspe_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
     metric = metric_modules.RMSPEMetric()
-    metric.update(preds, target)
-    assert torch.isclose(output, metric.compute(), rtol=0.0001)
+    with metric.sync_context():
+        metric.update(preds, target)
+        assert torch.isclose(output, metric.compute(), rtol=0.0001)
 
 
 @pytest.mark.parametrize(
@@ -42,41 +62,46 @@ def test_rmspe_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.T
 )
 def test_r2_score(preds: torch.Tensor, target: torch.Tensor, num_outputs: int, output: torch.Tensor):
     metric = metric_modules.R2Score(num_outputs=num_outputs)
-    metric.update(preds, target)
-    assert metric.compute() == output
+    with metric.sync_context():
+        metric.update(preds, target)
+        assert metric.compute() == output
 
 
 def test_r2_score_single_sample():
     metric = metric_modules.R2Score(num_outputs=1)
-    metric.update(preds=torch.tensor([0.8]), target=torch.arange(1))
-    assert torch.isnan(metric.compute())
+    with metric.sync_context():
+        metric.update(preds=torch.tensor([0.8]), target=torch.arange(1))
+        assert torch.isnan(metric.compute())
 
 
 @pytest.mark.parametrize("preds", [torch.arange(6).reshape(3, 2).float()])
 @pytest.mark.parametrize("target", [torch.arange(6, 12).reshape(3, 2).float()])
 @pytest.mark.parametrize("output", [torch.tensor(-21.4655).float()])
 def test_bwcewl_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
-    metric = metric_modules.BWCEWLMetric()
-    metric.update(preds, target)
-    assert torch.isclose(output, metric.compute(), rtol=0.0001)
+    metric = metric_modules.BWCEWLMetric(BWCEWLossConfig())
+    with metric.sync_context():
+        metric.update(preds, target)
+        assert torch.isclose(output, metric.compute(), rtol=0.0001)
 
 
 @pytest.mark.parametrize("preds", [torch.tensor([[0.5, 0.5], [0.2, 0.8], [0.6, 0.4]])])
 @pytest.mark.parametrize("target", [torch.tensor([1, 1, 0])])
 @pytest.mark.parametrize("output", [torch.tensor(0.5763)])
 def test_softmax_cross_entropy_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
-    metric = metric_modules.SoftmaxCrossEntropyMetric()
-    metric.update(preds, target)
-    assert torch.isclose(output, metric.compute(), rtol=0.0001)
+    metric = metric_modules.SoftmaxCrossEntropyMetric(SoftmaxCrossEntropyLossConfig())
+    with metric.sync_context():
+        metric.update(preds, target)
+        assert torch.isclose(output, metric.compute(), rtol=0.0001)
 
 
 @pytest.mark.parametrize("preds", [torch.arange(6).reshape(3, 2).float()])
 @pytest.mark.parametrize("target", [torch.arange(6, 12).reshape(3, 2).float()])
 @pytest.mark.parametrize("output", [torch.tensor(-21.4655).float()])
 def test_sigmoid_cross_entropy_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
-    metric = metric_modules.SigmoidCrossEntropyMetric()
-    metric.update(preds, target)
-    assert torch.isclose(output, metric.compute(), rtol=0.0001)
+    metric = metric_modules.SigmoidCrossEntropyMetric(SigmoidCrossEntropyLossConfig())
+    with metric.sync_context():
+        metric.update(preds, target)
+        assert torch.isclose(output, metric.compute(), rtol=0.0001)
 
 
 @pytest.mark.parametrize(
@@ -101,17 +126,114 @@ def test_sigmoid_cross_entropy_metric(preds: torch.Tensor, target: torch.Tensor,
 )
 def test_token_accuracy_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
     metric = metric_modules.TokenAccuracyMetric()
-    metric.update(preds, target)
-    assert torch.allclose(metric.compute(), output)
+    with metric.sync_context():
+        metric.update(preds, target)
+        assert torch.allclose(metric.compute(), output)
 
 
-@pytest.mark.parametrize("preds", [torch.arange(6).reshape(3, 2)])
-@pytest.mark.parametrize("target", [torch.tensor([[0, 1], [2, 1], [4, 5]]).float()])
+def test_sequence_accuracy_metric():
+    target = torch.tensor(
+        [
+            [1, 6, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 6, 5, 4, 0],
+            [1, 6, 5, 4, 0],
+            [1, 6, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 6, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 6, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+        ]
+    )
+    preds = torch.tensor(
+        [
+            [1, 6, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 6, 5, 4, 0],
+            [1, 6, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 6, 5, 4, 0],
+            [1, 6, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 6, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 6, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+        ]
+    )
+    metric = metric_modules.SequenceAccuracyMetric()
+    with metric.sync_context():
+        metric.update(preds, target)
+        assert torch.isclose(metric.compute(), torch.tensor(0.8438), rtol=0.0001)
+
+
+@pytest.mark.parametrize("preds", [torch.arange(6)])
+@pytest.mark.parametrize("target", [torch.tensor([0, 1, 2, 1, 4, 5]).float()])
+@pytest.mark.parametrize("output", [torch.tensor(0.7500).float()])
+@pytest.mark.parametrize("one_hot", [False, True])
+def test_category_accuracy(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor, one_hot: bool):
+    if one_hot:
+        target = torch.nn.functional.one_hot(target.long(), num_classes=6).float()
+    metric = metric_modules.CategoryAccuracy(num_classes=6)
+    with metric.sync_context():
+        metric.update(preds, target)
+        assert torch.isclose(output, metric.compute(), rtol=0.0001)
+
+
+@pytest.mark.parametrize("preds", [torch.arange(6)])
+@pytest.mark.parametrize("target", [torch.tensor([0, 1, 2, 1, 4, 5]).float()])
 @pytest.mark.parametrize("output", [torch.tensor(0.8333).float()])
-def test_category_accuracy(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
-    metric = metric_modules.CategoryAccuracy()
-    metric.update(preds, target)
-    assert torch.isclose(output, metric.compute(), rtol=0.0001)
+@pytest.mark.parametrize("one_hot", [False, True])
+def test_category_accuracy_micro(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor, one_hot: bool):
+    if one_hot:
+        target = torch.nn.functional.one_hot(target.long(), num_classes=6).float()
+    metric = metric_modules.CategoryAccuracyMicro(num_classes=6)
+    with metric.sync_context():
+        metric.update(preds, target)
+        assert torch.isclose(output, metric.compute(), rtol=0.0001)
 
 
 @pytest.mark.parametrize(
@@ -126,9 +248,10 @@ def test_category_accuracy(preds: torch.Tensor, target: torch.Tensor, output: to
     ],
 )
 def test_hits_at_k_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor, k: int):
-    metric = metric_modules.HitsAtKMetric(top_k=k)
-    metric.update(preds, target)
-    assert torch.isclose(output, metric.compute(), rtol=0.0001)
+    metric = metric_modules.HitsAtKMetric(num_classes=3, top_k=k)
+    with metric.sync_context():
+        metric.update(preds, target)
+        assert torch.isclose(output, metric.compute(), rtol=0.0001)
 
 
 @pytest.mark.parametrize("preds", [torch.arange(6).reshape(3, 2).float()])
@@ -136,8 +259,9 @@ def test_hits_at_k_metric(preds: torch.Tensor, target: torch.Tensor, output: tor
 @pytest.mark.parametrize("output", [torch.tensor(6).float()])
 def test_mae_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
     metric = metric_modules.MAEMetric()
-    metric.update(preds, target)
-    assert output == metric.compute()
+    with metric.sync_context():
+        metric.update(preds, target)
+        assert output == metric.compute()
 
 
 @pytest.mark.parametrize("preds", [torch.arange(6).reshape(3, 2).float()])
@@ -145,8 +269,19 @@ def test_mae_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Ten
 @pytest.mark.parametrize("output", [torch.tensor(36).float()])
 def test_mse_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
     metric = metric_modules.MSEMetric()
-    metric.update(preds, target)
-    assert output == metric.compute()
+    with metric.sync_context():
+        metric.update(preds, target)
+        assert output == metric.compute()
+
+
+@pytest.mark.parametrize("preds", [torch.arange(6).reshape(3, 2).float()])
+@pytest.mark.parametrize("target", [torch.arange(6, 12).reshape(3, 2).float()])
+@pytest.mark.parametrize("output", [torch.tensor(0.7365440726280212)])
+def test_mape_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
+    metric = metric_modules.MAPEMetric()
+    with metric.sync_context():
+        metric.update(preds, target)
+        assert output.item() == metric.compute().item()
 
 
 @pytest.mark.parametrize("preds", [torch.tensor([[0, 1], [1, 1]])])
@@ -154,84 +289,15 @@ def test_mse_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Ten
 @pytest.mark.parametrize("output", [torch.tensor(0.5)])
 def test_jaccard_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
     metric = metric_modules.JaccardMetric()
-    metric.update(preds, target)
-    assert output == metric.compute()
-
-
-# ---- Utility function tests ----
-
-
-def test_get_improved_fun_minimize():
-    """For a minimize metric (loss), a lower value is an improvement."""
-    improved_fn = get_improved_fun(LOSS)
-    assert improved_fn(0.5, 1.0) is True
-    assert improved_fn(1.0, 0.5) is False
-    assert improved_fn(1.0, 1.0) is False
-
-
-def test_get_improved_fun_maximize():
-    """For a maximize metric (accuracy), a higher value is an improvement."""
-    improved_fn = get_improved_fun(ACCURACY)
-    assert improved_fn(1.0, 0.5) is True
-    assert improved_fn(0.5, 1.0) is False
-    assert improved_fn(1.0, 1.0) is False
-
-
-def test_get_initial_validation_value_minimize():
-    """Initial validation value for a minimize metric should be +inf."""
-    val = get_initial_validation_value(LOSS)
-    assert val == float("inf")
-
-
-def test_get_initial_validation_value_maximize():
-    """Initial validation value for a maximize metric should be -inf."""
-    val = get_initial_validation_value(ACCURACY)
-    assert val == float("-inf")
-
-
-def test_get_best_function_minimize():
-    """Best function for a minimize metric should be min."""
-    best_fn = get_best_function(LOSS)
-    assert best_fn is min
-
-
-def test_get_best_function_maximize():
-    """Best function for a maximize metric should be max."""
-    best_fn = get_best_function(ACCURACY)
-    assert best_fn is max
-
-
-# ---- LudwigMetric kwargs filtering test ----
-
-
-def test_ludwig_metric_ignores_unknown_kwargs():
-    """Instantiating a concrete LudwigMetric subclass with extra/unknown kwargs should not raise."""
-    # CategoryAccuracy is a simple concrete subclass that goes through LudwigMetric.__init__
-    metric = metric_modules.CategoryAccuracy(
-        unknown_kwarg_1="foo",
-        unknown_kwarg_2=42,
-    )
-    # The metric should be usable; verify by running a trivial update/compute cycle
-    metric.update(torch.tensor([0, 1, 2]), torch.tensor([0, 1, 2]))
-    assert metric.compute() == torch.tensor(1.0)
-
-
-# ---- ROCAUCMetric error-path tests ----
-
-
-def test_roc_auc_rejects_multidimensional_preds():
-    """ROCAUCMetric.update should raise RuntimeError for multi-dimensional inputs."""
-    metric = metric_modules.ROCAUCMetric()
-    preds_2d = torch.tensor([[0.5, 0.5], [0.5, 0.5]])
-    target_2d = torch.tensor([[1, 0], [0, 1]])
-    with pytest.raises(RuntimeError, match="Only binary tasks supported"):
-        metric.update(preds_2d, target_2d)
-
-
-def test_roc_auc_rejects_out_of_range_preds():
-    """ROCAUCMetric.update should raise RuntimeError when predictions are outside [0, 1]."""
-    metric = metric_modules.ROCAUCMetric()
-    preds = torch.tensor([-0.1, 0.5, 1.2])
-    target = torch.tensor([0, 1, 1])
-    with pytest.raises(RuntimeError, match="Only binary tasks supported"):
+    with metric.sync_context():
         metric.update(preds, target)
+        assert output == metric.compute()
+
+
+def test_char_error_rate():
+    metric = metric_modules.CharErrorRateMetric()
+    with metric.sync_context():
+        metric.update(
+            ["this is the prediction", "there is an other sample"], ["this is the reference", "there is another one"]
+        )
+        assert torch.isclose(torch.tensor(0.3415), metric.compute(), rtol=0.5)

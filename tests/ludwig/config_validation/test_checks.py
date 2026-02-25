@@ -6,7 +6,7 @@ Note that all testing should be done with the public API, rather than individual
 """
 
 import contextlib
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import pytest
 import yaml
@@ -113,27 +113,7 @@ def test_balance_non_binary_failure():
         ModelConfig.from_dict(config)
 
 
-def test_unsupported_features_config():
-    # GBMs don't support text features.
-    with pytest.raises(ConfigValidationError):
-        ModelConfig.from_dict(
-            {
-                "input_features": [text_feature()],
-                "output_features": [binary_feature()],
-                "model_type": "gbm",
-            }
-        )
-
-    # GBMs don't support output text features.
-    with pytest.raises(ConfigValidationError):
-        ModelConfig.from_dict(
-            {
-                "input_features": [binary_feature()],
-                "output_features": [text_feature()],
-                "model_type": "gbm",
-            }
-        )
-
+def test_supported_features_config():
     # ECD supports output text features.
     ModelConfig.from_dict(
         {

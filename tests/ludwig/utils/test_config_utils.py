@@ -1,5 +1,5 @@
 import copy
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import pytest
 
@@ -9,7 +9,6 @@ from ludwig.constants import (
     ENCODER,
     INPUT_FEATURES,
     MODEL_ECD,
-    MODEL_GBM,
     MODEL_LLM,
     MODEL_TYPE,
     NAME,
@@ -134,24 +133,6 @@ def ecd_config_dict_no_text_features() -> dict[str, Any]:
     }
 
 
-@pytest.fixture(scope="module")
-def gbm_config_dict() -> dict[str, Any]:
-    return {
-        MODEL_TYPE: MODEL_GBM,
-        INPUT_FEATURES: [{TYPE: TEXT, NAME: "in1", ENCODER: {TYPE: "tf_idf"}}],
-        OUTPUT_FEATURES: [{TYPE: BINARY, NAME: "out1"}],
-    }
-
-
-@pytest.fixture(scope="module")
-def gbm_config_dict_no_text_features() -> dict[str, Any]:
-    return {
-        MODEL_TYPE: MODEL_GBM,
-        INPUT_FEATURES: [{TYPE: BINARY, NAME: "in1"}],
-        OUTPUT_FEATURES: [{TYPE: BINARY, NAME: "out1"}],
-    }
-
-
 @pytest.mark.parametrize(
     "config,expectation",
     [
@@ -165,10 +146,6 @@ def gbm_config_dict_no_text_features() -> dict[str, Any]:
         ("ecd_config_dict_no_llm_encoder", False),
         # ECD configuration with no text features
         ("ecd_config_dict_no_text_features", False),
-        # GBM configuration with text feature. "tf_idf" is the only valid text encoder
-        ("gbm_config_dict", False),
-        # GBM configuration with no text features
-        ("gbm_config_dict_no_text_features", False),
     ],
 )
 @pytest.mark.parametrize("config_type", ["dict", "object"])
@@ -253,17 +230,13 @@ def ecd_config_dict_llm_encoder_8bit(
         ("ecd_config_dict_llm_encoder", [None]),
         ("ecd_config_dict_llm_encoder_4bit", [4]),
         ("ecd_config_dict_llm_encoder_8bit", [8]),
-        # GBM configuration with text feature. "tf_idf" is the only valid text encoder
-        ("gbm_config_dict", [None]),
-        # GBM configuration with no text features
-        ("gbm_config_dict_no_text_features", [None]),
     ],
 )
 @pytest.mark.parametrize("config_type", ["dict", "object"])
 def test_get_quantization(
     config: dict[str, Any], expectation: int | list[int] | None | list[None], config_type: str, request
 ):
-    """Test get_quantization with LLM and single-feature ECD/GBM configs.
+    """Test get_quantization with LLM and single-feature ECD configs.
 
     Args:
         config: The configuration to test

@@ -97,17 +97,7 @@ def test_too_few_features_config():
         )
 
 
-def test_too_many_features_config():
-    # GBMs Must have exactly one output feature
-    with pytest.raises(ConfigValidationError):
-        check_schema(
-            {
-                "input_features": [number_feature()],
-                "output_features": [binary_feature(), number_feature()],
-                "model_type": "gbm",
-            }
-        )
-
+def test_multi_output_features_config():
     # Multi-output is fine for ECD
     check_schema(
         {

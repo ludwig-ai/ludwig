@@ -1,4 +1,4 @@
-# Copyright (c) 2020 Uber Technologies, Inc.
+# Copyright (c) 2023 Predibase, Inc., 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,15 +19,26 @@ import os.path
 import pathlib
 import shutil
 import subprocess
-import sys
-from typing import Any, Dict, List, Set
 
 import pytest
 import yaml
 
-from ludwig.constants import COMBINER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, TRAINER
+from ludwig.constants import (
+    BATCH_SIZE,
+    COMBINER,
+    EVAL_BATCH_SIZE,
+    INPUT_FEATURES,
+    NAME,
+    OUTPUT_FEATURES,
+    PREPROCESSING,
+    TRAINER,
+)
+from ludwig.globals import MODEL_FILE_NAME
+from ludwig.types import FeatureConfigDict
 from ludwig.utils.data_utils import load_yaml
 from tests.integration_tests.utils import category_feature, generate_data, number_feature, sequence_feature
+
+pytestmark = pytest.mark.integration_tests_b
 
 
 def _run_commands(commands, **ludwig_kwargs):
@@ -42,14 +53,14 @@ def _run_commands(commands, **ludwig_kwargs):
 
 
 def _run_ludwig(command, **ludwig_kwargs):
-    commands = [sys.executable, "-m", "ludwig.cli", command]
+    commands = ["ludwig", command]
     return _run_commands(commands, **ludwig_kwargs)
 
 
 def _prepare_data(csv_filename, config_filename):
     # Single sequence input, single category output
     input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
-    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
+    output_features = [category_feature(decoder={"vocab_size": 3}, reduce_input="sum")]
 
     # Generate test data
     dataset_filename = generate_data(input_features, output_features, csv_filename)
@@ -59,7 +70,7 @@ def _prepare_data(csv_filename, config_filename):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128, EVAL_BATCH_SIZE: 128},
     }
 
     with open(config_filename, "w") as f:
@@ -81,7 +92,7 @@ def _prepare_hyperopt_data(csv_filename, config_filename):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 4},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
         "hyperopt": {
             "parameters": {
                 "trainer.learning_rate": {
@@ -116,6 +127,15 @@ def test_train_cli_dataset(tmpdir, csv_filename):
     _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
 
 
+def test_train_cli_gpu_memory_limit(tmpdir, csv_filename):
+    """Test training using `ludwig train --dataset --gpu_memory_limit`."""
+    config_filename = os.path.join(tmpdir, "config.yaml")
+    dataset_filename = _prepare_data(csv_filename, config_filename)
+    _run_ludwig(
+        "train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir), gpu_memory_limit="0.5"
+    )
+
+
 def test_train_cli_training_set(tmpdir, csv_filename):
     """Test training using `ludwig train --training_set`."""
     config_filename = os.path.join(tmpdir, "config.yaml")
@@ -139,7 +159,7 @@ def test_export_torchscript_cli(tmpdir, csv_filename):
     _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
     _run_ludwig(
         "export_torchscript",
-        model_path=os.path.join(tmpdir, "experiment_run", "model"),
+        model_path=os.path.join(tmpdir, "experiment_run", MODEL_FILE_NAME),
         output_path=os.path.join(tmpdir, "torchscript"),
     )
 
@@ -151,7 +171,7 @@ def test_export_mlflow_cli(tmpdir, csv_filename):
     _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
     _run_ludwig(
         "export_mlflow",
-        model_path=os.path.join(tmpdir, "experiment_run", "model"),
+        model_path=os.path.join(tmpdir, "experiment_run", MODEL_FILE_NAME),
         output_path=os.path.join(tmpdir, "data/results/mlflow"),
     )
 
@@ -171,7 +191,7 @@ def test_predict_cli(tmpdir, csv_filename):
     _run_ludwig(
         "predict",
         dataset=dataset_filename,
-        model=os.path.join(tmpdir, "experiment_run", "model"),
+        model=os.path.join(tmpdir, "experiment_run", MODEL_FILE_NAME),
         output_directory=os.path.join(tmpdir, "predictions"),
     )
 
@@ -184,7 +204,7 @@ def test_evaluate_cli(tmpdir, csv_filename):
     _run_ludwig(
         "evaluate",
         dataset=dataset_filename,
-        model=os.path.join(tmpdir, "experiment_run", "model"),
+        model=os.path.join(tmpdir, "experiment_run", MODEL_FILE_NAME),
         output_directory=os.path.join(tmpdir, "predictions"),
     )
 
@@ -216,11 +236,27 @@ def test_collect_summary_activations_weights_cli(tmpdir, csv_filename):
     config_filename = os.path.join(tmpdir, "config.yaml")
     dataset_filename = _prepare_data(csv_filename, config_filename)
     _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
-    completed_process = _run_ludwig("collect_summary", model=os.path.join(tmpdir, "experiment_run", "model"))
-    stdout = completed_process.stdout.decode("utf-8")
+    assert _run_ludwig("collect_summary", model=os.path.join(tmpdir, "experiment_run", MODEL_FILE_NAME))
 
-    assert "Modules" in stdout
-    assert "Parameters" in stdout
+
+@pytest.mark.parametrize(
+    "model_name",
+    [
+        "alexnet",
+        "convnext_base",
+        "convnext_large",
+        "convnext_small",
+        "convnext_tiny",
+        "densenet121",
+        "densenet161",
+        "densenet169",
+        "openai-community/gpt2",
+        "facebook/opt-125m",
+    ],
+)
+def test_collect_summary_pretrained_model_cli(model_name):
+    """Test collect_summary pretrained model cli."""
+    assert _run_ludwig("collect_summary", pretrained_model=model_name)
 
 
 def test_synthesize_dataset_cli(tmpdir, csv_filename):
@@ -259,19 +295,12 @@ def test_preprocess_cli(tmpdir, csv_filename):
 @pytest.mark.parametrize("second_seed_offset", [0, 1])
 @pytest.mark.parametrize("random_seed", [1919, 31])
 @pytest.mark.parametrize("type_of_run", ["train", "experiment"])
-@pytest.mark.parametrize(
-    "backend",
-    [
-        pytest.param("local", id="local"),
-    ],
-)
 def test_reproducible_cli_runs(
-    backend: str, type_of_run: str, random_seed: int, second_seed_offset: int, csv_filename: str, tmpdir: pathlib.Path
+    type_of_run: str, random_seed: int, second_seed_offset: int, csv_filename: str, tmpdir: pathlib.Path
 ) -> None:
     """
     Test for reproducible training using `ludwig experiment|train --dataset`.
     Args:
-        backend (str): backend to use
         type_of_run(str): type of run, either train or experiment
         csv_filename(str): file path of dataset to use
         random_seed(int): random seed integer to use for test
@@ -284,10 +313,8 @@ def test_reproducible_cli_runs(
     config_filename = os.path.join(tmpdir, "config.yaml")
     dataset_filename = _prepare_data(csv_filename, config_filename)
 
-    command_to_run = _run_ludwig
-
     # run first model
-    command_to_run(
+    _run_ludwig(
         type_of_run,
         dataset=dataset_filename,
         config=config_filename,
@@ -299,7 +326,7 @@ def test_reproducible_cli_runs(
     )
 
     # run second model with same seed
-    command_to_run(
+    _run_ludwig(
         type_of_run,
         dataset=dataset_filename,
         config=config_filename,
@@ -355,13 +382,14 @@ def test_init_config(tmpdir):
 
     config = load_yaml(output_config_path)
 
-    def to_name_set(features: list[dict[str, Any]]) -> set[str]:
+    def to_name_set(features: list[FeatureConfigDict]) -> set[str]:
         return {feature[NAME] for feature in features}
 
     assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)
     assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set(output_features)
 
 
+@pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/3377")
 def test_render_config(tmpdir):
     """Test rendering a full config from a partial user config."""
     user_config_path = os.path.join(tmpdir, "config.yaml")

@@ -4,7 +4,7 @@ from ludwig.utils.server_utils import NumpyJSONResponse
 
 
 def test_numpy_json_response():
-    response = NumpyJSONResponse(content=None)
+    response = NumpyJSONResponse({"message": "Ludwig server is up"})
 
     # Test Python builtin data type encoding.
     assert response.render(None) == b"null"
@@ -18,7 +18,7 @@ def test_numpy_json_response():
     assert response.render({"a": "b"}) == b'{"a":"b"}'
 
     # Test numpy data type encoding
-    for dtype in [np.byte, np.ubyte, np.short, np.ushort, np.intp, np.uintp, np.longlong, np.ulonglong]:
+    for dtype in [np.byte, np.ubyte, np.short, np.ushort, np.int32, np.int64, np.uint, np.longlong, np.ulonglong]:
         x = np.arange(5, dtype=dtype)
         assert response.render(x) == b"[0,1,2,3,4]"
         for i in x:

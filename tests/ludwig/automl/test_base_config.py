@@ -1,12 +1,16 @@
 import os
 from decimal import Decimal
 
+import dask
 import numpy as np
 import pandas as pd
 import pytest
 import yaml
 
 ray = pytest.importorskip("ray")  # noqa
+
+# Prevent Dask from converting object-dtype columns to PyArrow strings.
+dask.config.set({"dataframe.convert-string": False})
 
 from ludwig.automl.base_config import (  # noqa
     get_dataset_info,

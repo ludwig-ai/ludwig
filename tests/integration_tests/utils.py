@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Uber Technologies, Inc.
+# Copyright (c) 2023 Predibase, Inc., 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import contextlib
 import logging
 import multiprocessing
 import os
@@ -21,54 +22,79 @@ import shutil
 import sys
 import tempfile
 import traceback
-import unittest
 import uuid
-from distutils.util import strtobool
-from typing import List, Union
 
-import cloudpickle
-import numpy as np
-import pandas as pd
-import pytest
-import torch
-from PIL import Image
 
-from ludwig.api import LudwigModel
-from ludwig.backend import LocalBackend
-from ludwig.constants import COLUMN, DECODER, ENCODER, NAME, PROC_COLUMN, TRAINER, VECTOR
-from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FORMATS
-from ludwig.experiment import experiment_cli
-from ludwig.features.feature_utils import compute_feature_hash
-from ludwig.trainers.trainer import Trainer
-from ludwig.utils.data_utils import read_csv, replace_file_extension
+def strtobool(val):
+    val = str(val).strip().lower()
+    if val in ("y", "yes", "t", "true", "on", "1"):
+        return 1
+    elif val in ("n", "no", "f", "false", "off", "0"):
+        return 0
+    else:
+        raise ValueError(f"invalid truth value {val!r}")
+
+
+from typing import Any, TYPE_CHECKING  # noqa: E402
+
+import cloudpickle  # noqa: E402
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+import pytest  # noqa: E402
+import torch  # noqa: E402
+from PIL import Image  # noqa: E402
+
+from ludwig.api import LudwigModel  # noqa: E402
+from ludwig.backend import LocalBackend  # noqa: E402
+from ludwig.constants import (  # noqa: E402
+    AUDIO,
+    BAG,
+    BATCH_SIZE,
+    BINARY,
+    CATEGORY,
+    CATEGORY_DISTRIBUTION,
+    COLUMN,
+    DATE,
+    DECODER,
+    ENCODER,
+    H3,
+    IMAGE,
+    MODEL_ECD,
+    NAME,
+    NUMBER,
+    PROC_COLUMN,
+    SEQUENCE,
+    SET,
+    SPLIT,
+    TEXT,
+    TIMESERIES,
+    TRAINER,
+    VECTOR,
+)
+from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FORMATS  # noqa: E402
+from ludwig.experiment import experiment_cli  # noqa: E402
+from ludwig.features.feature_utils import compute_feature_hash  # noqa: E402
+from ludwig.globals import MODEL_FILE_NAME, PREDICTIONS_PARQUET_FILE_NAME  # noqa: E402
+from ludwig.schema.encoders.text_encoders import HFEncoderConfig  # noqa: E402
+from ludwig.schema.encoders.utils import get_encoder_classes  # noqa: E402
+from ludwig.trainers.trainer import Trainer  # noqa: E402
+from ludwig.utils import fs_utils  # noqa: E402
+from ludwig.utils.data_utils import read_csv, replace_file_extension, use_credentials  # noqa: E402
+
+if TYPE_CHECKING:
+    from ludwig.data.dataset.base import Dataset
+    from ludwig.schema.model_types.base import ModelConfig
 
 logger = logging.getLogger(__name__)
 
 # Used in sequence-related unit tests (encoders, features) as well as end-to-end integration tests.
 # Missing: passthrough encoder.
 ENCODERS = ["embed", "rnn", "parallel_cnn", "cnnrnn", "stacked_parallel_cnn", "stacked_cnn", "transformer"]
+TEXT_ENCODERS = ENCODERS + ["tf_idf"]
 
 HF_ENCODERS_SHORT = ["distilbert"]
 
-HF_ENCODERS = [
-    "bert",
-    "gpt",
-    "gpt2",
-    # 'transformer_xl',
-    "xlnet",
-    "xlm",
-    "roberta",
-    "distilbert",
-    "ctrl",
-    "camembert",
-    "albert",
-    "t5",
-    "xlmroberta",
-    "longformer",
-    "flaubert",
-    "electra",
-    "mt5",
-]
+HF_ENCODERS = [name for name, cls in get_encoder_classes(MODEL_ECD, TEXT).items() if issubclass(cls, HFEncoderConfig)]
 
 RAY_BACKEND_CONFIG = {
     "type": "ray",
@@ -77,7 +103,7 @@ RAY_BACKEND_CONFIG = {
     },
     "trainer": {
         "use_gpu": False,
-        "num_workers": 2,
+        "num_workers": 1,
         "resources_per_worker": {
             "CPU": 0.1,
             "GPU": 0,
@@ -103,7 +129,7 @@ class FakeRemoteBackend(LocalBackend):
 
 
 class FakeRemoteTrainer(Trainer):
-    def train(self, *args, save_path="model", **kwargs):
+    def train(self, *args, save_path=MODEL_FILE_NAME, **kwargs):
         with tempfile.TemporaryDirectory() as tmpdir:
             return super().train(*args, save_path=tmpdir, **kwargs)
 
@@ -117,6 +143,8 @@ def parse_flag_from_env(key, default=False):
     else:
         # KEY is set, convert it to True or False.
         try:
+            if isinstance(value, bool):
+                return 1 if value else 0
             _value = strtobool(value)
         except ValueError:
             # More values are supported, but let's keep the message simple.
@@ -124,18 +152,13 @@ def parse_flag_from_env(key, default=False):
     return _value
 
 
-_run_slow_tests = parse_flag_from_env("RUN_SLOW", default=False)
 _run_private_tests = parse_flag_from_env("RUN_PRIVATE", default=False)
 
 
-def slow(test_case):
-    """Decorator marking a test as slow.
-
-    Slow tests are skipped by default. Set the RUN_SLOW environment variable to a truth value to run them.
-    """
-    if not _run_slow_tests:
-        test_case = unittest.skip("Skipping: this test is too slow")(test_case)
-    return test_case
+private_test = pytest.mark.skipif(
+    not _run_private_tests,
+    reason="Skipping: this test is marked private, set RUN_PRIVATE=1 in your environment to run",
+)
 
 
 def private_param(param):
@@ -158,6 +181,7 @@ def generate_data(
     filename="test_csv.csv",
     num_examples=25,
     nan_percent=0.0,
+    with_split=False,
 ):
     """Helper method to generate synthetic data based on input, output feature specs.
 
@@ -166,18 +190,54 @@ def generate_data(
     :param output_features: schema
     :param filename: path to the file where data is stored
     :param nan_percent: percent of values in a feature to be NaN
+    :param with_split: If True, then new column "split" is created, containing integer values as follows:
+        0 -- for training set;
+        1 -- for validation set;
+        2 -- for test set.
+
     :return:
+    """
+    df = generate_data_as_dataframe(input_features, output_features, num_examples, nan_percent, with_split=with_split)
+    df.to_csv(filename, index=False)
+    return filename
+
+
+def generate_data_as_dataframe(
+    input_features,
+    output_features,
+    num_examples=25,
+    nan_percent=0.0,
+    with_split=False,
+) -> pd.DataFrame:
+    """Helper method to generate synthetic data based on input, output feature specs.
+
+    Args:
+        input_features: schema
+        output_features: schema
+        num_examples: number of examples to generate
+        nan_percent: percent of values in a feature to be NaN
+        with_split: If True, then new column "split" is created, containing integer values as follows:
+            0 -- for training set;
+            1 -- for validation set;
+            2 -- for test set.
+
+    Returns:
+        A pandas DataFrame
     """
     features = input_features + output_features
     df = build_synthetic_dataset(num_examples, features)
     data = [next(df) for _ in range(num_examples + 1)]
 
-    dataframe = pd.DataFrame(data[1:], columns=data[0])
-    if nan_percent > 0:
-        add_nans_to_df_in_place(dataframe, nan_percent)
-    dataframe.to_csv(filename, index=False)
+    df = pd.DataFrame(data[1:], columns=data[0])
 
-    return filename
+    # Add "split" column to DataFrame
+    if with_split:
+        num_val_examples = max(2, int(num_examples * 0.1))
+        num_test_examples = max(2, int(num_examples * 0.1))
+        num_train_examples = num_examples - num_val_examples - num_test_examples
+        df["split"] = [0] * num_train_examples + [1] * num_val_examples + [2] * num_test_examples
+
+    return df
 
 
 def recursive_update(dictionary, values):
@@ -195,8 +255,8 @@ def random_string(length=5):
 
 def number_feature(normalization=None, **kwargs):
     feature = {
-        "name": "num_" + random_string(),
-        "type": "number",
+        "name": f"{NUMBER}_{random_string()}",
+        "type": NUMBER,
         "preprocessing": {"normalization": normalization},
     }
     recursive_update(feature, kwargs)
@@ -209,8 +269,8 @@ def category_feature(output_feature=False, **kwargs):
     if DECODER in kwargs:
         output_feature = True
     feature = {
-        "type": "category",
-        "name": "category_" + random_string(),
+        "name": f"{CATEGORY}_{random_string()}",
+        "type": CATEGORY,
     }
     if output_feature:
         feature.update(
@@ -221,7 +281,7 @@ def category_feature(output_feature=False, **kwargs):
     else:
         feature.update(
             {
-                ENCODER: {"type": "dense", "vocab_size": 10, "embedding_size": 5},
+                ENCODER: {"vocab_size": 10, "embedding_size": 5},
             }
         )
     recursive_update(feature, kwargs)
@@ -230,12 +290,16 @@ def category_feature(output_feature=False, **kwargs):
     return feature
 
 
-def text_feature(output_feature=False, **kwargs):
+def text_feature(output_feature: bool = False, name: str = None, **kwargs):
     if DECODER in kwargs:
         output_feature = True
+    if name is not None:
+        feature_name = name
+    else:
+        feature_name = f"{TEXT}_{random_string()}"
     feature = {
-        "name": "text_" + random_string(),
-        "type": "text",
+        "name": feature_name,
+        "type": TEXT,
     }
     if output_feature:
         feature.update(
@@ -266,8 +330,8 @@ def set_feature(output_feature=False, **kwargs):
     if DECODER in kwargs:
         output_feature = True
     feature = {
-        "type": "set",
-        "name": "set_" + random_string(),
+        "name": f"{SET}_{random_string()}",
+        "type": SET,
     }
     if output_feature:
         feature.update(
@@ -291,8 +355,8 @@ def sequence_feature(output_feature=False, **kwargs):
     if DECODER in kwargs:
         output_feature = True
     feature = {
-        "type": "sequence",
-        "name": "sequence_" + random_string(),
+        "name": f"{SEQUENCE}_{random_string()}",
+        "type": SEQUENCE,
     }
     if output_feature:
         feature.update(
@@ -327,14 +391,11 @@ def sequence_feature(output_feature=False, **kwargs):
 
 def image_feature(folder, **kwargs):
     feature = {
-        "type": "image",
-        "name": "image_" + random_string(),
+        "name": f"{IMAGE}_{random_string()}",
+        "type": IMAGE,
         "preprocessing": {"in_memory": True, "height": 12, "width": 12, "num_channels": 3},
         ENCODER: {
-            "type": "resnet",
-            "resnet_size": 8,
-            "num_filters": 8,
-            "output_size": 8,
+            "type": "stacked_cnn",
         },
         "destination_folder": folder,
     }
@@ -346,8 +407,8 @@ def image_feature(folder, **kwargs):
 
 def audio_feature(folder, **kwargs):
     feature = {
-        "name": "audio_" + random_string(),
-        "type": "audio",
+        "name": f"{AUDIO}_{random_string()}",
+        "type": AUDIO,
         "preprocessing": {
             "type": "fbank",
             "window_length_in_s": 0.04,
@@ -374,10 +435,24 @@ def audio_feature(folder, **kwargs):
 
 def timeseries_feature(**kwargs):
     feature = {
-        "name": "timeseries_" + random_string(),
-        "type": "timeseries",
-        ENCODER: {"type": "parallel_cnn", "max_len": 7},
+        "name": f"{TIMESERIES}_{random_string()}",
+        "type": TIMESERIES,
     }
+
+    output_feature = DECODER in kwargs
+    if output_feature:
+        feature.update(
+            {
+                DECODER: {"type": "projector"},
+            }
+        )
+    else:
+        feature.update(
+            {
+                ENCODER: {"type": "parallel_cnn", "max_len": 7},
+            }
+        )
+
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
@@ -386,8 +461,8 @@ def timeseries_feature(**kwargs):
 
 def binary_feature(**kwargs):
     feature = {
-        "name": "binary_" + random_string(),
-        "type": "binary",
+        "name": f"{BINARY}_{random_string()}",
+        "type": BINARY,
     }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
@@ -397,8 +472,8 @@ def binary_feature(**kwargs):
 
 def bag_feature(**kwargs):
     feature = {
-        "name": "bag_" + random_string(),
-        "type": "bag",
+        "name": f"{BAG}_{random_string()}",
+        "type": BAG,
         ENCODER: {"type": "embed", "max_len": 5, "vocab_size": 10, "embedding_size": 5},
     }
     recursive_update(feature, kwargs)
@@ -409,9 +484,11 @@ def bag_feature(**kwargs):
 
 def date_feature(**kwargs):
     feature = {
-        "name": "date_" + random_string(),
-        "type": "date",
-        "preprocessing": {"datetime_format": random.choice(list(DATETIME_FORMATS.keys()))},
+        "name": f"{DATE}_{random_string()}",
+        "type": DATE,
+        "preprocessing": {
+            "datetime_format": random.choice(list(DATETIME_FORMATS.keys())),
+        },
     }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
@@ -420,7 +497,10 @@ def date_feature(**kwargs):
 
 
 def h3_feature(**kwargs):
-    feature = {"name": "h3_" + random_string(), "type": "h3"}
+    feature = {
+        "name": f"{H3}_{random_string()}",
+        "type": H3,
+    }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
@@ -429,11 +509,26 @@ def h3_feature(**kwargs):
 
 def vector_feature(**kwargs):
     feature = {
+        "name": f"{VECTOR}_{random_string()}",
         "type": VECTOR,
-        "name": "vector_" + random_string(),
         "preprocessing": {
             "vector_size": 5,
         },
+    }
+    recursive_update(feature, kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
+    return feature
+
+
+def category_distribution_feature(**kwargs):
+    feature = {
+        "name": f"{CATEGORY_DISTRIBUTION}_{random_string()}",
+        "type": CATEGORY_DISTRIBUTION,
+        "preprocessing": {
+            "vocab": ["a", "b", "c"],
+        },
+        DECODER: {"type": "classifier"},
     }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
@@ -448,8 +543,15 @@ def run_experiment(
     running an experiment.
 
     :param input_features: list of input feature dictionaries
-    :param output_features: list of output feature dictionaries **kwargs you may also pass extra parameters to the
-        experiment as keyword arguments
+    :param output_features: list of output feature dictionaries
+    :param config: A dictionary containing the Ludwig model configuration
+    :param skip_save_processed_input: (bool, default: `False`) if input
+    dataset is provided it is preprocessed and cached by saving an HDF5
+    and JSON files to avoid running the preprocessing again. If this
+    parameter is `False`, the HDF5 and JSON file are not saved.
+    :param backend: (Union[Backend, str]) `Backend` or string name
+    **kwargs you may also pass extra parameters to the experiment as keyword
+    arguments
     :return: None
     """
     if input_features is None and output_features is None and config is None:
@@ -460,7 +562,7 @@ def run_experiment(
             "input_features": input_features,
             "output_features": output_features,
             "combiner": {"type": "concat", "output_size": 14},
-            TRAINER: {"epochs": 2},
+            TRAINER: {"epochs": 2, BATCH_SIZE: 128},
         }
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -482,7 +584,7 @@ def run_experiment(
         }
         args.update(kwargs)
 
-        experiment_cli(**args)
+        return experiment_cli(**args)
 
 
 def generate_output_features_with_dependencies(main_feature, dependencies):
@@ -497,8 +599,8 @@ def generate_output_features_with_dependencies(main_feature, dependencies):
     """
 
     output_features = [
-        category_feature(decoder={"type": "classifier", "vocab_size": 2}, reduce_input="sum"),
-        sequence_feature(decoder={"type": "generator", "vocab_size": 10, "max_len": 5}),
+        category_feature(decoder={"type": "classifier", "vocab_size": 2}, reduce_input="sum", output_feature=True),
+        sequence_feature(decoder={"type": "generator", "vocab_size": 10, "max_len": 5}, output_feature=True),
         number_feature(),
     ]
 
@@ -533,8 +635,8 @@ def generate_output_features_with_dependencies_complex():
     )
 
     # The correct order ids[tf, sf, nf, vf, set_f, cf]
-    # # shuffling it to test the robustness of the topological sort
-    output_features = [nf, tf, set_f, vf, cf, sf, nf]
+    # shuffling it to test the robustness of the topological sort
+    output_features = [nf, tf, set_f, vf, cf, sf]
 
     return output_features
 
@@ -621,7 +723,7 @@ def run_api_experiment(input_features, output_features, data_csv):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     model = LudwigModel(config)
@@ -634,7 +736,7 @@ def run_api_experiment(input_features, output_features, data_csv):
         )
         model.predict(dataset=data_csv)
 
-        model_dir = os.path.join(output_dir, "model")
+        model_dir = os.path.join(output_dir, MODEL_FILE_NAME)
         loaded_model = LudwigModel.load(model_dir)
 
         # Necessary before call to get_weights() to materialize the weights
@@ -670,6 +772,8 @@ def add_nans_to_df_in_place(df: pd.DataFrame, nan_percent: float):
     num_rows = len(df)
     num_nans_per_col = int(round(nan_percent * num_rows))
     for col in df.columns:
+        if col == SPLIT:  # do not add NaNs to the split column
+            continue
         col_idx = df.columns.get_loc(col)
         for row_idx in random.sample(range(num_rows), num_nans_per_col):
             df.iloc[row_idx, col_idx] = np.nan
@@ -693,7 +797,7 @@ def create_data_set_to_use(data_format, raw_data, nan_percent=0.0):
     # https://stackoverflow.com/questions/16490261/python-pandas-write-dataframe-to-fixed-width-file-to-fwf
     from tabulate import tabulate
 
-    def to_fwf(df, fname):
+    def to_fwf(df: pd.DataFrame, fname: str):
         content = tabulate(df.values.tolist(), list(df.columns), tablefmt="plain")
         open(fname, "w").write(content)
 
@@ -713,6 +817,10 @@ def create_data_set_to_use(data_format, raw_data, nan_percent=0.0):
 
     elif data_format == "excel":
         dataset_to_use = replace_file_extension(raw_data, "xlsx")
+        read_csv_with_nan(raw_data, nan_percent=nan_percent).to_excel(dataset_to_use, index=False)
+
+    elif data_format == "excel_xls":
+        dataset_to_use = replace_file_extension(raw_data, "xls")
         read_csv_with_nan(raw_data, nan_percent=nan_percent).to_excel(dataset_to_use, index=False)
 
     elif data_format == "feather":
@@ -772,7 +880,7 @@ def create_data_set_to_use(data_format, raw_data, nan_percent=0.0):
 
 
 def augment_dataset_with_none(
-    df: pd.DataFrame, first_row_none: bool = False, last_row_none: bool = False, nan_cols: list = []
+    df: pd.DataFrame, first_row_none: bool = False, last_row_none: bool = False, nan_cols: list | None = None
 ) -> pd.DataFrame:
     """Optionally sets the first and last rows of nan_cols of the given dataframe to nan.
 
@@ -785,6 +893,8 @@ def augment_dataset_with_none(
     :param nan_cols: a list of columns in the dataframe to explicitly set the first or last rows to np.nan
     :type nan_cols: list
     """
+    nan_cols = nan_cols if nan_cols is not None else []
+
     if first_row_none:
         for col in nan_cols:
             df.iloc[0, df.columns.get_loc(col)] = np.nan
@@ -806,12 +916,11 @@ def train_with_backend(
     callbacks=None,
     skip_save_processed_input=True,
     skip_save_predictions=True,
+    required_metrics=None,
 ):
     model = LudwigModel(config, backend=backend, callbacks=callbacks)
-    output_dir = None
-
-    try:
-        _, _, output_dir = model.train(
+    with tempfile.TemporaryDirectory() as output_directory:
+        _, _, _ = model.train(
             dataset=dataset,
             training_set=training_set,
             validation_set=validation_set,
@@ -820,25 +929,32 @@ def train_with_backend(
             skip_save_progress=True,
             skip_save_unprocessed_output=True,
             skip_save_log=True,
+            output_directory=output_directory,
         )
 
         if dataset is None:
             dataset = training_set
 
         if predict:
-            with tempfile.TemporaryDirectory() as predict_dir:
-                preds, _ = model.predict(
-                    dataset=dataset,
-                    skip_save_predictions=skip_save_predictions,
-                    output_directory=predict_dir,
-                )
+            preds, _ = model.predict(
+                dataset=dataset, skip_save_predictions=skip_save_predictions, output_directory=output_directory
+            )
             assert preds is not None
+
+            if not skip_save_predictions:
+                read_preds = model.backend.df_engine.read_predictions(
+                    os.path.join(output_directory, PREDICTIONS_PARQUET_FILE_NAME)
+                )
+                # call compute to ensure preds materialize correctly
+                read_preds = read_preds.compute()
+                assert read_preds is not None
 
         if evaluate:
             eval_stats, eval_preds, _ = model.evaluate(
                 dataset=dataset, collect_overall_stats=False, collect_predictions=True
             )
             assert eval_preds is not None
+            assert_all_required_metrics_exist(eval_stats, required_metrics)
 
             # Test that eval_stats are approx equal when using local backend
             with tempfile.TemporaryDirectory() as tmpdir:
@@ -850,28 +966,215 @@ def train_with_backend(
 
                 # Filter out metrics that are not being aggregated correctly for now
                 # TODO(travis): https://github.com/ludwig-ai/ludwig/issues/1956
+                # Filter out next_token_perplexity since it is only relevant for LLMs
                 def filter(stats):
                     return {
                         k: {
                             metric_name: value
                             for metric_name, value in v.items()
-                            if metric_name not in {"loss", "root_mean_squared_percentage_error"}
+                            if metric_name
+                            not in {
+                                "loss",
+                                "root_mean_squared_percentage_error",
+                                "jaccard",
+                                "token_accuracy",
+                                "next_token_perplexity",
+                            }
                         }
                         for k, v in stats.items()
                     }
 
-                for (k1, v1), (k2, v2) in zip(filter(eval_stats).items(), filter(local_eval_stats).items()):
-                    assert k1 == k2
-                    for (name1, metric1), (name2, metric2) in zip(v1.items(), v2.items()):
-                        assert name1 == name2
-                        # Use wider tolerance to account for differences in NaN handling
-                        # and data ordering between distributed (Dask) and local backends.
-                        # With small datasets (25 examples), metrics can diverge significantly.
-                        assert np.isclose(
-                            metric1, metric2, rtol=0.1, atol=1e-2
-                        ), f"metric {name1}: {metric1} != {metric2}"
+                for (feature_name_from_eval, metrics_dict_from_eval), (
+                    feature_name_from_local,
+                    metrics_dict_from_local,
+                ) in zip(filter(eval_stats).items(), filter(local_eval_stats).items()):
+                    for (metric_name_from_eval, metric_value_from_eval), (
+                        metric_name_from_local,
+                        metric_value_from_local,
+                    ) in zip(metrics_dict_from_eval.items(), metrics_dict_from_local.items()):
+                        assert metric_name_from_eval == metric_name_from_local, (
+                            f"Metric mismatch between eval and local. Metrics from eval: "
+                            f"{metrics_dict_from_eval.keys()}. Metrics from local: {metrics_dict_from_local.keys()}"
+                        )
+                        if (
+                            metric_value_from_eval == metric_value_from_eval
+                            and feature_name_from_eval == feature_name_from_eval
+                        ):
+                            # Check for equality if the values are non-nans.
+                            assert np.isclose(
+                                metric_value_from_eval, metric_value_from_local, rtol=1e-03, atol=1e-04
+                            ), (
+                                f"Metric {metric_name_from_eval} for feature {feature_name_from_eval}: "
+                                f"{metric_value_from_eval} != {metric_value_from_local}"
+                            )
 
         return model
+
+
+def assert_all_required_metrics_exist(
+    feature_to_metrics_dict: dict[str, dict[str, Any]], required_metrics: dict[str, set] | None = None
+):
+    """Checks that all `required_metrics` exist in the dictionary returned during Ludwig model evaluation.
+
+    `feature_to_metrics_dict` is a dict where the feature name is a key and the value is a dictionary of metrics:
+
+        {
+            "binary_1234": {
+                "accuracy": 0.5,
+                "loss": 0.5,
+            },
+            "numerical_1234": {
+                "mean_squared_error": 0.5,
+                "loss": 0.5,
+            }
+        }
+
+    `required_metrics` is a dict where the feature name is a key and the value is a set of metric names:
+
+        {
+            "binary_1234": {"accuracy"},
+            "numerical_1234": {"mean_squared_error"},
+        }
+
+    Args:
+        feature_to_metrics_dict: dictionary of output feature to a dictionary of metrics
+        required_metrics: optional dictionary of output feature to a set of metrics names. If None, then function
+            returns True immediately.
+    Returns:
+        None. Raises an AssertionError if any required metrics are missing.
+    """
+    if required_metrics is None:
+        return
+
+    for feature_name, metrics_dict in feature_to_metrics_dict.items():
+        if feature_name in required_metrics:
+            required_metric_names = set(required_metrics[feature_name])
+            metric_names = set(metrics_dict.keys())
+            assert required_metric_names.issubset(
+                metric_names
+            ), f"required metrics {required_metric_names} not in metrics {metric_names} for feature {feature_name}"
+
+
+def assert_preprocessed_dataset_shape_and_dtype_for_feature(
+    feature_name: str,
+    preprocessed_dataset: "Dataset",
+    config_obj: "ModelConfig",
+    expected_dtype: np.dtype,
+    expected_shape: tuple,
+):
+    """Asserts that the preprocessed dataset has the correct shape and dtype for a given feature type.
+
+    Args:
+        feature_name: the name of the feature to check
+        preprocessed_dataset: the preprocessed dataset
+        config_obj: the model config object
+        expected_dtype: the expected dtype
+        expected_shape: the expected shape
+    Returns:
+        None.
+    Raises:
+        AssertionError if the preprocessed dataset does not have the correct shape and dtype for the given feature type.
+    """
+    if_configs = [if_config for if_config in config_obj.input_features if if_config.name == feature_name]
+    # fail fast if given `feature_name`` is not found or is not unique
+    if len(if_configs) != 1:
+        raise ValueError(f"feature_name {feature_name} found {len(if_configs)} times in config_obj")
+    if_config = if_configs[0]
+
+    if_config_proc_column = if_config.proc_column
+    for result in [
+        preprocessed_dataset.training_set,
+        preprocessed_dataset.validation_set,
+        preprocessed_dataset.test_set,
+    ]:
+        result_df = result.to_df()
+        result_df_proc_col = result_df[if_config_proc_column]
+
+        # Check that the proc col is of the correct dtype
+        result_df_proc_col_dtypes = set(result_df_proc_col.map(lambda x: x.dtype))
+        assert all(
+            [expected_dtype == dtype for dtype in result_df_proc_col_dtypes]
+        ), f"proc dtype should be {expected_dtype}, got the following set of values: {result_df_proc_col_dtypes}"
+
+        # Check that the proc col is of the right dimensions
+        result_df_proc_col_shapes = set(result_df_proc_col.map(lambda x: x.shape))
+        assert all(
+            expected_shape == shape for shape in result_df_proc_col_shapes
+        ), f"proc shape should be {expected_shape}, got the following set of values: {result_df_proc_col_shapes}"
+
+
+@contextlib.contextmanager
+def remote_tmpdir(fs_protocol, bucket):
+    if bucket is None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield f"{fs_protocol}://{tmpdir}"  # noqa: E231
+        return
+
+    prefix = f"tmp_{uuid.uuid4().hex}"
+    tmpdir = f"{fs_protocol}://{bucket}/{prefix}"  # noqa: E231
+    try:
+        with use_credentials(minio_test_creds()):
+            fs_utils.makedirs(f"{fs_protocol}://{bucket}", exist_ok=True)  # noqa: E231
+        yield tmpdir
     finally:
-        # Remove results/intermediate data saved to disk
-        shutil.rmtree(output_dir, ignore_errors=True)
+        try:
+            with use_credentials(minio_test_creds()):
+                fs_utils.delete(tmpdir, recursive=True)
+        except FileNotFoundError as e:
+            logger.info(f"failed to delete remote tempdir, does not exist: {str(e)}")
+            pass
+
+
+def minio_test_creds():
+    return {
+        "s3": {
+            "client_kwargs": {
+                "endpoint_url": os.environ.get("LUDWIG_MINIO_ENDPOINT", "http://localhost:9000"),
+                "aws_access_key_id": os.environ.get("LUDWIG_MINIO_ACCESS_KEY", "minio"),
+                "aws_secret_access_key": os.environ.get("LUDWIG_MINIO_SECRET_KEY", "minio123"),
+            }
+        }
+    }
+
+
+def clear_huggingface_cache():
+    cache_path = os.environ.get("TRANSFORMERS_CACHE")
+
+    if cache_path is None:
+        try:
+            from huggingface_hub.constants import HF_HUB_CACHE
+
+            cache_path = HF_HUB_CACHE.rstrip("/")
+        except ImportError:
+            cache_path = os.path.expanduser("~/.cache/huggingface")
+        while not cache_path.endswith("huggingface") and cache_path:
+            cache_path = "/".join(cache_path.split("/")[:-1])
+
+    du = shutil.disk_usage(cache_path)
+
+    logger.info(f"Current disk usage {du} ({100 * du.free / du.total}% usage)")
+
+    # only clean up cache if less than 25% of disk space is used.
+    if du.free / du.total > 0.25:
+        return
+
+    logger.info(
+        f"Clearing HuggingFace cache under path: `{cache_path}`. "
+        f"Free disk space is {100 * du.free / du.total}% of total disk space."
+    )
+    for root, dirs, files in os.walk(cache_path):
+        for f in files:
+            os.unlink(os.path.join(root, f))
+        for d in dirs:
+            shutil.rmtree(os.path.join(root, d))
+
+
+def run_test_suite(config, dataset, backend):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        model = LudwigModel(config, backend=backend)
+        _, _, output_dir = model.train(dataset=dataset, output_directory=tmpdir)
+
+        model_dir = os.path.join(output_dir, MODEL_FILE_NAME)
+        loaded_model = LudwigModel.load(model_dir, backend=backend)
+        loaded_model.predict(dataset=dataset)
+        return loaded_model

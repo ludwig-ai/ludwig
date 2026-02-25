@@ -82,9 +82,9 @@ def test_trainable_torchvision_layers(setup_data, trainable):
         for p1, p2 in zip(
             model.model.input_features.get("image").encoder_obj.model.parameters(), tv_model.parameters()
         ):
-            assert not torch.all(p1 == p2)
+            assert not torch.all(p1.cpu() == p2.cpu())
     else:
         for p1, p2 in zip(
             model.model.input_features.get("image").encoder_obj.model.parameters(), tv_model.parameters()
         ):
-            assert torch.all(p1 == p2)
+            assert torch.all(p1.cpu() == p2.cpu())

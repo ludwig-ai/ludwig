@@ -723,15 +723,6 @@ def test_experiment_model_resume(tmpdir):
     "dist_strategy",
     [
         pytest.param("ddp", id="ddp", marks=pytest.mark.distributed),
-        pytest.param(
-            "horovod",
-            id="horovod",
-            marks=[
-                pytest.mark.distributed,
-                pytest.mark.horovod,
-                pytest.mark.skip("Horovod tests are currently broken"),
-            ],
-        ),
     ],
 )
 def test_experiment_model_resume_distributed(tmpdir, dist_strategy, ray_cluster_4cpu):

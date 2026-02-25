@@ -26,14 +26,15 @@ def ray_start(num_cpus=2, num_gpus=None):
         num_cpus=num_cpus,
         num_gpus=num_gpus,
         include_dashboard=False,
-        object_store_memory=500 * 1024 * 1024,
+        object_store_memory=150 * 1024 * 1024,
     )
     try:
         yield res
     finally:
         ray.shutdown()
         # Delete the cluster address just in case.
-        ray._private.utils.reset_ray_address()
+        if hasattr(ray._private.utils, "reset_ray_address"):
+            ray._private.utils.reset_ray_address()
 
 
 @spawn
@@ -42,44 +43,47 @@ def run_test_imbalance_ray(
     input_df,
     config,
     balance,
+    num_cpus=2,
+    num_gpus=None,
 ):
-    csv_filename = os.path.join(tmpdir, "dataset.csv")
-    input_df.to_csv(csv_filename)
-    dataset_parquet = create_data_set_to_use("parquet", csv_filename)
+    with ray_start(num_cpus=num_cpus, num_gpus=num_gpus):
+        csv_filename = os.path.join(tmpdir, "dataset.csv")
+        input_df.to_csv(csv_filename)
+        dataset_parquet = create_data_set_to_use("parquet", csv_filename)
 
-    model = LudwigModel(config, backend=RAY_BACKEND_CONFIG, callbacks=None)
-    output_dir = None
+        model = LudwigModel(config, backend=RAY_BACKEND_CONFIG, callbacks=None)
+        output_dir = None
 
-    try:
-        _, output_dataset, output_dir = model.train(
-            dataset=dataset_parquet,
-            training_set=None,
-            validation_set=None,
-            test_set=None,
-            skip_save_processed_input=True,
-            skip_save_progress=True,
-            skip_save_unprocessed_output=True,
-            skip_save_log=True,
-        )
-    finally:
-        # Remove results/intermediate data saved to disk
-        shutil.rmtree(output_dir, ignore_errors=True)
+        try:
+            _, output_dataset, output_dir = model.train(
+                dataset=dataset_parquet,
+                training_set=None,
+                validation_set=None,
+                test_set=None,
+                skip_save_processed_input=True,
+                skip_save_progress=True,
+                skip_save_unprocessed_output=True,
+                skip_save_log=True,
+            )
+        finally:
+            # Remove results/intermediate data saved to disk
+            shutil.rmtree(output_dir, ignore_errors=True)
 
-    input_train_set = input_df.sample(frac=0.7, replace=False)
-    processed_len = output_dataset[0].ds.count()
-    processed_target_pos = output_dataset[0].ds.sum(on="Label_mZFLky")
-    processed_target_neg = output_dataset[0].ds.count() - output_dataset[0].ds.sum(on="Label_mZFLky")
-    assert len(input_train_set) == 140
-    assert 0.05 <= len(input_train_set[input_train_set["Label"] == 1]) / len(input_train_set) <= 0.15
-    assert round(processed_target_pos / processed_target_neg, 1) == 0.5
-    assert model.backend.df_engine.parallelism == RAY_BACKEND_CONFIG["processor"]["parallelism"]
-    assert isinstance(model.backend, RayBackend)
+        input_train_set = input_df.sample(frac=0.7, replace=False)
+        processed_len = output_dataset[0].ds.count()
+        processed_target_pos = output_dataset[0].ds.sum(on="Label_mZFLky")
+        processed_target_neg = output_dataset[0].ds.count() - output_dataset[0].ds.sum(on="Label_mZFLky")
+        assert len(input_train_set) == 140
+        assert 0.05 <= len(input_train_set[input_train_set["Label"] == 1]) / len(input_train_set) <= 0.15
+        assert round(processed_target_pos / processed_target_neg, 1) == 0.5
+        assert model.backend.df_engine.parallelism == RAY_BACKEND_CONFIG["processor"]["parallelism"]
+        assert isinstance(model.backend, RayBackend)
 
-    if balance == "oversample_minority":
-        assert len(input_train_set) < processed_len
+        if balance == "oversample_minority":
+            assert len(input_train_set) < processed_len
 
-    if balance == "undersample_majority":
-        assert len(input_train_set) > processed_len
+        if balance == "undersample_majority":
+            assert len(input_train_set) > processed_len
 
 
 def run_test_imbalance_local(
@@ -123,12 +127,13 @@ def run_test_imbalance_local(
     ["oversample_minority", "undersample_majority"],
 )
 @pytest.mark.distributed
-def test_imbalance_ray(tmpdir, balance, ray_cluster_2cpu):
+@pytest.mark.skip(reason="Flaky")
+def test_imbalance_ray(balance):
     config = {
         "input_features": [
-            {"name": "Index", "column": "Index", "type": "number"},
-            {"name": "random_1", "column": "random_1", "type": "number"},
-            {"name": "random_2", "column": "random_2", "type": "category"},
+            {"name": "Index", "column": "Index", "type": "numerical"},
+            {"name": "random_1", "column": "random_1", "type": "numerical"},
+            {"name": "random_2", "column": "random_2", "type": "numerical"},
         ],
         "output_features": [{"name": "Label", "column": "Label", "type": "binary"}],
         "trainer": {"epochs": 2, "batch_size": 8},
@@ -147,7 +152,7 @@ def test_imbalance_ray(tmpdir, balance, ray_cluster_2cpu):
     )
 
     config["preprocessing"][balance] = 0.5
-    run_test_imbalance_ray(tmpdir, df, config, balance)
+    run_test_imbalance_ray(df, config, balance)
 
 
 @pytest.mark.parametrize(

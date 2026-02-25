@@ -4,6 +4,7 @@
 #
 import logging
 
+import pytest
 import requests
 
 import ludwig
@@ -12,6 +13,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+@pytest.mark.slow
 def test_links():
     # Iterate through all datasets, ensure links are valid and reachable.
     all_datasets = ludwig.datasets.list_datasets()

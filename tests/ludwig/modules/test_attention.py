@@ -67,6 +67,7 @@ def test_multihead_self_attention(input_batch_size: int, input_seq_size: int, in
         target,
     )
 
+    # With F.scaled_dot_product_attention, all parameters receive gradients even with a single-token sequence.
     assert upc == tpc, f"Some parameters not updated.  These parameters not updated: {not_updated}"
 
 

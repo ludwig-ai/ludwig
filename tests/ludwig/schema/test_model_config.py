@@ -1,6 +1,6 @@
 import os
 from tempfile import TemporaryDirectory
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 import pytest
 import yaml
@@ -21,7 +21,6 @@ from ludwig.constants import (
     INPUT_SIZE,
     LOSS,
     MODEL_ECD,
-    MODEL_GBM,
     MODEL_LLM,
     MODEL_TYPE,
     NAME,
@@ -270,7 +269,7 @@ def test_update_config_object():
     assert config_object.input_features.text_feature.encoder.max_sequence_length == 10
 
 
-@pytest.mark.parametrize("model_type", [MODEL_ECD, MODEL_GBM])
+@pytest.mark.parametrize("model_type", [MODEL_ECD])
 def test_config_object_validation_parameters_defaults(model_type: str):
     config = {
         "input_features": [
@@ -730,51 +729,6 @@ def test_preprocessing_max_sequence_length(sequence_length, max_sequence_length,
     config_obj = ModelConfig.from_dict(config)
     assert config_obj.input_features[0].preprocessing.max_sequence_length == max_sequence_length_expected
     assert config_obj.input_features[1].preprocessing.max_sequence_length == max_sequence_length_expected
-
-
-def test_gbm_encoders():
-    config = {
-        "input_features": [
-            {"name": "feature_1", "type": "category"},
-            {"name": "Sex", "type": "category"},
-        ],
-        "output_features": [
-            {"name": "Survived", "type": "category"},
-        ],
-        "defaults": {
-            "binary": {
-                "encoder": {
-                    "type": "passthrough",
-                },
-                "preprocessing": {
-                    "missing_value_strategy": "fill_with_false",
-                },
-            },
-            "category": {
-                "encoder": {
-                    "type": "onehot",
-                },
-                "preprocessing": {
-                    "missing_value_strategy": "fill_with_const",
-                    "most_common": 10000,
-                },
-            },
-            "number": {
-                "encoder": {
-                    "type": "passthrough",
-                },
-                "preprocessing": {
-                    "missing_value_strategy": "fill_with_const",
-                },
-            },
-        },
-        "model_type": "gbm",
-    }
-
-    config_obj = ModelConfig.from_dict(config).to_dict()
-
-    for feature_type in config_obj.get("defaults"):
-        assert "encoder" in config_obj["defaults"][feature_type]
 
 
 def test_encoder_decoder_values_as_str():
