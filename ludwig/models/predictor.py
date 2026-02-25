@@ -291,6 +291,7 @@ class Predictor(BasePredictor):
         if bucketing_field:
             raise ValueError("BucketedBatcher is not supported yet")
 
+        self.dist_model = self._distributed.to_device(self.dist_model)
         prev_model_training_mode = self.dist_model.training  # store previous model training mode
         self.dist_model.eval()  # set model to eval mode
 
