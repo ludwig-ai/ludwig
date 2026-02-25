@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import contextlib
 import inspect
 import logging
 from collections.abc import Callable
@@ -2478,12 +2477,8 @@ class LLMEncoder(Encoder):
         self.model = prepare_model_for_kbit_training(self.model, use_gradient_checkpointing=False)
 
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None):
-        # Wrap with flash attention backend for faster generation
-        with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False) if (
-            torch.cuda.is_available() and self.curr_device.type == "cuda"
-        ) else contextlib.nullcontext():
-            # Get the hidden state of the last layer and return it as the text encoding
-            model_outputs = self.model(input_ids=inputs, output_hidden_states=True).hidden_states[-1]
+        # Get the hidden state of the last layer and return it as the text encoding
+        model_outputs = self.model(input_ids=inputs, output_hidden_states=True).hidden_states[-1]
 
         return {ENCODER_OUTPUT: model_outputs.type(torch.float32)}
 

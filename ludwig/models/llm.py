@@ -1,7 +1,7 @@
 import contextlib
 import logging
 import os
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 import torch
@@ -266,14 +266,8 @@ class LLM(BaseModel):
             input_ids, target_ids, self.tokenizer, self.global_max_sequence_length
         )
 
-        # Wrap with flash attention backend for faster generation
-        with (
-            torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False)
-            if (torch.cuda.is_available() and self.curr_device.type == "cuda")
-            else contextlib.nullcontext()
-        ):
-            # TODO (jeffkinnison): Determine why the 8-bit `SCB` and `CB` matrices are deleted in the forward pass
-            model_outputs = self.model(input_ids=self.model_inputs, attention_mask=self.attention_masks).get(LOGITS)
+        # TODO (jeffkinnison): Determine why the 8-bit `SCB` and `CB` matrices are deleted in the forward pass
+        model_outputs = self.model(input_ids=self.model_inputs, attention_mask=self.attention_masks).get(LOGITS)
 
         if self.output_feature_type != TEXT:
             # Pass generated tokens through decoder after averaging the token probabilities
@@ -331,20 +325,14 @@ class LLM(BaseModel):
 
                 input_lengths.append(input_ids_sample_no_padding.shape[1])
 
-                # Wrap with flash attention backend for faster generation
-                with (
-                    torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False)
-                    if (torch.cuda.is_available() and self.curr_device.type == "cuda")
-                    else contextlib.nullcontext()
-                ):
-                    # Generate text using the model
-                    model_outputs = self.model.generate(
-                        input_ids=input_ids_sample_no_padding,
-                        attention_mask=mask,
-                        generation_config=self.generation,
-                        return_dict_in_generate=True,
-                        output_scores=True,
-                    )
+                # Generate text using the model
+                model_outputs = self.model.generate(
+                    input_ids=input_ids_sample_no_padding,
+                    attention_mask=mask,
+                    generation_config=self.generation,
+                    return_dict_in_generate=True,
+                    output_scores=True,
+                )
 
                 sequences_list.append(model_outputs.sequences[0])
 
