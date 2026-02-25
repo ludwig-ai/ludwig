@@ -44,7 +44,7 @@ if TYPE_CHECKING:
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.backend.datasource import read_binary_files_with_index
-from ludwig.constants import MODEL_ECD, NAME, PREPROCESSING, PROC_COLUMN, TYPE
+from ludwig.constants import MODEL_ECD, MODEL_LLM, NAME, PREPROCESSING, PROC_COLUMN, TYPE
 from ludwig.data.dataframe.base import DataFrameEngine
 
 try:
@@ -826,7 +826,14 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
     def create_trainer(self, model: BaseModel, **kwargs) -> "BaseTrainer":  # noqa: F821
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
-        trainer_cls = get_from_registry(model.type(), get_ray_trainers_registry())
+        if model.type() == MODEL_LLM:
+            from ludwig.trainers.registry import get_llm_ray_trainers_registry
+
+            trainer_config = kwargs.get("config")
+            trainer_type = trainer_config.type if trainer_config else None
+            trainer_cls = get_from_registry(trainer_type, get_llm_ray_trainers_registry())
+        else:
+            trainer_cls = get_from_registry(model.type(), get_ray_trainers_registry())
 
         # Deep copy to workaround https://github.com/ray-project/ray/issues/24139
         all_kwargs = {
