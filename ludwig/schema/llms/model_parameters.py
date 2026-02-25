@@ -1,5 +1,3 @@
-from typing import Optional
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
@@ -14,14 +12,14 @@ class RoPEScalingConfig(schema_utils.BaseMarshmallowConfig):
 
     This parameter is a dictionary containing the scaling configuration for the RoPE embeddings. Currently supports
     three scaling strategies: linear and dynamic. Their scaling factor must be an float greater than 1. The expected
-    format is {'type': strategy name, 'factor': scaling factor}
+    format is {'rope_type': strategy name, 'factor': scaling factor}
     """
 
     def __post_init__(self):
         # Both parameters must be set, or none.
-        if not self.type:
+        if not self.rope_type:
             raise ConfigValidationError(
-                f"`rope_scaling`'s `type` field must be one of ['linear', 'dynamic'], got {self.type}"
+                f"`rope_scaling`'s `rope_type` field must be one of ['linear', 'dynamic'], got {self.rope_type}"
             )
 
         if not self.factor:
@@ -29,7 +27,7 @@ class RoPEScalingConfig(schema_utils.BaseMarshmallowConfig):
                 f"When using `rope_scaling`, `factor` must be specified and be > 1. Got {self.factor}."
             )
 
-    type: str | None = schema_utils.StringOptions(
+    rope_type: str | None = schema_utils.StringOptions(
         options=["linear", "dynamic"],
         default=None,
         allow_none=True,

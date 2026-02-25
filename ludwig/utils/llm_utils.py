@@ -43,13 +43,18 @@ def load_pretrained_from_config(
     load_kwargs = {}
     if config_obj.quantization:
         # Apply quantization configuration at model load time
-        load_kwargs["torch_dtype"] = getattr(torch, config_obj.quantization.bnb_4bit_compute_dtype)
+        load_kwargs["dtype"] = getattr(torch, config_obj.quantization.bnb_4bit_compute_dtype)
         load_kwargs["quantization_config"] = config_obj.quantization.to_bitsandbytes()
         load_kwargs["device_map"] = "auto"
 
         if transformers_436:
             load_kwargs["attn_implementation"] = "eager"
+    else:
+        # Load in float32 by default to avoid CUBLAS errors with small hidden sizes
+        # and to ensure numerical stability during training without mixed-precision.
+        load_kwargs["dtype"] = torch.float32
 
+    config_modified = False
     if config_obj.model_parameters:
         # Add any model specific parameters to the load kwargs
         for param_name, param_value in config_obj.model_parameters.to_dict().items():
@@ -59,9 +64,21 @@ def load_pretrained_from_config(
                 continue
 
             if hasattr(model_config, param_name):
-                load_kwargs[param_name] = param_value
+                if isinstance(param_value, dict):
+                    # For nested dict params (e.g. rope_scaling), merge with existing
+                    # config values to preserve defaults like rope_theta.
+                    existing = getattr(model_config, param_name, {}) or {}
+                    existing.update(param_value)
+                    setattr(model_config, param_name, existing)
+                    config_modified = True
+                else:
+                    load_kwargs[param_name] = param_value
             else:
                 logger.warning(f"Parameter {param_name} is not supported by {config_obj.base_model}. Skipping.")
+
+    # Only pass config= when we've directly modified it (e.g. rope_scaling merge).
+    if config_modified:
+        load_kwargs["config"] = model_config
 
     logger.info("Loading large language model...")
     pretrained_model_name_or_path = weights_save_path or config_obj.base_model
@@ -143,6 +160,25 @@ def to_device(
     return model, device
 
 
+def _load_peft_config(pretrained_adapter_weights: str):
+    """Load a PeftConfig, fixing known compatibility issues with newer PEFT versions."""
+    import json
+
+    from huggingface_hub import hf_hub_download
+    from peft import PeftConfig
+
+    config_file = hf_hub_download(pretrained_adapter_weights, "adapter_config.json")
+    with open(config_file) as f:
+        config_dict = json.load(f)
+
+    # AdaLoRA requires total_step > 0 in newer PEFT versions, but pretrained
+    # configs may have total_step=None.
+    if config_dict.get("peft_type") == "ADALORA" and not config_dict.get("total_step"):
+        config_dict["total_step"] = 10000
+
+    return PeftConfig.from_peft_type(**config_dict)
+
+
 def initialize_adapter(
     model: PreTrainedModel, config_obj: "LLMModelConfig"  # noqa F821
 ) -> Union["PeftModel", PreTrainedModel]:  # noqa F821
@@ -164,10 +200,10 @@ def initialize_adapter(
             # Leave this import inline to support a minimal install of Ludwig
             from peft import MODEL_TYPE_TO_PEFT_MODEL_MAPPING, PeftConfig  # noqa
 
-            peft_config = PeftConfig.from_pretrained(config_obj.adapter.pretrained_adapter_weights)
+            peft_config = _load_peft_config(config_obj.adapter.pretrained_adapter_weights)
 
             model = MODEL_TYPE_TO_PEFT_MODEL_MAPPING[peft_config.task_type].from_pretrained(
-                model, config_obj.adapter.pretrained_adapter_weights
+                model, config_obj.adapter.pretrained_adapter_weights, config=peft_config
             )
         else:
             # Leave this import inline to support a minimal install of Ludwig
