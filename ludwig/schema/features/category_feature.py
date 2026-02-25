@@ -1,13 +1,5 @@
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (
-    ACCURACY,
-    CATEGORY,
-    CATEGORY_DISTRIBUTION,
-    MODEL_ECD,
-    MODEL_GBM,
-    MODEL_LLM,
-    SOFTMAX_CROSS_ENTROPY,
-)
+from ludwig.constants import ACCURACY, CATEGORY, CATEGORY_DISTRIBUTION, MODEL_ECD, MODEL_LLM, SOFTMAX_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -22,9 +14,6 @@ from ludwig.schema.features.utils import (
     ecd_defaults_config_registry,
     ecd_input_config_registry,
     ecd_output_config_registry,
-    gbm_defaults_config_registry,
-    gbm_input_config_registry,
-    gbm_output_config_registry,
     input_mixin_registry,
     llm_output_config_registry,
     output_mixin_registry,
@@ -63,28 +52,6 @@ class ECDCategoryInputFeatureConfig(CategoryInputFeatureConfig):
         MODEL_ECD,
         feature_type=CATEGORY,
         default="dense",
-    )
-
-
-@DeveloperAPI
-@gbm_input_config_registry.register(CATEGORY)
-@ludwig_dataclass
-class GBMCategoryInputFeatureConfig(CategoryInputFeatureConfig):
-    encoder: BaseEncoderConfig = EncoderDataclassField(
-        MODEL_GBM,
-        feature_type=CATEGORY,
-        default="passthrough",
-    )
-
-
-@DeveloperAPI
-@gbm_defaults_config_registry.register(CATEGORY)
-@ludwig_dataclass
-class GBMCategoryDefaultsConfig(CategoryInputFeatureConfigMixin):
-    encoder: BaseEncoderConfig = EncoderDataclassField(
-        MODEL_GBM,
-        feature_type=CATEGORY,
-        default="passthrough",
     )
 
 
@@ -160,17 +127,6 @@ class CategoryOutputFeatureConfig(CategoryOutputFeatureConfigMixin, BaseOutputFe
 class ECDCategoryOutputFeatureConfig(CategoryOutputFeatureConfig):
     decoder: BaseDecoderConfig = DecoderDataclassField(
         MODEL_ECD,
-        feature_type=CATEGORY,
-        default="classifier",
-    )
-
-
-@DeveloperAPI
-@gbm_output_config_registry.register(CATEGORY)
-@ludwig_dataclass
-class GBMCategoryOutputFeatureConfig(CategoryOutputFeatureConfig):
-    decoder: BaseDecoderConfig = DecoderDataclassField(
-        MODEL_GBM,
         feature_type=CATEGORY,
         default="classifier",
     )

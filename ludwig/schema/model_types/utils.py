@@ -3,7 +3,7 @@ import logging
 import sys
 import warnings
 from collections.abc import Mapping
-from typing import Any, Dict, List, Set, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 from marshmallow import ValidationError
 from transformers import AutoConfig
@@ -244,7 +244,7 @@ def set_hyperopt_defaults_(config: "ModelConfig"):
     config.trainer.early_stop = -1
 
     if isinstance(config.trainer, ECDTrainerConfig) and isinstance(scheduler, BaseHyperbandSchedulerConfig):
-        # TODO(travis): explore similar contraints for GBMs, which don't have epochs
+        # TODO(travis): explore similar constraints for other model types that may not have epochs
         max_t = scheduler.max_t
         time_attr = scheduler.time_attr
         epochs = config.trainer.epochs

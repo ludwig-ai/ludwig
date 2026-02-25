@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import MODEL_ECD, MODEL_GBM, MODEL_LLM
+from ludwig.constants import MODEL_ECD, MODEL_LLM
 from ludwig.schema import utils as schema_utils
 from ludwig.utils.registry import Registry
 
@@ -9,30 +9,19 @@ input_config_registries = defaultdict(Registry)
 output_config_registries = defaultdict(Registry)
 
 ecd_input_config_registry = input_config_registries[MODEL_ECD]
-gbm_input_config_registry = input_config_registries[MODEL_GBM]
 llm_input_config_registry = input_config_registries[MODEL_LLM]
 
 ecd_output_config_registry = output_config_registries[MODEL_ECD]
-gbm_output_config_registry = output_config_registries[MODEL_GBM]
 llm_output_config_registry = output_config_registries[MODEL_LLM]
 
 input_mixin_registry = Registry()
 output_mixin_registry = Registry()
-"""As of Ludwig v0.7, ECD models support the full range of feature parameters available in Ludwig, so any feature
-schema can be registered into it.
+"""ECD models support the full range of feature parameters available in Ludwig, so any feature schema can be
+registered into it.
 
 See `BinaryDefaultsConfig` for an example.
 """
 ecd_defaults_config_registry = Registry()
-"""As of Ludwig v0.7, GBM models only support certain feature types and those features may only contain
-preprocessing parameters (in comparison, ECD features can specify encoders and other parameters).
-
-This is why the two model types have
-separate defaults registries. See `BinaryInputFeatureConfigMixin` for an example of a schema pattern that is designed to
-be registered by this registry (whereas, conversely, `BinaryDefaultsConfig` is an example of one to be registered with
-the ECD defaults registry).
-"""
-gbm_defaults_config_registry = Registry()
 
 llm_defaults_config_registry = Registry()
 

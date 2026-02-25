@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Type, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
@@ -389,10 +389,11 @@ class AdaloraConfig(LoraConfig):
         description="The coefficient of orthogonality regularization.",
     )
 
-    total_step: int | None = schema_utils.PositiveInteger(
-        default=None,
-        allow_none=True,
-        description="The total training steps that should be specified before training.",
+    total_step: int = schema_utils.PositiveInteger(
+        default=10000,
+        allow_none=False,
+        description="The total training steps for AdaLoRA rank allocation scheduling. "
+        "Must be a positive integer (required by peft >= 0.14).",
     )
 
     rank_pattern: dict | None = schema_utils.Dict(

@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Iterable
 from dataclasses import Field, field
-from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar
+from typing import Any, Generic, TypeVar
 
 from marshmallow import fields, validate
 from rich.console import Console
@@ -16,7 +16,6 @@ from ludwig.constants import (
     H3,
     IMAGE,
     MODEL_ECD,
-    MODEL_GBM,
     MODEL_LLM,
     NUMBER,
     SEQUENCE,
@@ -30,8 +29,6 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.utils import (
     ecd_input_config_registry,
     ecd_output_config_registry,
-    gbm_input_config_registry,
-    gbm_output_config_registry,
     get_input_feature_jsonschema,
     get_output_feature_jsonschema,
     llm_input_config_registry,
@@ -136,12 +133,6 @@ class BaseInputFeatureConfig(BaseFeatureConfig):
 @DeveloperAPI
 @ludwig_dataclass
 class ECDInputFeatureConfig(BaseFeatureConfig):
-    pass
-
-
-@DeveloperAPI
-@ludwig_dataclass
-class GBMInputFeatureConfig(BaseFeatureConfig):
     pass
 
 
@@ -283,14 +274,6 @@ class ECDInputFeatureSelection(FeaturesTypeSelection):
         return get_input_feature_jsonschema(MODEL_ECD)
 
 
-class GBMInputFeatureSelection(FeaturesTypeSelection):
-    def __init__(self):
-        super().__init__(registry=gbm_input_config_registry, description="Type of the input feature")
-
-    def _jsonschema_type_mapping(self):
-        return get_input_feature_jsonschema(MODEL_GBM)
-
-
 class LLMInputFeatureSelection(FeaturesTypeSelection):
     def __init__(self):
         super().__init__(registry=llm_input_config_registry, description="Type of the input feature")
@@ -305,14 +288,6 @@ class ECDOutputFeatureSelection(FeaturesTypeSelection):
 
     def _jsonschema_type_mapping(self):
         return get_output_feature_jsonschema(MODEL_ECD)
-
-
-class GBMOutputFeatureSelection(FeaturesTypeSelection):
-    def __init__(self):
-        super().__init__(max_length=1, registry=gbm_output_config_registry, description="Type of the output feature")
-
-    def _jsonschema_type_mapping(self):
-        return get_output_feature_jsonschema(MODEL_GBM)
 
 
 class LLMOutputFeatureSelection(FeaturesTypeSelection):

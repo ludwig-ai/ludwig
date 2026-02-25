@@ -1,6 +1,5 @@
 import re
 from abc import ABC
-from typing import Optional, Type, Union
 
 import torch
 from packaging.version import parse as parse_version

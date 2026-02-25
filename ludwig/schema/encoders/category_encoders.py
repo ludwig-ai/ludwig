@@ -1,7 +1,5 @@
-from typing import List, TYPE_CHECKING
-
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import CATEGORY, MODEL_ECD, MODEL_GBM
+from ludwig.constants import CATEGORY, MODEL_ECD
 from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
@@ -9,12 +7,9 @@ from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
-if TYPE_CHECKING:
-    from ludwig.schema.features.preprocessing.category import CategoryPreprocessingConfig
-
 
 @DeveloperAPI
-@register_encoder_config("passthrough", CATEGORY, model_types=[MODEL_ECD, MODEL_GBM])
+@register_encoder_config("passthrough", CATEGORY, model_types=[MODEL_ECD])
 @ludwig_dataclass
 class CategoricalPassthroughEncoderConfig(BaseEncoderConfig):
     """CategoricalPassthroughEncoderConfig is a dataclass that configures the parameters used for a categorical
@@ -95,7 +90,7 @@ class CategoricalSparseConfig(BaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("onehot", CATEGORY, model_types=[MODEL_ECD, MODEL_GBM])
+@register_encoder_config("onehot", CATEGORY, model_types=[MODEL_ECD])
 @ludwig_dataclass
 class CategoricalOneHotEncoderConfig(BaseEncoderConfig):
     """CategoricalOneHotEncoderConfig is a dataclass that configures the parameters used for a categorical onehot
@@ -107,10 +102,6 @@ class CategoricalOneHotEncoderConfig(BaseEncoderConfig):
     )
 
     vocab: list[str] = common_fields.VocabField()
-
-    def set_fixed_preprocessing_params(self, model_type: str, preprocessing: "CategoryPreprocessingConfig"):
-        if model_type == MODEL_GBM:
-            preprocessing.cache_encoder_embeddings = True
 
     def can_cache_embeddings(self) -> bool:
         return True

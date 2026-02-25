@@ -7,7 +7,7 @@ from functools import lru_cache
 from typing import Any
 from typing import Dict as TDict
 from typing import List as TList
-from typing import Optional, Set, Tuple, Type, TypeVar, Union
+from typing import TypeVar
 
 import marshmallow_dataclass
 import yaml
@@ -52,7 +52,7 @@ def load_trainer_with_kwargs(
     In particular, it chooses the correct default type for an incoming config (if it doesn't have one already), but
     otherwise passes all other parameters through without change.
     """
-    from ludwig.constants import MODEL_ECD, MODEL_LLM
+    from ludwig.constants import MODEL_LLM
     from ludwig.schema.trainer import ECDTrainerConfig, LLMTrainerConfig
 
     if model_type == MODEL_LLM:
@@ -184,7 +184,7 @@ class BaseMarshmallowConfig(ABC):
     def log_deprecation_warnings_for_any_invalid_parameters(self, data, **kwargs):
         """Logs a warning for any unknown or invalid parameters passed to a schema.
 
-        Will be removed in Ludwig v0.8, when all such parameters will explicitly raise an error.
+        Will be removed in a future version, when all such parameters will explicitly raise an error.
         """
         copy_data = copy.deepcopy(data)
         for key in data.keys():
@@ -192,7 +192,7 @@ class BaseMarshmallowConfig(ABC):
                 if key != "type":
                     warnings.warn(
                         f'"{key}" is not a valid parameter for the "{self.__class__.__name__}" schema, will be flagged '
-                        "as an error in v0.8",
+                        "as an error in a future version",
                         DeprecationWarning,
                     )
         return copy_data
@@ -1023,7 +1023,7 @@ def FloatRangeTupleDataclassField(
             if all(minmax_checks):
                 return data
             raise ValidationError(
-                f"Values in received tuple should be in range [{min},{max}], instead received: {data}"
+                f"Values in received tuple should be in range [{min}, {max}], instead received: {data}"
             )
         raise ValidationError(f'Received value should be of {n}-dimensional "Tuple[float]", instead received: {data}')
 

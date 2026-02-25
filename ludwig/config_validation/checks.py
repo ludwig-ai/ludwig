@@ -11,14 +11,11 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     AUDIO,
     BINARY,
-    CATEGORY,
     IMAGE,
     IN_MEMORY,
     MIN_QUANTIZATION_BITS_FOR_MERGE_AND_UNLOAD,
     MODEL_ECD,
-    MODEL_GBM,
     MODEL_LLM,
-    NUMBER,
     SEQUENCE,
     SET,
     TEXT,
@@ -111,31 +108,6 @@ def check_training_runway(config: "ModelConfig") -> None:  # noqa: F821
                 "trainer.steps_per_checkpoint. Please specify one or the other, or specify neither to "
                 "checkpoint/eval the model every epoch."
             )
-
-
-@register_config_check
-def check_gbm_horovod_incompatibility(config: "ModelConfig") -> None:  # noqa: F821
-    """Checks that GBM model type isn't being used with the horovod backend.
-
-    TODO(Justin): This is fine for now because we don't validate on the backend, but can be removed in the future when
-    backend is schema-fied (separate schemas for ECD and GBM).
-    """
-    if config.backend is None:
-        return
-    # TODO (jeffkinnison): Revert to object access when https://github.com/ludwig-ai/ludwig/pull/3127 lands
-    if config.model_type == MODEL_GBM and config.backend.get("type") == "horovod":
-        raise ConfigValidationError("Horovod backend does not support GBM models.")
-
-
-@register_config_check
-def check_gbm_output_type(config: "ModelConfig") -> None:  # noqa: F821
-    """Checks that the output features for GBMs are of supported types."""
-    if config.model_type == MODEL_GBM:
-        for output_feature in config.output_features:
-            if output_feature.type not in {BINARY, CATEGORY, NUMBER}:
-                raise ConfigValidationError(
-                    "GBM Models currently only support Binary, Category, and Number output features."
-                )
 
 
 @register_config_check
