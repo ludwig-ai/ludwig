@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import torch
@@ -290,8 +289,8 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         return None
 
     def create_predict_module(self) -> PredictModule:
-        # A lot of code assumes output features have a prediction module, but if we are using GBM then passthrough
-        # decoder is specified here which has no threshold.
+        # A lot of code assumes output features have a prediction module, but if we are using a passthrough
+        # decoder then there is no threshold.
         threshold = getattr(self, "threshold", 0.5)
         return _BinaryPredict(threshold, calibration_module=self.calibration_module)
 

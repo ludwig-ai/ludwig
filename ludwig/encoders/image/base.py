@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any
 
 import torch
 
@@ -348,7 +348,6 @@ class ViTEncoder(ImageEncoder):
         gradient_checkpointing: bool = False,
         patch_size: int = 16,
         trainable: bool = True,
-        output_attentions: bool = False,
         encoder_config=None,
         **kwargs,
     ):
@@ -387,9 +386,6 @@ class ViTEncoder(ImageEncoder):
             config_dict = {
                 "pretrained_model_name_or_path": pretrained_model,
             }
-            if output_attentions:
-                config_dict["attn_implementation"] = "eager"
-
             transformer = ViTModel.from_pretrained(**config_dict)
         else:
             config_dict = {
@@ -407,9 +403,6 @@ class ViTEncoder(ImageEncoder):
                 "layer_norm_eps": layer_norm_eps,
                 "gradient_checkpointing": gradient_checkpointing,
             }
-            if output_attentions:
-                config_dict["attn_implementation"] = "eager"
-
             config = ViTConfig(**config_dict)
             transformer = ViTModel(config)
 

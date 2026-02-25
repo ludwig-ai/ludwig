@@ -1,7 +1,7 @@
 import logging
 import math
 from collections.abc import Callable
-from typing import Any, Dict
+from typing import Any
 
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts, LambdaLR, ReduceLROnPlateau, SequentialLR
@@ -46,8 +46,7 @@ class ReduceLROnPLateauCappedDecreases(ReduceLROnPlateau):
             new_lr = max(old_lr * math.pow(self.factor, self._num_reduce_lr), self.min_lrs[i])
             if old_lr - new_lr > self.eps:
                 param_group["lr"] = new_lr
-                if self.verbose:
-                    logger.info(f"From ReduceLROnPLateauCappedDecreases, reducing learning rate to {new_lr}")
+                logger.info(f"From ReduceLROnPLateauCappedDecreases, reducing learning rate to {new_lr}")
 
 
 class LRScheduler:

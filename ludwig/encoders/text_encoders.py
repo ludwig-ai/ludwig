@@ -17,7 +17,7 @@ import contextlib
 import inspect
 import logging
 from collections.abc import Callable
-from typing import Any, Dict, List, Optional, Type, TYPE_CHECKING, TypeVar, Union
+from typing import Any, TYPE_CHECKING, TypeVar
 
 import numpy as np
 import torch
@@ -2353,7 +2353,7 @@ class TfIdfEncoder(Encoder):
         idf = np.zeros(vocab_size)
         for i, s in enumerate(vocab):
             idf[i] = str2idf[s]
-        self.idf = torch.from_numpy(idf).float().unsqueeze(0)
+        self.register_buffer("idf", torch.from_numpy(idf).float().unsqueeze(0))
 
     def forward(self, t: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         # Compute the term frequency within each row

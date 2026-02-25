@@ -20,7 +20,7 @@ from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 import torch
@@ -229,8 +229,7 @@ class ImageAugmentation(torch.nn.Module):
     ):
         super().__init__()
 
-        # TODO: change to debug level before merging
-        logger.info(f"Creating Augmentation pipline: {augmentation_list}")
+        logger.debug(f"Creating augmentation pipeline: {augmentation_list}")
 
         self.normalize_mean = normalize_mean
         self.normalize_std = normalize_std
@@ -252,7 +251,7 @@ class ImageAugmentation(torch.nn.Module):
             # convert from float to uint8 values - this is required for the augmentation
             imgs = self._convert_back_to_uint8(imgs)
 
-            logger.debug(f"Executing augmentation pipeline steps:\n{self.augmentation_steps}")
+            logger.debug("Executing augmentation pipeline steps: %s", self.augmentation_steps)
             imgs = self.augmentation_steps(imgs)
 
             # convert back to float32 values and renormalize if needed
@@ -765,8 +764,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
         if len(sample) == 0:
             failed_entries_repr = "\n\t- ".join(failed_entries)
             raise ValueError(
-                f"Images dimensions cannot be inferred. Failed to read {sample_size} images as samples:\n\t- "
-                f"{failed_entries_repr}."
+                f"Images dimensions cannot be inferred. Failed to read {sample_size} images as samples:"  # noqa: E231
+                f"\n\t- {failed_entries_repr}."
             )
 
         should_resize = False
