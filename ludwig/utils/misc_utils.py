@@ -21,7 +21,7 @@ import subprocess
 import weakref
 from collections import OrderedDict
 from collections.abc import Mapping
-from typing import Any, Dict, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 import numpy
 import torch
@@ -173,8 +173,6 @@ def remove_empty_lines(str):
     return "\n".join([line.rstrip() for line in str.split("\n") if line.rstrip()])
 
 
-# TODO(travis): move to cached_property when we drop Python 3.7.
-# https://stackoverflow.com/a/33672499
 @DeveloperAPI
 def memoized_method(*lru_args, **lru_kwargs):
     def decorator(func):

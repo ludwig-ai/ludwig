@@ -16,11 +16,10 @@ from collections.abc import Callable
 from functools import lru_cache
 from inspect import signature
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import ray
 from ray import tune
-from ray.train import Checkpoint
 from ray.tune import ExperimentAnalysis, PlacementGroupFactory, register_trainable, Stopper
 from ray.tune.schedulers.resource_changing_scheduler import DistributeResources, ResourceChangingScheduler
 from ray.tune.search import BasicVariantGenerator, ConcurrencyLimiter, SEARCH_ALG_IMPORT
@@ -36,9 +35,10 @@ from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.hyperopt.search_algos import get_search_algorithm
 from ludwig.hyperopt.utils import load_json_values, substitute_parameters
 from ludwig.modules.metric_modules import get_best_function
+from ludwig.schema.model_types.utils import merge_with_defaults
 from ludwig.utils import metric_utils
 from ludwig.utils.data_utils import hash_dict, NumpyEncoder
-from ludwig.utils.defaults import default_random_seed, merge_with_defaults
+from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import has_remote_protocol, safe_move_file
 from ludwig.utils.misc_utils import get_from_registry
 
@@ -58,7 +58,7 @@ def _patch_bohb_configspace_conversion():
 
         import ConfigSpace
         from ray.tune.search.bohb.bohb_search import TuneBOHB
-        from ray.tune.search.sample import Categorical, Domain, Float, Integer, LogUniform, Normal, Quantized, Uniform
+        from ray.tune.search.sample import Categorical, Float, Integer, LogUniform, Normal, Quantized, Uniform
         from ray.tune.search.variant_generator import parse_spec_vars
         from ray.tune.utils import flatten_dict
 
@@ -481,7 +481,8 @@ class RayTuneExecutor:
                 checkpoint = None
         except Exception:
             logger.warning(
-                f"Cannot get best model path for {trial_path} due to exception below:\n{traceback.format_exc()}"
+                f"Cannot get best model path for {trial_path} due to exception below:"  # noqa: E231
+                f"\n{traceback.format_exc()}"
             )
             yield None
             return

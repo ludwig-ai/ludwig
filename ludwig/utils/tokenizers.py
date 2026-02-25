@@ -16,7 +16,7 @@ input_features:
 import logging
 import re
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import torch
 
@@ -116,6 +116,31 @@ class SpacePunctuationStringToListTokenizer(torch.nn.Module):
             tokens.append(token_sequence)
 
         return tokens[0] if isinstance(v, str) else tokens
+
+
+class StringSplitTokenizer(BaseTokenizer):
+    """Splits a string by a given separator."""
+
+    def __init__(self, separator: str = " ", **kwargs):
+        self.separator = separator
+
+    def __call__(self, text):
+        return text.split(self.separator)
+
+
+class NgramTokenizer(BaseTokenizer):
+    """Tokenizes text into unigrams + ngrams up to n."""
+
+    def __init__(self, n: int = 2, **kwargs):
+        self.n = n
+
+    def __call__(self, text):
+        tokens = text.strip().split()
+        result = list(tokens)
+        for i in range(2, self.n + 1):
+            for j in range(len(tokens) - i + 1):
+                result.append(" ".join(tokens[j : j + i]))
+        return result
 
 
 class UnderscoreStringToListTokenizer(BaseTokenizer):
@@ -772,6 +797,10 @@ class HFTokenizer(BaseTokenizer):
         self.tokenizer = AutoTokenizer.from_pretrained(
             pretrained_model_name_or_path,
         )
+        # Some models (e.g. LLaMA) don't have a pad_token by default.
+        # Set it to eos_token to avoid NoneType errors in preprocessing.
+        if self.tokenizer.pad_token is None and self.tokenizer.eos_token is not None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
 
     def __call__(self, text):
         return self.tokenizer.encode(text, truncation=True)
@@ -784,6 +813,11 @@ class HFTokenizer(BaseTokenizer):
 
     def get_unk_token(self) -> str:
         return self.tokenizer.unk_token
+
+    def convert_token_to_id(self, token: str) -> int:
+        if token is None:
+            return 0
+        return self.tokenizer.convert_tokens_to_ids(token)
 
 
 tokenizer_registry = {
@@ -1001,6 +1035,11 @@ class BERTTokenizer(torch.nn.Module):
 
     def get_unk_token(self) -> str:
         return self.unk_token
+
+    def convert_token_to_id(self, token: str) -> int:
+        if token is None:
+            return 0
+        return self.tokenizer.convert_tokens_to_ids(token)
 
 
 tokenizer_registry.update(

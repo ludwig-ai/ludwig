@@ -1,13 +1,17 @@
 import copy
 import logging
 import tempfile
-from typing import Dict, Optional, Tuple, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Union
 
 import torch
 import torch.nn.functional as F
 import transformers
-from bitsandbytes.nn.modules import Embedding
 from packaging import version
+
+try:
+    from bitsandbytes.nn.modules import Embedding as BnbEmbedding
+except ImportError:
+    BnbEmbedding = None
 from transformers import AutoConfig, AutoModelForCausalLM, PreTrainedModel, PreTrainedTokenizer, TextStreamer
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, PREDICTIONS, PROBABILITIES
@@ -585,7 +589,7 @@ def update_embedding_layer(model: AutoModelForCausalLM, config_obj: LLMTrainerCo
             )
 
         # Initialize the BNB embedding layer with the same parameters and weights as the original embedding layer.
-        bnb_embedding = Embedding(
+        bnb_embedding = BnbEmbedding(
             num_embeddings=embedding_layer.num_embeddings,
             embedding_dim=embedding_layer.embedding_dim,
             padding_idx=embedding_layer.padding_idx,

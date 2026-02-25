@@ -2,7 +2,6 @@ import copy
 import logging
 import os
 from pprint import pformat
-from typing import List, Optional, Union
 
 import pandas as pd
 import yaml
@@ -222,7 +221,7 @@ def hyperopt(
 
     hyperopt_config = full_config[HYPEROPT]
 
-    # Explicitly default to a local backend to avoid picking up Ray or Horovod
+    # Explicitly default to a local backend to avoid picking up Ray
     # backend from the environment.
     backend = backend or config_dict.get("backend") or "local"
     backend = initialize_backend(backend)

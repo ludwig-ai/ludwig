@@ -14,8 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import time
-from datetime import date, datetime
-from typing import Union
+from datetime import date, datetime, timezone
 
 import numpy as np
 from dateutil.parser import parse, ParserError
@@ -92,5 +91,5 @@ def convert_number_to_datetime(timestamp: float | int | str) -> datetime:
         timestamp = timestamp / np.power(10, delta)
 
     # Convert the timestamp to a datetime object. If it is not a valid timestamp, `ValueError` is raised.
-    dt = datetime.utcfromtimestamp(timestamp)
+    dt = datetime.fromtimestamp(timestamp, tz=timezone.utc).replace(tzinfo=None)
     return dt

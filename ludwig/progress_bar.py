@@ -1,5 +1,4 @@
 import uuid
-from typing import Dict
 
 import tqdm
 
@@ -94,6 +93,11 @@ class LudwigProgressBar:
                     }
                 }
             )
+
+    def set_postfix(self, ordered_dict: dict = None, **kwargs) -> None:
+        """Sets the postfix (additional stats) for the progress bar."""
+        if self.progress_bar:
+            self.progress_bar.set_postfix(ordered_dict, **kwargs)
 
     def update(self, steps: int) -> None:
         """Updates the progress bar.

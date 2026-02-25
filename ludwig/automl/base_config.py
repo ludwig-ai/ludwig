@@ -14,7 +14,7 @@
 import logging
 import os
 from dataclasses import dataclass
-from typing import Any, Dict, List, Set, Union
+from typing import Any
 
 import dask.dataframe as dd
 import numpy as np
@@ -259,7 +259,7 @@ def get_dataset_info(df: pd.DataFrame | dd.DataFrame) -> DatasetInfo:
     inference.
 
     # Inputs
-    :param df: (Union[pd.DataFrame, dd.core.DataFrame]) Pandas or Dask dataframe.  # Return
+    :param df: (Union[pd.DataFrame, dd.DataFrame]) Pandas or Dask dataframe.  # Return
     :return: (DatasetInfo) Structure containing list of FieldInfo objects.
     """
     source = wrap_data_source(df)

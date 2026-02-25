@@ -20,7 +20,7 @@ import os
 import sys
 from collections.abc import Callable
 from functools import partial
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -272,7 +272,7 @@ def _extract_ground_truth_values(
         if split_file.endswith(".csv"):
             # Legacy code path for previous split file format
             warnings.warn(
-                "Using a CSV split file is deprecated and will be removed in v0.7. "
+                "Using a CSV split file is deprecated and will be removed in a future version. "
                 "Please retrain or convert to Parquet",
                 DeprecationWarning,
             )
@@ -1765,7 +1765,7 @@ def compare_classifiers_performance_subset(
     if subset == "ground_truth":
         subset_indices = ground_truth < k
         gt_subset = ground_truth[subset_indices]
-        logger.info(f"Subset is {len(gt_subset) / len(ground_truth) * 100:.2f}% of the data")
+        logger.info(f"Subset is {len(gt_subset) / len(ground_truth) * 100:.2f}% of the data")  # noqa: E231
 
     probs = probabilities_per_model
     accuracies = []
@@ -2141,8 +2141,8 @@ def compare_classifiers_predictions(
     both_wrong = both_wrong_same + both_wrong_different
 
     logger.info(f"Test datapoints: {all}")
-    logger.info(f"Both right: {both_right} {100 * both_right / all:.2f}%")
-    logger.info(f"One right: {one_right} {100 * one_right / all:.2f}%")
+    logger.info(f"Both right: {both_right} {100 * both_right / all:.2f}%")  # noqa: E231
+    logger.info(f"One right: {one_right} {100 * one_right / all:.2f}%")  # noqa: E231
     logger.info(
         "  {} right / {} wrong: {} {:.2f}% {:.2f}%".format(
             name_c1,
@@ -2161,7 +2161,7 @@ def compare_classifiers_predictions(
             100 * c1_wrong_c2_right / one_right if one_right > 0 else 0,
         )
     )
-    logger.info(f"Both wrong: {both_wrong} {100 * both_wrong / all:.2f}%")
+    logger.info(f"Both wrong: {both_wrong} {100 * both_wrong / all:.2f}%")  # noqa: E231
     logger.info(
         "  same prediction: {} {:.2f}% {:.2f}%".format(
             both_wrong_same, 100 * both_wrong_same / all, 100 * both_wrong_same / both_wrong if both_wrong > 0 else 0
@@ -2543,7 +2543,7 @@ def confidence_thresholding_data_vs_acc_subset(
     if subset == "ground_truth":
         subset_indices = ground_truth < k
         gt_subset = ground_truth[subset_indices]
-        logger.info(f"Subset is {len(gt_subset) / len(ground_truth) * 100:.2f}% of the data")
+        logger.info(f"Subset is {len(gt_subset) / len(ground_truth) * 100:.2f}% of the data")  # noqa: E231
 
     for i, prob in enumerate(probs):
         if labels_limit > 0 and prob.shape[1] > labels_limit + 1:
@@ -2692,7 +2692,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
         if subset == "ground_truth":
             subset_indices = ground_truth == curr_k
             gt_subset = ground_truth[subset_indices]
-            logger.info(f"Subset is {len(gt_subset) / len(ground_truth) * 100:.2f}% of the data")
+            logger.info(f"Subset is {len(gt_subset) / len(ground_truth) * 100:.2f}% of the data")  # noqa: E231
 
         for i, prob in enumerate(probs):
             if labels_limit > 0 and prob.shape[1] > labels_limit + 1:

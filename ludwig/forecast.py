@@ -1,7 +1,6 @@
 import argparse
 import logging
 import sys
-from typing import List, Optional, Union
 
 import pandas as pd
 
@@ -131,8 +130,7 @@ def cli(sys_argv):
     parser.add_argument(
         "-b",
         "--backend",
-        help="specifies backend to use for parallel / distributed execution, "
-        "defaults to local execution or Horovod if called using horovodrun",
+        help="specifies backend to use for parallel / distributed execution, " "defaults to local execution",
         choices=ALL_BACKENDS,
     )
 

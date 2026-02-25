@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Set, Union
+from typing import Any
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
@@ -117,7 +117,7 @@ def config_uses_llm(config: dict[str, Any] | ModelConfig) -> bool:
     uses_llm = False
 
     # For a valid config, model_type LLM is automatically True
-    # ECD or GBM models need to be checked for at least one LLM text encoder
+    # ECD models need to be checked for at least one LLM text encoder
     if isinstance(config, ModelConfig):
         if config.model_type == MODEL_LLM:
             uses_llm = True
@@ -152,7 +152,7 @@ def get_quantization(config: dict[str, Any] | ModelConfig) -> list[int | None]:
 
     Returns:
         For LLM models, the value of quantization.bits or None if it is not specified.
-        For ECD and GBM models, the list of values of quantization.bits for each encoder. If the encoder does not
+        For ECD models, the list of values of quantization.bits for each encoder. If the encoder does not
         support quantization or no quantization config is specified, the list entry is None.
     """
     if isinstance(config, ModelConfig):
