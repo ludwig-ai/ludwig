@@ -1,5 +1,6 @@
 import contextlib
 import copy
+import importlib.util
 import logging
 import os
 import random
@@ -1030,7 +1031,7 @@ def test_prompt_template(input_features, expected, model_type, backend, tmpdir, 
             v = raw_col_values[i]
             if isinstance(v, float):
                 # Test formatting in parametrize uses 2 decimal places of precision
-                raw_text = f"{v:.2f}"
+                raw_text = format(v, ".2f")
             else:
                 raw_text = str(v)
             assert raw_text in decoded, f"'{raw_text}' not in '{decoded}'"
@@ -1042,8 +1043,14 @@ def test_prompt_template(input_features, expected, model_type, backend, tmpdir, 
     "retrieval_kwargs",
     [
         pytest.param({"type": "random", "k": 2}, id="random_retrieval"),
-        # TODO: find a smaller model for testing
-        pytest.param({"type": "semantic", "model_name": "paraphrase-MiniLM-L3-v2", "k": 2}, id="semantic_retrieval"),
+        pytest.param(
+            {"type": "semantic", "model_name": "paraphrase-MiniLM-L3-v2", "k": 2},
+            id="semantic_retrieval",
+            marks=pytest.mark.skipif(
+                not importlib.util.find_spec("sentence_transformers"),
+                reason="sentence_transformers not installed",
+            ),
+        ),
     ],
 )
 def test_handle_features_with_few_shot_prompt_config(backend, retrieval_kwargs, ray_cluster_2cpu):

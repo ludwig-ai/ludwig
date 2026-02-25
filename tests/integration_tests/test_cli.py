@@ -19,6 +19,7 @@ import os.path
 import pathlib
 import shutil
 import subprocess
+import sys
 
 import pytest
 import yaml
@@ -53,7 +54,8 @@ def _run_commands(commands, **ludwig_kwargs):
 
 
 def _run_ludwig(command, **ludwig_kwargs):
-    commands = ["ludwig", command]
+    ludwig_bin = os.path.join(os.path.dirname(sys.executable), "ludwig")
+    commands = [ludwig_bin, command]
     return _run_commands(commands, **ludwig_kwargs)
 
 
