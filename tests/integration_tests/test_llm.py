@@ -650,6 +650,7 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
     ],
 )
 def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_strategy, adapter_args, quantization):
+    pytest.importorskip("bitsandbytes", reason="bitsandbytes required for quantization tests")
     if (
         _finetune_strategy_requires_cuda(finetune_strategy_name=finetune_strategy, quantization_args=quantization)
         and not (torch.cuda.is_available() and torch.cuda.device_count()) > 0
