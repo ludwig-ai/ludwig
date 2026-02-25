@@ -15,7 +15,6 @@
 # ==============================================================================
 import logging
 from functools import partial
-from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -436,7 +435,9 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                         metadata["idx2str"][token] if token < len(metadata["idx2str"]) else UNKNOWN_SYMBOL
                         for token in pred
                     ]
-                return tokenizer.tokenizer.batch_decode(pred, skip_special_tokens=True)
+                # Decode each token ID individually. In transformers 5.x, batch_decode
+                # on a 1D array treats it as a single sequence rather than individual tokens.
+                return [tokenizer.tokenizer.decode([int(token_id)], skip_special_tokens=True) for token_id in pred]
 
             result[predictions_col] = token_col.map(idx2str)
 
@@ -451,7 +452,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                             for token in pred
                         ]
                     )
-                return tokenizer.tokenizer.batch_decode([pred], skip_special_tokens=True)
+                return tokenizer.tokenizer.decode(pred, skip_special_tokens=True)
 
             result[f"{self.feature_name}_response"] = token_col.map(idx2response)
 
