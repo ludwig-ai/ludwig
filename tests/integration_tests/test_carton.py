@@ -15,7 +15,6 @@
 import asyncio
 import os
 import platform
-from typing import List, Union
 
 import numpy as np
 import pandas as pd
@@ -36,6 +35,7 @@ from tests.integration_tests.utils import (
 
 @pytest.mark.skipif(platform.system() == "Windows", reason="Carton is not supported on Windows")
 def test_carton_torchscript(csv_filename, tmpdir):
+    pytest.importorskip("cartonml", reason="cartonml-nightly not installed")
     data_csv_path = os.path.join(tmpdir, csv_filename)
 
     # Configure features to be tested:
