@@ -790,6 +790,7 @@ class RayTuneExecutor:
         gpu_memory_limit=None,
         allow_parallel_threads=True,
         callbacks=None,
+        tune_callbacks=None,
         backend=None,
         random_seed=default_random_seed,
         debug=False,
@@ -893,13 +894,14 @@ class RayTuneExecutor:
             )
 
         tune_config = {}
-        tune_callbacks = []
+        _tune_callbacks = list(tune_callbacks or [])
         for callback in callbacks or []:
             run_experiment_trial, tune_config = callback.prepare_ray_tune(
                 run_experiment_trial,
                 tune_config,
-                tune_callbacks,
+                _tune_callbacks,
             )
+        tune_callbacks = _tune_callbacks
 
         if _is_ray_backend(backend):
             # for now, we do not do distributed training on cpu (until spread scheduling is implemented for Ray Train)
