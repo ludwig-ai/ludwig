@@ -18,10 +18,8 @@ import warnings
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from io import BytesIO
-from typing import List, Optional, Tuple, Union
 
 import numpy as np
-import tifffile
 import torch
 import torchvision.transforms.functional as F
 from torchvision.io import decode_image, ImageReadMode
@@ -217,6 +215,8 @@ def read_image_as_numpy(bytes_obj: bytes) -> torch.Tensor | None:
 def read_image_as_tif(bytes_obj: bytes) -> torch.Tensor | None:
     """Reads image from bytes object from a tif file."""
     try:
+        import tifffile
+
         with BytesIO(bytes_obj) as buffer:
             image = tifffile.imread(buffer)
             if image.dtype == np.uint16:

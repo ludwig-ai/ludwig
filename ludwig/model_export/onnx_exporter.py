@@ -1,6 +1,5 @@
 import os
 
-import onnx
 import torch
 
 from ludwig.api import LudwigModel
@@ -45,5 +44,7 @@ class OnnxExporter(BaseModelExporter):
         )
 
     def check_model_export(self, path):
+        import onnx
+
         onnx_model = onnx.load(path)
         onnx.checker.check_model(onnx_model)
