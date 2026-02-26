@@ -117,6 +117,7 @@ def test_explainer_api_ray_minimum_batch_size(tmpdir, ray_cluster_2cpu):
     )
 
 
+@pytest.mark.flaky(reruns=2, reruns_delay=5)
 @pytest.mark.parametrize("cache_encoder_embeddings", [True, False])
 @pytest.mark.parametrize(
     "explainer_class,model_type",

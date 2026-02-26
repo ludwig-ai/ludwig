@@ -1,5 +1,6 @@
 pytest
 pytest-timeout
+pytest-rerunfailures
 tifffile
 wget
 aim
