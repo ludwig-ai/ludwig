@@ -305,6 +305,12 @@ def read_html(data_fp, df_lib, **kwargs):
     # Chunking is not supported for html files:
     kwargs.pop("nrows", None)
 
+    # Wrap literal HTML strings in StringIO to avoid pandas FutureWarning
+    from io import StringIO
+
+    if isinstance(data_fp, str) and not os.path.isfile(data_fp):
+        data_fp = StringIO(data_fp)
+
     # https://github.com/dask/dask/issues/9055
     if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_html() since dask backend does not support it")

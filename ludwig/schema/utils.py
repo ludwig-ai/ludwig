@@ -170,9 +170,6 @@ class BaseMarshmallowConfig(ABC):
         unknown = LUDWIG_SCHEMA_VALIDATION_POLICY_VAR
         "Flag that sets marshmallow `load` calls to handle unknown properties passed as a parameter."
 
-        ordered = True
-        "Flag that maintains the order of defined parameters in the schema"
-
     def to_dict(self):
         """Method for getting a dictionary representation of this dataclass.
 

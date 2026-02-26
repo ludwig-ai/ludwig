@@ -5,7 +5,7 @@ import os
 from collections import OrderedDict
 from functools import lru_cache
 from io import BytesIO
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Literal
 
 import yaml
 
@@ -40,7 +40,7 @@ def _get_dataset_configs() -> dict[str, DatasetConfig]:
     """Returns all dataset configs indexed by name."""
     import importlib.resources
 
-    config_files = [f for f in importlib.resources.contents(configs) if f.endswith(".yaml")]
+    config_files = [f.name for f in importlib.resources.files(configs).iterdir() if f.name.endswith(".yaml")]
     config_objects = [_load_dataset_config(f) for f in config_files]
     return {c.name: c for c in config_objects}
 

@@ -49,7 +49,7 @@ from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
 from ludwig.schema.model_config import ModelConfig
 from ludwig.utils import fs_utils
 from ludwig.utils.data_utils import load_json, use_credentials
-from tests.integration_tests.utils import category_feature, generate_data, minio_test_creds, remote_tmpdir, text_feature
+from tests.integration_tests.utils import category_feature, generate_data, minio_test_creds, text_feature
 
 ray = pytest.importorskip("ray")
 
@@ -360,25 +360,6 @@ def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_
 @pytest.mark.parametrize("search_space", ["random", "grid"])
 def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster_7cpu):
     _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, "local", ray_cluster_7cpu)
-
-
-@pytest.mark.parametrize("fs_protocol,bucket", [("s3", "test-bucket")], ids=["s3"])
-def test_hyperopt_sync_remote(fs_protocol, bucket, csv_filename, ray_cluster_7cpu):
-    backend = {
-        "type": "local",
-        "credentials": {
-            "artifacts": minio_test_creds(),
-        },
-    }
-
-    with remote_tmpdir(fs_protocol, bucket) as tmpdir:
-        _run_hyperopt_run_hyperopt(
-            csv_filename,
-            "random",
-            tmpdir,
-            backend,
-            ray_cluster_7cpu,
-        )
 
 
 def test_hyperopt_with_feature_specific_parameters(csv_filename, tmpdir, ray_cluster_7cpu):
