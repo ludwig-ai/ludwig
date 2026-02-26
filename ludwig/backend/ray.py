@@ -59,7 +59,7 @@ except (ImportError, AttributeError):
     _SCALAR_TYPES = cast_as_tensor_dtype = RayDataset = RayDatasetManager = RayDatasetShard = None
 from ludwig.models.base import BaseModel
 from ludwig.models.ecd import ECD
-from ludwig.models.predictor import BasePredictor, get_output_columns, get_predictor_cls, Predictor
+from ludwig.models.predictor import BasePredictor, get_output_columns, get_predictor_cls
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.registry import get_ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
@@ -216,7 +216,11 @@ def train_fn(
         )
 
     model = ray.get(model_ref)
-    device = get_torch_device()
+    # Use Ray Train's device assignment which respects use_gpu setting,
+    # rather than get_torch_device() which always picks CUDA if available.
+    from ray.train.torch import get_device as ray_get_device
+
+    device = ray_get_device()
     model = model.to(device)
 
     trainer = RemoteTrainer(model=model, report_tqdm_to_ray=True, **executable_kwargs)
@@ -568,7 +572,10 @@ def eval_fn(
         )
 
         model = ray.get(model_ref)
-        device = get_torch_device()
+        # Use Ray Train's device assignment which respects use_gpu setting
+        from ray.train.torch import get_device as ray_get_device
+
+        device = ray_get_device()
         model = model.to(device)
 
         predictor_cls = get_predictor_cls(model.type())
@@ -717,11 +724,18 @@ class RayPredictor(BasePredictor):
         **kwargs,
     ):
         model_ref = ray.put(model)
+        _, num_gpus = self.get_resources_per_worker()
 
         class BatchInferModel:
             def __init__(self):
                 model = ray.get(model_ref)
-                device = get_torch_device()
+                # Respect the GPU setting from resources_per_worker.
+                # When num_gpus=0, force CPU even if CUDA is available on the machine,
+                # to avoid device mismatches between model outputs and targets.
+                if num_gpus > 0:
+                    device = get_torch_device()
+                else:
+                    device = "cpu"
                 self.model = model.to(device)
 
                 self.output_columns = output_columns
@@ -730,7 +744,8 @@ class RayPredictor(BasePredictor):
                 self.reshape_map = {
                     f[PROC_COLUMN]: training_set_metadata[f[NAME]].get("reshape") for f in features.values()
                 }
-                predictor = Predictor(dist_model=model, model=model, **predictor_kwargs)
+                predictor_cls = get_predictor_cls(self.model.type())
+                predictor = predictor_cls(dist_model=self.model, model=self.model, **predictor_kwargs)
                 self.predict = partial(predictor.predict_single, *args, **kwargs)
 
             def __call__(self, df: pd.DataFrame) -> pd.DataFrame:

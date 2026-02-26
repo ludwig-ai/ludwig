@@ -217,6 +217,9 @@ class LLM(BaseModel):
         self.model = prepare_model_for_kbit_training(self.model, use_gradient_checkpointing=False)
 
     def to_device(self, device):
+        # Always refresh curr_device from actual parameter location, since
+        # nn.Module.to() can move parameters without updating curr_device.
+        self.curr_device = next(self.model.parameters()).device
         self.model, device = to_device(self.model, device, self.config_obj, self.curr_device)
         self.curr_device = device
         return self
@@ -324,6 +327,10 @@ class LLM(BaseModel):
                     input_ids_sample_no_padding = input_ids_sample_no_padding[:, -self.max_input_length :]  # noqa E203
 
                 input_lengths.append(input_ids_sample_no_padding.shape[1])
+
+                # Ensure input_ids are on the same device as the model
+                model_device = next(self.model.parameters()).device
+                input_ids_sample_no_padding = input_ids_sample_no_padding.to(model_device)
 
                 # Generate text using the model
                 model_outputs = self.model.generate(

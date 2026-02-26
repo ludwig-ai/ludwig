@@ -65,10 +65,14 @@ def get_decoded_targets_and_predictions(
     tokenizer: PreTrainedTokenizer,
 ) -> tuple[list[str], list[str]]:
     """Returns the decoded targets and predictions, accounting for IGNORE_INDEX_TOKEN_ID."""
+    # Ensure targets and predictions are on the same device
+    pred_tensor = predictions[PREDICTIONS]
+    if targets.device != pred_tensor.device:
+        targets = targets.to(pred_tensor.device)
     sanitized_targets = torch.where(targets != IGNORE_INDEX_TOKEN_ID, targets, tokenizer.pad_token_id)
     sanitized_predictions = torch.where(
         targets != IGNORE_INDEX_TOKEN_ID,
-        predictions[PREDICTIONS],
+        pred_tensor,
         tokenizer.pad_token_id,
     )
     decoded_targets = tokenizer.batch_decode(sanitized_targets, skip_special_tokens=True)

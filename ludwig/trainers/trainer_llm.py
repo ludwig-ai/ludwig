@@ -2,7 +2,7 @@ import logging
 import os
 import time
 from collections.abc import Callable
-from typing import Dict, List, Optional, Union
+from typing import Union
 
 from torch.utils.tensorboard import SummaryWriter
 
@@ -92,6 +92,14 @@ class NoneTrainer(BaseTrainer):
         """
 
         super().__init__()
+
+        # Ensure distributed strategy is initialized for metric sync_context.
+        # NoneTrainer may run on the head node (not in a Ray Train worker),
+        # so init_dist_strategy may not have been called yet.
+        from ludwig.distributed import init_dist_strategy
+
+        init_dist_strategy("local")
+
         self.config = config
         self.distributed = distributed if distributed is not None else LocalStrategy()
         self.skip_save_log = skip_save_log
