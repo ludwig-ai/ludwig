@@ -14,11 +14,11 @@ import yaml
 from marshmallow import EXCLUDE, fields, pre_load, schema, validate, ValidationError
 from marshmallow.utils import missing
 from marshmallow_dataclass import dataclass as m_dataclass
-from marshmallow_jsonschema import JSONSchema as js
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import ACTIVE, COLUMN, LUDWIG_SCHEMA_VALIDATION_POLICY, NAME, PROC_COLUMN, TYPE
 from ludwig.modules.reduction_modules import reduce_mode_registry
+from ludwig.schema.jsonschema import marshmallow_schema_to_jsonschema_dict
 from ludwig.schema.metadata import COMMON_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
 from ludwig.utils.misc_utils import scrub_creds
@@ -228,7 +228,7 @@ def assert_is_a_marshmallow_class(cls):
 def unload_jsonschema_from_marshmallow_class(mclass, additional_properties: bool = True, title: str = None) -> TDict:
     """Helper method to directly get a marshmallow class's JSON schema without extra wrapping props."""
     assert_is_a_marshmallow_class(mclass)
-    schema = js(props_ordered=True).dump(mclass.Schema())["definitions"][mclass.__name__]
+    schema = marshmallow_schema_to_jsonschema_dict(mclass.Schema())["definitions"][mclass.__name__]
     # Check top-level ParameterMetadata:
     for prop in schema["properties"]:
         prop_schema = schema["properties"][prop]
