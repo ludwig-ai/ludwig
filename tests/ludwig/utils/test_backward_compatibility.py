@@ -435,8 +435,7 @@ def test_deprecated_hyperopt_sampler_early_stopping(use_scheduler):
         ],
         "hyperopt": {
             "search_alg": {
-                "type": "hyperopt",
-                "random_state_seed": 42,
+                "type": "variant_generator",
             },
             "executor": {
                 "type": "ray",

@@ -469,8 +469,7 @@ def test_hyperopt_old_config(csv_filename, tmpdir, ray_cluster_7cpu):
                     "reduction_factor": 5,
                 },
                 "search_alg": {
-                    TYPE: HYPEROPT,
-                    "random_state_seed": 42,
+                    TYPE: "variant_generator",
                 },
                 "num_samples": 2,
             },

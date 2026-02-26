@@ -30,7 +30,7 @@ import re
 import tempfile
 import threading
 from itertools import islice
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -256,7 +256,7 @@ def read_parquet(data_fp, df_lib, nrows=None, **kwargs):
         from ludwig.utils.fs_utils import get_fs_and_path
 
         fs, _ = get_fs_and_path(data_fp)
-        dataset = pq.ParquetDataset(data_fp, filesystem=fs, use_legacy_dataset=False).fragments[0]
+        dataset = pq.ParquetDataset(data_fp, filesystem=fs).fragments[0]
 
         preview = dataset.head(nrows).to_pandas()
 

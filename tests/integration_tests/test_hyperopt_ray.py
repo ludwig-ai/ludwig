@@ -269,8 +269,8 @@ def test_hyperopt_run_hyperopt(csv_filename, backend, tmpdir, ray_cluster_4cpu):
         "executor": {
             "type": "ray",
             "num_samples": 2,
-            "cpu_resources_per_trial": 2,
-            "max_concurrent_trials": "auto",
+            "cpu_resources_per_trial": 1,
+            "max_concurrent_trials": 1,
         },
         "search_alg": {"type": "variant_generator"},
     }

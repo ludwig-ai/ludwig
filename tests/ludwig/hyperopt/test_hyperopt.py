@@ -31,7 +31,7 @@ def _get_config():
                 "cpu_resources_per_trial": 1,
             },
             "parameters": {"trainer.learning_rate": {"space": "choice", "categories": [0.005, 0.01, 0.02, 0.025]}},
-            "search_alg": {"type": "hyperopt", "random_state_seed": 42},
+            "search_alg": {"type": "variant_generator"},
             "output_feature": "Product",
         },
     }

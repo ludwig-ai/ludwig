@@ -62,7 +62,7 @@ HYPEROPT_CONFIG = {
             ],
         },
     },
-    "search_alg": {"type": "hyperopt"},
+    "search_alg": {"type": "variant_generator"},
     "executor": {"type": "ray"},
     "goal": "minimize",
 }
