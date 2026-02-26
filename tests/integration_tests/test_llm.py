@@ -113,8 +113,8 @@ def get_generation_config():
 
 def convert_preds(preds: DataFrame):
     if isinstance(preds, pd.DataFrame):
-        return preds.to_dict()
-    return preds.compute().to_dict()
+        return preds.to_dict(orient="list")
+    return preds.compute().to_dict(orient="list")
 
 
 @pytest.mark.llm
