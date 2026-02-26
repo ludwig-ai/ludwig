@@ -231,7 +231,13 @@ def test_hyperopt_executor_with_metric(use_split, csv_filename, tmpdir, ray_clus
 
 
 @pytest.mark.distributed
-@pytest.mark.parametrize("backend", ["local", "ray"])
+@pytest.mark.parametrize(
+    "backend",
+    [
+        "local",
+        pytest.param("ray", marks=pytest.mark.xfail(reason="Nested Ray actors exceed 4-CPU CI cluster resources")),
+    ],
+)
 def test_hyperopt_run_hyperopt(csv_filename, backend, tmpdir, ray_cluster_4cpu):
     input_features = [
         text_feature(name="utterance", encoder={"cell_type": "lstm", "reduce_output": "sum"}),
