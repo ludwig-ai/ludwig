@@ -49,7 +49,7 @@ from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
 from ludwig.schema.model_config import ModelConfig
 from ludwig.utils import fs_utils
 from ludwig.utils.data_utils import load_json, use_credentials
-from tests.integration_tests.utils import category_feature, generate_data, minio_test_creds, text_feature
+from tests.integration_tests.utils import category_feature, generate_data, minio_test_creds, remote_tmpdir, text_feature
 
 ray = pytest.importorskip("ray")
 
@@ -360,6 +360,33 @@ def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_
 @pytest.mark.parametrize("search_space", ["random", "grid"])
 def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster_7cpu):
     _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, "local", ray_cluster_7cpu)
+
+
+def test_hyperopt_sync_remote(csv_filename, ray_cluster_7cpu, monkeypatch):
+    """Test hyperopt with remote S3 (MinIO) storage for trial results."""
+    # Override AWS env vars so PyArrow's S3 client (used by Ray Tune internally)
+    # connects to MinIO instead of real AWS S3
+    minio_endpoint = os.environ.get("LUDWIG_MINIO_ENDPOINT", "http://localhost:9000")
+    monkeypatch.setenv("AWS_ACCESS_KEY_ID", os.environ.get("LUDWIG_MINIO_ACCESS_KEY", "minio"))
+    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", os.environ.get("LUDWIG_MINIO_SECRET_KEY", "minio123"))
+    monkeypatch.setenv("AWS_ENDPOINT_URL", minio_endpoint)
+    monkeypatch.setenv("AWS_EC2_METADATA_DISABLED", "true")
+
+    backend = {
+        "type": "local",
+        "credentials": {
+            "artifacts": minio_test_creds(),
+        },
+    }
+
+    with remote_tmpdir("s3", "test") as tmpdir:
+        _run_hyperopt_run_hyperopt(
+            csv_filename,
+            "random",
+            tmpdir,
+            backend,
+            ray_cluster_7cpu,
+        )
 
 
 def test_hyperopt_with_feature_specific_parameters(csv_filename, tmpdir, ray_cluster_7cpu):

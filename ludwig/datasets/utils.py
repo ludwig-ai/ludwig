@@ -1,6 +1,5 @@
 import os
 from functools import lru_cache
-from typing import Dict
 
 import yaml
 
@@ -26,7 +25,9 @@ def _get_model_configs(dataset_name: str) -> dict[str, dict]:
     import importlib.resources
 
     config_filenames = [
-        f for f in importlib.resources.contents(model_configs) if f.endswith(".yaml") and f.startswith(dataset_name)
+        f.name
+        for f in importlib.resources.files(model_configs).iterdir()
+        if f.name.endswith(".yaml") and f.name.startswith(dataset_name)
     ]
     configs = {}
     for config_filename in config_filenames:
