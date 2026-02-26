@@ -1,6 +1,5 @@
 from dataclasses import field
 from importlib import import_module
-from typing import Dict, List, Optional
 
 from marshmallow import fields, ValidationError
 
@@ -37,7 +36,7 @@ def evaluated_rewards_field(description: str | None = None) -> fields.Field:
 class BaseSearchAlgorithmConfig(schema_utils.BaseMarshmallowConfig):
     """Basic search algorithm settings."""
 
-    type: str = schema_utils.String(default="hyperopt", description="The search algorithm to use.")
+    type: str = schema_utils.String(default="variant_generator", description="The search algorithm to use.")
 
     def set_random_state(self, ludwig_random_state: int) -> None:
         """Overwrite the config random state.

@@ -244,6 +244,7 @@ def test_ad_hoc_dataset_download(tmpdir, dataset_name, size):
 
 
 @pytest.mark.skipif(not importlib.util.find_spec("datasets"), reason="huggingface datasets not installed")
+@pytest.mark.xfail(reason="HuggingFace datasets library no longer supports loading datasets via scripts")
 def test_hf_dataset_loading():
     import datasets
 

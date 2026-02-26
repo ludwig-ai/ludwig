@@ -800,6 +800,10 @@ class RayTuneExecutor:
         if isinstance(dataset, str) and not has_remote_protocol(dataset) and not os.path.isabs(dataset):
             dataset = os.path.abspath(dataset)
 
+        # Ray Tune / PyArrow requires absolute paths or URIs for storage_path
+        if not has_remote_protocol(output_directory) and not os.path.isabs(output_directory):
+            output_directory = os.path.abspath(output_directory)
+
         if isinstance(backend, str):
             backend = initialize_backend(backend)
 

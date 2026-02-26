@@ -38,4 +38,7 @@ scikit-optimize
 # search_alg: zoopt
 zoopt
 
+# search_alg: hyperopt (TPE)
+hyperopt
+
 s3fs>=2022.8.2

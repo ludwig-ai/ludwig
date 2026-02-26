@@ -6,7 +6,7 @@ trainer:
 hyperopt:
   search_alg:
     # Gives results like default + supports random_state_seed for sample sequence repeatability
-    type: hyperopt
+    type: variant_generator
   executor:
     type: ray
     num_samples: 10
