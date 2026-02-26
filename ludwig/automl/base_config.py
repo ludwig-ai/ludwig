@@ -143,7 +143,7 @@ def get_default_automl_hyperopt() -> dict[str, Any]:
     return yaml.safe_load(
         """
   search_alg:
-    type: hyperopt
+    type: variant_generator
   executor:
     type: ray
     num_samples: 10

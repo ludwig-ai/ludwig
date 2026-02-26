@@ -15,7 +15,7 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from zlib import crc32
 
 import numpy as np
@@ -210,6 +210,7 @@ class StratifySplitter(Splitter):
             Returns a single DataFrame with the split column populated. Assumes that the split column is already present
             in the partition and has a default value of 0 (train).
             """
+            partition = partition.copy()
             _, val, test = stratify_split_dataframe(partition, self.column, self.probabilities, backend, random_seed)
             # Split column defaults to train, so only need to update val and test
             partition.loc[val.index, TMP_SPLIT_COL] = 1
@@ -278,7 +279,7 @@ class DatetimeSplitter(Splitter):
                     # Strings not in the expected format, so assume it's a formatted datetime and return
                     return x
 
-            return f"{x[0]}-{x[1]}-{x[2]} {x[5]}:{x[6]}:{x[7]}"
+            return f"{x[0]}-{x[1]}-{x[2]} {x[5]}:{x[6]}:{x[7]}"  # noqa: E231
 
         df[TMP_SPLIT_COL] = backend.df_engine.map_objects(df[self.column], list_to_date_str)
 
