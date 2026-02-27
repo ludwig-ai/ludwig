@@ -31,13 +31,20 @@ class Callback(ABC):
         :param args: The full list of command-line arguments (sys.argv).
         """
 
-    def on_preprocess_start(self, config: ModelConfigDict):
+    def on_preprocess_start(self, config: ModelConfigDict, **kwargs):
         """Called before preprocessing starts.
 
         :param config: The config dictionary.
         """
 
-    def on_preprocess_end(self, training_set, validation_set, test_set, training_set_metadata: TrainingSetMetadataDict):
+    def on_preprocess_end(
+        self,
+        training_set,
+        validation_set,
+        test_set,
+        training_set_metadata: TrainingSetMetadataDict,
+        **kwargs,
+    ):
         """Called after preprocessing ends.
 
         :param training_set: The training set.
@@ -50,50 +57,50 @@ class Callback(ABC):
             vocabularies, feature statistics, etc. Same as training_set_metadata.json.
         """
 
-    def on_hyperopt_init(self, experiment_name: str):
+    def on_hyperopt_init(self, experiment_name: str, **kwargs):
         """Called to initialize state before hyperparameter optimization begins.
 
         :param experiment_name: The name of the current experiment.
         """
 
-    def on_hyperopt_preprocessing_start(self, experiment_name: str):
+    def on_hyperopt_preprocessing_start(self, experiment_name: str, **kwargs):
         """Called before data preprocessing for hyperparameter optimization begins.
 
         :param experiment_name: The name of the current experiment.
         """
 
-    def on_hyperopt_preprocessing_end(self, experiment_name: str):
+    def on_hyperopt_preprocessing_end(self, experiment_name: str, **kwargs):
         """Called after data preprocessing for hyperparameter optimization is completed.
 
         :param experiment_name: The name of the current experiment.
         """
 
-    def on_hyperopt_start(self, experiment_name: str):
+    def on_hyperopt_start(self, experiment_name: str, **kwargs):
         """Called before any hyperparameter optimization trials are started.
 
         :param experiment_name: The name of the current experiment.
         """
 
-    def on_hyperopt_end(self, experiment_name: str):
+    def on_hyperopt_end(self, experiment_name: str, **kwargs):
         """Called after all hyperparameter optimization trials are completed.
 
         :param experiment_name: The name of the current experiment.
         """
 
-    def on_hyperopt_finish(self, experiment_name: str):
+    def on_hyperopt_finish(self, experiment_name: str, **kwargs):
         """Deprecated.
 
         Use on_hyperopt_end instead.
         """
         # TODO(travis): remove in favor of on_hyperopt_end for naming consistency
 
-    def on_hyperopt_trial_start(self, parameters: HyperoptConfigDict):
+    def on_hyperopt_trial_start(self, parameters: HyperoptConfigDict, **kwargs):
         """Called before the start of each hyperparameter optimization trial.
 
         :param parameters: The complete dictionary of parameters for this hyperparameter optimization experiment.
         """
 
-    def on_hyperopt_trial_end(self, parameters: HyperoptConfigDict):
+    def on_hyperopt_trial_end(self, parameters: HyperoptConfigDict, **kwargs):
         """Called after the end of each hyperparameter optimization trial.
 
         :param parameters: The complete dictionary of parameters for this hyperparameter optimization experiment.
@@ -106,7 +113,7 @@ class Callback(ABC):
         """
         return False
 
-    def on_resume_training(self, is_coordinator: bool):
+    def on_resume_training(self, is_coordinator: bool, **kwargs):
         pass
 
     def on_train_init(
@@ -117,6 +124,7 @@ class Callback(ABC):
         model_name: str,
         output_directory: str,
         resume_directory: str | None,
+        **kwargs,
     ):
         """Called after preprocessing, but before the creation of the model and trainer objects.
 
@@ -133,6 +141,7 @@ class Callback(ABC):
         model,
         config: ModelConfigDict,
         config_fp: str | None,
+        **kwargs,
     ):
         """Called after creation of trainer, before the start of training.
 
@@ -142,13 +151,13 @@ class Callback(ABC):
         :param config_fp: The file path to the config, or none if config was passed to stdin.
         """
 
-    def on_train_end(self, output_directory: str):
+    def on_train_end(self, output_directory: str, **kwargs):
         """Called at the end of training, before the model is saved.
 
         :param output_directory: file path to where training results are stored.
         """
 
-    def on_trainer_train_setup(self, trainer, save_path: str, is_coordinator: bool):
+    def on_trainer_train_setup(self, trainer, save_path: str, is_coordinator: bool, **kwargs):
         """Called in every trainer (distributed or local) before training starts.
 
         :param trainer: The trainer instance.
@@ -157,7 +166,7 @@ class Callback(ABC):
         :param is_coordinator: Is this trainer the coordinator.
         """
 
-    def on_trainer_train_teardown(self, trainer, progress_tracker, save_path: str, is_coordinator: bool):
+    def on_trainer_train_teardown(self, trainer, progress_tracker, save_path: str, is_coordinator: bool, **kwargs):
         """Called in every trainer (distributed or local) after training completes.
 
         :param trainer: The trainer instance.
@@ -168,7 +177,7 @@ class Callback(ABC):
         :param is_coordinator: Is this trainer the coordinator.
         """
 
-    def on_batch_start(self, trainer, progress_tracker, save_path: str):
+    def on_batch_start(self, trainer, progress_tracker, save_path: str, **kwargs):
         """Called on coordinator only before each batch.
 
         :param trainer: The trainer instance.
@@ -178,7 +187,7 @@ class Callback(ABC):
         :param save_path: The path to the directory model is saved in.
         """
 
-    def on_batch_end(self, trainer, progress_tracker, save_path: str, sync_step: bool = True):
+    def on_batch_end(self, trainer, progress_tracker, save_path: str, sync_step: bool = True, **kwargs):
         """Called on coordinator only after each batch.
 
         :param trainer: The trainer instance.
@@ -189,7 +198,7 @@ class Callback(ABC):
         :param sync_step: Whether the model params were updated and synced in this step.
         """
 
-    def on_eval_start(self, trainer, progress_tracker, save_path: str):
+    def on_eval_start(self, trainer, progress_tracker, save_path: str, **kwargs):
         """Called on coordinator at the start of evaluation.
 
         :param trainer: The trainer instance.
@@ -199,7 +208,7 @@ class Callback(ABC):
         :param save_path: The path to the directory model is saved in.
         """
 
-    def on_eval_end(self, trainer, progress_tracker, save_path: str):
+    def on_eval_end(self, trainer, progress_tracker, save_path: str, **kwargs):
         """Called on coordinator at the end of evaluation.
 
         :param trainer: The trainer instance.
@@ -209,7 +218,7 @@ class Callback(ABC):
         :param save_path: The path to the directory model is saved in.
         """
 
-    def on_epoch_start(self, trainer, progress_tracker, save_path: str):
+    def on_epoch_start(self, trainer, progress_tracker, save_path: str, **kwargs):
         """Called on coordinator only before the start of each epoch.
 
         :param trainer: The trainer instance.
@@ -219,7 +228,7 @@ class Callback(ABC):
         :param save_path: The path to the directory model is saved in.
         """
 
-    def on_epoch_end(self, trainer, progress_tracker, save_path: str):
+    def on_epoch_end(self, trainer, progress_tracker, save_path: str, **kwargs):
         """Called on coordinator only after the end of each epoch.
 
         :param trainer: The trainer instance.
@@ -229,7 +238,7 @@ class Callback(ABC):
         :param save_path: The path to the directory model is saved in.
         """
 
-    def on_validation_start(self, trainer, progress_tracker, save_path: str):
+    def on_validation_start(self, trainer, progress_tracker, save_path: str, **kwargs):
         """Called on coordinator before validation starts.
 
         :param trainer: The trainer instance.
@@ -239,7 +248,7 @@ class Callback(ABC):
         :param save_path: The path to the directory model is saved in.
         """
 
-    def on_validation_end(self, trainer, progress_tracker, save_path: str):
+    def on_validation_end(self, trainer, progress_tracker, save_path: str, **kwargs):
         """Called on coordinator after validation is complete.
 
         :param trainer: The trainer instance.
@@ -249,7 +258,7 @@ class Callback(ABC):
         :param save_path: The path to the directory model is saved in.
         """
 
-    def on_test_start(self, trainer, progress_tracker, save_path: str):
+    def on_test_start(self, trainer, progress_tracker, save_path: str, **kwargs):
         """Called on coordinator before testing starts.
 
         :param trainer: The trainer instance.
@@ -259,7 +268,7 @@ class Callback(ABC):
         :param save_path: The path to the directory model is saved in.
         """
 
-    def on_test_end(self, trainer, progress_tracker, save_path: str):
+    def on_test_end(self, trainer, progress_tracker, save_path: str, **kwargs):
         """Called on coordinator after testing ends.
 
         :param trainer: The trainer instance.
@@ -269,18 +278,18 @@ class Callback(ABC):
         :param save_path: The path to the directory model is saved in.
         """
 
-    def should_early_stop(self, trainer, progress_tracker, is_coordinator):
+    def should_early_stop(self, trainer, progress_tracker, is_coordinator, **kwargs):
         # Triggers early stopping if any callback on any worker returns True
         return False
 
-    def on_checkpoint(self, trainer, progress_tracker):
+    def on_checkpoint(self, trainer, progress_tracker, **kwargs):
         """Called after each checkpoint is passed, regardless of whether the model was evaluated or saved at that
         checkpoint."""
 
-    def on_save_best_checkpoint(self, trainer, progress_tracker, save_path):
+    def on_save_best_checkpoint(self, trainer, progress_tracker, save_path, **kwargs):
         """Called on every worker immediately after a new best model is checkpointed."""
 
-    def on_build_metadata_start(self, df, mode: str):
+    def on_build_metadata_start(self, df, mode: str, **kwargs):
         """Called before building metadata for dataset.
 
         :param df: The dataset.
@@ -288,7 +297,7 @@ class Callback(ABC):
         :param mode: "prediction", "training", or None.
         """
 
-    def on_build_metadata_end(self, df, mode):
+    def on_build_metadata_end(self, df, mode, **kwargs):
         """Called after building dataset metadata.
 
         :param df: The dataset.
@@ -296,7 +305,7 @@ class Callback(ABC):
         :param mode: "prediction", "training", or None.
         """
 
-    def on_build_data_start(self, df, mode):
+    def on_build_data_start(self, df, mode, **kwargs):
         """Called before build_data, which does preprocessing, handling missing values, adding metadata to
         training_set_metadata.
 
@@ -305,7 +314,7 @@ class Callback(ABC):
         :param mode: "prediction", "training", or None.
         """
 
-    def on_build_data_end(self, df, mode):
+    def on_build_data_end(self, df, mode, **kwargs):
         """Called after build_data completes.
 
         :param df: The dataset.
@@ -313,26 +322,32 @@ class Callback(ABC):
         :param mode: "prediction", "training", or None.
         """
 
-    def on_evaluation_start(self):
+    def on_evaluation_start(self, **kwargs):
         """Called before preprocessing for evaluation."""
 
-    def on_evaluation_end(self):
+    def on_evaluation_end(self, **kwargs):
         """Called after evaluation is complete."""
 
-    def on_visualize_figure(self, fig):
+    def on_visualize_figure(self, fig, **kwargs):
         """Called after a visualization is generated.
 
         :param fig: The figure.
         :type fig: matplotlib.figure.Figure
         """
 
-    def on_ludwig_end(self):
+    def on_ludwig_end(self, **kwargs):
         """Convenience method for any cleanup.
 
         Not yet implemented.
         """
 
-    def prepare_ray_tune(self, train_fn: Callable, tune_config: dict[str, Any], tune_callbacks: list[Callable]):
+    def prepare_ray_tune(
+        self,
+        train_fn: Callable,
+        tune_config: dict[str, Any],
+        tune_callbacks: list[Callable],
+        **kwargs,
+    ):
         """Configures Ray Tune callback and config.
 
         :param train_fn: The function which runs the experiment trial.
