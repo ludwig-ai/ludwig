@@ -279,7 +279,7 @@ class DatetimeSplitter(Splitter):
                     # Strings not in the expected format, so assume it's a formatted datetime and return
                     return x
 
-            return f"{x[0]}-{x[1]}-{x[2]} {x[5]}:{x[6]}:{x[7]}"  # noqa: E231
+            return f"{x[0]}-{x[1]}-{x[2]} {x[5]}:{x[6]}:{x[7]}"
 
         df[TMP_SPLIT_COL] = backend.df_engine.map_objects(df[self.column], list_to_date_str)
 

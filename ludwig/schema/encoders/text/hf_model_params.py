@@ -1,5 +1,3 @@
-from typing import List, Set
-
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import ludwig_dataclass

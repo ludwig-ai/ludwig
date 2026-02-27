@@ -185,7 +185,7 @@ def test_train_dataset_uri(tmpdir):
         with mock.patch("ludwig.datasets.loaders.dataset_loader.get_default_cache_location", return_value=str(tmpdir)):
             model = LudwigModel(model_config, backend="local")
 
-            results = model.train(dataset=f"ludwig://{dataset_name}")  # noqa: E231
+            results = model.train(dataset=f"ludwig://{dataset_name}")
             proc_result = results.preprocessed_data
             train_df1 = proc_result.training_set.to_df()
             val_df1 = proc_result.validation_set.to_df()
@@ -196,9 +196,9 @@ def test_train_dataset_uri(tmpdir):
             assert len(test_df1) == 2
 
             results = model.train(
-                training_set=f"ludwig://{dataset_name}",  # noqa: E231
-                validation_set=f"ludwig://{dataset_name}",  # noqa: E231
-                test_set=f"ludwig://{dataset_name}",  # noqa: E231
+                training_set=f"ludwig://{dataset_name}",
+                validation_set=f"ludwig://{dataset_name}",
+                test_set=f"ludwig://{dataset_name}",
             )
             proc_result_split = results.preprocessed_data
             train_df2 = proc_result_split.training_set.to_df()

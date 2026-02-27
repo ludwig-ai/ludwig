@@ -50,7 +50,7 @@ def test_get_trainer_kwargs(trainer_config, cluster_resources, num_nodes, expect
             actual_backend = actual_kwargs.pop("backend")
             expected_backend = expected_kwargs.pop("backend")
 
-            assert type(actual_backend) == type(expected_backend)
+            assert type(actual_backend) is type(expected_backend)
             assert actual_kwargs == expected_kwargs
 
 

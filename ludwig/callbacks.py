@@ -16,7 +16,7 @@
 
 from abc import ABC
 from collections.abc import Callable
-from typing import Any, Dict, List, Union
+from typing import Any
 
 from ludwig.api_annotations import PublicAPI
 from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainingSetMetadataDict
@@ -30,14 +30,12 @@ class Callback(ABC):
         :param cmd: The Ludwig subcommand being run, ex. "train", "evaluate", "predict", ...
         :param args: The full list of command-line arguments (sys.argv).
         """
-        pass
 
     def on_preprocess_start(self, config: ModelConfigDict):
         """Called before preprocessing starts.
 
         :param config: The config dictionary.
         """
-        pass
 
     def on_preprocess_end(self, training_set, validation_set, test_set, training_set_metadata: TrainingSetMetadataDict):
         """Called after preprocessing ends.
@@ -52,42 +50,35 @@ class Callback(ABC):
             vocabularies, feature statistics, etc. Same as training_set_metadata.json.
         """
 
-        pass
-
     def on_hyperopt_init(self, experiment_name: str):
         """Called to initialize state before hyperparameter optimization begins.
 
         :param experiment_name: The name of the current experiment.
         """
-        pass
 
     def on_hyperopt_preprocessing_start(self, experiment_name: str):
         """Called before data preprocessing for hyperparameter optimization begins.
 
         :param experiment_name: The name of the current experiment.
         """
-        pass
 
     def on_hyperopt_preprocessing_end(self, experiment_name: str):
         """Called after data preprocessing for hyperparameter optimization is completed.
 
         :param experiment_name: The name of the current experiment.
         """
-        pass
 
     def on_hyperopt_start(self, experiment_name: str):
         """Called before any hyperparameter optimization trials are started.
 
         :param experiment_name: The name of the current experiment.
         """
-        pass
 
     def on_hyperopt_end(self, experiment_name: str):
         """Called after all hyperparameter optimization trials are completed.
 
         :param experiment_name: The name of the current experiment.
         """
-        pass
 
     def on_hyperopt_finish(self, experiment_name: str):
         """Deprecated.
@@ -95,21 +86,18 @@ class Callback(ABC):
         Use on_hyperopt_end instead.
         """
         # TODO(travis): remove in favor of on_hyperopt_end for naming consistency
-        pass
 
     def on_hyperopt_trial_start(self, parameters: HyperoptConfigDict):
         """Called before the start of each hyperparameter optimization trial.
 
         :param parameters: The complete dictionary of parameters for this hyperparameter optimization experiment.
         """
-        pass
 
     def on_hyperopt_trial_end(self, parameters: HyperoptConfigDict):
         """Called after the end of each hyperparameter optimization trial.
 
         :param parameters: The complete dictionary of parameters for this hyperparameter optimization experiment.
         """
-        pass
 
     def should_stop_hyperopt(self):
         """Returns true if the entire hyperopt run (all trials) should be stopped.
@@ -139,7 +127,6 @@ class Callback(ABC):
         :param output_directory: file path to where training results are stored.
         :param resume_directory: model directory to resume training from, or None.
         """
-        pass
 
     def on_train_start(
         self,
@@ -154,14 +141,12 @@ class Callback(ABC):
         :param config: The config dictionary.
         :param config_fp: The file path to the config, or none if config was passed to stdin.
         """
-        pass
 
     def on_train_end(self, output_directory: str):
         """Called at the end of training, before the model is saved.
 
         :param output_directory: file path to where training results are stored.
         """
-        pass
 
     def on_trainer_train_setup(self, trainer, save_path: str, is_coordinator: bool):
         """Called in every trainer (distributed or local) before training starts.
@@ -171,7 +156,6 @@ class Callback(ABC):
         :param save_path: The path to the directory model is saved in.
         :param is_coordinator: Is this trainer the coordinator.
         """
-        pass
 
     def on_trainer_train_teardown(self, trainer, progress_tracker, save_path: str, is_coordinator: bool):
         """Called in every trainer (distributed or local) after training completes.
@@ -183,7 +167,6 @@ class Callback(ABC):
         :param save_path: The path to the directory model is saved in.
         :param is_coordinator: Is this trainer the coordinator.
         """
-        pass
 
     def on_batch_start(self, trainer, progress_tracker, save_path: str):
         """Called on coordinator only before each batch.
@@ -194,7 +177,6 @@ class Callback(ABC):
         :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
         :param save_path: The path to the directory model is saved in.
         """
-        pass
 
     def on_batch_end(self, trainer, progress_tracker, save_path: str, sync_step: bool = True):
         """Called on coordinator only after each batch.
@@ -206,7 +188,6 @@ class Callback(ABC):
         :param save_path: The path to the directory model is saved in.
         :param sync_step: Whether the model params were updated and synced in this step.
         """
-        pass
 
     def on_eval_start(self, trainer, progress_tracker, save_path: str):
         """Called on coordinator at the start of evaluation.
@@ -217,7 +198,6 @@ class Callback(ABC):
         :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
         :param save_path: The path to the directory model is saved in.
         """
-        pass
 
     def on_eval_end(self, trainer, progress_tracker, save_path: str):
         """Called on coordinator at the end of evaluation.
@@ -228,7 +208,6 @@ class Callback(ABC):
         :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
         :param save_path: The path to the directory model is saved in.
         """
-        pass
 
     def on_epoch_start(self, trainer, progress_tracker, save_path: str):
         """Called on coordinator only before the start of each epoch.
@@ -239,7 +218,6 @@ class Callback(ABC):
         :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
         :param save_path: The path to the directory model is saved in.
         """
-        pass
 
     def on_epoch_end(self, trainer, progress_tracker, save_path: str):
         """Called on coordinator only after the end of each epoch.
@@ -250,7 +228,6 @@ class Callback(ABC):
         :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
         :param save_path: The path to the directory model is saved in.
         """
-        pass
 
     def on_validation_start(self, trainer, progress_tracker, save_path: str):
         """Called on coordinator before validation starts.
@@ -261,7 +238,6 @@ class Callback(ABC):
         :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
         :param save_path: The path to the directory model is saved in.
         """
-        pass
 
     def on_validation_end(self, trainer, progress_tracker, save_path: str):
         """Called on coordinator after validation is complete.
@@ -272,7 +248,6 @@ class Callback(ABC):
         :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
         :param save_path: The path to the directory model is saved in.
         """
-        pass
 
     def on_test_start(self, trainer, progress_tracker, save_path: str):
         """Called on coordinator before testing starts.
@@ -283,7 +258,6 @@ class Callback(ABC):
         :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
         :param save_path: The path to the directory model is saved in.
         """
-        pass
 
     def on_test_end(self, trainer, progress_tracker, save_path: str):
         """Called on coordinator after testing ends.
@@ -294,7 +268,6 @@ class Callback(ABC):
         :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
         :param save_path: The path to the directory model is saved in.
         """
-        pass
 
     def should_early_stop(self, trainer, progress_tracker, is_coordinator):
         # Triggers early stopping if any callback on any worker returns True
@@ -303,11 +276,9 @@ class Callback(ABC):
     def on_checkpoint(self, trainer, progress_tracker):
         """Called after each checkpoint is passed, regardless of whether the model was evaluated or saved at that
         checkpoint."""
-        pass
 
     def on_save_best_checkpoint(self, trainer, progress_tracker, save_path):
         """Called on every worker immediately after a new best model is checkpointed."""
-        pass
 
     def on_build_metadata_start(self, df, mode: str):
         """Called before building metadata for dataset.
@@ -316,7 +287,6 @@ class Callback(ABC):
         :type df: pd.DataFrame
         :param mode: "prediction", "training", or None.
         """
-        pass
 
     def on_build_metadata_end(self, df, mode):
         """Called after building dataset metadata.
@@ -325,7 +295,6 @@ class Callback(ABC):
         :type df: pd.DataFrame
         :param mode: "prediction", "training", or None.
         """
-        pass
 
     def on_build_data_start(self, df, mode):
         """Called before build_data, which does preprocessing, handling missing values, adding metadata to
@@ -335,7 +304,6 @@ class Callback(ABC):
         :type df: pd.DataFrame
         :param mode: "prediction", "training", or None.
         """
-        pass
 
     def on_build_data_end(self, df, mode):
         """Called after build_data completes.
@@ -344,15 +312,12 @@ class Callback(ABC):
         :type df: pd.DataFrame
         :param mode: "prediction", "training", or None.
         """
-        pass
 
     def on_evaluation_start(self):
         """Called before preprocessing for evaluation."""
-        pass
 
     def on_evaluation_end(self):
         """Called after evaluation is complete."""
-        pass
 
     def on_visualize_figure(self, fig):
         """Called after a visualization is generated.
@@ -360,14 +325,12 @@ class Callback(ABC):
         :param fig: The figure.
         :type fig: matplotlib.figure.Figure
         """
-        pass
 
     def on_ludwig_end(self):
         """Convenience method for any cleanup.
 
         Not yet implemented.
         """
-        pass
 
     def prepare_ray_tune(self, train_fn: Callable, tune_config: dict[str, Any], tune_callbacks: list[Callable]):
         """Configures Ray Tune callback and config.

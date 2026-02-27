@@ -1,5 +1,4 @@
 import logging
-from typing import Dict, Tuple
 
 from ludwig.constants import (
     BATCH_SIZE,

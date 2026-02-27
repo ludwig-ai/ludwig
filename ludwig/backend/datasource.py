@@ -1,6 +1,6 @@
 """Custom Ray datasource utilities for reading binary files with None handling."""
 import logging
-from typing import List, Optional, Tuple, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 import pandas as pd
 import ray

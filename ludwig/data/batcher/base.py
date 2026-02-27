@@ -15,7 +15,6 @@
 # ==============================================================================
 
 from abc import ABC, abstractmethod
-from typing import Dict
 
 import numpy as np
 

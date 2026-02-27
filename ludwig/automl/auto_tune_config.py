@@ -2,7 +2,6 @@ import copy
 import logging
 import math
 from collections import OrderedDict
-from typing import List
 
 import psutil
 

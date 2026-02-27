@@ -13,7 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import List
 
 import numpy as np
 import torch

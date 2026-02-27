@@ -1,7 +1,7 @@
 import logging
 from collections import deque
 from pprint import pprint
-from typing import Any, Dict, Tuple
+from typing import Any
 
 import pandas as pd
 import pytest

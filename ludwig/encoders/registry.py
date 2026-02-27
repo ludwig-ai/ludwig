@@ -1,5 +1,3 @@
-from typing import Dict, List, Type, Union
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.encoders.base import Encoder
 from ludwig.utils.registry import Registry

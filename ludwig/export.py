@@ -17,7 +17,6 @@ import argparse
 import logging
 import os
 import sys
-from typing import Optional
 
 from ludwig.api import LudwigModel
 from ludwig.contrib import add_contrib_callback_args

@@ -1,5 +1,4 @@
 from dataclasses import field
-from typing import Dict, Optional, Union
 
 from marshmallow import fields, ValidationError
 

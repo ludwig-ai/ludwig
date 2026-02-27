@@ -1,5 +1,3 @@
-from typing import Union
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     BFILL,

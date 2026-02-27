@@ -16,7 +16,6 @@
 import argparse
 import logging
 import sys
-from typing import List, Optional, Union
 
 from ludwig.backend import ALL_BACKENDS, Backend, initialize_backend
 from ludwig.callbacks import Callback

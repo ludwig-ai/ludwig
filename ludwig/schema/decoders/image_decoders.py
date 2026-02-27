@@ -1,4 +1,4 @@
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import IMAGE, MODEL_ECD

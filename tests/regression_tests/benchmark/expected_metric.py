@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Union
 
 from dataclasses_json import dataclass_json
 

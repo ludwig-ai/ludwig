@@ -1,6 +1,5 @@
 import os
 import tempfile
-from typing import Dict
 
 import torch
 from marshmallow_dataclass import dataclass

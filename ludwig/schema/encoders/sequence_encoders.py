@@ -1,5 +1,5 @@
 from dataclasses import Field
-from typing import List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import AUDIO, SEQUENCE, TEXT, TIMESERIES

@@ -17,7 +17,6 @@ import logging
 from abc import ABC
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Dict, Type
 
 import torch
 from torch.nn import Linear, ModuleList

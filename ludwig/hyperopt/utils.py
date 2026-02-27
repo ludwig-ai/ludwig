@@ -4,7 +4,7 @@ import json
 import logging
 import os
 import warnings
-from typing import Any, Dict
+from typing import Any
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (

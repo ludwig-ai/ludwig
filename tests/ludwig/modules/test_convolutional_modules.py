@@ -191,14 +191,12 @@ def test_conv1d_stack(layers: None | list, num_layers: None | int, dropout: floa
     if dropout == 0:
         # all trainable parameters should be updated
         assert tpc == upc, (
-            f"All parameter not updated. Parameters not updated: {not_updated}"  # noqa: E231
-            f"\nModule structure:\n{conv1_stack}"  # noqa: E231
+            f"All parameter not updated. Parameters not updated: {not_updated}" f"\nModule structure:\n{conv1_stack}"
         )
     else:
         # with specified config and random seed, non-zero dropout update parameter count could take different values
         assert (tpc == upc) or (upc == 1), (
-            f"All parameter not updated. Parameters not updated: {not_updated}"  # noqa: E231
-            f"\nModule structure:\n{conv1_stack}"  # noqa: E231
+            f"All parameter not updated. Parameters not updated: {not_updated}" f"\nModule structure:\n{conv1_stack}"
         )
 
 
@@ -320,15 +318,15 @@ def test_parallel_conv1d_stack(stacked_layers: None | list, dropout: float) -> N
     if dropout == 0:
         # all trainable parameters should be updated
         assert tpc == upc, (
-            f"All parameter not updated. Parameters not updated: {not_updated}"  # noqa: E231
-            f"\nModule structure:\n{parallel_conv1d_stack}"  # noqa: E231
+            f"All parameter not updated. Parameters not updated: {not_updated}"
+            f"\nModule structure:\n{parallel_conv1d_stack}"
         )
     else:
         # With high dropout (0.99), most gradients are zeroed out. The exact number of updated
         # parameters depends on the random seed and PyTorch version.
         assert upc > 0, (
-            f"No parameters updated with dropout={dropout}. Parameters not updated: {not_updated}"  # noqa: E231
-            f"\nModule structure:\n{parallel_conv1d_stack}"  # noqa: E231
+            f"No parameters updated with dropout={dropout}. Parameters not updated: {not_updated}"
+            f"\nModule structure:\n{parallel_conv1d_stack}"
         )
 
 
@@ -514,6 +512,5 @@ def test_resnet(
     fpc, tpc, upc, not_updated = check_module_parameters_updated(resnet, (input_tensor,), target)
     # all trainable parameters should be updated
     assert tpc == upc, (
-        f"All parameter not updated. Parameters not updated: {not_updated}"  # noqa: E231
-        f"\nModule structure:\n{resnet}"  # noqa: E231
+        f"All parameter not updated. Parameters not updated: {not_updated}" f"\nModule structure:\n{resnet}"
     )

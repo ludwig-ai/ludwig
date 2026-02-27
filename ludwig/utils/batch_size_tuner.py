@@ -3,7 +3,6 @@ import logging
 import statistics
 import time
 from abc import ABC
-from typing import Optional
 
 import torch
 
@@ -114,7 +113,6 @@ class BatchSizeEvaluator(ABC):
 
     def reset(self):
         """Called at the beginning of each evaluation step."""
-        pass
 
     def step(self, batch_size: int, global_max_sequence_length: int | None = None):
         """Called each step to evaluate the given batch size."""

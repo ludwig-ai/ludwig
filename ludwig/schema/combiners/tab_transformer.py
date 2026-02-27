@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig

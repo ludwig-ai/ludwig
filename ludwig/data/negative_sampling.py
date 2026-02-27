@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Any, List, Tuple
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -85,7 +85,8 @@ def negative_sample(
     for user_idx, interaction_row in enumerate(interactions_dense):
         if log_pct > 0 and user_idx % niter_log == 0:
             logging.info(
-                f"Negative sampling progress: {float(user_idx) * 100 / nrows:0.0f}% in {time.time() - start_time:0.2f}s"
+                f"Negative sampling progress: {float(user_idx) * 100 / nrows:0.0f}% "
+                f"in {time.time() - start_time:0.2f}s"
             )
 
         neg_items_for_user, extra_samples = _negative_sample_user(interaction_row, neg_pos_ratio, extra_samples)

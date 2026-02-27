@@ -19,7 +19,6 @@ import os
 import shutil
 import tarfile
 from enum import Enum
-from typing import List, Optional
 from zipfile import ZipFile
 
 from ludwig.utils.fs_utils import upload_output_directory

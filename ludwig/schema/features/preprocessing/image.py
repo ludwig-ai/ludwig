@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BFILL, DROP_ROW, IMAGE, IMAGENET1K, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING
 from ludwig.schema import utils as schema_utils

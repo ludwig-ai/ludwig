@@ -17,7 +17,6 @@ import argparse
 import logging
 import os
 import sys
-from typing import List, Optional, Union
 
 import pandas as pd
 

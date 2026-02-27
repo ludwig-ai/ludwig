@@ -1,5 +1,4 @@
 import logging
-from typing import Set
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import AUDIO, BINARY, CATEGORY, DATE, IMAGE, NUMBER, TEXT

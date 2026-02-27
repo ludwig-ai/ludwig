@@ -1,6 +1,5 @@
 from random import choice
 from string import ascii_lowercase, ascii_uppercase, digits
-from typing import Dict
 
 import pytest
 import torch

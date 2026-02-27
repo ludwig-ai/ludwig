@@ -44,7 +44,7 @@ repos:
       - id: isort
         name: Format imports
   - repo: https://github.com/pycqa/flake8
-    rev: 6.0.0
+    rev: 7.2.0
     hooks:
       - id: flake8
   - repo: https://github.com/psf/black

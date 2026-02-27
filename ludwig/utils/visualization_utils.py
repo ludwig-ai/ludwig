@@ -17,7 +17,6 @@ import copy
 import logging
 from collections import Counter
 from sys import platform
-from typing import Dict, List
 
 import numpy as np
 import pandas as pd

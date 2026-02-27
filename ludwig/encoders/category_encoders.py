@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict, List, Optional, Type, Union
 
 import torch
 from torch import nn

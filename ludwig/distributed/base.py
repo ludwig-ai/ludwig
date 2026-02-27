@@ -47,7 +47,6 @@ class DistributedStrategy(ABC):
         Returns:
             A tuple of the wrapped model and the optimizer.
         """
-        pass
 
     def prepare_for_inference(self, model: nn.Module) -> nn.Module:
         return model

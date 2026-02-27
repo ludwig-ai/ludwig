@@ -2,7 +2,6 @@ import logging
 import os
 import tempfile
 from os import PathLike
-from typing import Optional, Tuple, Type, Union
 
 from transformers import AutoTokenizer, PreTrainedModel
 from transformers.tokenization_utils import PreTrainedTokenizer

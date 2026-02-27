@@ -1,4 +1,4 @@
-from typing import Dict, List, Literal, TYPE_CHECKING, Union
+from typing import Literal, TYPE_CHECKING
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import LOGITS, MAXIMIZE, MINIMIZE, PREDICTIONS, PROBABILITIES, RESPONSE

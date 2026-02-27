@@ -1,5 +1,3 @@
-from typing import List
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import IMAGE, LOSS, MODEL_ECD, SOFTMAX_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils

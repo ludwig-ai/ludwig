@@ -1,5 +1,4 @@
 from collections.abc import Callable
-from typing import List, Optional, Tuple, Type
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.utils.registry import Registry

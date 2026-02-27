@@ -13,7 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Optional
 
 import torch
 from torch.nn import GRU, LSTM, RNN

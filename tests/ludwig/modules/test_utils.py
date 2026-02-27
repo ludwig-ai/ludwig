@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import torch
 
 from ludwig.utils.torch_utils import LudwigModule

@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
 
 from ludwig.globals import MODEL_FILE_NAME
 from ludwig.types import ModelConfigDict, TrainingSetMetadataDict

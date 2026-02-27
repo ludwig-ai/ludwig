@@ -1,5 +1,3 @@
-from typing import Type
-
 import pytest
 import torch
 

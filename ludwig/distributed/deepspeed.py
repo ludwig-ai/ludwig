@@ -2,7 +2,7 @@ import logging
 import os
 import warnings
 from collections.abc import Mapping
-from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
+from typing import Any, Optional, TYPE_CHECKING
 
 import deepspeed
 import deepspeed.comm

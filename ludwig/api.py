@@ -1014,7 +1014,7 @@ class LudwigModel:
                 outputs = self._generate_non_streaming_outputs(input_strings, input_ids, attention_mask)
 
             decoded_outputs = tokenizer.tokenizer.batch_decode(outputs, skip_special_tokens=True)
-            logger.info(f"Finished generating in: {(time.time() - start_time):.2f}s.")  # noqa: E231
+            logger.info(f"Finished generating in: {(time.time() - start_time):.2f}s.")
 
             return decoded_outputs[0] if len(decoded_outputs) == 1 else decoded_outputs
 
@@ -1183,7 +1183,7 @@ class LudwigModel:
 
                     logger.info(f"Saved to: {output_directory}")
 
-            logger.info(f"Finished predicting in: {(time.time() - start_time):.2f}s.")  # noqa: E231
+            logger.info(f"Finished predicting in: {(time.time() - start_time):.2f}s.")
             return converted_postproc_predictions, output_directory
 
     def evaluate(
@@ -2254,7 +2254,7 @@ def kfold_cross_validate(
     if num_folds is None:
         raise ValueError("k_fold parameter must be specified")
 
-    logger.info(f"starting {num_folds:d}-fold cross validation")  # noqa: E231
+    logger.info(f"starting {num_folds:d}-fold cross validation")
 
     # create output_directory if not available
     if not os.path.isdir(output_directory):
@@ -2286,7 +2286,7 @@ def kfold_cross_validate(
             }
 
             # train and validate model on this fold
-            logger.info(f"training on fold {fold_num:d}")  # noqa: E231
+            logger.info(f"training on fold {fold_num:d}")
 
             model = LudwigModel(
                 config=config,
@@ -2358,7 +2358,7 @@ def kfold_cross_validate(
 
     kfold_cv_stats["overall"] = overall_kfold_stats
 
-    logger.info(f"completed {num_folds:d}-fold cross validation")  # noqa: E231
+    logger.info(f"completed {num_folds:d}-fold cross validation")
 
     return kfold_cv_stats, kfold_split_indices
 

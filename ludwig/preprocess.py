@@ -16,7 +16,6 @@
 import argparse
 import logging
 import sys
-from typing import List, Union
 
 import pandas as pd
 import yaml

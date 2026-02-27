@@ -3,7 +3,7 @@ import json
 import os
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from typing import Any, Dict, List, Optional, Type, TYPE_CHECKING, Union
+from typing import Any, TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -38,7 +38,6 @@ class RetrievalModel(ABC):
         If `columns_to_index` is None, all columns are indexed. Otherwise, only the columns in `columns_to_index` are
         used for indexing, but all columns in `df` are returned in the search results.
         """
-        pass
 
     @abstractmethod
     def search(
@@ -48,17 +47,14 @@ class RetrievalModel(ABC):
 
         If `return_data` is True, returns the data associated with the indices. Otherwise, returns the indices.
         """
-        pass
 
     @abstractmethod
     def save_index(self, name: str, cache_directory: str):
         """Saves the index to the cache directory."""
-        pass
 
     @abstractmethod
     def load_index(self, name: str, cache_directory: str):
         """Loads the index from the cache directory."""
-        pass
 
 
 class RandomRetrieval(RetrievalModel):

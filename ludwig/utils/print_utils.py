@@ -16,7 +16,6 @@
 import logging
 from collections import OrderedDict
 from pprint import pformat
-from typing import Dict, Union
 
 from ludwig.api_annotations import DeveloperAPI
 

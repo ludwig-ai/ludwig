@@ -1,6 +1,5 @@
 """Utilities used for managing output feature dicts."""
 
-from typing import Dict, List
 
 import numpy as np
 import torch

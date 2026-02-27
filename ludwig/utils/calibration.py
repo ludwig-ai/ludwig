@@ -17,7 +17,6 @@
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List, Type, Union
 
 import numpy as np
 import torch

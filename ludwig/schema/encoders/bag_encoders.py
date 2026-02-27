@@ -1,5 +1,3 @@
-from typing import List
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BAG
 from ludwig.schema import utils as schema_utils

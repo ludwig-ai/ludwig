@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 
-
-from typing import Type
-
 import torch
 from torch import nn, Tensor
 from torch.nn import HuberLoss as _HuberLoss

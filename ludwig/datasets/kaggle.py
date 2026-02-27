@@ -1,6 +1,5 @@
 import os
 from contextlib import contextmanager
-from typing import Optional
 
 from ludwig.utils.fs_utils import upload_output_directory
 

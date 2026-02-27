@@ -18,7 +18,6 @@ import logging
 from collections import defaultdict
 from collections.abc import Callable
 from functools import total_ordering
-from typing import Dict, List, Optional
 
 from packaging import version as pkg_version
 

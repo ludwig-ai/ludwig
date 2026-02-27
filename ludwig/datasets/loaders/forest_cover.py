@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from typing import Optional
 
 import pandas as pd
 from sklearn.model_selection import train_test_split

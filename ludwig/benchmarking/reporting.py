@@ -1,6 +1,6 @@
 from collections import Counter, defaultdict
 from statistics import mean
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any
 
 import torch
 from torch._C._autograd import _KinetoEvent

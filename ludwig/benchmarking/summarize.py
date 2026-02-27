@@ -2,7 +2,6 @@ import argparse
 import logging
 import os
 import shutil
-from typing import List, Tuple
 
 from ludwig.benchmarking.summary_dataclasses import (
     build_metrics_diff,

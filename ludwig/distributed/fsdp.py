@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import torch
 from torch import nn

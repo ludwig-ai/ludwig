@@ -764,7 +764,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         if len(sample) == 0:
             failed_entries_repr = "\n\t- ".join(failed_entries)
             raise ValueError(
-                f"Images dimensions cannot be inferred. Failed to read {sample_size} images as samples:"  # noqa: E231
+                f"Images dimensions cannot be inferred. Failed to read {sample_size} images as samples:"
                 f"\n\t- {failed_entries_repr}."
             )
 

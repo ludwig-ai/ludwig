@@ -36,7 +36,6 @@ class TrainingHook(ABC):
         Raises:
             NotImplementedError: If the method is not implemented in a subclass.
         """
-        pass
 
     def activate_hook(self, module: torch.nn.Module) -> torch.nn.Module:
         """Activates the training hook for a given module.

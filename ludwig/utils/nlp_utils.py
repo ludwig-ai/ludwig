@@ -137,7 +137,6 @@ def load_nlp_pipeline(language="xx"):
         raise ValueError
     else:
         spacy_module_name = language_module_registry[language]
-    global nlp_pipelines
     if nlp_pipelines[language] is None:
         logger.info("Loading NLP pipeline")
         try:

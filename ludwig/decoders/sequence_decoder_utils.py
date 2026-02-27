@@ -1,6 +1,5 @@
 """Utility functions related to sequence decoders."""
 
-from typing import Dict, Tuple
 
 import torch
 

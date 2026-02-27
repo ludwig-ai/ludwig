@@ -17,7 +17,6 @@ import argparse
 import logging
 import sys
 from ast import literal_eval
-from typing import List, Optional, Union
 
 import pandas as pd
 

@@ -1,5 +1,5 @@
 import contextlib
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 
 from ludwig.utils import data_utils
 

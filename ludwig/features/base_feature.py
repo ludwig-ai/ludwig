@@ -15,7 +15,7 @@
 import logging
 from abc import ABC, abstractmethod, abstractstaticmethod
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any
 
 import torch
 from torch import Tensor
@@ -182,7 +182,6 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
 
     def update_config_after_module_init(self, feature_config):
         """Updates the config after the torch.nn.Module objects have been initialized."""
-        pass
 
     def initialize_encoder(self, encoder_config):
         encoder_cls = get_encoder_cls(self.type(), encoder_config.type)
@@ -275,7 +274,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     @abstractmethod
     def get_output_dtype(cls):
         """Returns the Tensor data type feature outputs."""
-        pass
 
     def initialize_decoder(self, decoder_config):
         # Input to the decoder is the output feature's FC hidden layer.

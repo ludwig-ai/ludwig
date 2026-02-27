@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CATEGORY, MODEL_LLM, TEXT

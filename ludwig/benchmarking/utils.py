@@ -280,10 +280,10 @@ def format_time(time_us):
     US_IN_SECOND = 1000.0 * 1000.0
     US_IN_MS = 1000.0
     if time_us >= US_IN_SECOND:
-        return f"{time_us / US_IN_SECOND:.3f}s"  # noqa: E231
+        return f"{time_us / US_IN_SECOND:.3f}s"
     if time_us >= US_IN_MS:
-        return f"{time_us / US_IN_MS:.3f}ms"  # noqa: E231
-    return f"{time_us:.3f}us"  # noqa: E231
+        return f"{time_us / US_IN_MS:.3f}ms"
+    return f"{time_us:.3f}us"
 
 
 def format_memory(nbytes):
@@ -295,10 +295,10 @@ def format_memory(nbytes):
     MB = 1024 * KB
     GB = 1024 * MB
     if abs(nbytes) >= GB:
-        return f"{nbytes * 1.0 / GB:.2f} Gb"  # noqa: E231
+        return f"{nbytes * 1.0 / GB:.2f} Gb"
     elif abs(nbytes) >= MB:
-        return f"{nbytes * 1.0 / MB:.2f} Mb"  # noqa: E231
+        return f"{nbytes * 1.0 / MB:.2f} Mb"
     elif abs(nbytes) >= KB:
-        return f"{nbytes * 1.0 / KB:.2f} Kb"  # noqa: E231
+        return f"{nbytes * 1.0 / KB:.2f} Kb"
     else:
         return str(nbytes) + " b"

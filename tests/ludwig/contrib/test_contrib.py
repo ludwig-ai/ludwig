@@ -1,6 +1,5 @@
 import argparse
 from collections.abc import Sequence
-from typing import List, Type
 
 import pytest
 

@@ -452,7 +452,7 @@ class Trainer(BaseTrainer):
         # Log CUDA memory stats.
         if torch.cuda.is_available():
             for i in range(torch.cuda.device_count()):
-                device = torch.device(f"cuda:{i}")  # noqa: E231
+                device = torch.device(f"cuda:{i}")
                 memory_stats = torch.cuda.memory_stats(device=device)
                 gb_memory_stats = {k: v / (1000**3) for k, v in memory_stats.items()}
                 # Allocated bytes.

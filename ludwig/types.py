@@ -1,6 +1,6 @@
 """Public API: Common typing for Ludwig dictionary parameters."""
 
-from typing import Any, Dict
+from typing import Any
 
 FeatureConfigDict = dict[str, Any]
 """Dictionary of parameters used to configure an input or output feature.

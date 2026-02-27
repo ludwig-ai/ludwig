@@ -17,7 +17,6 @@
 import collections
 import logging
 from contextlib import contextmanager
-from typing import Dict
 
 import dask
 import dask.array as da

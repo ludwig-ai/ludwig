@@ -2,7 +2,7 @@ import contextlib
 import logging
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 import torch
@@ -325,7 +325,6 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
 
     def unskip(self):
         """Converts all skipped features into their fully encoded versions."""
-        pass
 
     @abstractmethod
     def save(self, save_path: str):
@@ -347,7 +346,6 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
 
     def _activate_forward_hooks(self):
         """Activates/registers forward hooks for the model."""
-        pass
 
     def _deactivate_forward_hooks(self) -> None:
         """Deactivates/de-registers forward hooks for the model (if needed)."""

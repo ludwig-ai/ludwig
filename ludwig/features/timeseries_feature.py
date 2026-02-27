@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict, List, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 import numpy as np
 import torch

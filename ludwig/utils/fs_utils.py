@@ -23,7 +23,6 @@ import pathlib
 import shutil
 import tempfile
 import uuid
-from typing import List, Optional
 from urllib.parse import unquote, urlparse
 
 import certifi

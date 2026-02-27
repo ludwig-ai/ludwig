@@ -90,7 +90,7 @@ def features_to_test(feature_list: list[tuple[str, list]]) -> tuple[dict, dict]:
     encoder_outputs = {}
     input_features = {}
     for i in range(len(feature_list)):
-        feature_name = f"feature_{i:02d}"  # noqa: E231
+        feature_name = f"feature_{i:02d}"
         encoder_outputs[feature_name] = {
             ENCODER_OUTPUT: torch.randn(feature_list[i][1], dtype=torch.float32, device=DEVICE)
         }

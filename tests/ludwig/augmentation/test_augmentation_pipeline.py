@@ -2,7 +2,6 @@ import copy
 import logging
 import os
 import tempfile
-from typing import Dict, List
 
 import pytest
 import torch

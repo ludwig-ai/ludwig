@@ -3,7 +3,6 @@ import logging
 import os
 from dataclasses import dataclass
 from statistics import mean
-from typing import Dict, List, Optional, Set, Union
 
 import ludwig.modules.metric_modules  # noqa: F401
 from ludwig.benchmarking.utils import format_memory, format_time

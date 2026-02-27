@@ -4,7 +4,6 @@ import re
 import shutil
 import tempfile
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 import torch
@@ -349,7 +348,6 @@ class TritonMaster:
             self.model_version = int(self.model_version)
         if not isinstance(self.model_version, int) or self.model_version < 1:
             raise ValueError("Model version has to be a non-zero positive integer")
-        pass
 
         # wrapper.py is optional and is just for visualizing the inputs/outputs to the model exported to Triton.
         wrapper_definition = TritonModel(
@@ -510,7 +508,6 @@ class TritonEnsembleConfig:
             self.model_version = int(self.model_version)
         if not isinstance(self.model_version, int) or self.model_version < 1:
             raise ValueError("Model version has to be a non-zero positive integer")
-        pass
 
         os.makedirs(os.path.join(self.base_path, str(self.model_version)), exist_ok=True)
         model_path = os.path.join(self.base_path, str(self.model_version), "model.txt")

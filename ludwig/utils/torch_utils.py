@@ -181,7 +181,6 @@ class LudwigModule(Module):
 
     def prepare_for_training(self):
         """This is called from within the Trainer object to do any final instantiation before model training."""
-        pass
 
     def losses(self):
         collected_losses = []
@@ -214,7 +213,6 @@ class LudwigModule(Module):
     @abstractmethod
     def input_shape(self) -> torch.Size:
         """Returns size of the input tensor without the batch dimension."""
-        pass
         # raise NotImplementedError("Abstract class.")
 
     @property

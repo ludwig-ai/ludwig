@@ -1,6 +1,5 @@
 import dataclasses
 from dataclasses import dataclass
-from typing import Dict, Union
 
 from ludwig.utils.data_utils import flatten_dict
 

@@ -865,7 +865,7 @@ def create_data_set_to_use(data_format, raw_data, nan_percent=0.0):
         for _, row in df.iterrows():
             processed_df_row = {}
             for feature_name, raw_feature in row.items():
-                if "image" in feature_name and not (type(raw_feature) == float and np.isnan(raw_feature)):
+                if "image" in feature_name and not (isinstance(raw_feature, float) and np.isnan(raw_feature)):
                     feature = np.array(Image.open(raw_feature))
                 else:
                     feature = raw_feature
@@ -1107,14 +1107,14 @@ def assert_preprocessed_dataset_shape_and_dtype_for_feature(
 def remote_tmpdir(fs_protocol, bucket):
     if bucket is None:
         with tempfile.TemporaryDirectory() as tmpdir:
-            yield f"{fs_protocol}://{tmpdir}"  # noqa: E231
+            yield f"{fs_protocol}://{tmpdir}"
         return
 
     prefix = f"tmp_{uuid.uuid4().hex}"
-    tmpdir = f"{fs_protocol}://{bucket}/{prefix}"  # noqa: E231
+    tmpdir = f"{fs_protocol}://{bucket}/{prefix}"
     try:
         with use_credentials(minio_test_creds()):
-            fs_utils.makedirs(f"{fs_protocol}://{bucket}", exist_ok=True)  # noqa: E231
+            fs_utils.makedirs(f"{fs_protocol}://{bucket}", exist_ok=True)
         yield tmpdir
     finally:
         try:
@@ -1122,7 +1122,6 @@ def remote_tmpdir(fs_protocol, bucket):
                 fs_utils.delete(tmpdir, recursive=True)
         except Exception as e:
             logger.info(f"failed to delete remote tempdir: {str(e)}")
-            pass
 
 
 def minio_test_creds():

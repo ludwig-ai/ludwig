@@ -20,7 +20,7 @@ import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Union
+from typing import Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.utils.fs_utils import checksum

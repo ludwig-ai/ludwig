@@ -481,8 +481,7 @@ class RayTuneExecutor:
                 checkpoint = None
         except Exception:
             logger.warning(
-                f"Cannot get best model path for {trial_path} due to exception below:"  # noqa: E231
-                f"\n{traceback.format_exc()}"
+                f"Cannot get best model path for {trial_path} due to exception below:" f"\n{traceback.format_exc()}"
             )
             yield None
             return

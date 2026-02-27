@@ -1,5 +1,4 @@
 from dataclasses import Field
-from typing import Optional
 
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata import COMMON_METADATA

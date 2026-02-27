@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 from dataclasses import asdict
-from typing import Dict, Optional, Tuple, Type, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 import torch
 

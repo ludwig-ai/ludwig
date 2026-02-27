@@ -1,5 +1,4 @@
 import logging
-from typing import Dict, List
 
 from tabulate import tabulate
 

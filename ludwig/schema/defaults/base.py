@@ -7,5 +7,3 @@ from ludwig.schema.utils import ludwig_dataclass
 @ludwig_dataclass
 class BaseDefaultsConfig(schema_utils.BaseMarshmallowConfig):
     """Base defaults config class."""
-
-    pass

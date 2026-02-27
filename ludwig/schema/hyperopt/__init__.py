@@ -1,5 +1,4 @@
 from abc import ABC
-from typing import Dict
 
 from marshmallow_dataclass import dataclass
 

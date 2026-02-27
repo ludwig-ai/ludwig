@@ -13,7 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Union
 
 from dataclasses_json import dataclass_json
 

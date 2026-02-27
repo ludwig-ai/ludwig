@@ -8,7 +8,7 @@ import time
 from queue import Empty as EmptyQueueException
 from queue import Queue
 from subprocess import PIPE, Popen
-from typing import Any, Dict, List
+from typing import Any
 from xml.etree.ElementTree import fromstring
 
 import psutil

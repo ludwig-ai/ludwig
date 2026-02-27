@@ -121,7 +121,7 @@ def convert_to_form(entry):
     data = {}
     files = []
     for k, v in entry.items():
-        if type(v) == str and os.path.exists(v):
+        if isinstance(v, str) and os.path.exists(v):
             file = open(v, "rb")
             files.append((k, (v, file.read(), "application/octet-stream")))
         else:
@@ -136,7 +136,7 @@ def convert_to_batch_form(data_df):
     }
     for row in data["data"]:
         for v in row:
-            if type(v) == str and os.path.exists(v) and v not in files:
+            if isinstance(v, str) and os.path.exists(v) and v not in files:
                 files[v] = (v, open(v, "rb"), "application/octet-stream")
     return files
 

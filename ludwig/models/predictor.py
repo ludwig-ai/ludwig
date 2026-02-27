@@ -242,7 +242,7 @@ class Predictor(BasePredictor):
                     batch = batcher.next_batch()
                     logger.debug(
                         f"evaluation for {dataset_name}: obtained next batch "
-                        f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"  # noqa: E231
+                        f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                     )
                     inputs = {
                         i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(
@@ -272,7 +272,7 @@ class Predictor(BasePredictor):
                     if self.is_coordinator():
                         logger.debug(
                             f"evaluation for {dataset_name}: completed batch {progress_bar.total_steps} "
-                            f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"  # noqa: E231
+                            f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                         )
                 progress_bar.close()
 
@@ -389,7 +389,7 @@ class LlmFineTunePredictor(Predictor):
                     batch = batcher.next_batch()
                     logger.debug(
                         f"evaluation for {dataset_name}: obtained next batch "
-                        f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"  # noqa: E231
+                        f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                     )
                     inputs = {
                         i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(
@@ -430,7 +430,7 @@ class LlmFineTunePredictor(Predictor):
                     if self.is_coordinator():
                         logger.debug(
                             f"evaluation for {dataset_name}: completed batch {progress_bar.total_steps} "
-                            f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"  # noqa: E231
+                            f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                         )
 
                 progress_bar.close()

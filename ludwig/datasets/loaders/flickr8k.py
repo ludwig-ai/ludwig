@@ -15,7 +15,6 @@
 import os
 import re
 from collections import defaultdict
-from typing import List
 
 from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.defaults.llm import LLMDefaultsConfig, LLMDefaultsField

@@ -311,7 +311,7 @@ def test_hyperopt_run_hyperopt(csv_filename, backend, tmpdir, ray_cluster_4cpu):
 @pytest.mark.slow
 @pytest.mark.distributed
 def test_hyperopt_ray_mlflow(csv_filename, tmpdir, ray_cluster_4cpu):
-    mlflow_uri = f"file://{tmpdir}/mlruns"  # noqa: E231
+    mlflow_uri = f"file://{tmpdir}/mlruns"
     mlflow.set_tracking_uri(mlflow_uri)
     client = MlflowClient(tracking_uri=mlflow_uri)
 

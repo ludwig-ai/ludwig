@@ -1,6 +1,3 @@
-from typing import Optional
-
-
 def PublicAPI(*args, **kwargs):
     """Annotation for documenting public APIs. Public APIs are classes and methods exposed to end users of Ludwig.
 

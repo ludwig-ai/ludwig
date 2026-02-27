@@ -1,5 +1,4 @@
 import logging
-from typing import Type
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.vector_index.base import VectorIndex

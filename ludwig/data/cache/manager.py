@@ -1,6 +1,5 @@
 import logging
 import os
-from typing import Optional
 
 from ludwig.constants import CHECKSUM, META, TEST, TRAINING, VALIDATION
 from ludwig.data.cache.types import alphanum, CacheableDataset

@@ -14,7 +14,7 @@ import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from glob import glob
-from typing import Any, Dict, Optional, Tuple, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 import torch
 from torch.optim import Optimizer
