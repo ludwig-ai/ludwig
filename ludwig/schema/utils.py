@@ -136,14 +136,18 @@ def _convert_dataclass_field_to_pydantic(dc_field) -> FieldInfo:
                 # Generic marshmallow field - store for reference
                 metadata_list.append(_MarshmallowFieldMarker(marshmallow_field))
 
-    # Extract default
+    # Extract default and create FieldInfo.
+    # Note: pydantic 2's Field() does not accept a `metadata` kwarg — set it on the FieldInfo after creation.
     if dc_field.default is not _dc.MISSING:
-        return Field(default=dc_field.default, metadata=metadata_list or None)
+        fi = Field(default=dc_field.default)
     elif dc_field.default_factory is not _dc.MISSING:
-        return Field(default_factory=dc_field.default_factory, metadata=metadata_list or None)
+        fi = Field(default_factory=dc_field.default_factory)
     else:
         # No default - this is a required field
-        return Field(metadata=metadata_list or None)
+        fi = Field()
+    if metadata_list:
+        fi.metadata = metadata_list
+    return fi
 
 
 class _MarshmallowFieldMarker:
@@ -231,6 +235,10 @@ class _LudwigModelMeta(type(BaseModel)):
                     jse_enum = (jse or {}).get("enum") if isinstance(jse, dict) else None
                     if isinstance(jse_enum, list) and None in jse_enum:
                         should_widen = True
+                if not should_widen:
+                    # Also widen if allow_none=True was explicitly set in the field factory
+                    if isinstance(jse, dict) and jse.get("allow_none"):
+                        should_widen = True
 
                 if should_widen:
                     is_union = origin in (types.UnionType,)
@@ -257,7 +265,11 @@ class _LudwigModelMeta(type(BaseModel)):
                     pass
 
         namespace["__annotations__"] = annotations
-        cls = super().__new__(mcs, name, bases, namespace, **kwargs)
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="Field name .* shadows an attribute in parent")
+            cls = super().__new__(mcs, name, bases, namespace, **kwargs)
 
         # Restore @property descriptors that we removed from namespace.
         if _saved_properties:
@@ -367,7 +379,7 @@ class BaseMarshmallowConfig(BaseModel, metaclass=_LudwigModelMeta):
     @model_validator(mode="after")
     def _validate_field_constraints(self):
         """Post-validation: enforce enum constraints stored in json_schema_extra."""
-        for fname, finfo in self.model_fields.items():
+        for fname, finfo in type(self).model_fields.items():
             value = getattr(self, fname, None)
             extra = finfo.json_schema_extra
             if not isinstance(extra, dict):
@@ -906,7 +918,10 @@ def String(
     if not allow_none and default is not None and not isinstance(default, str):
         raise ValueError(f"Provided default `{default}` should be a string!")
 
-    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata)
+    extra_kwargs = {}
+    if allow_none:
+        extra_kwargs["allow_none"] = True
+    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata, **extra_kwargs)
     kwargs = {}
     if pattern is not None:
         kwargs["pattern"] = pattern
@@ -1017,7 +1032,10 @@ def Integer(
     if default is not None and not isinstance(default, int):
         raise ValueError(f"Invalid default: `{default}`")
 
-    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata)
+    extra_kwargs = {}
+    if allow_none:
+        extra_kwargs["allow_none"] = True
+    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata, **extra_kwargs)
     return Field(default=default, description=description, json_schema_extra=json_extra)
 
 
@@ -1033,7 +1051,10 @@ def PositiveInteger(
         if not isinstance(default, int) or default < 1:
             raise ValueError(f"Invalid default: `{default}`")
 
-    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata)
+    extra_kwargs = {}
+    if allow_none:
+        extra_kwargs["allow_none"] = True
+    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata, **extra_kwargs)
     return Field(default=default, ge=1, description=description, json_schema_extra=json_extra)
 
 
@@ -1049,7 +1070,10 @@ def NonNegativeInteger(
         if not isinstance(default, int) or default < 0:
             raise ValueError(f"Invalid default: `{default}`")
 
-    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata)
+    extra_kwargs = {}
+    if allow_none:
+        extra_kwargs["allow_none"] = True
+    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata, **extra_kwargs)
     return Field(default=default, ge=0, description=description, json_schema_extra=json_extra)
 
 
@@ -1079,7 +1103,10 @@ def IntegerRange(
     if max is not None:
         kwargs["le" if max_inclusive else "lt"] = max
 
-    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata)
+    extra_kwargs = {}
+    if allow_none:
+        extra_kwargs["allow_none"] = True
+    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata, **extra_kwargs)
     return Field(default=default, description=description, json_schema_extra=json_extra, **kwargs)
 
 
@@ -1094,7 +1121,10 @@ def Float(
     if default is not None and not isinstance(default, (float, int)):
         raise ValueError(f"Invalid default: `{default}`")
 
-    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata)
+    extra_kwargs = {}
+    if allow_none:
+        extra_kwargs["allow_none"] = True
+    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata, **extra_kwargs)
     return Field(default=default, description=description, json_schema_extra=json_extra)
 
 
@@ -1117,7 +1147,10 @@ def NonNegativeFloat(
     if max is not None:
         kwargs["le"] = max
 
-    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata)
+    extra_kwargs = {}
+    if allow_none:
+        extra_kwargs["allow_none"] = True
+    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata, **extra_kwargs)
     return Field(default=default, description=description, json_schema_extra=json_extra, **kwargs)
 
 
@@ -1143,7 +1176,10 @@ def FloatRange(
     if max is not None:
         kwargs["le" if max_inclusive else "lt"] = max
 
-    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata)
+    extra_kwargs = {}
+    if allow_none:
+        extra_kwargs["allow_none"] = True
+    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata, **extra_kwargs)
     return Field(default=default, description=description, json_schema_extra=json_extra, **kwargs)
 
 
@@ -1267,10 +1303,14 @@ def FloatRangeTupleDataclassField(
     if default is None and not allow_none:
         raise ValueError("Default value must not be None if allow_none is False")
 
+    extra_kwargs = {}
+    if allow_none:
+        extra_kwargs["allow_none"] = True
     json_extra = _make_json_schema_extra(
         description=description,
         parameter_metadata=parameter_metadata,
         _float_tuple_range={"n": n, "min": min, "max": max},
+        **extra_kwargs,
     )
     return Field(default=default, description=description, json_schema_extra=json_extra)
 
@@ -1288,10 +1328,14 @@ def OneOfOptionsField(
     Pydantic union validation handles the multi-type dispatch. The field_options are stored in json_schema_extra for
     JSON schema generation.
     """
+    extra_kwargs = {}
+    if allow_none:
+        extra_kwargs["allow_none"] = True
     json_extra = _make_json_schema_extra(
         description=description,
         parameter_metadata=parameter_metadata,
         _oneof_options=True,
+        **extra_kwargs,
     )
 
     if default is None or isinstance(default, (int, str, bool)):
@@ -1394,10 +1438,9 @@ class TypeSelection(mm_fields.Field):
             def default_factory():
                 return None
 
-        return Field(
-            default_factory=default_factory,
-            metadata=[_TypeSelectionMarker(self)],
-        )
+        fi = Field(default_factory=default_factory)
+        fi.metadata = [_TypeSelectionMarker(self)]
+        return fi
 
     def _jsonschema_type_mapping(self):
         """Override in subclass for custom JSON schema."""
@@ -1458,10 +1501,9 @@ class DictMarshmallowField(mm_fields.Field):
         else:
             marker = _NestedConfigMarker(self.cls, self.allow_none)
 
-        return Field(
-            default_factory=default_factory,
-            metadata=[marker],
-        )
+        fi = Field(default_factory=default_factory)
+        fi.metadata = [marker]
+        return fi
 
     def _jsonschema_type_mapping(self):
         return unload_jsonschema_from_marshmallow_class(self.cls)

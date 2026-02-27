@@ -30,7 +30,7 @@ from sklearn.calibration import calibration_curve
 from sklearn.metrics import brier_score_loss
 from yaml import warnings
 
-from ludwig.api import TrainingStats
+from ludwig.api import EvaluationFrequency, TrainingStats
 from ludwig.api_annotations import DeveloperAPI, PublicAPI
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.callbacks import Callback
@@ -140,6 +140,21 @@ def load_data_for_viz(load_type, model_file_statistics, dtype=int, ground_truth_
     return stats_per_model
 
 
+def _load_training_stats(data: dict) -> TrainingStats:
+    """Construct a TrainingStats from a dict loaded from JSON."""
+    eval_freq = data.get("evaluation_frequency")
+    if isinstance(eval_freq, dict):
+        eval_freq = EvaluationFrequency(**eval_freq)
+    elif eval_freq is None:
+        eval_freq = EvaluationFrequency()
+    return TrainingStats(
+        training=data.get("training", {}),
+        validation=data.get("validation", {}),
+        test=data.get("test", {}),
+        evaluation_frequency=eval_freq,
+    )
+
+
 @DeveloperAPI
 def load_training_stats_for_viz(load_type, model_file_statistics, dtype=int, ground_truth_split=2) -> TrainingStats:
     """Load model file data (specifically training stats) for a list of models.
@@ -152,7 +167,7 @@ def load_training_stats_for_viz(load_type, model_file_statistics, dtype=int, gro
         load_type, model_file_statistics, dtype=dtype, ground_truth_split=ground_truth_split
     )
     try:
-        stats_per_model = [TrainingStats.Schema().load(j) for j in stats_per_model]
+        stats_per_model = [_load_training_stats(j) for j in stats_per_model]
     except Exception:
         logger.exception(f"Failed to load model statistics {model_file_statistics}!")
         raise

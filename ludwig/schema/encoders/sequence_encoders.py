@@ -74,7 +74,10 @@ class SequenceEncoderConfig(BaseEncoderConfig):
     """Base class for sequence encoders."""
 
     def set_fixed_preprocessing_params(self, model_type: str, preprocessing: "SequencePreprocessingConfig"):
-        preprocessing.cache_encoder_embeddings = False
+        if isinstance(preprocessing, dict):
+            preprocessing["cache_encoder_embeddings"] = False
+        else:
+            preprocessing.cache_encoder_embeddings = False
 
 
 @DeveloperAPI
