@@ -9,7 +9,7 @@
 #   model serving
 #
 
-FROM rayproject/ray:2.9.0-py311
+FROM rayproject/ray:2.44.1-py312
 
 RUN sudo apt-get update && DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y \
 	build-essential \
@@ -28,7 +28,7 @@ RUN pip install -U pip
 
 WORKDIR /ludwig
 
-RUN pip install --no-cache-dir torch==2.1.0 torchtext torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir torch==2.6.0 torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
 
 COPY . .
 RUN pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cpu
