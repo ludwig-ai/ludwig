@@ -82,7 +82,10 @@ def load_pretrained_from_config(
 
     logger.info("Loading large language model...")
     pretrained_model_name_or_path = weights_save_path or config_obj.base_model
-    model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path, **load_kwargs)
+    trust_remote_code = getattr(config_obj, "trust_remote_code", False)
+    model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(
+        pretrained_model_name_or_path, trust_remote_code=trust_remote_code, **load_kwargs
+    )
     return model
 
 
@@ -138,6 +141,7 @@ def to_device(
             if config_obj.adapter:
                 model = AutoModelForCausalLM.from_pretrained(
                     config_obj.base_model,
+                    trust_remote_code=getattr(config_obj, "trust_remote_code", False),
                     **model_kwargs,
                 )
 
@@ -152,6 +156,7 @@ def to_device(
             else:
                 model = AutoModelForCausalLM.from_pretrained(
                     tmpdir,
+                    trust_remote_code=getattr(config_obj, "trust_remote_code", False),
                     **model_kwargs,
                 )
     else:

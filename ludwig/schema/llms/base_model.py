@@ -83,7 +83,7 @@ def BaseModelDataclassField():
             if os.path.isdir(model_name):
                 return model_name
             try:
-                AutoConfig.from_pretrained(model_name)
+                AutoConfig.from_pretrained(model_name, trust_remote_code=True)
                 return model_name
             except OSError:
                 raise ConfigValidationError(
