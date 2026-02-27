@@ -1,4 +1,5 @@
 import math
+import sys
 
 import numpy as np
 from torch.optim import SGD
@@ -109,8 +110,8 @@ def test_lr_scheduler_reduce_on_plateau():
 
     progress_tracker = get_new_progress_tracker(
         batch_size=64,
-        best_eval_metric_value=float("inf"),
-        best_increase_batch_size_eval_metric=float("inf"),
+        best_eval_metric_value=sys.float_info.max,
+        best_increase_batch_size_eval_metric=sys.float_info.max,
         learning_rate=base_lr,
         output_features={"output1": output1},
     )
@@ -233,8 +234,8 @@ def test_lr_scheduler_save_load():
 
     progress_tracker = get_new_progress_tracker(
         batch_size=64,
-        best_eval_metric_value=float("inf"),
-        best_increase_batch_size_eval_metric=float("inf"),
+        best_eval_metric_value=sys.float_info.max,
+        best_increase_batch_size_eval_metric=sys.float_info.max,
         learning_rate=base_lr,
         output_features={"output1": output1},
     )
