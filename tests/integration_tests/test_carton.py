@@ -111,8 +111,7 @@ def test_carton_torchscript(csv_filename, tmpdir):
     async def load():
         return await carton.load(carton_path)
 
-    loop = asyncio.get_event_loop()
-    carton_model = loop.run_until_complete(load())
+    carton_model = asyncio.run(load())
 
     def to_input(s: pd.Series) -> list[str] | torch.Tensor:
         if s.dtype == "object":
@@ -127,7 +126,7 @@ def test_carton_torchscript(csv_filename, tmpdir):
     async def infer(inputs):
         return await carton_model.infer(inputs)
 
-    outputs = loop.run_until_complete(infer(inputs))
+    outputs = asyncio.run(infer(inputs))
 
     # Compare results from Python trained model against Carton
     assert len(preds_dict) == len(outputs)

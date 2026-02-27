@@ -167,7 +167,7 @@ def _load_hf_datasets(
             val_df = backend.df_engine.from_pandas(val_df)
             validation_set_out = CacheableDataframe(df=val_df, name=validation_set, checksum=None)
         else:  # This handles an edge case -- NOT EXPECTED USER BEHAVIOR
-            logging.warn(
+            logging.warning(
                 "A Hugging Face validation set has been passed in that is different from the test set. "
                 "This is not recommended."
             )
@@ -179,7 +179,7 @@ def _load_hf_datasets(
             test_df = backend.df_engine.from_pandas(test_df)
             test_set_out = CacheableDataframe(df=test_df, name=test_set, checksum=None)
         else:  # This handles an edge case -- NOT EXPECTED USER BEHAVIOR
-            logging.warn(
+            logging.warning(
                 "A Hugging Face test set has been passed in that is different from the training set. "
                 "This is not recommended."
             )

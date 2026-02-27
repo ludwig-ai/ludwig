@@ -6,7 +6,7 @@ import shutil
 import sys
 import tempfile
 import traceback
-from typing import Any, Dict, List
+from typing import Any
 
 import torch
 
@@ -137,7 +137,7 @@ def export_carton(model: LudwigModel, carton_path: str, carton_model_name="ludwi
                 raise ValueError(exception_message) from e  # Re-raise error for calling function to handle.
 
         try:
-            tmp_out_path: str = asyncio.get_event_loop().run_until_complete(pack())
+            tmp_out_path: str = asyncio.run(pack())
             # Move it to the output path
             shutil.move(tmp_out_path, carton_path)
         except Exception as e:

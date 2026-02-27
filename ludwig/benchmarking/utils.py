@@ -6,7 +6,7 @@ import shutil
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from types import ModuleType
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any
 
 import fsspec
 import pandas as pd
@@ -116,9 +116,7 @@ def download_artifacts(
         dataset_name = experiment["dataset_name"]
         for experiment_name in [base_experiment, experimental_experiment]:
             coroutines.append(download_one(fs, download_base_path, dataset_name, experiment_name, local_dir))
-    loop = asyncio.get_event_loop()
-    futures = asyncio.gather(*coroutines, return_exceptions=True)
-    downloaded_names = loop.run_until_complete(futures)
+    downloaded_names = asyncio.run(asyncio.gather(*coroutines, return_exceptions=True))
 
     dataset_names = [experiment_tuple[0] for experiment_tuple in set(downloaded_names) if experiment_tuple[0]]
     assert (
@@ -282,10 +280,10 @@ def format_time(time_us):
     US_IN_SECOND = 1000.0 * 1000.0
     US_IN_MS = 1000.0
     if time_us >= US_IN_SECOND:
-        return f"{time_us / US_IN_SECOND:.3f}s"
+        return f"{time_us / US_IN_SECOND:.3f}s"  # noqa: E231
     if time_us >= US_IN_MS:
-        return f"{time_us / US_IN_MS:.3f}ms"
-    return f"{time_us:.3f}us"
+        return f"{time_us / US_IN_MS:.3f}ms"  # noqa: E231
+    return f"{time_us:.3f}us"  # noqa: E231
 
 
 def format_memory(nbytes):
@@ -297,10 +295,10 @@ def format_memory(nbytes):
     MB = 1024 * KB
     GB = 1024 * MB
     if abs(nbytes) >= GB:
-        return f"{nbytes * 1.0 / GB:.2f} Gb"
+        return f"{nbytes * 1.0 / GB:.2f} Gb"  # noqa: E231
     elif abs(nbytes) >= MB:
-        return f"{nbytes * 1.0 / MB:.2f} Mb"
+        return f"{nbytes * 1.0 / MB:.2f} Mb"  # noqa: E231
     elif abs(nbytes) >= KB:
-        return f"{nbytes * 1.0 / KB:.2f} Kb"
+        return f"{nbytes * 1.0 / KB:.2f} Kb"  # noqa: E231
     else:
         return str(nbytes) + " b"
