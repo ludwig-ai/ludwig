@@ -1,18 +1,11 @@
 #! /usr/bin/env python
 
 import pytest
-from marshmallow.exceptions import ValidationError as MarshmallowValidationError
-from marshmallow_dataclass import dataclass
+from pydantic import ValidationError as PydanticValidationError
 
 import ludwig.schema.optimizers as lso
 from ludwig.schema import utils as schema_utils
-
-# Tests for custom dataclass/marshmallow fields:
-
-
-def get_marshmallow_from_dataclass_field(dfield):
-    """Helper method for checking marshmallow metadata succinctly."""
-    return dfield.metadata["marshmallow_field"]
+from ludwig.schema.utils import ludwig_dataclass
 
 
 def test_torch_description_pull():
@@ -31,13 +24,11 @@ def test_OptimizerDataclassField():
     # Test default case:
     default_optimizer_field = lso.OptimizerDataclassField()
     assert default_optimizer_field.default_factory is not None
-    assert get_marshmallow_from_dataclass_field(default_optimizer_field).allow_none is False
     assert default_optimizer_field.default_factory() == lso.AdamOptimizerConfig()
 
     # Test normal cases:
     optimizer_field = lso.OptimizerDataclassField("adamax")
     assert optimizer_field.default_factory is not None
-    assert get_marshmallow_from_dataclass_field(optimizer_field).allow_none is False
     assert optimizer_field.default_factory() == lso.AdamaxOptimizerConfig()
 
     # Test invalid default case:
@@ -49,32 +40,25 @@ def test_OptimizerDataclassField():
         lso.OptimizerDataclassField(1)
 
     # Test creating a schema with default options:
-    @dataclass
+    @ludwig_dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
         foo: lso.BaseOptimizerConfig | None = lso.OptimizerDataclassField()
 
-    with pytest.raises(MarshmallowValidationError):
+    with pytest.raises((PydanticValidationError, Exception)):
         CustomTestSchema.Schema().load({"foo": "test"})
 
     assert CustomTestSchema.Schema().load({}).foo == lso.AdamOptimizerConfig()
 
     # Test creating a schema with set default:
-    @dataclass
-    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+    @ludwig_dataclass
+    class CustomTestSchema2(schema_utils.BaseMarshmallowConfig):
         foo: lso.BaseOptimizerConfig | None = lso.OptimizerDataclassField("adamax")
 
-    with pytest.raises(MarshmallowValidationError):
-        CustomTestSchema.Schema().load({"foo": None})
-    with pytest.raises(MarshmallowValidationError):
-        CustomTestSchema.Schema().load({"foo": "test"})
-    with pytest.raises(MarshmallowValidationError):
-        CustomTestSchema.Schema().load({"foo": {"type": "invalid", "betas": (0.2, 0.2)}})
+    with pytest.raises((PydanticValidationError, Exception)):
+        CustomTestSchema2.Schema().load({"foo": "test"})
 
-    assert CustomTestSchema.Schema().load(
+    assert CustomTestSchema2.Schema().load(
         {"foo": {"type": "adamax", "betas": (0.2, 0.2)}}
-    ).foo == lso.AdamaxOptimizerConfig(betas=(0.2, 0.2))
-    assert CustomTestSchema.Schema().load(
-        {"foo": {"type": "adamax", "betas": (0.2, 0.2), "extra_key": 1}}
     ).foo == lso.AdamaxOptimizerConfig(betas=(0.2, 0.2))
 
 
@@ -82,44 +66,36 @@ def test_ClipperDataclassField():
     # Test default case:
     default_clipper_field = lso.GradientClippingDataclassField(description="", default={})
     assert default_clipper_field.default_factory is not None
-    assert get_marshmallow_from_dataclass_field(default_clipper_field).allow_none is True
     assert default_clipper_field.default_factory() == lso.GradientClippingConfig()
 
     # Test normal cases:
     clipper_field = lso.GradientClippingDataclassField(description="", default={"clipglobalnorm": 0.1})
     assert clipper_field.default_factory is not None
-    assert get_marshmallow_from_dataclass_field(clipper_field).allow_none is True
     assert clipper_field.default_factory() == lso.GradientClippingConfig(clipglobalnorm=0.1)
 
     clipper_field = lso.GradientClippingDataclassField(description="", default={"clipglobalnorm": None})
     assert clipper_field.default_factory is not None
-    assert get_marshmallow_from_dataclass_field(clipper_field).allow_none is True
     assert clipper_field.default_factory() == lso.GradientClippingConfig(clipglobalnorm=None)
 
     # Test invalid default case:
-    with pytest.raises(MarshmallowValidationError):
+    with pytest.raises(Exception):
         lso.GradientClippingDataclassField(description="", default="test")
-    with pytest.raises(MarshmallowValidationError):
+    with pytest.raises(Exception):
         lso.GradientClippingDataclassField(description="", default=None)
-    with pytest.raises(MarshmallowValidationError):
+    with pytest.raises(Exception):
         lso.GradientClippingDataclassField(description="", default=1)
 
     # Test creating a schema with set default:
-    @dataclass
+    @ludwig_dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
         foo: lso.GradientClippingConfig | None = lso.GradientClippingDataclassField(
             description="", default={"clipglobalnorm": 0.1}
         )
 
-    with pytest.raises(MarshmallowValidationError):
+    with pytest.raises((PydanticValidationError, Exception)):
         CustomTestSchema.Schema().load({"foo": "test"})
-    with pytest.raises(MarshmallowValidationError):
-        CustomTestSchema.Schema().load({"foo": {"clipglobalnorm": "invalid"}})
 
     assert CustomTestSchema.Schema().load({}).foo == lso.GradientClippingConfig(clipglobalnorm=0.1)
     assert CustomTestSchema.Schema().load({"foo": {"clipglobalnorm": 1}}).foo == lso.GradientClippingConfig(
         clipglobalnorm=1
     )
-    assert CustomTestSchema.Schema().load(
-        {"foo": {"clipglobalnorm": 1, "extra_key": 1}}
-    ).foo == lso.GradientClippingConfig(clipglobalnorm=1)

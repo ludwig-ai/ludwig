@@ -625,6 +625,27 @@ def _field_info_to_jsonschema(fname: str, finfo: FieldInfo, annotation: type | N
                 return result
             return {"type": "object"}
 
+    # Handle InitializerOrDict fields
+    from pydantic_core import PydanticUndefined
+
+    extra = finfo.json_schema_extra
+    if isinstance(extra, dict) and "_initializer_options" in extra:
+        init_options = extra["_initializer_options"]
+        return {
+            "oneOf": [
+                {"type": "string", "enum": init_options},
+                {
+                    "type": "object",
+                    "properties": {"type": {"type": "string", "enum": init_options}},
+                    "required": ["type"],
+                    "additionalProperties": True,
+                },
+                {"type": "null"},
+            ],
+            "default": finfo.default if finfo.default is not PydanticUndefined else "xavier_uniform",
+            "description": finfo.description or "",
+        }
+
     # Build schema from field info
     schema: dict[str, Any] = {}
 
@@ -637,7 +658,7 @@ def _field_info_to_jsonschema(fname: str, finfo: FieldInfo, annotation: type | N
     from pydantic_core import PydanticUndefined
 
     if finfo.default is not PydanticUndefined:
-        if not callable(finfo.default):
+        if not callable(finfo.default) and not isinstance(finfo.default, property):
             schema["default"] = finfo.default
 
     # Enum constraint from json_schema_extra
@@ -647,6 +668,10 @@ def _field_info_to_jsonschema(fname: str, finfo: FieldInfo, annotation: type | N
             schema["enum"] = extra["enum"]
         if "parameter_metadata" in extra:
             schema["parameter_metadata"] = copy.deepcopy(extra["parameter_metadata"])
+
+    # Always include parameter_metadata (default if not explicitly provided)
+    if "parameter_metadata" not in schema:
+        schema["parameter_metadata"] = convert_metadata_to_json(None)
 
     # Map type annotation to JSON schema type
     # Only emit type if annotation and default are consistent (avoid mismatches
@@ -672,7 +697,7 @@ def _field_info_to_jsonschema(fname: str, finfo: FieldInfo, annotation: type | N
             else:
                 schema["type"] = type_str
 
-    # Range constraints from pydantic Field metadata
+    # Range constraints and pattern from pydantic Field metadata
     from annotated_types import Ge, Gt, Le, Lt
 
     for meta in finfo.metadata or []:
@@ -684,6 +709,8 @@ def _field_info_to_jsonschema(fname: str, finfo: FieldInfo, annotation: type | N
             schema["maximum"] = meta.le
         elif isinstance(meta, Lt):
             schema["exclusiveMaximum"] = meta.lt
+        elif hasattr(meta, "pattern") and getattr(meta, "pattern", None) is not None:
+            schema["pattern"] = meta.pattern
 
     return schema
 
@@ -694,8 +721,9 @@ def _annotation_to_json_type(annotation) -> str | list | None:
 
     origin = getattr(annotation, "__origin__", None)
 
-    # Handle Union types (e.g. str | None)
-    if origin is types.UnionType:
+    # Handle Python 3.10+ union types (e.g. float | None) which are instances of
+    # types.UnionType directly, without __origin__
+    if isinstance(annotation, types.UnionType):
         args = annotation.__args__
         has_none = type(None) in args
         non_none = [a for a in args if a is not type(None)]
