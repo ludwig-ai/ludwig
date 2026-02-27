@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from dataclasses import asdict
+import dataclasses
 from typing import Optional, TYPE_CHECKING
 
 import torch
@@ -47,7 +47,13 @@ def get_optimizer_class_and_kwargs(
     optimizer_cls = get_from_registry(optimizer_config.type.lower(), optimizer_registry)[0]
 
     # Create a dict of parameters to be passed to torch (i.e. everything except `type`):
-    cls_kwargs = {field: value for field, value in asdict(optimizer_config).items() if field != "type"}
+    if dataclasses.is_dataclass(optimizer_config):
+        config_dict = dataclasses.asdict(optimizer_config)
+    elif hasattr(optimizer_config, "to_dict"):
+        config_dict = optimizer_config.to_dict()
+    else:
+        config_dict = vars(optimizer_config)
+    cls_kwargs = {field: value for field, value in config_dict.items() if field != "type"}
     cls_kwargs["lr"] = learning_rate
 
     return optimizer_cls, cls_kwargs

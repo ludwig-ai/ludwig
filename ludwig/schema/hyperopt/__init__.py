@@ -1,7 +1,5 @@
 from abc import ABC
 
-from marshmallow_dataclass import dataclass
-
 import ludwig.schema.hyperopt.parameter  # noqa: F401
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import LOSS, TEST, TRAIN, VALIDATION
@@ -10,6 +8,7 @@ from ludwig.modules.metric_registry import get_metric_registry
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.hyperopt.executor import ExecutorConfig, ExecutorDataclassField
 from ludwig.schema.hyperopt.search_algorithm import BaseSearchAlgorithmConfig, SearchAlgorithmDataclassField
+from ludwig.schema.utils import ludwig_dataclass as dataclass
 
 
 @DeveloperAPI

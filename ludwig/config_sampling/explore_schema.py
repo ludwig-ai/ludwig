@@ -144,12 +144,22 @@ def get_potential_values(item: dict[str, Any]) -> list[ParameterBaseTypes | list
             parameter metadata, etc.
     """
     temp = []
+    item_type = item.get("type")
+    if item_type is None:
+        # No explicit type — try to infer from enum/const/default
+        if "enum" in item:
+            return [v for v in item["enum"] if v is not None]
+        if "const" in item:
+            return [item["const"]]
+        if "default" in item:
+            return [item["default"]]
+        return []
     # Case where we're using OneOf (e.g. to allow batch size 'auto' and integers)
-    if isinstance(item["type"], list):
-        for property_type in item["type"]:
+    if isinstance(item_type, list):
+        for property_type in item_type:
             temp += handle_property_type(property_type, item)
     else:
-        temp += handle_property_type(item["type"], item)
+        temp += handle_property_type(item_type, item)
 
     # Make sure values are unique. Not using set because some values are unhashable.
     unique_temp = []

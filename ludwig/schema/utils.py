@@ -1,57 +1,480 @@
+"""Ludwig schema utilities - pydantic 2 based.
+
+This module provides the foundation for Ludwig's declarative config system.
+All config classes inherit from BaseMarshmallowConfig (a pydantic BaseModel)
+and use field factory functions (String, Integer, Float, etc.) that return
+pydantic Field() objects.
+"""
+
 import copy
+import logging
 import os
 import warnings
 from abc import ABC, abstractmethod
-from dataclasses import field, Field
 from functools import lru_cache
 from typing import Any
-from typing import Dict as TDict
-from typing import List as TList
-from typing import TypeVar
 
-import marshmallow_dataclass
 import yaml
-from marshmallow import EXCLUDE, fields, pre_load, schema, validate, ValidationError
-from marshmallow.utils import missing
-from marshmallow_dataclass import dataclass as m_dataclass
+from marshmallow import fields as mm_fields
+from marshmallow import ValidationError as MarshmallowValidationError
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import ValidationError as PydanticValidationError
+from pydantic.fields import FieldInfo
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import ACTIVE, COLUMN, LUDWIG_SCHEMA_VALIDATION_POLICY, NAME, PROC_COLUMN, TYPE
 from ludwig.modules.reduction_modules import reduce_mode_registry
-from ludwig.schema.jsonschema import marshmallow_schema_to_jsonschema_dict
 from ludwig.schema.metadata import COMMON_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
 from ludwig.utils.misc_utils import scrub_creds
 from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import activations, initializer_registry
 
+logger = logging.getLogger(__name__)
+
 RECURSION_STOP_ENUM = {"weights_initializer", "bias_initializer", "norm_params"}
-ludwig_dataclass = m_dataclass(repr=False, order=True)
 
 
-@DeveloperAPI
-def get_marshmallow_field_class_name(field):
-    """Returns a human-readable string of the marshmallow class name."""
-    return field.metadata["marshmallow_field"].__class__.__name__
+def ludwig_dataclass(cls):
+    """No-op decorator.
 
-
-@DeveloperAPI
-def load_config(cls: type["BaseMarshmallowConfig"], **kwargs) -> "BaseMarshmallowConfig":  # noqa 0821
-    """Takes a marshmallow class and instantiates it with the given keyword args as parameters."""
-    assert_is_a_marshmallow_class(cls)
-    schema = cls.Schema()
-    return schema.load(kwargs)
-
-
-@DeveloperAPI
-def load_trainer_with_kwargs(
-    model_type: str, kwargs: dict
-) -> tuple["BaseMarshmallowConfig", TDict[str, Any]]:  # noqa: F821
-    """Special case of `load_config_with_kwargs` for the trainer schemas.
-
-    In particular, it chooses the correct default type for an incoming config (if it doesn't have one already), but
-    otherwise passes all other parameters through without change.
+    Config classes now inherit directly from BaseMarshmallowConfig (pydantic BaseModel).
     """
+    return cls
+
+
+# TODO: Change to RAISE and update descriptions once we want to enforce strict schemas.
+LUDWIG_SCHEMA_VALIDATION_POLICY_VAR = os.environ.get(LUDWIG_SCHEMA_VALIDATION_POLICY, "exclude").lower()
+
+
+class _SchemaAdapter:
+    """Adapts pydantic model to marshmallow-like Schema interface for backward compatibility.
+
+    This allows existing code that calls cls.Schema().load(data), cls.Schema().dump(data), and cls.Schema().fields to
+    continue working.
+    """
+
+    def __init__(self, cls):
+        self._cls = cls
+
+    def __call__(self):
+        """Allow Schema()() pattern (double-call)."""
+        return self
+
+    def load(self, data):
+        """Validate and create a config instance from a dict."""
+        return self._cls.model_validate(data)
+
+    def dump(self, data):
+        """Serialize a config instance or dict to a plain dict."""
+        if isinstance(data, BaseMarshmallowConfig):
+            return data.to_dict()
+        if isinstance(data, dict):
+            try:
+                instance = self._cls.model_validate(data)
+                return instance.to_dict()
+            except Exception:
+                return data
+        return data
+
+    @property
+    def fields(self):
+        """Return field info dict (pydantic model_fields)."""
+        return self._cls.model_fields
+
+
+# Sentinel for TypeSelection and DictMarshmallowField metadata markers
+class _TypeSelectionMarker:
+    """Marker stored in Field.metadata to indicate this field uses TypeSelection dispatch."""
+
+    def __init__(self, type_selection):
+        self.type_selection = type_selection
+
+
+class _NestedConfigMarker:
+    """Marker stored in Field.metadata to indicate this field uses DictMarshmallowField dispatch."""
+
+    def __init__(self, cls, allow_none=True):
+        self.cls = cls
+        self.allow_none = allow_none
+
+
+ConfigT = Any  # TypeVar("ConfigT", bound="BaseMarshmallowConfig")
+
+
+def _convert_dataclass_field_to_pydantic(dc_field) -> FieldInfo:
+    """Convert a dataclasses.Field to a pydantic FieldInfo.
+
+    This is the bridge that allows old marshmallow-style field definitions
+    (using dataclasses.field(metadata={"marshmallow_field": ...})) to work
+    with pydantic BaseModel classes during the migration period.
+    """
+    import dataclasses as _dc
+
+    metadata_list = []
+    marshmallow_field = None
+
+    # Extract marshmallow_field from metadata
+    if dc_field.metadata:
+        marshmallow_field = dc_field.metadata.get("marshmallow_field")
+        if marshmallow_field is not None:
+            # Store as a marker so model_validator can use it for dispatch
+            if isinstance(marshmallow_field, TypeSelection):
+                metadata_list.append(_TypeSelectionMarker(marshmallow_field))
+            elif isinstance(marshmallow_field, DictMarshmallowField):
+                # Check if the subclass overrides _jsonschema_type_mapping
+                has_custom_schema = (
+                    type(marshmallow_field)._jsonschema_type_mapping
+                    is not DictMarshmallowField._jsonschema_type_mapping
+                )
+                if has_custom_schema:
+                    # Store as MarshmallowFieldMarker to preserve custom JSON schema generation
+                    metadata_list.append(_MarshmallowFieldMarker(marshmallow_field))
+                else:
+                    metadata_list.append(_NestedConfigMarker(marshmallow_field.cls, marshmallow_field.allow_none))
+            else:
+                # Generic marshmallow field - store for reference
+                metadata_list.append(_MarshmallowFieldMarker(marshmallow_field))
+
+    # Extract default
+    if dc_field.default is not _dc.MISSING:
+        return Field(default=dc_field.default, metadata=metadata_list or None)
+    elif dc_field.default_factory is not _dc.MISSING:
+        return Field(default_factory=dc_field.default_factory, metadata=metadata_list or None)
+    else:
+        # No default - this is a required field
+        return Field(metadata=metadata_list or None)
+
+
+class _MarshmallowFieldMarker:
+    """Stores a marshmallow field for backward compat during migration."""
+
+    def __init__(self, marshmallow_field):
+        self.marshmallow_field = marshmallow_field
+
+
+class _LudwigModelMeta(type(BaseModel)):
+    """Metaclass that bridges marshmallow-dataclass patterns to pydantic 2.
+
+    Handles two key behaviors:
+    1. Converts dataclasses.Field objects to pydantic FieldInfo in __new__
+    2. Allows class-level access to field defaults via __getattr__
+    """
+
+    def __new__(mcs, name, bases, namespace, **kwargs):
+        import dataclasses as _dc
+
+        annotations = namespace.get("__annotations__", {})
+
+        # Convert dataclass field() objects to pydantic Field() before pydantic processes them
+        for attr_name in list(annotations.keys()):
+            if attr_name in namespace:
+                value = namespace[attr_name]
+                if isinstance(value, _dc.Field):
+                    namespace[attr_name] = _convert_dataclass_field_to_pydantic(value)
+
+        # Auto-widen annotations to bridge marshmallow→pydantic gap.
+        # In marshmallow, annotations were decorative. In pydantic, they're enforced.
+        import types
+        import typing
+
+        for attr_name, ann in list(annotations.items()):
+            # Skip ClassVar annotations
+            origin = getattr(ann, "__origin__", None)
+            if origin is typing.ClassVar:
+                continue
+
+            if attr_name not in namespace:
+                continue
+
+            value = namespace[attr_name]
+
+            # For fields with markers (TypeSelection/DictMarshmallowField/MarshmallowField),
+            # set annotation to Any since the actual validation happens in the marker
+            if isinstance(value, FieldInfo):
+                jse = getattr(value, "json_schema_extra", None)
+                has_marker = False
+                if isinstance(jse, dict) and "metadata" in jse:
+                    has_marker = any(
+                        isinstance(m, (_TypeSelectionMarker, _NestedConfigMarker, _MarshmallowFieldMarker))
+                        for m in jse["metadata"]
+                    )
+                for meta in getattr(value, "metadata", None) or []:
+                    if isinstance(meta, (_TypeSelectionMarker, _NestedConfigMarker, _MarshmallowFieldMarker)):
+                        has_marker = True
+                        break
+
+                if has_marker:
+                    annotations[attr_name] = Any
+                    continue
+
+                # Widen to include None if default is None or enum contains None
+                from pydantic_core import PydanticUndefined
+
+                should_widen = value.default is None and value.default is not PydanticUndefined
+                if not should_widen:
+                    # Also widen if the enum (from allow_none=True in StringOptions etc.) contains None
+                    jse_enum = (jse or {}).get("enum") if isinstance(jse, dict) else None
+                    if isinstance(jse_enum, list) and None in jse_enum:
+                        should_widen = True
+
+                if should_widen:
+                    is_union = origin in (types.UnionType,)
+                    try:
+                        is_union = is_union or origin is typing.Union
+                    except (AttributeError, TypeError):
+                        pass
+
+                    has_none = False
+                    if is_union:
+                        has_none = type(None) in getattr(ann, "__args__", ())
+
+                    if not has_none:
+                        try:
+                            annotations[attr_name] = ann | None
+                        except TypeError:
+                            pass
+
+            elif value is None:
+                # Plain None default
+                try:
+                    annotations[attr_name] = ann | None
+                except TypeError:
+                    pass
+
+        namespace["__annotations__"] = annotations
+        return super().__new__(mcs, name, bases, namespace, **kwargs)
+
+    def __getattr__(cls, name: str) -> Any:
+        """Allow accessing field defaults as class attributes (e.g., cls.type)."""
+        for klass in cls.__mro__:
+            pf = vars(klass).get("__pydantic_fields__")
+            if pf is not None and isinstance(pf, dict) and name in pf:
+                field_info = pf[name]
+                from pydantic_core import PydanticUndefined
+
+                if field_info.default is not PydanticUndefined:
+                    return field_info.default
+                break
+        raise AttributeError(name)
+
+
+@DeveloperAPI
+class BaseMarshmallowConfig(BaseModel, metaclass=_LudwigModelMeta):
+    """Base pydantic model for all Ludwig config classes.
+
+    Maintains backward-compatible API (from_dict, to_dict, Schema, etc.) while using pydantic 2 internally for
+    validation and serialization.
+    """
+
+    model_config = ConfigDict(
+        extra="ignore" if LUDWIG_SCHEMA_VALIDATION_POLICY_VAR == "exclude" else "forbid",
+        arbitrary_types_allowed=True,
+        validate_default=False,
+        revalidate_instances="never",
+        populate_by_name=True,
+        strict=False,
+    )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _pre_validate(cls, data: Any) -> Any:
+        """Pre-validation: log deprecation warnings, resolve TypeSelection/nested fields."""
+        if not isinstance(data, dict):
+            return data
+
+        # Log deprecation warnings for unknown fields
+        valid_fields = set(cls.model_fields.keys())
+        for key in list(data.keys()):
+            if key not in valid_fields and key != "type":
+                warnings.warn(
+                    f'"{key}" is not a valid parameter for the "{cls.__name__}" schema, will be flagged '
+                    "as an error in a future version",
+                    DeprecationWarning,
+                )
+
+        # Resolve TypeSelection, DictMarshmallowField, and legacy marshmallow fields
+        for fname, finfo in cls.model_fields.items():
+            if fname not in data:
+                continue
+            value = data[fname]
+
+            # Get markers from both metadata and json_schema_extra
+            markers = list(finfo.metadata or [])
+            jse = finfo.json_schema_extra
+            if isinstance(jse, dict) and "metadata" in jse:
+                markers.extend(jse["metadata"])
+
+            for meta in markers:
+                if isinstance(meta, _TypeSelectionMarker):
+                    data[fname] = meta.type_selection.resolve(value)
+                    break
+                elif isinstance(meta, _NestedConfigMarker):
+                    if isinstance(value, BaseMarshmallowConfig):
+                        break  # Already a config instance, skip re-validation
+                    if isinstance(value, dict):
+                        try:
+                            data[fname] = meta.cls.model_validate(value)
+                        except Exception as e:
+                            from ludwig.error import ConfigValidationError
+
+                            raise ConfigValidationError(
+                                f"Invalid params: {value}, see `{meta.cls}` definition. Error: {e}"
+                            )
+                    break
+                elif isinstance(meta, _MarshmallowFieldMarker):
+                    # Legacy marshmallow field - use its _deserialize for validation
+                    # Skip if value is already a config instance (avoid double-validation)
+                    if isinstance(value, BaseMarshmallowConfig):
+                        break
+                    mfield = meta.marshmallow_field
+                    if hasattr(mfield, "_deserialize") and value is not None:
+                        try:
+                            data[fname] = mfield._deserialize(value, fname, data)
+                        except Exception as e:
+                            # Re-raise ConfigValidationError (from __post_init__) and
+                            # MarshmallowValidationError (from _deserialize) rather than swallowing them
+                            from ludwig.error import ConfigValidationError
+
+                            if isinstance(e, (ConfigValidationError, MarshmallowValidationError)):
+                                raise
+                            pass  # Let pydantic handle other validation errors
+                    break
+
+        return data
+
+    @model_validator(mode="after")
+    def _validate_field_constraints(self):
+        """Post-validation: enforce enum constraints stored in json_schema_extra."""
+        for fname, finfo in self.model_fields.items():
+            value = getattr(self, fname, None)
+            extra = finfo.json_schema_extra
+            if not isinstance(extra, dict):
+                continue
+
+            # Validate enum constraints (from StringOptions, IntegerOptions)
+            if "enum" in extra and value is not None:
+                allowed = extra["enum"]
+                if value not in allowed:
+                    raise ValueError(f"Field '{fname}': value {value!r} not in allowed options {allowed}")
+
+            # Validate float tuple range constraints
+            if "_float_tuple_range" in extra and value is not None:
+                spec = extra["_float_tuple_range"]
+                if not isinstance(value, (tuple, list)) or len(value) != spec["n"]:
+                    raise ValueError(f"Field '{fname}': expected {spec['n']}-tuple, got {value!r}")
+                for v in value:
+                    if spec.get("min") is not None and v < spec["min"]:
+                        raise ValueError(f"Field '{fname}': value {v} below minimum {spec['min']}")
+                    if spec.get("max") is not None and v > spec["max"]:
+                        raise ValueError(f"Field '{fname}': value {v} above maximum {spec['max']}")
+
+            # Validate embed field (int or str from options)
+            if "_embed_options" in extra and value is not None:
+                embed_options = extra["_embed_options"]
+                if isinstance(value, str) and value not in embed_options:
+                    raise ValueError(f"Field '{fname}': string value {value!r} not in {embed_options}")
+                if not isinstance(value, (str, int)):
+                    raise ValueError(f"Field '{fname}': expected str, int, or None, got {type(value).__name__}")
+
+            # Validate initializer_or_dict field
+            if "_initializer_options" in extra and value is not None:
+                init_options = extra["_initializer_options"]
+                if isinstance(value, str) and value not in init_options:
+                    raise ValueError(f"Field '{fname}': initializer {value!r} not in {init_options}")
+                if isinstance(value, dict):
+                    if "type" not in value:
+                        raise ValueError(f"Field '{fname}': dict must contain 'type' key")
+                    if value["type"] not in init_options:
+                        raise ValueError(f"Field '{fname}': initializer type {value['type']!r} not in {init_options}")
+                if not isinstance(value, (str, dict)):
+                    raise ValueError(f"Field '{fname}': expected str or dict, got {type(value).__name__}")
+
+        return self
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        """Allow setting arbitrary attributes on config instances.
+
+        Ludwig code dynamically sets attributes like saved_weights_in_checkpoint, proc_column, etc. on config objects.
+        Pydantic 2 normally rejects setting attributes not defined as fields, so we override to allow it.
+        """
+        try:
+            super().__setattr__(name, value)
+        except ValueError:
+            # Attribute not in model fields - allow it anyway (dataclass behavior)
+            object.__setattr__(self, name, value)
+
+    def model_post_init(self, __context: Any) -> None:
+        """Bridge: call __post_init__ if defined by subclass (dataclass convention)."""
+        super().model_post_init(__context)
+        # Check if THIS class (or a parent) defines __post_init__
+        post_init = getattr(type(self), "__post_init__", None)
+        if post_init is not None:
+            post_init(self)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Get a dictionary representation of this config.
+
+        Recursively converts nested config objects and scrubs credentials.
+        """
+        return scrub_creds(convert_submodules(vars(self)))
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> "BaseMarshmallowConfig":
+        """Create a config instance from a dictionary."""
+        return cls.model_validate(d)
+
+    @classmethod
+    @lru_cache(maxsize=None)
+    def get_valid_field_names(cls) -> set[str]:
+        """Return the set of valid field names for this config class."""
+        return set(cls.model_fields.keys())
+
+    @classmethod
+    @lru_cache(maxsize=None)
+    def get_class_schema(cls):
+        """Return a schema adapter for backward compatibility.
+
+        Returns an object with .load() and .fields methods.
+        """
+        return _SchemaAdapter(cls)
+
+    @classmethod
+    def Schema(cls):
+        """Backward compatibility: return a schema adapter with .load(), .dump(), .fields."""
+        return _SchemaAdapter(cls)
+
+    def __repr__(self):
+        return yaml.dump(self.to_dict(), sort_keys=False)
+
+
+@DeveloperAPI
+def get_marshmallow_field_class_name(field_info):
+    """Returns a human-readable string of the field class name.
+
+    For backward compat, checks both pydantic metadata and marshmallow_field.
+    """
+    # Check for marshmallow_field in metadata (legacy)
+    if hasattr(field_info, "metadata"):
+        for meta in field_info.metadata or []:
+            if hasattr(meta, "__class__"):
+                return meta.__class__.__name__
+    # For pydantic FieldInfo, return the annotation name
+    if hasattr(field_info, "annotation"):
+        return str(field_info.annotation)
+    return "Unknown"
+
+
+@DeveloperAPI
+def load_config(cls: type["BaseMarshmallowConfig"], **kwargs) -> "BaseMarshmallowConfig":
+    """Takes a config class and instantiates it with the given keyword args as parameters."""
+    assert_is_a_marshmallow_class(cls)
+    return cls.model_validate(kwargs)
+
+
+@DeveloperAPI
+def load_trainer_with_kwargs(model_type: str, kwargs: dict) -> tuple["BaseMarshmallowConfig", dict[str, Any]]:
+    """Special case of `load_config_with_kwargs` for the trainer schemas."""
     from ludwig.constants import MODEL_LLM
     from ludwig.schema.trainer import ECDTrainerConfig, LLMTrainerConfig
 
@@ -66,54 +489,39 @@ def load_trainer_with_kwargs(
 @DeveloperAPI
 def load_config_with_kwargs(
     cls: type["BaseMarshmallowConfig"], kwargs_overrides
-) -> tuple["BaseMarshmallowConfig", TDict[str, Any]]:  # noqa 0821
-    """Instatiates an instance of the marshmallow class and kwargs overrides instantiantes the schema.
+) -> tuple["BaseMarshmallowConfig", dict[str, Any]]:
+    """Instantiates a config class filtering kwargs to only valid fields.
 
-    Returns a tuple of config, and a dictionary of any keys in kwargs_overrides which are not present in config.
+    Returns a tuple of (config, remaining_kwargs).
     """
     assert_is_a_marshmallow_class(cls)
-    schema = cls.Schema()
-    fields = schema.fields.keys()
+    fields = cls.model_fields.keys()
     return load_config(cls, **{k: v for k, v in kwargs_overrides.items() if k in fields}), {
         k: v for k, v in kwargs_overrides.items() if k not in fields
     }
 
 
 @DeveloperAPI
-def convert_submodules(config_dict: dict) -> TDict[str, any]:
-    """Helper function for converting submodules to dictionaries during a config object to dict transformation.
-
-    Args:
-        config_dict: Top level config dictionary with un-converted submodules
-
-    Returns:
-        The fully converted config dictionary
-    """
+def convert_submodules(config_dict: dict) -> dict[str, Any]:
+    """Helper for converting submodules to dictionaries during config serialization."""
     output_dict = copy.deepcopy(config_dict)
 
     for k, v in output_dict.items():
         if isinstance(v, dict):
             convert_submodules(v)
-
         elif isinstance(v, BaseMarshmallowConfig):
             output_dict[k] = v.to_dict()
             convert_submodules(output_dict[k])
-
         elif isinstance(v, list):
-            # Handle generic lists
             output_dict[k] = [x.to_dict() if isinstance(x, BaseMarshmallowConfig) else x for x in v]
-
         elif isinstance(v, ListSerializable):
             output_dict[k] = v.to_list()
-
-        else:
-            continue
 
     return output_dict
 
 
 @DeveloperAPI
-def create_cond(if_pred: TDict, then_pred: TDict):
+def create_cond(if_pred: dict, then_pred: dict):
     """Returns a JSONSchema conditional for the given if-then predicates."""
     return {
         "if": {"properties": {k: {"const": v} for k, v in if_pred.items()}},
@@ -122,19 +530,10 @@ def create_cond(if_pred: TDict, then_pred: TDict):
 
 
 @DeveloperAPI
-def remove_duplicate_fields(properties: dict, fields: TList[str] | None = None) -> None:
-    """Util function for removing duplicated schema elements. For example, input feature json schema mapping has a
-    type param defined directly on the json schema, but also has a parameter defined on the schema class. We need
-    both -
-
-    json schema level for validation and schema class level for config object - though we only need the json schema
-    level for validation, so we get rid of the duplicates when converting to json schema.
-
-    Args:
-        properties: Dictionary of properties generated from a Ludwig schema class
-    """
+def remove_duplicate_fields(properties: dict, fields: list[str] | None = None) -> None:
+    """Util function for removing duplicated schema elements."""
     duplicate_fields = [NAME, TYPE, COLUMN, PROC_COLUMN, ACTIVE] if fields is None else fields
-    for key in duplicate_fields:  # TODO: Remove col/proc_col once train metadata decoupled
+    for key in duplicate_fields:
         if key in properties:
             del properties[key]
 
@@ -142,99 +541,253 @@ def remove_duplicate_fields(properties: dict, fields: TList[str] | None = None) 
 @DeveloperAPI
 class ListSerializable(ABC):
     @abstractmethod
-    def to_list(self) -> TList:
+    def to_list(self) -> list:
         pass
-
-
-ConfigT = TypeVar("ConfigT", bound="BaseMarshmallowConfig")
-
-
-# TODO: Change to RAISE and update descriptions once we want to enforce strict schemas.
-LUDWIG_SCHEMA_VALIDATION_POLICY_VAR = os.environ.get(LUDWIG_SCHEMA_VALIDATION_POLICY, EXCLUDE).lower()
-
-
-@DeveloperAPI
-class BaseMarshmallowConfig(ABC):
-    """Base marshmallow class for common attributes and metadata."""
-
-    class Meta:
-        """Sub-class specifying meta information for Marshmallow.
-
-        Currently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are
-        excluded from `load` calls so that the marshmallow_dataclass package can be used but
-        `unload_jsonschema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.
-        to True so that JSON objects with extra properties do not raise errors; as a result properties are picked and
-        filled in as necessary.
-        """
-
-        unknown = LUDWIG_SCHEMA_VALIDATION_POLICY_VAR
-        "Flag that sets marshmallow `load` calls to handle unknown properties passed as a parameter."
-
-    def to_dict(self):
-        """Method for getting a dictionary representation of this dataclass.
-
-        Returns: dict for this dataclass
-        """
-        return scrub_creds(convert_submodules(self.__dict__))
-
-    @pre_load
-    def log_deprecation_warnings_for_any_invalid_parameters(self, data, **kwargs):
-        """Logs a warning for any unknown or invalid parameters passed to a schema.
-
-        Will be removed in a future version, when all such parameters will explicitly raise an error.
-        """
-        copy_data = copy.deepcopy(data)
-        for key in data.keys():
-            if key not in self.fields:
-                if key != "type":
-                    warnings.warn(
-                        f'"{key}" is not a valid parameter for the "{self.__class__.__name__}" schema, will be flagged '
-                        "as an error in a future version",
-                        DeprecationWarning,
-                    )
-        return copy_data
-
-    @classmethod
-    def from_dict(cls: type[ConfigT], d: TDict[str, Any]) -> ConfigT:
-        schema = cls.get_class_schema()()
-        return schema.load(d)
-
-    @classmethod
-    @lru_cache(maxsize=None)
-    def get_valid_field_names(cls) -> set[str]:
-        schema = cls.get_class_schema()()
-        return set(schema.fields.keys())
-
-    @classmethod
-    @lru_cache(maxsize=None)
-    def get_class_schema(cls):
-        return marshmallow_dataclass.class_schema(cls)
-
-    def __repr__(self):
-        return yaml.dump(self.to_dict(), sort_keys=False)
 
 
 @DeveloperAPI
 def assert_is_a_marshmallow_class(cls):
-    assert hasattr(cls, "Schema") and isinstance(
-        cls.Schema, schema.SchemaMeta
-    ), f"Expected marshmallow class, but `{cls}` does not have the necessary `Schema` attribute."
+    """Assert that cls is a Ludwig config class (pydantic BaseModel)."""
+    assert issubclass(
+        cls, BaseMarshmallowConfig
+    ), f"Expected a Ludwig config class (BaseMarshmallowConfig subclass), but `{cls}` is not."
+
+
+def _default_matches_json_type(default_val, type_str) -> bool:
+    """Check if a default value is consistent with a JSON schema type string.
+
+    Returns True if the default value matches the type string, False otherwise. This is used to avoid emitting 'type':
+    'integer' when the default is 7.5 (float), which was a common pattern in the marshmallow era where type enforcement
+    was looser.
+    """
+    if isinstance(type_str, list):
+        # Union type like ["integer", "null"]
+        return any(_default_matches_json_type(default_val, t) for t in type_str)
+    _CHECKS = {
+        "string": lambda v: isinstance(v, str),
+        "integer": lambda v: isinstance(v, int) and not isinstance(v, bool),
+        "number": lambda v: isinstance(v, (int, float)) and not isinstance(v, bool),
+        "boolean": lambda v: isinstance(v, bool),
+        "object": lambda v: isinstance(v, dict),
+        "array": lambda v: isinstance(v, (list, tuple)),
+        "null": lambda v: v is None,
+    }
+    check = _CHECKS.get(type_str)
+    if check is None:
+        return True  # Unknown type, don't block
+    return check(default_val)
+
+
+def _field_info_to_jsonschema(fname: str, finfo: FieldInfo, annotation: type | None = None) -> dict:
+    """Convert a pydantic FieldInfo to a JSON schema fragment.
+
+    Checks metadata markers for TypeSelection/DictMarshmallowField/legacy marshmallow fields, and falls back to type-
+    based mapping for plain fields.
+    """
+    # Check for markers in both metadata and json_schema_extra
+    markers = list(finfo.metadata or [])
+    jse = finfo.json_schema_extra
+    if isinstance(jse, dict) and "metadata" in jse:
+        markers.extend(jse["metadata"])
+
+    for meta in markers:
+        if isinstance(meta, _TypeSelectionMarker):
+            ts = meta.type_selection
+            custom = ts._jsonschema_type_mapping()
+            if custom is not None:
+                return custom
+            return {"type": "object"}
+
+        if isinstance(meta, _NestedConfigMarker):
+            return unload_jsonschema_from_marshmallow_class(meta.cls)
+
+        if isinstance(meta, _MarshmallowFieldMarker):
+            mf = meta.marshmallow_field
+            if hasattr(mf, "_jsonschema_type_mapping"):
+                custom = mf._jsonschema_type_mapping()
+                if custom is not None:
+                    return custom
+            # Handle marshmallow List fields (e.g., FeatureList)
+            if isinstance(mf, mm_fields.List) and mf.inner is not None:
+                inner_schema = {}
+                if hasattr(mf.inner, "_jsonschema_type_mapping"):
+                    inner_schema = mf.inner._jsonschema_type_mapping() or {}
+                result = {"type": "array", "items": inner_schema}
+                # Copy validators
+                from marshmallow import validate
+
+                for v in mf.validators:
+                    if isinstance(v, validate.Length):
+                        if v.min is not None:
+                            result["minItems"] = v.min
+                        if v.max is not None:
+                            result["maxItems"] = v.max
+                return result
+            return {"type": "object"}
+
+    # Build schema from field info
+    schema: dict[str, Any] = {}
+
+    # Description
+    desc = finfo.description or ""
+    if desc:
+        schema["description"] = desc
+
+    # Default value
+    from pydantic_core import PydanticUndefined
+
+    if finfo.default is not PydanticUndefined:
+        if not callable(finfo.default):
+            schema["default"] = finfo.default
+
+    # Enum constraint from json_schema_extra
+    extra = finfo.json_schema_extra
+    if isinstance(extra, dict):
+        if "enum" in extra:
+            schema["enum"] = extra["enum"]
+        if "parameter_metadata" in extra:
+            schema["parameter_metadata"] = copy.deepcopy(extra["parameter_metadata"])
+
+    # Map type annotation to JSON schema type
+    # Only emit type if annotation and default are consistent (avoid mismatches
+    # like annotation=int but default=7.5 which was common in marshmallow era)
+    if annotation is not None:
+        type_str = _annotation_to_json_type(annotation)
+        if type_str:
+            # If the enum contains None, the JSON schema type must include "null"
+            enum_vals = schema.get("enum")
+            if enum_vals is not None and None in enum_vals:
+                if isinstance(type_str, list):
+                    if "null" not in type_str:
+                        type_str = type_str + ["null"]
+                elif type_str != "null":
+                    type_str = [type_str, "null"]
+
+            # Check for mismatch between annotation type and default value
+            from pydantic_core import PydanticUndefined
+
+            default_val = finfo.default if finfo.default is not PydanticUndefined else None
+            if default_val is not None and not _default_matches_json_type(default_val, type_str):
+                pass  # Skip emitting type to avoid JSON schema validation failures
+            else:
+                schema["type"] = type_str
+
+    # Range constraints from pydantic Field metadata
+    from annotated_types import Ge, Gt, Le, Lt
+
+    for meta in finfo.metadata or []:
+        if isinstance(meta, Ge):
+            schema["minimum"] = meta.ge
+        elif isinstance(meta, Gt):
+            schema["exclusiveMinimum"] = meta.gt
+        elif isinstance(meta, Le):
+            schema["maximum"] = meta.le
+        elif isinstance(meta, Lt):
+            schema["exclusiveMaximum"] = meta.lt
+
+    return schema
+
+
+def _annotation_to_json_type(annotation) -> str | list | None:
+    """Map a Python type annotation to a JSON schema type string."""
+    import types
+
+    origin = getattr(annotation, "__origin__", None)
+
+    # Handle Union types (e.g. str | None)
+    if origin is types.UnionType:
+        args = annotation.__args__
+        has_none = type(None) in args
+        non_none = [a for a in args if a is not type(None)]
+        if len(non_none) == 1:
+            base = _annotation_to_json_type(non_none[0])
+            if has_none and base:
+                return [base, "null"]
+            return base
+        return None
+
+    # Also handle typing.Union
+    try:
+        import typing
+
+        if origin is typing.Union:
+            args = annotation.__args__
+            has_none = type(None) in args
+            non_none = [a for a in args if a is not type(None)]
+            if len(non_none) == 1:
+                base = _annotation_to_json_type(non_none[0])
+                if has_none and base:
+                    return [base, "null"]
+                return base
+            return None
+    except (AttributeError, TypeError):
+        pass
+
+    _TYPE_MAP = {
+        str: "string",
+        int: "integer",
+        float: "number",
+        bool: "boolean",
+        dict: "object",
+        list: "array",
+        tuple: "array",
+    }
+
+    if annotation in _TYPE_MAP:
+        return _TYPE_MAP[annotation]
+
+    return None
 
 
 @DeveloperAPI
-def unload_jsonschema_from_marshmallow_class(mclass, additional_properties: bool = True, title: str = None) -> TDict:
-    """Helper method to directly get a marshmallow class's JSON schema without extra wrapping props."""
+def unload_jsonschema_from_marshmallow_class(mclass, additional_properties: bool = True, title: str = None) -> dict:
+    """Get a JSON schema dict for a Ludwig config class.
+
+    Iterates over pydantic model_fields and checks metadata markers for TypeSelection, DictMarshmallowField, and legacy
+    marshmallow fields.
+    """
     assert_is_a_marshmallow_class(mclass)
-    schema = marshmallow_schema_to_jsonschema_dict(mclass.Schema())["definitions"][mclass.__name__]
-    # Check top-level ParameterMetadata:
-    for prop in schema["properties"]:
-        prop_schema = schema["properties"][prop]
-        if "parameter_metadata" in prop_schema:
-            prop_schema["parameter_metadata"] = copy.deepcopy(prop_schema["parameter_metadata"])
-    schema["additionalProperties"] = additional_properties
+
+    properties = {}
+    annotations = {}
+
+    # Gather annotations from the class and its MRO
+    for klass in reversed(mclass.__mro__):
+        annotations.update(getattr(klass, "__annotations__", {}))
+
+    for fname, finfo in mclass.model_fields.items():
+        ann = annotations.get(fname)
+        properties[fname] = _field_info_to_jsonschema(fname, finfo, ann)
+
+    schema = {
+        "type": "object",
+        "properties": properties,
+        "additionalProperties": additional_properties,
+    }
     if title is not None:
         schema["title"] = title
     return schema
+
+
+# ============================================================================
+# Field Factory Functions
+# ============================================================================
+# All return pydantic Field() objects (FieldInfo) that can be used as class
+# variable defaults in BaseMarshmallowConfig subclasses.
+# ============================================================================
+
+
+def _make_json_schema_extra(
+    description: str = "",
+    parameter_metadata: ParameterMetadata = None,
+    **extra,
+) -> dict | None:
+    """Build json_schema_extra dict for Field(), returning None if empty."""
+    result = {}
+    if parameter_metadata:
+        result["parameter_metadata"] = convert_metadata_to_json(parameter_metadata)
+    result.update(extra)
+    return result or None
 
 
 @DeveloperAPI
@@ -300,73 +853,54 @@ def String(
     pattern: str = None,
     parameter_metadata: ParameterMetadata = None,
 ):
-    if not allow_none and not isinstance(default, str):
-        raise ValidationError(f"Provided default `{default}` should be a string!")
+    """Returns a pydantic Field for string values."""
+    if not allow_none and default is not None and not isinstance(default, str):
+        raise ValueError(f"Provided default `{default}` should be a string!")
 
+    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata)
+    kwargs = {}
     if pattern is not None:
-        validation = validate.Regexp(pattern)
-    else:
-        validation = None
+        kwargs["pattern"] = pattern
 
-    return field(
-        metadata={
-            "marshmallow_field": fields.String(
-                validate=validation,
-                allow_none=allow_none,
-                load_default=default,
-                dump_default=default,
-                metadata={
-                    "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
-                },
-            ),
-        },
+    return Field(
         default=default,
+        description=description,
+        json_schema_extra=json_extra,
+        **kwargs,
     )
 
 
 @DeveloperAPI
 def StringOptions(
-    options: TList[str],
+    options: list[str],
     default: None | str,
     allow_none: bool = False,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
-    """Returns a dataclass field with marshmallow metadata that enforces string inputs must be one of `options`.
-
-    By default, None is allowed (and automatically appended) to the allowed list of options.
-    """
+    """Returns a pydantic Field that enforces string inputs must be one of `options`."""
+    options = list(options)  # ensure list, not dict_keys or other iterable
     assert len(options) > 0, "Must provide non-empty list of options!"
 
     if default is not None:
         assert isinstance(default, str), f"Provided default `{default}` should be a string!"
 
-    # If None should be allowed for an enum field, it also has to be defined as a valid
-    # [option](https://github.com/json-schema-org/json-schema-spec/issues/258):
     if allow_none and None not in options:
-        options += [None]
+        options = options + [None]
     if not allow_none and None in options:
-        options.remove(None)
+        options = [o for o in options if o is not None]
 
-    assert len(options) == len(set(options)), f"Provided options must be unique! See: {options}"
-    assert default in options, f"Provided default `{default}` is not one of allowed options: {options} "
+    assert len(options) == len(
+        {o for o in options if o is not None} | ({None} if None in options else set())
+    ), f"Provided options must be unique! See: {options}"
+    assert default in options, f"Provided default `{default}` is not one of allowed options: {options}"
 
-    return field(
-        metadata={
-            "marshmallow_field": fields.String(
-                validate=validate.OneOf(options),
-                allow_none=allow_none,
-                load_default=default,
-                dump_default=default,
-                metadata={
-                    "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
-                },
-            )
-        },
-        default=default,
+    json_extra = _make_json_schema_extra(
+        description=description,
+        parameter_metadata=parameter_metadata,
+        enum=options,
     )
+    return Field(default=default, description=description, json_schema_extra=json_extra)
 
 
 @DeveloperAPI
@@ -375,10 +909,7 @@ def ProtectedString(
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
-    """Alias for a `StringOptions` field with only one option.
-
-    Useful primarily for `type` parameters.
-    """
+    """Alias for a `StringOptions` field with only one option."""
     return StringOptions(
         options=[pstring],
         default=pstring,
@@ -390,70 +921,40 @@ def ProtectedString(
 
 @DeveloperAPI
 def IntegerOptions(
-    options: TList[int],
+    options: list[int],
     default: None | int,
     allow_none: bool = False,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
-    """Returns a dataclass field with marshmallow metadata that enforces integer inputs must be one of `options`.
-
-    By default, None is allowed (and automatically appended) to the allowed list of options.
-    """
-    # If None should be allowed for an enum field, it also has to be defined as a valid
-    # [option](https://github.com/json-schema-org/json-schema-spec/issues/258):
+    """Returns a pydantic Field that enforces integer inputs must be one of `options`."""
     if len(options) <= 0:
-        raise ValidationError("Must provide non-empty list of options!")
+        raise ValueError("Must provide non-empty list of options!")
     if default is not None and not isinstance(default, int):
-        raise ValidationError(f"Provided default `{default}` should be an int!")
+        raise ValueError(f"Provided default `{default}` should be an int!")
     if allow_none and None not in options:
-        options += [None]
+        options = list(options) + [None]
     if not allow_none and None in options:
-        options.remove(None)
+        options = [o for o in options if o is not None]
     if default not in options:
-        raise ValidationError(f"Provided default `{default}` is not one of allowed options: {options} ")
-    return field(
-        metadata={
-            "marshmallow_field": fields.Integer(
-                validate=validate.OneOf(options),
-                allow_none=allow_none,
-                load_default=default,
-                dump_default=default,
-                metadata={
-                    "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
-                },
-            )
-        },
-        default=default,
+        raise ValueError(f"Provided default `{default}` is not one of allowed options: {options}")
+
+    json_extra = _make_json_schema_extra(
+        description=description,
+        parameter_metadata=parameter_metadata,
+        enum=options,
     )
+    return Field(default=default, description=description, json_schema_extra=json_extra)
 
 
 @DeveloperAPI
 def Boolean(default: bool, description: str = "", parameter_metadata: ParameterMetadata = None):
-    if default is not None:
-        try:
-            assert isinstance(default, bool)
-        except Exception:
-            raise ValidationError(f"Invalid default: `{default}`")
-    return field(
-        metadata={
-            "marshmallow_field": fields.Boolean(
-                truthy={True},
-                falsy={False},
-                # Necessary because marshmallow will otherwise cast any non-boolean value to a boolean:
-                validate=validate.OneOf([True, False]),
-                allow_none=False,
-                load_default=default,
-                dump_default=default,
-                metadata={
-                    "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
-                },
-            )
-        },
-        default=default,
-    )
+    """Returns a pydantic Field for boolean values."""
+    if default is not None and not isinstance(default, bool):
+        raise ValueError(f"Invalid default: `{default}`")
+
+    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata)
+    return Field(default=default, description=description, json_schema_extra=json_extra)
 
 
 @DeveloperAPI
@@ -463,27 +964,12 @@ def Integer(
     description="",
     parameter_metadata: ParameterMetadata = None,
 ):
-    """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs."""
-    if default is not None:
-        try:
-            assert isinstance(default, int)
-        except Exception:
-            raise ValidationError(f"Invalid default: `{default}`")
-    return field(
-        metadata={
-            "marshmallow_field": fields.Integer(
-                strict=True,
-                allow_none=allow_none,
-                load_default=default,
-                dump_default=default,
-                metadata={
-                    "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
-                },
-            )
-        },
-        default=default,
-    )
+    """Returns a pydantic Field strictly enforcing integer inputs."""
+    if default is not None and not isinstance(default, int):
+        raise ValueError(f"Invalid default: `{default}`")
+
+    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata)
+    return Field(default=default, description=description, json_schema_extra=json_extra)
 
 
 @DeveloperAPI
@@ -493,32 +979,13 @@ def PositiveInteger(
     allow_none: bool = False,
     parameter_metadata: ParameterMetadata = None,
 ):
-    """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
-    positive."""
-    val = validate.Range(min=1)
-
+    """Returns a pydantic Field enforcing positive integer inputs (>= 1)."""
     if default is not None:
-        try:
-            assert isinstance(default, int)
-            val(default)
-        except Exception:
-            raise ValidationError(f"Invalid default: `{default}`")
-    return field(
-        metadata={
-            "marshmallow_field": fields.Integer(
-                strict=True,
-                validate=val,
-                allow_none=allow_none,
-                load_default=default,
-                dump_default=default,
-                metadata={
-                    "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
-                },
-            )
-        },
-        default=default,
-    )
+        if not isinstance(default, int) or default < 1:
+            raise ValueError(f"Invalid default: `{default}`")
+
+    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata)
+    return Field(default=default, ge=1, description=description, json_schema_extra=json_extra)
 
 
 @DeveloperAPI
@@ -528,32 +995,13 @@ def NonNegativeInteger(
     allow_none: bool = False,
     parameter_metadata: ParameterMetadata = None,
 ):
-    """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
-    nonnegative."""
-    val = validate.Range(min=0)
-
+    """Returns a pydantic Field enforcing nonnegative integer inputs (>= 0)."""
     if default is not None:
-        try:
-            assert isinstance(default, int)
-            val(default)
-        except Exception:
-            raise ValidationError(f"Invalid default: `{default}`")
-    return field(
-        metadata={
-            "marshmallow_field": fields.Integer(
-                strict=True,
-                validate=val,
-                allow_none=allow_none,
-                load_default=default,
-                dump_default=default,
-                metadata={
-                    "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
-                },
-            )
-        },
-        default=default,
-    )
+        if not isinstance(default, int) or default < 0:
+            raise ValueError(f"Invalid default: `{default}`")
+
+    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata)
+    return Field(default=default, ge=0, description=description, json_schema_extra=json_extra)
 
 
 @DeveloperAPI
@@ -567,61 +1015,38 @@ def IntegerRange(
     min_inclusive: bool = True,
     max_inclusive: bool = True,
 ):
-    """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be in range
-    set by relevant keyword args."""
-    val = validate.Range(min=min, max=max, min_inclusive=min_inclusive, max_inclusive=max_inclusive)
-
+    """Returns a pydantic Field enforcing integer inputs within a range."""
     if default is not None:
-        try:
-            assert isinstance(default, int)
-            val(default)
-        except Exception:
-            raise ValidationError(f"Invalid default: `{default}`")
-    return field(
-        metadata={
-            "marshmallow_field": fields.Integer(
-                strict=True,
-                validate=val,
-                allow_none=allow_none,
-                load_default=default,
-                dump_default=default,
-                metadata={
-                    "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
-                },
-            )
-        },
-        default=default,
-    )
+        if not isinstance(default, int):
+            raise ValueError(f"Invalid default: `{default}`")
+        if min is not None and ((min_inclusive and default < min) or (not min_inclusive and default <= min)):
+            raise ValueError(f"Invalid default: `{default}` (below min {min})")
+        if max is not None and ((max_inclusive and default > max) or (not max_inclusive and default >= max)):
+            raise ValueError(f"Invalid default: `{default}` (above max {max})")
+
+    kwargs = {}
+    if min is not None:
+        kwargs["ge" if min_inclusive else "gt"] = min
+    if max is not None:
+        kwargs["le" if max_inclusive else "lt"] = max
+
+    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata)
+    return Field(default=default, description=description, json_schema_extra=json_extra, **kwargs)
 
 
 @DeveloperAPI
 def Float(
-    default: None | int,
+    default: None | float | int,
     allow_none=False,
     description="",
     parameter_metadata: ParameterMetadata = None,
 ):
-    """Returns a dataclass field with marshmallow metadata strictly enforcing float inputs."""
-    if default is not None:
-        try:
-            assert isinstance(default, float) or isinstance(default, int)
-        except Exception:
-            raise ValidationError(f"Invalid default: `{default}`")
-    return field(
-        metadata={
-            "marshmallow_field": fields.Float(
-                allow_none=allow_none,
-                load_default=default,
-                dump_default=default,
-                metadata={
-                    "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
-                },
-            )
-        },
-        default=default,
-    )
+    """Returns a pydantic Field for float inputs."""
+    if default is not None and not isinstance(default, (float, int)):
+        raise ValueError(f"Invalid default: `{default}`")
+
+    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata)
+    return Field(default=default, description=description, json_schema_extra=json_extra)
 
 
 @DeveloperAPI
@@ -632,30 +1057,19 @@ def NonNegativeFloat(
     max: float | None = None,
     parameter_metadata: ParameterMetadata = None,
 ):
-    """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be nonnegative."""
-    val = validate.Range(min=0.0, max=max)
-
+    """Returns a pydantic Field enforcing nonnegative float inputs."""
     if default is not None:
-        try:
-            assert isinstance(default, float) or isinstance(default, int)
-            val(default)
-        except Exception:
-            raise ValidationError(f"Invalid default: `{default}`")
-    return field(
-        metadata={
-            "marshmallow_field": fields.Float(
-                validate=val,
-                allow_none=allow_none,
-                load_default=default,
-                dump_default=default,
-                metadata={
-                    "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
-                },
-            )
-        },
-        default=default,
-    )
+        if not isinstance(default, (float, int)) or default < 0:
+            raise ValueError(f"Invalid default: `{default}`")
+        if max is not None and default > max:
+            raise ValueError(f"Invalid default: `{default}` (above max {max})")
+
+    kwargs = {"ge": 0.0}
+    if max is not None:
+        kwargs["le"] = max
+
+    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata)
+    return Field(default=default, description=description, json_schema_extra=json_extra, **kwargs)
 
 
 @DeveloperAPI
@@ -669,300 +1083,117 @@ def FloatRange(
     min_inclusive: bool = True,
     max_inclusive: bool = True,
 ):
-    """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be in range set by
-    relevant keyword args."""
-    val = validate.Range(min=min, max=max, min_inclusive=min_inclusive, max_inclusive=max_inclusive)
-
+    """Returns a pydantic Field enforcing float inputs within a range."""
     if default is not None:
-        try:
-            assert isinstance(default, float) or isinstance(default, int)
-            val(default)
-        except Exception:
-            raise ValidationError(f"Invalid default: `{default}`")
-    return field(
-        metadata={
-            "marshmallow_field": fields.Float(
-                validate=val,
-                allow_none=allow_none,
-                load_default=default,
-                dump_default=default,
-                metadata={
-                    "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
-                },
-            )
-        },
-        default=default,
-    )
+        if not isinstance(default, (float, int)):
+            raise ValueError(f"Invalid default: `{default}`")
+
+    kwargs = {}
+    if min is not None:
+        kwargs["ge" if min_inclusive else "gt"] = min
+    if max is not None:
+        kwargs["le" if max_inclusive else "lt"] = max
+
+    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata)
+    return Field(default=default, description=description, json_schema_extra=json_extra, **kwargs)
 
 
 @DeveloperAPI
 def Dict(
-    default: None | TDict = None,
+    default: None | dict = None,
     allow_none: bool = True,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
-    """Returns a dataclass field with marshmallow metadata enforcing input must be a dict."""
+    """Returns a pydantic Field for dict values."""
     allow_none = allow_none or default is None
 
     if default is not None:
-        try:
-            assert isinstance(default, dict)
-            assert all([isinstance(k, str) for k in default.keys()])
-        except Exception:
-            raise ValidationError(f"Invalid default: `{default}`")
+        if not isinstance(default, dict):
+            raise ValueError(f"Invalid default: `{default}`")
+        if not all(isinstance(k, str) for k in default.keys()):
+            raise ValueError(f"Invalid default: `{default}` (non-string keys)")
     elif not allow_none:
         default = {}
 
-    load_default = lambda: copy.deepcopy(default)
-    return field(
-        metadata={
-            "marshmallow_field": fields.Dict(
-                fields.String(),
-                allow_none=allow_none,
-                load_default=load_default,
-                dump_default=default,
-                metadata={
-                    "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
-                },
-            )
-        },
-        default_factory=load_default,
-    )
+    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata)
+
+    if default is None:
+        return Field(default=None, description=description, json_schema_extra=json_extra)
+    return Field(default_factory=lambda: copy.deepcopy(default), description=description, json_schema_extra=json_extra)
 
 
 @DeveloperAPI
 def List(
     list_type: type[str] | type[int] | type[float] | type[list] = str,
     inner_type: type[str] | type[int] | type[float] | type[dict] = float,
-    default: None | TList[Any] = None,
+    default: None | list[Any] = None,
     allow_none: bool = True,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
-    """Returns a dataclass field with marshmallow metadata enforcing input must be a list.
-
-    Args:
-        list_type: Type of the top-level list items.
-        inner_type: Type of the contents of inner lists. Only used when `list_type` is `list`.
-    """
+    """Returns a pydantic Field for list values."""
     if default is not None:
-        try:
-            assert isinstance(default, list)
-
-        except Exception:
-            raise ValidationError(f"Invalid default: `{default}`")
+        if not isinstance(default, list):
+            raise ValueError(f"Invalid default: `{default}`")
     elif not allow_none:
         default = []
 
-    type_map = {str: fields.String, int: fields.Integer, float: fields.Float}
+    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata)
 
-    # When using a flat list, we just need to check that the type of the contents is valid. Lists of lists were
-    # originally restricted to contain floats, but we now include a type check that includes all flat list types and
-    # dictionaries. List of list of dict supports some valid hyperopt categorical parameter configs (e.g.,
-    # hyperopting `decoder.fc_layers` configs).
-    if list_type is not list:
-        try:
-            field_type = type_map[list_type]()
-        except KeyError:
-            raise ValueError(f"Invalid list type: `{list_type}`")
-    else:
-        try:
-            inner_field_type = type_map[inner_type]() if inner_type is not dict else fields.Dict(fields.String())
-        except KeyError:
-            raise ValueError(f"Invalid inner list type. Requested list of {inner_type}.")
-        field_type = fields.List(inner_field_type)
-
-    load_default = lambda: copy.deepcopy(default)
-    return field(
-        metadata={
-            "marshmallow_field": fields.List(
-                field_type,
-                allow_none=allow_none,
-                load_default=load_default,
-                dump_default=default,
-                metadata={
-                    "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
-                },
-            )
-        },
-        default_factory=load_default,
-    )
+    if default is None:
+        return Field(default=None, description=description, json_schema_extra=json_extra)
+    return Field(default_factory=lambda: copy.deepcopy(default), description=description, json_schema_extra=json_extra)
 
 
 @DeveloperAPI
 def DictList(
-    default: None | TList[TDict] = None,
+    default: None | list[dict] = None,
     allow_none: bool = True,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
-    """Returns a dataclass field with marshmallow metadata enforcing input must be a list of dicts."""
+    """Returns a pydantic Field for list-of-dicts values."""
     if default is not None:
-        try:
-            assert isinstance(default, list)
-            assert all([isinstance(d, dict) for d in default])
-            for d in default:
-                assert all([isinstance(k, str) for k in d.keys()])
-        except Exception:
-            raise ValidationError(f"Invalid default: `{default}`")
+        if not isinstance(default, list) or not all(isinstance(d, dict) for d in default):
+            raise ValueError(f"Invalid default: `{default}`")
     elif not allow_none:
         default = []
 
-    load_default = lambda: copy.deepcopy(default)
-    return field(
-        metadata={
-            "marshmallow_field": fields.List(
-                fields.Dict(fields.String()),
-                allow_none=True,
-                load_default=load_default,
-                dump_default=default,
-                metadata={
-                    "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
-                },
-            )
-        },
-        default_factory=load_default,
-    )
+    json_extra = _make_json_schema_extra(description=description, parameter_metadata=parameter_metadata)
+
+    if default is None:
+        return Field(default=None, description=description, json_schema_extra=json_extra)
+    return Field(default_factory=lambda: copy.deepcopy(default), description=description, json_schema_extra=json_extra)
 
 
 @DeveloperAPI
 def Embed(description: str = "", parameter_metadata: ParameterMetadata = None):
-    """Returns a dataclass field with marshmallow metadata enforcing valid values for embedding input feature
-    names.
-
-    In particular, int and str values are allowed, and in the latter case the value must be one of the allowed
-    `_embed_options`.
-    """
+    """Returns a pydantic Field for embedding input feature names (int, str, or None)."""
     _embed_options = ["add"]
-
-    class EmbedInputFeatureNameField(fields.Field):
-        def _deserialize(self, value, attr, data, **kwargs):
-            if value is None:
-                return value
-
-            if isinstance(value, str):
-                if value not in _embed_options:
-                    raise ValidationError(f"Expected one of: {_embed_options}, found: {value}")
-                return value
-
-            if isinstance(value, int):
-                return value
-
-            raise ValidationError("Field should be int or str")
-
-        def _jsonschema_type_mapping(self):
-            return {
-                "oneOf": [
-                    {
-                        "type": "string",
-                        "enum": _embed_options,
-                        "default": "add",
-                        "title": "embed_string_option",
-                        "description": "MISSING",
-                    },
-                    {"type": "integer", "title": "embed_integer_option", "description": "MISSING"},
-                    {"type": "null", "title": "embed_null_option", "description": "MISSING"},
-                ],
-                "title": self.name,
-                "description": "Valid options for embedding (or not embedding) input feature names.",
-            }
-
-    return field(
-        metadata={
-            "marshmallow_field": EmbedInputFeatureNameField(
-                allow_none=True,
-                load_default=None,
-                dump_default=None,
-                metadata={
-                    "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
-                },
-            )
-        },
-        default=None,
+    json_extra = _make_json_schema_extra(
+        description=description,
+        parameter_metadata=parameter_metadata,
+        _embed_options=_embed_options,
     )
+    return Field(default=None, description=description, json_schema_extra=json_extra)
 
 
 @DeveloperAPI
 def InitializerOrDict(
     default: str = "xavier_uniform", description: str = "", parameter_metadata: ParameterMetadata = None
 ):
-    """Returns a dataclass field with marshmallow metadata allowing customizable initializers.
-
-    In particular, allows str or dict types; in the former case the field is equivalent to `InitializerOptions` while in
-    the latter case a dict can be defined with the `type` field enforced to be one of `initializer_registry` as usual
-    while additional properties are unrestricted.
-    """
+    """Returns a pydantic Field allowing str or dict initializer values."""
     initializers = list(initializer_registry.keys())
     if not isinstance(default, str) or default not in initializers:
-        raise ValidationError(f"Invalid default: `{default}`")
+        raise ValueError(f"Invalid default: `{default}`")
 
-    class InitializerOptionsOrCustomDictField(fields.Field):
-        def _deserialize(self, value, attr, data, **kwargs):
-            if isinstance(value, str):
-                if value not in initializers:
-                    raise ValidationError(f"Expected one of: {initializers}, found: {value}")
-                return value
-
-            if isinstance(value, dict):
-                if "type" not in value:
-                    raise ValidationError("Dict must contain 'type'")
-                if value["type"] not in initializers:
-                    raise ValidationError(f"Dict expected key 'type' to be one of: {initializers}, found: {value}")
-                return value
-
-            raise ValidationError("Field should be str or dict")
-
-        def _jsonschema_type_mapping(self):
-            initializers = list(initializer_registry.keys())
-            param_metadata = convert_metadata_to_json(parameter_metadata)
-            return {
-                "oneOf": [
-                    # Note: default not provided in the custom dict option:
-                    {
-                        "type": "object",
-                        "properties": {
-                            "type": {"type": "string", "enum": initializers},
-                        },
-                        "required": ["type"],
-                        "title": f"{self.name}_custom_option",
-                        "additionalProperties": True,  # Will be removed by initializer refactor PR.
-                        "description": "Customize an existing initializer.",
-                        "parameter_metadata": param_metadata,
-                    },
-                    {
-                        "type": "string",
-                        "enum": initializers,
-                        "default": default,
-                        "title": f"{self.name}_preconfigured_option",
-                        "description": "Pick a preconfigured initializer.",
-                        "parameter_metadata": param_metadata,
-                    },
-                ],
-                "title": self.name,
-                "default": default,
-                "description": description,
-            }
-
-    return field(
-        metadata={
-            "marshmallow_field": InitializerOptionsOrCustomDictField(
-                allow_none=False,
-                load_default=default,
-                dump_default=default,
-                metadata={
-                    "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
-                },
-            )
-        },
-        default=default,
+    json_extra = _make_json_schema_extra(
+        description=description,
+        parameter_metadata=parameter_metadata,
+        _initializer_options=initializers,
     )
+    return Field(default=default, description=description, json_schema_extra=json_extra)
 
 
 @DeveloperAPI
@@ -975,215 +1206,64 @@ def FloatRangeTupleDataclassField(
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
-    """Returns a dataclass field with marshmallow metadata enforcing a `N`-dim.
+    """Returns a pydantic Field for an N-dim tuple with values in a range."""
+    if default is not None:
+        if n != len(default):
+            raise ValueError(f"Dimension of tuple '{n}' must match dimension of default val. '{default}'")
+        for v in default:
+            if min is not None and v < min:
+                raise ValueError(f"Invalid default: value {v} below minimum {min}")
+            if max is not None and v > max:
+                raise ValueError(f"Invalid default: value {v} above maximum {max}")
+    if default is None and not allow_none:
+        raise ValueError("Default value must not be None if allow_none is False")
 
-    tuple with all values in given range. In particular, inputs must be N-dimensional tuples of purely numeric values
-    within [min, max] range, i.e. inclusive. The generated JSON schema uses a restricted array type as the equivalent
-    representation of a Python tuple.
-    """
-    if default is not None and n != len(default):
-        raise ValidationError(f"Dimension of tuple '{n}' must match dimension of default val. '{default}'")
-
-    class FloatTupleMarshmallowField(fields.Tuple):
-        def _jsonschema_type_mapping(self):
-            if default is not None:
-                validate_range(default)
-            items_schema = {"type": "number"}
-            if min is not None:
-                items_schema["minimum"] = min
-            if max is not None:
-                items_schema["maximum"] = max
-            one_of = [
-                {
-                    "type": "array",
-                    "items": [{**items_schema}] * n,
-                    "default": default,
-                    "description": description,
-                },
-            ]
-            if allow_none:
-                one_of.append({"type": "null", "title": "null_float_tuple_option", "description": "None"})
-            return {
-                "oneOf": one_of,
-                "title": self.name,
-                "default": default,
-                "description": "Valid options for FloatRangeTupleDataclassField.",
-            }
-
-    def validate_range(data: tuple):
-        if isinstance(data, tuple) and all([isinstance(x, float) or isinstance(x, int) for x in data]):
-            minmax_checks = []
-            if min is not None:
-                minmax_checks += list(map(lambda b: min <= b, data))
-            if max is not None:
-                minmax_checks += list(map(lambda b: b <= max, data))
-            if all(minmax_checks):
-                return data
-            raise ValidationError(
-                f"Values in received tuple should be in range [{min}, {max}], instead received: {data}"
-            )
-        raise ValidationError(f'Received value should be of {n}-dimensional "Tuple[float]", instead received: {data}')
-
-    try:
-        if default is not None:
-            validate_range(default)
-        if default is None and not allow_none:
-            raise ValidationError("Default value must not be None if allow_none is False")
-    except Exception:
-        raise ValidationError(f"Invalid default: `{default}`")
-
-    return field(
-        metadata={
-            "marshmallow_field": FloatTupleMarshmallowField(
-                tuple_fields=[fields.Float()] * n,
-                allow_none=allow_none,
-                validate=validate_range,
-                load_default=default,
-                dump_default=default,
-                metadata={
-                    "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
-                },
-            )
-        },
-        default=default,
+    json_extra = _make_json_schema_extra(
+        description=description,
+        parameter_metadata=parameter_metadata,
+        _float_tuple_range={"n": n, "min": min, "max": max},
     )
+    return Field(default=default, description=description, json_schema_extra=json_extra)
 
 
 @DeveloperAPI
 def OneOfOptionsField(
     default: Any,
     description: str,
-    field_options: TList,
+    field_options: list,
     allow_none: bool = False,
     parameter_metadata: ParameterMetadata = None,
 ):
-    """Returns a dataclass field that is a combination of the other fields defined in `ludwig.schema.utils`.
+    """Returns a pydantic Field that accepts values matching any of the field_options.
 
-    NOTE: There can be at most one field_option with `allow_none=True`, or else a None value can be attributed to
-    multiple field_options, which this JSON validator does not permit.
+    Pydantic union validation handles the multi-type dispatch. The field_options are stored in json_schema_extra for
+    JSON schema generation.
     """
-    if default is None:
-        # If the default is None, then this field allows none.
-        allow_none = True
-
-    fields_that_allow_none = [option for option in field_options if option.metadata["marshmallow_field"].allow_none]
-    if len(fields_that_allow_none) > 1 and allow_none:
-        raise ValueError(
-            f"The governing OneOf has allow_none=True, but there are some field options that themselves "
-            "allow_none=True, which is ambiguous for JSON validation. To maintain allow_none=True for the overall "
-            "field, add allow_none=False to each of the field_options: "
-            f"{[get_marshmallow_field_class_name(field) for field in fields_that_allow_none]}, and rely on the "
-            "governing OneOf's allow_none=True to set the allow_none policy."
-        )
-
-    if fields_that_allow_none and not allow_none:
-        raise ValueError(
-            "The governing OneOf has allow_none=False, while None is permitted by the following field_options: "
-            f"{[get_marshmallow_field_class_name(field) for field in fields_that_allow_none]}. This is contradictory. "
-            "Please set allow_none=False for each field option to make this consistent."
-        )
-
-    class OneOfOptionsCombinatorialField(fields.Field):
-        def _serialize(self, value, attr, obj, **kwargs):
-            if allow_none and value is None:
-                return None
-            for option in field_options:
-                mfield_meta = option.metadata["marshmallow_field"]
-                try:
-                    if value is None and mfield_meta.allow_none:
-                        return None
-                    # Not every field (e.g. our custom dataclass fields) has a `validate` method:
-                    if mfield_meta.validate:
-                        mfield_meta.validate(value)
-                    return mfield_meta._serialize(value, attr, obj, **kwargs)
-                except Exception:
-                    continue
-            raise ValidationError(f"Value to serialize does not match any valid option schemas: {value}")
-
-        def _deserialize(self, value, attr, obj, **kwargs):
-            if allow_none and value is None:
-                return None
-            for option in field_options:
-                mfield_meta = option.metadata["marshmallow_field"]
-                try:
-                    # Not every field (e.g. our custom dataclass fields) has a `validate` method:
-                    if mfield_meta.validate:
-                        mfield_meta.validate(value)
-                    return mfield_meta._deserialize(value, attr, obj, **kwargs)
-                except Exception:
-                    continue
-            raise ValidationError(f"Value to deserialize does not match any valid option schemas: {value}")
-
-        def _jsonschema_type_mapping(self):
-            """Constructs a oneOf schema by iteratively adding the schemas of `field_options` to a list."""
-            oneOf = {
-                "oneOf": [],
-                "description": description,
-                "default": default,
-                "title": self.name,
-                "parameter_metadata": convert_metadata_to_json(parameter_metadata),
-            }
-
-            for idx, option in enumerate(field_options):
-                mfield_meta = option.metadata["marshmallow_field"]
-
-                # Necessary for key/name de-duplication in case a name is not supplied by the user:
-                mfield_meta_class_name = str(mfield_meta.__class__).split(".")[-1].split("'")[0].lower()
-
-                # If the option inherits from a custom dataclass-field, then use the custom jsonschema:
-                if hasattr(mfield_meta, "_jsonschema_type_mapping"):
-                    oneOf["oneOf"].append(mfield_meta._jsonschema_type_mapping())
-                # Otherwise, extract the jsonschema using a dummy dataclass as intermediary:
-                else:
-
-                    @m_dataclass
-                    class DummyClass:
-                        tmp: Any = option
-
-                    dummy_schema = unload_jsonschema_from_marshmallow_class(DummyClass)
-                    tmp_json_schema = dummy_schema["properties"]["tmp"]
-                    # Manually set the title, otherwise it would be 'tmp':
-                    tmp_json_schema["title"] = f"{self.name}_{mfield_meta_class_name}_option"
-                    oneOf["oneOf"].append(tmp_json_schema)
-
-            # Add null as an option if we want to allow none but none of the field options allow none.
-            any_field_options_allow_none = any(
-                option.metadata["marshmallow_field"].allow_none for option in field_options
-            )
-            if allow_none and not any_field_options_allow_none:
-                oneOf["oneOf"] += [{"type": "null", "title": "null_option", "description": "Disable this parameter."}]
-
-            return oneOf
-
-    # Create correct default kwarg to pass to dataclass field constructor:
-    def is_primitive(value):
-        primitive = (int, str, bool)
-        return isinstance(value, primitive)
-
-    default_kwarg = {}
-    if is_primitive(default):
-        default_kwarg["default"] = default
-    else:
-        default_kwarg["default_factory"] = lambda: default
-
-    return field(
-        metadata={
-            "marshmallow_field": OneOfOptionsCombinatorialField(
-                allow_none=allow_none,
-                load_default=default,
-                dump_default=default,
-                metadata={
-                    "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
-                },
-            ),
-        },
-        **default_kwarg,
+    json_extra = _make_json_schema_extra(
+        description=description,
+        parameter_metadata=parameter_metadata,
+        _oneof_options=True,
     )
 
+    if default is None or isinstance(default, (int, str, bool)):
+        return Field(default=default, description=description, json_schema_extra=json_extra)
+    return Field(default_factory=lambda: copy.deepcopy(default), description=description, json_schema_extra=json_extra)
 
-class TypeSelection(fields.Field):
+
+# ============================================================================
+# TypeSelection - Polymorphic config dispatch based on registry
+# ============================================================================
+
+
+class TypeSelection(mm_fields.Field):
+    """Resolves polymorphic config types from a registry based on a key field.
+
+    Used for fields like encoder, decoder, optimizer where the config class depends on a "type" key in the dict value.
+
+    Inherits from marshmallow fields.Field for backward compatibility with code that uses TypeSelection instances as
+    inner fields in marshmallow List/Nested constructs.
+    """
+
     def __init__(
         self,
         registry: Registry,
@@ -1193,116 +1273,150 @@ class TypeSelection(fields.Field):
         parameter_metadata: ParameterMetadata = None,
         allow_str_value: bool = False,
         allow_none: bool = False,
+        **kwargs,
     ):
+        super().__init__(**kwargs)
         self.registry = registry
         self.default_value = default_value
         self.key = key
         self.allow_str_value = allow_str_value
-
-        dump_default = missing
-        load_default = missing
-        self.default_factory = None
-        if self.default_value is not None:
-            default_obj = {key: default_value}
-            cls = self.get_schema_from_registry(self.default_value.lower())
-            self.default_factory = lambda: cls.Schema().load(default_obj)
-            load_default = self.default_factory
-            dump_default = cls.Schema().dump(default_obj)
-
-        super().__init__(
-            allow_none=allow_none,
-            dump_default=dump_default,
-            load_default=load_default,
-            metadata={"description": description, "parameter_metadata": convert_metadata_to_json(parameter_metadata)},
-        )
+        self.allow_none = allow_none
+        self.description = description
+        self.parameter_metadata = parameter_metadata
 
     def _deserialize(self, value, attr, data, **kwargs):
+        """Marshmallow deserialization - delegates to resolve()."""
+        return self.resolve(value)
+
+    def resolve(self, value):
+        """Resolve a raw value (dict, str, None) to a config instance."""
         if value is None:
+            if self.allow_none:
+                return None
             return None
 
+        # Already a config instance
+        if isinstance(value, BaseMarshmallowConfig):
+            return value
+
         if self.allow_str_value and isinstance(value, str):
-            # If user provided the value as a string, assume they were providing the type
             value = self.str_value_to_object(value)
 
         if isinstance(value, dict):
             cls_type = value.get(self.key)
             cls_type = cls_type.lower() if cls_type else self.default_value
-            if cls_type in self.registry:
+            if cls_type and cls_type in self.registry:
                 cls = self.get_schema_from_registry(cls_type)
                 try:
-                    return cls.Schema().load(value)
-                except (TypeError, ValidationError) as e:
-                    raise ValidationError(f"Invalid params: {value}, see `{cls}` definition") from e
-            raise ValidationError(f"Invalid type: '{cls_type}', expected one of: {list(self.registry.keys())}")
+                    return cls.model_validate(value)
+                except (TypeError, PydanticValidationError) as e:
+                    raise MarshmallowValidationError(f"Invalid params: {value}, see `{cls}` definition") from e
+            raise MarshmallowValidationError(
+                f"Invalid type: '{cls_type}', expected one of: {list(self.registry.keys())}"
+            )
 
         maybe_str = ", `str`," if self.allow_str_value else ""
-        raise ValidationError(f"Invalid param {value}, expected `None`{maybe_str} or `dict`")
+        raise MarshmallowValidationError(f"Invalid param {value}, expected `None`{maybe_str} or `dict`")
 
-    def str_value_to_object(self, value: str) -> str:
+    def str_value_to_object(self, value: str) -> dict:
+        """Convert a string shorthand to a dict with the type key."""
         return {self.key: value}
 
     def get_schema_from_registry(self, key: str) -> type[BaseMarshmallowConfig]:
+        """Look up a config class from the registry."""
         return self.registry[key]
 
-    # TODO: Maybe need to plumb 'required' through here
-    def get_default_field(self) -> Field:
-        default_factory = lambda: None
-        if self.default_factory is not None:
-            default_factory = self.default_factory
+    def get_default_field(self) -> FieldInfo:
+        """Create a pydantic Field wrapping this TypeSelection.
 
-        return field(
-            metadata={"marshmallow_field": self},
+        The TypeSelection instance is stored in Field.metadata so the base class's model_validator can use it for
+        dispatch.
+        """
+        if self.default_value is not None:
+            cls = self.get_schema_from_registry(self.default_value.lower())
+            key = self.key
+            dv = self.default_value
+
+            def default_factory(cls=cls, key=key, dv=dv):
+                return cls.model_validate({key: dv})
+
+        else:
+
+            def default_factory():
+                return None
+
+        return Field(
             default_factory=default_factory,
+            metadata=[_TypeSelectionMarker(self)],
         )
+
+    def _jsonschema_type_mapping(self):
+        """Override in subclass for custom JSON schema."""
+        return None
 
 
 @DeveloperAPI
-class DictMarshmallowField(fields.Field):
+class DictMarshmallowField(mm_fields.Field):
+    """Validates a dict as a specific config class (non-polymorphic).
+
+    Used for fields where a dict should be deserialized into a fixed config class. Inherits from marshmallow
+    fields.Field for backward compat.
+    """
+
     def __init__(
         self,
         cls: type[BaseMarshmallowConfig],
         allow_none: bool = True,
         default_missing: bool = False,
         description: str = "",
+        **kwargs,
     ):
+        super().__init__(**kwargs)
         self.cls = cls
-
-        dump_default = missing
-        load_default = missing
-        self.default_factory = None
-        if not default_missing:
-            default_obj = {}
-            self.default_factory = lambda: cls.Schema().load(default_obj)
-            load_default = self.default_factory
-            dump_default = cls.Schema().dump(default_obj)
-
-        super().__init__(
-            allow_none=allow_none,
-            dump_default=dump_default,
-            load_default=load_default,
-            metadata={"description": description},
-        )
+        self.allow_none = allow_none
+        self.default_missing = default_missing
+        self.description = description
 
     def _deserialize(self, value, attr, data, **kwargs):
+        """Marshmallow deserialization - delegates to pydantic model_validate."""
         if value is None:
             return value
         if isinstance(value, dict):
             try:
-                return self.cls.Schema().load(value)
-            except (TypeError, ValidationError) as e:
-                # TODO(travis): this seems much too verbose, does the validation error not show the specific error?
-                raise ValidationError(f"Invalid params: {value}, see `{self.cls}` definition. Error: {e}")
-        raise ValidationError(f"Invalid param {value}, expected `None` or `dict`")
+                return self.cls.model_validate(value)
+            except (TypeError, PydanticValidationError) as e:
+                raise MarshmallowValidationError(f"Invalid params: {value}, see `{self.cls}` definition") from e
+        raise MarshmallowValidationError("Field should be None or dict")
 
-    def get_default_field(self) -> Field:
-        default_factory = lambda: None
-        if self.default_factory is not None:
-            default_factory = self.default_factory
+    def get_default_field(self) -> FieldInfo:
+        """Create a pydantic Field wrapping this DictMarshmallowField."""
+        if not self.default_missing:
+            cls = self.cls
 
-        return field(
-            metadata={"marshmallow_field": self},
+            def default_factory(cls=cls):
+                return cls.model_validate({})
+
+        else:
+
+            def default_factory():
+                return None
+
+        # Check if subclass overrides _jsonschema_type_mapping - if so, use
+        # MarshmallowFieldMarker to preserve custom JSON schema generation
+        has_custom_schema = type(self)._jsonschema_type_mapping is not DictMarshmallowField._jsonschema_type_mapping
+        if has_custom_schema:
+            marker = _MarshmallowFieldMarker(self)
+        else:
+            marker = _NestedConfigMarker(self.cls, self.allow_none)
+
+        return Field(
             default_factory=default_factory,
+            metadata=[marker],
         )
 
     def _jsonschema_type_mapping(self):
         return unload_jsonschema_from_marshmallow_class(self.cls)
+
+
+# Keep ValidationError accessible for backward compat
+ValidationError = MarshmallowValidationError

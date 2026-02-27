@@ -10,7 +10,7 @@ from packaging import version
 
 try:
     from bitsandbytes.nn.modules import Embedding as BnbEmbedding
-except ImportError:
+except Exception:
     BnbEmbedding = None
 from transformers import AutoConfig, AutoModelForCausalLM, PreTrainedModel, PreTrainedTokenizer, TextStreamer
 

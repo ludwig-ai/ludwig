@@ -6,7 +6,7 @@ import torch
 
 try:
     import bitsandbytes as bnb
-except ImportError:
+except Exception:
     bnb = None
 from marshmallow import fields, ValidationError
 

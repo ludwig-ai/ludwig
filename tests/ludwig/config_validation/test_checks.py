@@ -507,4 +507,4 @@ def test_check_llm_text_encoder_is_not_used_with_ecd():
     with pytest.raises(ConfigValidationError) as excinfo:
         ModelConfig.from_dict(config)
 
-    assert str(excinfo.value) == "Please use the `model_type: llm` for text-to-text models."
+    assert "Please use the `model_type: llm` for text-to-text models." in str(excinfo.value)
