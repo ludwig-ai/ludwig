@@ -2,7 +2,6 @@ import os
 import tempfile
 
 import torch
-from marshmallow_dataclass import dataclass
 from torch import nn, Tensor
 
 from ludwig.api import LudwigModel
@@ -23,6 +22,7 @@ from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.features.loss.loss import BaseLossConfig
 from ludwig.schema.features.loss.loss import register_loss as register_loss_schema
+from ludwig.schema.utils import ludwig_dataclass as dataclass
 from tests.integration_tests.utils import (
     category_feature,
     generate_data,

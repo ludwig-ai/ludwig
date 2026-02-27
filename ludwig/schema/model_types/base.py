@@ -2,8 +2,6 @@ import copy
 from abc import ABC
 from typing import Any
 
-from marshmallow import ValidationError
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.config_validation.checks import get_config_check_registry
 from ludwig.config_validation.validation import check_schema
@@ -113,7 +111,7 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
         config["model_type"] = config.get("model_type", MODEL_ECD)
         model_type = config["model_type"]
         if model_type not in model_type_schema_registry:
-            raise ValidationError(
+            raise ConfigValidationError(
                 f"Invalid model type: '{model_type}', expected one of: {list(model_type_schema_registry.keys())}"
             )
 
@@ -139,7 +137,9 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
         schema = cls.get_class_schema()()
         try:
             config_obj: ModelConfig = schema.load(config)
-        except ValidationError as e:
+        except ConfigValidationError:
+            raise
+        except ValueError as e:
             raise ConfigValidationError(f"Config validation error raised during config deserialization: {e}") from e
         except (OSError, ValueError) as e:
             raise ConfigValidationError(f"Config validation error raised during config post-init: {e}") from e

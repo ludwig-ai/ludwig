@@ -1,4 +1,4 @@
-from marshmallow.fields import Field
+from pydantic.fields import FieldInfo
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
@@ -6,7 +6,7 @@ from ludwig.schema.hyperopt.utils import register_parameter_config
 from ludwig.schema.utils import ludwig_dataclass
 
 
-def quantization_number_field(dtype: type[float] | type[int] = float, default=None) -> Field:
+def quantization_number_field(dtype: type[float] | type[int] = float, default=None) -> FieldInfo:
     description = (
         "Quantization number. Output values will be rounded to the nearest increment of `q` in range."
         "Quantization makes the upper bound inclusive."
@@ -19,7 +19,7 @@ def quantization_number_field(dtype: type[float] | type[int] = float, default=No
     return field
 
 
-def log_base_field(default: float = 10) -> Field:
+def log_base_field(default: float = 10) -> FieldInfo:
     return schema_utils.FloatRange(default=default, description="Logarithmic base.")
 
 

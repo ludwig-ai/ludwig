@@ -1,9 +1,8 @@
 import logging
 from collections.abc import Iterable
-from dataclasses import Field, field
+from dataclasses import field
 from typing import Any, Generic, TypeVar
 
-from marshmallow import fields, validate
 from rich.console import Console
 
 from ludwig.api_annotations import DeveloperAPI
@@ -211,17 +210,53 @@ class FeatureCollection(Generic[T], schema_utils.ListSerializable):
             return self._features[i]
 
 
-class FeatureList(fields.List):
-    def _serialize(self, value, attr, obj, **kwargs) -> list[Any] | None:
-        if value is None:
-            return None
+class FeatureList(schema_utils.LudwigSchemaField):
+    """A schema field that deserializes a list of dicts into a FeatureCollection.
 
-        value_list = value.to_list()
-        return super()._serialize(value_list, attr, obj, **kwargs)
+    Each item is resolved via the inner TypeSelection's resolve() method.
+    """
+
+    def __init__(
+        self,
+        inner: schema_utils.TypeSelection,
+        min_length: int | None = None,
+        max_length: int | None = None,
+        equal: int | None = None,
+        metadata: dict | None = None,
+    ):
+        self.inner = inner
+        self.min_length = min_length
+        self.max_length = max_length
+        self.equal = equal
+        self.metadata = metadata or {}
 
     def _deserialize(self, value, attr, data, **kwargs) -> FeatureCollection:
-        feature_list = super()._deserialize(value, attr, data, **kwargs)
+        if not isinstance(value, list):
+            raise ConfigValidationError(f"Expected a list of features for '{attr}', got {type(value).__name__}")
+
+        # Validate length constraints
+        n = len(value)
+        if self.equal is not None and n != self.equal:
+            raise ConfigValidationError(f"Expected exactly {self.equal} feature(s) for '{attr}', got {n}")
+        if self.min_length is not None and n < self.min_length:
+            raise ConfigValidationError(f"Expected at least {self.min_length} feature(s) for '{attr}', got {n}")
+        if self.max_length is not None and n > self.max_length:
+            raise ConfigValidationError(f"Expected at most {self.max_length} feature(s) for '{attr}', got {n}")
+
+        feature_list = [self.inner.resolve(item) for item in value]
         return FeatureCollection(feature_list)
+
+    def _jsonschema_type_mapping(self):
+        inner_schema = self.inner._jsonschema_type_mapping() or {}
+        result = {"type": "array", "items": inner_schema}
+        if self.min_length is not None:
+            result["minItems"] = self.min_length
+        if self.max_length is not None:
+            result["maxItems"] = self.max_length
+        if self.equal is not None:
+            result["minItems"] = self.equal
+            result["maxItems"] = self.equal
+        return result
 
 
 class FeaturesTypeSelection(schema_utils.TypeSelection):
@@ -238,7 +273,7 @@ class FeaturesTypeSelection(schema_utils.TypeSelection):
         self.max_length = max_length
         self.supplementary_metadata = {} if supplementary_metadata is None else supplementary_metadata
 
-    def get_list_field(self) -> Field:
+    def get_list_field(self):
         min_length = self.min_length
         max_length = self.max_length
         equal = None
@@ -251,11 +286,9 @@ class FeaturesTypeSelection(schema_utils.TypeSelection):
             metadata={
                 "marshmallow_field": FeatureList(
                     self,
-                    validate=validate.Length(
-                        min=min_length,
-                        max=max_length,
-                        equal=equal,
-                    ),
+                    min_length=min_length,
+                    max_length=max_length,
+                    equal=equal,
                     metadata=self.supplementary_metadata,
                 )
             },

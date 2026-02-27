@@ -1,9 +1,8 @@
 from dataclasses import field
 
-from marshmallow import fields, ValidationError
-
 import ludwig.schema.utils as schema_utils
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.error import ConfigValidationError
 from ludwig.schema.utils import ludwig_dataclass
 
 
@@ -60,8 +59,8 @@ def ProfilerDataclassField(description: str, default: dict = {}):
     """
     allow_none = True
 
-    class ProfilingMarshmallowField(fields.Field):
-        """Custom marshmallow field class for the torch profiler.
+    class ProfilingMarshmallowField(schema_utils.LudwigSchemaField):
+        """Custom field class for the torch profiler.
 
         Deserializes a dict to a valid instance of `ludwig.modules.optimization_modules.ProfilerConfig` and
         creates a corresponding JSON schema for external usage.
@@ -73,9 +72,11 @@ def ProfilerDataclassField(description: str, default: dict = {}):
             if isinstance(value, dict):
                 try:
                     return ProfilerConfig.Schema().load(value)
-                except (TypeError, ValidationError):
-                    raise ValidationError(f"Invalid params for profiling config: {value}, see ProfilerConfig class.")
-            raise ValidationError("Field should be None or dict")
+                except (TypeError, ConfigValidationError):
+                    raise ConfigValidationError(
+                        f"Invalid params for profiling config: {value}, see ProfilerConfig class."
+                    )
+            raise ConfigValidationError("Field should be None or dict")
 
         def _jsonschema_type_mapping(self):
             return {
@@ -85,7 +86,7 @@ def ProfilerDataclassField(description: str, default: dict = {}):
             }
 
     if not isinstance(default, dict):
-        raise ValidationError(f"Invalid default: `{default}`")
+        raise ConfigValidationError(f"Invalid default: `{default}`")
 
     def load_default():
         return ProfilerConfig.Schema().load(default)

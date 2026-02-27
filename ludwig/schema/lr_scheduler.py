@@ -1,11 +1,10 @@
 from abc import ABC
 from dataclasses import field
 
-from marshmallow import fields, ValidationError
-
 import ludwig.schema.utils as schema_utils
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import LOSS, MODEL_ECD, TRAINING
+from ludwig.error import ConfigValidationError
 from ludwig.schema.metadata import TRAINER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
@@ -138,8 +137,8 @@ def LRSchedulerDataclassField(description: str, default: dict = None):
     allow_none = True
     default = default or {}
 
-    class LRSchedulerMarshmallowField(fields.Field):
-        """Custom marshmallow field class for learjing rate scheduler.
+    class LRSchedulerMarshmallowField(schema_utils.LudwigSchemaField):
+        """Custom field class for learning rate scheduler.
 
         Deserializes a dict to a valid instance of `LRSchedulerConfig` and creates a corresponding JSON schema for
         external usage.
@@ -151,12 +150,11 @@ def LRSchedulerDataclassField(description: str, default: dict = None):
             if isinstance(value, dict):
                 try:
                     return LRSchedulerConfig.Schema().load(value)
-                except (TypeError, ValidationError) as e:
-                    # TODO(travis): this seems much too verbose, does the validation error not show the specific error?
-                    raise ValidationError(
+                except (TypeError, ConfigValidationError) as e:
+                    raise ConfigValidationError(
                         f"Invalid params for learning rate scheduler: {value}, see LRSchedulerConfig class. Error: {e}"
                     )
-            raise ValidationError("Field should be None or dict")
+            raise ConfigValidationError("Field should be None or dict")
 
         def _jsonschema_type_mapping(self):
             return {
@@ -166,7 +164,7 @@ def LRSchedulerDataclassField(description: str, default: dict = None):
             }
 
     if not isinstance(default, dict):
-        raise ValidationError(f"Invalid default: `{default}`")
+        raise ConfigValidationError(f"Invalid default: `{default}`")
 
     load_default = lambda: LRSchedulerConfig.Schema().load(default)
     dump_default = LRSchedulerConfig.Schema().dump(default)
