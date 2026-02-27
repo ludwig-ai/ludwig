@@ -1,5 +1,5 @@
 {
-	"name": "Python 3",
+	"name": "Ludwig Dev",
 	"build": {
 		"dockerfile": "Dockerfile",
 		"context": ".."
@@ -7,23 +7,18 @@
 	"customizations": {
 		"vscode": {
 			"settings": {
-				"python.defaultInterpreterPath": "/home/ray/anaconda3/bin/python"
+				"python.defaultInterpreterPath": "/usr/local/bin/python"
 			},
 			"extensions": [
 				"ms-python.python",
-				"ms-python.vscode-pylance"
+				"ms-python.vscode-pylance",
+				"charliermarsh.ruff"
 			]
 		}
 	},
-	"postCreateCommand": "pip install .[test]",
-	"runArgs": [
-		"--network=host",
-		"--shm-size=3.55gb"
-	],
-	"remoteUser": "ray",
+	"postCreateCommand": "pip install --user -e '.[test]'",
+	"remoteUser": "vscode",
 	"features": {
-		"docker-in-docker": "latest",
-		"git": "latest",
-		"aws-cli": "latest"
+		"ghcr.io/devcontainers/features/git:1": {}
 	}
 }
