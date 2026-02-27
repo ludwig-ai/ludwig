@@ -768,17 +768,14 @@ class LudwigModel:
 
                 self.training_set_metadata = training_set_metadata
 
-                # Ensure model weights are saved to the driver if training was done remotely
-                if self.backend.is_coordinator() and not skip_save_model:
-                    self.model.save(model_dir)
-
                 if self.is_merge_and_unload_set():
-                    # For an LLM model trained with a LoRA adapter, handle merge and unload postprocessing directives.
+                    # For an LLM model trained with a LoRA adapter, merge first, then save the full model.
                     self.model.merge_and_unload(progressbar=self.config_obj.adapter.postprocessor.progressbar)
 
-                    # Also: Ensure that the full model weights are saved to the driver if training was done remotely.
                     if self.backend.is_coordinator() and not skip_save_model:
                         self.model.save_base_model(model_dir)
+                elif self.backend.is_coordinator() and not skip_save_model:
+                    self.model.save(model_dir)
 
                 # Synchronize model weights between workers
                 self.backend.sync_model(self.model)
@@ -1848,10 +1845,13 @@ class LudwigModel:
         # load model weights
         ludwig_model.load_weights(model_dir, from_checkpoint)
 
-        # The LoRA layers appear to be loaded again (perhaps due to a potential bug); hence, we merge and unload again.
+        # If merge_and_unload was NOT performed before saving (i.e., adapter weights exist),
+        # we need to merge them now for inference.
         if ludwig_model.is_merge_and_unload_set():
-            # For an LLM model trained with a LoRA adapter, handle merge and unload postprocessing directives.
-            ludwig_model.model.merge_and_unload(progressbar=config_obj.adapter.postprocessor.progressbar)
+            weights_save_path = os.path.join(model_dir, MODEL_WEIGHTS_FILE_NAME)
+            adapter_config_path = os.path.join(weights_save_path, "adapter_config.json")
+            if os.path.exists(adapter_config_path):
+                ludwig_model.model.merge_and_unload(progressbar=config_obj.adapter.postprocessor.progressbar)
 
         # load train set metadata
         ludwig_model.training_set_metadata = backend.broadcast_return(

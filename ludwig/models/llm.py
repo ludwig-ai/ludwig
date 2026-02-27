@@ -630,13 +630,23 @@ class LLM(BaseModel):
         """Loads the model from the given path."""
         weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
         if self.config_obj.adapter:
-            from peft import PeftModel  # noqa
+            # Check if the saved weights are merged (no adapter_config.json) or adapter-only
+            adapter_config_path = os.path.join(weights_save_path, "adapter_config.json")
+            if os.path.exists(adapter_config_path):
+                from peft import PeftModel  # noqa
 
-            if isinstance(self.model, PeftModel):
-                # Unwrap and reload PeftModel
-                self.model = self.model.base_model
+                if isinstance(self.model, PeftModel):
+                    # Unwrap and reload PeftModel
+                    self.model = self.model.base_model
 
-            self.model = PeftModel.from_pretrained(self.model, weights_save_path)
+                self.model = PeftModel.from_pretrained(self.model, weights_save_path)
+            else:
+                # Weights were already merged (merge_and_unload was done before save),
+                # so load as a regular pretrained model.
+                logger.info("Loading merged LoRA weights (no adapter_config.json found).")
+                self.model = load_pretrained_from_config(
+                    self.config_obj, model_config=self.model_config, weights_save_path=weights_save_path
+                )
         elif self.config_obj.trainer.type != "none":
             self.model = load_pretrained_from_config(
                 self.config_obj, model_config=self.model_config, weights_save_path=weights_save_path
