@@ -33,6 +33,7 @@ def test_sequence_length_3D(input_sequence: list[list[list[int]]], expected_outp
 @contextlib.contextmanager
 def clean_params():
     prev = _get_torch_init_params()
+    prev_cuda = os.environ.get("CUDA_VISIBLE_DEVICES")
     try:
         _set_torch_init_params(None)
         if "CUDA_VISIBLE_DEVICES" in os.environ:
@@ -40,6 +41,11 @@ def clean_params():
         yield
     finally:
         _set_torch_init_params(prev)
+        # Restore CUDA_VISIBLE_DEVICES to prevent contaminating other tests
+        if prev_cuda is not None:
+            os.environ["CUDA_VISIBLE_DEVICES"] = prev_cuda
+        elif "CUDA_VISIBLE_DEVICES" in os.environ:
+            del os.environ["CUDA_VISIBLE_DEVICES"]
 
 
 @patch("ludwig.utils.torch_utils.torch")
@@ -73,7 +79,7 @@ def test_initialize_pytorch_with_gpu_list(mock_torch):
     mock_torch.cuda.device_count.return_value = 4
     with clean_params():
         initialize_pytorch(gpus=[1, 2])
-    assert os.environ["CUDA_VISIBLE_DEVICES"] == "1,2"
+        assert os.environ["CUDA_VISIBLE_DEVICES"] == "1,2"
 
 
 @patch("ludwig.utils.torch_utils.torch")
@@ -82,7 +88,7 @@ def test_initialize_pytorch_with_gpu_string(mock_torch):
     mock_torch.cuda.device_count.return_value = 4
     with clean_params():
         initialize_pytorch(gpus="1,2")
-    assert os.environ["CUDA_VISIBLE_DEVICES"] == "1,2"
+        assert os.environ["CUDA_VISIBLE_DEVICES"] == "1,2"
 
 
 @patch("ludwig.utils.torch_utils.torch")
@@ -91,8 +97,8 @@ def test_initialize_pytorch_with_gpu_int(mock_torch):
     mock_torch.cuda.device_count.return_value = 4
     with clean_params():
         initialize_pytorch(gpus=1)
-    mock_torch.cuda.set_device.assert_called_with(1)
-    assert "CUDA_VISIBLE_DEVICES" not in os.environ
+        mock_torch.cuda.set_device.assert_called_with(1)
+        assert "CUDA_VISIBLE_DEVICES" not in os.environ
 
 
 @patch("ludwig.utils.torch_utils.torch")
@@ -101,4 +107,4 @@ def test_initialize_pytorch_without_gpu(mock_torch):
     mock_torch.cuda.device_count.return_value = 4
     with clean_params():
         initialize_pytorch(gpus=-1)
-    assert os.environ["CUDA_VISIBLE_DEVICES"] == ""
+        assert os.environ["CUDA_VISIBLE_DEVICES"] == ""
