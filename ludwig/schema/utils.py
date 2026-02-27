@@ -166,6 +166,20 @@ class _LudwigModelMeta(type(BaseModel)):
 
         annotations = namespace.get("__annotations__", {})
 
+        # Detect @property definitions and prevent pydantic from treating them as field defaults.
+        # Properties that don't shadow inherited fields work fine as-is because pydantic
+        # only processes annotated attributes. Properties that DO shadow inherited fields
+        # should be converted to fields with constant defaults instead (done at the schema
+        # class level, not here).
+        _saved_properties: dict[str, property] = {}
+        for attr_name, value in list(namespace.items()):
+            if isinstance(value, property) and attr_name in annotations:
+                # A property in this class's own annotations would confuse pydantic.
+                # Remove it from annotations (it won't become a field).
+                _saved_properties[attr_name] = value
+                del namespace[attr_name]
+                annotations.pop(attr_name, None)
+
         # Convert dataclass field() objects to pydantic Field() before pydantic processes them
         for attr_name in list(annotations.keys()):
             if attr_name in namespace:
@@ -243,7 +257,14 @@ class _LudwigModelMeta(type(BaseModel)):
                     pass
 
         namespace["__annotations__"] = annotations
-        return super().__new__(mcs, name, bases, namespace, **kwargs)
+        cls = super().__new__(mcs, name, bases, namespace, **kwargs)
+
+        # Restore @property descriptors that we removed from namespace.
+        if _saved_properties:
+            for pname, prop in _saved_properties.items():
+                setattr(cls, pname, prop)
+
+        return cls
 
     def __getattr__(cls, name: str) -> Any:
         """Allow accessing field defaults as class attributes (e.g., cls.type)."""
