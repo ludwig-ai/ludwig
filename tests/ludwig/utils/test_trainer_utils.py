@@ -1,3 +1,4 @@
+import sys
 from collections import OrderedDict
 
 import pytest
@@ -180,7 +181,7 @@ def test_full_progress_tracker():
                 "Survived": {"accuracy": 0.719, "loss": 4.396, "roc_auc": 0.667},
                 "combined": {"loss": 4.396},
             },
-            "best_increase_batch_size_eval_metric": float("inf"),
+            "best_increase_batch_size_eval_metric": sys.float_info.max,
             "checkpoint_number": 12,
             "epoch": 12,
             "last_increase_batch_size": 0,

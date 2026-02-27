@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+import sys
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
@@ -552,10 +553,13 @@ def get_improved_fn(metric: str) -> Callable:
 
 
 def get_initial_validation_value(metric: str) -> float:
+    # Use finite floats instead of inf/-inf so that training_progress.json
+    # is valid JSON (RFC 8259). sys.float_info.max (~1.8e308) is larger than
+    # any real metric value, so comparison semantics are identical.
     if get_metric_objective(metric) == MINIMIZE:
-        return float("inf")
+        return sys.float_info.max
     else:
-        return float("-inf")
+        return -sys.float_info.max
 
 
 def get_best_function(metric: str) -> Callable:
