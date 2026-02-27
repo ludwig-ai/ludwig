@@ -184,12 +184,15 @@ class _LudwigModelMeta(type(BaseModel)):
                 del namespace[attr_name]
                 annotations.pop(attr_name, None)
 
-        # Convert dataclass field() objects to pydantic Field() before pydantic processes them
+        # Convert dataclass field() objects and marshmallow field descriptors to pydantic Field()
         for attr_name in list(annotations.keys()):
             if attr_name in namespace:
                 value = namespace[attr_name]
                 if isinstance(value, _dc.Field):
                     namespace[attr_name] = _convert_dataclass_field_to_pydantic(value)
+                elif isinstance(value, mm_fields.Field) and hasattr(value, "get_default_field"):
+                    # TypeSelection and DictMarshmallowField instances need conversion
+                    namespace[attr_name] = value.get_default_field()
 
         # Auto-widen annotations to bridge marshmallow→pydantic gap.
         # In marshmallow, annotations were decorative. In pydantic, they're enforced.
