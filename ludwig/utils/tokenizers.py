@@ -796,6 +796,7 @@ class HFTokenizer(BaseTokenizer):
 
         self.tokenizer = AutoTokenizer.from_pretrained(
             pretrained_model_name_or_path,
+            trust_remote_code=kwargs.get("trust_remote_code", False),
         )
         # Some models (e.g. LLaMA) don't have a pad_token by default.
         # Set it to eos_token to avoid NoneType errors in preprocessing.

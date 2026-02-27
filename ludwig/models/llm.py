@@ -95,7 +95,10 @@ class LLM(BaseModel):
         self._random_seed = random_seed
 
         self.model_name = self.config_obj.base_model
-        self.model_config = AutoConfig.from_pretrained(self.config_obj.base_model)
+        self.model_config = AutoConfig.from_pretrained(
+            self.config_obj.base_model,
+            trust_remote_code=self.config_obj.trust_remote_code,
+        )
 
         self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
         self.curr_device = next(self.model.parameters()).device
@@ -116,7 +119,10 @@ class LLM(BaseModel):
             self.global_max_sequence_length = self.context_len
 
         # Initialize tokenizer
-        self.tokenizer = HFTokenizer(self.config_obj.base_model).tokenizer
+        self.tokenizer = HFTokenizer(
+            self.config_obj.base_model,
+            trust_remote_code=self.config_obj.trust_remote_code,
+        ).tokenizer
 
         self._set_generation_config(self.config_obj.generation.to_dict())
 

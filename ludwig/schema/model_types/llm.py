@@ -50,3 +50,12 @@ class LLMModelConfig(ModelConfig):
     adapter: BaseAdapterConfig | None = AdapterDataclassField()
     quantization: QuantizationConfig | None = QuantizationConfigField().get_default_field()
     model_parameters: ModelParametersConfig | None = ModelParametersConfigField().get_default_field()
+
+    trust_remote_code: bool = schema_utils.Boolean(
+        default=False,
+        description=(
+            "Whether to trust and execute remote code from the HuggingFace model repository. "
+            "Required for some models (e.g. Phi-2, Qwen) that use custom architectures. "
+            "Only enable this for models you trust."
+        ),
+    )
