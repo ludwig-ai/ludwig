@@ -146,3 +146,9 @@ ludwig/benchmarking/configs/
 
 # Comet
 .comet.config
+
+# Test-generated artifacts (image/audio features)
+*.png
+*.wav
+generated_audio/
+generated_images/
