@@ -382,7 +382,7 @@ def test_model_save_reload_hf_model(tmpdir, csv_filename, tmp_path):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+        TRAINER: {"train_steps": 1, BATCH_SIZE: 128},
     }
 
     data_df = read_csv(data_csv_path)

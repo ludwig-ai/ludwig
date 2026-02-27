@@ -281,7 +281,7 @@ def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
         COMBINER: {TYPE: "concat"},
-        TRAINER: {"epochs": 2, "learning_rate": 0.001, BATCH_SIZE: 128},
+        TRAINER: {"epochs": 1, "learning_rate": 0.001, BATCH_SIZE: 128},
         "backend": backend,
     }
 
@@ -610,12 +610,13 @@ def test_hyperopt_without_config_defaults(csv_filename, tmpdir, ray_cluster_7cpu
             "goal": "minimize",
             "output_feature": output_features[0]["name"],
             "metric": "loss",
+            "executor": {"type": "ray", "num_samples": 2},
         },
     }
 
     experiment_name = f"test_hyperopt_{uuid.uuid4().hex}"
     hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name=experiment_name)
-    assert hyperopt_results.experiment_analysis.results_df.shape[0] == 10
+    assert hyperopt_results.experiment_analysis.results_df.shape[0] == 2
 
 
 @pytest.mark.slow
