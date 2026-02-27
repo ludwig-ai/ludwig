@@ -9601,3 +9601,22 @@ UNetEncoder:
             data preprocessing.
         internal_only: true
         ui_display_name: NOT DISPLAYED
+TimmEncoder:
+    model_name:
+        ui_display_name: Model Name
+    use_pretrained:
+        ui_display_name: Use Pretrained
+    saved_weights_in_checkpoint:
+        internal_only: true
+        ui_display_name: Saved Weights in Checkpoint
+    trainable:
+        ui_display_name: Trainable
+TimmCAFormerEncoder:
+    model_name:
+        ui_display_name: Model Name
+TimmConvFormerEncoder:
+    model_name:
+        ui_display_name: Model Name
+TimmPoolFormerEncoder:
+    model_name:
+        ui_display_name: Model Name
