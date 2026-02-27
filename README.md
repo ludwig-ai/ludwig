@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://ludwig.ai">
-    <img src="https://github.com/ludwig-ai/artwork/raw/master/icon/ludwig-full-icon.png" height="150">
+    <img src="https://github.com/ludwig-ai/ludwig-docs/raw/master/docs/images/ludwig_hero_smaller.jpg" height="150">
   </a>
 </p>
 
