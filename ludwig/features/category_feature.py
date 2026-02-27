@@ -419,7 +419,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 feature_config.loss.class_weights = class_weights_list
 
         if feature_config.loss.class_similarities_temperature > 0:
-            if "class_similarities" in feature_config.loss:
+            if feature_config.loss.class_similarities is not None:
                 similarities = feature_config.loss.class_similarities
                 temperature = feature_config.loss.class_similarities_temperature
 

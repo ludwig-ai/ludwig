@@ -1,5 +1,4 @@
 # This workflow will install Python dependencies and run all tests marked as `slow` on a single Python version.
-# The tests will run on a high-memory AWS compute instance to accommodate memory-intensive workloads.
 
 name: pytest (slow)
 
@@ -9,7 +8,7 @@ on:
 
 jobs:
   slow-pytest:
-    name: py-slow${{ matrix.python-version  }}
+    name: py-slow
     runs-on: ubuntu-latest
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
@@ -29,33 +28,26 @@ jobs:
 
     timeout-minutes: 150
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.9
+          python-version: "3.12"
 
       - name: Setup Linux
         if: runner.os == 'linux'
         run: |
           sudo apt-get update && sudo apt-get install -y cmake libsndfile1 libsox-dev
 
-      - name: Setup macOS
-        if: runner.os == 'macOS'
-        run: |
-          brew install libuv
-
       - name: Install dependencies
         run: |
           python --version
           pip --version
           python -m pip install -U pip
-          pip install torch==2.1.0 torchtext torchvision torchaudio
-          pip install ray==2.3.1
+          pip install torch torchvision torchaudio
           pip install '.[test]'
-
           pip list
-
         shell: bash
 
       - name: Tests
