@@ -4,7 +4,7 @@ from torch import nn
 try:
     from bitsandbytes.functional import dequantize_4bit
     from bitsandbytes.nn.modules import Linear4bit
-except ImportError:
+except Exception:
     dequantize_4bit = None
     Linear4bit = None
 

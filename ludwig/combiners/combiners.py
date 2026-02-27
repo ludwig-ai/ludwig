@@ -753,6 +753,10 @@ class TabTransformerCombiner(Combiner):
             unembeddable_hidden = torch.tile(self.empty_hidden, [batch_size, 0])
 
         # ================ Concat Skipped and Others ================
+        # When reduce_output is None, hidden is 3D [batch, seq, dim] but
+        # unembeddable_hidden is 2D [batch, dim]. Expand to match.
+        if hidden.dim() == 3 and unembeddable_hidden.dim() == 2:
+            unembeddable_hidden = unembeddable_hidden.unsqueeze(1).expand(-1, hidden.size(1), -1)
         hidden = torch.cat([hidden, unembeddable_hidden], -1)
 
         # ================ FC Layers ================

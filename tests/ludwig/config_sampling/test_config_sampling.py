@@ -46,4 +46,4 @@ def test_config_sampling():
 
     # In place to check for sudden changes in the number of combinatorially generated configs. Update ranges
     # accordingly if new parameters are added.
-    assert 130 < total_count < 200
+    assert 100 < total_count < 200

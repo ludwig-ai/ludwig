@@ -842,6 +842,8 @@ class NumpyEncoder(json.JSONEncoder):
             return o.tolist()
         elif dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
+        elif hasattr(o, "to_dict"):
+            return o.to_dict()
         else:
             return json.JSONEncoder.default(self, o)
 

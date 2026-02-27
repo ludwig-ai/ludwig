@@ -93,13 +93,13 @@ class RandomBrightnessConfig(BaseAugmentationConfig):
         parameter_metadata=FEATURE_METADATA[IMAGE][AUGMENTATION][TYPE],
     )
 
-    min: int = schema_utils.FloatRange(
+    min: float = schema_utils.FloatRange(
         default=0.5,
         description="Minimum factor for random brightness.",
         parameter_metadata=FEATURE_METADATA[IMAGE][AUGMENTATION]["min_brightness"],
     )
 
-    max: int = schema_utils.FloatRange(
+    max: float = schema_utils.FloatRange(
         default=2.0,
         description="Maximum factor for random brightness.",
         parameter_metadata=FEATURE_METADATA[IMAGE][AUGMENTATION]["max_brightness"],
@@ -117,14 +117,14 @@ class RandomContrastConfig(BaseAugmentationConfig):
         parameter_metadata=FEATURE_METADATA[IMAGE][AUGMENTATION][TYPE],
     )
 
-    min: int = schema_utils.FloatRange(
+    min: float = schema_utils.FloatRange(
         default=0.5,
-        description="Minimum factor for random brightness.",
+        description="Minimum factor for random contrast.",
         parameter_metadata=FEATURE_METADATA[IMAGE][AUGMENTATION]["min_contrast"],
     )
 
-    max: int = schema_utils.FloatRange(
+    max: float = schema_utils.FloatRange(
         default=2.0,
-        description="Maximum factor for random brightness.",
+        description="Maximum factor for random contrast.",
         parameter_metadata=FEATURE_METADATA[IMAGE][AUGMENTATION]["max_contrast"],
     )

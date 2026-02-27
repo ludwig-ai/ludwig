@@ -29,13 +29,13 @@ import tempfile
 import time
 import traceback
 from collections import OrderedDict
+from dataclasses import dataclass
 from pprint import pformat
 from typing import Any, ClassVar
 
 import numpy as np
 import pandas as pd
 import torch
-from marshmallow_dataclass import dataclass
 from tabulate import tabulate
 
 from ludwig.api_annotations import PublicAPI
@@ -2318,7 +2318,12 @@ def kfold_cross_validate(
 
             # augment the training statistics with scoring metric from
             # the hold out fold
-            train_stats_dict = dataclasses.asdict(train_stats)
+            if dataclasses.is_dataclass(train_stats):
+                train_stats_dict = dataclasses.asdict(train_stats)
+            elif hasattr(train_stats, "to_dict"):
+                train_stats_dict = train_stats.to_dict()
+            else:
+                train_stats_dict = vars(train_stats)
             train_stats_dict["fold_eval_stats"] = eval_stats
 
             # collect training statistics for this fold

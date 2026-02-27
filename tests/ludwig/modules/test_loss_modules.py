@@ -2,7 +2,7 @@ import contextlib
 
 import pytest
 import torch
-from marshmallow import ValidationError
+from pydantic import ValidationError
 
 from ludwig.features.category_feature import CategoryOutputFeature
 from ludwig.features.set_feature import SetOutputFeature

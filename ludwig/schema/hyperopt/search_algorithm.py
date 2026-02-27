@@ -1,5 +1,6 @@
 from dataclasses import field
 from importlib import import_module
+from typing import Any
 
 from marshmallow import fields, ValidationError
 
@@ -479,7 +480,7 @@ class OptunaSAConfig(BaseSearchAlgorithmConfig):
 class SkoptSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("skopt")
 
-    optimizer = None
+    optimizer: Any | None = None
 
     space: dict | None = schema_utils.Dict(
         description=(

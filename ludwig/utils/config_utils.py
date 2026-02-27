@@ -56,14 +56,27 @@ def get_defaults_section_for_feature_type(
     return config_defaults[feature_type][config_defaults_section]
 
 
+def _to_dict(obj) -> dict:
+    """Convert a config object or dict to a plain dict."""
+    if isinstance(obj, dict):
+        return obj
+    return obj.to_dict()
+
+
 def get_preprocessing_params(config_obj: ModelConfig) -> PreprocessingConfigDict:
     """Returns a new dictionary that merges preprocessing section of config with type-specific preprocessing
     parameters from config defaults."""
     preprocessing_params = {}
-    preprocessing_params.update(config_obj.preprocessing.to_dict())
+    preprocessing_params.update(_to_dict(config_obj.preprocessing))
     for feat_type in get_input_type_registry().keys():
         if hasattr(config_obj.defaults, feat_type):
-            preprocessing_params[feat_type] = getattr(config_obj.defaults, feat_type).preprocessing.to_dict()
+            feat_defaults = getattr(config_obj.defaults, feat_type)
+            preprocessing = (
+                feat_defaults.preprocessing
+                if not isinstance(feat_defaults, dict)
+                else feat_defaults.get("preprocessing", {})
+            )
+            preprocessing_params[feat_type] = _to_dict(preprocessing)
     return preprocessing_params
 
 

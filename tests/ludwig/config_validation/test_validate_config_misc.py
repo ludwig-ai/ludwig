@@ -428,7 +428,7 @@ def test_text_encoder_adapter(encoder_config, expected_adapter):
 
 def test_default_param_metadata():
     @ludwig_dataclass
-    class TestClass:
+    class TestClass(schema_utils.BaseMarshmallowConfig):
         test_schema_entry: str = schema_utils.StringOptions(
             options=["test"],
             default="test",

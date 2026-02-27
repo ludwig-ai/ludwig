@@ -54,7 +54,7 @@ from ludwig.schema.encoders.text_encoders import (
     XLMRoBERTaConfig,
     XLNetConfig,
 )
-from ludwig.schema.llms.peft import BaseAdapterConfig
+from ludwig.schema.llms.peft import adapter_registry, BaseAdapterConfig
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.hf_utils import load_pretrained_hf_model_with_hub_fallback
 from ludwig.utils.llm_utils import get_context_len, initialize_adapter, load_pretrained_from_config
@@ -138,11 +138,14 @@ class HFTextEncoder(Encoder):
             transformer.resize_token_embeddings(vocab_size)
 
     def _wrap_transformer(
-        self, transformer: nn.Module, adapter: BaseAdapterConfig | None, trainable: bool
+        self, transformer: nn.Module, adapter: BaseAdapterConfig | dict | None, trainable: bool
     ) -> nn.Module:
         if adapter is not None:
             from peft import get_peft_model
 
+            if isinstance(adapter, dict):
+                adapter_cls = adapter_registry[adapter["type"]]
+                adapter = adapter_cls.model_validate(adapter)
             peft_config = adapter.to_config()
             transformer = get_peft_model(transformer, peft_config)
 
