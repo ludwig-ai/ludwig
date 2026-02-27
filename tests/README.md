@@ -110,5 +110,5 @@ NOTE: Be sure to update other Integration Test GHA pytest jobs to exclude tests 
 To check which tests would be run under the `pytest` command without actually running them, use `--collect-only`.
 
 ```sh
-pytest -m "not distributed and not slow and not combinatorial and not horovod and not llm and integration_tests_c" --junitxml pytest.xml tests/integration_tests --collect-only
+pytest -m "not distributed and not slow and not combinatorial and not llm and integration_tests_c" --junitxml pytest.xml tests/integration_tests --collect-only
 ```

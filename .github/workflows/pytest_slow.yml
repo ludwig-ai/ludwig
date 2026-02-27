@@ -45,7 +45,7 @@ jobs:
           python --version
           pip --version
           python -m pip install -U pip
-          pip install torch torchvision torchaudio
+          pip install torch==2.6.0 torchvision torchaudio
           pip install '.[test]'
           pip list
         shell: bash

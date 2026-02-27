@@ -11,7 +11,7 @@
 
 </div>
 
-Ludwig은 사용자들이 코드를 작성할 필요 없이 딥러닝 모델을 학습시키고 사용할 수 있게 하는 TensorFlow 기반으로 만들어진 toolbox입니다.
+Ludwig은 사용자들이 코드를 작성할 필요 없이 딥러닝 모델을 학습시키고 사용할 수 있게 하는 PyTorch 기반으로 만들어진 toolbox입니다.
 
 이 모델을 학습시키기 위해서는 입출력 데이터가 들어있는 파일이 제공되어야 합니다. 나머지는 Ludwig가 알아서 처리해 줄 것입니다. 간단한 명령어들은 단일 기기 혹은 분산 기기를 통해 모델을 학습하는 데에 사용될 수 있고, 또한 새로운 데이터를 예측하는 데에 사용됩니다.
 
@@ -34,7 +34,7 @@ Toolbox에 반영된 핵심 설계 원리는 아래와 같습니다:
 
 # Installation
 
-Ludwig는 Python 3.6이상 버전을 요구합니다. 만약 Python 3가 설치되어 있지 않으면 다음 명령어를 이용해서 설치하세요.
+Ludwig는 Python 3.12이상 버전을 요구합니다. 만약 Python 3가 설치되어 있지 않으면 다음 명령어를 이용해서 설치하세요.
 
 ```
 sudo apt install python3  # on ubuntu
@@ -78,7 +78,7 @@ source venv/bin/activate
 pip install -e '.[test]'
 ```
 
-**Note:** 만약 GPU 없이 실행 중이라면, 가벼운 용량의 CPU로 만 사용할 수 있는 TensorFlow를 사용하고 싶으실 겁니다. CPU로 만 사용할 수 있는 TensorFlow 버전을 사용하고 싶다면 `tensorflow`를 삭제하고 `ludwig`를 설치한 후 `tensorflow-cpu`로 대체하면 됩니다. `requirements.txt`에 명시되어 있는 대로 호환 가능한 범위 내의 버전을 설치해야만 합니다.
+**Note:** 만약 GPU 없이 실행 중이라면, CPU 전용 PyTorch를 설치할 수 있습니다. 자세한 내용은 [PyTorch 설치 가이드](https://pytorch.org/get-started/locally/)를 참고하세요.
 
 ## Basic Principles
 

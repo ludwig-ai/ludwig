@@ -9,14 +9,9 @@
 #   model serving
 #
 
-FROM rayproject/ray:2.9.0-py311-cu121
+FROM rayproject/ray:2.44.1-py312-cu124
 
-
-# Upgrade to GCC-9 from GCC-7.5
-# Required for libgcc-s1 which is a dependency for libnccl2
-RUN sudo apt-get update && sudo apt install -y software-properties-common && \
-    sudo add-apt-repository ppa:ubuntu-toolchain-r/test && \
-    sudo apt update && \
+RUN sudo apt-get update && \
     DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y \
     build-essential \
     wget \
@@ -27,7 +22,6 @@ RUN sudo apt-get update && sudo apt install -y software-properties-common && \
     tzdata \
     rsync \
     vim \
-    gcc-9 \
     ffmpeg \
     sox \
     libsox-dev
@@ -35,7 +29,7 @@ RUN pip install -U pip
 
 WORKDIR /ludwig
 
-RUN pip install --no-cache-dir torch==2.1.0 torchtext torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu118
+RUN pip install --no-cache-dir torch==2.6.0 torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu124
 
 COPY . .
 RUN pip install --no-cache-dir '.[full]'
