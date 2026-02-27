@@ -1120,8 +1120,8 @@ def remote_tmpdir(fs_protocol, bucket):
         try:
             with use_credentials(minio_test_creds()):
                 fs_utils.delete(tmpdir, recursive=True)
-        except FileNotFoundError as e:
-            logger.info(f"failed to delete remote tempdir, does not exist: {str(e)}")
+        except Exception as e:
+            logger.info(f"failed to delete remote tempdir: {str(e)}")
             pass
 
 
