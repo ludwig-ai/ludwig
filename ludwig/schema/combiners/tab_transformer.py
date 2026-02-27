@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
@@ -20,7 +18,7 @@ class TabTransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):
         description=COMBINER_METADATA["tabtransformer"]["type"].long_description,
     )
 
-    embed_input_feature_name: Optional[Union[str, int]] = schema_utils.Embed(
+    embed_input_feature_name: str | int | None = schema_utils.Embed(
         description="This value controls the size of the embeddings. Valid values are `add` which uses the "
         "`hidden_size` value or an integer that is set to a specific value. In the case of an integer "
         "value, it must be smaller than hidden_size.",

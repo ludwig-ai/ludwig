@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from typing import Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -23,9 +22,9 @@ from ludwig.utils.torch_utils import LudwigModule
 class MLP(LudwigModule):
     def __init__(
         self,
-        in_features: Union[int, Tuple[int]],
+        in_features: int | tuple[int],
         hidden_size: int,
-        out_features: Union[int, Tuple[int]] = None,
+        out_features: int | tuple[int] = None,
         dropout: float = 0.0,
     ):
         super().__init__()

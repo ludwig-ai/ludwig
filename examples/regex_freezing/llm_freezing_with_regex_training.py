@@ -11,8 +11,7 @@ For some models, a HuggingFace Token will be necessary.
 Once you obtain one, use "export HUGGING_FACE_HUB_TOKEN="<api_token>"" in the terminal.
 """
 
-config_str = yaml.safe_load(
-    r"""
+config_str = yaml.safe_load(r"""
 model_type: llm
 base_model: facebook/opt-350m
 
@@ -57,8 +56,7 @@ preprocessing:
 
 generation:
   pad_token_id : 0
-"""
-)
+""")
 
 model = LudwigModel(config=config_str, logging_level=logging.INFO)
 results = model.train(dataset="ludwig://alpaca")

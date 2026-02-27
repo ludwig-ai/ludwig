@@ -1,6 +1,5 @@
 import os
 import tempfile
-from typing import List, Set
 from unittest import mock
 
 import numpy as np
@@ -36,12 +35,12 @@ from ludwig.hyperopt.execution import RayTuneExecutor  # noqa E402
 pytestmark = [pytest.mark.distributed, pytest.mark.integration_tests_c]
 
 
-def to_name_set(features: List[FeatureConfigDict]) -> Set[str]:
+def to_name_set(features: list[FeatureConfigDict]) -> set[str]:
     """Returns the list of feature names."""
     return {feature[NAME] for feature in features}
 
 
-def merge_lists(a_features: List, b_features: List):
+def merge_lists(a_features: list, b_features: list):
     for idx in range(max(len(a_features), len(b_features))):
         if idx >= len(a_features):
             a_features.append(b_features[idx])
@@ -63,7 +62,7 @@ def merge_dict_with_features(a: ModelConfigDict, b: ModelConfigDict) -> ModelCon
 
 
 def check_types(
-    config: ModelConfigDict, input_features: List[FeatureConfigDict], output_features: List[FeatureConfigDict]
+    config: ModelConfigDict, input_features: list[FeatureConfigDict], output_features: list[FeatureConfigDict]
 ):
     actual_features = config.get(INPUT_FEATURES, []) + config.get(OUTPUT_FEATURES, [])
     expected_features = {f[NAME]: f for f in input_features + output_features}

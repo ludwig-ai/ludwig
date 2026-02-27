@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 """This module contains the class and auxiliary methods of a model."""
+
 import contextlib
 import csv
 import logging
@@ -25,7 +26,7 @@ import sys
 import tempfile
 import threading
 import time
-from typing import Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
 
 import numpy as np
 import packaging
@@ -113,11 +114,11 @@ class Trainer(BaseTrainer):
         skip_save_model: bool = False,
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
-        callbacks: List = None,
+        callbacks: list = None,
         report_tqdm_to_ray=False,
         random_seed: float = default_random_seed,
-        distributed: Optional[DistributedStrategy] = None,
-        device: Optional[str] = None,
+        distributed: DistributedStrategy | None = None,
+        device: str | None = None,
         **kwargs,
     ):
         """Trains a model with a set of options and hyperparameters listed below. Customizable.
@@ -229,7 +230,7 @@ class Trainer(BaseTrainer):
             else:
                 logger.info("`trainer.use_mixed_precision=True`, but no GPU device found. Setting to `False`")
                 self.use_amp = False
-        self.scaler = torch.cuda.amp.GradScaler() if self.use_amp else None
+        self.scaler = torch.amp.GradScaler("cuda") if self.use_amp else None
 
         # when training starts the sigint handler will be replaced with
         # set_steps_to_1_or_quit so this is needed to remember
@@ -291,11 +292,11 @@ class Trainer(BaseTrainer):
 
     def train_step(
         self,
-        inputs: Dict[str, torch.Tensor],
-        targets: Dict[str, torch.Tensor],
+        inputs: dict[str, torch.Tensor],
+        targets: dict[str, torch.Tensor],
         should_step: bool = True,
-        profiler: Optional[torch.profiler.profile] = None,
-    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor], torch.Tensor]:
+        profiler: torch.profiler.profile | None = None,
+    ) -> tuple[torch.Tensor, dict[str, torch.Tensor], torch.Tensor]:
         """Performs a single training step.
 
         Params:
@@ -310,7 +311,6 @@ class Trainer(BaseTrainer):
                 3. tokens usage tensor
         """
         if isinstance(self.optimizer, torch.optim.LBFGS):
-            # NOTE: Horovod is not supported for L-BFGS.
             # NOTE: AMP is not supported for L-BFGS yet.
             # NOTE: gradient accumulation is not supported for L-BFGS yet.
 
@@ -340,7 +340,7 @@ class Trainer(BaseTrainer):
 
             return loss, all_losses, model_outputs[USED_TOKENS]
 
-        with torch.cuda.amp.autocast() if self.use_amp else contextlib.nullcontext():
+        with torch.amp.autocast("cuda") if self.use_amp else contextlib.nullcontext():
             with self.distributed.prepare_model_update(self.dist_model, should_step=should_step):
                 # Obtain model predictions and loss
                 model_outputs = self.dist_model((inputs, targets))
@@ -362,9 +362,8 @@ class Trainer(BaseTrainer):
             # Short-circuit the parameter updates if we are still accumulating gradients
             return loss, all_losses, used_tokens
 
-        # Wait for gradient aggregation to complete before clipping the gradients
+        # Wait for gradient aggregation to complete before clipping the gradients.
         # When using AMP, we need to do this before unscaling.
-        # See: https://github.com/horovod/horovod/blob/master/examples/pytorch/pytorch_mnist.py
         self.distributed.wait_optimizer_synced(self.optimizer)
 
         if self.use_amp:
@@ -534,8 +533,7 @@ class Trainer(BaseTrainer):
                 # Total memory used.
                 train_summary_writer.add_scalar(
                     f"cuda/device{i}/total_memory_used_gb",
-                    (torch.cuda.mem_get_info(device=device)[1] - torch.cuda.mem_get_info(device=device)[0])
-                    / (1000**3),
+                    (torch.cuda.mem_get_info(device=device)[1] - torch.cuda.mem_get_info(device=device)[0]) / (1000**3),
                     global_step=step,
                 )
 
@@ -559,9 +557,9 @@ class Trainer(BaseTrainer):
         max_trials: int = 20,
         halving_limit: int = 3,
         snapshot_weights: bool = True,
-        on_best_batch_size_updated: Optional[Callable[[int, float, int], None]] = None,
+        on_best_batch_size_updated: Callable[[int, float, int], None] | None = None,
         tune_for_training: bool = True,
-        global_max_sequence_length: Optional[int] = None,
+        global_max_sequence_length: int | None = None,
     ) -> int:
         logger.info("Tuning batch size...")
         skip_save_model = self.skip_save_model
@@ -636,7 +634,7 @@ class Trainer(BaseTrainer):
                 trainer.model.reset_metrics()
                 trainer.optimizer.zero_grad()
 
-            def step(self, batch_size: int, global_max_sequence_length: Optional[int] = None):
+            def step(self, batch_size: int, global_max_sequence_length: int | None = None):
                 trainer.distributed.set_batch_size(trainer.dist_model, batch_size)
                 inputs = {
                     input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(trainer.device)
@@ -658,7 +656,7 @@ class Trainer(BaseTrainer):
                 trainer.model.reset_metrics()
                 trainer.optimizer.zero_grad()
 
-            def step(self, batch_size: int, global_max_sequence_length: Optional[int] = None):
+            def step(self, batch_size: int, global_max_sequence_length: int | None = None):
                 trainer.distributed.set_batch_size(trainer.dist_model, batch_size)
                 inputs = {
                     input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(trainer.device)
@@ -687,7 +685,7 @@ class Trainer(BaseTrainer):
         metrics_names,
         save_path,
         loss: torch.Tensor,
-        all_losses: Dict[str, torch.Tensor],
+        all_losses: dict[str, torch.Tensor],
         early_stopping_steps: int,
         checkpoint_manager: CheckpointManager,
     ) -> bool:
@@ -1209,8 +1207,8 @@ class Trainer(BaseTrainer):
         checkpoint_manager: CheckpointManager,
         final_steps_per_checkpoint: int,
         early_stopping_steps: int,
-        profiler: Optional[torch.profiler.profile],
-    ) -> Tuple[bool, bool]:
+        profiler: torch.profiler.profile | None,
+    ) -> tuple[bool, bool]:
         """Completes up to one epoch through the data.
 
         This function completes a single pass (epoch) through the training data and returns
@@ -1270,7 +1268,7 @@ class Trainer(BaseTrainer):
                 )
 
             progress_tracker.steps += 1
-            progress_bar.set_postfix({"loss": float(loss)})
+            progress_bar.set_postfix({"loss": loss.detach().item()})
             progress_bar.update(1)
             if self.is_coordinator():
                 logger.debug(

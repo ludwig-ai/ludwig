@@ -16,7 +16,6 @@
 import argparse
 import logging
 import sys
-from typing import List, Optional, Union
 
 import pandas as pd
 
@@ -33,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 def evaluate_cli(
     model_path: str,
-    dataset: Union[str, dict, pd.DataFrame] = None,
+    dataset: str | dict | pd.DataFrame = None,
     data_format: str = None,
     split: str = FULL,
     batch_size: int = 128,
@@ -43,11 +42,11 @@ def evaluate_cli(
     skip_collect_predictions: bool = False,
     skip_collect_overall_stats: bool = False,
     output_directory: str = "results",
-    gpus: Union[str, int, List[int]] = None,
-    gpu_memory_limit: Optional[float] = None,
+    gpus: str | int | list[int] = None,
+    gpu_memory_limit: float | None = None,
     allow_parallel_threads: bool = True,
-    callbacks: List[Callback] = None,
-    backend: Union[Backend, str] = None,
+    callbacks: list[Callback] = None,
+    backend: Backend | str = None,
     logging_level: int = logging.INFO,
     **kwargs,
 ) -> None:
@@ -228,8 +227,7 @@ def cli(sys_argv):
     parser.add_argument(
         "-b",
         "--backend",
-        help="specifies backend to use for parallel / distributed execution, "
-        "defaults to local execution or Horovod if called using horovodrun",
+        help="specifies backend to use for parallel / distributed execution, " "defaults to local execution",
         choices=ALL_BACKENDS,
     )
     parser.add_argument(

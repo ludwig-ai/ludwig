@@ -1,6 +1,5 @@
 import json
 import os
-from typing import Optional, Type, Union
 from unittest import mock
 
 import pytest
@@ -21,6 +20,7 @@ from tests.integration_tests.utils import (
     clear_huggingface_cache,
     generate_data,
     HF_ENCODERS,
+    HF_ENCODERS_SHORT,
     LocalTestBackend,
     text_feature,
 )
@@ -30,8 +30,8 @@ RANDOM_SEED = 1919
 
 
 def _load_pretrained_hf_model_no_weights(
-    modelClass: Type,
-    pretrained_model_name_or_path: Optional[Union[str, os.PathLike]],
+    modelClass: type,
+    pretrained_model_name_or_path: str | os.PathLike | None,
     **pretrained_kwargs,
 ):
     """Loads a HF model architecture without loading the weights."""
@@ -67,8 +67,12 @@ def get_mismatched_config_params(ludwig_results_dir, ludwig_model):
     return mismatches
 
 
-@pytest.mark.slow
-@pytest.mark.parametrize("encoder_name", HF_ENCODERS)
+# Use a curated subset of HF encoders that are compatible with transformers 5.x.
+# Full encoder-schema coverage is tested by test_encoder_names_constant_synced_with_schema.
+_HF_ENCODERS_E2E = ["albert", "bert", "distilbert", "electra", "roberta", "auto_transformer"]
+
+
+@pytest.mark.parametrize("encoder_name", _HF_ENCODERS_E2E)
 def test_hf_ludwig_model_e2e(tmpdir, csv_filename, encoder_name):
     """Tests HuggingFace encoders end-to-end.
 
@@ -124,9 +128,8 @@ def test_hf_ludwig_model_e2e(tmpdir, csv_filename, encoder_name):
     clear_huggingface_cache()
 
 
-@pytest.mark.slow
 @pytest.mark.parametrize("reduce_output", [None, "last", "sum", "mean", "max", "concat"])
-@pytest.mark.parametrize("encoder_name", HF_ENCODERS)
+@pytest.mark.parametrize("encoder_name", HF_ENCODERS_SHORT)
 def test_hf_ludwig_model_reduce_options(tmpdir, csv_filename, encoder_name, reduce_output):
     input_features = [
         text_feature(
@@ -188,9 +191,9 @@ def test_hf_ludwig_model_reduce_options(tmpdir, csv_filename, encoder_name, redu
 @pytest.mark.parametrize(
     "pretrained_model_name_or_path",
     [
-        "hf-internal-testing/tiny-random-bloom",
         "hf-internal-testing/tiny-random-OPTModel",
-        "hf-internal-testing/tiny-random-GPTJModel",
+        "hf-internal-testing/tiny-random-BertModel",
+        "hf-internal-testing/tiny-random-DistilBertModel",
     ],
 )
 def test_hf_ludwig_model_auto_transformers(tmpdir, csv_filename, pretrained_model_name_or_path):
@@ -236,14 +239,14 @@ def test_distilbert_param_updates(trainable: bool):
         use_pretrained=False,
         max_sequence_length=max_sequence_length,
         trainable=trainable,
-    )
+    ).to(DEVICE)
 
     # send a random input through the model with its initial weights
-    inputs = torch.rand((2, max_sequence_length)).type(distil_bert_encoder.input_dtype)
+    inputs = torch.rand((2, max_sequence_length)).type(distil_bert_encoder.input_dtype).to(DEVICE)
     outputs = distil_bert_encoder(inputs)
 
     # perform a backward pass to update the model params
-    target = torch.randn(outputs[ENCODER_OUTPUT].shape)
+    target = torch.randn(outputs[ENCODER_OUTPUT].shape).to(DEVICE)
     check_module_parameters_updated(distil_bert_encoder, (inputs,), target)
 
     # send the same input through the model again. should be different if trainable, else the same

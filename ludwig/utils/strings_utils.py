@@ -19,7 +19,6 @@ import unicodedata
 from collections import Counter
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional, Set, Union
 
 import numpy as np
 from dateutil.parser import parse as parse_datetime
@@ -92,7 +91,7 @@ def str2bool(v: str, fallback_true_label=None) -> bool:
     return v == fallback_true_label
 
 
-def values_are_pandas_numbers(values: List[str]):
+def values_are_pandas_numbers(values: list[str]):
     """Returns True if values would be read by pandas as dtype float or int."""
     for v in values:
         try:
@@ -102,13 +101,13 @@ def values_are_pandas_numbers(values: List[str]):
     return True
 
 
-def values_are_pandas_bools(values: List[str]):
+def values_are_pandas_bools(values: list[str]):
     """Returns True if values would be read by pandas as dtype bool."""
     lowercase_values_set = {str(v).lower() for v in values}
     return lowercase_values_set.issubset(PANDAS_FALSE_STRS | PANDAS_TRUE_STRS)
 
 
-def are_conventional_bools(values: List[Union[str, bool]]) -> bool:
+def are_conventional_bools(values: list[str | bool]) -> bool:
     """Returns whether all values are conventional booleans."""
     for value in values:
         lower_value = str(value).lower()
@@ -117,7 +116,7 @@ def are_conventional_bools(values: List[Union[str, bool]]) -> bool:
     return True
 
 
-def is_number(s: Union[str, int, float]):
+def is_number(s: str | int | float):
     """Returns whether specified value is number."""
     if isinstance(s, str) and s.lower() == "nan":
         return True
@@ -128,7 +127,7 @@ def is_number(s: Union[str, int, float]):
         return False
 
 
-def is_datetime(s: Union[str, int, float]):
+def is_datetime(s: str | int | float):
     """Returns whether specified value is datetime."""
     if is_number(s):
         return False
@@ -140,7 +139,7 @@ def is_datetime(s: Union[str, int, float]):
         return False
 
 
-def are_all_datetimes(values: List[Union[str, int, float]]):
+def are_all_datetimes(values: list[str | int | float]):
     """Returns whether all values are datetimes."""
     for value in values:
         if not is_datetime(value):
@@ -148,7 +147,7 @@ def are_all_datetimes(values: List[Union[str, int, float]]):
     return True
 
 
-def are_all_numbers(values: List[Union[str, int, float]]):
+def are_all_numbers(values: list[str | int | float]):
     """Returns whether all values are numbers."""
     for value in values:
         if not is_number(value):
@@ -156,7 +155,7 @@ def are_all_numbers(values: List[Union[str, int, float]]):
     return True
 
 
-def is_integer(s: Union[str, int, float]):
+def is_integer(s: str | int | float):
     """Returns whether specified value is an integer."""
     try:
         float(s)
@@ -166,7 +165,7 @@ def is_integer(s: Union[str, int, float]):
         return float(s).is_integer() and not np.isnan(float(s))
 
 
-def are_sequential_integers(values: List[Union[str, int, float]]):
+def are_sequential_integers(values: list[str | int | float]):
     """Returns whether distinct values form sequential integer list."""
     int_list = []
     for value in values:
@@ -206,7 +205,7 @@ def load_vocabulary(vocab_file):
         return vocabulary
 
 
-def add_or_move_symbol(vocab_list: List[str], vocab_set: Set[str], symbol: str, index: int):
+def add_or_move_symbol(vocab_list: list[str], vocab_set: set[str], symbol: str, index: int):
     """Inserts or moves the symbol to the specified index."""
     if symbol in vocab_set:
         vocab_list.remove(symbol)
@@ -215,16 +214,16 @@ def add_or_move_symbol(vocab_list: List[str], vocab_set: Set[str], symbol: str, 
 
 @dataclass
 class Vocabulary:
-    vocab: List[str]
+    vocab: list[str]
     """List of strings representing the computed vocabulary."""
 
-    str2idx: Dict[str, int]
+    str2idx: dict[str, int]
     """Map of symbol to index."""
 
-    str2freq: Dict[str, int]
+    str2freq: dict[str, int]
     """Map of symbol to frequency."""
 
-    str2idf: Optional[Dict[str, int]]
+    str2idf: dict[str, int] | None
     """Map of symbol to inverse document frequency."""
 
     max_sequence_length: int
@@ -249,7 +248,7 @@ class Vocabulary:
     """
 
 
-def _get_vocab_from_dict(vocab: Dict[str, int]) -> List[str]:
+def _get_vocab_from_dict(vocab: dict[str, int]) -> list[str]:
     """Returns a vocab in list format from a vocab token=>idx dictionary."""
     vocab_values = list(vocab.values())
     if len(set(vocab_values)) != len(vocab_values):
@@ -273,7 +272,7 @@ def _get_vocabulary(
     padding_symbol: str,
     unit_counts: Counter,
     num_most_frequent: int,
-) -> Optional[List[str]]:
+) -> list[str] | None:
     """Returns the vocabulary from the tokenizer_type, tokenizer, or vocab_file.
 
     If the `tokenizer_type` is 'hf_tokenizer', then the set vocabulary from the tokenizer is used.
@@ -332,7 +331,7 @@ def create_vocabulary(
     start_symbol: str = START_SYMBOL,
     stop_symbol: str = STOP_SYMBOL,
     pretrained_model_name_or_path: str = None,
-    ngram_size: Optional[int] = None,
+    ngram_size: int | None = None,
     compute_idf: bool = False,
     processor: DataFrameEngine = PANDAS,
     prompt_template: str = "",
@@ -409,7 +408,7 @@ def create_vocabulary(
         padding_symbol = tokenizer.get_pad_token()
         pad_idx = tokenizer.convert_token_to_id(padding_symbol)
 
-    vocab: List[str] = _get_vocabulary(
+    vocab: list[str] = _get_vocabulary(
         tokenizer_type,
         tokenizer,
         vocab_file,
@@ -463,7 +462,7 @@ def create_vocabulary(
 
 def create_vocabulary_single_token(
     data: Series,
-    num_most_frequent: Optional[int] = None,
+    num_most_frequent: int | None = None,
     processor: DataFrameEngine = PANDAS,
     unknown_symbol: str = UNKNOWN_SYMBOL,
 ):

@@ -168,7 +168,7 @@ def test_kfold_cv_api_from_file(tmpdir):
     # test kfold_cross_validate api with config file
 
     # execute k-fold cross validation run
-    (kfold_cv_stats, kfold_split_indices) = kfold_cross_validate(3, config=config_fp, dataset=training_data_fp)
+    kfold_cv_stats, kfold_split_indices = kfold_cross_validate(3, config=config_fp, dataset=training_data_fp)
 
     # correct structure for results from kfold cv
     for key in ["fold_" + str(i + 1) for i in range(num_folds)] + ["overall"]:
@@ -203,7 +203,7 @@ def test_kfold_cv_api_in_memory(tmpdir):
     # test kfold_cross_validate api with config in-memory
 
     # execute k-fold cross validation run
-    (kfold_cv_stats, kfold_split_indices) = kfold_cross_validate(3, config=config, dataset=training_data_fp)
+    kfold_cv_stats, kfold_split_indices = kfold_cross_validate(3, config=config, dataset=training_data_fp)
 
     # correct structure for results from kfold cv
     for key in ["fold_" + str(i + 1) for i in range(num_folds)] + ["overall"]:
@@ -257,7 +257,7 @@ def test_kfold_cv_dataset_formats(tmpdir, data_format):
     # test kfold_cross_validate api with config in-memory
 
     # execute k-fold cross validation run
-    (kfold_cv_stats, kfold_split_indices) = kfold_cross_validate(3, config=config, dataset=dataset_to_use)
+    kfold_cv_stats, kfold_split_indices = kfold_cross_validate(3, config=config, dataset=dataset_to_use)
 
     # correct structure for results from kfold cv
     for key in ["fold_" + str(i + 1) for i in range(num_folds)] + ["overall"]:

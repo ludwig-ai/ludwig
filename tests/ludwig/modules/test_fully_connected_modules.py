@@ -1,6 +1,3 @@
-from typing import List, Optional
-
-import numpy as np
 import pytest
 import torch
 
@@ -25,7 +22,7 @@ def test_fc_layer(
     activation: str,
     dropout: float,
     batch_size: int,
-    norm: Optional[str],
+    norm: str | None,
 ):
     set_random_seed(RANDOM_SEED)  # make repeatable
     fc_layer = FCLayer(
@@ -45,9 +42,9 @@ def test_fc_layer(
     ],
 )
 def test_fc_stack(
-    first_layer_input_size: Optional[int],
-    layers: Optional[List],
-    num_layers: Optional[int],
+    first_layer_input_size: int | None,
+    layers: list | None,
+    num_layers: int | None,
 ):
     set_random_seed(RANDOM_SEED)
     fc_stack = FCStack(first_layer_input_size=first_layer_input_size, layers=layers, num_layers=num_layers).to(DEVICE)
@@ -87,4 +84,4 @@ def test_fc_stack_no_layers_behaves_like_passthrough():
 
     assert list(output_tensor.shape[1:]) == [first_layer_input_size]
     assert output_tensor.shape[1:] == fc_stack.output_shape
-    assert np.all(np.isclose(input_tensor, output_tensor))
+    assert torch.allclose(input_tensor, output_tensor)

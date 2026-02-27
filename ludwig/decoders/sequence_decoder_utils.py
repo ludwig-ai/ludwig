@@ -1,7 +1,5 @@
 """Utility functions related to sequence decoders."""
 
-from typing import Dict, Tuple
-
 import torch
 
 from ludwig.constants import ENCODER_OUTPUT_STATE, HIDDEN
@@ -21,7 +19,7 @@ def repeat_2D_tensor(tensor, k):
 
 
 def get_rnn_init_state(
-    combiner_outputs: Dict[str, torch.Tensor], sequence_reducer: SequenceReducer, num_layers: int
+    combiner_outputs: dict[str, torch.Tensor], sequence_reducer: SequenceReducer, num_layers: int
 ) -> torch.Tensor:
     """Computes the hidden state that the RNN decoder should start with.
 
@@ -64,8 +62,8 @@ def get_rnn_init_state(
 
 
 def get_lstm_init_state(
-    combiner_outputs: Dict[str, torch.Tensor], sequence_reducer: SequenceReducer, num_layers: int
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    combiner_outputs: dict[str, torch.Tensor], sequence_reducer: SequenceReducer, num_layers: int
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Returns the states that the LSTM decoder should start with.
 
     Args:

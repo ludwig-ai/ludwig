@@ -3,7 +3,6 @@ import pytest
 from ludwig.config_validation.validation import check_schema, get_schema
 from ludwig.constants import (
     ACTIVE,
-    AUDIO,
     BACKEND,
     CATEGORY,
     COLUMN,
@@ -12,9 +11,7 @@ from ludwig.constants import (
     ENCODER,
     LOSS,
     MODEL_ECD,
-    MODEL_GBM,
     MODEL_LLM,
-    MODEL_TYPE,
     NAME,
     PREPROCESSING,
     PROC_COLUMN,
@@ -26,7 +23,6 @@ from ludwig.features.feature_registries import get_output_type_registry
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.schema.defaults.ecd import ECDDefaultsConfig
-from ludwig.schema.defaults.gbm import GBMDefaultsConfig
 from ludwig.schema.features.preprocessing.audio import AudioPreprocessingConfig
 from ludwig.schema.features.preprocessing.bag import BagPreprocessingConfig
 from ludwig.schema.features.preprocessing.binary import BinaryPreprocessingConfig
@@ -260,13 +256,6 @@ def test_ecd_defaults_schema():
     assert LOSS in schema.category.to_dict()
 
 
-def test_gbm_defaults_schema():
-    schema = GBMDefaultsConfig()
-    assert AUDIO not in schema.to_dict()
-    assert schema.binary.preprocessing.missing_value_strategy == "fill_with_false"
-    assert PREPROCESSING in schema.binary.to_dict()
-
-
 def test_validate_defaults_schema():
     config = {
         "input_features": [
@@ -325,23 +314,6 @@ def test_validate_no_trainer_type():
     # Ensure validation succeeds with ECD trainer params and ECD model type
     check_schema(config)
 
-    # Ensure validation fails with ECD trainer params and GBM model type
-    config[MODEL_TYPE] = MODEL_GBM
-    with pytest.raises(ConfigValidationError):
-        check_schema(config)
-
-    # Switch to trainer with valid GBM params
-    config[TRAINER] = {"tree_learner": "serial"}
-
-    # Ensure validation succeeds with GBM trainer params and GBM model type
-    check_schema(config)
-
-    # Ensure validation fails with GBM trainer params and ECD model type
-    config[MODEL_TYPE] = MODEL_ECD
-    config[TRAINER] = {"tree_learner": "serial"}
-    with pytest.raises(ConfigValidationError):
-        check_schema(config)
-
 
 def test_schema_no_duplicates():
     schema = get_schema()
@@ -367,7 +339,7 @@ def test_schema_no_duplicates():
         )
 
 
-@pytest.mark.parametrize("model_type", [MODEL_ECD, MODEL_GBM, MODEL_LLM])
+@pytest.mark.parametrize("model_type", [MODEL_ECD, MODEL_LLM])
 def test_ludwig_schema_serialization(model_type):
     import json
 

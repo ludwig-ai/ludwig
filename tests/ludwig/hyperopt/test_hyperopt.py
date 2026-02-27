@@ -31,7 +31,7 @@ def _get_config():
                 "cpu_resources_per_trial": 1,
             },
             "parameters": {"trainer.learning_rate": {"space": "choice", "categories": [0.005, 0.01, 0.02, 0.025]}},
-            "search_alg": {"type": "hyperopt", "random_state_seed": 42},
+            "search_alg": {"type": "variant_generator"},
             "output_feature": "Product",
         },
     }
@@ -118,18 +118,6 @@ def test_grid_search_more_than_one_sample():
                 "executor": {"num_samples": 2},
             }
         )
-
-
-def test_hyperopt_config_gbm():
-    """This test was added due to a schema validation error when hyperopting GBMs:
-
-    ```jsonschema.exceptions.ValidationError: Additional properties are not allowed ('epochs' was unexpected)```
-    """
-    config = _get_config()
-    config["model_type"] = "gbm"
-
-    # Config should not raise an exception
-    ModelConfig.from_dict(config)
 
 
 @pytest.mark.parametrize(

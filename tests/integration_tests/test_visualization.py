@@ -23,6 +23,7 @@ import json
 import os
 import random
 import subprocess
+import sys
 
 import numpy as np
 import pytest
@@ -80,8 +81,7 @@ def get_output_feature_name(experiment_dir, output_feature=0):
 
     :param experiment_dir: Path to the experiment directory
     :param output_feature: position of the output feature the description.json
-    :return output_feature_name: name of the first output feature name
-                        from the experiment
+    :return output_feature_name: name of the first output feature name from the experiment
     """
     description_file = os.path.join(experiment_dir, DESCRIPTION_FILE_NAME)
     with open(description_file, "rb") as f:
@@ -108,7 +108,7 @@ def test_visualization_learning_curves_output_saved(csv_filename):
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
     train_stats = os.path.join(exp_dir_name, "training_statistics.json")
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -152,7 +152,7 @@ def test_visualization_confusion_matrix_output_saved(csv_filename):
     ground_truth_metadata = experiment_source_data_name + ".meta.json"
     test_stats = os.path.join(exp_dir_name, TEST_STATISTICS_FILE_NAME)
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -179,8 +179,7 @@ def test_visualization_confusion_matrix_output_saved(csv_filename):
 def test_visualization_compare_performance_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
 
-    Compare performance between two models. To reduce test complexity
-    one model is compared to it self.
+    Compare performance between two models. To reduce test complexity one model is compared to it self.
 
     :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
@@ -197,7 +196,7 @@ def test_visualization_compare_performance_output_saved(csv_filename):
     test_stats = os.path.join(exp_dir_name, TEST_STATISTICS_FILE_NAME)
 
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -217,7 +216,7 @@ def test_visualization_compare_performance_output_saved(csv_filename):
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        result = subprocess.run(command, capture_output=True)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -246,7 +245,7 @@ def test_visualization_compare_classifiers_from_prob_csv_output_saved(csv_filena
     ground_truth = experiment_source_data_name + ".csv"
     split_file = get_split_path(csv_filename)
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -303,7 +302,7 @@ def test_visualization_compare_classifiers_from_prob_npy_output_saved(csv_filena
     ground_truth = experiment_source_data_name + ".csv"
     split_file = experiment_source_data_name + ".split.parquet"
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -360,7 +359,7 @@ def test_visualization_compare_classifiers_from_pred_npy_output_saved(csv_filena
     split_file = experiment_source_data_name + ".split.parquet"
     ground_truth_metadata = experiment_source_data_name + ".meta.json"
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -417,7 +416,7 @@ def test_visualization_compare_classifiers_from_pred_csv_output_saved(csv_filena
     split_file = experiment_source_data_name + ".split.parquet"
     ground_truth_metadata = experiment_source_data_name + ".meta.json"
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -472,7 +471,7 @@ def test_visualization_compare_classifiers_subset_output_saved(csv_filename):
     ground_truth = experiment_source_data_name + ".csv"
     split_file = experiment_source_data_name + ".split.parquet"
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -526,7 +525,7 @@ def test_visualization_compare_classifiers_changing_k_output_pdf(csv_filename):
     split_file = experiment_source_data_name + ".split.parquet"
     ground_truth_metadata = exp_dir_name + "/model/training_set_metadata.json"
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -581,7 +580,7 @@ def test_visualization_compare_classifiers_multiclass_multimetric_output_saved(c
     experiment_source_data_name = csv_filename.split(".")[0]
     ground_truth_metadata = experiment_source_data_name + ".meta.json"
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -630,7 +629,7 @@ def test_visualization_compare_classifiers_predictions_npy_output_saved(csv_file
     ground_truth = experiment_source_data_name + ".csv"
     split_file = experiment_source_data_name + ".split.parquet"
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -686,7 +685,7 @@ def test_visualization_compare_classifiers_predictions_csv_output_saved(csv_file
     ground_truth = experiment_source_data_name + ".csv"
     split_file = experiment_source_data_name + ".split.parquet"
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -741,7 +740,7 @@ def test_visualization_cmp_classifiers_predictions_distribution_output_saved(csv
     ground_truth = experiment_source_data_name + ".csv"
     split_file = experiment_source_data_name + ".split.parquet"
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -796,7 +795,7 @@ def test_visualization_cconfidence_thresholding_output_saved(csv_filename):
     ground_truth = experiment_source_data_name + ".csv"
     split_file = experiment_source_data_name + ".split.parquet"
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -851,7 +850,7 @@ def test_visualization_confidence_thresholding_data_vs_acc_output_saved(csv_file
     ground_truth = experiment_source_data_name + ".csv"
     split_file = experiment_source_data_name + ".split.parquet"
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -906,7 +905,7 @@ def test_visualization_confidence_thresholding_data_vs_acc_subset_output_saved(c
     ground_truth = experiment_source_data_name + ".csv"
     split_file = experiment_source_data_name + ".split.parquet"
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -963,7 +962,7 @@ def test_vis_confidence_thresholding_data_vs_acc_subset_per_class_output_saved(c
     ground_truth = experiment_source_data_name + ".csv"
     split_file = experiment_source_data_name + ".split.parquet"
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -1032,7 +1031,7 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(csv_filename):
     ground_truth = experiment_source_data_name + ".csv"
     split_file = experiment_source_data_name + ".split.parquet"
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -1098,7 +1097,7 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
     ground_truth = experiment_source_data_name + ".csv"
     split_file = experiment_source_data_name + ".split.parquet"
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -1164,7 +1163,7 @@ def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename, bin
     ground_truth = experiment_source_data_name + ".csv"
     split_file = experiment_source_data_name + ".split.parquet"
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -1226,7 +1225,7 @@ def test_visualization_precision_recall_curves_output_saved(csv_filename, binary
     ground_truth = experiment_source_data_name + ".csv"
     split_file = experiment_source_data_name + ".split.parquet"
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -1280,7 +1279,7 @@ def test_visualization_precision_recall_curves_from_test_statistics_output_saved
     output_feature_name = get_output_feature_name(exp_dir_name)
     test_stats = os.path.join(exp_dir_name, TEST_STATISTICS_FILE_NAME)
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -1331,7 +1330,7 @@ def test_visualization_roc_curves_output_saved(csv_filename, binary_output_type)
     ground_truth = experiment_source_data_name + ".csv"
     split_file = experiment_source_data_name + ".split.parquet"
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -1387,7 +1386,7 @@ def test_visualization_roc_curves_from_test_statistics_output_saved(csv_filename
     output_feature_name = get_output_feature_name(exp_dir_name)
     test_stats = os.path.join(exp_dir_name, TEST_STATISTICS_FILE_NAME)
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -1434,7 +1433,7 @@ def test_visualization_calibration_1_vs_all_output_saved(csv_filename):
     ground_truth = experiment_source_data_name + ".csv"
     split_file = experiment_source_data_name + ".split.parquet"
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -1493,7 +1492,7 @@ def test_visualization_calibration_multiclass_output_saved(csv_filename):
     ground_truth = experiment_source_data_name + ".csv"
     split_file = experiment_source_data_name + ".split.parquet"
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",
@@ -1547,7 +1546,7 @@ def test_visualization_frequency_vs_f1_output_saved(csv_filename):
     experiment_source_data_name = csv_filename.split(".")[0]
     ground_truth_metadata = experiment_source_data_name + ".meta.json"
     test_cmd_pdf = [
-        "python",
+        sys.executable,
         "-m",
         "ludwig.visualize",
         "--visualization",

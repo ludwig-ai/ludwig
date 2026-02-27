@@ -15,13 +15,11 @@
 # ==============================================================================
 import logging
 import warnings
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from io import BytesIO
-from typing import Callable, List, Optional, Tuple, Union
 
 import numpy as np
-import tifffile
 import torch
 import torchvision.transforms.functional as F
 from torchvision.io import decode_image, ImageReadMode
@@ -29,6 +27,7 @@ from torchvision.models._api import WeightsEnum
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CROP_OR_PAD, IMAGE_MAX_CLASSES, INTERPOLATE
+from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
 from ludwig.utils.registry import Registry
 
@@ -36,7 +35,7 @@ from ludwig.utils.registry import Registry
 @dataclass
 class TVModelVariant:
     # Model variant identifier
-    variant_id: Union[str, int]
+    variant_id: str | int
 
     # TorchVision function to create model class
     create_model_function: Callable
@@ -80,15 +79,43 @@ def get_gray_default_image(num_channels: int, height: int, width: int) -> np.nda
 
 
 @DeveloperAPI
-def get_average_image(image_lst: List[np.ndarray]) -> np.array:
+def get_average_image(image_lst: list[np.ndarray]) -> np.array:
     return np.mean([x for x in image_lst if x is not None], axis=(0), dtype=np.float32)
 
 
 @DeveloperAPI
 def is_bytes_image(bytes_obj) -> bool:
-    import imghdr
+    """Check if a bytes object is an image using PIL."""
+    try:
+        from io import BytesIO
 
-    return imghdr.what(None, bytes_obj) is not None
+        from PIL import Image
+
+        if isinstance(bytes_obj, bytes):
+            bytes_obj = BytesIO(bytes_obj)
+        Image.open(bytes_obj).verify()
+        return True
+    except Exception:
+        return False
+
+
+def is_image(src_path: str, img_entry: bytes | str, column: str) -> bool:
+    if not isinstance(img_entry, str):
+        return False
+    try:
+        from io import BytesIO
+
+        from PIL import Image
+
+        path = get_abs_path(src_path, img_entry)
+        bytes_obj = get_bytes_obj_from_path(path)
+        if isinstance(bytes_obj, bytes):
+            bytes_obj = BytesIO(bytes_obj)
+        Image.open(bytes_obj).verify()
+        return True
+    except Exception as e:
+        logger.warning(f"While assessing potential image in is_image() for column {column}, encountered exception: {e}")
+        return False
 
 
 @DeveloperAPI
@@ -116,8 +143,8 @@ def get_image_read_mode_from_num_channels(num_channels: int) -> ImageReadMode:
 
 @DeveloperAPI
 def read_image_from_path(
-    path: str, num_channels: Optional[int] = None, return_num_bytes=False
-) -> Union[Optional[torch.Tensor], Tuple[Optional[torch.Tensor], int]]:
+    path: str, num_channels: int | None = None, return_num_bytes=False
+) -> torch.Tensor | None | tuple[torch.Tensor | None, int]:
     """Reads image from path.
 
     Useful for reading from a small number of paths. For more intensive reads, use backend.read_binary_files instead. If
@@ -136,9 +163,7 @@ def read_image_from_path(
 
 
 @DeveloperAPI
-def read_image_from_bytes_obj(
-    bytes_obj: Optional[bytes] = None, num_channels: Optional[int] = None
-) -> Optional[torch.Tensor]:
+def read_image_from_bytes_obj(bytes_obj: bytes | None = None, num_channels: int | None = None) -> torch.Tensor | None:
     """Tries to read image as a tensor from the path.
 
     If the path is not decodable as a PNG, attempts to read as a numpy file. If neither of these work, returns None.
@@ -158,7 +183,7 @@ def read_image_from_bytes_obj(
 
 
 @DeveloperAPI
-def read_image_as_png(bytes_obj: bytes, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> Optional[torch.Tensor]:
+def read_image_as_png(bytes_obj: bytes, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor | None:
     """Reads image from bytes object from a PNG file."""
     try:
         with BytesIO(bytes_obj) as buffer:
@@ -175,7 +200,7 @@ def read_image_as_png(bytes_obj: bytes, mode: ImageReadMode = ImageReadMode.UNCH
 
 
 @DeveloperAPI
-def read_image_as_numpy(bytes_obj: bytes) -> Optional[torch.Tensor]:
+def read_image_as_numpy(bytes_obj: bytes) -> torch.Tensor | None:
     """Reads image from bytes object from a numpy file."""
     try:
         with BytesIO(bytes_obj) as buffer:
@@ -187,9 +212,11 @@ def read_image_as_numpy(bytes_obj: bytes) -> Optional[torch.Tensor]:
 
 
 @DeveloperAPI
-def read_image_as_tif(bytes_obj: bytes) -> Optional[torch.Tensor]:
+def read_image_as_tif(bytes_obj: bytes) -> torch.Tensor | None:
     """Reads image from bytes object from a tif file."""
     try:
+        import tifffile
+
         with BytesIO(bytes_obj) as buffer:
             image = tifffile.imread(buffer)
             if image.dtype == np.uint16:
@@ -206,9 +233,9 @@ def read_image_as_tif(bytes_obj: bytes) -> Optional[torch.Tensor]:
 @DeveloperAPI
 def pad(
     img: torch.Tensor,
-    new_size: Union[int, Tuple[int, int]],
+    new_size: int | tuple[int, int],
 ) -> torch.Tensor:
-    """torchscript-compatible implementation of pad.
+    """Torchscript-compatible implementation of pad.
 
     Args:
         img (torch.Tensor): image with shape [..., height, width] to pad
@@ -229,9 +256,9 @@ def pad(
 @DeveloperAPI
 def crop(
     img: torch.Tensor,
-    new_size: Union[int, Tuple[int, int]],
+    new_size: int | tuple[int, int],
 ) -> torch.Tensor:
-    """torchscript-compatible implementation of crop.
+    """Torchscript-compatible implementation of crop.
 
     Args:
         img (torch.Tensor): image with shape [..., height, width] to crop
@@ -245,8 +272,8 @@ def crop(
 
 
 @DeveloperAPI
-def crop_or_pad(img: torch.Tensor, new_size: Union[int, Tuple[int, int]]):
-    """torchscript-compatible implementation of resize using constants.CROP_OR_PAD.
+def crop_or_pad(img: torch.Tensor, new_size: int | tuple[int, int]):
+    """Torchscript-compatible implementation of resize using constants.CROP_OR_PAD.
 
     Args:
         img (torch.Tensor): image with shape [..., height, width] to resize
@@ -266,12 +293,12 @@ def crop_or_pad(img: torch.Tensor, new_size: Union[int, Tuple[int, int]]):
 @DeveloperAPI
 def resize_image(
     img: torch.Tensor,
-    new_size: Union[int, Tuple[int, int]],
+    new_size: int | tuple[int, int],
     resize_method: str,
     crop_or_pad_constant: str = CROP_OR_PAD,
     interpolate_constant: str = INTERPOLATE,
 ) -> torch.Tensor:
-    """torchscript-compatible implementation of resize.
+    """Torchscript-compatible implementation of resize.
 
     Args:
         img (torch.Tensor): image with shape [..., height, width] to resize
@@ -311,7 +338,7 @@ def num_channels_in_image(img: torch.Tensor):
 
 @DeveloperAPI
 def get_unique_channels(
-    image_sample: List[torch.Tensor],
+    image_sample: list[torch.Tensor],
     num_channels: int,
     num_classes: int = None,
 ) -> torch.Tensor:
@@ -430,7 +457,7 @@ def get_image_from_class_mask(
 
 
 @DeveloperAPI
-def to_tuple(v: Union[int, Tuple[int, int]]) -> Tuple[int, int]:
+def to_tuple(v: int | tuple[int, int]) -> tuple[int, int]:
     """Converts int or tuple to tuple of ints."""
     if torch.jit.isinstance(v, int):
         return v, v
@@ -439,19 +466,18 @@ def to_tuple(v: Union[int, Tuple[int, int]]) -> Tuple[int, int]:
 
 
 @DeveloperAPI
-def to_np_tuple(prop: Union[int, Iterable]) -> np.ndarray:
+def to_np_tuple(prop: int | Iterable) -> np.ndarray:
     """Creates a np array of length 2 from a Conv2D property.
 
-    E.g., stride=(2, 3) gets converted into np.array([2, 3]), where the
-    height_stride = 2 and width_stride = 3. stride=2 gets converted into
-    np.array([2, 2]).
+    E.g., stride=(2, 3) gets converted into np.array([2, 3]), where the height_stride = 2 and width_stride = 3. stride=2
+    gets converted into np.array([2, 2]).
     """
-    if type(prop) is int:
+    if isinstance(prop, int):
         return np.ones(2).astype(int) * prop
+    elif isinstance(prop, np.ndarray) and prop.size == 2:
+        return prop.astype(int)
     elif isinstance(prop, Iterable) and len(prop) == 2:
         return np.array(list(prop)).astype(int)
-    elif type(prop) is np.ndarray and prop.size == 2:
-        return prop.astype(int)
     else:
         raise TypeError(f"prop must be int or iterable of length 2, but is {prop}.")
 
@@ -460,11 +486,11 @@ def to_np_tuple(prop: Union[int, Iterable]) -> np.ndarray:
 def get_img_output_shape(
     img_height: int,
     img_width: int,
-    kernel_size: Union[int, Tuple[int]],
-    stride: Union[int, Tuple[int]],
-    padding: Union[int, Tuple[int], str],
-    dilation: Union[int, Tuple[int]],
-) -> Tuple[int]:
+    kernel_size: int | tuple[int],
+    stride: int | tuple[int],
+    padding: int | tuple[int] | str,
+    dilation: int | tuple[int],
+) -> tuple[int]:
     """Returns the height and width of an image after a 2D img op.
 
     Currently supported for Conv2D, MaxPool2D and AvgPool2d ops.
@@ -489,7 +515,7 @@ def get_img_output_shape(
 torchvision_model_registry = Registry()
 
 
-def register_torchvision_model_variants(variants: List[TVModelVariant]):
+def register_torchvision_model_variants(variants: list[TVModelVariant]):
     def wrap(cls):
         # prime with empty placeholder
         torchvision_model_registry[cls.torchvision_model_type] = {}

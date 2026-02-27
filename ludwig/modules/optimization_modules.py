@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 from dataclasses import asdict
-from typing import Dict, Optional, Tuple, Type, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 import torch
 
@@ -36,7 +36,7 @@ def create_clipper(gradient_clipping_config: Optional["GradientClippingConfig"])
 
 def get_optimizer_class_and_kwargs(
     optimizer_config: "BaseOptimizerConfig", learning_rate: float
-) -> Tuple[Type[torch.optim.Optimizer], Dict]:
+) -> tuple[type[torch.optim.Optimizer], dict]:
     """Returns the optimizer class and kwargs for the optimizer.
 
     :return: Tuple of optimizer class and kwargs for the optimizer.

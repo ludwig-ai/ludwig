@@ -2,7 +2,8 @@ import hashlib
 import json
 import os
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Type, TYPE_CHECKING, Union
+from collections.abc import Callable
+from typing import Any, TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -23,7 +24,7 @@ def df_checksum(df: pd.DataFrame) -> str:
     return hashlib.sha1(pd.util.hash_pandas_object(df).values).hexdigest()
 
 
-def df_to_row_strs(df: pd.DataFrame) -> List[str]:
+def df_to_row_strs(df: pd.DataFrame) -> list[str]:
     rows = df.to_dict(orient="records")
     row_strs = [json.dumps(r) for r in rows]
     return row_strs
@@ -31,33 +32,29 @@ def df_to_row_strs(df: pd.DataFrame) -> List[str]:
 
 class RetrievalModel(ABC):
     @abstractmethod
-    def create_dataset_index(self, df: pd.DataFrame, backend: "Backend", columns_to_index: Optional[List[str]] = None):
+    def create_dataset_index(self, df: pd.DataFrame, backend: "Backend", columns_to_index: list[str] | None = None):
         """Creates an index for the dataset.
 
         If `columns_to_index` is None, all columns are indexed. Otherwise, only the columns in `columns_to_index` are
         used for indexing, but all columns in `df` are returned in the search results.
         """
-        pass
 
     @abstractmethod
     def search(
         self, df, backend: "Backend", k: int = 10, return_data: bool = False
-    ) -> Union[List[int], List[Dict[str, Any]]]:
+    ) -> list[int] | list[dict[str, Any]]:
         """Retrieve the top k results for the given query.
 
         If `return_data` is True, returns the data associated with the indices. Otherwise, returns the indices.
         """
-        pass
 
     @abstractmethod
     def save_index(self, name: str, cache_directory: str):
         """Saves the index to the cache directory."""
-        pass
 
     @abstractmethod
     def load_index(self, name: str, cache_directory: str):
         """Loads the index from the cache directory."""
-        pass
 
 
 class RandomRetrieval(RetrievalModel):
@@ -70,13 +67,13 @@ class RandomRetrieval(RetrievalModel):
         self.index = None
         self.index_data = None
 
-    def create_dataset_index(self, df: pd.DataFrame, backend: "Backend", columns_to_index: Optional[List[str]] = None):
+    def create_dataset_index(self, df: pd.DataFrame, backend: "Backend", columns_to_index: list[str] | None = None):
         self.index = np.array(range(len(df)))
         self.index_data = df
 
     def search(
         self, df, backend: "Backend", k: int = 10, return_data: bool = False
-    ) -> Union[List[int], List[Dict[str, Any]]]:
+    ) -> list[int] | list[dict[str, Any]]:
         results = []
         for _ in tqdm(range(len(df))):
             indices = np.random.choice(self.index, k, replace=False)
@@ -121,7 +118,7 @@ class SemanticRetrieval(RetrievalModel):
         # best batch size computed during the encoding step
         self.best_batch_size = None
 
-    def create_dataset_index(self, df: pd.DataFrame, backend: "Backend", columns_to_index: Optional[List[str]] = None):
+    def create_dataset_index(self, df: pd.DataFrame, backend: "Backend", columns_to_index: list[str] | None = None):
         if columns_to_index is None:
             columns_to_index = df.columns
         df_to_index = df[columns_to_index]
@@ -132,7 +129,7 @@ class SemanticRetrieval(RetrievalModel):
         # Save the entire df so we can return the full row when searching
         self.index_data = df
 
-    def _encode(self, row_strs: List[str], backend: "Backend") -> np.ndarray:
+    def _encode(self, row_strs: list[str], backend: "Backend") -> np.ndarray:
         # only do this step once
         if self.best_batch_size is None:
             self.best_batch_size = backend.tune_batch_size(
@@ -148,7 +145,7 @@ class SemanticRetrieval(RetrievalModel):
 
     def search(
         self, df: pd.DataFrame, backend: "Backend", k: int = 10, return_data: bool = False
-    ) -> Union[List[int], List[Dict[str, Any]]]:
+    ) -> list[int] | list[dict[str, Any]]:
         row_strs = df_to_row_strs(df)
 
         query_vectors = self._encode(row_strs, backend)
@@ -179,14 +176,14 @@ class SemanticRetrieval(RetrievalModel):
 
 
 def create_semantic_retrieval_model_evaluator(
-    model: "SentenceTransformer", samples: List[str]
-) -> Type[BatchSizeEvaluator]:
+    model: "SentenceTransformer", samples: list[str]
+) -> type[BatchSizeEvaluator]:
     class _RetrievalModelEvaluator(BatchSizeEvaluator):
         def __init__(self):
             self.model = model.to(get_torch_device())
             self.samples = samples
 
-        def step(self, batch_size: int, global_max_sequence_length: Optional[int] = None):
+        def step(self, batch_size: int, global_max_sequence_length: int | None = None):
             self.model.encode(self.samples[:batch_size], batch_size=batch_size, show_progress_bar=False)
 
     return _RetrievalModelEvaluator

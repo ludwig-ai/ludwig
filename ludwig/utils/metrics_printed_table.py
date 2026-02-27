@@ -1,5 +1,4 @@
 import logging
-from typing import Dict, List
 
 from tabulate import tabulate
 
@@ -9,7 +8,7 @@ from ludwig.utils.metric_utils import TrainerMetric
 logger = logging.getLogger(__name__)
 
 
-def get_metric_value_or_empty(metrics_log: Dict[str, List[TrainerMetric]], metric_name: str):
+def get_metric_value_or_empty(metrics_log: dict[str, list[TrainerMetric]], metric_name: str):
     """Returns the metric value if it exists or empty."""
     if metric_name not in metrics_log:
         return ""
@@ -17,10 +16,10 @@ def get_metric_value_or_empty(metrics_log: Dict[str, List[TrainerMetric]], metri
 
 
 def print_table_for_single_output_feature(
-    train_metrics_log: Dict[str, List[TrainerMetric]],
-    validation_metrics_log: Dict[str, List[TrainerMetric]],
-    test_metrics_log: Dict[str, List[TrainerMetric]],
-    combined_loss_for_each_split: List[float],
+    train_metrics_log: dict[str, list[TrainerMetric]],
+    validation_metrics_log: dict[str, list[TrainerMetric]],
+    test_metrics_log: dict[str, list[TrainerMetric]],
+    combined_loss_for_each_split: list[float],
 ) -> None:
     """Prints the metrics table for a single output feature.
 
@@ -54,10 +53,10 @@ def print_table_for_single_output_feature(
 
 
 def print_metrics_table(
-    output_features: Dict[str, "OutputFeature"],  # noqa
-    train_metrics_log: Dict[str, Dict[str, List[TrainerMetric]]],
-    validation_metrics_log: Dict[str, Dict[str, List[TrainerMetric]]],
-    test_metrics_log: Dict[str, Dict[str, List[TrainerMetric]]],
+    output_features: dict[str, "OutputFeature"],  # noqa
+    train_metrics_log: dict[str, dict[str, list[TrainerMetric]]],
+    validation_metrics_log: dict[str, dict[str, list[TrainerMetric]]],
+    test_metrics_log: dict[str, dict[str, list[TrainerMetric]]],
 ):
     """Prints a table of metrics table for each output feature, for each split.
 

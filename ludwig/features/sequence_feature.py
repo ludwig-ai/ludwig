@@ -16,7 +16,6 @@
 
 import logging
 from functools import partial
-from typing import Dict, List, Union
 
 import numpy as np
 import torch
@@ -82,10 +81,10 @@ class _SequencePreprocessing(torch.nn.Module):
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         """Takes a list of strings and returns a tensor of token ids."""
-        if not torch.jit.isinstance(v, List[str]):
+        if not torch.jit.isinstance(v, list[str]):
             raise ValueError(f"Unsupported input: {v}")
 
-        futures: List[torch.jit.Future[torch.Tensor]] = []
+        futures: list[torch.jit.Future[torch.Tensor]] = []
         for sequence in v:
             futures.append(
                 torch.jit.fork(
@@ -114,7 +113,7 @@ class _SequencePreprocessing(torch.nn.Module):
         if self.tokenizer_type == "hf_tokenizer":
             # Handles start, stop, and unknown symbols implicitly
             unit_sequence = self.tokenizer(sequence)
-            assert torch.jit.isinstance(unit_sequence, List[int])
+            assert torch.jit.isinstance(unit_sequence, list[int])
             # Ensures that the sequence lengths are aligned between the input and output tensors.
             sequence_length = min(len(unit_sequence), self.max_sequence_length)
             sequence_vector[:sequence_length] = torch.tensor(unit_sequence)[:sequence_length]
@@ -122,7 +121,7 @@ class _SequencePreprocessing(torch.nn.Module):
 
         # If tokenizer is not HF, we manually convert tokens to IDs and insert start, stop, and unknown symbols.
         unit_sequence = self.tokenizer(sequence_str)
-        assert torch.jit.isinstance(unit_sequence, List[str])
+        assert torch.jit.isinstance(unit_sequence, list[str])
 
         sequence_vector[0] = self.unit_to_id[self.start_symbol]
         if len(unit_sequence) + 1 < self.max_sequence_length:
@@ -151,13 +150,13 @@ class _SequencePostprocessing(torch.nn.Module):
         self.probabilities_key = PROBABILITIES
         self.probability_key = PROBABILITY
 
-    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> FeaturePostProcessingOutputDict:
+    def forward(self, preds: dict[str, torch.Tensor], feature_name: str) -> FeaturePostProcessingOutputDict:
         pred_predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
         pred_probabilities = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.probabilities_key)
 
-        predictions: List[List[str]] = []
+        predictions: list[list[str]] = []
         for sequence in pred_predictions:
-            sequence_predictions: List[str] = []
+            sequence_predictions: list[str] = []
             for i in range(self.max_sequence_length):
                 unit_id = int(sequence[i].item())
                 if unit_id < len(self.idx2str):
@@ -178,7 +177,7 @@ class _SequencePostprocessing(torch.nn.Module):
 
 
 class _SequencePredict(PredictModule):
-    def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: dict[str, torch.Tensor], feature_name: str) -> dict[str, torch.Tensor]:
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
         probabilities = torch.softmax(logits, -1)
         predictions = torch.argmax(logits, -1)
@@ -338,8 +337,8 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     def __init__(
         self,
-        output_feature_config: Union[SequenceOutputFeatureConfig, Dict],
-        output_features: Dict[str, OutputFeature],
+        output_feature_config: SequenceOutputFeatureConfig | dict,
+        output_features: dict[str, OutputFeature],
         **kwargs,
     ):
         super().__init__(output_feature_config, output_features, **kwargs)
@@ -347,7 +346,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         self._setup_loss()
         self._setup_metrics()
 
-    def logits(self, inputs: Dict[str, torch.Tensor], target=None):
+    def logits(self, inputs: dict[str, torch.Tensor], target=None):
         return self.decoder_obj(inputs, target=target)
 
     def create_predict_module(self) -> PredictModule:

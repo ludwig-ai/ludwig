@@ -17,7 +17,6 @@ import argparse
 import logging
 import os
 import sys
-from typing import List, Optional, Union
 
 import pandas as pd
 
@@ -35,12 +34,12 @@ logger = logging.getLogger(__name__)
 
 
 def experiment_cli(
-    config: Union[str, dict],
-    dataset: Union[str, dict, pd.DataFrame] = None,
-    training_set: Union[str, dict, pd.DataFrame] = None,
-    validation_set: Union[str, dict, pd.DataFrame] = None,
-    test_set: Union[str, dict, pd.DataFrame] = None,
-    training_set_metadata: Union[str, dict] = None,
+    config: str | dict,
+    dataset: str | dict | pd.DataFrame = None,
+    training_set: str | dict | pd.DataFrame = None,
+    validation_set: str | dict | pd.DataFrame = None,
+    test_set: str | dict | pd.DataFrame = None,
+    training_set_metadata: str | dict = None,
     data_format: str = None,
     experiment_name: str = "experiment",
     model_name: str = "run",
@@ -59,11 +58,11 @@ def experiment_cli(
     skip_collect_predictions: bool = False,
     skip_collect_overall_stats: bool = False,
     output_directory: str = "results",
-    gpus: Union[str, int, List[int]] = None,
-    gpu_memory_limit: Optional[float] = None,
+    gpus: str | int | list[int] = None,
+    gpu_memory_limit: float | None = None,
     allow_parallel_threads: bool = True,
-    callbacks: List[Callback] = None,
-    backend: Union[Backend, str] = None,
+    callbacks: list[Callback] = None,
+    backend: Backend | str = None,
     random_seed: int = default_random_seed,
     logging_level: int = logging.INFO,
     **kwargs,
@@ -214,7 +213,7 @@ def experiment_cli(
             allow_parallel_threads=allow_parallel_threads,
             callbacks=callbacks,
         )
-    (eval_stats, train_stats, preprocessed_data, output_directory) = model.experiment(
+    eval_stats, train_stats, preprocessed_data, output_directory = model.experiment(
         dataset=dataset,
         training_set=training_set,
         validation_set=validation_set,
@@ -257,19 +256,16 @@ def kfold_cross_validate_cli(
 
     # Inputs
     :param k_fold: (int) number of folds to create for the cross-validation
-    :param config: (Union[str, dict], default: None) a dictionary or file path
-            containing model configuration. Refer to the [User Guide]
-           (http://ludwig.ai/user_guide/#model-config) for details.
+    :param config: (Union[str, dict], default: None) a dictionary or file path containing model configuration. Refer to
+        the [User Guide] (http://ludwig.ai/user_guide/#model-config) for details.
     :param dataset: (string, default: None)
     :param output_directory: (string, default: 'results')
     :param random_seed: (int) Random seed used k-fold splits.
-    :param skip_save_k_fold_split_indices: (boolean, default: False) Disables
-            saving k-fold split indices
-
+    :param skip_save_k_fold_split_indices: (boolean, default: False) Disables saving k-fold split indices
     :return: None
     """
 
-    (kfold_cv_stats, kfold_split_indices) = kfold_cross_validate(
+    kfold_cv_stats, kfold_split_indices = kfold_cross_validate(
         k_fold,
         config=config,
         dataset=dataset,
@@ -496,8 +492,7 @@ def cli(sys_argv):
     parser.add_argument(
         "-b",
         "--backend",
-        help="specifies backend to use for parallel / distributed execution, "
-        "defaults to local execution or Horovod if called using horovodrun",
+        help="specifies backend to use for parallel / distributed execution, " "defaults to local execution",
         choices=ALL_BACKENDS,
     )
     parser.add_argument(

@@ -1,5 +1,3 @@
-from typing import List
-
 import pytest
 import torch
 
@@ -13,7 +11,7 @@ DEVICE = get_torch_device()
 @pytest.mark.parametrize("embedding_size", [2])
 @pytest.mark.parametrize("representation", ["dense", "sparse"])
 def test_embed(
-    vocab: List[str],
+    vocab: list[str],
     embedding_size: int,
     representation: str,
 ):
@@ -31,7 +29,7 @@ def test_embed(
 @pytest.mark.parametrize("embedding_size", [3])
 @pytest.mark.parametrize("representation", ["dense", "sparse"])
 def test_embed_set(
-    vocab: List[str],
+    vocab: list[str],
     embedding_size: int,
     representation: str,
 ):
@@ -49,7 +47,7 @@ def test_embed_set(
 @pytest.mark.parametrize("embedding_size", [5, 10])
 @pytest.mark.parametrize("representation", ["dense", "sparse"])
 def test_embed_weighted(
-    vocab: List[str],
+    vocab: list[str],
     embedding_size: int,
     representation: str,
 ):
@@ -63,7 +61,7 @@ def test_embed_weighted(
 @pytest.mark.parametrize("embedding_size", [2])
 @pytest.mark.parametrize("representation", ["dense", "sparse"])
 def test_embed_sequence(
-    vocab: List[str],
+    vocab: list[str],
     embedding_size: int,
     representation: str,
 ):
@@ -82,7 +80,7 @@ def test_embed_sequence(
 @pytest.mark.parametrize("embedding_size", [10])
 @pytest.mark.parametrize("representation", ["dense", "sparse"])
 def test_token_and_position_embedding(
-    vocab: List[str],
+    vocab: list[str],
     embedding_size: int,
     representation: str,
 ):

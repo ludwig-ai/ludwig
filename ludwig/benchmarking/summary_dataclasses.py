@@ -3,7 +3,6 @@ import logging
 import os
 from dataclasses import dataclass
 from statistics import mean
-from typing import Dict, List, Optional, Set, Union
 
 import ludwig.modules.metric_modules  # noqa: F401
 from ludwig.benchmarking.utils import format_memory, format_time
@@ -32,7 +31,7 @@ class MetricDiff:
     diff: float
 
     # Percentage of change the metric with respect to base_value.
-    diff_percentage: Union[float, str]
+    diff_percentage: float | str
 
     def __post_init__(self):
         """Add human-readable string representations to the field."""
@@ -92,10 +91,10 @@ class MetricsSummary:
     output_feature_name: str
 
     # Dictionary that maps from metric name to their values.
-    metric_to_values: Dict[str, Union[float, int]]
+    metric_to_values: dict[str, float | int]
 
     # Names of metrics for the output feature.
-    metric_names: Set[str]
+    metric_names: set[str]
 
 
 @dataclass
@@ -121,7 +120,7 @@ class MetricsDiff:
     experimental_summary: MetricsSummary
 
     # `List[MetricDiff]` containing diffs for metric of the two experiments.
-    metrics: List[MetricDiff]
+    metrics: list[MetricDiff]
 
     def to_string(self):
         ret = []
@@ -216,10 +215,10 @@ def build_metrics_summary(experiment_local_directory: str) -> MetricsSummary:
     output_feature_name: str = config["output_features"][0]["name"]
     metric_dict = report[output_feature_name]
     full_metric_names = get_metric_classes(output_feature_type)
-    metric_to_values: Dict[str, Union[float, int]] = {
+    metric_to_values: dict[str, float | int] = {
         metric_name: metric_dict[metric_name] for metric_name in full_metric_names if metric_name in metric_dict
     }
-    metric_names: Set[str] = set(metric_to_values)
+    metric_names: set[str] = set(metric_to_values)
 
     return MetricsSummary(
         experiment_local_directory=experiment_local_directory,
@@ -250,7 +249,7 @@ def build_metrics_diff(
 
     metrics_in_common = set(base_summary.metric_names).intersection(set(experimental_summary.metric_names))
 
-    metrics: List[MetricDiff] = [
+    metrics: list[MetricDiff] = [
         build_diff(name, base_summary.metric_to_values[name], experimental_summary.metric_to_values[name])
         for name in metrics_in_common
     ]
@@ -279,10 +278,10 @@ class ResourceUsageSummary:
     code_block_tag: str
 
     # Dictionary that maps from metric name to their values.
-    metric_to_values: Dict[str, Union[float, int]]
+    metric_to_values: dict[str, float | int]
 
     # Names of metrics for the output feature.
-    metric_names: Set[str]
+    metric_names: set[str]
 
 
 @dataclass
@@ -299,7 +298,7 @@ class ResourceUsageDiff:
     experimental_experiment_name: str
 
     # `List[Diff]` containing diffs for metric of the two experiments.
-    metrics: List[MetricDiff]
+    metrics: list[MetricDiff]
 
     def to_string(self):
         ret = []
@@ -366,7 +365,7 @@ def export_resource_usage_diff_to_csv(resource_usage_diff: ResourceUsageDiff, pa
         logger.info(f"Exported a CSV report to {path}\n")
 
 
-def average_runs(path_to_runs_dir: str) -> Dict[str, Union[int, float]]:
+def average_runs(path_to_runs_dir: str) -> dict[str, int | float]:
     """Return average metrics from code blocks/function that ran more than once.
 
     Metrics for code blocks/functions that were executed exactly once will be returned as is.
@@ -385,7 +384,7 @@ def average_runs(path_to_runs_dir: str) -> Dict[str, Union[int, float]]:
     return runs_average
 
 
-def summarize_resource_usage(path: str, tags: Optional[List[str]] = None) -> List[ResourceUsageSummary]:
+def summarize_resource_usage(path: str, tags: list[str] | None = None) -> list[ResourceUsageSummary]:
     """Create resource usage summaries for each code block/function that was decorated with ResourceUsageTracker.
 
     Each entry of the list corresponds to the metrics collected from a code block/function run.
@@ -411,7 +410,7 @@ def summarize_resource_usage(path: str, tags: Optional[List[str]] = None) -> Lis
 
     summary_list = []
     for code_block_tag, metric_type_dicts in summary.items():
-        merged_summary: Dict[str, Union[float, int]] = {}
+        merged_summary: dict[str, float | int] = {}
         for metrics in metric_type_dicts.values():
             assert "num_runs" in metrics
             assert "num_runs" not in merged_summary or metrics["num_runs"] == merged_summary["num_runs"]
@@ -427,9 +426,9 @@ def summarize_resource_usage(path: str, tags: Optional[List[str]] = None) -> Lis
 def build_resource_usage_diff(
     base_path: str,
     experimental_path: str,
-    base_experiment_name: Optional[str] = None,
-    experimental_experiment_name: Optional[str] = None,
-) -> List[ResourceUsageDiff]:
+    base_experiment_name: str | None = None,
+    experimental_experiment_name: str | None = None,
+) -> list[ResourceUsageDiff]:
     """Build and return a ResourceUsageDiff object to diff resource usage metrics between two experiments.
 
     :param base_path: corresponds to the `output_dir` argument in the base ResourceUsageTracker run.
@@ -447,16 +446,16 @@ def build_resource_usage_diff(
     diffs = []
     for base_summary, experimental_summary in summaries_list:
         metrics_in_common = set(base_summary.metric_names).intersection(set(experimental_summary.metric_names))
-        metrics: List[MetricDiff] = [
+        metrics: list[MetricDiff] = [
             build_diff(name, base_summary.metric_to_values[name], experimental_summary.metric_to_values[name])
             for name in metrics_in_common
         ]
         diff = ResourceUsageDiff(
             code_block_tag=base_summary.code_block_tag,
             base_experiment_name=base_experiment_name if base_experiment_name else "experiment_1",
-            experimental_experiment_name=experimental_experiment_name
-            if experimental_experiment_name
-            else "experiment_2",
+            experimental_experiment_name=(
+                experimental_experiment_name if experimental_experiment_name else "experiment_2"
+            ),
             metrics=metrics,
         )
         diffs.append(diff)

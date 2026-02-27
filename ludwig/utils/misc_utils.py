@@ -21,7 +21,7 @@ import subprocess
 import weakref
 from collections import OrderedDict
 from collections.abc import Mapping
-from typing import Any, Dict, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 import numpy
 import torch
@@ -42,7 +42,7 @@ def set_random_seed(random_seed):
     random.seed(random_seed)
     numpy.random.seed(random_seed)
     torch.manual_seed(random_seed)
-    if torch.cuda.is_available():
+    if torch.cuda.is_available() and torch.cuda.device_count() > 0:
         torch.cuda.manual_seed(random_seed)
 
 
@@ -173,8 +173,6 @@ def remove_empty_lines(str):
     return "\n".join([line.rstrip() for line in str.split("\n") if line.rstrip()])
 
 
-# TODO(travis): move to cached_property when we drop Python 3.7.
-# https://stackoverflow.com/a/33672499
 @DeveloperAPI
 def memoized_method(*lru_args, **lru_kwargs):
     def decorator(func):
@@ -215,7 +213,7 @@ def get_commit_hash():
 
 
 @DeveloperAPI
-def scrub_creds(config_dict: Dict[str, Any]) -> Dict[str, Any]:
+def scrub_creds(config_dict: dict[str, Any]) -> dict[str, Any]:
     """Returns a copy of a config dict with all sensitive fields scrubbed."""
     if config_dict.get("backend", {}) and "credentials" in config_dict.get("backend", {}):
         config_dict["backend"]["credentials"] = {}

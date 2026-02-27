@@ -1,7 +1,7 @@
 from abc import ABC
+from collections.abc import Callable
 from dataclasses import field
 from importlib import import_module
-from typing import Callable, Dict, Optional, Tuple, Union
 
 from marshmallow import fields, ValidationError
 
@@ -86,9 +86,9 @@ class BaseSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     time_attr: str = time_attr_alias()
 
-    metric: Optional[str] = metric_alias()
+    metric: str | None = metric_alias()
 
-    mode: Optional[str] = schema_utils.StringOptions(
+    mode: str | None = schema_utils.StringOptions(
         options=["min", "max"],
         default=None,
         allow_none=True,
@@ -247,7 +247,7 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
         ),
     )
 
-    hyperparam_mutations: Optional[Dict] = schema_utils.Dict(
+    hyperparam_mutations: dict | None = schema_utils.Dict(
         default=None,
         description=(
             "Hyperparams to mutate. The format is as follows: for each key, either a list, function, or a tune search "
@@ -282,7 +282,7 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
         ),
     )
 
-    perturbation_factors: Tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
+    perturbation_factors: tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
         default=(1.2, 0.8),
         allow_none=False,
         max=None,
@@ -290,7 +290,7 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
     )
 
     # TODO: Add schema support for Callable
-    custom_explore_fn: Union[str, Callable] = schema_utils.String(
+    custom_explore_fn: str | Callable = schema_utils.String(
         default=None,
         allow_none=True,
         description=(
@@ -364,7 +364,7 @@ class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig):
         ),
     )
 
-    hyperparam_bounds: Optional[Dict] = schema_utils.Dict(
+    hyperparam_bounds: dict | None = schema_utils.Dict(
         default=None,
         description=(
             "Hyperparameters to mutate. The format is as follows: for each key, enter a list of the form [min, max] "
@@ -449,13 +449,13 @@ class ResourceChangingSchedulerConfig(BaseSchedulerConfig):
 
     type: str = schema_utils.ProtectedString("resource_changing")
 
-    base_scheduler: Union[str, None, Callable] = schema_utils.String(
+    base_scheduler: str | None | Callable = schema_utils.String(
         default=None,
         allow_none=True,
         description=("The scheduler to provide decisions about trials. If None, a default FIFOScheduler will be used."),
     )
 
-    resources_allocation_function: Union[str, Callable] = schema_utils.String(
+    resources_allocation_function: str | Callable = schema_utils.String(
         default=None,
         allow_none=True,
         description=(

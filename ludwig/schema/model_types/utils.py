@@ -2,7 +2,8 @@ import copy
 import logging
 import sys
 import warnings
-from typing import Any, Dict, List, Mapping, Set, TYPE_CHECKING
+from collections.abc import Mapping
+from typing import Any, TYPE_CHECKING
 
 from marshmallow import ValidationError
 from transformers import AutoConfig
@@ -57,7 +58,7 @@ def merge_with_defaults(config_dict: ModelConfigDict) -> ModelConfigDict:
     return config_dict
 
 
-def _merge_features_(features: List[Dict[str, Any]], defaults: Dict[str, Any], exclude_keys: Set[str]):
+def _merge_features_(features: list[dict[str, Any]], defaults: dict[str, Any], exclude_keys: set[str]):
     for feature in features:
         ftype = feature.get(TYPE)
         if not ftype:
@@ -71,7 +72,7 @@ def _merge_features_(features: List[Dict[str, Any]], defaults: Dict[str, Any], e
         feature.update(merged_feature)
 
 
-def _merge_dict_with_types(dct: Dict[str, Any], merge_dct: Dict[str, Any], exclude_keys: Set[str]) -> Dict[str, Any]:
+def _merge_dict_with_types(dct: dict[str, Any], merge_dct: dict[str, Any], exclude_keys: set[str]) -> dict[str, Any]:
     dct = copy.deepcopy(dct)
     dct = {k: v for k, v in dct.items() if k not in exclude_keys}
 
@@ -243,7 +244,7 @@ def set_hyperopt_defaults_(config: "ModelConfig"):
     config.trainer.early_stop = -1
 
     if isinstance(config.trainer, ECDTrainerConfig) and isinstance(scheduler, BaseHyperbandSchedulerConfig):
-        # TODO(travis): explore similar contraints for GBMs, which don't have epochs
+        # TODO(travis): explore similar constraints for other model types that may not have epochs
         max_t = scheduler.max_t
         time_attr = scheduler.time_attr
         epochs = config.trainer.epochs

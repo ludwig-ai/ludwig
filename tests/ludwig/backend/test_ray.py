@@ -5,9 +5,7 @@ import pytest
 
 # Skip these tests if Ray is not installed
 ray = pytest.importorskip("ray")  # noqa
-horovod = pytest.importorskip("horovod")  # noqa
 
-from ray.train.horovod import HorovodConfig  # noqa
 from ray.train.torch import TorchConfig  # noqa
 
 from ludwig.backend import initialize_backend  # noqa
@@ -28,7 +26,6 @@ pytestmark = pytest.mark.distributed
             2,
             dict(
                 backend=TorchConfig(),
-                strategy="ddp",
                 num_workers=1,
                 use_gpu=True,
                 resources_per_worker={
@@ -38,78 +35,6 @@ pytestmark = pytest.mark.distributed
             ),
             id="ddp",
             marks=pytest.mark.distributed,
-        ),
-        # Test Horovod
-        pytest.param(
-            {"strategy": "horovod"},
-            {"CPU": 4, "GPU": 1},
-            2,
-            dict(
-                backend=HorovodConfig(),
-                strategy="horovod",
-                num_workers=1,
-                use_gpu=True,
-                resources_per_worker={
-                    "CPU": 0,
-                    "GPU": 1,
-                },
-            ),
-            id="prioritize-gpu-when-available-over-multinode",
-            marks=[pytest.mark.distributed, pytest.mark.horovod],
-        ),
-        # Use one worker per node for CPU, chck NIC override
-        pytest.param(
-            {"strategy": "horovod", "nics": [""]},
-            {"CPU": 4, "GPU": 0},
-            2,
-            dict(
-                backend=HorovodConfig(nics={""}),
-                strategy="horovod",
-                num_workers=2,
-                use_gpu=False,
-                resources_per_worker={
-                    "CPU": 1,
-                    "GPU": 0,
-                },
-            ),
-            id="one-worker-per-node-nic-override",
-            marks=[pytest.mark.distributed, pytest.mark.horovod],
-        ),
-        # Allow explicitly setting GPU usage for autoscaling clusters
-        pytest.param(
-            {"strategy": "horovod", "use_gpu": True, "num_workers": 2},
-            {"CPU": 4, "GPU": 0},
-            1,
-            dict(
-                backend=HorovodConfig(),
-                strategy="horovod",
-                num_workers=2,
-                use_gpu=True,
-                resources_per_worker={
-                    "CPU": 0,
-                    "GPU": 1,
-                },
-            ),
-            id="set-gpu-usage-autoscaling-clusters",
-            marks=[pytest.mark.distributed, pytest.mark.horovod],
-        ),
-        # Allow overriding resources_per_worker
-        pytest.param(
-            {"strategy": "horovod", "resources_per_worker": {"CPU": 2, "GPU": 1}},
-            {"CPU": 4, "GPU": 2},
-            2,
-            dict(
-                backend=HorovodConfig(),
-                strategy="horovod",
-                num_workers=2,
-                use_gpu=True,
-                resources_per_worker={
-                    "CPU": 2,
-                    "GPU": 1,
-                },
-            ),
-            id="override-resources-per-worker",
-            marks=[pytest.mark.distributed, pytest.mark.horovod],
         ),
     ],
 )
@@ -125,9 +50,7 @@ def test_get_trainer_kwargs(trainer_config, cluster_resources, num_nodes, expect
             actual_backend = actual_kwargs.pop("backend")
             expected_backend = expected_kwargs.pop("backend")
 
-            assert type(actual_backend) == type(expected_backend)
-            if isinstance(actual_backend, HorovodConfig):
-                assert actual_backend.nics == expected_backend.nics
+            assert type(actual_backend) is type(expected_backend)
             assert actual_kwargs == expected_kwargs
 
 
@@ -145,18 +68,18 @@ def test_get_trainer_kwargs(trainer_config, cluster_resources, num_nodes, expect
                 "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": None},
             },
         ),
-        (  # If max_concurrent_trials is auto, set it to total_trials - 2 if num_samples == num_cpus
+        (  # If max_concurrent_trials is auto, set to cpus // cpus_per_trial
             {
                 "parameters": {"trainer.learning_rate": {"space": "choice", "values": [0.001, 0.01, 0.1]}},
                 "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": "auto"},
             },
             {
                 "parameters": {"trainer.learning_rate": {"space": "choice", "values": [0.001, 0.01, 0.1]}},
-                "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": 3},
+                "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": 4},
             },
         ),
-        (  # Even though num_samples is set to 4, this will actually result in 9 trials. We should correctly set
-            # max_concurrent_trials to 2
+        (  # Even though num_samples is set to 4, this will actually result in 9 trials.
+            # With 4 CPUs and 1 CPU/trial, max_concurrent_trials = 4
             {
                 "parameters": {
                     "trainer.learning_rate": {"space": "grid_search", "values": [0.001, 0.01, 0.1]},
@@ -169,7 +92,7 @@ def test_get_trainer_kwargs(trainer_config, cluster_resources, num_nodes, expect
                     "trainer.learning_rate": {"space": "grid_search", "values": [0.001, 0.01, 0.1]},
                     "combiner.num_fc_layers": {"space": "grid_search", "values": [1, 2, 3]},
                 },
-                "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": 3},
+                "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": 4},
             },
         ),
         (  # Ensure user config value (1) is respected if it is passed in

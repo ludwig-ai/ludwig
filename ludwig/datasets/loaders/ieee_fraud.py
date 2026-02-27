@@ -13,7 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 import os
-from typing import List
 
 import pandas as pd
 
@@ -23,7 +22,7 @@ from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 class IEEEFraudLoader(DatasetLoader):
     """The IEEE-CIS Fraud Detection Dataset https://www.kaggle.com/c/ieee-fraud-detection/overview."""
 
-    def load_unprocessed_dataframe(self, file_paths: List[str]) -> pd.DataFrame:
+    def load_unprocessed_dataframe(self, file_paths: list[str]) -> pd.DataFrame:
         """Load dataset files into a dataframe."""
         train_files = {"train_identity.csv", "train_transaction.csv"}
         test_files = {"test_identity.csv", "test_transaction.csv"}

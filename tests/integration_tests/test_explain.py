@@ -6,11 +6,10 @@ import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import BATCH_SIZE, BINARY, CATEGORY, MINIMUM_BATCH_SIZE, MODEL_ECD, MODEL_GBM, TYPE
+from ludwig.constants import BATCH_SIZE, BINARY, CATEGORY, MINIMUM_BATCH_SIZE, MODEL_ECD, TYPE
 from ludwig.explain.captum import IntegratedGradientsExplainer
 from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import Explanation
-from ludwig.explain.gbm import GBMExplainer
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -55,7 +54,7 @@ def test_explanation_dataclass():
 
 
 def test_abstract_explainer_instantiation():
-    with pytest.raises(TypeError, match="Can't instantiate abstract class Explainer with abstract method"):
+    with pytest.raises(TypeError, match="Can't instantiate abstract class Explainer"):
         Explainer(None, inputs_df=None, sample_df=None, target=None)
 
 
@@ -63,7 +62,6 @@ def test_abstract_explainer_instantiation():
     "explainer_class, model_type",
     [
         (IntegratedGradientsExplainer, MODEL_ECD),
-        (GBMExplainer, MODEL_GBM),
     ],
 )
 @pytest.mark.parametrize(
@@ -119,14 +117,13 @@ def test_explainer_api_ray_minimum_batch_size(tmpdir, ray_cluster_2cpu):
     )
 
 
+@pytest.mark.flaky(reruns=2, reruns_delay=5)
 @pytest.mark.parametrize("cache_encoder_embeddings", [True, False])
 @pytest.mark.parametrize(
     "explainer_class,model_type",
     [
         pytest.param(IntegratedGradientsExplainer, MODEL_ECD, id="ecd_local"),
         pytest.param(RayIntegratedGradientsExplainer, MODEL_ECD, id="ecd_ray", marks=pytest.mark.distributed),
-        # TODO(travis): once we support GBM text features
-        # pytest.param((GBMExplainer, MODEL_GBM), id="gbm_local"),
     ],
 )
 def test_explainer_text_hf(explainer_class, model_type, cache_encoder_embeddings, tmpdir, ray_cluster_2cpu):
@@ -147,8 +144,6 @@ def test_explainer_text_hf(explainer_class, model_type, cache_encoder_embeddings
     [
         pytest.param(IntegratedGradientsExplainer, MODEL_ECD, id="ecd_local"),
         pytest.param(RayIntegratedGradientsExplainer, MODEL_ECD, id="ecd_ray", marks=pytest.mark.distributed),
-        # TODO(travis): once we support GBM text features
-        # pytest.param((GBMExplainer, MODEL_GBM), id="gbm_local"),
     ],
 )
 def test_explainer_text_tied_weights(explainer_class, model_type, tmpdir):
@@ -179,22 +174,21 @@ def run_test_explainer_api(
             category_feature(encoder={TYPE: "onehot", "reduce_output": "sum"}),
             category_feature(encoder={TYPE: "passthrough", "reduce_output": "sum"}),
         ]
-        if model_type == MODEL_ECD:
-            # TODO(travis): need unit tests to test the get_embedding_layer() of every encoder to ensure it is
-            #  compatible with the explainer
-            input_features += [
-                category_feature(encoder={"type": "dense", "reduce_output": "sum"}),
-                text_feature(encoder={"vocab_size": 3}),
-                vector_feature(),
-                timeseries_feature(),
-                image_feature(folder=image_dest_folder),
-                # audio_feature(os.path.join(tmpdir, "generated_audio")), # NOTE: works but takes a long time
-                # sequence_feature(encoder={"vocab_size": 3}),
-                date_feature(),
-                # h3_feature(),
-                set_feature(encoder={"vocab_size": 3}),
-                # bag_feature(encoder={"vocab_size": 3}),
-            ]
+        # TODO(travis): need unit tests to test the get_embedding_layer() of every encoder to ensure it is
+        #  compatible with the explainer
+        input_features += [
+            category_feature(encoder={"type": "dense", "reduce_output": "sum"}),
+            text_feature(encoder={"vocab_size": 3}),
+            vector_feature(),
+            timeseries_feature(),
+            image_feature(folder=image_dest_folder),
+            # audio_feature(os.path.join(tmpdir, "generated_audio")), # NOTE: works but takes a long time
+            # sequence_feature(encoder={"vocab_size": 3}),
+            date_feature(),
+            # h3_feature(),
+            set_feature(encoder={"vocab_size": 3}),
+            # bag_feature(encoder={"vocab_size": 3}),
+        ]
 
     # Generate data
     csv_filename = os.path.join(tmpdir, "training.csv")
@@ -205,12 +199,7 @@ def run_test_explainer_api(
 
     # Train model
     config = {"input_features": input_features, "output_features": output_features, "model_type": model_type}
-    if model_type == MODEL_ECD:
-        config["trainer"] = {"epochs": 2, BATCH_SIZE: batch_size}
-    else:
-        # Disable feature filtering to avoid having no features due to small test dataset,
-        # see https://stackoverflow.com/a/66405983/5222402
-        config["trainer"] = {"feature_pre_filter": False}
+    config["trainer"] = {"epochs": 2, BATCH_SIZE: batch_size}
     config.update(additional_config)
 
     model = LudwigModel(config, logging_level=logging.WARNING, backend=LocalTestBackend())

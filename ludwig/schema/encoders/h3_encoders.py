@@ -1,5 +1,3 @@
-from typing import List
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import H3
 from ludwig.schema import utils as schema_utils
@@ -99,7 +97,7 @@ class H3EmbedConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["H3Embed"]["num_fc_layers"],
     )
 
-    fc_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
+    fc_layers: list[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
         default=None,
         description="List of dictionaries containing the parameters for each fully connected layer.",
         parameter_metadata=ENCODER_METADATA["H3Embed"]["fc_layers"],
@@ -196,7 +194,7 @@ class H3WeightedSumConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["H3WeightedSum"]["num_fc_layers"],
     )
 
-    fc_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
+    fc_layers: list[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
         default=None,
         description="List of dictionaries containing the parameters for each fully connected layer.",
         parameter_metadata=ENCODER_METADATA["H3WeightedSum"]["fc_layers"],

@@ -12,8 +12,9 @@ import signal
 import tempfile
 import uuid
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from glob import glob
-from typing import Any, Dict, Mapping, Optional, Tuple, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 import torch
 from torch.optim import Optimizer
@@ -81,8 +82,8 @@ class Checkpoint(ABC):
         self,
         distributed: "DistributedStrategy",
         model: "BaseModel",
-        optimizer: Optional[Optimizer] = None,
-        scheduler: Optional[LRScheduler] = None,
+        optimizer: Optimizer | None = None,
+        scheduler: LRScheduler | None = None,
     ):
         """Constructor."""
         self.distributed = distributed
@@ -97,18 +98,18 @@ class Checkpoint(ABC):
         mkdir(directory)
 
     @abstractmethod
-    def load(self, save_path: str, device: Optional[torch.device] = None) -> bool:
+    def load(self, save_path: str, device: torch.device | None = None) -> bool:
         pass
 
     @abstractmethod
-    def get_state_for_inference(self, save_path: str, device: Optional[torch.device] = None) -> Mapping[str, Any]:
+    def get_state_for_inference(self, save_path: str, device: torch.device | None = None) -> Mapping[str, Any]:
         pass
 
     @abstractmethod
     def save(self, save_path: str, global_step: int):
         pass
 
-    def _get_global_step(self, state: Dict[str, Any], save_path: str) -> int:
+    def _get_global_step(self, state: dict[str, Any], save_path: str) -> int:
         global_step = state.get("global_step")
         if global_step is None:
             # Legacy step detection for older checkpoint format which encoded the
@@ -124,7 +125,7 @@ class MultiNodeCheckpoint(Checkpoint):
             super().prepare(directory)
         self.distributed.barrier()
 
-    def load(self, save_path: str, device: Optional[torch.device] = None) -> bool:
+    def load(self, save_path: str, device: torch.device | None = None) -> bool:
         """Load state from a saved checkpoint.
 
         Args:
@@ -160,7 +161,7 @@ class MultiNodeCheckpoint(Checkpoint):
             logger.error(e)
             return False
 
-    def get_state_for_inference(self, save_path: str, device: Optional[torch.device] = None) -> Mapping[str, Any]:
+    def get_state_for_inference(self, save_path: str, device: torch.device | None = None) -> Mapping[str, Any]:
         state = torch.load(save_path, map_location=device)
         return state[MODEL_WEIGHTS_FILE_NAME]
 
@@ -210,7 +211,7 @@ class MultiNodeCheckpoint(Checkpoint):
                     signal.signal(signal.SIGINT, orig_handler)
         self.distributed.barrier()
 
-    def get_model_state_dict(self) -> Dict[str, Any]:
+    def get_model_state_dict(self) -> dict[str, Any]:
         state = self.model.state_dict()
 
         # Remove frozen parameter weights from state_dict for adapters and pretrained models
@@ -319,7 +320,7 @@ class CheckpointManager:
         save_path = os.path.join(self.directory, f"{tag}.ckpt")
         self.checkpoint.load(save_path, self.device)
 
-    def get_best_checkpoint_state_for_inference(self, device: torch.device) -> Tuple[Mapping[str, Any], None]:
+    def get_best_checkpoint_state_for_inference(self, device: torch.device) -> tuple[Mapping[str, Any], None]:
         save_path = os.path.join(self.directory, f"{BEST}.ckpt")
         try:
             return self.checkpoint.get_state_for_inference(save_path, device)

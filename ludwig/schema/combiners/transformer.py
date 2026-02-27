@@ -1,5 +1,3 @@
-from typing import Optional
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
@@ -20,7 +18,7 @@ class TransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):
         description=COMBINER_METADATA["transformer"]["type"].long_description,
     )
 
-    reduce_output: Optional[str] = schema_utils.ReductionOptions(
+    reduce_output: str | None = schema_utils.ReductionOptions(
         default="mean",
         description="Strategy to use to aggregate the output of the transformer.",
         parameter_metadata=COMBINER_METADATA["transformer"]["reduce_output"],

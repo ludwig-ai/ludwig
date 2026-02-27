@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, Union
+from typing import Any
 
 import yaml
 
@@ -9,7 +9,7 @@ _PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 _CONFIG_DIR = os.path.join(_PATH_HERE, "configs")
 
 
-def _to_metadata(d: Dict[str, Any]) -> Union[ParameterMetadata, Dict[str, Any]]:
+def _to_metadata(d: dict[str, Any]) -> ParameterMetadata | dict[str, Any]:
     is_nested = False
     for k, v in list(d.items()):
         if isinstance(v, dict):
@@ -22,7 +22,7 @@ def _to_metadata(d: Dict[str, Any]) -> Union[ParameterMetadata, Dict[str, Any]]:
     return ParameterMetadata.from_dict(d)
 
 
-def _load(fname: str) -> Dict[str, Any]:
+def _load(fname: str) -> dict[str, Any]:
     with open(os.path.join(_CONFIG_DIR, fname)) as f:
         return _to_metadata(yaml.safe_load(f))
 

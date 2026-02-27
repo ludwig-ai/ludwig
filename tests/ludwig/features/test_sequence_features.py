@@ -1,9 +1,11 @@
-from typing import List, Tuple
-
 import numpy as np
 import pytest
 import torch
-import torchtext
+
+try:
+    import torchtext
+except ImportError:
+    torchtext = None
 
 from ludwig.constants import ENCODER_OUTPUT, LAST_HIDDEN, LOGITS, SEQUENCE, TEXT, TYPE
 from ludwig.features.sequence_feature import _SequencePreprocessing, SequenceInputFeature, SequenceOutputFeature
@@ -20,7 +22,7 @@ VOCAB_SIZE = 64
 
 
 @pytest.fixture(scope="module")
-def input_sequence() -> Tuple[torch.Tensor, List]:
+def input_sequence() -> tuple[torch.Tensor, list]:
     # generates a realistic looking synthetic sequence tensor, i.e.
     # each sequence will have non-zero tokens at the beginning with
     # trailing zero tokens, including a max length token with a single
@@ -193,7 +195,8 @@ def test_text_preproc_module_space_punct_tokenizer():
 
 
 @pytest.mark.skipif(
-    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0), reason="requires torchtext 0.12.0 or higher"
+    torchtext is None or torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0),
+    reason="requires torchtext 0.12.0 or higher",
 )
 def test_sequence_preproc_module_sentencepiece_tokenizer():
     metadata = {
@@ -228,7 +231,8 @@ def test_sequence_preproc_module_sentencepiece_tokenizer():
 
 
 @pytest.mark.skipif(
-    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0), reason="requires torchtext 0.12.0 or higher"
+    torchtext is None or torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0),
+    reason="requires torchtext 0.12.0 or higher",
 )
 def test_sequence_preproc_module_clip_tokenizer():
     metadata = {
@@ -261,7 +265,8 @@ def test_sequence_preproc_module_clip_tokenizer():
 
 
 @pytest.mark.skipif(
-    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0), reason="requires torchtext 0.12.0 or higher"
+    torchtext is None or torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0),
+    reason="requires torchtext 0.12.0 or higher",
 )
 def test_sequence_preproc_module_gpt2bpe_tokenizer():
     metadata = {
@@ -297,7 +302,8 @@ def test_sequence_preproc_module_gpt2bpe_tokenizer():
 
 
 @pytest.mark.skipif(
-    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 13, 0), reason="requires torchtext 0.13.0 or higher"
+    torchtext is None or torch.torch_version.TorchVersion(torchtext.__version__) < (0, 13, 0),
+    reason="requires torchtext 0.13.0 or higher",
 )
 def test_sequence_preproc_module_bert_tokenizer():
     metadata = {

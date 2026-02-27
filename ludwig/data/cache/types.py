@@ -20,7 +20,7 @@ import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Union
+from typing import Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.utils.fs_utils import checksum
@@ -46,7 +46,7 @@ class CacheableDataset(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def unwrap(self) -> Union[str, DataFrame]:
+    def unwrap(self) -> str | DataFrame:
         raise NotImplementedError()
 
 
@@ -63,7 +63,7 @@ class CacheableDataframe(CacheableDataset):
     def get_cache_directory(self) -> str:
         return os.getcwd()
 
-    def unwrap(self) -> Union[str, DataFrame]:
+    def unwrap(self) -> str | DataFrame:
         return self.df
 
 
@@ -86,14 +86,14 @@ class CacheablePath(CacheableDataset):
     def get_cache_directory(self) -> str:
         return os.path.dirname(self.path)
 
-    def unwrap(self) -> Union[str, DataFrame]:
+    def unwrap(self) -> str | DataFrame:
         return self.path
 
 
 CacheInput = Union[str, DataFrame, CacheableDataset]
 
 
-def wrap(dataset: Optional[CacheInput]) -> CacheableDataset:
+def wrap(dataset: CacheInput | None) -> CacheableDataset:
     if dataset is None:
         return None
 

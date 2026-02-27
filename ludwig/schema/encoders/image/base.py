@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
+from typing import Any, TYPE_CHECKING
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import IMAGE
@@ -33,7 +33,7 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
         description=ENCODER_METADATA["Stacked2DCNN"]["type"].long_description,
     )
 
-    conv_dropout: Optional[int] = schema_utils.FloatRange(
+    conv_dropout: int | None = schema_utils.FloatRange(
         default=0.0,
         min=0,
         max=1,
@@ -61,14 +61,14 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["width"],
     )
 
-    num_channels: Optional[int] = schema_utils.NonNegativeInteger(
+    num_channels: int | None = schema_utils.NonNegativeInteger(
         default=None,
         allow_none=True,
         description="Number of channels to use in the encoder. ",
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["num_channels"],
     )
 
-    out_channels: Optional[int] = schema_utils.NonNegativeInteger(
+    out_channels: int | None = schema_utils.NonNegativeInteger(
         default=32,
         description="Indicates the number of filters, and by consequence the output channels of the 2d convolution. "
         "If out_channels is not already specified in conv_layers this is the default out_channels that "
@@ -76,7 +76,7 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["out_channels"],
     )
 
-    kernel_size: Optional[Union[int, Tuple[int]]] = schema_utils.OneOfOptionsField(
+    kernel_size: int | tuple[int] | None = schema_utils.OneOfOptionsField(
         default=3,
         description="An integer or pair of integers specifying the kernel size. A single integer specifies a square "
         "kernel, while a pair of integers specifies the height and width of the kernel in that order (h, "
@@ -89,7 +89,7 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["kernel_size"],
     )
 
-    stride: Optional[Union[int, Tuple[int]]] = schema_utils.OneOfOptionsField(
+    stride: int | tuple[int] | None = schema_utils.OneOfOptionsField(
         default=1,
         description="An integer or pair of integers specifying the stride of the convolution along the height and "
         "width. If a stride is not already specified in conv_layers, specifies the default stride of the "
@@ -101,7 +101,7 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["stride"],
     )
 
-    padding_mode: Optional[str] = schema_utils.StringOptions(
+    padding_mode: str | None = schema_utils.StringOptions(
         options=["zeros", "reflect", "replicate", "circular"],
         default="zeros",
         description="If padding_mode is not already specified in conv_layers, specifies the default padding_mode of "
@@ -109,7 +109,7 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["padding_mode"],
     )
 
-    padding: Optional[Union[int, Tuple[int], str]] = schema_utils.OneOfOptionsField(
+    padding: int | tuple[int] | str | None = schema_utils.OneOfOptionsField(
         default="valid",
         allow_none=True,
         description="An int, pair of ints (h, w), or one of ['valid', 'same'] specifying the padding used for"
@@ -122,7 +122,7 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["padding"],
     )
 
-    dilation: Optional[Union[int, Tuple[int]]] = schema_utils.OneOfOptionsField(
+    dilation: int | tuple[int] | None = schema_utils.OneOfOptionsField(
         default=1,
         allow_none=True,
         description="An int or pair of ints specifying the dilation rate to use for dilated convolution. If dilation "
@@ -135,7 +135,7 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["dilation"],
     )
 
-    groups: Optional[int] = schema_utils.PositiveInteger(
+    groups: int | None = schema_utils.PositiveInteger(
         default=1,
         description="Groups controls the connectivity between convolution inputs and outputs. When groups = 1, each "
         "output channel depends on every input channel. When groups > 1, input and output channels are "
@@ -144,14 +144,14 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["groups"],
     )
 
-    pool_function: Optional[str] = schema_utils.StringOptions(
+    pool_function: str | None = schema_utils.StringOptions(
         ["max", "average", "avg", "mean"],
         default="max",
         description="Pooling function to use.",
         parameter_metadata=ENCODER_METADATA["conv_params"]["pool_function"],
     )
 
-    pool_kernel_size: Optional[Union[int, Tuple[int]]] = schema_utils.OneOfOptionsField(
+    pool_kernel_size: int | tuple[int] | None = schema_utils.OneOfOptionsField(
         default=2,
         allow_none=True,
         description="An integer or pair of integers specifying the pooling size. If pool_kernel_size is not specified "
@@ -163,7 +163,7 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["pool_kernel_size"],
     )
 
-    pool_stride: Optional[Union[int, Tuple[int]]] = schema_utils.OneOfOptionsField(
+    pool_stride: int | tuple[int] | None = schema_utils.OneOfOptionsField(
         default=None,
         allow_none=True,
         description="An integer or pair of integers specifying the pooling stride, which is the factor by which the "
@@ -175,7 +175,7 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["pool_stride"],
     )
 
-    pool_padding: Optional[Union[int, Tuple[int]]] = schema_utils.OneOfOptionsField(
+    pool_padding: int | tuple[int] | None = schema_utils.OneOfOptionsField(
         default=0,
         allow_none=True,
         description="An integer or pair of ints specifying pooling padding (h, w).",
@@ -186,7 +186,7 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["pool_padding"],
     )
 
-    pool_dilation: Optional[Union[int, Tuple[int]]] = schema_utils.OneOfOptionsField(
+    pool_dilation: int | tuple[int] | None = schema_utils.OneOfOptionsField(
         default=1,
         allow_none=True,
         description="An integer or pair of ints specifying pooling dilation rate (h, w).",
@@ -197,20 +197,20 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["pool_dilation"],
     )
 
-    output_size: Optional[int] = schema_utils.PositiveInteger(
+    output_size: int | None = schema_utils.PositiveInteger(
         default=128,
         description="If output_size is not already specified in fc_layers this is the default output_size that will "
         "be used for each layer. It indicates the size of the output of a fully connected layer. ",
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["output_size"],
     )
 
-    conv_use_bias: Optional[bool] = schema_utils.Boolean(
+    conv_use_bias: bool | None = schema_utils.Boolean(
         default=True,
         description="If bias not already specified in conv_layers, specifies if the 2D convolutional kernel should "
         "have a bias term.",
     )
 
-    conv_norm: Optional[str] = schema_utils.StringOptions(
+    conv_norm: str | None = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
         allow_none=True,
@@ -220,26 +220,26 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["conv_norm"],
     )
 
-    conv_norm_params: Optional[Dict[str, Any]] = schema_utils.Dict(
+    conv_norm_params: dict[str, Any] | None = schema_utils.Dict(
         default=None,
         description="Parameters used if conv_norm is either batch or layer. ",
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["conv_norm_params"],
     )
 
-    num_conv_layers: Optional[int] = schema_utils.NonNegativeInteger(
+    num_conv_layers: int | None = schema_utils.NonNegativeInteger(
         default=None,
         allow_none=True,
         description="Number of convolutional layers to use in the encoder. ",
         parameter_metadata=ENCODER_METADATA["conv_params"]["num_conv_layers"],
     )
 
-    conv_layers: Optional[List[dict]] = schema_utils.DictList(
+    conv_layers: list[dict] | None = schema_utils.DictList(
         default=None,
         description="List of convolutional layers to use in the encoder. ",
         parameter_metadata=ENCODER_METADATA["conv_params"]["conv_layers"],
     )
 
-    fc_dropout: Optional[float] = schema_utils.FloatRange(
+    fc_dropout: float | None = schema_utils.FloatRange(
         default=0.0,
         min=0,
         max=1,
@@ -247,33 +247,33 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_dropout"],
     )
 
-    fc_activation: Optional[str] = schema_utils.ActivationOptions(
+    fc_activation: str | None = schema_utils.ActivationOptions(
         description="If an activation is not already specified in fc_layers this is the default activation that will "
         "be used for each layer. It indicates the activation function applied to the output.",
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_activation"],
     )
 
-    fc_use_bias: Optional[bool] = schema_utils.Boolean(
+    fc_use_bias: bool | None = schema_utils.Boolean(
         default=True,
         description="Whether the layer uses a bias vector.",
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_use_bias"],
     )
 
-    fc_bias_initializer: Optional[str] = schema_utils.StringOptions(
+    fc_bias_initializer: str | None = schema_utils.StringOptions(
         sorted(list(initializer_registry.keys())),
         default="zeros",
         description="Initializer for the bias vector.",
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_bias_initializer"],
     )
 
-    fc_weights_initializer: Optional[str] = schema_utils.StringOptions(
+    fc_weights_initializer: str | None = schema_utils.StringOptions(
         sorted(list(initializer_registry.keys())),
         default="xavier_uniform",
         description="Initializer for the weights matrix.",
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_weights_initializer"],
     )
 
-    fc_norm: Optional[str] = schema_utils.StringOptions(
+    fc_norm: str | None = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
         allow_none=True,
@@ -282,7 +282,7 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_norm"],
     )
 
-    fc_norm_params: Optional[Dict[str, Any]] = schema_utils.Dict(
+    fc_norm_params: dict[str, Any] | None = schema_utils.Dict(
         default=None,
         description="Parameters used if norm is either batch or layer. For information on parameters used with batch "
         "see Torch's documentation on batch normalization or for layer see Torch's documentation on layer "
@@ -290,13 +290,13 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_norm_params"],
     )
 
-    num_fc_layers: Optional[Optional[int]] = schema_utils.PositiveInteger(
+    num_fc_layers: int | None | None = schema_utils.PositiveInteger(
         default=1,
         description="The number of stacked fully connected layers.",
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["num_fc_layers"],
     )
 
-    fc_layers: Optional[Optional[List[Dict]]] = schema_utils.DictList(
+    fc_layers: list[dict] | None | None = schema_utils.DictList(
         default=None,
         description="A list of dictionaries containing the parameters of all the fully connected layers. The length "
         "of the list determines the number of stacked fully connected layers and the content of each "
@@ -321,7 +321,7 @@ class ResNetConfig(ImageEncoderConfig):
         description=ENCODER_METADATA["ResNet"]["type"].long_description,
     )
 
-    dropout: Optional[float] = schema_utils.FloatRange(
+    dropout: float | None = schema_utils.FloatRange(
         default=0.0,
         min=0,
         max=1,
@@ -329,7 +329,7 @@ class ResNetConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ResNet"]["dropout"],
     )
 
-    activation: Optional[str] = schema_utils.ActivationOptions(
+    activation: str | None = schema_utils.ActivationOptions(
         description="if an activation is not already specified in fc_layers this is the default activation that will "
         "be used for each layer. It indicates the activation function applied to the output.",
         parameter_metadata=ENCODER_METADATA["ResNet"]["activation"],
@@ -349,20 +349,20 @@ class ResNetConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ResNet"]["width"],
     )
 
-    resnet_size: Optional[int] = schema_utils.PositiveInteger(
+    resnet_size: int | None = schema_utils.PositiveInteger(
         default=50,
         description="The size of the ResNet model to use.",
         parameter_metadata=ENCODER_METADATA["ResNet"]["resnet_size"],
     )
 
-    num_channels: Optional[int] = schema_utils.NonNegativeInteger(
+    num_channels: int | None = schema_utils.NonNegativeInteger(
         default=None,
         allow_none=True,
         description="Number of channels to use in the encoder. ",
         parameter_metadata=ENCODER_METADATA["ResNet"]["num_channels"],
     )
 
-    out_channels: Optional[int] = schema_utils.NonNegativeInteger(
+    out_channels: int | None = schema_utils.NonNegativeInteger(
         default=32,
         description="Indicates the number of filters, and by consequence the output channels of the 2d convolution. "
         "If out_channels is not already specified in conv_layers this is the default out_channels that "
@@ -370,7 +370,7 @@ class ResNetConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ResNet"]["out_channels"],
     )
 
-    kernel_size: Optional[Union[int, Tuple[int]]] = schema_utils.OneOfOptionsField(
+    kernel_size: int | tuple[int] | None = schema_utils.OneOfOptionsField(
         default=3,
         allow_none=True,
         description="An integer or pair of integers specifying the kernel size. A single integer specifies a square "
@@ -384,7 +384,7 @@ class ResNetConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ResNet"]["kernel_size"],
     )
 
-    conv_stride: Union[int, Tuple[int]] = schema_utils.OneOfOptionsField(
+    conv_stride: int | tuple[int] = schema_utils.OneOfOptionsField(
         default=1,
         allow_none=True,
         description="An integer or pair of integers specifying the stride of the initial convolutional layer.",
@@ -395,7 +395,7 @@ class ResNetConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ResNet"]["conv_stride"],
     )
 
-    first_pool_kernel_size: Union[int, Tuple[int]] = schema_utils.OneOfOptionsField(
+    first_pool_kernel_size: int | tuple[int] = schema_utils.OneOfOptionsField(
         default=None,
         allow_none=True,
         description="Pool size to be used for the first pooling layer. If none, the first pooling layer is skipped.",
@@ -406,7 +406,7 @@ class ResNetConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ResNet"]["first_pool_kernel_size"],
     )
 
-    first_pool_stride: Union[int, Tuple[int]] = schema_utils.OneOfOptionsField(
+    first_pool_stride: int | tuple[int] = schema_utils.OneOfOptionsField(
         default=None,
         allow_none=True,
         description="Stride for first pooling layer. If null, defaults to first_pool_kernel_size.",
@@ -429,34 +429,34 @@ class ResNetConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ResNet"]["batch_norm_epsilon"],
     )
 
-    use_bias: Optional[bool] = schema_utils.Boolean(
+    use_bias: bool | None = schema_utils.Boolean(
         default=True,
         description="Whether the layer uses a bias vector.",
         parameter_metadata=ENCODER_METADATA["ResNet"]["use_bias"],
     )
 
-    bias_initializer: Optional[str] = schema_utils.StringOptions(
+    bias_initializer: str | None = schema_utils.StringOptions(
         sorted(list(initializer_registry.keys())),
         default="zeros",
         description="initializer for the bias vector.",
         parameter_metadata=ENCODER_METADATA["ResNet"]["bias_initializer"],
     )
 
-    weights_initializer: Optional[str] = schema_utils.StringOptions(
+    weights_initializer: str | None = schema_utils.StringOptions(
         sorted(list(initializer_registry.keys())),
         default="xavier_uniform",
         description="Initializer for the weights matrix.",
         parameter_metadata=ENCODER_METADATA["ResNet"]["weights_initializer"],
     )
 
-    output_size: Optional[int] = schema_utils.PositiveInteger(
+    output_size: int | None = schema_utils.PositiveInteger(
         default=128,
         description="if output_size is not already specified in fc_layers this is the default output_size that will "
         "be used for each layer. It indicates the size of the output of a fully connected layer. ",
         parameter_metadata=ENCODER_METADATA["ResNet"]["output_size"],
     )
 
-    norm: Optional[str] = schema_utils.StringOptions(
+    norm: str | None = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
         allow_none=True,
@@ -465,7 +465,7 @@ class ResNetConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ResNet"]["norm"],
     )
 
-    norm_params: Optional[Dict[str, Any]] = schema_utils.Dict(
+    norm_params: dict[str, Any] | None = schema_utils.Dict(
         default=None,
         description="parameters used if norm is either batch or layer. For information on parameters used with batch "
         "see Torch's documentation on batch normalization or for layer see Torch's documentation on layer "
@@ -473,13 +473,13 @@ class ResNetConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ResNet"]["norm_params"],
     )
 
-    num_fc_layers: Optional[Optional[int]] = schema_utils.PositiveInteger(
+    num_fc_layers: int | None | None = schema_utils.PositiveInteger(
         default=1,
         description="The number of stacked fully connected layers.",
         parameter_metadata=ENCODER_METADATA["ResNet"]["num_fc_layers"],
     )
 
-    fc_layers: Optional[Optional[List[Dict]]] = schema_utils.DictList(
+    fc_layers: list[dict] | None | None = schema_utils.DictList(
         default=None,
         description="A list of dictionaries containing the parameters of all the fully connected layers. The length "
         "of the list determines the number of stacked fully connected layers and the content of each "
@@ -709,11 +709,11 @@ class ViTConfig(ImageEncoderConfig):
         return True
 
     @classmethod
-    def required_width(cls) -> Optional[int]:
+    def required_width(cls) -> int | None:
         return 224
 
     @classmethod
-    def required_height(cls) -> Optional[int]:
+    def required_height(cls) -> int | None:
         return 224
 
     def is_pretrained(self) -> bool:
@@ -747,14 +747,14 @@ class UNetEncoderConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["UNetEncoder"]["width"],
     )
 
-    num_channels: Optional[int] = schema_utils.NonNegativeInteger(
+    num_channels: int | None = schema_utils.NonNegativeInteger(
         default=None,
         allow_none=True,
         description="Number of channels in the input image. ",
         parameter_metadata=ENCODER_METADATA["UNetEncoder"]["num_channels"],
     )
 
-    conv_norm: Optional[str] = schema_utils.StringOptions(
+    conv_norm: str | None = schema_utils.StringOptions(
         ["batch"],
         default="batch",
         allow_none=True,

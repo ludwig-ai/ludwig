@@ -8,7 +8,6 @@
 import multiprocessing
 import time
 from dataclasses import dataclass
-from typing import Optional
 
 import pandas as pd
 
@@ -23,17 +22,17 @@ class TrainingResults:
     """Results of a training run for a dataset."""
 
     ludwig_version: str
-    ludwig_commit: Optional[str]
+    ludwig_commit: str | None
     dataset_version: str
     dataset_name: str
     has_config: bool
-    output_directory: Optional[str] = None
-    splits: Optional[str] = None
-    metric: Optional[str] = None
-    performance: Optional[float] = None
-    load_time: Optional[float] = None
-    train_time: Optional[float] = None
-    eval_time: Optional[float] = None
+    output_directory: str | None = None
+    splits: str | None = None
+    metric: str | None = None
+    performance: float | None = None
+    load_time: float | None = None
+    train_time: float | None = None
+    eval_time: float | None = None
 
 
 def _train_dataset_process(dataset_name, results_queue):

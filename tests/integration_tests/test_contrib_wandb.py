@@ -25,4 +25,3 @@ if __name__ == "__main__":
 
     ```python -m pytest tests/integration_tests/test_contrib_wandb.py::test_name```
     """
-    pass

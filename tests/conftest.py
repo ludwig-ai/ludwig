@@ -208,29 +208,20 @@ def _ray_start(request, **kwargs):
     finally:
         ray.shutdown()
         # Delete the cluster address just in case.
-        ray._private.utils.reset_ray_address()
+        if hasattr(ray._private.utils, "reset_ray_address"):
+            ray._private.utils.reset_ray_address()
 
 
 def _get_default_ray_kwargs():
-    system_config = _get_default_system_config()
     ray_kwargs = {
         "num_cpus": 1,
         "object_store_memory": 150 * 1024 * 1024,
         "dashboard_port": None,
         "include_dashboard": False,
         "namespace": "default_test_namespace",
-        "_system_config": system_config,
         "ignore_reinit_error": True,
     }
     return ray_kwargs
-
-
-def _get_default_system_config():
-    system_config = {
-        "object_timeout_milliseconds": 200,
-        "object_store_full_delay_ms": 100,
-    }
-    return system_config
 
 
 def _get_sample_config():

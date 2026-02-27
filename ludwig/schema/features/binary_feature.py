@@ -1,5 +1,5 @@
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BINARY, BINARY_WEIGHTED_CROSS_ENTROPY, MODEL_ECD, MODEL_GBM, ROC_AUC
+from ludwig.constants import BINARY, BINARY_WEIGHTED_CROSS_ENTROPY, MODEL_ECD, ROC_AUC
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -14,9 +14,6 @@ from ludwig.schema.features.utils import (
     ecd_defaults_config_registry,
     ecd_input_config_registry,
     ecd_output_config_registry,
-    gbm_defaults_config_registry,
-    gbm_input_config_registry,
-    gbm_output_config_registry,
     input_mixin_registry,
     output_mixin_registry,
 )
@@ -51,28 +48,6 @@ class BinaryInputFeatureConfig(BinaryInputFeatureConfigMixin, BaseInputFeatureCo
 class ECDBinaryInputFeatureConfig(BinaryInputFeatureConfig):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_ECD,
-        feature_type=BINARY,
-        default="passthrough",
-    )
-
-
-@DeveloperAPI
-@gbm_input_config_registry.register(BINARY)
-@ludwig_dataclass
-class GBMBinaryInputFeatureConfig(BinaryInputFeatureConfig):
-    encoder: BaseEncoderConfig = EncoderDataclassField(
-        MODEL_GBM,
-        feature_type=BINARY,
-        default="passthrough",
-    )
-
-
-@DeveloperAPI
-@gbm_defaults_config_registry.register(BINARY)
-@ludwig_dataclass
-class GBMBinaryDefaultsConfig(BinaryInputFeatureConfigMixin):
-    encoder: BaseEncoderConfig = EncoderDataclassField(
-        MODEL_GBM,
         feature_type=BINARY,
         default="passthrough",
     )
@@ -150,17 +125,6 @@ class BinaryOutputFeatureConfig(BinaryOutputFeatureConfigMixin, BaseOutputFeatur
 class ECDBinaryOutputFeatureConfig(BinaryOutputFeatureConfig):
     decoder: BaseDecoderConfig = DecoderDataclassField(
         MODEL_ECD,
-        feature_type=BINARY,
-        default="regressor",
-    )
-
-
-@DeveloperAPI
-@gbm_output_config_registry.register(BINARY)
-@ludwig_dataclass
-class GBMBinaryOutputFeatureConfig(BinaryOutputFeatureConfig):
-    decoder: BaseDecoderConfig = DecoderDataclassField(
-        MODEL_GBM,
         feature_type=BINARY,
         default="regressor",
     )

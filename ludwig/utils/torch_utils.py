@@ -3,7 +3,6 @@ import os
 import warnings
 from abc import abstractmethod
 from functools import lru_cache
-from typing import List, Optional, Tuple, Union
 
 import torch
 from torch import nn
@@ -13,12 +12,15 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import ENCODER_OUTPUT
 from ludwig.utils.strings_utils import SpecialSymbol
 
-_TORCH_INIT_PARAMS: Optional[Tuple] = None
+_TORCH_INIT_PARAMS: tuple | None = None
 
 
 @DeveloperAPI
 def get_torch_device():
-    if torch.cuda.is_available():
+    if torch.cuda.is_available() and torch.cuda.device_count() > 0:
+        # Use cublasLt for batched GEMM operations. The default cublas library has known
+        # bugs with cublasSgemmStridedBatched on certain GPU/driver combinations.
+        torch.backends.cuda.preferred_blas_library("cublaslt")
         return "cuda"
 
     if bool(os.environ.get("LUDWIG_ENABLE_MPS")):
@@ -60,9 +62,7 @@ def place_on_device(x, device):
 def sequence_length_2D(sequence: torch.Tensor) -> torch.Tensor:
     """Returns the number of non-padding elements per sequence in batch.
 
-    :param sequence: (torch.Tensor) A 2D tensor of shape [batch size x max sequence length].
-
-    # Return
+    :param sequence: (torch.Tensor) A 2D tensor of shape [batch size x max sequence length].  # Return
     :returns: (torch.Tensor) The count on non-zero elements per sequence.
     """
     used = (sequence != SpecialSymbol.PADDING.value).type(torch.int32)
@@ -74,9 +74,7 @@ def sequence_length_2D(sequence: torch.Tensor) -> torch.Tensor:
 def sequence_length_3D(sequence: torch.Tensor) -> torch.Tensor:
     """Returns the number of non-zero elements per sequence in batch.
 
-    :param sequence: (torch.Tensor) A 3D tensor of shape [batch size x max sequence length x hidden size].
-
-    # Return
+    :param sequence: (torch.Tensor) A 3D tensor of shape [batch size x max sequence length x hidden size].  # Return
     :returns: (torch.Tensor) The count on non-zero elements per sequence.
     """
     used = torch.sign(torch.amax(torch.abs(sequence), dim=2))
@@ -86,15 +84,13 @@ def sequence_length_3D(sequence: torch.Tensor) -> torch.Tensor:
 
 
 @DeveloperAPI
-def sequence_mask(lengths: torch.Tensor, maxlen: Optional[int] = None, dtype: torch.dtype = torch.bool):
+def sequence_mask(lengths: torch.Tensor, maxlen: int | None = None, dtype: torch.dtype = torch.bool):
     """Returns a mask of shape (batch_size x maxlen), where mask[i] is True for each element up to lengths[i],
     otherwise False i.e. if maxlen=5 and lengths[i] = 3, mask[i] = [True, True True, False False].
 
     :param lengths: (torch.Tensor) A 1d integer tensor of shape [batch size].
     :param maxlen: (Optional[int]) The maximum sequence length.  If not specified, the max(lengths) is used.
-    :param dtype: (type) The type to output.
-
-    # Return
+    :param dtype: (type) The type to output.  # Return
     :returns: (torch.Tensor) A sequence mask tensor of shape (batch_size x maxlen).
     """
     if maxlen is None:
@@ -185,7 +181,6 @@ class LudwigModule(Module):
 
     def prepare_for_training(self):
         """This is called from within the Trainer object to do any final instantiation before model training."""
-        pass
 
     def losses(self):
         collected_losses = []
@@ -218,7 +213,6 @@ class LudwigModule(Module):
     @abstractmethod
     def input_shape(self) -> torch.Size:
         """Returns size of the input tensor without the batch dimension."""
-        pass
         # raise NotImplementedError("Abstract class.")
 
     @property
@@ -295,13 +289,11 @@ class Dense(LudwigModule):
 
 @DeveloperAPI
 def initialize_pytorch(
-    gpus: Optional[Union[int, str, List[int]]] = None,
-    gpu_memory_limit: Optional[float] = None,
+    gpus: int | str | list[int] | None = None,
+    gpu_memory_limit: float | None = None,
     allow_parallel_threads: bool = True,
-    local_rank: int = 0,
-    local_size: int = 1,
 ):
-    param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads, local_rank, local_size)
+    param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads)
     if _TORCH_INIT_PARAMS is not None:
         if _TORCH_INIT_PARAMS != param_tuple:
             warnings.warn(
@@ -316,22 +308,9 @@ def initialize_pytorch(
     if not allow_parallel_threads:
         torch.set_num_threads(1)
         torch.set_num_interop_threads(1)
-        if torch.cuda.is_available():
+        if torch.cuda.is_available() and torch.cuda.device_count() > 0:
             torch.backends.cudnn.deterministic = True
             torch.backends.cudnn.benchmark = False
-
-    gpu_device_count = torch.cuda.device_count()
-    if local_size > 1 and gpus is None:
-        if 0 < gpu_device_count < local_size:
-            warnings.warn(
-                f"Distributed: disabling GPU support! This host is running with "
-                f"{local_size} worker processes but only {gpu_device_count} "
-                f"GPUs. To enable GPU training, reduce the number of worker processes "
-                f"on this host to match the number of GPUs."
-            )
-            gpus = [-1]
-        else:
-            gpus = [local_rank]
 
     if isinstance(gpus, int):
         gpus = [gpus]
@@ -342,7 +321,7 @@ def initialize_pytorch(
     if gpus and len(gpus) == 1 and gpus[0] == -1:
         # CUDA_VISIBLE_DEVICES syntax for disabling all GPUs
         os.environ["CUDA_VISIBLE_DEVICES"] = ""
-    elif torch.cuda.is_available():
+    elif torch.cuda.is_available() and torch.cuda.device_count() > 0:
         # Set visible devices so GPU utilization is isolated
         # (no GPU contention between workers).
         if gpus is not None:
@@ -353,18 +332,18 @@ def initialize_pytorch(
 
         # Limit the amount of memory that can be consumed per GPU
         if gpu_memory_limit is not None:
-            for gpu in gpus or range(gpu_device_count):
+            for gpu in gpus or range(torch.cuda.device_count()):
                 torch.cuda.memory.set_per_process_memory_fraction(gpu_memory_limit, gpu)
 
     _set_torch_init_params(param_tuple)
 
 
-def _set_torch_init_params(params: Optional[Tuple]):
+def _set_torch_init_params(params: tuple | None):
     global _TORCH_INIT_PARAMS
     _TORCH_INIT_PARAMS = params
 
 
-def _get_torch_init_params() -> Optional[Tuple]:
+def _get_torch_init_params() -> tuple | None:
     return _TORCH_INIT_PARAMS
 
 

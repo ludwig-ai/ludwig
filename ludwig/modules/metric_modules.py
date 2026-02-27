@@ -14,8 +14,9 @@
 # ==============================================================================
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
-from typing import Any, Callable, Generator, Optional, Type
+from typing import Any
 
 import torch
 from torch import Tensor, tensor
@@ -111,11 +112,11 @@ class LudwigMetric(Metric, ABC):
     @contextmanager
     def sync_context(
         self,
-        dist_sync_fn: Optional[Callable] = None,
-        process_group: Optional[Any] = None,
+        dist_sync_fn: Callable | None = None,
+        process_group: Any | None = None,
         should_sync: bool = True,
         should_unsync: bool = True,
-        distributed_available: Optional[Callable] = jit_distributed_available,
+        distributed_available: Callable | None = jit_distributed_available,
     ) -> Generator:
         """Override the behavior of this in the base class to support custom distributed strategies."""
         dist_strategy = get_current_dist_strategy()
@@ -539,7 +540,7 @@ class CORNMetric(LossMetric):
         return self.loss_function(preds, target)
 
 
-def get_metric_cls(metric_name: str) -> Type[LudwigMetric]:
+def get_metric_cls(metric_name: str) -> type[LudwigMetric]:
     return get_metric_registry()[metric_name]
 
 

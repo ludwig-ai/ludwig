@@ -1,5 +1,3 @@
-from typing import Optional
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
@@ -33,14 +31,14 @@ class SequenceConcatCombinerConfig(BaseCombinerConfig):
         description=COMBINER_METADATA["sequence_concat"]["type"].long_description,
     )
 
-    main_sequence_feature: Optional[str] = schema_utils.String(
+    main_sequence_feature: str | None = schema_utils.String(
         default=None,
         allow_none=True,
         description=MAIN_SEQUENCE_FEATURE_DESCRIPTION,
         parameter_metadata=COMBINER_METADATA["sequence_concat"]["main_sequence_feature"],
     )
 
-    reduce_output: Optional[str] = schema_utils.ReductionOptions(
+    reduce_output: str | None = schema_utils.ReductionOptions(
         default=None,
         description="Strategy to use to aggregate the embeddings of the items of the set.",
         parameter_metadata=COMBINER_METADATA["sequence_concat"]["reduce_output"],

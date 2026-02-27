@@ -1,5 +1,3 @@
-from typing import Type
-
 import pytest
 import torch
 
@@ -40,7 +38,7 @@ def test_sequence_passthrough_encoder(reduce_output: str):
 )
 @pytest.mark.parametrize("reduce_output", ["mean", "avg", "max", "last", "concat", "attention", None])
 @pytest.mark.parametrize("vocab_size", [2, 1024])  # Uses vocabularies smaller than (and larger than) embedding size.
-def test_sequence_encoders(encoder_type: Type, reduce_output: str, vocab_size: int):
+def test_sequence_encoders(encoder_type: type, reduce_output: str, vocab_size: int):
     # make repeatable
     torch.manual_seed(RANDOM_SEED)
 

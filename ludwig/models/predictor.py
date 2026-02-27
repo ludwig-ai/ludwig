@@ -4,7 +4,6 @@ import sys
 from abc import ABC, abstractmethod
 from collections import defaultdict, OrderedDict
 from pprint import pformat
-from typing import Dict, List, Optional, Type
 
 import numpy as np
 import pandas as pd
@@ -12,7 +11,7 @@ import psutil
 import torch
 from torch import nn
 
-from ludwig.constants import COMBINED, LAST_HIDDEN, LOGITS, MODEL_ECD, MODEL_GBM, MODEL_LLM
+from ludwig.constants import COMBINED, LAST_HIDDEN, LOGITS, MODEL_ECD, MODEL_LLM
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.utils import convert_to_dict
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
@@ -65,7 +64,7 @@ class BasePredictor(ABC):
 _predictor_registry = Registry[BasePredictor]()
 
 
-def register_predictor(model_types: List[str]):
+def register_predictor(model_types: list[str]):
     def wrap(cls):
         for model_type in model_types:
             _predictor_registry[model_type] = cls
@@ -74,11 +73,11 @@ def register_predictor(model_types: List[str]):
     return wrap
 
 
-def get_predictor_cls(model_type: str) -> Type[BasePredictor]:
+def get_predictor_cls(model_type: str) -> type[BasePredictor]:
     return _predictor_registry[model_type]
 
 
-@register_predictor([MODEL_ECD, MODEL_GBM])
+@register_predictor([MODEL_ECD])
 class Predictor(BasePredictor):
     """Predictor is a class that uses a model to predict and evaluate."""
 
@@ -88,7 +87,7 @@ class Predictor(BasePredictor):
         batch_size: int = 128,
         distributed: DistributedStrategy = None,
         report_tqdm_to_ray: bool = False,
-        model: Optional[BaseModel] = None,
+        model: BaseModel | None = None,
         remote: bool = False,
         **kwargs,
     ):
@@ -108,11 +107,6 @@ class Predictor(BasePredictor):
         self.report_tqdm_to_ray = report_tqdm_to_ray
 
         device = get_torch_device()
-        if model.type() == MODEL_GBM:
-            # TODO (jeffkinnison): revert to using the requested device for GBMs when device usage is fixed
-            device = "cpu"
-            dist_model = dist_model.to(device)
-
         self.device = device
         self.dist_model = dist_model
         self.model = model
@@ -171,7 +165,7 @@ class Predictor(BasePredictor):
         self.dist_model.train(prev_model_training_mode)
         return from_numpy_dataset(predictions)
 
-    def _predict(self, batch: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+    def _predict(self, batch: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
         """Predict a batch of data.
 
         Params:
@@ -297,6 +291,7 @@ class Predictor(BasePredictor):
         if bucketing_field:
             raise ValueError("BucketedBatcher is not supported yet")
 
+        self.dist_model = self._distributed.to_device(self.dist_model)
         prev_model_training_mode = self.dist_model.training  # store previous model training mode
         self.dist_model.eval()  # set model to eval mode
 
@@ -332,7 +327,7 @@ class Predictor(BasePredictor):
 
         return collected_tensors
 
-    def _predict_on_inputs(self, inputs: Dict) -> Dict:
+    def _predict_on_inputs(self, inputs: dict) -> dict:
         return self.dist_model(inputs)
 
     def is_coordinator(self):
@@ -341,7 +336,7 @@ class Predictor(BasePredictor):
 
 @register_predictor([MODEL_LLM])
 class LlmPredictor(Predictor):
-    def _predict_on_inputs(self, inputs: Dict) -> Dict:
+    def _predict_on_inputs(self, inputs: dict) -> dict:
         return self.dist_model.generate(inputs)
 
 

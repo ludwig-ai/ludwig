@@ -15,7 +15,6 @@
 import json
 import logging
 import os.path
-from typing import Dict, List
 
 import mlflow
 import pandas as pd
@@ -91,7 +90,7 @@ SCENARIOS = [
 ]
 
 
-def _get_config(search_alg: Dict, executor: Dict, epochs: int):
+def _get_config(search_alg: dict, executor: dict, epochs: int):
     input_features = [
         text_feature(name="utterance", encoder={"cell_type": "lstm", "reduce_output": "sum"}),
         category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
@@ -121,16 +120,16 @@ class HyperoptTestCallback(TuneCallback):
         self.user_config = {}
         self.rendered_config = {}
 
-    def on_trial_start(self, iteration: int, trials: List["Trial"], trial: "Trial", **info):
+    def on_trial_start(self, iteration: int, trials: list["Trial"], trial: "Trial", **info):
         super().on_trial_start(iteration, trials, trial, **info)
         self.trial_ids.add(trial.trial_id)
 
-    def on_trial_complete(self, iteration: int, trials: List["Trial"], trial: "Trial", **info):  # noqa
+    def on_trial_complete(self, iteration: int, trials: list["Trial"], trial: "Trial", **info):  # noqa
         super().on_trial_complete(iteration, trials, trial, **info)
         self.trial_status[trial.trial_id] = trial.status
 
         model_hyperparameters = os.path.join(
-            trial.logdir, f"{self.exp_name}_{self.model_type}", MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME
+            trial.local_path, f"{self.exp_name}_{self.model_type}", MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME
         )
         if os.path.isfile(model_hyperparameters):
             try:
@@ -141,7 +140,7 @@ class HyperoptTestCallback(TuneCallback):
             except OSError:
                 logging.exception("Could not load rendered config from trial logdir.")
 
-        model_hyperparameters = os.path.join(trial.logdir, "trial_hyperparameters.json")
+        model_hyperparameters = os.path.join(trial.local_path, "trial_hyperparameters.json")
         if os.path.isfile(model_hyperparameters):
             try:
                 with open(model_hyperparameters) as f:
@@ -232,7 +231,13 @@ def test_hyperopt_executor_with_metric(use_split, csv_filename, tmpdir, ray_clus
 
 
 @pytest.mark.distributed
-@pytest.mark.parametrize("backend", ["local", "ray"])
+@pytest.mark.parametrize(
+    "backend",
+    [
+        "local",
+        pytest.param("ray", marks=pytest.mark.xfail(reason="Nested Ray actors exceed 4-CPU CI cluster resources")),
+    ],
+)
 def test_hyperopt_run_hyperopt(csv_filename, backend, tmpdir, ray_cluster_4cpu):
     input_features = [
         text_feature(name="utterance", encoder={"cell_type": "lstm", "reduce_output": "sum"}),
@@ -270,8 +275,8 @@ def test_hyperopt_run_hyperopt(csv_filename, backend, tmpdir, ray_cluster_4cpu):
         "executor": {
             "type": "ray",
             "num_samples": 2,
-            "cpu_resources_per_trial": 2,
-            "max_concurrent_trials": "auto",
+            "cpu_resources_per_trial": 1,
+            "max_concurrent_trials": 1,
         },
         "search_alg": {"type": "variant_generator"},
     }

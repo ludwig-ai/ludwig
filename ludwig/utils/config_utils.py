@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Set, Union
+from typing import Any
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
@@ -23,7 +23,7 @@ from ludwig.types import FeatureConfigDict, FeatureTypeDefaultsDict, Preprocessi
 @DeveloperAPI
 def get_feature_type_parameter_values_from_section(
     config: ModelConfig, features_section: str, feature_type: str, parameter_name: str
-) -> Set:
+) -> set:
     """Returns the set of all parameter values used for the given features_section, feature_type, and
     parameter_name."""
     parameter_values = set()
@@ -105,7 +105,7 @@ def has_pretrained_encoder(config: ModelConfig) -> bool:
     return False
 
 
-def config_uses_llm(config: Union[Dict[str, Any], ModelConfig]) -> bool:
+def config_uses_llm(config: dict[str, Any] | ModelConfig) -> bool:
     """Determine if a config uses an LLM.
 
     Args:
@@ -117,7 +117,7 @@ def config_uses_llm(config: Union[Dict[str, Any], ModelConfig]) -> bool:
     uses_llm = False
 
     # For a valid config, model_type LLM is automatically True
-    # ECD or GBM models need to be checked for at least one LLM text encoder
+    # ECD models need to be checked for at least one LLM text encoder
     if isinstance(config, ModelConfig):
         if config.model_type == MODEL_LLM:
             uses_llm = True
@@ -144,7 +144,7 @@ def config_uses_llm(config: Union[Dict[str, Any], ModelConfig]) -> bool:
     return uses_llm
 
 
-def get_quantization(config: Union[Dict[str, Any], ModelConfig]) -> List[Union[int, None]]:
+def get_quantization(config: dict[str, Any] | ModelConfig) -> list[int | None]:
     """Get the quantization specified in a config at any level.
 
     Args:
@@ -152,7 +152,7 @@ def get_quantization(config: Union[Dict[str, Any], ModelConfig]) -> List[Union[i
 
     Returns:
         For LLM models, the value of quantization.bits or None if it is not specified.
-        For ECD and GBM models, the list of values of quantization.bits for each encoder. If the encoder does not
+        For ECD models, the list of values of quantization.bits for each encoder. If the encoder does not
         support quantization or no quantization config is specified, the list entry is None.
     """
     if isinstance(config, ModelConfig):

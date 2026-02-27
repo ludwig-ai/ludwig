@@ -15,7 +15,6 @@
 # ==============================================================================
 import logging
 from datetime import date, datetime
-from typing import Dict, List
 
 import numpy as np
 import torch
@@ -43,7 +42,7 @@ class _DatePreprocessing(torch.nn.Module):
         super().__init__()
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
-        if torch.jit.isinstance(v, List[torch.Tensor]):
+        if torch.jit.isinstance(v, list[torch.Tensor]):
             v = torch.stack(v)
 
         if torch.jit.isinstance(v, torch.Tensor):
@@ -107,7 +106,7 @@ class DateFeatureMixin(BaseFeatureMixin):
     def add_feature_data(
         feature_config: FeatureConfigDict,
         input_df: DataFrame,
-        proc_df: Dict[str, DataFrame],
+        proc_df: dict[str, DataFrame],
         metadata: TrainingSetMetadataDict,
         preprocessing_parameters: PreprocessingConfigDict,
         backend,  # Union[Backend, str]
@@ -117,7 +116,7 @@ class DateFeatureMixin(BaseFeatureMixin):
         proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.map_objects(
             input_df[feature_config[COLUMN]],
             lambda x: np.array(
-                DateFeatureMixin.date_to_list(x, datetime_format, preprocessing_parameters), dtype=np.int16
+                DateFeatureMixin.date_to_list(x, datetime_format, preprocessing_parameters), dtype=np.int32
             ),
         )
         return proc_df
@@ -140,7 +139,7 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
 
     @property
     def input_dtype(self):
-        return torch.int16
+        return torch.int32
 
     @property
     def input_shape(self) -> torch.Size:

@@ -1,6 +1,5 @@
 import os
 from functools import lru_cache
-from typing import Dict
 
 import yaml
 
@@ -9,7 +8,7 @@ from ludwig.datasets import model_configs
 
 
 @PublicAPI
-def model_configs_for_dataset(dataset_name: str) -> Dict[str, Dict]:
+def model_configs_for_dataset(dataset_name: str) -> dict[str, dict]:
     """Returns a dictionary of built-in model configs for the specified dataset.
 
     Maps config name to ludwig config dict.
@@ -18,7 +17,7 @@ def model_configs_for_dataset(dataset_name: str) -> Dict[str, Dict]:
 
 
 @lru_cache(maxsize=3)
-def _get_model_configs(dataset_name: str) -> Dict[str, Dict]:
+def _get_model_configs(dataset_name: str) -> dict[str, dict]:
     """Returns all model configs for the specified dataset.
 
     Model configs are named <dataset_name>_<config_name>.yaml
@@ -26,7 +25,9 @@ def _get_model_configs(dataset_name: str) -> Dict[str, Dict]:
     import importlib.resources
 
     config_filenames = [
-        f for f in importlib.resources.contents(model_configs) if f.endswith(".yaml") and f.startswith(dataset_name)
+        f.name
+        for f in importlib.resources.files(model_configs).iterdir()
+        if f.name.endswith(".yaml") and f.name.startswith(dataset_name)
     ]
     configs = {}
     for config_filename in config_filenames:

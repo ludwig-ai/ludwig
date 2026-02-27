@@ -6,7 +6,7 @@ import shutil
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from types import ModuleType
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any
 
 import fsspec
 import pandas as pd
@@ -34,7 +34,7 @@ logger = logging.getLogger()
 
 
 def load_from_module(
-    dataset_module: Union[DatasetLoader, ModuleType], output_feature: Dict[str, str], subsample_frac: float = 1
+    dataset_module: DatasetLoader | ModuleType, output_feature: dict[str, str], subsample_frac: float = 1
 ) -> pd.DataFrame:
     """Load the ludwig dataset, optionally subsamples it, and returns a repeatable split. A stratified split is
     used for classification datasets.
@@ -57,7 +57,7 @@ def load_from_module(
         return get_repeatable_train_val_test_split(dataset, random_seed=default_random_seed)
 
 
-def export_artifacts(experiment: Dict[str, str], experiment_output_directory: str, export_base_path: str):
+def export_artifacts(experiment: dict[str, str], experiment_output_directory: str, export_base_path: str):
     """Save the experiment artifacts to the `bench_export_directory`.
 
     Args:
@@ -95,7 +95,7 @@ def download_artifacts(
     experimental_experiment: str,
     download_base_path: str,
     local_dir: str = "benchmarking_summaries",
-) -> Tuple[str, List[str]]:
+) -> tuple[str, list[str]]:
     """Download benchmarking artifacts for two experiments.
 
     Args:
@@ -116,9 +116,7 @@ def download_artifacts(
         dataset_name = experiment["dataset_name"]
         for experiment_name in [base_experiment, experimental_experiment]:
             coroutines.append(download_one(fs, download_base_path, dataset_name, experiment_name, local_dir))
-    loop = asyncio.get_event_loop()
-    futures = asyncio.gather(*coroutines, return_exceptions=True)
-    downloaded_names = loop.run_until_complete(futures)
+    downloaded_names = asyncio.run(asyncio.gather(*coroutines, return_exceptions=True))
 
     dataset_names = [experiment_tuple[0] for experiment_tuple in set(downloaded_names) if experiment_tuple[0]]
     assert (
@@ -131,7 +129,7 @@ def download_artifacts(
 @DeveloperAPI
 async def download_one(
     fs, download_base_path: str, dataset_name: str, experiment_name: str, local_dir: str
-) -> Tuple[str, str]:
+) -> tuple[str, str]:
     """Download `config.yaml` and `report.json` for an experiment.
 
     Args:
@@ -161,7 +159,7 @@ async def download_one(
     return dataset_name, local_dir
 
 
-def validate_benchmarking_config(benchmarking_config: Dict[str, Any]) -> None:
+def validate_benchmarking_config(benchmarking_config: dict[str, Any]) -> None:
     """Validates the parameters of the benchmarking config.
 
     Args:
@@ -175,13 +173,11 @@ def validate_benchmarking_config(benchmarking_config: Dict[str, Any]) -> None:
     ):
         raise ValueError("You must either specify a global experiment name or an experiment name for each experiment.")
     if "export" not in benchmarking_config:
-        raise ValueError(
-            """You must specify export parameters. Example:
+        raise ValueError("""You must specify export parameters. Example:
             export:
               export_artifacts: true
               export_base_path: s3://benchmarking.us-west-2.ludwig.com/bench/    # include the slash at the end.
-        """
-        )
+        """)
     if "experiments" not in benchmarking_config:
         raise ValueError("You must specify a list of experiments.")
     for experiment in benchmarking_config["experiments"]:
@@ -189,7 +185,7 @@ def validate_benchmarking_config(benchmarking_config: Dict[str, Any]) -> None:
             raise ValueError("A Ludwig dataset must be specified.")
 
 
-def populate_benchmarking_config_with_defaults(benchmarking_config: Dict[str, Any]) -> Dict[str, Any]:
+def populate_benchmarking_config_with_defaults(benchmarking_config: dict[str, Any]) -> dict[str, Any]:
     """Populates the parameters of the benchmarking config with defaults.
 
     Args:
@@ -204,7 +200,7 @@ def populate_benchmarking_config_with_defaults(benchmarking_config: Dict[str, An
     return benchmarking_config
 
 
-def propagate_global_parameters(benchmarking_config: Dict[str, Any]) -> Dict[str, Any]:
+def propagate_global_parameters(benchmarking_config: dict[str, Any]) -> dict[str, Any]:
     """Propagate the global parameters of the benchmarking config to local experiments.
 
     Args:
@@ -224,7 +220,7 @@ def propagate_global_parameters(benchmarking_config: Dict[str, Any]) -> Dict[str
     return benchmarking_config
 
 
-def create_default_config(experiment: Dict[str, Any]) -> str:
+def create_default_config(experiment: dict[str, Any]) -> str:
     """Create a Ludwig config that only contains input and output features.
 
     Args:

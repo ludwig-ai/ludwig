@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from typing import Any, Dict, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
@@ -58,7 +58,7 @@ if TYPE_CHECKING:
 
 
 @DeveloperAPI
-def get_base_type_registry() -> Dict:
+def get_base_type_registry() -> dict:
     return {
         TEXT: TextFeatureMixin,
         CATEGORY: CategoryFeatureMixin,
@@ -78,7 +78,7 @@ def get_base_type_registry() -> Dict:
 
 
 @DeveloperAPI
-def get_input_type_registry() -> Dict:
+def get_input_type_registry() -> dict:
     return {
         TEXT: TextInputFeature,
         NUMBER: NumberInputFeature,
@@ -97,7 +97,7 @@ def get_input_type_registry() -> Dict:
 
 
 @DeveloperAPI
-def get_output_type_registry() -> Dict:
+def get_output_type_registry() -> dict:
     return {
         CATEGORY: CategoryOutputFeature,
         BINARY: BinaryOutputFeature,
@@ -112,7 +112,7 @@ def get_output_type_registry() -> Dict:
     }
 
 
-def update_config_with_metadata(config_obj: "ModelConfig", training_set_metadata: Dict[str, Any]):
+def update_config_with_metadata(config_obj: "ModelConfig", training_set_metadata: dict[str, Any]):
     # populate input features fields depending on data
     for input_feature in config_obj.input_features:
         feature = get_from_registry(input_feature.type, get_input_type_registry())

@@ -19,7 +19,6 @@ import os
 import shutil
 import tarfile
 from enum import Enum
-from typing import List, Optional
 from zipfile import ZipFile
 
 from ludwig.utils.fs_utils import upload_output_directory
@@ -65,7 +64,7 @@ def is_archive(path):
     return infer_archive_type(path) != ArchiveType.UNKNOWN
 
 
-def list_archive(archive_path, archive_type: Optional[ArchiveType] = None) -> List[str]:
+def list_archive(archive_path, archive_type: ArchiveType | None = None) -> list[str]:
     """Return list of files extracted in an archive (without extracting them)."""
     if archive_type is None:
         archive_type = infer_archive_type(archive_path)
@@ -88,7 +87,7 @@ def list_archive(archive_path, archive_type: Optional[ArchiveType] = None) -> Li
     return []
 
 
-def extract_archive(archive_path: str, archive_type: Optional[ArchiveType] = None) -> List[str]:
+def extract_archive(archive_path: str, archive_type: ArchiveType | None = None) -> list[str]:
     """Extracts files from archive (into the same directory), returns a list of extracted files.
 
     Args:

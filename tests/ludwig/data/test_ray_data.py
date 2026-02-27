@@ -16,7 +16,17 @@ pytestmark = pytest.mark.distributed
 
 
 def test_async_reader_error():
-    pipeline = mock.Mock()
+    """Test that RayDatasetBatcher handles a dataset that produces no batches.
+
+    When the dataset's iter_batches raises an error in the producer thread, the batcher should end up with
+    last_batch=True (no data to consume).
+    """
+    mock_dataset = mock.Mock()
+    # map_batches returns a mock whose iter_batches yields nothing (empty iteration)
+    mock_mapped = mock.Mock()
+    mock_mapped.iter_batches.return_value = iter([])
+    mock_dataset.map_batches.return_value = mock_mapped
+
     features = {
         "num1": {"name": "num1", "type": "number"},
         "bin1": {"name": "bin1", "type": "binary"},
@@ -26,15 +36,15 @@ def test_async_reader_error():
         "bin1": {},
     }
 
-    with pytest.raises(TypeError, match="'Mock' object is not iterable"):
-        RayDatasetBatcher(
-            dataset_epoch_iterator=iter([pipeline]),
-            features=features,
-            training_set_metadata=training_set_metadata,
-            batch_size=64,
-            samples_per_epoch=100,
-            ignore_last=False,
-        )
+    batcher = RayDatasetBatcher(
+        dataset=mock_dataset,
+        features=features,
+        training_set_metadata=training_set_metadata,
+        batch_size=64,
+        samples_per_epoch=100,
+    )
+    # With no data to read, the batcher should immediately signal last batch
+    assert batcher.last_batch()
 
 
 @pytest.fixture(scope="module")

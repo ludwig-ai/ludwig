@@ -16,7 +16,7 @@
 import functools
 import logging
 from io import BytesIO
-from typing import Any, List, Optional, Union
+from typing import Any
 
 import torch
 import torch.nn.functional as F
@@ -46,7 +46,12 @@ def is_torch_audio_tuple(audio: Any) -> bool:
 
 
 @DeveloperAPI
-def get_default_audio(audio_lst: List[TorchAudioTuple]) -> TorchAudioTuple:
+def get_default_audio(audio_lst: list[TorchAudioTuple]) -> TorchAudioTuple:
+    if not audio_lst:
+        # Return a silent audio tensor as default when no valid audio is available
+        default_audio_tensor = torch.zeros(1, DEFAULT_AUDIO_TENSOR_LENGTH)
+        return default_audio_tensor, 16000
+
     sampling_rates = [audio[1] for audio in audio_lst]
     tensor_list = [audio[0] for audio in audio_lst]
 
@@ -63,7 +68,7 @@ def get_default_audio(audio_lst: List[TorchAudioTuple]) -> TorchAudioTuple:
 
 
 @DeveloperAPI
-def read_audio_from_path(path: str) -> Optional[TorchAudioTuple]:
+def read_audio_from_path(path: str) -> TorchAudioTuple | None:
     """Reads audio from path.
 
     Useful for reading from a small number of paths. For more intensive reads, use backend.read_binary_files instead.
@@ -82,15 +87,10 @@ def read_audio_from_path(path: str) -> Optional[TorchAudioTuple]:
 
 @DeveloperAPI
 @functools.lru_cache(maxsize=32)
-def read_audio_from_bytes_obj(bytes_obj: bytes) -> Optional[TorchAudioTuple]:
+def read_audio_from_bytes_obj(bytes_obj: bytes) -> TorchAudioTuple | None:
     try:
         f = BytesIO(bytes_obj)
-        if _TORCH_AUDIO_210:
-            return torchaudio.load(f, backend="sox")
-        elif _TORCH_AUDIO_201:
-            return torchaudio.backend.sox_io_backend.load(f)
-        else:
-            return torchaudio.backend.sox_backend.load(f)
+        return torchaudio.load(f)
     except Exception as e:
         logger.warning(e)
         return None
@@ -110,7 +110,7 @@ def _pre_emphasize_data(data: torch.Tensor, emphasize_value: float = 0.97):
 
 
 @DeveloperAPI
-def get_length_in_samp(sampling_rate_in_hz: Union[float, int], length_in_s: Union[float, int]) -> int:
+def get_length_in_samp(sampling_rate_in_hz: float | int, length_in_s: float | int) -> int:
     return int(sampling_rate_in_hz * length_in_s)
 
 
@@ -264,7 +264,7 @@ def _get_stft(
     window_shift_in_s: float,
     num_fft_points: int,
     window_type: str,
-    data_transformation: Optional[str] = None,
+    data_transformation: str | None = None,
     zero_mean_offset: bool = False,
 ) -> torch.Tensor:
     pre_emphasized_data = _pre_emphasize_data(raw_data)
@@ -289,7 +289,7 @@ def _short_time_fourier_transform(
     window_shift_in_s: float,
     num_fft_points: int,
     window_type: str,
-    data_transformation: Optional[str] = None,
+    data_transformation: str | None = None,
     zero_mean_offset: bool = False,
 ) -> torch.Tensor:
     window_length_in_samp: int = get_length_in_samp(window_length_in_s, sampling_rate_in_hz)
@@ -329,7 +329,7 @@ def get_num_output_padded_to_fit_input(num_input: int, window_length_in_samp: in
 
 
 @DeveloperAPI
-def get_window(window_type: str, window_length_in_samp: int, device: Optional[torch.device] = None) -> torch.Tensor:
+def get_window(window_type: str, window_length_in_samp: int, device: torch.device | None = None) -> torch.Tensor:
     # Increase precision in order to achieve parity with scipy.signal.windows.get_window implementation
     if window_type == "bartlett":
         return torch.bartlett_window(window_length_in_samp, periodic=False, dtype=torch.float64, device=device).to(
@@ -358,7 +358,7 @@ def is_audio_score(src_path):
 
 
 def _weight_data_matrix(
-    data_matrix: torch.Tensor, window_type: str, data_transformation: Optional[str] = None
+    data_matrix: torch.Tensor, window_type: str, data_transformation: str | None = None
 ) -> torch.Tensor:
     window_length_in_samp = data_matrix[0].shape[0]
     window = get_window(window_type, window_length_in_samp, device=data_matrix.device)

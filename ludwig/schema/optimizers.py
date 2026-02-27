@@ -1,9 +1,13 @@
 from abc import ABC
 from dataclasses import field
-from typing import ClassVar, Dict, Optional, Tuple, Type
+from typing import ClassVar
 
-import bitsandbytes as bnb
 import torch
+
+try:
+    import bitsandbytes as bnb
+except ImportError:
+    bnb = None
 from marshmallow import fields, ValidationError
 
 import ludwig.schema.utils as schema_utils
@@ -41,7 +45,7 @@ class BaseOptimizerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     different from the torch-specified defaults.
     """
 
-    optimizer_class: ClassVar[Optional[torch.optim.Optimizer]] = None
+    optimizer_class: ClassVar[torch.optim.Optimizer | None] = None
     "Class variable pointing to the corresponding `torch.optim.Optimizer` class."
 
     type: str
@@ -101,31 +105,33 @@ class SGDOptimizerConfig(BaseOptimizerConfig):
     )
 
 
-@DeveloperAPI
-@register_optimizer(name="sgd_8bit")
-@ludwig_dataclass
-class SGD8BitOptimizerConfig(SGDOptimizerConfig):
-    """Parameters for stochastic gradient descent."""
+if bnb is not None:
 
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.SGD8bit
+    @DeveloperAPI
+    @register_optimizer(name="sgd_8bit")
+    @ludwig_dataclass
+    class SGD8BitOptimizerConfig(SGDOptimizerConfig):
+        """Parameters for stochastic gradient descent."""
 
-    type: str = schema_utils.ProtectedString("sgd_8bit")
+        optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.SGD8bit
 
-    block_wise: bool = schema_utils.Boolean(
-        default=False,
-        description="Whether to use block wise update.",
-    )
+        type: str = schema_utils.ProtectedString("sgd_8bit")
 
-    percentile_clipping: int = schema_utils.IntegerRange(
-        default=100,
-        min=0,
-        max=100,
-        description="Percentile clipping.",
-    )
+        block_wise: bool = schema_utils.Boolean(
+            default=False,
+            description="Whether to use block wise update.",
+        )
 
-    @property
-    def is_8bit(self) -> bool:
-        return True
+        percentile_clipping: int = schema_utils.IntegerRange(
+            default=100,
+            min=0,
+            max=100,
+            description="Percentile clipping.",
+        )
+
+        @property
+        def is_8bit(self) -> bool:
+            return True
 
 
 @DeveloperAPI
@@ -194,7 +200,7 @@ class AdamOptimizerConfig(BaseOptimizerConfig):
        (default: 'adam')"""
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adam.html#torch.optim.Adam :
-    betas: Tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
+    betas: tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
         default=(0.9, 0.999),
         description="Coefficients used for computing running averages of gradient and its square.",
         parameter_metadata=OPTIMIZER_METADATA["betas"],
@@ -218,59 +224,59 @@ class AdamOptimizerConfig(BaseOptimizerConfig):
     )
 
 
-@DeveloperAPI
-@register_optimizer(name="adam_8bit")
-@ludwig_dataclass
-class Adam8BitOptimizerConfig(AdamOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.Adam8bit
+if bnb is not None:
 
-    type: str = schema_utils.ProtectedString("adam_8bit")
+    @DeveloperAPI
+    @register_optimizer(name="adam_8bit")
+    @ludwig_dataclass
+    class Adam8BitOptimizerConfig(AdamOptimizerConfig):
+        optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.Adam8bit
 
-    block_wise: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether to use block wise update.",
-    )
+        type: str = schema_utils.ProtectedString("adam_8bit")
 
-    percentile_clipping: int = schema_utils.IntegerRange(
-        default=100,
-        min=0,
-        max=100,
-        description="Percentile clipping.",
-    )
+        block_wise: bool = schema_utils.Boolean(
+            default=True,
+            description="Whether to use block wise update.",
+        )
 
-    @property
-    def is_8bit(self) -> bool:
-        return True
+        percentile_clipping: int = schema_utils.IntegerRange(
+            default=100,
+            min=0,
+            max=100,
+            description="Percentile clipping.",
+        )
 
+        @property
+        def is_8bit(self) -> bool:
+            return True
 
-@DeveloperAPI
-@register_optimizer(name="paged_adam")
-@ludwig_dataclass
-class PagedAdamOptimizerConfig(Adam8BitOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedAdam
+    @DeveloperAPI
+    @register_optimizer(name="paged_adam")
+    @ludwig_dataclass
+    class PagedAdamOptimizerConfig(Adam8BitOptimizerConfig):
+        optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedAdam
 
-    type: str = schema_utils.ProtectedString("paged_adam")
+        type: str = schema_utils.ProtectedString("paged_adam")
 
-    @property
-    def is_paged(self) -> bool:
-        return True
+        @property
+        def is_paged(self) -> bool:
+            return True
 
-    @property
-    def is_8bit(self) -> bool:
-        return False
+        @property
+        def is_8bit(self) -> bool:
+            return False
 
+    @DeveloperAPI
+    @register_optimizer(name="paged_adam_8bit")
+    @ludwig_dataclass
+    class PagedAdam8BitOptimizerConfig(PagedAdamOptimizerConfig):
+        optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedAdam8bit
 
-@DeveloperAPI
-@register_optimizer(name="paged_adam_8bit")
-@ludwig_dataclass
-class PagedAdam8BitOptimizerConfig(PagedAdamOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedAdam8bit
+        type: str = schema_utils.ProtectedString("paged_adam_8bit")
 
-    type: str = schema_utils.ProtectedString("paged_adam_8bit")
-
-    @property
-    def is_8bit(self) -> bool:
-        return True
+        @property
+        def is_8bit(self) -> bool:
+            return True
 
 
 @DeveloperAPI
@@ -287,7 +293,7 @@ class AdamWOptimizerConfig(BaseOptimizerConfig):
        (default: 'adamw')"""
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adam.html#torch.optim.Adam :
-    betas: Tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
+    betas: tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
         default=(0.9, 0.999),
         description="Coefficients used for computing running averages of gradient and its square.",
         parameter_metadata=OPTIMIZER_METADATA["betas"],
@@ -311,59 +317,59 @@ class AdamWOptimizerConfig(BaseOptimizerConfig):
     )
 
 
-@DeveloperAPI
-@register_optimizer(name="adamw_8bit")
-@ludwig_dataclass
-class AdamW8BitOptimizerConfig(AdamWOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.AdamW8bit
+if bnb is not None:
 
-    type: str = schema_utils.ProtectedString("adamw_8bit")
+    @DeveloperAPI
+    @register_optimizer(name="adamw_8bit")
+    @ludwig_dataclass
+    class AdamW8BitOptimizerConfig(AdamWOptimizerConfig):
+        optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.AdamW8bit
 
-    block_wise: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether to use block wise update.",
-    )
+        type: str = schema_utils.ProtectedString("adamw_8bit")
 
-    percentile_clipping: int = schema_utils.IntegerRange(
-        default=100,
-        min=0,
-        max=100,
-        description="Percentile clipping.",
-    )
+        block_wise: bool = schema_utils.Boolean(
+            default=True,
+            description="Whether to use block wise update.",
+        )
 
-    @property
-    def is_8bit(self) -> bool:
-        return True
+        percentile_clipping: int = schema_utils.IntegerRange(
+            default=100,
+            min=0,
+            max=100,
+            description="Percentile clipping.",
+        )
 
+        @property
+        def is_8bit(self) -> bool:
+            return True
 
-@DeveloperAPI
-@register_optimizer(name="paged_adamw")
-@ludwig_dataclass
-class PagedAdamWOptimizerConfig(AdamW8BitOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedAdamW
+    @DeveloperAPI
+    @register_optimizer(name="paged_adamw")
+    @ludwig_dataclass
+    class PagedAdamWOptimizerConfig(AdamW8BitOptimizerConfig):
+        optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedAdamW
 
-    type: str = schema_utils.ProtectedString("paged_adamw")
+        type: str = schema_utils.ProtectedString("paged_adamw")
 
-    @property
-    def is_paged(self) -> bool:
-        return True
+        @property
+        def is_paged(self) -> bool:
+            return True
 
-    @property
-    def is_8bit(self) -> bool:
-        return False
+        @property
+        def is_8bit(self) -> bool:
+            return False
 
+    @DeveloperAPI
+    @register_optimizer(name="paged_adamw_8bit")
+    @ludwig_dataclass
+    class PagedAdamW8BitOptimizerConfig(PagedAdamWOptimizerConfig):
+        optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedAdamW8bit
 
-@DeveloperAPI
-@register_optimizer(name="paged_adamw_8bit")
-@ludwig_dataclass
-class PagedAdamW8BitOptimizerConfig(PagedAdamWOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedAdamW8bit
+        type: str = schema_utils.ProtectedString("paged_adamw_8bit")
 
-    type: str = schema_utils.ProtectedString("paged_adamw_8bit")
-
-    @property
-    def is_8bit(self) -> bool:
-        return True
+        @property
+        def is_8bit(self) -> bool:
+            return True
 
 
 @DeveloperAPI
@@ -433,29 +439,31 @@ class AdagradOptimizerConfig(BaseOptimizerConfig):
     )
 
 
-@DeveloperAPI
-@register_optimizer(name="adagrad_8bit")
-@ludwig_dataclass
-class Adagrad8BitOptimizerConfig(AdagradOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.Adagrad8bit
+if bnb is not None:
 
-    type: str = schema_utils.ProtectedString("adagrad_8bit")
+    @DeveloperAPI
+    @register_optimizer(name="adagrad_8bit")
+    @ludwig_dataclass
+    class Adagrad8BitOptimizerConfig(AdagradOptimizerConfig):
+        optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.Adagrad8bit
 
-    block_wise: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether to use block wise update.",
-    )
+        type: str = schema_utils.ProtectedString("adagrad_8bit")
 
-    percentile_clipping: int = schema_utils.IntegerRange(
-        default=100,
-        min=0,
-        max=100,
-        description="Percentile clipping.",
-    )
+        block_wise: bool = schema_utils.Boolean(
+            default=True,
+            description="Whether to use block wise update.",
+        )
 
-    @property
-    def is_8bit(self) -> bool:
-        return True
+        percentile_clipping: int = schema_utils.IntegerRange(
+            default=100,
+            min=0,
+            max=100,
+            description="Percentile clipping.",
+        )
+
+        @property
+        def is_8bit(self) -> bool:
+            return True
 
 
 @DeveloperAPI
@@ -472,7 +480,7 @@ class AdamaxOptimizerConfig(BaseOptimizerConfig):
        (default: 'adamax')"""
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adamax.html#torch.optim.Adamax :
-    betas: Tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
+    betas: tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
         default=(0.9, 0.999),
         description="Coefficients used for computing running averages of gradient and its square.",
         parameter_metadata=OPTIMIZER_METADATA["betas"],
@@ -525,7 +533,7 @@ class NadamOptimizerConfig(BaseOptimizerConfig):
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.NAdam.html#torch.optim.NAdam :
 
-    betas: Tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
+    betas: tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
         default=(0.9, 0.999),
         description="Coefficients used for computing running averages of gradient and its square.",
         parameter_metadata=OPTIMIZER_METADATA["betas"],
@@ -588,257 +596,262 @@ class RMSPropOptimizerConfig(BaseOptimizerConfig):
     weight_decay: float = schema_utils.NonNegativeFloat(default=0.0, description="Weight decay ($L2$ penalty).")
 
 
-@DeveloperAPI
-@register_optimizer(name="rmsprop_8bit")
-@ludwig_dataclass
-class RMSProp8BitOptimizerConfig(RMSPropOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.RMSprop8bit
+if bnb is not None:
 
-    type: str = schema_utils.ProtectedString("rmsprop_8bit")
+    @DeveloperAPI
+    @register_optimizer(name="rmsprop_8bit")
+    @ludwig_dataclass
+    class RMSProp8BitOptimizerConfig(RMSPropOptimizerConfig):
+        optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.RMSprop8bit
 
-    block_wise: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether to use block wise update.",
-    )
+        type: str = schema_utils.ProtectedString("rmsprop_8bit")
 
-    percentile_clipping: int = schema_utils.IntegerRange(
-        default=100,
-        min=0,
-        max=100,
-        description="Percentile clipping.",
-    )
+        block_wise: bool = schema_utils.Boolean(
+            default=True,
+            description="Whether to use block wise update.",
+        )
 
-    @property
-    def is_8bit(self) -> bool:
-        return True
+        percentile_clipping: int = schema_utils.IntegerRange(
+            default=100,
+            min=0,
+            max=100,
+            description="Percentile clipping.",
+        )
 
-
-@DeveloperAPI
-@register_optimizer(name="lamb")
-@ludwig_dataclass
-class LAMBOptimizerConfig(BaseOptimizerConfig):
-    """Layer-wise Adaptive Moments optimizer for Batch training.
-
-    Paper: https://arxiv.org/pdf/1904.00962.pdf
-    """
-
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.LAMB
-
-    type: str = schema_utils.ProtectedString("lamb")
-
-    bias_correction: bool = schema_utils.Boolean(
-        default=True,
-    )
-
-    betas: Tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
-        default=(0.9, 0.999),
-        description="Coefficients used for computing running averages of gradient and its square.",
-        parameter_metadata=OPTIMIZER_METADATA["betas"],
-    )
-
-    eps: float = schema_utils.NonNegativeFloat(
-        default=1e-08,
-        description="Term added to the denominator to improve numerical stability.",
-        parameter_metadata=OPTIMIZER_METADATA["eps"],
-    )
-
-    weight_decay: float = schema_utils.NonNegativeFloat(
-        default=0.0,
-        description="Weight decay (L2 penalty).",
-        parameter_metadata=OPTIMIZER_METADATA["weight_decay"],
-    )
-
-    amsgrad: bool = schema_utils.Boolean(
-        default=False,
-        description="Whether to use the AMSGrad variant of this algorithm from the paper 'On the Convergence of Adam "
-        "and Beyond'.",
-        parameter_metadata=OPTIMIZER_METADATA["amsgrad"],
-    )
-
-    adam_w_mode: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether to use the AdamW mode of this algorithm from the paper "
-        "'Decoupled Weight Decay Regularization'.",
-    )
-
-    percentile_clipping: int = schema_utils.IntegerRange(
-        default=100,
-        min=0,
-        max=100,
-        description="Percentile clipping.",
-    )
-
-    block_wise: bool = schema_utils.Boolean(
-        default=False,
-        description="Whether to use block wise update.",
-    )
-
-    max_unorm: float = schema_utils.FloatRange(
-        default=1.0,
-        min=0.0,
-        max=1.0,
-    )
+        @property
+        def is_8bit(self) -> bool:
+            return True
 
 
-@DeveloperAPI
-@register_optimizer(name="lamb_8bit")
-@ludwig_dataclass
-class LAMB8BitOptimizerConfig(LAMBOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.LAMB8bit
+if bnb is not None:
 
-    type: str = schema_utils.ProtectedString("lamb_8bit")
+    @DeveloperAPI
+    @register_optimizer(name="lamb")
+    @ludwig_dataclass
+    class LAMBOptimizerConfig(BaseOptimizerConfig):
+        """Layer-wise Adaptive Moments optimizer for Batch training.
 
-    @property
-    def is_8bit(self) -> bool:
-        return True
+        Paper: https://arxiv.org/pdf/1904.00962.pdf
+        """
 
+        optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.LAMB
 
-@DeveloperAPI
-@register_optimizer(name="lars")
-@ludwig_dataclass
-class LARSOptimizerConfig(BaseOptimizerConfig):
-    """Layerwise Adaptive Rate Scaling.
+        type: str = schema_utils.ProtectedString("lamb")
 
-    Paper: https://arxiv.org/pdf/1708.03888.pdf
-    """
+        bias_correction: bool = schema_utils.Boolean(
+            default=True,
+        )
 
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.LARS
+        betas: tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
+            default=(0.9, 0.999),
+            description="Coefficients used for computing running averages of gradient and its square.",
+            parameter_metadata=OPTIMIZER_METADATA["betas"],
+        )
 
-    type: str = schema_utils.ProtectedString("lars")
+        eps: float = schema_utils.NonNegativeFloat(
+            default=1e-08,
+            description="Term added to the denominator to improve numerical stability.",
+            parameter_metadata=OPTIMIZER_METADATA["eps"],
+        )
 
-    # 0.9 taken from the original paper - momentum requires a non zero value
-    # https://arxiv.org/pdf/1708.03888v3.pdf
-    momentum: float = schema_utils.FloatRange(
-        default=0.9,
-        min=0.0,
-        max=1.0,
-        min_inclusive=False,
-        description="Momentum factor.",
-        parameter_metadata=OPTIMIZER_METADATA["momentum"],
-    )
+        weight_decay: float = schema_utils.NonNegativeFloat(
+            default=0.0,
+            description="Weight decay (L2 penalty).",
+            parameter_metadata=OPTIMIZER_METADATA["weight_decay"],
+        )
 
-    dampening: float = schema_utils.FloatRange(
-        default=0.0,
-        min=0.0,
-        max=1.0,
-        description="Dampening for momentum.",
-        parameter_metadata=OPTIMIZER_METADATA["dampening"],
-    )
+        amsgrad: bool = schema_utils.Boolean(
+            default=False,
+            description=(
+                "Whether to use the AMSGrad variant of this algorithm from the paper "
+                "'On the Convergence of Adam and Beyond'."
+            ),
+            parameter_metadata=OPTIMIZER_METADATA["amsgrad"],
+        )
 
-    weight_decay: float = schema_utils.NonNegativeFloat(
-        default=0.0,
-        description="Weight decay (L2 penalty).",
-        parameter_metadata=OPTIMIZER_METADATA["weight_decay"],
-    )
+        adam_w_mode: bool = schema_utils.Boolean(
+            default=True,
+            description="Whether to use the AdamW mode of this algorithm from the paper "
+            "'Decoupled Weight Decay Regularization'.",
+        )
 
-    nesterov: bool = schema_utils.Boolean(
-        default=False,
-        description="Enables Nesterov momentum.",
-        parameter_metadata=OPTIMIZER_METADATA["nesterov"],
-    )
+        percentile_clipping: int = schema_utils.IntegerRange(
+            default=100,
+            min=0,
+            max=100,
+            description="Percentile clipping.",
+        )
 
-    percentile_clipping: int = schema_utils.IntegerRange(
-        default=100,
-        min=0,
-        max=100,
-        description="Percentile clipping.",
-    )
+        block_wise: bool = schema_utils.Boolean(
+            default=False,
+            description="Whether to use block wise update.",
+        )
 
-    max_unorm: float = schema_utils.FloatRange(
-        default=1.0,
-        min=0.0,
-        max=1.0,
-    )
+        max_unorm: float = schema_utils.FloatRange(
+            default=1.0,
+            min=0.0,
+            max=1.0,
+        )
 
+    @DeveloperAPI
+    @register_optimizer(name="lamb_8bit")
+    @ludwig_dataclass
+    class LAMB8BitOptimizerConfig(LAMBOptimizerConfig):
+        optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.LAMB8bit
 
-@DeveloperAPI
-@register_optimizer(name="lars_8bit")
-@ludwig_dataclass
-class LARS8BitOptimizerConfig(LARSOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.LARS8bit
+        type: str = schema_utils.ProtectedString("lamb_8bit")
 
-    type: str = schema_utils.ProtectedString("lars_8bit")
-
-    @property
-    def is_8bit(self) -> bool:
-        return True
-
-
-@DeveloperAPI
-@register_optimizer(name="lion")
-@ludwig_dataclass
-class LIONOptimizerConfig(BaseOptimizerConfig):
-    """Evolved Sign Momentum.
-
-    Paper: https://arxiv.org/pdf/2302.06675.pdf
-    """
-
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.Lion
-
-    type: str = schema_utils.ProtectedString("lion")
-
-    betas: Tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
-        default=(0.9, 0.999),
-        description="Coefficients used for computing running averages of gradient and its square.",
-        parameter_metadata=OPTIMIZER_METADATA["betas"],
-    )
-
-    weight_decay: float = schema_utils.NonNegativeFloat(
-        default=0.0,
-        description="Weight decay (L2 penalty).",
-        parameter_metadata=OPTIMIZER_METADATA["weight_decay"],
-    )
-
-    percentile_clipping: int = schema_utils.IntegerRange(
-        default=100,
-        min=0,
-        max=100,
-        description="Percentile clipping.",
-    )
-
-    block_wise: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether to use block wise update.",
-    )
+        @property
+        def is_8bit(self) -> bool:
+            return True
 
 
-@DeveloperAPI
-@register_optimizer(name="lion_8bit")
-@ludwig_dataclass
-class LION8BitOptimizerConfig(LIONOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.Lion8bit
+if bnb is not None:
 
-    type: str = schema_utils.ProtectedString("lion_8bit")
+    @DeveloperAPI
+    @register_optimizer(name="lars")
+    @ludwig_dataclass
+    class LARSOptimizerConfig(BaseOptimizerConfig):
+        """Layerwise Adaptive Rate Scaling.
 
-    @property
-    def is_8bit(self) -> bool:
-        return True
+        Paper: https://arxiv.org/pdf/1708.03888.pdf
+        """
+
+        optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.LARS
+
+        type: str = schema_utils.ProtectedString("lars")
+
+        # 0.9 taken from the original paper - momentum requires a non zero value
+        # https://arxiv.org/pdf/1708.03888v3.pdf
+        momentum: float = schema_utils.FloatRange(
+            default=0.9,
+            min=0.0,
+            max=1.0,
+            min_inclusive=False,
+            description="Momentum factor.",
+            parameter_metadata=OPTIMIZER_METADATA["momentum"],
+        )
+
+        dampening: float = schema_utils.FloatRange(
+            default=0.0,
+            min=0.0,
+            max=1.0,
+            description="Dampening for momentum.",
+            parameter_metadata=OPTIMIZER_METADATA["dampening"],
+        )
+
+        weight_decay: float = schema_utils.NonNegativeFloat(
+            default=0.0,
+            description="Weight decay (L2 penalty).",
+            parameter_metadata=OPTIMIZER_METADATA["weight_decay"],
+        )
+
+        nesterov: bool = schema_utils.Boolean(
+            default=False,
+            description="Enables Nesterov momentum.",
+            parameter_metadata=OPTIMIZER_METADATA["nesterov"],
+        )
+
+        percentile_clipping: int = schema_utils.IntegerRange(
+            default=100,
+            min=0,
+            max=100,
+            description="Percentile clipping.",
+        )
+
+        max_unorm: float = schema_utils.FloatRange(
+            default=1.0,
+            min=0.0,
+            max=1.0,
+        )
+
+    @DeveloperAPI
+    @register_optimizer(name="lars_8bit")
+    @ludwig_dataclass
+    class LARS8BitOptimizerConfig(LARSOptimizerConfig):
+        optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.LARS8bit
+
+        type: str = schema_utils.ProtectedString("lars_8bit")
+
+        @property
+        def is_8bit(self) -> bool:
+            return True
 
 
-@DeveloperAPI
-@register_optimizer(name="paged_lion")
-@ludwig_dataclass
-class PagedLionOptimizerConfig(LIONOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedLion
+if bnb is not None:
 
-    type: str = schema_utils.ProtectedString("paged_lion")
+    @DeveloperAPI
+    @register_optimizer(name="lion")
+    @ludwig_dataclass
+    class LIONOptimizerConfig(BaseOptimizerConfig):
+        """Evolved Sign Momentum.
 
-    @property
-    def is_paged(self) -> bool:
-        return True
+        Paper: https://arxiv.org/pdf/2302.06675.pdf
+        """
 
+        optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.Lion
 
-@DeveloperAPI
-@register_optimizer(name="paged_lion_8bit")
-@ludwig_dataclass
-class PagedLion8BitOptimizerConfig(PagedLionOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedLion8bit
+        type: str = schema_utils.ProtectedString("lion")
 
-    type: str = schema_utils.ProtectedString("paged_lion_8bit")
+        betas: tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
+            default=(0.9, 0.999),
+            description="Coefficients used for computing running averages of gradient and its square.",
+            parameter_metadata=OPTIMIZER_METADATA["betas"],
+        )
 
-    @property
-    def is_8bit(self) -> bool:
-        return True
+        weight_decay: float = schema_utils.NonNegativeFloat(
+            default=0.0,
+            description="Weight decay (L2 penalty).",
+            parameter_metadata=OPTIMIZER_METADATA["weight_decay"],
+        )
+
+        percentile_clipping: int = schema_utils.IntegerRange(
+            default=100,
+            min=0,
+            max=100,
+            description="Percentile clipping.",
+        )
+
+        block_wise: bool = schema_utils.Boolean(
+            default=True,
+            description="Whether to use block wise update.",
+        )
+
+    @DeveloperAPI
+    @register_optimizer(name="lion_8bit")
+    @ludwig_dataclass
+    class LION8BitOptimizerConfig(LIONOptimizerConfig):
+        optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.Lion8bit
+
+        type: str = schema_utils.ProtectedString("lion_8bit")
+
+        @property
+        def is_8bit(self) -> bool:
+            return True
+
+    @DeveloperAPI
+    @register_optimizer(name="paged_lion")
+    @ludwig_dataclass
+    class PagedLionOptimizerConfig(LIONOptimizerConfig):
+        optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedLion
+
+        type: str = schema_utils.ProtectedString("paged_lion")
+
+        @property
+        def is_paged(self) -> bool:
+            return True
+
+    @DeveloperAPI
+    @register_optimizer(name="paged_lion_8bit")
+    @ludwig_dataclass
+    class PagedLion8BitOptimizerConfig(PagedLionOptimizerConfig):
+        optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedLion8bit
+
+        type: str = schema_utils.ProtectedString("paged_lion_8bit")
+
+        @property
+        def is_8bit(self) -> bool:
+            return True
 
 
 @DeveloperAPI
@@ -883,7 +896,7 @@ def OptimizerDataclassField(default="adam", description="", parameter_metadata: 
                 parameter_metadata=parameter_metadata,
             )
 
-        def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
+        def get_schema_from_registry(self, key: str) -> type[schema_utils.BaseMarshmallowConfig]:
             return get_optimizer_cls(key)
 
         def _jsonschema_type_mapping(self):
@@ -912,7 +925,7 @@ def OptimizerDataclassField(default="adam", description="", parameter_metadata: 
 class GradientClippingConfig(schema_utils.BaseMarshmallowConfig):
     """Dataclass that holds gradient clipping parameters."""
 
-    clipglobalnorm: Optional[float] = schema_utils.FloatRange(
+    clipglobalnorm: float | None = schema_utils.FloatRange(
         default=0.5,
         allow_none=True,
         description="Maximum allowed norm of the gradients",
@@ -920,14 +933,14 @@ class GradientClippingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     # TODO(travis): is this redundant with `clipglobalnorm`?
-    clipnorm: Optional[float] = schema_utils.FloatRange(
+    clipnorm: float | None = schema_utils.FloatRange(
         default=None,
         allow_none=True,
         description="Maximum allowed norm of the gradients",
         parameter_metadata=OPTIMIZER_METADATA["gradient_clipping"],
     )
 
-    clipvalue: Optional[float] = schema_utils.FloatRange(
+    clipvalue: float | None = schema_utils.FloatRange(
         default=None,
         allow_none=True,
         description="Maximum allowed value of the gradients",
@@ -936,7 +949,7 @@ class GradientClippingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-def GradientClippingDataclassField(description: str, default: Dict = {}):
+def GradientClippingDataclassField(description: str, default: dict = {}):
     """Returns custom dataclass field for `ludwig.modules.optimization_modules.GradientClippingConfig`. Allows
     `None` by default.
 

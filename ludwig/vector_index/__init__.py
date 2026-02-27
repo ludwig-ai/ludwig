@@ -1,5 +1,4 @@
 import logging
-from typing import Type
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.vector_index.base import VectorIndex
@@ -12,7 +11,7 @@ FAISS = "faiss"
 ALL_INDICES = [FAISS]
 
 
-def get_faiss_index_cls() -> Type[VectorIndex]:
+def get_faiss_index_cls() -> type[VectorIndex]:
     from ludwig.vector_index.faiss import FaissIndex
 
     return FaissIndex
@@ -25,5 +24,5 @@ vector_index_registry = {
 
 
 @DeveloperAPI
-def get_vector_index_cls(type: str) -> Type[VectorIndex]:
+def get_vector_index_cls(type: str) -> type[VectorIndex]:
     return vector_index_registry[type]()

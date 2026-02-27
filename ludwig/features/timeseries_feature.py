@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict, List, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 import numpy as np
 import torch
@@ -81,7 +81,7 @@ class _TimeseriesPreprocessing(torch.nn.Module):
         self.max_timeseries_length = int(metadata["max_timeseries_length"])
         self.computed_fill_value = metadata["preprocessing"]["computed_fill_value"]
 
-    def _process_str_sequence(self, sequence: List[str], limit: int) -> torch.Tensor:
+    def _process_str_sequence(self, sequence: list[str], limit: int) -> torch.Tensor:
         float_sequence = [float(s) for s in sequence[:limit]]
         return torch.tensor(float_sequence)
 
@@ -89,11 +89,11 @@ class _TimeseriesPreprocessing(torch.nn.Module):
         if v.isnan().any():
             tokenized_fill_value = self.tokenizer(self.computed_fill_value)
             # refines type of sequences from Any to List[str]
-            assert torch.jit.isinstance(tokenized_fill_value, List[str])
+            assert torch.jit.isinstance(tokenized_fill_value, list[str])
             return self._process_str_sequence(tokenized_fill_value, self.max_timeseries_length)
         return v
 
-    def forward_list_of_tensors(self, v: List[torch.Tensor]) -> torch.Tensor:
+    def forward_list_of_tensors(self, v: list[torch.Tensor]) -> torch.Tensor:
         v = [self._nan_to_fill_value(v_i) for v_i in v]
 
         if self.padding == "right":
@@ -107,12 +107,12 @@ class _TimeseriesPreprocessing(torch.nn.Module):
             timeseries_matrix = torch.flip(reversed_timeseries_padded, dims=(1,))
         return timeseries_matrix
 
-    def forward_list_of_strs(self, v: List[str]) -> torch.Tensor:
+    def forward_list_of_strs(self, v: list[str]) -> torch.Tensor:
         v = [self.computed_fill_value if s == "nan" else s for s in v]
 
         sequences = self.tokenizer(v)
         # refines type of sequences from Any to List[List[str]]
-        assert torch.jit.isinstance(sequences, List[List[str]]), "sequences is not a list of lists."
+        assert torch.jit.isinstance(sequences, list[list[str]]), "sequences is not a list of lists."
 
         timeseries_matrix = torch.full(
             [len(sequences), self.max_timeseries_length], self.padding_value, dtype=torch.float32
@@ -128,9 +128,9 @@ class _TimeseriesPreprocessing(torch.nn.Module):
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         """Takes a list of float values and creates a padded torch.Tensor."""
-        if torch.jit.isinstance(v, List[torch.Tensor]):
+        if torch.jit.isinstance(v, list[torch.Tensor]):
             return self.forward_list_of_tensors(v)
-        if torch.jit.isinstance(v, List[str]):
+        if torch.jit.isinstance(v, list[str]):
             return self.forward_list_of_strs(v)
         raise ValueError(f"Unsupported input: {v}")
 
@@ -274,8 +274,8 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 class TimeseriesOutputFeature(TimeseriesFeatureMixin, OutputFeature):
     def __init__(
         self,
-        output_feature_config: Union[TimeseriesOutputFeatureConfig, Dict],
-        output_features: Dict[str, OutputFeature],
+        output_feature_config: TimeseriesOutputFeatureConfig | dict,
+        output_features: dict[str, OutputFeature],
         **kwargs,
     ):
         self.horizon = output_feature_config.horizon

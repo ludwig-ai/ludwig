@@ -1,12 +1,12 @@
 import logging
 import re
 from collections import defaultdict
-from typing import Dict, List, Tuple, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 try:
     from typing import Literal
 except ImportError:
-    from typing_extensions import Literal
+    from typing import Literal
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import AUTO, COMBINED, LOSS
@@ -27,15 +27,15 @@ logger = logging.getLogger(__name__)
 
 
 @DeveloperAPI
-def initialize_trainer_metric_dict(output_features) -> Dict[str, Dict[str, List[TrainerMetric]]]:
+def initialize_trainer_metric_dict(output_features) -> dict[str, dict[str, list[TrainerMetric]]]:
     """Returns a dict of dict of metrics, output_feature_name -> metric_name -> List[TrainerMetric]."""
     metrics = defaultdict(lambda: defaultdict(list))
     return metrics
 
 
 def get_latest_metrics_dict(
-    progress_tracker_metrics: Dict[str, Dict[str, List[TrainerMetric]]]
-) -> Dict[str, Dict[str, float]]:
+    progress_tracker_metrics: dict[str, dict[str, list[TrainerMetric]]],
+) -> dict[str, dict[str, float]]:
     """Returns a dict of field name -> metric name -> latest metric value."""
     latest_metrics_dict = defaultdict(dict)
     for feature_name, metrics_dict in progress_tracker_metrics.items():
@@ -53,7 +53,7 @@ def get_new_progress_tracker(
     best_eval_metric_value: float,
     best_increase_batch_size_eval_metric: float,
     learning_rate: float,
-    output_features: Dict[str, "OutputFeature"],
+    output_features: dict[str, "OutputFeature"],
 ):
     """Returns a new instance of a ProgressTracker with empty metrics."""
     return ProgressTracker(
@@ -114,21 +114,21 @@ class ProgressTracker:
         learning_rate: float,
         num_reductions_learning_rate: int,
         num_increases_batch_size: int,
-        train_metrics: Dict[str, Dict[str, List[TrainerMetric]]],
-        validation_metrics: Dict[str, Dict[str, List[TrainerMetric]]],
-        test_metrics: Dict[str, Dict[str, List[TrainerMetric]]],
+        train_metrics: dict[str, dict[str, list[TrainerMetric]]],
+        validation_metrics: dict[str, dict[str, list[TrainerMetric]]],
+        test_metrics: dict[str, dict[str, list[TrainerMetric]]],
         last_learning_rate_reduction: int,
         last_increase_batch_size: int,
-        best_eval_train_metrics: Dict[str, Dict[str, float]],
-        best_eval_validation_metrics: Dict[str, Dict[str, float]],
-        best_eval_test_metrics: Dict[str, Dict[str, float]],
-        llm_eval_examples: Dict[str, List[str]] = None,
-        checkpoint_to_step: Dict[str, int] = None,
-        checkpoint_to_epoch: Dict[str, int] = None,
-        incremental_step_token_usage: Dict[str, int] = None,
-        cumulative_step_token_usage: Dict[str, int] = None,
-        incremental_checkpoint_token_usage: Dict[str, int] = None,
-        cumulative_checkpoint_token_usage: Dict[str, int] = None,
+        best_eval_train_metrics: dict[str, dict[str, float]],
+        best_eval_validation_metrics: dict[str, dict[str, float]],
+        best_eval_test_metrics: dict[str, dict[str, float]],
+        llm_eval_examples: dict[str, list[str]] = None,
+        checkpoint_to_step: dict[str, int] = None,
+        checkpoint_to_epoch: dict[str, int] = None,
+        incremental_step_token_usage: dict[str, int] = None,
+        cumulative_step_token_usage: dict[str, int] = None,
+        incremental_checkpoint_token_usage: dict[str, int] = None,
+        cumulative_checkpoint_token_usage: dict[str, int] = None,
         total_tokens_used: int = 0,
     ):
         """JSON-serializable holder object that stores information related to training progress.
@@ -256,7 +256,7 @@ class ProgressTracker:
         save_json(filepath, self.__dict__)
 
     @staticmethod
-    def load(progress_tracking_dict: Dict):
+    def load(progress_tracking_dict: dict):
         from ludwig.utils.backward_compatibility import upgrade_model_progress
 
         loaded = upgrade_model_progress(progress_tracking_dict)
@@ -361,10 +361,10 @@ class ProgressTracker:
 def append_metrics(
     model: BaseModel,
     dataset_name: Literal["train", "validation", "test"],
-    results: Dict[str, Dict[str, float]],
-    metrics_log: Dict[str, Dict[str, List[TrainerMetric]]],
+    results: dict[str, dict[str, float]],
+    metrics_log: dict[str, dict[str, list[TrainerMetric]]],
     progress_tracker: ProgressTracker,
-) -> Dict[str, Dict[str, List[TrainerMetric]]]:
+) -> dict[str, dict[str, list[TrainerMetric]]]:
     epoch = progress_tracker.epoch
     steps = progress_tracker.steps
     for output_feature in model.output_features:
@@ -433,9 +433,9 @@ def get_training_report(
     validation_field: str,
     validation_metric: str,
     include_test_set: bool,
-    train_valiset_stats: Dict[str, Dict[str, List[float]]],
-    train_testset_stats: Dict[str, Dict[str, List[float]]],
-) -> List[Tuple[str, str]]:
+    train_valiset_stats: dict[str, dict[str, list[float]]],
+    train_testset_stats: dict[str, dict[str, list[float]]],
+) -> list[tuple[str, str]]:
     """Returns a training report in the form of a list [(report item, value)]."""
     validation_field_result = train_valiset_stats[validation_field]
     best_function = get_best_function(validation_metric)
@@ -476,7 +476,7 @@ def get_training_report(
     return training_report
 
 
-def get_rendered_batch_size_grad_accum(config: "BaseTrainerConfig", num_workers: int) -> Tuple[int, int]:
+def get_rendered_batch_size_grad_accum(config: "BaseTrainerConfig", num_workers: int) -> tuple[int, int]:
     """Returns the batch size and gradient accumulation steps to use for training.
 
     For batch_size==AUTO:
@@ -513,7 +513,7 @@ def get_rendered_batch_size_grad_accum(config: "BaseTrainerConfig", num_workers:
     return batch_size, gradient_accumulation_steps
 
 
-def freeze_layers_regex(config: Union[ECDTrainerConfig, FineTuneTrainerConfig], model: Union[ECD, LLM]) -> None:
+def freeze_layers_regex(config: ECDTrainerConfig | FineTuneTrainerConfig, model: ECD | LLM) -> None:
     """Freezes layers in a model whose names match a specified regular expression pattern.
 
     This function iterates over all parameters of the model, checking each parameter's name against

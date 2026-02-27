@@ -8,7 +8,7 @@ from ludwig.schema.utils import assert_is_a_marshmallow_class, BaseMarshmallowCo
 
 @dataclass
 class CustomTestSchema(BaseMarshmallowConfig):
-    """sample docstring."""
+    """Sample docstring."""
 
     foo: int = 5
     "foo (default: 5)"

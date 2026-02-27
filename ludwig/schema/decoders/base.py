@@ -1,8 +1,7 @@
 from abc import ABC
-from typing import Dict, List, Tuple, Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BINARY, CATEGORY, MODEL_ECD, MODEL_GBM, MODEL_LLM, NUMBER, SET, TIMESERIES, VECTOR
+from ludwig.constants import BINARY, CATEGORY, MODEL_ECD, MODEL_LLM, NUMBER, SET, TIMESERIES, VECTOR
 from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.utils import register_decoder_config
@@ -23,7 +22,7 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
         parameter_metadata=DECODER_METADATA["BaseDecoder"]["type"],
     )
 
-    fc_layers: List[dict] = common_fields.FCLayersField()
+    fc_layers: list[dict] = common_fields.FCLayersField()
 
     num_fc_layers: int = common_fields.NumFCLayersField(
         description="Number of fully-connected layers if `fc_layers` not specified."
@@ -41,7 +40,7 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
         parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_use_bias"],
     )
 
-    fc_weights_initializer: Union[str, Dict] = schema_utils.OneOfOptionsField(
+    fc_weights_initializer: str | dict = schema_utils.OneOfOptionsField(
         default="xavier_uniform",
         allow_none=True,
         description="The weights initializer to use for the layers in the fc_stack",
@@ -58,7 +57,7 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
         parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_weights_initializer"],
     )
 
-    fc_bias_initializer: Union[str, Dict] = schema_utils.OneOfOptionsField(
+    fc_bias_initializer: str | dict = schema_utils.OneOfOptionsField(
         default="zeros",
         allow_none=True,
         description="The bias initializer to use for the layers in the fc_stack",
@@ -108,7 +107,7 @@ class PassthroughDecoderConfig(BaseDecoderConfig):
 
 
 @DeveloperAPI
-@register_decoder_config("regressor", [BINARY, NUMBER], model_types=[MODEL_ECD, MODEL_GBM])
+@register_decoder_config("regressor", [BINARY, NUMBER], model_types=[MODEL_ECD])
 @ludwig_dataclass
 class RegressorConfig(BaseDecoderConfig):
     """RegressorConfig is a dataclass that configures the parameters used for a regressor decoder."""
@@ -212,7 +211,7 @@ class ProjectorConfig(BaseDecoderConfig):
         ),
     )
 
-    clip: Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
+    clip: list[int] | tuple[int] = schema_utils.FloatRangeTupleDataclassField(
         n=2,
         default=None,
         allow_none=True,
@@ -224,7 +223,7 @@ class ProjectorConfig(BaseDecoderConfig):
 
 
 @DeveloperAPI
-@register_decoder_config("classifier", [CATEGORY, SET], model_types=[MODEL_ECD, MODEL_GBM, MODEL_LLM])
+@register_decoder_config("classifier", [CATEGORY, SET], model_types=[MODEL_ECD, MODEL_LLM])
 @ludwig_dataclass
 class ClassifierConfig(BaseDecoderConfig):
     @classmethod

@@ -1,4 +1,4 @@
-from typing import List, Tuple, Union
+from typing import Union
 
 import pandas as pd
 import torch
@@ -13,6 +13,6 @@ except ImportError:
     Series = pd.Series
 
 # torchaudio.load returns the audio tensor and the sampling rate as a tuple.
-TorchAudioTuple = Tuple[torch.Tensor, int]
-TorchscriptPreprocessingInput = Union[List[str], List[torch.Tensor], List[TorchAudioTuple], torch.Tensor]
+TorchAudioTuple = tuple[torch.Tensor, int]
+TorchscriptPreprocessingInput = Union[list[str], list[torch.Tensor], list[TorchAudioTuple], torch.Tensor]
 TorchDevice = Union[str, torch.device]

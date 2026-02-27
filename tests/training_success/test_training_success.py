@@ -1,7 +1,7 @@
 import logging
 from collections import deque
 from pprint import pprint
-from typing import Any, Dict, Tuple
+from typing import Any
 
 import pandas as pd
 import pytest
@@ -21,8 +21,8 @@ from .configs import (
 
 
 def defaults_config_generator(
-    feature_type: str, allow_list: str, static_schema: Dict[str, Any] = None
-) -> Tuple[ModelConfigDict, pd.DataFrame]:
+    feature_type: str, allow_list: str, static_schema: dict[str, Any] = None
+) -> tuple[ModelConfigDict, pd.DataFrame]:
     """Generate combinatorial configs for the defaults section of the Ludwig config.
 
     Args:
@@ -56,7 +56,7 @@ def defaults_config_generator(
         yield config, dataset
 
 
-def ecd_trainer_config_generator(static_schema: Dict[str, Any] = None) -> Tuple[ModelConfigDict, pd.DataFrame]:
+def ecd_trainer_config_generator(static_schema: dict[str, Any] = None) -> tuple[ModelConfigDict, pd.DataFrame]:
     """Generate combinatorial configs for the ECD trainer section of the Ludwig config."""
     schema = get_schema() if not static_schema else static_schema
     properties = schema["properties"]
@@ -92,8 +92,8 @@ def ecd_trainer_config_generator(static_schema: Dict[str, Any] = None) -> Tuple[
 
 
 def combiner_config_generator(
-    combiner_type: str, static_schema: Dict[str, Any] = None
-) -> Tuple[ModelConfigDict, pd.DataFrame]:
+    combiner_type: str, static_schema: dict[str, Any] = None
+) -> tuple[ModelConfigDict, pd.DataFrame]:
     """Generate combinatorial configs for the combiner section of the Ludwig config.
 
     Args:

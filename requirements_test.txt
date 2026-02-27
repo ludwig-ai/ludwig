@@ -1,33 +1,28 @@
 pytest
 pytest-timeout
+pytest-rerunfailures
 tifffile
 wget
-six>=1.13.0
 aim
-wandb<0.12.11
+wandb
 comet_ml
 mlflow
 
 # For testing optional Ray Tune Search Algorithms
 # search_alg: bohb
 hpbandster
-ConfigSpace==0.7.1
+ConfigSpace>=1.0
 
 # search_alg: ax
 ax-platform
 
-# Pinning because aimstack does not support 2.x.x - https://github.com/aimhubio/aim/issues/2514
-sqlalchemy<2
+sqlalchemy
 
 # search_alg: bayesopt
 bayesian-optimization
 
 # search_alg: cfo and blendsearch
 flaml[blendsearch]
-
-# Disabling due to numpy installation failure https://github.com/ludwig-ai/ludwig/actions/runs/4737879639/jobs/8411146481
-# search_alg: dragonfly
-# dragonfly-opt
 
 # search_alg: hebo
 HEBO
@@ -43,5 +38,8 @@ scikit-optimize
 
 # search_alg: zoopt
 zoopt
+
+# search_alg: hyperopt (TPE)
+hyperopt
 
 s3fs>=2022.8.2

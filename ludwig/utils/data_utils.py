@@ -30,7 +30,7 @@ import re
 import tempfile
 import threading
 from itertools import islice
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -54,7 +54,7 @@ try:
     import dask
     import dask.dataframe as dd
 
-    DASK_DF_FORMATS = {dd.core.DataFrame}
+    DASK_DF_FORMATS = {dd.DataFrame}
 except ImportError:
     DASK_DF_FORMATS = set()
     dd = None
@@ -256,7 +256,7 @@ def read_parquet(data_fp, df_lib, nrows=None, **kwargs):
         from ludwig.utils.fs_utils import get_fs_and_path
 
         fs, _ = get_fs_and_path(data_fp)
-        dataset = pq.ParquetDataset(data_fp, filesystem=fs, use_legacy_dataset=False).fragments[0]
+        dataset = pq.ParquetDataset(data_fp, filesystem=fs).fragments[0]
 
         preview = dataset.head(nrows).to_pandas()
 
@@ -304,6 +304,12 @@ def read_feather(data_fp, df_lib, **kwargs):
 def read_html(data_fp, df_lib, **kwargs):
     # Chunking is not supported for html files:
     kwargs.pop("nrows", None)
+
+    # Wrap literal HTML strings in StringIO to avoid pandas FutureWarning
+    from io import StringIO
+
+    if isinstance(data_fp, str) and not os.path.isfile(data_fp):
+        data_fp = StringIO(data_fp)
 
     # https://github.com/dask/dask/issues/9055
     if is_dask_lib(df_lib):
@@ -435,7 +441,7 @@ def save_json(data_fp, data, sort_keys=True, indent=4):
 
 
 @DeveloperAPI
-def hash_dict(d: dict, max_length: Union[int, None] = 6) -> bytes:
+def hash_dict(d: dict, max_length: int | None = 6) -> bytes:
     """Function that maps a dictionary into a unique hash.
 
     Known limitation: All values and keys of the dict must have an ordering. If not, there's no guarantee to obtain the
@@ -545,7 +551,7 @@ def save_array(data_fp, array):
 
 # TODO(shreya): Confirm types of args
 @DeveloperAPI
-def load_pretrained_embeddings(embeddings_path: str, vocab: List[str]) -> np.ndarray:
+def load_pretrained_embeddings(embeddings_path: str, vocab: list[str]) -> np.ndarray:
     """Create an embedding matrix of all words in vocab."""
     embeddings, embeddings_size = load_glove(embeddings_path, return_embedding_size=True)
 
@@ -570,7 +576,7 @@ def load_pretrained_embeddings(embeddings_path: str, vocab: List[str]) -> np.nda
 
 @DeveloperAPI
 @functools.lru_cache(1)
-def load_glove(file_path: str, return_embedding_size: bool = False) -> Dict[str, np.ndarray]:
+def load_glove(file_path: str, return_embedding_size: bool = False) -> dict[str, np.ndarray]:
     """Loads Glove embeddings for each word.
 
     Returns:
@@ -614,14 +620,14 @@ def load_glove(file_path: str, return_embedding_size: bool = False) -> Dict[str,
 
 
 @DeveloperAPI
-def split_data(split: float, data: List) -> Tuple[List, List]:
+def split_data(split: float, data: list) -> tuple[list, list]:
     split_length = int(round(split * len(data)))
     random.shuffle(data)
     return data[:split_length], data[split_length:]
 
 
 @DeveloperAPI
-def split_by_slices(slices: List[Any], n: int, probabilities: List[float]) -> List[Any]:
+def split_by_slices(slices: list[Any], n: int, probabilities: list[float]) -> list[Any]:
     splits = []
     indices = cumsum([int(x * n) for x in probabilities])
     start = 0
@@ -700,14 +706,12 @@ def class_counts(dataset, labels_field):
 def load_from_file(file_name, field=None, dtype=int, ground_truth_split=2):
     """Load experiment data from supported file formats.
 
-    Experiment data can be test/train statistics, model predictions,
-    probability, ground truth,  ground truth metadata.
+    Experiment data can be test/train statistics, model predictions, probability, ground truth,  ground truth metadata.
     :param file_name: Path to file to be loaded
     :param field: Target Prediction field.
     :param dtype:
-    :param ground_truth_split: Ground truth split filter where 0 is train 1 is
-    validation and 2 is test split. By default test split is used when loading
-    ground truth from hdf5.
+    :param ground_truth_split: Ground truth split filter where 0 is train 1 is validation and 2 is test split. By
+        default test split is used when loading ground truth from hdf5.
     :return: Experiment data as array
     """
     if file_name.endswith(".hdf5") and field is not None:
@@ -753,7 +757,7 @@ def add_sequence_feature_column(df, col_name, seq_length):
     delimited strings composed of preceding values of the same column up to seq_length. For example values of the
     i-th row of the new column will be a space-delimited string of df[col_name][i-seq_length].
 
-     :param df: input dataframe
+    :param df: input dataframe
     :param col_name: column name containing sequential data
     :param seq_length: length of an array of preceeding column values to use
     """
@@ -828,14 +832,14 @@ class NumpyEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, (set, tuple)):
             return list(o)
+        elif isinstance(o, np.bool_):
+            return bool(o)
         elif isinstance(o, np.integer):
             return int(o)
         elif isinstance(o, np.floating):
             return float(o)
         elif isinstance(o, np.ndarray):
             return o.tolist()
-        elif isinstance(o, np.bool_):
-            return bool(o)
         elif dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
         else:
@@ -884,8 +888,8 @@ def figure_data_format_dataset(dataset):
         return figure_data_format_dataset(dataset.unwrap())
     elif isinstance(dataset, pd.DataFrame):
         return pd.DataFrame
-    elif dd and isinstance(dataset, dd.core.DataFrame):
-        return dd.core.DataFrame
+    elif dd and isinstance(dataset, dd.DataFrame):
+        return dd.DataFrame
     elif isinstance(dataset, dict):
         return dict
     elif isinstance(dataset, str):

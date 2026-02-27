@@ -49,8 +49,7 @@ review_label_pairs = [
 df = pd.DataFrame(review_label_pairs)
 df["split"] = [0] * 15 + [2] * 10
 
-config = yaml.safe_load(
-    """
+config = yaml.safe_load("""
 model_type: llm
 base_model: facebook/opt-350m
 generation:
@@ -90,8 +89,7 @@ output_features:
 preprocessing:
     split:
         type: fixed
-    """
-)
+    """)
 
 # Define Ludwig model object that drive model training
 model = LudwigModel(config=config, logging_level=logging.INFO)

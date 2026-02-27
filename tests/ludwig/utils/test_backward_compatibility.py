@@ -1,6 +1,6 @@
 import copy
 import math
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
@@ -435,8 +435,7 @@ def test_deprecated_hyperopt_sampler_early_stopping(use_scheduler):
         ],
         "hyperopt": {
             "search_alg": {
-                "type": "hyperopt",
-                "random_state_seed": 42,
+                "type": "variant_generator",
             },
             "executor": {
                 "type": "ray",
@@ -792,7 +791,7 @@ def test_cache_credentials_backward_compatibility():
     ],
     ids=["resnet", "vit", "resnet_legacy", "vit_legacy"],
 )
-def test_legacy_image_encoders(encoder: Dict[str, Any], upgraded_type: str):
+def test_legacy_image_encoders(encoder: dict[str, Any], upgraded_type: str):
     config = {
         "input_features": [{"name": "image1", "type": "image", "encoder": encoder}],
         "output_features": [{"name": "binary1", "type": "binary"}],
@@ -824,65 +823,6 @@ def test_load_config_missing_hyperopt():
     config_obj = ModelConfig.from_dict(old_valid_config)
     assert config_obj.hyperopt is None
     assert config_obj.to_dict()[HYPEROPT] is None
-
-
-def test_defaults_gbm_config():
-    old_valid_config = {
-        "input_features": [
-            {"name": "feature_1", "type": "category"},
-            {"name": "Sex", "type": "category"},
-        ],
-        "output_features": [
-            {"name": "Survived", "type": "category"},
-        ],
-        "defaults": {
-            "binary": {
-                "decoder": {
-                    "type": "regressor",
-                    "num_fc_layers": 0,
-                },
-                "encoder": {"type": "passthrough"},
-                "loss": {
-                    "weight": 1.0,
-                },
-                "preprocessing": {
-                    "missing_value_strategy": "fill_with_false",
-                },
-            },
-            "category": {
-                "decoder": {"type": "classifier", "num_fc_layers": 0},
-                "encoder": {"type": "onehot"},
-                "loss": {"confidence_penalty": 0},
-                "preprocessing": {
-                    "missing_value_strategy": "fill_with_const",
-                    "most_common": 10000,
-                },
-            },
-            "number": {
-                "decoder": {"type": "regressor"},
-                "encoder": {"type": "passthrough"},
-                "loss": {"type": "mean_squared_error"},
-                "preprocessing": {"missing_value_strategy": "fill_with_const"},
-            },
-            "sequence": {
-                "decoder": {},
-                "loss": {},
-                "preprocessing": {},
-                "encoder": {},
-            },
-        },
-        "model_type": "gbm",
-    }
-
-    config_obj = ModelConfig.from_dict(old_valid_config).to_dict()
-
-    # Non GBM supported feature so shouldn't exist in defaults
-    assert "sequence" not in config_obj["defaults"]
-
-    # Ensure defaults only have relevant keys
-    for feature_type in config_obj["defaults"]:
-        assert "decoder" not in config_obj["defaults"][feature_type]
-        assert "loss" not in config_obj["defaults"][feature_type]
 
 
 def test_type_removed_from_defaults_config():
@@ -918,14 +858,7 @@ def test_type_removed_from_defaults_config():
         "model_type": "ecd",
     }
 
-    config_2 = copy.deepcopy(config)
-    config_2["model_type"] = "gbm"
-
     config_obj = ModelConfig.from_dict(config).to_dict()
-    config_obj_2 = ModelConfig.from_dict(config_2).to_dict()
 
     for feature_type in config_obj.get("defaults"):
         assert "type" not in config_obj["defaults"][feature_type]
-
-    for feature_type in config_obj_2.get("defaults"):
-        assert "type" not in config_obj_2["defaults"][feature_type]

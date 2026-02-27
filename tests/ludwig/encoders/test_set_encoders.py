@@ -1,5 +1,3 @@
-from typing import List
-
 import pytest
 import torch
 
@@ -18,7 +16,7 @@ DEVICE = get_torch_device()
 @pytest.mark.parametrize("embedding_size", [10])
 @pytest.mark.parametrize("representation", ["sparse"])
 def test_set_encoder(
-    vocab: List[str],
+    vocab: list[str],
     embedding_size: int,
     representation: str,
     num_fc_layers: int,

@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import List, Tuple
 
 import dask.dataframe as dd
 import pandas as pd
@@ -16,7 +15,7 @@ from ludwig.utils.types import DataFrame
 class DataSource(ABC):
     @property
     @abstractmethod
-    def columns(self) -> List[str]:
+    def columns(self) -> list[str]:
         raise NotImplementedError()
 
     @abstractmethod
@@ -24,7 +23,7 @@ class DataSource(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_distinct_values(self, column: str, max_values_to_return: int) -> Tuple[int, List[str], float]:
+    def get_distinct_values(self, column: str, max_values_to_return: int) -> tuple[int, list[str], float]:
         raise NotImplementedError()
 
     @abstractmethod
@@ -53,13 +52,13 @@ class DataframeSourceMixin:
     df: DataFrame
 
     @property
-    def columns(self) -> List[str]:
+    def columns(self) -> list[str]:
         return self.df.columns
 
     def get_dtype(self, column: str) -> str:
         return self.df[column].dtype.name
 
-    def get_distinct_values(self, column, max_values_to_return: int) -> Tuple[int, List[str], float]:
+    def get_distinct_values(self, column, max_values_to_return: int) -> tuple[int, list[str], float]:
         unique_values = self.df[column].dropna().unique()
         num_unique_values = len(unique_values)
         unique_values_counts = self.df[column].value_counts()
@@ -110,7 +109,7 @@ class DaskDataSource(DataframeSource):
     def sample(self) -> pd.DataFrame:
         return self.get_sample()
 
-    def get_distinct_values(self, column, max_values_to_return) -> Tuple[int, List[str], float]:
+    def get_distinct_values(self, column, max_values_to_return) -> tuple[int, list[str], float]:
         unique_values = self.df[column].drop_duplicates().dropna().persist()
         num_unique_values = len(unique_values)
 
@@ -133,6 +132,6 @@ class DaskDataSource(DataframeSource):
 
 @DeveloperAPI
 def wrap_data_source(df: DataFrame) -> DataSource:
-    if isinstance(df, dd.core.DataFrame):
+    if isinstance(df, dd.DataFrame):
         return DaskDataSource(df)
     return DataframeSource(df)

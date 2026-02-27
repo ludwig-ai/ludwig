@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from typing import Union
 
 import pytest
 
@@ -348,9 +347,9 @@ def test_get_final_steps_per_checkpoint():
     ],
 )
 def test_get_rendered_batch_size_grad_accum(
-    effective_batch_size: Union[str, int],
-    batch_size: Union[str, int],
-    gradient_accumulation_steps: Union[str, int],
+    effective_batch_size: str | int,
+    batch_size: str | int,
+    gradient_accumulation_steps: str | int,
     num_workers: int,
     expected_batch_size: int,
     expected_grad_accum: int,

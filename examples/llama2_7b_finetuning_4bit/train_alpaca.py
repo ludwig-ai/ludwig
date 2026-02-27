@@ -5,8 +5,7 @@ import yaml
 
 from ludwig.api import LudwigModel
 
-config = yaml.safe_load(
-    """
+config = yaml.safe_load("""
 model_type: llm
 base_model: meta-llama/Llama-2-7b-hf
 
@@ -35,8 +34,7 @@ trainer:
 
 backend:
   type: local
-"""
-)
+""")
 
 # Define Ludwig model object that drive model training
 model = LudwigModel(config=config, logging_level=logging.INFO)

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Type, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
@@ -56,7 +56,7 @@ class LoraPostprocessorConfigField(schema_utils.DictMarshmallowField):
 class BaseAdapterConfig(schema_utils.BaseMarshmallowConfig, ABC):
     type: str
 
-    pretrained_adapter_weights: Optional[str] = schema_utils.String(
+    pretrained_adapter_weights: str | None = schema_utils.String(
         default=None, description="Path to pretrained weights.", allow_none=True
     )
 
@@ -86,7 +86,7 @@ class LoraConfig(BaseAdapterConfig):
         parameter_metadata=LLM_METADATA["adapter"]["lora"]["r"],
     )
 
-    alpha: Optional[int] = schema_utils.PositiveInteger(
+    alpha: int | None = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="The alpha parameter for Lora scaling. Defaults to `2 * r`.",
@@ -106,7 +106,7 @@ class LoraConfig(BaseAdapterConfig):
         description="Bias type for Lora.",
     )
 
-    target_modules: Optional[List[str]] = schema_utils.List(
+    target_modules: list[str] | None = schema_utils.List(
         default=None,
         allow_none=True,
         description=(
@@ -179,25 +179,25 @@ class BasePromptLearningConfig(BaseAdapterConfig):
         parameter_metadata=LLM_METADATA["adapter"]["prompt_learning"]["num_virtual_tokens"],
     )
 
-    token_dim: Optional[int] = schema_utils.PositiveInteger(
+    token_dim: int | None = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="The hidden embedding dimension of the base transformer model.",
     )
 
-    num_transformer_submodules: Optional[int] = schema_utils.PositiveInteger(
+    num_transformer_submodules: int | None = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="The number of transformer submodules in the base transformer model.",
     )
 
-    num_attention_heads: Optional[int] = schema_utils.PositiveInteger(
+    num_attention_heads: int | None = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="The number of attention heads in the base transformer model.",
     )
 
-    num_layers: Optional[int] = schema_utils.PositiveInteger(
+    num_layers: int | None = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="The number of layers in the base transformer model.",
@@ -389,13 +389,14 @@ class AdaloraConfig(LoraConfig):
         description="The coefficient of orthogonality regularization.",
     )
 
-    total_step: Optional[int] = schema_utils.PositiveInteger(
-        default=None,
-        allow_none=True,
-        description="The total training steps that should be specified before training.",
+    total_step: int = schema_utils.PositiveInteger(
+        default=10000,
+        allow_none=False,
+        description="The total training steps for AdaLoRA rank allocation scheduling. "
+        "Must be a positive integer (required by peft >= 0.14).",
     )
 
-    rank_pattern: Optional[dict] = schema_utils.Dict(
+    rank_pattern: dict | None = schema_utils.Dict(
         default=None,
         allow_none=True,
         description="The allocated rank for each weight matrix by RankAllocator.",
@@ -498,14 +499,14 @@ class IA3Config(BaseAdapterConfig):
         description=LLM_METADATA["adapter"]["ia3"]["type"].long_description,
     )
 
-    target_modules: Optional[List[str]] = schema_utils.List(
+    target_modules: list[str] | None = schema_utils.List(
         default=None,
         allow_none=True,
         description="The names of the modules to apply (IA)^3 to.",
         parameter_metadata=LLM_METADATA["adapter"]["ia3"]["target_modules"],
     )
 
-    feedforward_modules: Optional[List[str]] = schema_utils.List(
+    feedforward_modules: list[str] | None = schema_utils.List(
         default=None,
         allow_none=True,
         description=(
@@ -525,7 +526,7 @@ class IA3Config(BaseAdapterConfig):
         parameter_metadata=LLM_METADATA["adapter"]["ia3"]["fan_in_fan_out"],
     )
 
-    modules_to_save: Optional[List[str]] = schema_utils.List(
+    modules_to_save: list[str] | None = schema_utils.List(
         list_type=str,
         default=None,
         allow_none=True,
@@ -577,7 +578,7 @@ def get_adapter_conds():
 
 
 @DeveloperAPI
-def AdapterDataclassField(default: Optional[str] = None):
+def AdapterDataclassField(default: str | None = None):
     description = "Whether to use parameter-efficient fine-tuning"
 
     class AdapterSelection(schema_utils.TypeSelection):
@@ -591,7 +592,7 @@ def AdapterDataclassField(default: Optional[str] = None):
                 allow_none=True,
             )
 
-        def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
+        def get_schema_from_registry(self, key: str) -> type[schema_utils.BaseMarshmallowConfig]:
             return adapter_registry[key]
 
         @staticmethod

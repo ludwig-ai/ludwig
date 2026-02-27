@@ -2,6 +2,7 @@
 
 Backward pass wrt alpha per (Correia et al., 2019). See https://arxiv.org/pdf/1905.05702 for detailed description.
 """
+
 # Author: Goncalo M Correia
 # Author: Ben Peters
 # Author: Vlad Niculae <vlad@vene.ro>
@@ -285,10 +286,13 @@ class EntmaxBisect(nn.Module):
             suffice for machine precision.
 
         """
+        super().__init__()
         self.dim = dim
         self.n_iter = n_iter
-        self.alpha = alpha
-        super().__init__()
+        if isinstance(alpha, torch.Tensor):
+            self.register_buffer("alpha", alpha)
+        else:
+            self.alpha = alpha
 
     def forward(self, X):
         return entmax_bisect(X, alpha=self.alpha, dim=self.dim, n_iter=self.n_iter, training=self.training)

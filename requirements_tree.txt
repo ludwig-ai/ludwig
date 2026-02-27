@@ -1,3 +1,0 @@
-hummingbird-ml>=0.4.8
-lightgbm
-lightgbm-ray

@@ -1,5 +1,3 @@
-from typing import Dict, List, Union
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.utils.registry import Registry
 
@@ -17,7 +15,7 @@ def get_augmentation_op_registry() -> Registry:
 
 
 @DeveloperAPI
-def register_augmentation_op(name: str, features: Union[str, List[str]]):
+def register_augmentation_op(name: str, features: str | list[str]):
     if isinstance(features, str):
         features = [features]
 
@@ -39,7 +37,7 @@ def get_augmentation_op(feature_type: str, op_name: str):
 class AugmentationPipelines:
     """Container holding augmentation pipelines defined in the model."""
 
-    def __init__(self, augmentation_pipelines: Dict):
+    def __init__(self, augmentation_pipelines: dict):
         self.augmentation_pipelines = augmentation_pipelines
 
     def __getitem__(self, key):

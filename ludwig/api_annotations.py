@@ -1,6 +1,3 @@
-from typing import Optional
-
-
 def PublicAPI(*args, **kwargs):
     """Annotation for documenting public APIs. Public APIs are classes and methods exposed to end users of Ludwig.
 
@@ -104,7 +101,7 @@ def Deprecated(*args, **kwargs):
     return inner
 
 
-def _append_doc(obj, message: str, directive: Optional[str] = None) -> str:
+def _append_doc(obj, message: str, directive: str | None = None) -> str:
     """
     Args:
         message: An additional message to append to the end of docstring for a class

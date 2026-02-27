@@ -19,7 +19,7 @@ import os.path
 import pathlib
 import shutil
 import subprocess
-from typing import List, Set
+import sys
 
 import pytest
 import yaml
@@ -54,12 +54,8 @@ def _run_commands(commands, **ludwig_kwargs):
 
 
 def _run_ludwig(command, **ludwig_kwargs):
-    commands = ["ludwig", command]
-    return _run_commands(commands, **ludwig_kwargs)
-
-
-def _run_ludwig_horovod(command, **ludwig_kwargs):
-    commands = ["horovodrun", "-np", "2", "ludwig", command]
+    ludwig_bin = os.path.join(os.path.dirname(sys.executable), "ludwig")
+    commands = [ludwig_bin, command]
     return _run_commands(commands, **ludwig_kwargs)
 
 
@@ -155,30 +151,6 @@ def test_train_cli_training_set(tmpdir, csv_filename):
         test_set=test_filename,
         config=config_filename,
         output_directory=str(tmpdir),
-    )
-
-
-@pytest.mark.distributed
-@pytest.mark.horovod
-def test_train_cli_horovod(tmpdir, csv_filename):
-    """Test training using `horovodrun -np 2 ludwig train --dataset`."""
-    config_filename = os.path.join(tmpdir, "config.yaml")
-    dataset_filename = _prepare_data(csv_filename, config_filename)
-    _run_ludwig_horovod(
-        "train",
-        dataset=dataset_filename,
-        config=config_filename,
-        output_directory=str(tmpdir),
-        experiment_name="horovod_experiment",
-    )
-
-    # Check that `model_load_path` works correctly
-    _run_ludwig_horovod(
-        "train",
-        dataset=dataset_filename,
-        config=config_filename,
-        output_directory=str(tmpdir),
-        model_load_path=os.path.join(tmpdir, "horovod_experiment_run", MODEL_FILE_NAME),
     )
 
 
@@ -325,20 +297,12 @@ def test_preprocess_cli(tmpdir, csv_filename):
 @pytest.mark.parametrize("second_seed_offset", [0, 1])
 @pytest.mark.parametrize("random_seed", [1919, 31])
 @pytest.mark.parametrize("type_of_run", ["train", "experiment"])
-@pytest.mark.parametrize(
-    "backend",
-    [
-        pytest.param("local", id="local"),
-        pytest.param("horovod", id="horovod", marks=[pytest.mark.distributed, pytest.mark.horovod]),
-    ],
-)
 def test_reproducible_cli_runs(
-    backend: str, type_of_run: str, random_seed: int, second_seed_offset: int, csv_filename: str, tmpdir: pathlib.Path
+    type_of_run: str, random_seed: int, second_seed_offset: int, csv_filename: str, tmpdir: pathlib.Path
 ) -> None:
     """
     Test for reproducible training using `ludwig experiment|train --dataset`.
     Args:
-        backend (str): backend to use
         type_of_run(str): type of run, either train or experiment
         csv_filename(str): file path of dataset to use
         random_seed(int): random seed integer to use for test
@@ -351,13 +315,8 @@ def test_reproducible_cli_runs(
     config_filename = os.path.join(tmpdir, "config.yaml")
     dataset_filename = _prepare_data(csv_filename, config_filename)
 
-    if backend == "local":
-        command_to_run = _run_ludwig
-    else:
-        command_to_run = _run_ludwig_horovod
-
     # run first model
-    command_to_run(
+    _run_ludwig(
         type_of_run,
         dataset=dataset_filename,
         config=config_filename,
@@ -369,7 +328,7 @@ def test_reproducible_cli_runs(
     )
 
     # run second model with same seed
-    command_to_run(
+    _run_ludwig(
         type_of_run,
         dataset=dataset_filename,
         config=config_filename,
@@ -425,7 +384,7 @@ def test_init_config(tmpdir):
 
     config = load_yaml(output_config_path)
 
-    def to_name_set(features: List[FeatureConfigDict]) -> Set[str]:
+    def to_name_set(features: list[FeatureConfigDict]) -> set[str]:
         return {feature[NAME] for feature in features}
 
     assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)

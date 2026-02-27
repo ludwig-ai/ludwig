@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """Trains model on Twitter Bots dataset using default settings."""
+
 import logging
 import os
 import shutil
@@ -26,8 +27,7 @@ if __name__ == "__main__":
     if not os.path.exists("profile_images"):
         rename(os.path.join(twitter_bots_dataset.processed_dataset_dir, "profile_images"), "profile_images")
 
-    config = yaml.safe_load(
-        """
+    config = yaml.safe_load("""
     input_features:
       - name: default_profile
         type: binary
@@ -64,8 +64,7 @@ if __name__ == "__main__":
     output_features:
       - name: account_type
         type: binary
-        """
-    )
+        """)
 
     model = LudwigModel(config, logging_level=logging.INFO)
 

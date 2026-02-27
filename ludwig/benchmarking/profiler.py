@@ -8,7 +8,7 @@ import time
 from queue import Empty as EmptyQueueException
 from queue import Queue
 from subprocess import PIPE, Popen
-from typing import Any, Dict, List
+from typing import Any
 from xml.etree.ElementTree import fromstring
 
 import psutil
@@ -54,7 +54,7 @@ def get_gpu_info():
     return data
 
 
-def monitor(queue: Queue, info: Dict[str, Any], logging_interval: int, cuda_is_available: bool) -> None:
+def monitor(queue: Queue, info: dict[str, Any], logging_interval: int, cuda_is_available: bool) -> None:
     """Monitors hardware resource use.
 
     Collects system specific metrics (CPU/CUDA, CPU/CUDA memory) at a `logging_interval` interval and pushes
@@ -220,7 +220,10 @@ class LudwigProfiler(contextlib.ContextDecorator):
         try:
             self.queue.put(STOP_MESSAGE)
             self.t.join()
-            self.info = self.queue.get()
+            result = self.queue.get()
+            # If monitor thread crashed, result may be a string instead of dict
+            if isinstance(result, dict):
+                self.info = result
             # recording in microseconds to be in line with torch profiler time recording.
             self.info["end_time"] = time.perf_counter_ns() / 1000
             self.info["end_disk_usage"] = shutil.disk_usage(os.path.expanduser("~")).used
@@ -243,8 +246,8 @@ class LudwigProfiler(contextlib.ContextDecorator):
         save_json(file_name, profiler_dataclass_to_flat_dict(system_usage_metrics))
 
     def _reformat_torch_usage_metrics_tags(
-        self, torch_usage_metrics: Dict[str, Any]
-    ) -> Dict[str, List[TorchProfilerMetrics]]:
+        self, torch_usage_metrics: dict[str, Any]
+    ) -> dict[str, list[TorchProfilerMetrics]]:
         reformatted_dict = {}
         for key, value in torch_usage_metrics.items():
             assert key.startswith(LUDWIG_TAG)

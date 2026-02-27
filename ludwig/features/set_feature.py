@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Union
+from typing import Any
 
 import numpy as np
 import torch
@@ -62,7 +62,7 @@ class _SetPreprocessing(torch.nn.Module):
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         """Takes a list of strings and returns a tensor of counts for each token."""
-        if not torch.jit.isinstance(v, List[str]):
+        if not torch.jit.isinstance(v, list[str]):
             raise ValueError(f"Unsupported input: {v}")
 
         if self.lowercase:
@@ -72,7 +72,7 @@ class _SetPreprocessing(torch.nn.Module):
 
         unit_sequences = self.tokenizer(sequences)
         # refines type of unit_sequences from Any to List[List[str]]
-        assert torch.jit.isinstance(unit_sequences, List[List[str]]), "unit_sequences is not a list of lists."
+        assert torch.jit.isinstance(unit_sequences, list[list[str]]), "unit_sequences is not a list of lists."
 
         set_matrix = torch.zeros(len(unit_sequences), self.vocab_size, dtype=torch.float32)
         for sample_idx, unit_sequence in enumerate(unit_sequences):
@@ -102,16 +102,16 @@ class _SetPostprocessing(torch.nn.Module):
         self.probabilities_key = PROBABILITIES
         self.unk = UNKNOWN_SYMBOL
 
-    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> FeaturePostProcessingOutputDict:
+    def forward(self, preds: dict[str, torch.Tensor], feature_name: str) -> FeaturePostProcessingOutputDict:
         predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
         probabilities = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.probabilities_key)
 
-        inv_preds: List[List[str]] = []
-        filtered_probs: List[torch.Tensor] = []
+        inv_preds: list[list[str]] = []
+        filtered_probs: list[torch.Tensor] = []
         for sample_idx, sample in enumerate(predictions):
-            sample_preds: List[str] = []
-            pos_sample_idxs: List[int] = []
-            pos_class_idxs: List[int] = []
+            sample_preds: list[str] = []
+            pos_sample_idxs: list[int] = []
+            pos_class_idxs: list[int] = []
             for class_idx, is_positive in enumerate(sample):
                 if is_positive == 1:
                     sample_preds.append(self.idx2str.get(class_idx, self.unk))
@@ -131,7 +131,7 @@ class _SetPredict(PredictModule):
         super().__init__()
         self.threshold = threshold
 
-    def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: dict[str, torch.Tensor], feature_name: str) -> dict[str, torch.Tensor]:
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
         probabilities = torch.sigmoid(logits)
 
@@ -249,8 +249,8 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 class SetOutputFeature(SetFeatureMixin, OutputFeature):
     def __init__(
         self,
-        output_feature_config: Union[SetOutputFeatureConfig, Dict],
-        output_features: Dict[str, OutputFeature],
+        output_feature_config: SetOutputFeatureConfig | dict,
+        output_features: dict[str, OutputFeature],
         **kwargs,
     ):
         self.threshold = output_feature_config.threshold
@@ -263,7 +263,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         hidden = inputs[HIDDEN]
         return self.decoder_obj(hidden)
 
-    def metric_kwargs(self) -> Dict[str, Any]:
+    def metric_kwargs(self) -> dict[str, Any]:
         return {"threshold": self.threshold}
 
     def create_predict_module(self) -> PredictModule:

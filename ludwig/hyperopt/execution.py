@@ -6,58 +6,145 @@ import json
 import logging
 import os
 import shutil
+import sys
 import tempfile
 import threading
 import time
 import traceback
 import uuid
+from collections.abc import Callable
 from functools import lru_cache
 from inspect import signature
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import ray
-from packaging import version
 from ray import tune
-from ray.air import Checkpoint
-from ray.air.config import CheckpointConfig, FailureConfig, RunConfig
-from ray.tune import ExperimentAnalysis, register_trainable, Stopper, TuneConfig
-from ray.tune.execution.placement_groups import PlacementGroupFactory
+from ray.tune import ExperimentAnalysis, PlacementGroupFactory, register_trainable, Stopper
 from ray.tune.schedulers.resource_changing_scheduler import DistributeResources, ResourceChangingScheduler
-from ray.tune.search import BasicVariantGenerator, ConcurrencyLimiter
-from ray.tune.tuner import Tuner
+from ray.tune.search import BasicVariantGenerator, ConcurrencyLimiter, SEARCH_ALG_IMPORT
 from ray.tune.utils import wait_for_gpu
 from ray.util.queue import Queue as RayQueue
 
 from ludwig.api import LudwigModel
-from ludwig.api_annotations import PublicAPI
 from ludwig.backend import initialize_backend, RAY
 from ludwig.backend.ray import initialize_ray
 from ludwig.callbacks import Callback
 from ludwig.constants import MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
-from ludwig.globals import MODEL_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
-from ludwig.hyperopt.syncer import RemoteSyncer
+from ludwig.hyperopt.search_algos import get_search_algorithm
 from ludwig.hyperopt.utils import load_json_values, substitute_parameters
 from ludwig.modules.metric_modules import get_best_function
-from ludwig.schema.hyperopt.utils import get_search_algorithm_cls
-from ludwig.schema.model_config import ModelConfig
-from ludwig.types import ModelConfigDict
-from ludwig.utils import fs_utils, metric_utils
-from ludwig.utils.data_utils import hash_dict, NumpyEncoder, use_credentials
+from ludwig.schema.model_types.utils import merge_with_defaults
+from ludwig.utils import metric_utils
+from ludwig.utils.data_utils import hash_dict, NumpyEncoder
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.fs_utils import has_remote_protocol, safe_move_file
 from ludwig.utils.misc_utils import get_from_registry
 
 logger = logging.getLogger(__name__)
 
-_ray220 = version.parse(ray.__version__) >= version.parse("2.2.0")
 
-if not _ray220:
-    from ludwig.backend._ray210_compat import TunerRay210
-else:
-    TunerRay210 = None
+def _patch_bohb_configspace_conversion():
+    """Monkey-patch TuneBOHB.convert_search_space for ConfigSpace 1.x compatibility.
+
+    ConfigSpace 1.x removed the `q` (quantization) parameter from hyperparameter classes.
+    Ray Tune's BOHB integration still passes `q=...`, so we patch the converter to drop it.
+    """
+    try:
+        # Check if ConfigSpace 1.x (no 'q' parameter)
+        import inspect
+        import math
+
+        import ConfigSpace
+        from ray.tune.search.bohb.bohb_search import TuneBOHB
+        from ray.tune.search.sample import Categorical, Float, Integer, LogUniform, Normal, Quantized, Uniform
+        from ray.tune.search.variant_generator import parse_spec_vars
+        from ray.tune.utils import flatten_dict
+
+        sig = inspect.signature(ConfigSpace.UniformFloatHyperparameter.__init__)
+        if "q" in sig.parameters:
+            return  # Old ConfigSpace, no patching needed
+
+        @staticmethod
+        def convert_search_space(spec):
+            resolved_vars, domain_vars, grid_vars = parse_spec_vars(spec)
+            if grid_vars:
+                raise ValueError(
+                    "Grid search parameters cannot be automatically converted " "to a TuneBOHB search space."
+                )
+            spec = flatten_dict(spec, prevent_delimiter=True)
+            resolved_vars, domain_vars, grid_vars = parse_spec_vars(spec)
+
+            def resolve_value(par, domain):
+                quantize = None
+                sampler = domain.get_sampler()
+                if isinstance(sampler, Quantized):
+                    quantize = sampler.q
+                    sampler = sampler.sampler
+
+                if isinstance(domain, Float):
+                    if isinstance(sampler, LogUniform):
+                        lower = domain.lower
+                        upper = domain.upper
+                        if quantize:
+                            lower = math.ceil(domain.lower / quantize) * quantize
+                            upper = math.floor(domain.upper / quantize) * quantize
+                        return ConfigSpace.UniformFloatHyperparameter(par, lower=lower, upper=upper, log=True)
+                    elif isinstance(sampler, Uniform):
+                        lower = domain.lower
+                        upper = domain.upper
+                        if quantize:
+                            lower = math.ceil(domain.lower / quantize) * quantize
+                            upper = math.floor(domain.upper / quantize) * quantize
+                        return ConfigSpace.UniformFloatHyperparameter(par, lower=lower, upper=upper, log=False)
+                    elif isinstance(sampler, Normal):
+                        return ConfigSpace.hyperparameters.NormalFloatHyperparameter(
+                            par, mu=sampler.mean, sigma=sampler.sd, log=False
+                        )
+                elif isinstance(domain, Integer):
+                    if isinstance(sampler, LogUniform):
+                        lower = domain.lower
+                        upper = domain.upper
+                        if quantize:
+                            lower = math.ceil(domain.lower / quantize) * quantize
+                            upper = math.floor(domain.upper / quantize) * quantize
+                        else:
+                            upper -= 1
+                        return ConfigSpace.UniformIntegerHyperparameter(par, lower=lower, upper=upper, log=True)
+                    elif isinstance(sampler, Uniform):
+                        lower = domain.lower
+                        upper = domain.upper
+                        if quantize:
+                            lower = math.ceil(domain.lower / quantize) * quantize
+                            upper = math.floor(domain.upper / quantize) * quantize
+                        else:
+                            upper -= 1
+                        return ConfigSpace.UniformIntegerHyperparameter(par, lower=lower, upper=upper, log=False)
+                elif isinstance(domain, Categorical):
+                    if isinstance(sampler, Uniform):
+                        return ConfigSpace.CategoricalHyperparameter(par, choices=domain.categories)
+
+                raise ValueError(
+                    "TuneBOHB does not support parameters of type "
+                    "`{}` with samplers of type `{}`".format(type(domain).__name__, type(domain.sampler).__name__)
+                )
+
+            cs = ConfigSpace.ConfigurationSpace()
+            for path, domain in domain_vars:
+                par = "/".join(str(p) for p in path)
+                value = resolve_value(par, domain)
+                cs.add_hyperparameter(value)
+            return cs
+
+        TuneBOHB.convert_search_space = convert_search_space
+        logger.info("Patched TuneBOHB.convert_search_space for ConfigSpace 1.x compatibility")
+
+    except ImportError:
+        pass  # BOHB not installed
+
+
+_patch_bohb_configspace_conversion()
 
 
 try:
@@ -74,7 +161,6 @@ except ImportError as e:
         f"ImportError (execution.py) failed to import RayBackend with error: \n\t{e}. "
         "The LocalBackend will be used instead. If you want to use the RayBackend, please install ludwig[distributed]."
     )
-    get_horovod_kwargs = None
 
     class RayBackend:
         pass
@@ -91,19 +177,11 @@ def _get_relative_checkpoints_dir_parts(path: Path):
     return path.parts[-2:]
 
 
-@default_retry()
-def _download_local_tmpdir(ckpt_path: str, tmpdir: str, creds: Dict[str, Any]) -> str:
-    local_ckpt_path = os.path.join(tmpdir, uuid.uuid4().hex)
-    with use_credentials(creds):
-        fs_utils.download(ckpt_path, local_ckpt_path)
-    return local_ckpt_path
-
-
 # Follwing disabled at the moment, expect to be re-enabled pending https://github.com/ludwig-ai/ludwig/issues/2039
 def ray_resource_allocation_function(
     trial_runner: "trial_runner.TrialRunner",  # noqa
     trial: "Trial",  # noqa
-    result: Dict[str, Any],
+    result: dict[str, Any],
     scheduler: "ResourceChangingScheduler",
 ):
     """Determine resources to allocate to running trials."""
@@ -121,22 +199,24 @@ def ray_resource_allocation_function(
     return pgf
 
 
-def checkpoint(progress_tracker, save_path):
+def _create_tune_checkpoint(save_path):
+    """Create a Ray Tune Checkpoint from a model save path."""
+
     def ignore_dot_files(src, files):
         return [f for f in files if f.startswith(".")]
 
-    with tune.checkpoint_dir(step=progress_tracker.tune_checkpoint_num) as checkpoint_dir:
-        checkpoint_model = os.path.join(checkpoint_dir, MODEL_FILE_NAME)
-        # Atomic copying of the checkpoints
-        if not os.path.isdir(checkpoint_model):
-            copy_id = uuid.uuid4()
-            tmp_dst = f"{checkpoint_model}.{copy_id}.tmp"
-            assert os.path.exists(save_path)
-            shutil.copytree(save_path, tmp_dst, ignore=ignore_dot_files)
-            try:
-                os.rename(tmp_dst, checkpoint_model)
-            except Exception:
-                shutil.rmtree(tmp_dst)
+    tmpdir = tempfile.mkdtemp()
+    checkpoint_model = os.path.join(tmpdir, "model")
+    if os.path.exists(save_path):
+        copy_id = uuid.uuid4()
+        tmp_dst = f"{checkpoint_model}.{copy_id}.tmp"
+        shutil.copytree(save_path, tmp_dst, ignore=ignore_dot_files)
+        try:
+            os.rename(tmp_dst, checkpoint_model)
+        except Exception:
+            shutil.rmtree(tmp_dst)
+
+    return tune.Checkpoint.from_directory(tmpdir)
 
 
 class RayTuneExecutor:
@@ -147,19 +227,16 @@ class RayTuneExecutor:
         metric: str,
         goal: str,
         split: str,
-        search_alg: Dict,
-        trial_driver_resources: Optional[Dict] = None,
+        search_alg: dict | None = None,
         cpu_resources_per_trial: int = None,
         gpu_resources_per_trial: int = None,
         kubernetes_namespace: str = None,
-        time_budget_s: Union[int, float, datetime.timedelta] = None,
-        max_concurrent_trials: Optional[int] = None,
+        time_budget_s: int | float | datetime.timedelta = None,
+        max_concurrent_trials: int | None = None,
         num_samples: int = 1,
-        scheduler: Optional[Dict] = None,
+        scheduler: dict | None = None,
         **kwargs,
     ) -> None:
-        # Force-populate the search algorithm registry
-
         if ray is None:
             raise ImportError("ray module is not installed. To install it, try running pip install ray")
         self.output_feature = output_feature
@@ -169,13 +246,12 @@ class RayTuneExecutor:
         self.search_space, self.decode_ctx = self._get_search_space(parameters)
         self.num_samples = num_samples
         self.goal = goal
-        self.search_algorithm = get_search_algorithm_cls(search_alg[TYPE])(**search_alg)
+        self.search_algorithm = get_search_algorithm(search_alg)
         self.scheduler = None if scheduler is None else tune.create_scheduler(scheduler[TYPE], **scheduler)
         self.output_feature = output_feature
         self.metric = metric
         self.split = split
         self.trial_id = 0
-        self.trial_driver_resources = trial_driver_resources
         self.cpu_resources_per_trial = cpu_resources_per_trial
         self.gpu_resources_per_trial = gpu_resources_per_trial
         self.kubernetes_namespace = kubernetes_namespace
@@ -186,7 +262,7 @@ class RayTuneExecutor:
         # Head node is the node to which all checkpoints are synced if running on a K8s cluster.
         self.head_node_ip = ray.util.get_node_ip_address()
 
-    def _get_search_space(self, parameters: Dict) -> Tuple[Dict, Dict]:
+    def _get_search_space(self, parameters: dict) -> tuple[dict, dict]:
         """Encode search space parameters as JSON with context for decoding."""
         config = {}
         ctx = {}
@@ -213,7 +289,7 @@ class RayTuneExecutor:
         return config, ctx
 
     @staticmethod
-    def encode_values(param: str, values: Dict, ctx: Dict) -> Dict:
+    def encode_values(param: str, values: dict, ctx: dict) -> dict:
         """JSON encodes any search spaces whose values are lists / dicts.
 
         Only applies to grid search and choice options.  See here for details:
@@ -228,7 +304,7 @@ class RayTuneExecutor:
         return values
 
     @staticmethod
-    def decode_values(config: Dict, ctx: Dict) -> Dict:
+    def decode_values(config: dict, ctx: dict) -> dict:
         """Decode config values with the decode function in the context.
 
         Uses the identity function if no encoding is needed.
@@ -267,14 +343,17 @@ class RayTuneExecutor:
             stats = stats[metric_part]
         return isinstance(stats, float)
 
-    def get_metric_score(self, train_stats, split=VALIDATION) -> float:
-        if self._has_metric(train_stats, split):
-            logger.info(f"Returning metric score from training ({split}) statistics")
-            return self.get_metric_score_from_train_stats(train_stats, split)
+    def get_metric_score(self, train_stats) -> float:
+        if self._has_metric(train_stats, VALIDATION):
+            logger.info("Returning metric score from training (validation) statistics")
+            return self.get_metric_score_from_train_stats(train_stats, VALIDATION)
+        elif self._has_metric(train_stats, TRAINING):
+            logger.info("Returning metric score from training split statistics, " "as no validation was given")
+            return self.get_metric_score_from_train_stats(train_stats, TRAINING)
         else:
             raise RuntimeError("Unable to obtain metric score from missing training (validation) statistics")
 
-    def get_metric_score_from_eval_stats(self, eval_stats) -> Union[float, list]:
+    def get_metric_score_from_eval_stats(self, eval_stats) -> float | list:
         stats = eval_stats[self.output_feature]
         for metric_part in self.metric.split("."):
             if isinstance(stats, dict):
@@ -318,7 +397,7 @@ class RayTuneExecutor:
     def _gpu_resources_per_trial_non_none(self):
         return self.gpu_resources_per_trial if self.gpu_resources_per_trial is not None else 0
 
-    def _get_remote_checkpoint_dir(self, trial_dir: Path) -> Optional[Union[str, Tuple[str, str]]]:
+    def _get_remote_checkpoint_dir(self, trial_dir: Path) -> str | tuple[str, str] | None:
         """Get the path to remote checkpoint directory."""
         if self.sync_config is None:
             return None
@@ -353,15 +432,9 @@ class RayTuneExecutor:
 
         return kubernetes_syncer.get_node_address_by_ip
 
+    # For specified [stopped] trial, remove checkpoint marker on any partial checkpoints
     @staticmethod
     def _remove_partial_checkpoints(trial_path: str):
-        """For specified [stopped] trial, remove checkpoint marker on any partial checkpoints.
-
-        These may have been created for a trial that was terminated early by RayTune because the time budget was
-        exceeded.
-        """
-        # `trial_dir` returned by RayTune may have a leading slash, so we need to remove it.
-        trial_path = trial_path.rstrip("/") if isinstance(trial_path, str) else trial_path
         marker_paths = glob.glob(os.path.join(glob.escape(trial_path), "checkpoint_*/.is_checkpoint"))
         for marker_path in marker_paths:
             chkpt_dir = os.path.dirname(marker_path)
@@ -374,26 +447,50 @@ class RayTuneExecutor:
                 # Remove checkpoint marker on incomplete directory
                 os.remove(marker_path)
 
-    @staticmethod
     @contextlib.contextmanager
-    def _get_best_model_path(trial_path: str, analysis: ExperimentAnalysis, creds: Dict[str, Any]) -> str:
-        # `trial_dir` returned by RayTune may have a leading slash, but get_best_checkpoint
-        # requires a path without a leading slash since it does a direct key lookup with analysis.trial_dataframes.
-        trial_path = trial_path.rstrip("/") if isinstance(trial_path, str) else trial_path
+    def _get_best_model_path(self, trial_or_path, analysis: ExperimentAnalysis) -> str:
+        # Accept either a Trial object or a path string
+        from ray.tune.experiment.trial import Trial
 
-        checkpoint = analysis.get_best_checkpoint(trial=trial_path)
-        if checkpoint is None:
-            logger.warning("No best model found")
-            yield None
-
-        ckpt_type, ckpt_path = checkpoint.get_internal_representation()
-        if ckpt_type == "uri":
-            # Read remote URIs using Ludwig's internal remote file loading APIs, as
-            # Ray's do not handle custom credentials at the moment.
-            with tempfile.TemporaryDirectory() as tmpdir:
-                yield _download_local_tmpdir(ckpt_path, tmpdir, creds)
+        if isinstance(trial_or_path, str):
+            trial_path = trial_or_path
         else:
-            yield ckpt_path
+            trial_path = trial_or_path.local_path
+
+        remote_checkpoint_dir = self._get_remote_checkpoint_dir(Path(trial_path))
+        if remote_checkpoint_dir is not None and self.sync_client is not None:
+            self.sync_client.sync_down(remote_checkpoint_dir, trial_path)
+            self.sync_client.wait_or_retry()
+        self._remove_partial_checkpoints(trial_path)  # needed by get_best_checkpoint
+
+        # get_best_checkpoint requires a Trial object in Ray 2.x
+        if isinstance(trial_or_path, Trial):
+            trial = trial_or_path
+        else:
+            # Try to find the trial by matching its path
+            trial = None
+            for t in analysis.trials:
+                if t.local_path and t.local_path.rstrip("/") == trial_path.rstrip("/"):
+                    trial = t
+                    break
+
+        try:
+            if trial is not None:
+                checkpoint = analysis.get_best_checkpoint(trial)
+            else:
+                checkpoint = None
+        except Exception:
+            logger.warning(
+                f"Cannot get best model path for {trial_path} due to exception below:" f"\n{traceback.format_exc()}"
+            )
+            yield None
+            return
+
+        if checkpoint is not None:
+            with checkpoint.as_directory() as path:
+                yield path
+        else:
+            yield checkpoint
 
     @staticmethod
     def _evaluate_best_model(
@@ -412,17 +509,16 @@ class RayTuneExecutor:
         debug,
     ):
         best_model = LudwigModel.load(
-            os.path.join(best_model_path, MODEL_FILE_NAME),
+            os.path.join(best_model_path, "model"),
             backend=backend,
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
         )
-        config = best_model.config
-        if config[TRAINER]["eval_batch_size"]:
-            batch_size = config[TRAINER]["eval_batch_size"]
+        if best_model.config[TRAINER]["eval_batch_size"]:
+            batch_size = best_model.config[TRAINER]["eval_batch_size"]
         else:
-            batch_size = config[TRAINER]["batch_size"]
+            batch_size = best_model.config[TRAINER]["batch_size"]
         try:
             eval_stats, _, _ = best_model.evaluate(
                 dataset=dataset,
@@ -453,6 +549,13 @@ class RayTuneExecutor:
         decode_ctx,
         is_using_ray_backend=False,
     ):
+        # Ray Tune redirects stdout/stderr through a Tee object that may not
+        # implement isatty(), which ray.data's progress bar code requires.
+        # Patch it to avoid AttributeError.
+        for stream in (sys.stdout, sys.stderr):
+            if not hasattr(stream, "isatty"):
+                stream.isatty = lambda: False
+
         for gpu_id in ray.get_gpu_ids():
             # Previous trial may not have freed its memory yet, so wait to avoid OOM
             wait_for_gpu(gpu_id)
@@ -464,16 +567,12 @@ class RayTuneExecutor:
         if "mlflow" in config:
             del config["mlflow"]
 
-        trial_id = tune.get_trial_id()
-        trial_dir = Path(tune.get_trial_dir())
+        trial_id = tune.get_context().get_trial_id()
+        trial_dir = Path(tune.get_context().get_trial_dir())
 
         modified_config = substitute_parameters(copy.deepcopy(hyperopt_dict["config"]), config)
 
-        # Write out the unmerged config with sampled hyperparameters to the trial's local directory.
-        with open(os.path.join(trial_dir, "trial_hyperparameters.json"), "w") as f:
-            json.dump(hyperopt_dict["config"], f)
-
-        modified_config = ModelConfig.from_dict(modified_config).to_dict()
+        modified_config = merge_with_defaults(modified_config)
 
         hyperopt_dict["config"] = modified_config
         hyperopt_dict["experiment_name "] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
@@ -485,7 +584,7 @@ class RayTuneExecutor:
         else:
             ray_queue = None
 
-        def report(progress_tracker, split=VALIDATION):
+        def report(progress_tracker, save_path=None):
             # The progress tracker's metrics are nested dictionaries of TrainerMetrics: feature_name -> metric_name ->
             # List[TrainerMetric], with one entry per training checkpoint, according to steps_per_checkpoint.
             # We reduce the dictionary of TrainerMetrics to a simple list of floats for interfacing with Ray Tune.
@@ -495,74 +594,78 @@ class RayTuneExecutor:
                 TEST: metric_utils.reduce_trainer_metrics_dict(progress_tracker.test_metrics),
             }
 
-            metric_score = tune_executor.get_metric_score(train_stats, split)
-            tune.report(
-                parameters=json.dumps(config, cls=NumpyEncoder),
-                metric_score=metric_score,
-                training_stats=json.dumps(train_stats, cls=NumpyEncoder),
-                eval_stats="{}",
-                trial_id=tune.get_trial_id(),
-                trial_dir=tune.get_trial_dir(),
-            )
+            metric_score = tune_executor.get_metric_score(train_stats)
+            report_kwargs = {
+                "metrics": {
+                    "parameters": json.dumps(config, cls=NumpyEncoder),
+                    "metric_score": metric_score,
+                    "training_stats": json.dumps(train_stats, cls=NumpyEncoder),
+                    "eval_stats": "{}",
+                    "trial_id": tune.get_context().get_trial_id(),
+                    "trial_dir": str(tune.get_context().get_trial_dir()),
+                }
+            }
+            if save_path is not None:
+                report_kwargs["checkpoint"] = _create_tune_checkpoint(save_path)
+            tune.report(**report_kwargs)
 
         class RayTuneReportCallback(Callback):
             def __init__(self):
                 super().__init__()
                 self.last_steps = 0
-                self.resume_ckpt_ref = None
-                self.eval_split = hyperopt_dict["eval_split"]
+                self.resume_ckpt_dir = None
 
-            def _get_remote_checkpoint_dir(self) -> Optional[Union[str, Tuple[str, str]]]:
+            def _get_remote_checkpoint_dir(self) -> str | tuple[str, str] | None:
                 # sync client has to be recreated to avoid issues with serialization
                 return tune_executor._get_remote_checkpoint_dir(trial_dir)
 
             def _checkpoint_progress(self, trainer, progress_tracker, save_path) -> None:
                 """Checkpoints the progress tracker."""
                 if is_using_ray_backend:
-                    trainer_ckpt = Checkpoint.from_directory(save_path)
-                    ckpt_ref = ray.put(trainer_ckpt.to_dict(), _owner=ray_queue.actor)
-                    ray_queue.put((progress_tracker, ckpt_ref))
+                    # Pass the save_path directly through the queue. On single-node clusters,
+                    # the trial driver and training workers share the same filesystem.
+                    # For multi-node, the checkpoint should be on shared storage.
+                    ray_queue.put((progress_tracker, save_path))
                     return
-                checkpoint(progress_tracker, save_path)
+                # For non-Ray backend, report metrics + checkpoint together
+                report(progress_tracker, save_path=save_path)
 
-            def on_train_start(self, model, config: ModelConfigDict, config_fp: Union[str, None]):
+            def on_train_start(self, model, config: dict[str, Any], config_fp: str | None):
                 if is_using_ray_backend and checkpoint_dir:
-                    # When using the Ray backend and resuming from a previous checkpoint, we must sync
-                    # the checkpoint files from the trial driver to the trainer worker.
-                    resume_ckpt = Checkpoint.from_directory(checkpoint_dir)
-                    self.resume_ckpt_ref = ray.put(resume_ckpt)
+                    # Store the checkpoint directory path for syncing to the trainer worker.
+                    self.resume_ckpt_dir = checkpoint_dir
 
             def on_trainer_train_setup(self, trainer, save_path, is_coordinator):
                 # Check local rank before manipulating files, as otherwise there will be a race condition
                 # between multiple workers running on the same node.
-                if self.resume_ckpt_ref is not None and trainer.local_rank == 0:
-                    # The resume checkpoint is not None, so we are resuming from a previous state, and the
-                    # node of the trainer worker is not the same as the trial driver, otherwise the files would
-                    # not need to be synced as they would share the same local filesystem.
+                if self.resume_ckpt_dir is not None and trainer.local_rank == 0:
+                    # Resume from a previous checkpoint by syncing files from the checkpoint
+                    # directory to the save_path.
+                    ckpt_path = self.resume_ckpt_dir
+                    # Attempt an atomic move from the ckpt_path to the save_path
+                    # This may first require removing the existing save_path
+                    tmp_path = save_path + ".tmp"
+                    if os.path.exists(save_path):
+                        os.rename(save_path, tmp_path)
 
-                    # Load the checkpoint directly from the reference in the object store.
-                    trainer_ckpt = ray.get(self.resume_ckpt_ref)
-                    with trainer_ckpt.as_directory() as ckpt_path:
-                        # Attempt an atomic move from the ckpt_path to the save_path
-                        # This may first require removing the existing save_path
-                        tmp_path = save_path + ".tmp"
+                    try:
+                        model_path = os.path.join(ckpt_path, "model")
+                        if os.path.exists(model_path):
+                            safe_move_file(model_path, save_path)
+                        elif os.path.exists(ckpt_path):
+                            safe_move_file(ckpt_path, save_path)
+                    except Exception:
+                        # Rollback from partial changes. Remove the save_path
+                        # and move the original save_path back.
                         if os.path.exists(save_path):
-                            os.rename(save_path, tmp_path)
-
-                        try:
-                            safe_move_file(os.path.join(ckpt_path, MODEL_FILE_NAME), save_path)
-                        except Exception:
-                            # Rollback from partial changes. Remove the save_path
-                            # and move the original save_path back.
-                            if os.path.exists(save_path):
-                                shutil.rmtree(save_path)
-                            if os.path.exists(tmp_path):
-                                os.rename(tmp_path, save_path)
-                            raise
-
-                        # Cleanup the backup save_path as it's no longer needed
+                            shutil.rmtree(save_path)
                         if os.path.exists(tmp_path):
-                            shutil.rmtree(tmp_path)
+                            os.rename(tmp_path, save_path)
+                        raise
+
+                    # Cleanup the backup save_path as it's no longer needed
+                    if os.path.exists(tmp_path):
+                        shutil.rmtree(tmp_path)
 
                 # Sync all workers here before continuing to training
                 trainer.barrier()
@@ -571,59 +674,51 @@ class RayTuneExecutor:
                 progress_tracker.tune_checkpoint_num += 1
                 self.last_steps = progress_tracker.steps
                 self._checkpoint_progress(trainer, progress_tracker, save_path)
-                if not is_using_ray_backend:
-                    report(progress_tracker, self.eval_split)
-
-            def on_save_best_checkpoint(self, trainer, progress_tracker, save_path):
-                # Hyperopt may early stop before we save the best model at the end, so save it each time
-                # we checkpoint the best model.
-                if trainer.is_coordinator():
-                    trainer.model.save(save_path)
 
             def on_trainer_train_teardown(self, trainer, progress_tracker, save_path, is_coordinator):
                 if is_coordinator and progress_tracker.steps > self.last_steps:
                     # Note: Calling tune.report in both on_eval_end() and here can cause multiprocessing issues
-                    # for some ray samplers if no steps have happened since the last eval.
+                    # for some ray samplers if not steps have happened since the last eval.
                     self._checkpoint_progress(trainer, progress_tracker, save_path)
-                    if not is_using_ray_backend:
-                        report(progress_tracker, self.eval_split)
 
         callbacks = hyperopt_dict.get("callbacks") or []
         hyperopt_dict["callbacks"] = callbacks + [RayTuneReportCallback()]
 
         # set tune resources
         if is_using_ray_backend:
+            resources = tune.get_context().get_trial_resources()
             # check if we are using at least 1 gpu per trial
             use_gpu = bool(self._gpu_resources_per_trial_non_none)
-            num_cpus, num_gpus = _get_num_cpus_gpus(use_gpu)
+            # get the resources assigned to the current trial
+            num_gpus = resources.required_resources.get("GPU", 0)
+            num_cpus = resources.required_resources.get("CPU", 1) if num_gpus == 0 else 0
 
-            hvd_kwargs = {
-                "use_gpu": use_gpu,
+            distributed_kwargs = {
                 "num_workers": int(num_gpus) if use_gpu else 1,
+                "use_gpu": use_gpu,
                 "resources_per_worker": {
                     "CPU": num_cpus,
-                    "GPU": num_gpus,
+                    "GPU": 1 if use_gpu else 0,
                 },
             }
-            # Check for custom HorovodConfig
-            backend_config = hyperopt_dict["backend"].distributed_kwargs.get("backend", None)
-            if backend_config is not None:
-                hvd_kwargs["backend"] = backend_config
-                hvd_kwargs["nics"] = hyperopt_dict["backend"].distributed_kwargs.get("nics", [""])
+            hyperopt_dict["backend"].set_distributed_kwargs(**distributed_kwargs)
 
-            hyperopt_dict["backend"].distributed_kwargs = hvd_kwargs
-
-            logger.debug(f"Trial horovod kwargs: {hvd_kwargs}")
+            logger.debug(f"Trial distributed kwargs: {distributed_kwargs}")
 
         stats = []
+        thread_error = [None]  # Use list to allow mutation from nested function
 
         def _run():
-            train_stats, eval_stats = run_experiment(
-                **hyperopt_dict,
-                model_resume_path=checkpoint_dir,
-                parameters=config,
-            )
-            stats.append((train_stats, eval_stats))
+            try:
+                train_stats, eval_stats = run_experiment(
+                    **hyperopt_dict,
+                    model_resume_path=checkpoint_dir,
+                    parameters=config,
+                )
+                stats.append((train_stats, eval_stats))
+            except Exception as e:
+                thread_error[0] = e
+                logger.error(f"Error in hyperopt trial thread: {e}")
 
         if is_using_ray_backend:
             # We have to pull the results to the trial actor
@@ -637,11 +732,8 @@ class RayTuneExecutor:
                 qsize = ray_queue.qsize()
                 if qsize:
                     results = ray_queue.get_nowait_batch(qsize)
-                    for progress_tracker, ckpt_ref in results:
-                        trainer_ckpt = Checkpoint(obj_ref=ckpt_ref)
-                        with trainer_ckpt.as_directory() as save_path:
-                            checkpoint(progress_tracker, save_path)
-                        report(progress_tracker, hyperopt_dict["eval_split"])
+                    for progress_tracker, save_path in results:
+                        report(progress_tracker, save_path=save_path)
 
             while thread.is_alive():
                 thread.join(timeout=0)
@@ -653,18 +745,22 @@ class RayTuneExecutor:
             # remove threading overhead
             _run()
 
+        if thread_error[0] is not None:
+            raise RuntimeError(f"Experiment failed: {thread_error[0]}") from thread_error[0]
         if not stats:
             raise RuntimeError("Experiment did not complete.")
         train_stats, eval_stats = stats.pop()
 
-        metric_score = self.get_metric_score(train_stats, hyperopt_dict["eval_split"])
+        metric_score = self.get_metric_score(train_stats)
         tune.report(
-            parameters=json.dumps(config, cls=NumpyEncoder),
-            metric_score=metric_score,
-            training_stats=json.dumps(train_stats, cls=NumpyEncoder),
-            eval_stats=json.dumps(eval_stats, cls=NumpyEncoder),
-            trial_id=tune.get_trial_id(),
-            trial_dir=tune.get_trial_dir(),
+            metrics={
+                "parameters": json.dumps(config, cls=NumpyEncoder),
+                "metric_score": metric_score,
+                "training_stats": json.dumps(train_stats, cls=NumpyEncoder),
+                "eval_stats": json.dumps(eval_stats, cls=NumpyEncoder),
+                "trial_id": tune.get_context().get_trial_id(),
+                "trial_dir": str(tune.get_context().get_trial_dir()),
+            }
         )
 
     def execute(
@@ -702,6 +798,10 @@ class RayTuneExecutor:
     ) -> HyperoptResults:
         if isinstance(dataset, str) and not has_remote_protocol(dataset) and not os.path.isabs(dataset):
             dataset = os.path.abspath(dataset)
+
+        # Ray Tune / PyArrow requires absolute paths or URIs for storage_path
+        if not has_remote_protocol(output_directory) and not os.path.isabs(output_directory):
+            output_directory = os.path.abspath(output_directory)
 
         if isinstance(backend, str):
             backend = initialize_backend(backend)
@@ -749,17 +849,22 @@ class RayTuneExecutor:
 
         mode = "min" if self.goal != MAXIMIZE else "max"
         metric = "metric_score"
-        use_gpu = bool(self._gpu_resources_per_trial_non_none)
-
-        if self.search_algorithm is not None:
-            self.search_algorithm.set_random_state(random_seed)
-            sa_kwargs = self.search_algorithm.to_dict()
-            del sa_kwargs[TYPE]
-            sa_kwargs["mode"] = mode
-            sa_kwargs["metric"] = metric
-            search_alg = tune.create_searcher(self.search_algorithm.type, **sa_kwargs)
+        # if random seed not set, use Ludwig seed
+        self.search_algorithm.check_for_random_seed(random_seed)
+        if self.search_algorithm.search_alg_dict is not None:
+            if TYPE not in self.search_algorithm.search_alg_dict:
+                candiate_search_algs = [search_alg for search_alg in SEARCH_ALG_IMPORT.keys()]
+                logger.warning(
+                    "WARNING: search_alg type parameter missing, using 'variant_generator' as default. "
+                    f"These are possible values for the type parameter: {candiate_search_algs}."
+                )
+                search_alg = None
+            else:
+                search_alg_type = self.search_algorithm.search_alg_dict[TYPE]
+                search_alg = tune.create_searcher(
+                    search_alg_type, metric=metric, mode=mode, **self.search_algorithm.search_alg_dict
+                )
         else:
-            logging.info("No hyperopt search algorithm specified, defaulting to `variant_generator`")
             search_alg = None
 
         if self.max_concurrent_trials:
@@ -777,9 +882,12 @@ class RayTuneExecutor:
             else:
                 search_alg = ConcurrencyLimiter(search_alg, max_concurrent=self.max_concurrent_trials)
 
+        resources_per_trial = {
+            "cpu": self._cpu_resources_per_trial_non_none,
+            "gpu": self._gpu_resources_per_trial_non_none,
+        }
+
         def run_experiment_trial(config, local_hyperopt_dict, checkpoint_dir=None):
-            # Checkpoint dir exists when trials are temporarily paused and resumed, for e.g.,
-            # when using the HB_BOHB scheduler.
             return self._run_experiment(
                 config,
                 checkpoint_dir,
@@ -789,113 +897,75 @@ class RayTuneExecutor:
             )
 
         tune_config = {}
+        _tune_callbacks = list(tune_callbacks or [])
         for callback in callbacks or []:
-            # Note: tune_config will contain the MLFlow keys from the last callback
-            # in the list of callbacks that implements prepare_ray_tune.
             run_experiment_trial, tune_config = callback.prepare_ray_tune(
                 run_experiment_trial,
                 tune_config,
-                tune_callbacks,
+                _tune_callbacks,
+            )
+        tune_callbacks = _tune_callbacks
+
+        if _is_ray_backend(backend):
+            # for now, we do not do distributed training on cpu (until spread scheduling is implemented for Ray Train)
+            # but we do want to enable it when GPUs are specified
+            resources_per_trial = PlacementGroupFactory(
+                [{}] + ([{"CPU": 0, "GPU": 1}] * self._gpu_resources_per_trial_non_none)
+                if self._gpu_resources_per_trial_non_none
+                else [{}] + [{"CPU": self._cpu_resources_per_trial_non_none}]
             )
 
         if has_remote_protocol(output_directory):
-            self.sync_client = RemoteSyncer(creds=backend.storage.artifacts.credentials)
-            self.sync_config = tune.SyncConfig(upload_dir=output_directory, syncer=self.sync_client)
-            output_directory = None
+            # In Ray 2.x, remote storage is handled via RunConfig storage_path
+            self.sync_config = tune.SyncConfig()
+            self.sync_client = None
+            # output_directory will be used as storage_path
         elif self.kubernetes_namespace:
-            from ray.tune.integration.kubernetes import KubernetesSyncClient, NamespacedKubernetesSyncer
-
-            self.sync_config = tune.SyncConfig(sync_to_driver=NamespacedKubernetesSyncer(self.kubernetes_namespace))
-            self.sync_client = KubernetesSyncClient(self.kubernetes_namespace)
+            logger.warning(
+                "Kubernetes-specific syncing is no longer supported in Ray 2.x. "
+                "Use cloud storage (S3, GCS) as the output directory instead."
+            )
 
         run_experiment_trial_params = tune.with_parameters(run_experiment_trial, local_hyperopt_dict=hyperopt_dict)
 
-        if _is_ray_backend(backend):
-            # NOTE(geoffrey): when we are using a Ray backend, the tune driver
-            # process (the process that executes this current bit of code) spawns a `trial_driver` process.
-            #
-            # The `trial_driver` process executes the function passed into `tune.run`, i.e. `run_experiment`. Its
-            # primary responsibility is to spawn the `trainer` process and communicate with the tune driver. The tune
-            # driver allocates the resources for this process using `self.trial_driver_resources`. We need to request
-            # resources for `trial_driver` despite it being very lightweight because the tune driver does not accept
-            # empty resource requests.
-            #
-            # The `trainer` process is a second process spawned by `trial_driver`. The tune driver
-            # does not know about this process, so we cannot allocate resources for it ahead of time. Instead, the
-            # `trainer` will reserve its own resources downstream based on its config.
-            #
-            # In summary, the tune driver should only request resources for `trial_driver`, since `trainer` will request
-            # its own resources.
-            resources = [self.trial_driver_resources]
-        else:
-            # If we are NOT using the Ray backend, the `trial_driver` and the `trainer` are the same
-            # process. Since the `trial_driver` doesn't really require its own resources, and the `trainer` is a local
-            # trainer unable to reserve its own resources, we can just request resources for the `trainer` here.
-            num_cpus, num_gpus = _get_num_cpus_gpus(use_gpu)
-            resources = [{"CPU": num_cpus, "GPU": num_gpus}]
-
-        resources_per_trial = PlacementGroupFactory(resources)
-        run_experiment_trial_params = tune.with_resources(run_experiment_trial_params, resources_per_trial)
-
-        @ray.remote(num_cpus=0)
+        @ray.remote
         def _register(name, trainable):
             register_trainable(name, trainable)
 
         ray.get(_register.remote(f"trainable_func_f{hash_dict(config).decode('ascii')}", run_experiment_trial_params))
 
-        try:
-            tuner_cls = TunerRay210 if not _ray220 else Tuner
+        # Note that resume="AUTO" will attempt to resume the experiment if possible, and
+        # otherwise will start a new experiment:
+        # https://docs.ray.io/en/latest/tune/tutorials/tune-stopping.html
+        should_resume = "AUTO" if resume is None else resume
 
-            if resume:
-                # Restore from experiment directory
-                tuner = tuner_cls.restore(
-                    path=os.path.join(output_directory, experiment_name), resume_unfinished=True, restart_errored=True
-                )
-            else:
-                tuner = tuner_cls(
-                    f"trainable_func_f{hash_dict(config).decode('ascii')}",
-                    param_space={
-                        **self.search_space,
-                        **tune_config,
-                    },
-                    tune_config=TuneConfig(
-                        metric=metric,
-                        mode=mode,
-                        search_alg=search_alg,
-                        scheduler=self.scheduler,
-                        num_samples=self.num_samples,
-                        time_budget_s=self.time_budget_s,
-                        # Explicitly prevent reuse actors since it causes issues with
-                        # concurrency when using MLFlow where trials are started without
-                        # run IDs due to a race condition.
-                        # TODO(Arnav): Re-enable in Ray 2.3
-                        reuse_actors=False,
-                    ),
-                    run_config=RunConfig(
-                        name=experiment_name,
-                        local_dir=output_directory,
-                        stop=CallbackStopper(callbacks),
-                        callbacks=tune_callbacks,
-                        failure_config=FailureConfig(
-                            max_failures=0,
-                        ),
-                        sync_config=self.sync_config,
-                        checkpoint_config=CheckpointConfig(
-                            num_to_keep=2,
-                            checkpoint_score_attribute=metric,
-                            checkpoint_score_order=mode,
-                        ),
-                        verbose=hyperopt_log_verbosity,
-                        log_to_file=True,
-                    ),
-                    _tuner_kwargs={
-                        "trial_name_creator": lambda trial: f"trial_{trial.trial_id}",
-                        "trial_dirname_creator": lambda trial: f"trial_{trial.trial_id}",
-                    },
-                )
-            result_grid = tuner.fit()
-            # Get ExperimentAnalysis object from ResultGrid
-            analysis = result_grid._experiment_analysis
+        try:
+            analysis = tune.run(
+                f"trainable_func_f{hash_dict(config).decode('ascii')}",
+                name=experiment_name,
+                config={
+                    **self.search_space,
+                    **tune_config,
+                },
+                scheduler=self.scheduler,
+                search_alg=search_alg,
+                num_samples=self.num_samples,
+                checkpoint_config=tune.CheckpointConfig(num_to_keep=1),
+                max_failures=1,  # retry a trial failure once
+                resources_per_trial=resources_per_trial,
+                time_budget_s=self.time_budget_s,
+                sync_config=self.sync_config,
+                storage_path=output_directory,
+                metric=metric,
+                mode=mode,
+                trial_name_creator=lambda trial: f"trial_{trial.trial_id}",
+                trial_dirname_creator=lambda trial: f"trial_{trial.trial_id}",
+                callbacks=tune_callbacks,
+                stop=CallbackStopper(callbacks),
+                verbose=hyperopt_log_verbosity,
+                resume=should_resume,
+                log_to_file=True,
+            )
         except Exception as e:
             # Explicitly raise a RuntimeError if an error is encountered during a Ray trial.
             # NOTE: Cascading the exception with "raise _ from e" still results in hanging.
@@ -922,12 +992,7 @@ class RayTuneExecutor:
                     # Evaluate the best model on the eval_split, which is validation_set
                     if validation_set is not None and validation_set.size > 0:
                         trial_path = trial["trial_dir"]
-                        # Remove partial checkpoints that may have been created by RayTune
-                        # when time budget is reached (if one was set)
-                        self._remove_partial_checkpoints(trial_path)
-                        with self._get_best_model_path(
-                            trial_path, analysis, backend.storage.artifacts.credentials
-                        ) as best_model_path:
+                        with self._get_best_model_path(trial_path, analysis) as best_model_path:
                             if best_model_path is not None:
                                 self._evaluate_best_model(
                                     trial,
@@ -957,11 +1022,10 @@ class RayTuneExecutor:
         return HyperoptResults(ordered_trials=ordered_trials, experiment_analysis=analysis)
 
 
-@PublicAPI
 class CallbackStopper(Stopper):
     """Ray Tune Stopper that triggers the entire job to stop if one callback returns True."""
 
-    def __init__(self, callbacks: Optional[List[Callback]]):
+    def __init__(self, callbacks: list[Callback] | None):
         self.callbacks = callbacks or []
 
     def __call__(self, trial_id, result):
@@ -981,7 +1045,7 @@ def get_build_hyperopt_executor(executor_type):
 executor_registry = {"ray": RayTuneExecutor}
 
 
-def set_values(params: Dict[str, Any], model_dict: Dict[str, Any]):
+def set_values(params: dict[str, Any], model_dict: dict[str, Any]):
     for key, value in params.items():
         if isinstance(value, dict):
             for sub_key, sub_value in value.items():
@@ -1038,42 +1102,39 @@ def run_experiment(
         callbacks=callbacks,
     )
 
-    try:
-        eval_stats, train_stats, _, _ = model.experiment(
-            dataset=dataset,
-            training_set=training_set,
-            validation_set=validation_set,
-            test_set=test_set,
-            training_set_metadata=training_set_metadata,
-            data_format=data_format,
-            experiment_name=experiment_name,
-            model_name=model_name,
-            model_resume_path=model_resume_path,
-            eval_split=eval_split,
-            skip_save_training_description=skip_save_training_description,
-            skip_save_training_statistics=skip_save_training_statistics,
-            skip_save_model=skip_save_model,
-            skip_save_progress=skip_save_progress,
-            skip_save_log=skip_save_log,
-            skip_save_processed_input=skip_save_processed_input,
-            skip_save_unprocessed_output=skip_save_unprocessed_output,
-            skip_save_predictions=skip_save_predictions,
-            skip_save_eval_stats=skip_save_eval_stats,
-            output_directory=output_directory,
-            skip_collect_predictions=True,
-            skip_collect_overall_stats=False,
-            random_seed=random_seed,
-            debug=debug,
-        )
-        return train_stats, eval_stats
-    finally:
-        for callback in callbacks or []:
-            callback.on_hyperopt_trial_end(parameters)
+    eval_stats, train_stats, _, _ = model.experiment(
+        dataset=dataset,
+        training_set=training_set,
+        validation_set=validation_set,
+        test_set=test_set,
+        training_set_metadata=training_set_metadata,
+        data_format=data_format,
+        experiment_name=experiment_name,
+        model_name=model_name,
+        model_resume_path=model_resume_path,
+        eval_split=eval_split,
+        skip_save_training_description=skip_save_training_description,
+        skip_save_training_statistics=skip_save_training_statistics,
+        skip_save_model=skip_save_model,
+        skip_save_progress=skip_save_progress,
+        skip_save_log=skip_save_log,
+        skip_save_processed_input=skip_save_processed_input,
+        skip_save_unprocessed_output=skip_save_unprocessed_output,
+        skip_save_predictions=skip_save_predictions,
+        skip_save_eval_stats=skip_save_eval_stats,
+        output_directory=output_directory,
+        skip_collect_predictions=True,
+        skip_collect_overall_stats=False,
+        random_seed=random_seed,
+        debug=debug,
+    )
+
+    for callback in callbacks or []:
+        callback.on_hyperopt_trial_end(parameters)
+
+    return train_stats, eval_stats
 
 
-def _get_num_cpus_gpus(use_gpu: bool):
-    # if use_gpu is True, then we need to set the number of gpus to 1
-    # and the number of cpus to 0
-    num_gpus = 1 if use_gpu else 0
-    num_cpus = 0 if use_gpu else 1
-    return num_cpus, num_gpus
+def _run_experiment_unary(kwargs):
+    """Unary function is needed by Fiber to map a list of args."""
+    return run_experiment(**kwargs)

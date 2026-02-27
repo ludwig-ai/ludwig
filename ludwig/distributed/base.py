@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import contextlib
 from abc import ABC, abstractmethod
-from typing import Any, Callable, TYPE_CHECKING
+from collections.abc import Callable
+from typing import Any, TYPE_CHECKING
 
 import torch
 from torch import nn
@@ -22,7 +23,7 @@ if TYPE_CHECKING:
 
 
 class DistributedStrategy(ABC):
-    """Interface that wraps a distributed training framework (Horovod, DDP).
+    """Interface that wraps a distributed training framework (DDP, FSDP, DeepSpeed).
 
     Distributed strategies modify the model and/or optimizer to coordinate gradient updates among multiple workers
     running in parallel. In most cases, these are using collective communication libraries pass messages between
@@ -46,7 +47,6 @@ class DistributedStrategy(ABC):
         Returns:
             A tuple of the wrapped model and the optimizer.
         """
-        pass
 
     def prepare_for_inference(self, model: nn.Module) -> nn.Module:
         return model

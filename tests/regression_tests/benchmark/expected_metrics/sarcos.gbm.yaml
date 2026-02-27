@@ -1,5 +1,0 @@
-metrics:
-  - output_feature_name: torque_1
-    metric_name: r2
-    expected_value: 0.9405434131622314
-    tolerance_percentage: 0.15

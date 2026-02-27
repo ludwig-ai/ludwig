@@ -13,6 +13,7 @@ def full_config_generator(generator_fn, *args):
 
 
 @pytest.mark.combinatorial
+@pytest.mark.timeout(600)
 def test_config_sampling():
     static_schema = load_json("tests/ludwig/config_sampling/static_schema.json")
     total_count = 0

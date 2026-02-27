@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 from contextlib import nullcontext as no_error_raised
 
@@ -53,6 +54,19 @@ def test_tv_efficientnet_freezing(regex):
 
 
 def test_llm_freezing(tmpdir, csv_filename):
+    # Force CPU to avoid CUBLAS errors with tiny random LLM models on GPU.
+    old_val = os.environ.get("CUDA_VISIBLE_DEVICES")
+    os.environ["CUDA_VISIBLE_DEVICES"] = ""
+    try:
+        _run_llm_freezing(tmpdir, csv_filename)
+    finally:
+        if old_val is None:
+            os.environ.pop("CUDA_VISIBLE_DEVICES", None)
+        else:
+            os.environ["CUDA_VISIBLE_DEVICES"] = old_val
+
+
+def _run_llm_freezing(tmpdir, csv_filename):
     input_features = [text_feature(name="input", encoder={"type": "passthrough"})]
     output_features = [text_feature(name="output")]
 

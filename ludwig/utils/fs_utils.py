@@ -23,7 +23,6 @@ import pathlib
 import shutil
 import tempfile
 import uuid
-from typing import List, Optional
 from urllib.parse import unquote, urlparse
 
 import certifi
@@ -87,7 +86,7 @@ def upgrade_http(urlpath):
 
 @DeveloperAPI
 @functools.lru_cache(maxsize=32)
-def get_bytes_obj_from_path(path: str) -> Optional[bytes]:
+def get_bytes_obj_from_path(path: str) -> bytes | None:
     if is_http(path):
         try:
             return get_bytes_obj_from_http_path(path)
@@ -289,8 +288,7 @@ def upload_output_directory(url):
         yield None, None
         return
 
-    protocol, _ = split_protocol(url)
-    if protocol is not None:
+    if has_remote_protocol(url):
         # To avoid extra network load, write all output files locally at runtime,
         # then upload to the remote fs at the end.
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -314,9 +312,10 @@ def upload_output_directory(url):
             # Upload to remote when finished
             put_fn()
     else:
-        makedirs(url, exist_ok=True)
-        # Just use the output directory directly if using a local filesystem
-        yield url, None
+        # For local paths (including file:// URIs), use the path directly.
+        _, local_path = get_fs_and_path(url)
+        makedirs(local_path, exist_ok=True)
+        yield local_path, None
 
 
 @DeveloperAPI
@@ -389,9 +388,9 @@ class file_lock(contextlib.AbstractContextManager):
 
 
 @DeveloperAPI
-def list_file_names_in_directory(directory_name: str) -> List[str]:
+def list_file_names_in_directory(directory_name: str) -> list[str]:
     file_path: pathlib.Path  # noqa [F842]  # incorrect flagging of "local variable is annotated but never used"
-    file_names: List[str] = [
+    file_names: list[str] = [
         file_path.name for file_path in pathlib.Path(directory_name).iterdir() if file_path.is_file()
     ]
     return file_names

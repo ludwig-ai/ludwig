@@ -3,7 +3,6 @@ import logging
 import statistics
 import time
 from abc import ABC
-from typing import Optional
 
 import torch
 
@@ -20,10 +19,10 @@ class BatchSizeEvaluator(ABC):
     def select_best_batch_size(
         self,
         dataset_len: int,
-        max_batch_size: Optional[int] = None,
+        max_batch_size: int | None = None,
         max_trials: int = 20,
-        is_coordinator: Optional[bool] = True,
-        global_max_sequence_length: Optional[int] = None,
+        is_coordinator: bool | None = True,
+        global_max_sequence_length: int | None = None,
     ) -> int:
         """Returns optimal batch size as measured by throughput (samples / sec)."""
         logger.info("Tuning batch size...")
@@ -93,9 +92,7 @@ class BatchSizeEvaluator(ABC):
             logger.info(f"Selected batch_size={best_batch_size}")
         return best_batch_size
 
-    def evaluate(
-        self, batch_size: int, total_steps: int = 5, global_max_sequence_length: Optional[int] = None
-    ) -> float:
+    def evaluate(self, batch_size: int, total_steps: int = 5, global_max_sequence_length: int | None = None) -> float:
         """Evaluates throughput of the given batch size.
 
         Return:
@@ -116,9 +113,8 @@ class BatchSizeEvaluator(ABC):
 
     def reset(self):
         """Called at the beginning of each evaluation step."""
-        pass
 
-    def step(self, batch_size: int, global_max_sequence_length: Optional[int] = None):
+    def step(self, batch_size: int, global_max_sequence_length: int | None = None):
         """Called each step to evaluate the given batch size."""
         raise NotImplementedError("`step` must be implemented by concrete evaluator.")
 
@@ -149,7 +145,7 @@ class BaseLLMBatchSizeEvaluator(BatchSizeEvaluator):
         self.trainer.model.reset_metrics()
         self.trainer.optimizer.zero_grad()
 
-    def step(self, batch_size: int, global_max_sequence_length: Optional[int] = None):
+    def step(self, batch_size: int, global_max_sequence_length: int | None = None):
         if global_max_sequence_length and self.input_msl + self.output_msl > global_max_sequence_length:
             # In this case, we just need to make sure that the length of the synthetic data exceeds
             # max_sequence_length by at most a small amount

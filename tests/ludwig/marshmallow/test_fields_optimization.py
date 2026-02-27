@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-from typing import Optional
 
 import pytest
 from marshmallow.exceptions import ValidationError as MarshmallowValidationError
@@ -52,7 +51,7 @@ def test_OptimizerDataclassField():
     # Test creating a schema with default options:
     @dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
-        foo: Optional[lso.BaseOptimizerConfig] = lso.OptimizerDataclassField()
+        foo: lso.BaseOptimizerConfig | None = lso.OptimizerDataclassField()
 
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": "test"})
@@ -62,7 +61,7 @@ def test_OptimizerDataclassField():
     # Test creating a schema with set default:
     @dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
-        foo: Optional[lso.BaseOptimizerConfig] = lso.OptimizerDataclassField("adamax")
+        foo: lso.BaseOptimizerConfig | None = lso.OptimizerDataclassField("adamax")
 
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": None})
@@ -108,7 +107,7 @@ def test_ClipperDataclassField():
     # Test creating a schema with set default:
     @dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
-        foo: Optional[lso.GradientClippingConfig] = lso.GradientClippingDataclassField(
+        foo: lso.GradientClippingConfig | None = lso.GradientClippingDataclassField(
             description="", default={"clipglobalnorm": 0.1}
         )
 

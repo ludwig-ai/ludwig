@@ -1,5 +1,4 @@
 from collections import defaultdict, namedtuple
-from typing import Dict, List, Optional
 
 import torch
 from torch import Tensor
@@ -10,7 +9,7 @@ from ludwig.modules.metric_registry import get_metric_names_for_type
 from ludwig.types import FeatureConfigDict
 
 
-def sequence_mask(lengths: Tensor, maxlen: Optional[int] = None, dtype=torch.bool) -> Tensor:
+def sequence_mask(lengths: Tensor, maxlen: int | None = None, dtype=torch.bool) -> Tensor:
     """Implements tf.sequence_mask in torch.
 
     From https://discuss.pytorch.org/t/pytorch-equivalent-for-tf-sequence-mask/39036/2.
@@ -24,7 +23,7 @@ def sequence_mask(lengths: Tensor, maxlen: Optional[int] = None, dtype=torch.boo
     return mask.type(dtype)
 
 
-def dynamic_partition(data: Tensor, partitions: Tensor, num_partitions: int) -> List[Tensor]:
+def dynamic_partition(data: Tensor, partitions: Tensor, num_partitions: int) -> list[Tensor]:
     """Implements tf.dynamic_partition in torch.
 
     From https://discuss.pytorch.org/t/equivalent-of-tf-dynamic-partition/53735.
@@ -75,8 +74,8 @@ TrainerMetric = namedtuple("TrainerMetric", ("epoch", "step", "value"))
 
 
 def reduce_trainer_metrics_dict(
-    dict_dict_trainer_metrics: Dict[str, Dict[str, List[TrainerMetric]]]
-) -> Dict[str, Dict[str, List[float]]]:
+    dict_dict_trainer_metrics: dict[str, dict[str, list[TrainerMetric]]],
+) -> dict[str, dict[str, list[float]]]:
     """Reduces Dict[feature_name, Dict[metric_name, List[TrainerMetric]]] to Dict[feature_name, Dict[metric_name,
     List[float]]].
 
@@ -91,7 +90,7 @@ def reduce_trainer_metrics_dict(
     return {k: dict(v) for k, v in flattened_dict.items()}
 
 
-def get_metric_names(output_features: Dict[str, "OutputFeature"]) -> Dict[str, List[str]]:  # noqa
+def get_metric_names(output_features: dict[str, "OutputFeature"]) -> dict[str, list[str]]:  # noqa
     """Returns a dict of output_feature_name -> list of metric names."""
     metrics_names = {}
     for output_feature_name, output_feature in output_features.items():
@@ -101,7 +100,7 @@ def get_metric_names(output_features: Dict[str, "OutputFeature"]) -> Dict[str, L
     return metrics_names
 
 
-def get_feature_to_metric_names_map(output_features: List[FeatureConfigDict]) -> Dict[str, List[str]]:
+def get_feature_to_metric_names_map(output_features: list[FeatureConfigDict]) -> dict[str, list[str]]:
     """Returns a dict of output_feature_name -> list of metric names."""
     metrics_names = {}
     for output_feature in output_features:
@@ -114,7 +113,7 @@ def get_feature_to_metric_names_map(output_features: List[FeatureConfigDict]) ->
 
 def get_feature_to_metric_names_map_from_feature_collection(
     output_features: "FeatureCollection",  # noqa
-) -> Dict[str, List[str]]:
+) -> dict[str, list[str]]:
     """Returns a dict of output_feature_name -> list of metric names."""
     metrics_names = {
         output_feature.name: get_metric_names_for_type(output_feature.type) for output_feature in output_features

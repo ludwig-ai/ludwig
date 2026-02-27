@@ -37,7 +37,6 @@ from ludwig.utils.data_utils import (
     sanitize_column_names,
     use_credentials,
 )
-from tests.integration_tests.utils import private_param
 
 try:
     import dask.dataframe as dd
@@ -102,7 +101,7 @@ def test_figure_data_format_dataset():
         figure_data_format_dataset(
             dd.from_pandas(pd.DataFrame([1, 2, 3, 4, 5], columns=["x"]), npartitions=1).reset_index()
         )
-        == dd.core.DataFrame
+        == dd.DataFrame
     )
     assert (
         figure_data_format_dataset(
@@ -118,7 +117,7 @@ def test_figure_data_format_dataset():
                 checksum="test123",
             )
         )
-        == dd.core.DataFrame
+        == dd.DataFrame
     )
 
 
@@ -185,20 +184,26 @@ def test_dataset_synthesizer_output_feature_decoder():
     LudwigModel(config=config, logging_level=logging.INFO)
 
 
-@pytest.mark.parametrize(
-    "dataset_1k_url",
-    [
-        private_param(["s3://ludwig-tests/datasets/synthetic_1k.csv"]),
-        private_param(["s3://ludwig-tests/datasets/synthetic_1k.parquet"]),
-    ],
-)
+@pytest.fixture
+def synthetic_1k_files(tmp_path):
+    """Create synthetic 1000-row CSV and Parquet files for chunking tests."""
+    df = pd.DataFrame({f"col_{i}": range(1000) for i in range(5)})
+    csv_path = str(tmp_path / "synthetic_1k.csv")
+    parquet_path = str(tmp_path / "synthetic_1k.parquet")
+    df.to_csv(csv_path, index=False)
+    df.to_parquet(parquet_path, index=False)
+    return csv_path, parquet_path
+
+
+@pytest.mark.parametrize("fmt_idx", [0, 1], ids=["csv", "parquet"])
 @pytest.mark.parametrize("nrows", [None, 100])
-def test_chunking(dataset_1k_url, nrows):
+def test_chunking(synthetic_1k_files, fmt_idx, nrows):
+    dataset_path = synthetic_1k_files[fmt_idx]
     reader_fn = {"csv": read_csv, "parquet": functools.partial(read_parquet, df_lib=PANDAS_DF)}
 
-    format = figure_data_format_dataset(dataset_1k_url)
+    fmt = figure_data_format_dataset(dataset_path)
 
-    assert reader_fn[format](dataset_1k_url, nrows=nrows).shape[0] == (nrows if nrows else 1000)
+    assert reader_fn[fmt](dataset_path, nrows=nrows).shape[0] == (nrows if nrows else 1000)
 
 
 @pytest.mark.parametrize(

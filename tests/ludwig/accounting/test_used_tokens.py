@@ -1,12 +1,6 @@
 import torch
 
-from ludwig.accounting.used_tokens import get_used_tokens_for_ecd, get_used_tokens_for_gbm, get_used_tokens_for_llm
-
-
-def test_get_used_tokens_for_gbm():
-    inputs = {"input1": torch.tensor([[1, 2], [3, 4]]), "input2": torch.tensor([5, 6])}
-
-    assert get_used_tokens_for_gbm(inputs) == 3
+from ludwig.accounting.used_tokens import get_used_tokens_for_ecd, get_used_tokens_for_llm
 
 
 def test_get_used_tokens_for_ecd():

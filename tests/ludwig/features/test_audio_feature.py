@@ -45,7 +45,7 @@ def test_audio_input_feature(encoder: str) -> None:
     }
 
     audio_config, _ = load_config_with_kwargs(AudioInputFeatureConfig, audio_config)
-    audio_input_feature = AudioInputFeature(audio_config)
+    audio_input_feature = AudioInputFeature(audio_config).to(DEVICE)
 
     audio_tensor = torch.randn([BATCH_SIZE, SEQ_SIZE, AUDIO_W_SIZE], dtype=torch.float32).to(DEVICE)
     encoder_output = audio_input_feature(audio_tensor)

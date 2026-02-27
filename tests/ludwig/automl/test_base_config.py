@@ -1,12 +1,16 @@
 import os
 from decimal import Decimal
 
+import dask
 import numpy as np
 import pandas as pd
 import pytest
 import yaml
 
 ray = pytest.importorskip("ray")  # noqa
+
+# Prevent Dask from converting object-dtype columns to PyArrow strings.
+dask.config.set({"dataframe.convert-string": False})
 
 from ludwig.automl.base_config import (  # noqa
     get_dataset_info,
@@ -151,8 +155,7 @@ def test_infer_parquet_types(tmpdir):
     ds_info = get_dataset_info_from_source(ds)
     metas = get_field_metadata(ds_info.fields, ds_info.row_count, targets=["bool"])
 
-    config = yaml.safe_load(
-        """
+    config = yaml.safe_load("""
         input_features:
             - name: int
               type: category
@@ -175,8 +178,7 @@ def test_infer_parquet_types(tmpdir):
         trainer:
             epochs: 2
             batch_size: 8
-        """
-    )
+        """)
 
     meta_dict = {meta.config.name: meta for meta in metas}
     for feature in config["input_features"] + config["output_features"]:

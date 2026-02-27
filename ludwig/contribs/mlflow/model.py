@@ -1,6 +1,7 @@
 import logging
 import os
 import shutil
+import tempfile
 
 import mlflow
 import yaml
@@ -46,6 +47,7 @@ def save_model(
     mlflow_model=None,
     signature: ModelSignature = None,
     input_example: ModelInputExample = None,
+    **kwargs,
 ):
     """Save a Ludwig model to a path on the local file system.
 
@@ -156,65 +158,27 @@ def log_model(
 ):
     """Log a Ludwig model as an MLflow artifact for the current run.
 
-    :param ludwig_model: Ludwig model (an instance of `ludwig.api.LudwigModel`_) to be saved.
-    :param artifact_path: Run-relative artifact path.
-    :param conda_env: Either a dictionary representation of a Conda environment or the path to a
-                      Conda environment yaml file. If provided, this describes the environment
-                      this model should be run in. At minimum, it should specify the dependencies
-                      contained in :func:`get_default_conda_env()`. If ``None``, the default
-                      :func:`get_default_conda_env()` environment is added to the model.
-                      The following is an *example* dictionary representation of a Conda
-                      environment::
-
-                        {
-                            'name': 'mlflow-env',
-                            'channels': ['defaults'],
-                            'dependencies': [
-                                'python=3.7.0',
-                                'pip': [
-                                    'ludwig==0.4.0'
-                                ]
-                            ]
-                        }
-    :param registered_model_name: (Experimental) If given, create a model version under
-                                  ``registered_model_name``, also creating a registered model if one
-                                  with the given name does not exist.
-
-    :param signature: (Experimental) :py:class:`ModelSignature <mlflow.models.ModelSignature>`
-                      describes model input and output :py:class:`Schema <mlflow.types.Schema>`.
-                      The model signature can be :py:func:`inferred <mlflow.models.infer_signature>`
-                      from datasets with valid model input (e.g. the training dataset with target
-                      column omitted) and valid model output (e.g. model predictions generated on
-                      the training dataset), for example:
-
-                      .. code-block:: python
-
-                        from mlflow.models.signature import infer_signature
-
-                        train = df.drop_column("target_label")
-                        predictions = ...  # compute model predictions
-                        signature = infer_signature(train, predictions)
-    :param input_example: (Experimental) Input example provides one or several instances of valid
-                          model input. The example can be used as a hint of what data to feed the
-                          model. The given example will be converted to a Pandas DataFrame and then
-                          serialized to json using the Pandas split-oriented format. Bytes are
-                          base64-encoded.
-    :param await_registration_for: Number of seconds to wait for the model version to finish
-                            being created and is in ``READY`` status. By default, the function
-                            waits for five minutes. Specify 0 or None to skip waiting.
+    Saves the model locally in MLflow format, then logs it as a run artifact using mlflow.log_artifacts(). This ensures
+    the model appears as a run artifact (compatible with MLflow 3.x where Model.log() uses the model registry instead).
     """
-    import ludwig
+    with tempfile.TemporaryDirectory() as tmpdir:
+        local_path = os.path.join(tmpdir, "model")
+        save_model(
+            ludwig_model,
+            path=local_path,
+            conda_env=conda_env,
+            signature=signature,
+            input_example=input_example,
+        )
+        mlflow.log_artifacts(local_path, artifact_path)
 
-    Model.log(
-        artifact_path=artifact_path,
-        flavor=ludwig.contribs.mlflow.model,
-        registered_model_name=registered_model_name,
-        conda_env=conda_env,
-        signature=signature,
-        input_example=input_example,
-        await_registration_for=await_registration_for,
-        ludwig_model=ludwig_model,
-    )
+    if registered_model_name is not None:
+        run_id = mlflow.active_run().info.run_id
+        mlflow.register_model(
+            f"runs:/{run_id}/{artifact_path}",
+            registered_model_name,
+            await_registration_for=await_registration_for,
+        )
 
 
 def _load_model(path):
@@ -249,8 +213,8 @@ def load_model(model_uri):
     """
     local_model_path = _download_artifact_from_uri(artifact_uri=model_uri)
     flavor_conf = _get_flavor_configuration(model_path=local_model_path, flavor_name=FLAVOR_NAME)
-    lgb_model_file_path = os.path.join(local_model_path, flavor_conf.get("data", "model.lgb"))
-    return _load_model(path=lgb_model_file_path)
+    model_data_path = os.path.join(local_model_path, flavor_conf.get("data", "model"))
+    return _load_model(path=model_data_path)
 
 
 class _LudwigModelWrapper:
@@ -289,14 +253,14 @@ def export_model(model_path, output_path, registered_model_name=None):
 
 @DeveloperAPI
 def log_saved_model(lpath):
-    """Log a saved Ludwig model as an MLflow artifact.
-
-    :param lpath: Path to saved Ludwig model.
-    """
-    log_model(
-        _CopyModel(lpath),
-        artifact_path=MODEL_FILE_NAME,
-    )
+    """Log a saved Ludwig model directory as a proper MLflow model artifact."""
+    if os.path.isdir(lpath):
+        log_model(
+            _CopyModel(lpath),
+            artifact_path="model",
+        )
+    elif os.path.isfile(lpath):
+        mlflow.log_artifact(lpath, "model")
 
 
 class _CopyModel:

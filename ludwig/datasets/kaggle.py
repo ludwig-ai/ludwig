@@ -1,6 +1,5 @@
 import os
 from contextlib import contextmanager
-from typing import Optional
 
 from ludwig.utils.fs_utils import upload_output_directory
 
@@ -25,10 +24,10 @@ def update_env(**kwargs):
 
 def download_kaggle_dataset(
     download_directory: str,
-    kaggle_dataset_id: Optional[str] = None,
-    kaggle_competition: Optional[str] = None,
-    kaggle_username: Optional[str] = None,
-    kaggle_key: Optional[str] = None,
+    kaggle_dataset_id: str | None = None,
+    kaggle_competition: str | None = None,
+    kaggle_username: str | None = None,
+    kaggle_key: str | None = None,
 ):
     """Download all files in a kaggle dataset. One of kaggle_dataset_id,
 

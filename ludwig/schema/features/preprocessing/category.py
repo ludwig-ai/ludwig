@@ -1,5 +1,3 @@
-from typing import List
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CATEGORY, DROP_ROW, FILL_WITH_CONST, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING
 from ludwig.error import ConfigValidationError
@@ -62,8 +60,7 @@ class CategoryPreprocessingConfig(BasePreprocessingConfig):
         description=(
             "For fixed encoders, compute encoder embeddings in preprocessing to avoid this step at train time. "
             "Can speed up the time taken per step during training, but will invalidate the preprocessed data "
-            "if the encoder type is changed. Some model types (GBM) require caching encoder embeddings "
-            "to use embedding features, and those models will override this value to `true` automatically."
+            "if the encoder type is changed."
         ),
         parameter_metadata=PREPROCESSING_METADATA["cache_encoder_embeddings"],
     )
@@ -112,7 +109,7 @@ class CategoryDistributionOutputPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[CATEGORY][PREPROCESSING]["missing_value_strategy"],
     )
 
-    vocab: List[str] = schema_utils.List(default=None)
+    vocab: list[str] = schema_utils.List(default=None)
 
 
 @DeveloperAPI
@@ -125,7 +122,7 @@ class LLMCategoryOutputPreprocessingConfig(CategoryOutputPreprocessingConfig):
         if self.fallback_label is None:
             raise ConfigValidationError("`fallback_label` must be specified for `category_llm` output feature.")
 
-    vocab: List[str] = schema_utils.List(
+    vocab: list[str] = schema_utils.List(
         default=None,
         allow_none=False,
         description="The list of labels that the model can predict.",

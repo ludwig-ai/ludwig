@@ -1,5 +1,3 @@
-from typing import Optional
-
 import pytest
 import torch
 
@@ -37,7 +35,7 @@ def test_feature_block(
     size: int,
     apply_glu: bool,
     external_shared_fc_layer: bool,
-    bn_virtual_bs: Optional[int],
+    bn_virtual_bs: int | None,
     batch_size: int,
 ) -> None:
     # setup synthetic tensor
@@ -72,7 +70,7 @@ def test_feature_block(
 def test_feature_transformer(
     input_size: int,
     size: int,
-    virtual_batch_size: Optional[int],
+    virtual_batch_size: int | None,
     num_total_blocks: int,
     num_shared_blocks: int,
     batch_size: int,
@@ -107,11 +105,11 @@ def test_feature_transformer(
 @pytest.mark.parametrize("entmax_mode", [None, "entmax15", "adaptive", "constant"])
 @pytest.mark.parametrize("batch_size", [1, 16])
 def test_attentive_transformer(
-    entmax_mode: Optional[str],
+    entmax_mode: str | None,
     input_size: int,
     size: int,
     output_size: int,
-    virtual_batch_size: Optional[int],
+    virtual_batch_size: int | None,
     batch_size: int,
 ) -> None:
     # setup synthetic tensors
@@ -150,11 +148,11 @@ def test_attentive_transformer(
 @pytest.mark.parametrize("entmax_mode", [None, "entmax15", "adaptive", "constant"])
 @pytest.mark.parametrize("batch_size", [1, 16])
 def test_tabnet(
-    entmax_mode: Optional[str],
+    entmax_mode: str | None,
     input_size: int,
     output_size: int,
     size: int,
-    virtual_batch_size: Optional[int],
+    virtual_batch_size: int | None,
     batch_size: int,
 ) -> None:
     # setup synthetic tensor

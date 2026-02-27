@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CATEGORY, MODEL_LLM, TEXT
@@ -60,7 +60,7 @@ class CategoryExtractorDecoderConfig(BaseExtractorDecoderConfig, BaseDecoderConf
     type: str = schema_utils.ProtectedString("category_extractor")
 
     # Match is a dict of label class
-    match: Dict[str, Dict[str, Any]] = schema_utils.Dict(
+    match: dict[str, dict[str, Any]] = schema_utils.Dict(
         default=None,
         allow_none=False,
         description="A dictionary of label classes and their corresponding "
@@ -68,7 +68,7 @@ class CategoryExtractorDecoderConfig(BaseExtractorDecoderConfig, BaseDecoderConf
         "of the LLM.",
     )
 
-    str2idx: Dict[str, int] = schema_utils.Dict(
+    str2idx: dict[str, int] = schema_utils.Dict(
         default=None,
         allow_none=True,
         description="A dictionary of label classes and their corresponding "

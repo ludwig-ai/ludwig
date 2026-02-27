@@ -1,5 +1,3 @@
-from typing import Dict, List, Type, Union
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     BINARY,
@@ -78,30 +76,30 @@ class BaseLossConfig(schema_utils.BaseMarshmallowConfig):
         return "[undefined]"
 
 
-_loss_registry = Registry[Type[BaseLossConfig]]()
-_loss_feature_registry = Registry[Dict[str, Type[BaseLossConfig]]]()
+_loss_registry = Registry[type[BaseLossConfig]]()
+_loss_feature_registry = Registry[dict[str, type[BaseLossConfig]]]()
 
 
 @DeveloperAPI
-def get_loss_schema_registry() -> Registry[Type[BaseLossConfig]]:
+def get_loss_schema_registry() -> Registry[type[BaseLossConfig]]:
     return _loss_registry
 
 
 @DeveloperAPI
-def get_loss_cls(feature: str, name: str) -> Type[BaseLossConfig]:
+def get_loss_cls(feature: str, name: str) -> type[BaseLossConfig]:
     return _loss_feature_registry[feature][name]
 
 
 @DeveloperAPI
-def get_loss_classes(feature: str) -> Dict[str, Type[BaseLossConfig]]:
+def get_loss_classes(feature: str) -> dict[str, type[BaseLossConfig]]:
     return _loss_feature_registry[feature]
 
 
-def register_loss(features: Union[str, List[str]]):
+def register_loss(features: str | list[str]):
     if isinstance(features, str):
         features = [features]
 
-    def wrap(cls: Type[BaseLossConfig]):
+    def wrap(cls: type[BaseLossConfig]):
         _loss_registry[cls.type] = cls
         for feature in features:
             feature_registry = _loss_feature_registry.get(feature, {})
@@ -260,7 +258,7 @@ class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
         description="Type of loss.",
     )
 
-    class_weights: Union[List[float], dict, None] = schema_utils.OneOfOptionsField(
+    class_weights: list[float] | dict | None = schema_utils.OneOfOptionsField(
         default=None,
         description=CLASS_WEIGHTS_DESCRIPTION,
         field_options=[
@@ -315,7 +313,7 @@ class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
         description="Type of loss.",
     )
 
-    class_weights: Union[List[float], dict, None] = schema_utils.OneOfOptionsField(
+    class_weights: list[float] | dict | None = schema_utils.OneOfOptionsField(
         default=None,
         description=CLASS_WEIGHTS_DESCRIPTION,
         field_options=[
@@ -390,7 +388,7 @@ class SigmoidCrossEntropyLossConfig(BaseLossConfig):
         description="Type of loss.",
     )
 
-    class_weights: Union[List[float], dict, None] = schema_utils.OneOfOptionsField(
+    class_weights: list[float] | dict | None = schema_utils.OneOfOptionsField(
         default=None,
         description=CLASS_WEIGHTS_DESCRIPTION,
         field_options=[

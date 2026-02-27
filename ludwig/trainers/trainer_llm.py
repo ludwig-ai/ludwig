@@ -1,7 +1,8 @@
 import logging
 import os
 import time
-from typing import Callable, Dict, List, Optional, Union
+from collections.abc import Callable
+from typing import Union
 
 from torch.utils.tensorboard import SummaryWriter
 
@@ -50,11 +51,11 @@ class NoneTrainer(BaseTrainer):
         skip_save_model: bool = False,
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
-        callbacks: List = None,
+        callbacks: list = None,
         report_tqdm_to_ray=False,
         random_seed: float = default_random_seed,
-        distributed: Optional[DistributedStrategy] = None,
-        device: Optional[str] = None,
+        distributed: DistributedStrategy | None = None,
+        device: str | None = None,
         **kwargs,
     ):
         """
@@ -91,6 +92,14 @@ class NoneTrainer(BaseTrainer):
         """
 
         super().__init__()
+
+        # Ensure distributed strategy is initialized for metric sync_context.
+        # NoneTrainer may run on the head node (not in a Ray Train worker),
+        # so init_dist_strategy may not have been called yet.
+        from ludwig.distributed import init_dist_strategy
+
+        init_dist_strategy("local")
+
         self.config = config
         self.distributed = distributed if distributed is not None else LocalStrategy()
         self.skip_save_log = skip_save_log
@@ -139,8 +148,8 @@ class NoneTrainer(BaseTrainer):
     def train(
         self,
         training_set: Dataset,
-        validation_set: Optional[Dataset] = None,
-        test_set: Optional[Dataset] = None,
+        validation_set: Dataset | None = None,
+        test_set: Dataset | None = None,
         save_path: str = MODEL_FILE_NAME,
         return_state_dict: bool = False,
         **kwargs,
@@ -231,7 +240,7 @@ class NoneTrainer(BaseTrainer):
         max_trials: int = 20,
         halving_limit: int = 3,
         snapshot_weights: bool = True,
-        on_best_batch_size_updated: Optional[Callable[[int, float, int], None]] = None,
+        on_best_batch_size_updated: Callable[[int, float, int], None] | None = None,
         tune_for_training: bool = True,
     ) -> int:
         # TODO: Implement batch size tuning for LLM, currently just returns the default batch size
@@ -281,7 +290,7 @@ class NoneTrainer(BaseTrainer):
         self,
         dataset: "Dataset",  # noqa: F821
         dataset_name: str,
-        metrics_log: Dict[str, Dict[str, List[TrainerMetric]]],
+        metrics_log: dict[str, dict[str, list[TrainerMetric]]],
         batch_size: int,
         progress_tracker: ProgressTracker,
     ):
@@ -313,8 +322,8 @@ class NoneTrainer(BaseTrainer):
     def run_evaluation(
         self,
         training_set: Union["Dataset", "RayDataset"],  # noqa: F821
-        validation_set: Optional[Union["Dataset", "RayDataset"]],  # noqa: F821
-        test_set: Optional[Union["Dataset", "RayDataset"]],  # noqa: F821
+        validation_set: Union["Dataset", "RayDataset"] | None,  # noqa: F821
+        test_set: Union["Dataset", "RayDataset"] | None,  # noqa: F821
         progress_tracker: ProgressTracker,
         train_summary_writer: SummaryWriter,
         validation_summary_writer: SummaryWriter,
@@ -417,11 +426,11 @@ class FineTuneTrainer(Trainer):
         skip_save_model: bool = False,
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
-        callbacks: List = None,
+        callbacks: list = None,
         report_tqdm_to_ray=False,
         random_seed: int = default_random_seed,
-        distributed: Optional[DistributedStrategy] = None,
-        device: Optional[str] = None,
+        distributed: DistributedStrategy | None = None,
+        device: str | None = None,
         **kwargs,
     ):
         super().__init__(
@@ -485,9 +494,9 @@ class FineTuneTrainer(Trainer):
         max_trials: int = 20,
         halving_limit: int = 3,
         snapshot_weights: bool = True,
-        on_best_batch_size_updated: Optional[Callable[[int, float, int], None]] = None,
+        on_best_batch_size_updated: Callable[[int, float, int], None] | None = None,
         tune_for_training: bool = True,
-        global_max_sequence_length: Optional[int] = None,
+        global_max_sequence_length: int | None = None,
     ) -> int:
         if global_max_sequence_length is None:
             global_max_sequence_length = self.model.global_max_sequence_length

@@ -41,7 +41,7 @@ def process_config(ludwig_config: dict, experiment_dict: dict) -> dict:
                 "trainer.learning_rate_scheduler.decay_rate": {"space": "uniform", "lower": 0.4, "upper": 0.96},
                 "trainer.batch_size": {"space": "randint", "lower": 32, "upper": 2048},
             },
-            "search_alg": {"type": "hyperopt"},
+            "search_alg": {"type": "variant_generator"},
             "executor": {"type": "ray", "num_samples": 1000},
             "scheduler": {"type": "bohb", "reduction_factor": 2},
         },

@@ -1,7 +1,6 @@
 import logging
 import os
 from abc import abstractmethod
-from typing import Optional, Type, Union
 
 import torch
 import torchvision.models as tvm
@@ -42,10 +41,10 @@ logger = logging.getLogger(__name__)
 class TVBaseEncoder(ImageEncoder):
     def __init__(
         self,
-        model_variant: Union[str, int] = None,
+        model_variant: str | int = None,
         use_pretrained: bool = True,
         saved_weights_in_checkpoint: bool = False,
-        model_cache_dir: Optional[str] = None,
+        model_cache_dir: str | None = None,
         trainable: bool = True,
         **kwargs,
     ):
@@ -173,7 +172,7 @@ class TVAlexNetEncoder(TVBaseEncoder):
         self.model.classifier[-1] = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return TVAlexNetEncoderConfig
 
 
@@ -210,7 +209,7 @@ class TVConvNeXtEncoder(TVBaseEncoder):
         self.model.classifier[-1] = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return TVConvNeXtEncoderConfig
 
 
@@ -239,7 +238,7 @@ class TVDenseNetEncoder(TVBaseEncoder):
         self.model.classifier = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return TVDenseNetEncoderConfig
 
 
@@ -275,7 +274,7 @@ class TVEfficientNetEncoder(TVBaseEncoder):
         self.model.classifier[-1] = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return TVEfficientNetEncoderConfig
 
 
@@ -309,7 +308,7 @@ class TVGoogLeNetEncoder(TVBaseEncoder):
         self.model.fc = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return TVGoogLeNetEncoderConfig
 
 
@@ -342,7 +341,7 @@ class TVInceptionV3Encoder(TVBaseEncoder):
         self.model.fc = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return TVInceptionV3EncoderConfig
 
 
@@ -368,7 +367,7 @@ class TVMaxVitEncoder(TVBaseEncoder):
         self.model.classifier[-1] = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return TVMaxVitEncoderConfig
 
 
@@ -397,7 +396,7 @@ class TVMNASNetEncoder(TVBaseEncoder):
         self.model.classifier[-1] = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return TVMNASNetEncoderConfig
 
 
@@ -423,7 +422,7 @@ class TVMobileNetV2Encoder(TVBaseEncoder):
         self.model.classifier[-1] = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return TVMobileNetV2EncoderConfig
 
 
@@ -450,7 +449,7 @@ class TVMobileNetV3Encoder(TVBaseEncoder):
         self.model.classifier[-1] = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return TVMobileNetV3EncoderConfig
 
 
@@ -490,7 +489,7 @@ class TVRegNetEncoder(TVBaseEncoder):
         self.model.fc = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return TVRegNetEncoderConfig
 
 
@@ -520,7 +519,7 @@ class TVResNetEncoder(TVBaseEncoder):
         self.model.fc = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return TVResNetEncoderConfig
 
 
@@ -548,7 +547,7 @@ class TVResNeXtEncoder(TVBaseEncoder):
         self.model.fc = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return TVResNeXtEncoderConfig
 
 
@@ -577,7 +576,7 @@ class TVShuffleNetV2Encoder(TVBaseEncoder):
         self.model.fc = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return TVShuffleNetV2EncoderConfig
 
 
@@ -607,7 +606,7 @@ class TVSqueezeNetEncoder(TVBaseEncoder):
         pass
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return TVSqueezeNetEncoderConfig
 
 
@@ -635,7 +634,7 @@ class TVSwinTransformerEncoder(TVBaseEncoder):
         self.model.head = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return TVSwinTransformerEncoderConfig
 
 
@@ -668,7 +667,7 @@ class TVVGGEncoder(TVBaseEncoder):
         self.model.classifier[-1] = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return TVVGGEncoderConfig
 
 
@@ -710,7 +709,7 @@ class TVViTEncoder(TVBaseEncoder):
         self.model.heads[-1] = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return TVViTEncoderConfig
 
 
@@ -737,5 +736,5 @@ class TVWideResNetEncoder(TVBaseEncoder):
         self.model.fc = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return TVWideResNetEncoderConfig

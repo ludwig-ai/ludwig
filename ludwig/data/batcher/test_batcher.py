@@ -11,8 +11,7 @@ def test_pandas_size():
     df = pd.DataFrame(
         {"name": ["joe", "janice", "sara"], "mask": ["green", "black", "pink"], "weapon": ["stick", "gun", "gun"]}
     )
-    config = yaml.safe_load(
-        """
+    config = yaml.safe_load("""
     model_type: llm
     base_model: HuggingFaceH4/tiny-random-LlamaForCausalLM
     input_features:
@@ -34,8 +33,7 @@ def test_pandas_size():
           - 1
           - 0
           - 0
-    """
-    )
+    """)
     model = LudwigModel(config=config, logging_level=logging.INFO)
     data = model.preprocess(df, skip_save_processed_input=False)
     training_set = data[0]
@@ -51,8 +49,7 @@ def test_pandas_batcher_use_all_samples():
     df = pd.DataFrame(
         {"name": ["joe", "janice", "sara"], "mask": ["green", "black", "pink"], "weapon": ["stick", "gun", "gun"]}
     )
-    config = yaml.safe_load(
-        """
+    config = yaml.safe_load("""
     model_type: llm
     base_model: HuggingFaceH4/tiny-random-LlamaForCausalLM
     input_features:
@@ -74,8 +71,7 @@ def test_pandas_batcher_use_all_samples():
           - 1
           - 0
           - 0
-    """
-    )
+    """)
     model = LudwigModel(config=config, logging_level=logging.INFO)
     data = model.preprocess(df, skip_save_processed_input=False)
     training_set = data[0]

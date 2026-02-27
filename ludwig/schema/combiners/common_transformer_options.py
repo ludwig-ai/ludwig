@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import common_fields
@@ -52,9 +52,9 @@ class CommonTransformerConfig:
         parameter_metadata=COMBINER_METADATA["transformer"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
+    bias_initializer: str | dict = common_fields.BiasInitializerField()
 
-    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField()
+    weights_initializer: str | dict = common_fields.WeightsInitializerField()
 
     # TODO(#1673): Add conditional logic for fields like this one:
     num_fc_layers: int = schema_utils.NonNegativeInteger(
@@ -69,11 +69,11 @@ class CommonTransformerConfig:
         parameter_metadata=COMBINER_METADATA["transformer"]["output_size"],
     )
 
-    norm: Optional[str] = common_fields.NormField()
+    norm: str | None = common_fields.NormField()
 
-    norm_params: Optional[dict] = common_fields.NormParamsField()
+    norm_params: dict | None = common_fields.NormParamsField()
 
-    fc_layers: Optional[List[Dict[str, Any]]] = common_fields.FCLayersField()
+    fc_layers: list[dict[str, Any]] | None = common_fields.FCLayersField()
 
     fc_dropout: float = common_fields.DropoutField()
 

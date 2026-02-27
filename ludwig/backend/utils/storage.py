@@ -1,9 +1,9 @@
 import contextlib
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 
 from ludwig.utils import data_utils
 
-CredInputs = Optional[Union[str, Dict[str, Any]]]
+CredInputs = Optional[Union[str, dict[str, Any]]]
 
 
 DEFAULTS = "defaults"
@@ -13,7 +13,7 @@ CACHE = "cache"
 
 
 class Storage:
-    def __init__(self, creds: Optional[Dict[str, Any]]):
+    def __init__(self, creds: dict[str, Any] | None):
         self._creds = creds
 
     @contextlib.contextmanager
@@ -22,7 +22,7 @@ class Storage:
             yield
 
     @property
-    def credentials(self) -> Optional[Dict[str, Any]]:
+    def credentials(self) -> dict[str, Any] | None:
         return self._creds
 
 
@@ -63,7 +63,7 @@ class StorageManager:
         return self.storages[CACHE]
 
 
-def load_creds(cred: CredInputs) -> Dict[str, Any]:
+def load_creds(cred: CredInputs) -> dict[str, Any]:
     if isinstance(cred, str):
         cred = data_utils.load_json(cred)
     return cred

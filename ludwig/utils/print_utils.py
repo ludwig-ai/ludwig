@@ -16,7 +16,6 @@
 import logging
 from collections import OrderedDict
 from pprint import pformat
-from typing import Dict, Union
 
 from ludwig.api_annotations import DeveloperAPI
 
@@ -24,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 @DeveloperAPI
-def get_logging_level_registry() -> Dict[str, int]:
+def get_logging_level_registry() -> dict[str, int]:
     return {
         "critical": logging.CRITICAL,
         "error": logging.ERROR,
@@ -73,7 +72,7 @@ def repr_ordered_dict(d: OrderedDict):
 
 
 @DeveloperAPI
-def query_yes_no(question: str, default: Union[str, None] = "yes"):
+def query_yes_no(question: str, default: str | None = "yes"):
     """Ask a yes/no question via raw_input() and return their answer.
 
     Args:

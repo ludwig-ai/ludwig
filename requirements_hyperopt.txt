@@ -1,4 +1,4 @@
-ray[default,tune]>=2.0.0
+ray[default,tune]>=2.9
 
 # required for Ray Tune Search Algorithm support for AutoML
 #search_alg: hyperopt

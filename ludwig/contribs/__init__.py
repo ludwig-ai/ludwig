@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
 """All contrib classes must implement the `ludwig.callbacks.Callback` interface.
 
 If you don't want to handle the call, either provide an empty method with `pass`, or just don't implement the method.
@@ -27,7 +26,6 @@ class ContribLoader(ABC):
     @abstractmethod
     def load(self) -> Callback:
         """Returns an instantiation of the callback instance, whose callback hooks will be invoked at runtime."""
-        pass
 
     def preload(self):
         """Will always be called when Ludwig CLI is invoked, preload gives the callback an opportunity to import or
@@ -36,7 +34,6 @@ class ContribLoader(ABC):
         Importing required 3rd-party libraries should be done here i.e. import wandb. preload is guaranteed to be called
         before any other callback method, and will only be called once per process.
         """
-        pass
 
 
 # Contributors, load your class here:

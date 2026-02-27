@@ -1,27 +1,7 @@
-from typing import Dict, Union
-
 import torch
 
 
-def get_used_tokens_for_gbm(inputs: Union[torch.Tensor, Dict[str, torch.Tensor]]) -> int:
-    """Returns the number of used tokens for a GBM model.
-
-    The number of used tokens is:
-    1. the size of the input tensor, which corresponds to 1 token for each input feature
-    (binary, category, number) in the batch.
-    2. batch_size, which corresponds to 1 token for the batch of target features.
-
-    Args:
-        inputs: The input tensors that are fed to the gbm.forward() method.
-    """
-    if isinstance(inputs, torch.Tensor):
-        # Inputs may be a tensor for evaluation.
-        # Use the total number of inputs + the batch size as the number of output tokens.
-        return torch.flatten(inputs).shape[0] + inputs.shape[0]
-    return len(inputs.keys()) + 1
-
-
-def get_used_tokens_for_ecd(inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor]) -> int:
+def get_used_tokens_for_ecd(inputs: dict[str, torch.Tensor], targets: dict[str, torch.Tensor]) -> int:
     """Returns the number of used tokens for an ECD model.
 
     The number of used tokens is the total size of the input and output tensors, which corresponds to 1 token for

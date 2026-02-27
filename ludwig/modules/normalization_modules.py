@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 import numpy as np
 import torch
@@ -13,7 +12,7 @@ logger = logging.getLogger(__name__)
 # implementation adapted from https://github.com/dreamquark-ai/tabnet
 class GhostBatchNormalization(LudwigModule):
     def __init__(
-        self, num_features: int, momentum: float = 0.05, epsilon: float = 1e-3, virtual_batch_size: Optional[int] = 128
+        self, num_features: int, momentum: float = 0.05, epsilon: float = 1e-3, virtual_batch_size: int | None = 128
     ):
         super().__init__()
         self.num_features = num_features
@@ -115,7 +114,7 @@ def create_norm_layer(norm: str, input_rank: int, num_features: int, **norm_para
         # TODO(travis): consider moving this behind a general BatchNorm interface to avoid this kludge.
         if input_rank not in {2, 3}:
             ValueError(f"`input_rank` parameter expected to be either 2 or 3, but found {input_rank}.")
-        norm = f"{norm}_{input_rank-1}d"
+        norm = f"{norm}_{input_rank - 1}d"
 
     norm_cls = norm_registry.get(norm)
     if norm_cls is None:

@@ -33,7 +33,8 @@ def ray_start(num_cpus=2, num_gpus=None):
     finally:
         ray.shutdown()
         # Delete the cluster address just in case.
-        ray._private.utils.reset_ray_address()
+        if hasattr(ray._private.utils, "reset_ray_address"):
+            ray._private.utils.reset_ray_address()
 
 
 @spawn

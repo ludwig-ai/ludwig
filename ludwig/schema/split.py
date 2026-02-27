@@ -1,5 +1,4 @@
 from dataclasses import Field
-from typing import Type
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import SPLIT, TYPE
@@ -122,8 +121,8 @@ class DateTimeSplitConfig(BaseSplitConfig):
 class HashSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the hash splitting config.
 
-    This is useful for deterministically splitting on a unique ID. Even when additional rows are added to the dataset
-    in the future, each ID will retain its original split assignment.
+    This is useful for deterministically splitting on a unique ID. Even when additional rows are added to the dataset in
+    the future, each ID will retain its original split assignment.
 
     This approach does not guarantee that the split proportions will be assigned exactly, but the larger the dataset,
     the more closely the assignment should match the given proportions.
@@ -180,7 +179,7 @@ def SplitDataclassField(default: str) -> Field:
         def __init__(self):
             super().__init__(registry=split_config_registry.data, default_value=default)
 
-        def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
+        def get_schema_from_registry(self, key: str) -> type[schema_utils.BaseMarshmallowConfig]:
             return split_config_registry.data[key]
 
         def _jsonschema_type_mapping(self):

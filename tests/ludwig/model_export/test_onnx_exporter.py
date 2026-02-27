@@ -1,9 +1,13 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from ludwig.api import LudwigModel
-from ludwig.model_export.base_model_exporter import LudwigTorchWrapper
-from ludwig.model_export.onnx_exporter import OnnxExporter
+import pytest
+
+onnx = pytest.importorskip("onnx")
+
+from ludwig.api import LudwigModel  # noqa: E402
+from ludwig.model_export.base_model_exporter import LudwigTorchWrapper  # noqa: E402
+from ludwig.model_export.onnx_exporter import OnnxExporter  # noqa: E402
 
 
 class TestOnnxExporter(unittest.TestCase):

@@ -1,5 +1,3 @@
-from typing import List, Type, Union
-
 from marshmallow.fields import Field
 
 from ludwig.api_annotations import DeveloperAPI
@@ -8,7 +6,7 @@ from ludwig.schema.hyperopt.utils import register_parameter_config
 from ludwig.schema.utils import ludwig_dataclass
 
 
-def quantization_number_field(dtype: Union[Type[float], Type[int]] = float, default=None) -> Field:
+def quantization_number_field(dtype: type[float] | type[int] = float, default=None) -> Field:
     description = (
         "Quantization number. Output values will be rounded to the nearest increment of `q` in range."
         "Quantization makes the upper bound inclusive."
@@ -33,7 +31,7 @@ class ChoiceParameterConfig(schema_utils.BaseMarshmallowConfig):
 
     space: str = schema_utils.ProtectedString("choice")
 
-    categories: List = schema_utils.OneOfOptionsField(
+    categories: list = schema_utils.OneOfOptionsField(
         default=None,
         allow_none=True,
         description=(
@@ -63,7 +61,7 @@ class GridSearchParameterConfig(schema_utils.BaseMarshmallowConfig):
 
     space: str = schema_utils.ProtectedString("grid_search")
 
-    values: List = schema_utils.OneOfOptionsField(
+    values: list = schema_utils.OneOfOptionsField(
         default=None,
         allow_none=True,
         description=(

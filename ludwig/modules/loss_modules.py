@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 
-
-from typing import Type
-
 import torch
 from torch import nn, Tensor
 from torch.nn import HuberLoss as _HuberLoss
@@ -47,11 +44,11 @@ from ludwig.utils.registry import Registry
 # used for Laplace smoothing for candidate samplers
 EPSILON = 1.0e-10
 
-loss_impl_registry = Registry[Type[nn.Module]]()
+loss_impl_registry = Registry[type[nn.Module]]()
 
 
-def register_loss(config_cls: Type[BaseLossConfig]):
-    def wrap(cls: Type[nn.Module]):
+def register_loss(config_cls: type[BaseLossConfig]):
+    def wrap(cls: type[nn.Module]):
         loss_impl_registry[config_cls] = cls
         return cls
 

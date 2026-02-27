@@ -13,7 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict, Tuple
 
 import torch
 import torch.nn as nn
@@ -50,7 +49,7 @@ class RNNDecoder(nn.Module):
         # See section 3.4 of https://arxiv.org/pdf/1706.03762.pdf.
         self.out.weight = self.embedding.weight
 
-    def forward(self, input: torch.Tensor, hidden: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, input: torch.Tensor, hidden: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """Runs a single decoding time step.
 
         Modeled off of https://pytorch.org/tutorials/intermediate/seq2seq_translation_tutorial.html.
@@ -91,7 +90,7 @@ class LSTMDecoder(nn.Module):
 
     def forward(
         self, input: torch.Tensor, hidden_state: torch.Tensor, cell_state: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Runs a single decoding time step.
 
         Modeled off of https://pytorch.org/tutorials/intermediate/seq2seq_translation_tutorial.html.
@@ -139,7 +138,7 @@ class SequenceRNNDecoder(nn.Module):
         self.register_buffer("logits", torch.zeros([max_sequence_length, vocab_size]))
         self.register_buffer("decoder_input", torch.Tensor([strings_utils.SpecialSymbol.START.value]))
 
-    def forward(self, combiner_outputs: Dict[str, torch.Tensor], target: torch.Tensor):
+    def forward(self, combiner_outputs: dict[str, torch.Tensor], target: torch.Tensor):
         """Runs max_sequence_length RNN decoding time steps.
 
         Args:
@@ -209,7 +208,7 @@ class SequenceLSTMDecoder(nn.Module):
         self.register_buffer("logits", torch.zeros([max_sequence_length, vocab_size]))
         self.register_buffer("decoder_input", torch.Tensor([strings_utils.SpecialSymbol.START.value]))
 
-    def forward(self, combiner_outputs: Dict[str, torch.Tensor], target: torch.Tensor) -> torch.Tensor:
+    def forward(self, combiner_outputs: dict[str, torch.Tensor], target: torch.Tensor) -> torch.Tensor:
         """Runs max_sequence_length LSTM decoding time steps.
 
         Args:
@@ -306,8 +305,8 @@ class SequenceGeneratorDecoder(Decoder):
             )
 
     def forward(
-        self, combiner_outputs: Dict[str, torch.Tensor], target: torch.Tensor = None
-    ) -> Dict[str, torch.Tensor]:
+        self, combiner_outputs: dict[str, torch.Tensor], target: torch.Tensor = None
+    ) -> dict[str, torch.Tensor]:
         """Decodes combiner_outputs into a sequence.
 
         Args:

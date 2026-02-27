@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, Tuple, Union
+from collections.abc import Callable
 
 import torch
 
@@ -15,12 +15,12 @@ class ParameterUpdateError(Exception):
 
 def check_module_parameters_updated(
     module: LudwigModule,
-    module_input_args: Tuple,
+    module_input_args: tuple,
     module_target: torch.Tensor,
-    loss_function: Union[Callable, None] = None,
+    loss_function: Callable | None = None,
     max_steps: int = 1,
     learning_rate: float = 0.001,
-) -> Tuple:
+) -> tuple:
     """
     Reports on the number of parameters in a Ludwig component and their update status.
     Args:
@@ -42,10 +42,27 @@ def check_module_parameters_updated(
     # setup
     if loss_function is None:
         loss_function = torch.nn.MSELoss()
+
+    # Ensure module and all inputs are on the same device
+    from ludwig.utils.torch_utils import get_torch_device
+
+    device = get_torch_device()
+    module = module.to(device)
+
+    def _move_to_device(arg):
+        if isinstance(arg, torch.Tensor):
+            return arg.to(device)
+        if isinstance(arg, dict):
+            return {k: _move_to_device(v) for k, v in arg.items()}
+        if isinstance(arg, (list, tuple)):
+            return type(arg)(_move_to_device(v) for v in arg)
+        return arg
+
+    module_input_args = tuple(_move_to_device(arg) for arg in module_input_args)
+    module_target = module_target.to(device)
+
     optimizer = torch.optim.SGD(module.parameters(), lr=learning_rate)
     module.train(True)
-
-    target_tensor = module_target
 
     trainable_parameter_list = []
     frozen_parameter_list = []
@@ -70,20 +87,20 @@ def check_module_parameters_updated(
             optimizer.zero_grad()
             if isinstance(module_output, torch.Tensor):
                 module_target = module_target.to(device=module_output.device)
-                loss = loss_function(module_output, target_tensor)
+                loss = loss_function(module_output, module_target)
             elif isinstance(module_output, dict):
                 if "logits" in module_output:
                     module_target = module_target.to(device=module_output["logits"].device)
-                    loss = loss_function(module_output["logits"], target_tensor)
+                    loss = loss_function(module_output["logits"], module_target)
                 elif ENCODER_OUTPUT in module_output:
                     module_target = module_target.to(device=module_output[ENCODER_OUTPUT].device)
-                    loss = loss_function(module_output[ENCODER_OUTPUT], target_tensor)
+                    loss = loss_function(module_output[ENCODER_OUTPUT], module_target)
                 elif "combiner_output" in module_output:
                     module_target = module_target.to(device=module_output["combiner_output"].device)
-                    loss = loss_function(module_output["combiner_output"], target_tensor)
+                    loss = loss_function(module_output["combiner_output"], module_target)
             elif isinstance(module_output, (list, tuple)):
                 module_target = module_target.to(device=module_output[0].device)
-                loss = loss_function(module_output[0], target_tensor)
+                loss = loss_function(module_output[0], module_target)
             else:
                 raise ValueError(f"Unexpected output type.  Module type found is {type(module_output)}")
 

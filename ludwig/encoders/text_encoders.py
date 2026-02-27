@@ -13,10 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import contextlib
 import inspect
 import logging
-from typing import Any, Callable, Dict, List, Optional, Type, TYPE_CHECKING, TypeVar, Union
+from collections.abc import Callable
+from typing import Any, TYPE_CHECKING, TypeVar
 
 import numpy as np
 import torch
@@ -76,7 +76,7 @@ def _cls_pooled_error_message(encoder: str):
 
 
 class HFTextEncoder(Encoder):
-    def _init_config(self, transformer, schema_keys: List[str], encoder_config: SequenceEncoderConfig):
+    def _init_config(self, transformer, schema_keys: list[str], encoder_config: SequenceEncoderConfig):
         """Creates a config object for the encoder using the transformer model and the passed-in encoder config.
 
         The transformer's config is only known after it is instantiated, so we must update the
@@ -99,7 +99,7 @@ class HFTextEncoder(Encoder):
         return self.get_schema_cls().from_dict(encoder_config_dict)
 
     def _init_transformer_from_scratch(
-        self, hf_model_cls: Type, hf_config_cls: Type, hf_config_params: Dict[str, Any], vocab_size: int
+        self, hf_model_cls: type, hf_config_cls: type, hf_config_params: dict[str, Any], vocab_size: int
     ):
         """Initializes the transformer model from scratch. This is in contrast to loading a pre-trained model.
 
@@ -138,7 +138,7 @@ class HFTextEncoder(Encoder):
             transformer.resize_token_embeddings(vocab_size)
 
     def _wrap_transformer(
-        self, transformer: nn.Module, adapter: Optional[BaseAdapterConfig], trainable: bool
+        self, transformer: nn.Module, adapter: BaseAdapterConfig | None, trainable: bool
     ) -> nn.Module:
         if adapter is not None:
             from peft import get_peft_model
@@ -164,18 +164,18 @@ ConfigT = TypeVar("ConfigT", bound="HFEncoderConfig")
 class HFTextEncoderImpl(HFTextEncoder):
     def __init__(
         self,
-        model_cls: Type[HFModelT],
-        config_cls: Type[HFConfigT],
-        schema_cls: Type[ConfigT],
+        model_cls: type[HFModelT],
+        config_cls: type[HFConfigT],
+        schema_cls: type[ConfigT],
         max_sequence_length: int,
         use_pretrained: bool,
         pretrained_model_name_or_path: str,
         saved_weights_in_checkpoint: bool,
         reduce_output: str,
         trainable: bool,
-        adapter: Optional[BaseAdapterConfig],
-        pretrained_kwargs: Dict,
-        encoder_config: Optional[ConfigT],
+        adapter: BaseAdapterConfig | None,
+        pretrained_kwargs: dict,
+        encoder_config: ConfigT | None,
         **kwargs,
     ):
         super().__init__()
@@ -202,7 +202,7 @@ class HFTextEncoderImpl(HFTextEncoder):
         self.transformer = self._wrap_transformer(transformer, adapter, trainable)
         self.max_sequence_length = max_sequence_length
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -253,7 +253,7 @@ class ALBERTEncoder(HFTextEncoder):
         pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         trainable: bool = False,
-        adapter: Optional[BaseAdapterConfig] = None,
+        adapter: BaseAdapterConfig | None = None,
         reduce_output: str = "cls_pooled",
         vocab_size: int = 30000,
         embedding_size: int = 128,
@@ -275,7 +275,7 @@ class ALBERTEncoder(HFTextEncoder):
         pad_token_id: int = 0,
         bos_token_id: int = 2,
         eos_token_id: int = 3,
-        pretrained_kwargs: Dict = None,
+        pretrained_kwargs: dict = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -325,7 +325,7 @@ class ALBERTEncoder(HFTextEncoder):
         self.transformer = self._wrap_transformer(transformer, adapter, trainable)
         self.max_sequence_length = max_sequence_length
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -342,7 +342,7 @@ class ALBERTEncoder(HFTextEncoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return ALBERTConfig
 
     @property
@@ -381,7 +381,7 @@ class MT5Encoder(HFTextEncoder):
         pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         trainable: bool = False,
-        adapter: Optional[BaseAdapterConfig] = None,
+        adapter: BaseAdapterConfig | None = None,
         reduce_output: str = "sum",
         vocab_size: int = 250112,
         d_model: int = 512,
@@ -402,7 +402,7 @@ class MT5Encoder(HFTextEncoder):
         pad_token_id: int = 0,
         eos_token_id: int = 1,
         decoder_start_token_id: int = 0,
-        pretrained_kwargs: Dict = None,
+        pretrained_kwargs: dict = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -452,7 +452,7 @@ class MT5Encoder(HFTextEncoder):
         self.transformer = self._wrap_transformer(transformer, adapter, trainable)
         self.max_sequence_length = max_sequence_length
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -464,7 +464,7 @@ class MT5Encoder(HFTextEncoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return MT5Config
 
     @property
@@ -504,7 +504,7 @@ class XLMRoBERTaEncoder(HFTextEncoder):
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "cls_pooled",
         trainable: bool = False,
-        adapter: Optional[BaseAdapterConfig] = None,
+        adapter: BaseAdapterConfig | None = None,
         vocab_size: int = None,
         pad_token_id: int = 1,
         bos_token_id: int = 0,
@@ -512,7 +512,7 @@ class XLMRoBERTaEncoder(HFTextEncoder):
         max_position_embeddings: int = 514,
         type_vocab_size: int = 1,
         add_pooling_layer: bool = True,
-        pretrained_kwargs: Dict = None,
+        pretrained_kwargs: dict = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -549,7 +549,7 @@ class XLMRoBERTaEncoder(HFTextEncoder):
         self.transformer = self._wrap_transformer(transformer, adapter, trainable)
         self.max_sequence_length = max_sequence_length
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -566,7 +566,7 @@ class XLMRoBERTaEncoder(HFTextEncoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return XLMRoBERTaConfig
 
     @property
@@ -605,14 +605,14 @@ class BERTEncoder(HFTextEncoder):
         pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         trainable: bool = False,
-        adapter: Optional[BaseAdapterConfig] = None,
+        adapter: BaseAdapterConfig | None = None,
         reduce_output: str = "cls_pooled",
         vocab_size: int = 30522,
         hidden_size: int = 768,
         num_hidden_layers: int = 12,
         num_attention_heads: int = 12,
         intermediate_size: int = 3072,
-        hidden_act: Union[str, Callable] = "gelu",
+        hidden_act: str | Callable = "gelu",
         hidden_dropout_prob: float = 0.1,
         attention_probs_dropout_prob: float = 0.1,
         max_position_embeddings: int = 512,
@@ -623,7 +623,7 @@ class BERTEncoder(HFTextEncoder):
         gradient_checkpointing: bool = False,
         position_embedding_type: str = "absolute",
         classifier_dropout: float = None,
-        pretrained_kwargs: Dict = None,
+        pretrained_kwargs: dict = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -671,7 +671,7 @@ class BERTEncoder(HFTextEncoder):
 
         self.max_sequence_length = max_sequence_length
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -688,7 +688,7 @@ class BERTEncoder(HFTextEncoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return BERTConfig
 
     @property
@@ -728,7 +728,7 @@ class XLMEncoder(HFTextEncoder):
         pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         trainable: bool = False,
-        adapter: Optional[BaseAdapterConfig] = None,
+        adapter: BaseAdapterConfig | None = None,
         reduce_output: str = "sum",
         vocab_size: int = 30145,
         emb_dim: int = 2048,
@@ -758,7 +758,7 @@ class XLMEncoder(HFTextEncoder):
         lang_id: int = 0,
         pad_token_id: int = 2,
         bos_token_id: int = 0,
-        pretrained_kwargs: Dict = None,
+        pretrained_kwargs: dict = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -814,7 +814,7 @@ class XLMEncoder(HFTextEncoder):
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.max_sequence_length = max_sequence_length
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -827,7 +827,7 @@ class XLMEncoder(HFTextEncoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return XLMConfig
 
     @property
@@ -868,7 +868,7 @@ class GPTEncoder(HFTextEncoder):
         pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         trainable: bool = False,
-        adapter: Optional[BaseAdapterConfig] = None,
+        adapter: BaseAdapterConfig | None = None,
         vocab_size: int = 30522,
         n_positions: int = 40478,
         n_ctx: int = 512,
@@ -881,7 +881,7 @@ class GPTEncoder(HFTextEncoder):
         attn_pdrop: float = 0.1,
         layer_norm_epsilon: float = 1e-5,
         initializer_range: float = 0.02,
-        pretrained_kwargs: Dict = None,
+        pretrained_kwargs: dict = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -926,7 +926,7 @@ class GPTEncoder(HFTextEncoder):
         self.transformer = self._wrap_transformer(transformer, adapter, trainable)
         self.max_sequence_length = max_sequence_length
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -939,7 +939,7 @@ class GPTEncoder(HFTextEncoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return GPTConfig
 
     @property
@@ -971,14 +971,14 @@ class GPT2Encoder(HFTextEncoder):
         pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         reduce_output: str = "sum",
         trainable: bool = False,
-        adapter: Optional[BaseAdapterConfig] = None,
+        adapter: BaseAdapterConfig | None = None,
         vocab_size: int = 50257,
         n_positions: int = 1024,
         n_ctx: int = 1024,
         n_embd: int = 768,
         n_layer: int = 12,
         n_head: int = 12,
-        n_inner: Optional[int] = None,
+        n_inner: int | None = None,
         activation_function: str = "gelu",
         resid_pdrop: float = 0.1,
         embd_pdrop: float = 0.1,
@@ -986,7 +986,7 @@ class GPT2Encoder(HFTextEncoder):
         layer_norm_epsilon: float = 1e-5,
         initializer_range: float = 0.02,
         scale_attn_weights: bool = True,
-        pretrained_kwargs: Dict = None,
+        pretrained_kwargs: dict = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -1031,7 +1031,7 @@ class GPT2Encoder(HFTextEncoder):
             _cls_pooled_error_message(self.__class__.__name__)
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -1044,7 +1044,7 @@ class GPT2Encoder(HFTextEncoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return GPT2Config
 
     @property
@@ -1074,7 +1074,7 @@ class DeBERTaEncoder(HFTextEncoderImpl):
         super().__init__(DebertaV2Model, _DebertaV2Config, DebertaV2Config, *args, **kwargs)
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return DebertaV2Config
 
 
@@ -1091,14 +1091,14 @@ class RoBERTaEncoder(HFTextEncoder):
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "cls_pooled",
         trainable: bool = False,
-        adapter: Optional[BaseAdapterConfig] = None,
+        adapter: BaseAdapterConfig | None = None,
         vocab_size: int = None,
         pad_token_id: int = 1,
         bos_token_id: int = 0,
         eos_token_id: int = 2,
         max_position_embeddings: int = 514,
         type_vocab_size: int = 1,
-        pretrained_kwargs: Dict = None,
+        pretrained_kwargs: dict = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -1133,7 +1133,7 @@ class RoBERTaEncoder(HFTextEncoder):
         if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -1149,7 +1149,7 @@ class RoBERTaEncoder(HFTextEncoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return RoBERTaConfig
 
     @property
@@ -1183,9 +1183,9 @@ class TransformerXLEncoder(HFTextEncoder):
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
-        adapter: Optional[BaseAdapterConfig] = None,
+        adapter: BaseAdapterConfig | None = None,
         vocab_size: int = 267735,
-        cutoffs: List[int] = [20000, 40000, 200000],
+        cutoffs: list[int] = [20000, 40000, 200000],
         d_model: int = 1024,
         d_embed: int = 1024,
         n_head: int = 16,
@@ -1210,7 +1210,7 @@ class TransformerXLEncoder(HFTextEncoder):
         init_std: float = 0.02,
         layer_norm_epsilon: float = 1e-5,
         eos_token_id: int = 0,
-        pretrained_kwargs: Dict = None,
+        pretrained_kwargs: dict = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -1268,14 +1268,14 @@ class TransformerXLEncoder(HFTextEncoder):
         self.transformer = self._wrap_transformer(transformer, adapter, trainable)
         self.max_sequence_length = max_sequence_length
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         transformer_outputs = self.transformer.module(inputs)
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return TransformerXLConfig
 
     @property
@@ -1309,7 +1309,7 @@ class XLNetEncoder(HFTextEncoder):
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
-        adapter: Optional[BaseAdapterConfig] = None,
+        adapter: BaseAdapterConfig | None = None,
         vocab_size: int = 32000,
         d_model: int = 1024,
         n_layer: int = 24,
@@ -1321,8 +1321,8 @@ class XLNetEncoder(HFTextEncoder):
         initializer_range: float = 0.02,
         layer_norm_eps: float = 1e-12,
         dropout: float = 0.1,
-        mem_len: Optional[int] = 512,
-        reuse_len: Optional[int] = None,
+        mem_len: int | None = 512,
+        reuse_len: int | None = None,
         use_mems_eval: bool = True,
         use_mems_train: bool = False,
         bi_data: bool = False,
@@ -1337,7 +1337,7 @@ class XLNetEncoder(HFTextEncoder):
         pad_token_id: int = 5,
         bos_token_id: int = 1,
         eos_token_id: int = 2,
-        pretrained_kwargs: Dict = None,
+        pretrained_kwargs: dict = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -1395,7 +1395,7 @@ class XLNetEncoder(HFTextEncoder):
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer = self._wrap_transformer(transformer, adapter, trainable)
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -1408,7 +1408,7 @@ class XLNetEncoder(HFTextEncoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return XLNetConfig
 
     @property
@@ -1440,7 +1440,7 @@ class DistilBERTEncoder(HFTextEncoder):
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
-        adapter: Optional[BaseAdapterConfig] = None,
+        adapter: BaseAdapterConfig | None = None,
         use_pretrained: bool = True,
         vocab_size: int = 30522,
         max_position_embeddings: int = 512,
@@ -1451,11 +1451,11 @@ class DistilBERTEncoder(HFTextEncoder):
         hidden_dim: int = 3072,
         dropout: float = 0.1,
         attention_dropout: float = 0.1,
-        activation: Union[str, Callable] = "gelu",
+        activation: str | Callable = "gelu",
         initializer_range: float = 0.02,
         qa_dropout: float = 0.1,
         seq_classif_dropout: float = 0.2,
-        pretrained_kwargs: Dict = None,
+        pretrained_kwargs: dict = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -1503,7 +1503,7 @@ class DistilBERTEncoder(HFTextEncoder):
         self.last_inputs = None
         self.last_hidden = None
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
 
@@ -1518,7 +1518,7 @@ class DistilBERTEncoder(HFTextEncoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return DistilBERTConfig
 
     @property
@@ -1553,7 +1553,7 @@ class CTRLEncoder(HFTextEncoder):
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
-        adapter: Optional[BaseAdapterConfig] = None,
+        adapter: BaseAdapterConfig | None = None,
         vocab_size: int = 246534,
         n_positions: int = 256,
         n_ctx: int = 256,
@@ -1566,7 +1566,7 @@ class CTRLEncoder(HFTextEncoder):
         attn_pdrop: float = 0.1,
         layer_norm_epsilon: float = 1e-6,
         initializer_range: float = 0.02,
-        pretrained_kwargs: Dict = None,
+        pretrained_kwargs: dict = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -1611,7 +1611,7 @@ class CTRLEncoder(HFTextEncoder):
             _cls_pooled_error_message(self.__class__.__name__)
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -1658,13 +1658,13 @@ class CamemBERTEncoder(HFTextEncoder):
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "cls-pooled",
         trainable: bool = False,
-        adapter: Optional[BaseAdapterConfig] = None,
+        adapter: BaseAdapterConfig | None = None,
         vocab_size: int = 30522,
         hidden_size: int = 768,
         num_hidden_layers: int = 12,
         num_attention_heads: int = 12,
         intermediate_size: int = 3072,
-        hidden_act: Union[str, Callable] = "gelu",
+        hidden_act: str | Callable = "gelu",
         hidden_dropout_prob: float = 0.1,
         attention_probs_dropout_prob: float = 0.1,
         max_position_embeddings: int = 512,
@@ -1675,7 +1675,7 @@ class CamemBERTEncoder(HFTextEncoder):
         gradient_checkpointing: bool = False,
         position_embedding_type: str = "absolute",
         classifier_dropout: float = None,
-        pretrained_kwargs: Dict = None,
+        pretrained_kwargs: dict = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -1723,7 +1723,7 @@ class CamemBERTEncoder(HFTextEncoder):
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.max_sequence_length = max_sequence_length
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -1740,7 +1740,7 @@ class CamemBERTEncoder(HFTextEncoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return CamemBERTConfig
 
     @property
@@ -1780,20 +1780,20 @@ class T5Encoder(HFTextEncoder):
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
-        adapter: Optional[BaseAdapterConfig] = None,
+        adapter: BaseAdapterConfig | None = None,
         vocab_size: int = 32128,
         d_model: int = 512,
         d_kv: int = 64,
         d_ff: int = 2048,
         num_layers: int = 6,
-        num_decoder_layers: Optional[int] = None,
+        num_decoder_layers: int | None = None,
         num_heads: int = 8,
         relative_attention_num_buckets: int = 32,
         dropout_rate: float = 0.1,
         layer_norm_eps: float = 1e-6,
         initializer_factor: float = 1,
         feed_forward_proj: str = "relu",
-        pretrained_kwargs: Dict = None,
+        pretrained_kwargs: dict = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -1836,7 +1836,7 @@ class T5Encoder(HFTextEncoder):
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer = self._wrap_transformer(transformer, adapter, trainable)
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -1849,7 +1849,7 @@ class T5Encoder(HFTextEncoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return T5Config
 
     @property
@@ -1889,7 +1889,7 @@ class FlauBERTEncoder(HFTextEncoder):
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
-        adapter: Optional[BaseAdapterConfig] = None,
+        adapter: BaseAdapterConfig | None = None,
         vocab_size: int = 30145,
         pre_norm: bool = False,
         layerdrop: float = 0.0,
@@ -1916,7 +1916,7 @@ class FlauBERTEncoder(HFTextEncoder):
         is_encoder: bool = True,
         mask_token_id: int = 0,
         lang_id: int = 1,
-        pretrained_kwargs: Dict = None,
+        pretrained_kwargs: dict = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -1975,7 +1975,7 @@ class FlauBERTEncoder(HFTextEncoder):
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer = self._wrap_transformer(transformer, adapter, trainable)
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -1988,7 +1988,7 @@ class FlauBERTEncoder(HFTextEncoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return FlauBERTConfig
 
     @property
@@ -2028,14 +2028,14 @@ class ELECTRAEncoder(HFTextEncoder):
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
-        adapter: Optional[BaseAdapterConfig] = None,
+        adapter: BaseAdapterConfig | None = None,
         vocab_size: int = 30522,
         embedding_size: int = 128,
         hidden_size: int = 256,
         num_hidden_layers: int = 12,
         num_attention_heads: int = 4,
         intermediate_size: int = 1024,
-        hidden_act: Union[str, Callable] = "gelu",
+        hidden_act: str | Callable = "gelu",
         hidden_dropout_prob: float = 0.1,
         attention_probs_dropout_prob: float = 0.1,
         max_position_embeddings: int = 512,
@@ -2043,8 +2043,8 @@ class ELECTRAEncoder(HFTextEncoder):
         initializer_range: float = 0.02,
         layer_norm_eps: float = 1e-12,
         position_embedding_type: str = "absolute",
-        classifier_dropout: Optional[float] = None,
-        pretrained_kwargs: Dict = None,
+        classifier_dropout: float | None = None,
+        pretrained_kwargs: dict = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -2090,7 +2090,7 @@ class ELECTRAEncoder(HFTextEncoder):
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer = self._wrap_transformer(transformer, adapter, trainable)
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -2103,7 +2103,7 @@ class ELECTRAEncoder(HFTextEncoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return ELECTRAConfig
 
     @property
@@ -2139,16 +2139,16 @@ class LongformerEncoder(HFTextEncoder):
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
-        attention_window: Union[List[int], int] = 512,
+        attention_window: list[int] | int = 512,
         sep_token_id: int = 2,
         pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
-        reduce_output: Optional[str] = "cls_pooled",
+        reduce_output: str | None = "cls_pooled",
         trainable: bool = False,
-        adapter: Optional[BaseAdapterConfig] = None,
+        adapter: BaseAdapterConfig | None = None,
         vocab_size: int = 50265,
-        num_tokens: Optional[int] = None,
-        pretrained_kwargs: Dict = None,
+        num_tokens: int | None = None,
+        pretrained_kwargs: dict = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -2184,7 +2184,7 @@ class LongformerEncoder(HFTextEncoder):
         self.transformer = self._wrap_transformer(transformer, adapter, trainable)
         self.max_sequence_length = max_sequence_length
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -2200,7 +2200,7 @@ class LongformerEncoder(HFTextEncoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return LongformerConfig
 
     @property
@@ -2238,9 +2238,9 @@ class AutoTransformerEncoder(HFTextEncoder):
         max_sequence_length: int,
         reduce_output: str = "sum",
         trainable: bool = False,
-        adapter: Optional[BaseAdapterConfig] = None,
-        vocab_size: Optional[int] = None,
-        pretrained_kwargs: Dict = None,
+        adapter: BaseAdapterConfig | None = None,
+        vocab_size: int | None = None,
+        pretrained_kwargs: dict = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -2268,7 +2268,7 @@ class AutoTransformerEncoder(HFTextEncoder):
             )
         self.max_sequence_length = max_sequence_length
 
-    def _maybe_resize_token_embeddings(self, transformer, vocab_size: Optional[int] = None):
+    def _maybe_resize_token_embeddings(self, transformer, vocab_size: int | None = None):
         """Overridden because AutoModel should use its own vocab size unless vocab size is explicitly specified."""
         if vocab_size is not None:
             transformer.resize_token_embeddings(vocab_size)
@@ -2276,7 +2276,7 @@ class AutoTransformerEncoder(HFTextEncoder):
         else:
             self.vocab_size = transformer.config.vocab_size
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
 
@@ -2301,7 +2301,7 @@ class AutoTransformerEncoder(HFTextEncoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return AutoTransformerConfig
 
     @property
@@ -2352,9 +2352,9 @@ class TfIdfEncoder(Encoder):
         idf = np.zeros(vocab_size)
         for i, s in enumerate(vocab):
             idf[i] = str2idf[s]
-        self.idf = torch.from_numpy(idf).float().unsqueeze(0)
+        self.register_buffer("idf", torch.from_numpy(idf).float().unsqueeze(0))
 
-    def forward(self, t: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, t: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         # Compute the term frequency within each row
         tf = torch.stack([t_i.bincount(minlength=self.vocab_size) for t_i in torch.unbind(t.long())])
 
@@ -2367,7 +2367,7 @@ class TfIdfEncoder(Encoder):
         return {ENCODER_OUTPUT: tfidf}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return TfIdfEncoderConfig
 
     @property
@@ -2438,7 +2438,7 @@ class LLMEncoder(Encoder):
         out_module.requires_grad_(requires_grad=False)
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return LLMEncoderConfig
 
     @property
@@ -2476,17 +2476,13 @@ class LLMEncoder(Encoder):
 
         self.model = prepare_model_for_kbit_training(self.model, use_gradient_checkpointing=False)
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
-        # Wrap with flash attention backend for faster generation
-        with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False) if (
-            torch.cuda.is_available() and self.curr_device.type == "cuda"
-        ) else contextlib.nullcontext():
-            # Get the hidden state of the last layer and return it as the text encoding
-            model_outputs = self.model(input_ids=inputs, output_hidden_states=True).hidden_states[-1]
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None):
+        # Get the hidden state of the last layer and return it as the text encoding
+        model_outputs = self.model(input_ids=inputs, output_hidden_states=True).hidden_states[-1]
 
         return {ENCODER_OUTPUT: model_outputs.type(torch.float32)}
 
-    def _save_to_state_dict(self, destination: Dict, prefix: str, keep_vars: bool):
+    def _save_to_state_dict(self, destination: dict, prefix: str, keep_vars: bool):
         # This is called by `torch.nn.Module.state_dict()` under the hood. `state_dict()` does additional work to
         # prep the dictionary, get submodule state, and run hooks. Overriding this method only impacts the
         # contents of the state_dict.

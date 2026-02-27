@@ -15,7 +15,6 @@
 import asyncio
 import os
 import platform
-from typing import List, Union
 
 import numpy as np
 import pandas as pd
@@ -36,6 +35,7 @@ from tests.integration_tests.utils import (
 
 @pytest.mark.skipif(platform.system() == "Windows", reason="Carton is not supported on Windows")
 def test_carton_torchscript(csv_filename, tmpdir):
+    pytest.importorskip("cartonml", reason="cartonml-nightly not installed")
     data_csv_path = os.path.join(tmpdir, csv_filename)
 
     # Configure features to be tested:
@@ -111,10 +111,9 @@ def test_carton_torchscript(csv_filename, tmpdir):
     async def load():
         return await carton.load(carton_path)
 
-    loop = asyncio.get_event_loop()
-    carton_model = loop.run_until_complete(load())
+    carton_model = asyncio.run(load())
 
-    def to_input(s: pd.Series) -> Union[List[str], torch.Tensor]:
+    def to_input(s: pd.Series) -> list[str] | torch.Tensor:
         if s.dtype == "object":
             return np.array(s.to_list())
         return s.to_numpy().astype(np.float32)
@@ -127,7 +126,7 @@ def test_carton_torchscript(csv_filename, tmpdir):
     async def infer(inputs):
         return await carton_model.infer(inputs)
 
-    outputs = loop.run_until_complete(infer(inputs))
+    outputs = asyncio.run(infer(inputs))
 
     # Compare results from Python trained model against Carton
     assert len(preds_dict) == len(outputs)

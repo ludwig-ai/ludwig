@@ -1,7 +1,5 @@
-from typing import List, Tuple, Union
-
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import MEAN_SQUARED_ERROR, MODEL_ECD, MODEL_GBM, NUMBER
+from ludwig.constants import MEAN_SQUARED_ERROR, MODEL_ECD, NUMBER
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -16,9 +14,6 @@ from ludwig.schema.features.utils import (
     ecd_defaults_config_registry,
     ecd_input_config_registry,
     ecd_output_config_registry,
-    gbm_defaults_config_registry,
-    gbm_input_config_registry,
-    gbm_output_config_registry,
     input_mixin_registry,
     output_mixin_registry,
 )
@@ -59,28 +54,6 @@ class ECDNumberInputFeatureConfig(NumberInputFeatureConfig):
 
 
 @DeveloperAPI
-@gbm_input_config_registry.register(NUMBER)
-@ludwig_dataclass
-class GBMNumberInputFeatureConfig(NumberInputFeatureConfig):
-    encoder: BaseEncoderConfig = EncoderDataclassField(
-        MODEL_GBM,
-        feature_type=NUMBER,
-        default="passthrough",
-    )
-
-
-@DeveloperAPI
-@gbm_defaults_config_registry.register(NUMBER)
-@ludwig_dataclass
-class GBMNumberDefaultsConfig(NumberInputFeatureConfigMixin):
-    encoder: BaseEncoderConfig = EncoderDataclassField(
-        MODEL_GBM,
-        feature_type=NUMBER,
-        default="passthrough",
-    )
-
-
-@DeveloperAPI
 @output_mixin_registry.register(NUMBER)
 @ludwig_dataclass
 class NumberOutputFeatureConfigMixin(BaseMarshmallowConfig):
@@ -103,7 +76,7 @@ class NumberOutputFeatureConfig(NumberOutputFeatureConfigMixin, BaseOutputFeatur
 
     type: str = schema_utils.ProtectedString(NUMBER)
 
-    clip: Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
+    clip: list[int] | tuple[int] = schema_utils.FloatRangeTupleDataclassField(
         n=2,
         default=None,
         allow_none=True,
@@ -148,17 +121,6 @@ class NumberOutputFeatureConfig(NumberOutputFeatureConfigMixin, BaseOutputFeatur
 class ECDNumberOutputFeatureConfig(NumberOutputFeatureConfig):
     decoder: BaseDecoderConfig = DecoderDataclassField(
         MODEL_ECD,
-        feature_type=NUMBER,
-        default="regressor",
-    )
-
-
-@DeveloperAPI
-@gbm_output_config_registry.register(NUMBER)
-@ludwig_dataclass
-class GBMNumberOutputFeatureConfig(NumberOutputFeatureConfig):
-    decoder: BaseDecoderConfig = DecoderDataclassField(
-        MODEL_GBM,
         feature_type=NUMBER,
         default="regressor",
     )

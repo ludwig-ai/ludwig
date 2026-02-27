@@ -15,7 +15,7 @@
 import logging
 from abc import ABC, abstractmethod, abstractstaticmethod
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any
 
 import torch
 from torch import Tensor
@@ -97,7 +97,7 @@ class BaseFeatureMixin(ABC):
     def add_feature_data(
         feature_config: FeatureConfigDict,
         input_df: DataFrame,
-        proc_df: Dict[str, DataFrame],
+        proc_df: dict[str, DataFrame],
         metadata: TrainingSetMetadataDict,
         preprocessing_parameters: PreprocessingConfigDict,
         backend,  # Union[Backend, str]
@@ -182,7 +182,6 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
 
     def update_config_after_module_init(self, feature_config):
         """Updates the config after the torch.nn.Module objects have been initialized."""
-        pass
 
     def initialize_encoder(self, encoder_config):
         encoder_cls = get_encoder_cls(self.type(), encoder_config.type)
@@ -205,7 +204,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def __init__(
         self,
         feature: BaseOutputFeatureConfig,
-        other_output_features: Dict[str, "OutputFeature"],
+        other_output_features: dict[str, "OutputFeature"],
         *args,
         **kwargs,
     ):
@@ -275,7 +274,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     @abstractmethod
     def get_output_dtype(cls):
         """Returns the Tensor data type feature outputs."""
-        pass
 
     def initialize_decoder(self, decoder_config):
         # Input to the decoder is the output feature's FC hidden layer.
@@ -285,12 +283,12 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         decoder_params_dict = decoder_schema.dump(decoder_config)
         return decoder_cls(decoder_config=decoder_config, **decoder_params_dict)
 
-    def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor], feature_name):
+    def train_loss(self, targets: Tensor, predictions: dict[str, Tensor], feature_name):
         loss_class = type(self.train_loss_function)
         prediction_key = output_feature_utils.get_feature_concat_name(feature_name, loss_class.get_loss_inputs())
         return self.train_loss_function(predictions[prediction_key], targets)
 
-    def eval_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
+    def eval_loss(self, targets: Tensor, predictions: dict[str, Tensor]):
         loss_class = type(self.train_loss_function)
         prediction_key = loss_class.get_loss_inputs()
         if isinstance(self.eval_loss_metric, MeanMetric):
@@ -343,7 +341,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         """Returns the PredictModule used to convert model outputs to predictions."""
         return self._prediction_module.module
 
-    def predictions(self, all_decoder_outputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
+    def predictions(self, all_decoder_outputs: dict[str, torch.Tensor], feature_name: str) -> dict[str, torch.Tensor]:
         """Computes actual predictions from the outputs of feature decoders.
 
         TODO(Justin): Consider refactoring this to accept feature-specific decoder outputs.
@@ -357,7 +355,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         return self.prediction_module(all_decoder_outputs, feature_name)
 
     @abstractmethod
-    def logits(self, combiner_outputs: Dict[str, torch.Tensor], target=None, **kwargs) -> Dict[str, torch.Tensor]:
+    def logits(self, combiner_outputs: dict[str, torch.Tensor], target=None, **kwargs) -> dict[str, torch.Tensor]:
         """Unpacks and feeds combiner_outputs to the decoder. Invoked as part of the output feature's forward pass.
 
         If target is not None, then we are in training.
@@ -370,11 +368,11 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         """
         raise NotImplementedError("OutputFeature is missing logits() implementation.")
 
-    def metric_kwargs(self) -> Dict[str, Any]:
+    def metric_kwargs(self) -> dict[str, Any]:
         """Returns arguments that are used to instantiate an instance of each metric class."""
         return {}
 
-    def update_metrics(self, targets: Tensor, predictions: Dict[str, Tensor]) -> None:
+    def update_metrics(self, targets: Tensor, predictions: dict[str, Tensor]) -> None:
         """Updates metrics with the given targets and predictions.
 
         Args:
@@ -413,11 +411,11 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     def forward(
         self,
-        combiner_outputs: Dict[str, torch.Tensor],
-        other_output_feature_outputs: Dict[str, torch.Tensor],
-        mask: Optional[torch.Tensor] = None,
-        target: Optional[torch.Tensor] = None,
-    ) -> Dict[str, torch.Tensor]:
+        combiner_outputs: dict[str, torch.Tensor],
+        other_output_feature_outputs: dict[str, torch.Tensor],
+        mask: torch.Tensor | None = None,
+        target: torch.Tensor | None = None,
+    ) -> dict[str, torch.Tensor]:
         """Forward pass that takes in output from the combiner, and passes it through to the decoder.
 
         Args:
@@ -464,7 +462,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     @abstractmethod
     def postprocess_predictions(
         self,
-        result: Dict[str, Tensor],
+        result: dict[str, Tensor],
         metadata: TrainingSetMetadataDict,
     ):
         raise NotImplementedError
@@ -507,7 +505,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         return feature_hidden
 
     def prepare_decoder_inputs(
-        self, combiner_hidden: Tensor, other_output_features: Dict[str, Tensor], mask=None
+        self, combiner_hidden: Tensor, other_output_features: dict[str, Tensor], mask=None
     ) -> Tensor:
         """Takes the combiner output and the outputs of other outputs features computed so far and performs:
 

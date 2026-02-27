@@ -18,9 +18,10 @@ from __future__ import annotations
 
 import time
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Generator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Any, Callable, Generator, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 import numpy as np
 import pandas as pd

@@ -1,5 +1,4 @@
 import os
-from typing import List
 
 import pytest
 from expected_metric import ExpectedMetric
@@ -14,9 +13,7 @@ SKIPPED_CONFIG_ISSUES = {
     "ames_housing.ecd.yaml": "https://github.com/ludwig-ai/ludwig/issues/3344",
 }
 CONFIGS_REQUIRING_DATASET_CREDENTIALS = {
-    "mercedes_benz_greener.gbm.yaml",
     "mercedes_benz_greener.ecd.yaml",
-    "ames_housing.gbm.yaml",
     "ames_housing.ecd.yaml",
 }
 RUN_PRIVATE = parse_flag_from_env("RUN_PRIVATE", default=False)
@@ -27,7 +24,7 @@ def update_skipped_configs_issues(config_filename):
         SKIPPED_CONFIG_ISSUES[config_filename] = "Requires credentials. Can't run from a forked repo."
 
 
-def get_test_config_filenames() -> List[str]:
+def get_test_config_filenames() -> list[str]:
     """Return list of the config filenames used for benchmarking."""
     benchmark_directory = "/".join(__file__.split("/")[:-1] + ["configs"])
     return [config_fp for config_fp in os.listdir(benchmark_directory)]
@@ -52,16 +49,14 @@ def test_performance(config_filename, tmpdir):
     dataset_name = get_dataset_from_config_path(config_path)
 
     if not os.path.exists(expected_test_statistics_fp):
-        raise FileNotFoundError(
-            """No corresponding expected metrics found for benchmarking config '{config_path}'.
+        raise FileNotFoundError("""No corresponding expected metrics found for benchmarking config '{config_path}'.
             Please add a new metrics YAML file '{expected_test_statistics_fp}'. Suggested content:
 
             metrics:
               - output_feature_name: <YOUR_OUTPUT_FEATURE e.g. SalePrice>
                 metric_name: <YOUR METRIC NAME e.g. accuracy>
                 expected_value: <A FLOAT VALUE>
-                tolerance_percent: 0.15"""
-        )
+                tolerance_percent: 0.15""")
     expected_metrics_dict = load_yaml(expected_test_statistics_fp)
 
     benchmarking_config = {
@@ -74,7 +69,7 @@ def test_performance(config_filename, tmpdir):
     if err is not None:
         raise err
 
-    expected_metrics: List[ExpectedMetric] = [
+    expected_metrics: list[ExpectedMetric] = [
         ExpectedMetric.from_dict(expected_metric) for expected_metric in expected_metrics_dict["metrics"]
     ]
     for expected_metric in expected_metrics:

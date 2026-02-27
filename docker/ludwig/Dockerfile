@@ -9,7 +9,7 @@
 #   model serving
 #
 
-FROM python:3.8.13-slim
+FROM python:3.11-slim
 
 RUN apt-get -y update && apt-get -y install \
     git \

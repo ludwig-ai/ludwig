@@ -17,9 +17,10 @@ import logging
 import os
 import warnings
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 import torch
@@ -222,14 +223,13 @@ class RandomBlur(torch.nn.Module):
 class ImageAugmentation(torch.nn.Module):
     def __init__(
         self,
-        augmentation_list: List[BaseAugmentationConfig],
-        normalize_mean: Optional[List[float]] = None,
-        normalize_std: Optional[List[float]] = None,
+        augmentation_list: list[BaseAugmentationConfig],
+        normalize_mean: list[float] | None = None,
+        normalize_std: list[float] | None = None,
     ):
         super().__init__()
 
-        # TODO: change to debug level before merging
-        logger.info(f"Creating Augmentation pipline: {augmentation_list}")
+        logger.debug(f"Creating augmentation pipeline: {augmentation_list}")
 
         self.normalize_mean = normalize_mean
         self.normalize_std = normalize_std
@@ -251,7 +251,7 @@ class ImageAugmentation(torch.nn.Module):
             # convert from float to uint8 values - this is required for the augmentation
             imgs = self._convert_back_to_uint8(imgs)
 
-            logger.debug(f"Executing augmentation pipeline steps:\n{self.augmentation_steps}")
+            logger.debug("Executing augmentation pipeline steps: %s", self.augmentation_steps)
             imgs = self.augmentation_steps(imgs)
 
             # convert back to float32 values and renormalize if needed
@@ -292,7 +292,7 @@ class ImageTransformMetadata:
 
 def _get_torchvision_transform(
     torchvision_parameters: TVModelVariant,
-) -> Tuple[torch.nn.Module, ImageTransformMetadata]:
+) -> tuple[torch.nn.Module, ImageTransformMetadata]:
     """Returns a torchvision transform that is compatible with the model variant.
 
     Note that the raw torchvision transform is not returned. Instead, a Sequential module that includes
@@ -334,8 +334,8 @@ class _ImagePreprocessing(torch.nn.Module):
     def __init__(
         self,
         metadata: TrainingSetMetadataDict,
-        torchvision_transform: Optional[torch.nn.Module] = None,
-        transform_metadata: Optional[ImageTransformMetadata] = None,
+        torchvision_transform: torch.nn.Module | None = None,
+        transform_metadata: ImageTransformMetadata | None = None,
     ):
         super().__init__()
 
@@ -358,13 +358,13 @@ class _ImagePreprocessing(torch.nn.Module):
         If `v` is already a torch.Tensor, we assume that the images are already preprocessed to be the same size.
         """
         # Nested conditional is a workaround to short-circuit boolean evaluation.
-        if not torch.jit.isinstance(v, List[torch.Tensor]):
+        if not torch.jit.isinstance(v, list[torch.Tensor]):
             if not torch.jit.isinstance(v, torch.Tensor):
                 raise ValueError(f"Unsupported input: {v}")
 
         if self.torchvision_transform is not None:
             # perform pre-processing for torchvision pretrained model encoders
-            if torch.jit.isinstance(v, List[torch.Tensor]):
+            if torch.jit.isinstance(v, list[torch.Tensor]):
                 imgs = [self.torchvision_transform(img) for img in v]
             else:
                 # convert batch of image tensors to a list and then run torchvision pretrained
@@ -375,7 +375,7 @@ class _ImagePreprocessing(torch.nn.Module):
             imgs_stacked = torch.stack(imgs)
         else:
             # perform pre-processing for Ludwig defined image encoders
-            if torch.jit.isinstance(v, List[torch.Tensor]):
+            if torch.jit.isinstance(v, list[torch.Tensor]):
                 imgs = [resize_image(img, (self.height, self.width), self.resize_method) for img in v]
                 imgs_stacked = torch.stack(imgs)
             else:
@@ -419,7 +419,7 @@ class _ImagePostprocessing(torch.nn.Module):
         self.logits_key = LOGITS
         self.predictions_key = PREDICTIONS
 
-    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> FeaturePostProcessingOutputDict:
+    def forward(self, preds: dict[str, torch.Tensor], feature_name: str) -> FeaturePostProcessingOutputDict:
         predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
         logits = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.logits_key)
 
@@ -427,7 +427,7 @@ class _ImagePostprocessing(torch.nn.Module):
 
 
 class _ImagePredict(PredictModule):
-    def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: dict[str, torch.Tensor], feature_name: str) -> dict[str, torch.Tensor]:
         predictions = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.predictions_key)
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
 
@@ -455,7 +455,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def _read_image_if_bytes_obj_and_resize(
-        img_entry: Union[bytes, torch.Tensor, np.ndarray, str],
+        img_entry: bytes | torch.Tensor | np.ndarray | str,
         img_width: int,
         img_height: int,
         should_resize: bool,
@@ -464,28 +464,21 @@ class ImageFeatureMixin(BaseFeatureMixin):
         user_specified_num_channels: bool,
         standardize_image: str,
         channel_class_map: torch.Tensor,
-    ) -> Optional[np.ndarray]:
-        """
-        :param img_entry Union[bytes, torch.Tensor, np.ndarray, str]: if str file path to the
-            image else torch.Tensor of the image itself
-        :param img_width: expected width of the image
-        :param img_height: expected height of the image
-        :param should_resize: Should the image be resized?
-        :param resize_method: type of resizing method
-        :param num_channels: expected number of channels in the first image
-        :param user_specified_num_channels: did the user specify num channels?
-        :param standardize_image: specifies whether to standarize image with imagenet1k specifications
-        :param channel_class_map: A tensor mapping channel values to classes, where dim=0 is the class
-        :return: image object as a numpy array
+    ) -> np.ndarray | None:
+        """:param img_entry Union[bytes, torch.Tensor, np.ndarray, str]: if str file path to the image else
+        torch.Tensor of the image itself :param img_width: expected width of the image :param img_height: expected
+        height of the image :param should_resize: Should the image be resized? :param resize_method: type of
+        resizing method :param num_channels: expected number of channels in the first image :param
+        user_specified_num_channels: did the user specify num channels? :param standardize_image: specifies whether
+        to standarize image with imagenet1k specifications :param channel_class_map: A tensor mapping channel
+        values to classes, where dim=0 is the class :return: image object as a numpy array.
 
-        Helper method to read and resize an image according to model definition.
-        If the user doesn't specify a number of channels, we use the first image
-        in the dataset as the source of truth. If any image in the dataset
-        doesn't have the same number of channels as the first image,
-        raise an exception.
+        Helper method to read and resize an image according to model definition. If the user doesn't specify a number of
+        channels, we use the first image in the dataset as the source of truth. If any image in the dataset doesn't have
+        the same number of channels as the first image, raise an exception.
 
-        If the user specifies a number of channels, we try to convert all the
-        images to the specifications by dropping channels/padding 0 channels
+        If the user specifies a number of channels, we try to convert all the images to the specifications by dropping
+        channels/padding 0 channels
         """
 
         if isinstance(img_entry, bytes):
@@ -564,9 +557,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def _read_image_with_pretrained_transform(
-        img_entry: Union[bytes, torch.Tensor, np.ndarray],
+        img_entry: bytes | torch.Tensor | np.ndarray,
         transform_fn: Callable,
-    ) -> Optional[np.ndarray]:
+    ) -> np.ndarray | None:
         if isinstance(img_entry, bytes):
             img = read_image_from_bytes_obj(img_entry)
         elif isinstance(img_entry, str):
@@ -587,7 +580,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def _set_image_and_height_equal_for_encoder(
         width: int, height: int, preprocessing_parameters: dict, encoder_type: str
-    ) -> Tuple[int, int]:
+    ) -> tuple[int, int]:
         """Some pretrained image encoders require images with the same dimension, or images with a specific width
         and heigh values. The returned width and height are set based on compatibility with the downstream encoder
         using the encoder parameters for the feature.
@@ -616,12 +609,12 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def _infer_image_size(
-        image_sample: List[torch.Tensor],
+        image_sample: list[torch.Tensor],
         max_height: int,
         max_width: int,
         preprocessing_parameters: dict,
         encoder_type: str,
-    ) -> Tuple[int, int]:
+    ) -> tuple[int, int]:
         """Infers the size to use from a group of images. The returned height will be the average height of images
         in image_sample rounded to the nearest integer, or max_height. Likewise for width.
 
@@ -651,7 +644,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         return height, width
 
     @staticmethod
-    def _infer_number_of_channels(image_sample: List[torch.Tensor]):
+    def _infer_number_of_channels(image_sample: list[torch.Tensor]):
         """Infers the channel depth to use from a group of images.
 
         We make the assumption that the majority of datasets scraped from the web will be RGB, so if we get a mixed bag
@@ -689,7 +682,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def _infer_image_num_classes(
-        image_sample: List[torch.Tensor],
+        image_sample: list[torch.Tensor],
         num_channels: int,
         num_classes: int,
     ) -> torch.Tensor:
@@ -727,7 +720,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         preprocessing_parameters: dict,
         encoder_type: str,
         column: Series,
-    ) -> Tuple:
+    ) -> tuple:
         """Helper method to determine the height, width and number of channels for preprocessing the image data.
 
         This is achieved by looking at the parameters provided by the user. When there are some missing parameters, we
@@ -771,8 +764,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
         if len(sample) == 0:
             failed_entries_repr = "\n\t- ".join(failed_entries)
             raise ValueError(
-                f"Images dimensions cannot be inferred. Failed to read {sample_size} images as samples:\n\t- "
-                f"{failed_entries_repr}."
+                f"Images dimensions cannot be inferred. Failed to read {sample_size} images as samples:"
+                f"\n\t- {failed_entries_repr}."
             )
 
         should_resize = False
@@ -905,9 +898,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
             average_file_size = None
 
             # save weight specification in preprocessing section
-            preprocessing_parameters[
-                "torchvision_model_default_weights"
-            ] = f"{torchvision_parameters.model_weights.DEFAULT}"
+            preprocessing_parameters["torchvision_model_default_weights"] = (
+                f"{torchvision_parameters.model_weights.DEFAULT}"
+            )
 
             # add torchvision model id to preprocessing section for torchscript
             preprocessing_parameters["torchvision_model_type"] = model_type
@@ -1080,7 +1073,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         return ImageInputFeatureConfig
 
     @staticmethod
-    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+    def create_preproc_module(metadata: dict[str, Any]) -> torch.nn.Module:
         model_type = metadata["preprocessing"].get("torchvision_model_type")
         model_variant = metadata["preprocessing"].get("torchvision_model_variant")
         if model_variant:
@@ -1105,8 +1098,8 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 class ImageOutputFeature(ImageFeatureMixin, OutputFeature):
     def __init__(
         self,
-        output_feature_config: Union[ImageOutputFeatureConfig, Dict],
-        output_features: Dict[str, OutputFeature],
+        output_feature_config: ImageOutputFeatureConfig | dict,
+        output_features: dict[str, OutputFeature],
         **kwargs,
     ):
         super().__init__(output_feature_config, output_features, **kwargs)
@@ -1114,7 +1107,7 @@ class ImageOutputFeature(ImageFeatureMixin, OutputFeature):
         self._setup_loss()
         self._setup_metrics()
 
-    def logits(self, inputs: Dict[str, torch.Tensor], target=None, **kwargs):
+    def logits(self, inputs: dict[str, torch.Tensor], target=None, **kwargs):
         return self.decoder_obj(inputs, target=target)
 
     def metric_kwargs(self):

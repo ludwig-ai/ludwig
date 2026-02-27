@@ -1,5 +1,3 @@
-from typing import List
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import IMAGE, LOSS, MODEL_ECD, SOFTMAX_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
@@ -49,7 +47,7 @@ class ImageInputFeatureConfigMixin(BaseMarshmallowConfig):
         default="stacked_cnn",
     )
 
-    augmentation: List[BaseAugmentationConfig] = AugmentationDataclassField(
+    augmentation: list[BaseAugmentationConfig] = AugmentationDataclassField(
         feature_type=IMAGE,
         default=False,
         default_augmentations=AUGMENTATION_DEFAULT_OPERATIONS,

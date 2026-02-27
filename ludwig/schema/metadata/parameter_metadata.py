@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from dataclasses_json import dataclass_json
 
@@ -54,22 +54,22 @@ class ParameterMetadata:
     long_description: str = ""
     """In depth description generally for documentation purposes."""
 
-    ui_display_name: Union[str, None] = ""
+    ui_display_name: str | None = ""
     """How this parameter can be displayed in a human-readable form."""
 
-    default_value_reasoning: Union[str, None] = None
+    default_value_reasoning: str | None = None
     """The reasoning behind the default value for this parameter."""
 
-    example_value: Union[List[Any], None] = None
+    example_value: list[Any] | None = None
     """Examples of other values that can be used for this parameter."""
 
-    related_parameters: Union[List[str], None] = None
+    related_parameters: list[str] | None = None
     """List of related parameters that this parameter interacts with or depends on."""
 
-    other_information: Union[str, None] = None
+    other_information: str | None = None
     """Other information that is relevant for this parameter."""
 
-    description_implications: Union[str, None] = None
+    description_implications: str | None = None
     """The intuition for how model performance would change if this parameter is changed."""
 
     suggested_values: Any = None
@@ -78,7 +78,7 @@ class ParameterMetadata:
     Should cover 95% (2-sigma) worth of use-cases.
     """
 
-    suggested_values_reasoning: Union[str, None] = None
+    suggested_values_reasoning: str | None = None
     """The reasoning behind the suggested values, as well as model performance indicators or other intuition that
     could help inform a user to make an educated decision about what values to experiment with for this
     parameter."""
@@ -90,7 +90,7 @@ class ParameterMetadata:
     expected_impact: ExpectedImpact = ExpectedImpact.UNKNOWN
     """The expected impact of determining a "good" value for this parameter."""
 
-    literature_references: Union[List[str], None] = None
+    literature_references: list[str] | None = None
     """List of links, papers, and blog posts to learn more."""
 
     internal_only: bool = False
@@ -100,16 +100,16 @@ class ParameterMetadata:
     """The compute tier defines the type of compute resources that a model typically needs to get good
     throughput."""
 
-    ui_component_type: Optional[str] = None
+    ui_component_type: str | None = None
     """Override for HTML component type that should be used to render this field in UIs."""
 
     @memoized_method(maxsize=1)
-    def to_json_dict(self) -> Dict[str, Any]:
+    def to_json_dict(self) -> dict[str, Any]:
         return json.loads(self.to_json())
 
 
 @DeveloperAPI
-def convert_metadata_to_json(pm: ParameterMetadata) -> Dict[str, Any]:
+def convert_metadata_to_json(pm: ParameterMetadata) -> dict[str, Any]:
     """Converts a ParameterMetadata dict to a normal JSON dict.
 
     NOTE: Without the json.loads call, to_json() returns

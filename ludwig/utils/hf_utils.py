@@ -2,7 +2,6 @@ import logging
 import os
 import tempfile
 from os import PathLike
-from typing import Optional, Tuple, Type, Union
 
 from transformers import AutoTokenizer, PreTrainedModel
 from transformers.tokenization_utils import PreTrainedTokenizer
@@ -17,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 @default_retry()
 def load_pretrained_hf_model_from_hub(
-    model_class: Type,
-    pretrained_model_name_or_path: Optional[Union[str, PathLike]],
+    model_class: type,
+    pretrained_model_name_or_path: str | PathLike | None,
     **pretrained_kwargs,
 ) -> PreTrainedModel:
     """Download a HuggingFace model.
@@ -36,7 +35,7 @@ def load_pretrained_hf_model_from_hub(
 
 @default_retry()
 def load_pretrained_hf_tokenizer(
-    pretrained_model_name_or_path: Optional[Union[str, PathLike]], **pretrained_kwargs
+    pretrained_model_name_or_path: str | PathLike | None, **pretrained_kwargs
 ) -> PreTrainedTokenizer:
     """Download a HuggingFace tokenizer.
 
@@ -50,8 +49,8 @@ def load_pretrained_hf_tokenizer(
 
 
 def _load_pretrained_hf_model_from_dir(
-    model_class: Type,
-    pretrained_model_name_or_path: Optional[Union[str, PathLike]],
+    model_class: type,
+    pretrained_model_name_or_path: str | PathLike | None,
     **pretrained_kwargs,
 ) -> PreTrainedModel:
     """Downloads a model to a local temporary directory, and Loads a pretrained HF model from a local directory."""
@@ -62,10 +61,10 @@ def _load_pretrained_hf_model_from_dir(
 
 @DeveloperAPI
 def load_pretrained_hf_model_with_hub_fallback(
-    model_class: Type,
-    pretrained_model_name_or_path: Optional[Union[str, PathLike]],
+    model_class: type,
+    pretrained_model_name_or_path: str | PathLike | None,
     **pretrained_kwargs,
-) -> Tuple[PreTrainedModel, bool]:
+) -> tuple[PreTrainedModel, bool]:
     """Returns the model and a boolean indicating whether the model was downloaded from the HuggingFace hub.
 
     If the `LUDWIG_PRETRAINED_MODELS_DIR` environment variable is set, we attempt to load the HF model from this
@@ -113,11 +112,11 @@ def load_pretrained_hf_model_with_hub_fallback(
 def upload_folder_to_hfhub(
     repo_id: str,
     folder_path: str,
-    repo_type: Optional[str] = "model",
-    private: Optional[bool] = False,
-    path_in_repo: Optional[str] = None,  # defaults to root of repo
-    commit_message: Optional[str] = None,
-    commit_description: Optional[str] = None,
+    repo_type: str | None = "model",
+    private: bool | None = False,
+    path_in_repo: str | None = None,  # defaults to root of repo
+    commit_message: str | None = None,
+    commit_description: str | None = None,
 ) -> None:
     """Uploads a local folder to the Hugging Face Model Hub.
 

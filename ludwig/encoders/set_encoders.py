@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Optional, Type
+from typing import Any
 
 import torch
 
@@ -36,11 +36,11 @@ logger = logging.getLogger(__name__)
 class SetSparseEncoder(Encoder):
     def __init__(
         self,
-        vocab: List[str],
+        vocab: list[str],
         representation: str = "dense",
         embedding_size: int = 50,
         embeddings_trainable: bool = True,
-        pretrained_embeddings: Optional[str] = None,
+        pretrained_embeddings: str | None = None,
         embeddings_on_cpu: bool = False,
         fc_layers=None,
         num_fc_layers: int = 0,
@@ -48,8 +48,8 @@ class SetSparseEncoder(Encoder):
         use_bias: bool = True,
         weights_initializer: str = "xavier_uniform",
         bias_initializer: str = "zeros",
-        norm: Optional[str] = None,
-        norm_params: Optional[Dict[str, Any]] = None,
+        norm: str | None = None,
+        norm_params: dict[str, Any] | None = None,
         activation: str = "relu",
         dropout: float = 0.0,
         encoder_config=None,
@@ -105,7 +105,7 @@ class SetSparseEncoder(Encoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return SetSparseEncoderConfig
 
     @property

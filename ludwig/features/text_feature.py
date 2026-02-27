@@ -15,7 +15,6 @@
 # ==============================================================================
 import logging
 from functools import partial
-from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -62,14 +61,18 @@ logger = logging.getLogger(__name__)
 
 def get_decoded_targets_and_predictions(
     targets: Tensor,
-    predictions: Dict[str, Tensor],
+    predictions: dict[str, Tensor],
     tokenizer: PreTrainedTokenizer,
-) -> Tuple[List[str], List[str]]:
+) -> tuple[list[str], list[str]]:
     """Returns the decoded targets and predictions, accounting for IGNORE_INDEX_TOKEN_ID."""
+    # Ensure targets and predictions are on the same device
+    pred_tensor = predictions[PREDICTIONS]
+    if targets.device != pred_tensor.device:
+        targets = targets.to(pred_tensor.device)
     sanitized_targets = torch.where(targets != IGNORE_INDEX_TOKEN_ID, targets, tokenizer.pad_token_id)
     sanitized_predictions = torch.where(
         targets != IGNORE_INDEX_TOKEN_ID,
-        predictions[PREDICTIONS],
+        pred_tensor,
         tokenizer.pad_token_id,
     )
     decoded_targets = tokenizer.batch_decode(sanitized_targets, skip_special_tokens=True)
@@ -78,8 +81,8 @@ def get_decoded_targets_and_predictions(
 
 
 def _get_metadata_reconciled_max_sequence_length(
-    preprocessing_parameters: Dict, vocabulary: Vocabulary
-) -> Tuple[int, int]:
+    preprocessing_parameters: dict, vocabulary: Vocabulary
+) -> tuple[int, int]:
     """Reconciles the different ways sequence length can be specified in preprocessing parameters.
 
     If the max sequence length is explicitly specified, we use the minimum of the true maximum sequence length and
@@ -303,8 +306,8 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     def __init__(
         self,
-        output_feature_config: Union[TextOutputFeatureConfig, Dict],
-        output_features: Dict[str, OutputFeature],
+        output_feature_config: TextOutputFeatureConfig | dict,
+        output_features: dict[str, OutputFeature],
         **kwargs,
     ):
         super().__init__(output_feature_config, output_features, **kwargs)
@@ -320,8 +323,8 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     def update_metrics(
         self,
         targets: Tensor,
-        predictions: Dict[str, Tensor],
-        tokenizer: Optional[PreTrainedTokenizer] = None,
+        predictions: dict[str, Tensor],
+        tokenizer: PreTrainedTokenizer | None = None,
     ) -> None:
         """Updates metrics with the given targets and predictions.
 
@@ -436,7 +439,9 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                         metadata["idx2str"][token] if token < len(metadata["idx2str"]) else UNKNOWN_SYMBOL
                         for token in pred
                     ]
-                return tokenizer.tokenizer.batch_decode(pred, skip_special_tokens=True)
+                # Decode each token ID individually. In transformers 5.x, batch_decode
+                # on a 1D array treats it as a single sequence rather than individual tokens.
+                return [tokenizer.tokenizer.decode([int(token_id)], skip_special_tokens=True) for token_id in pred]
 
             result[predictions_col] = token_col.map(idx2str)
 
@@ -451,7 +456,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                             for token in pred
                         ]
                     )
-                return tokenizer.tokenizer.batch_decode([pred], skip_special_tokens=True)
+                return tokenizer.tokenizer.decode(pred, skip_special_tokens=True)
 
             result[f"{self.feature_name}_response"] = token_col.map(idx2response)
 

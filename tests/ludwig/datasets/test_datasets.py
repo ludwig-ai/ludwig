@@ -1,3 +1,5 @@
+import importlib
+import importlib.util
 import io
 import os
 import uuid
@@ -220,16 +222,6 @@ def test_train_dataset_uri(tmpdir):
 
 
 @private_test
-@pytest.mark.parametrize("dataset_name,shape", [("mercedes_benz_greener", (8418, 379)), ("ames_housing", (2919, 82))])
-def test_dataset_fallback_mirror(dataset_name, shape):
-    dataset_module = ludwig.datasets.get_dataset(dataset_name)
-    dataset = dataset_module.load(kaggle_key="dummy_key", kaggle_username="dummy_username")
-
-    assert isinstance(dataset, pd.DataFrame)
-    assert dataset.shape == shape
-
-
-@private_test
 @pytest.mark.parametrize("dataset_name, size", [("code_alpaca", 20000), ("consumer_complaints", 38000)])
 def test_ad_hoc_dataset_download(tmpdir, dataset_name, size):
     dataset_config = ludwig.datasets._get_dataset_config(dataset_name)
@@ -241,6 +233,8 @@ def test_ad_hoc_dataset_download(tmpdir, dataset_name, size):
     assert len(df) >= size
 
 
+@pytest.mark.skipif(not importlib.util.find_spec("datasets"), reason="huggingface datasets not installed")
+@pytest.mark.xfail(reason="HuggingFace datasets library no longer supports loading datasets via scripts")
 def test_hf_dataset_loading():
     import datasets
 

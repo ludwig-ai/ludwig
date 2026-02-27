@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict, List, Optional, Type
 
 import torch
 
@@ -43,14 +42,14 @@ class DateEmbed(Encoder):
         self,
         embedding_size: int = 10,
         embeddings_on_cpu: bool = False,
-        fc_layers: Optional[List[Dict]] = None,
+        fc_layers: list[dict] | None = None,
         num_fc_layers: int = 0,
         output_size: int = 10,
         use_bias: bool = True,
         weights_initializer: str = "xavier_uniform",
         bias_initializer: str = "zeros",
-        norm: Optional[str] = None,
-        norm_params: Optional[Dict] = None,
+        norm: str | None = None,
+        norm_params: dict | None = None,
         activation: str = "relu",
         dropout: float = 0,
         encoder_config=None,
@@ -267,7 +266,7 @@ class DateEmbed(Encoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return DateEmbedConfig
 
     @property
@@ -284,14 +283,14 @@ class DateEmbed(Encoder):
 class DateWave(Encoder):
     def __init__(
         self,
-        fc_layers: Optional[List[FCStack]] = None,
+        fc_layers: list[FCStack] | None = None,
         num_fc_layers: int = 1,
         output_size: int = 10,
         use_bias: bool = True,
         weights_initializer: str = "xavier_uniform",
         bias_initializer: str = "zeros",
-        norm: Optional[str] = None,
-        norm_params: Optional[Dict] = None,
+        norm: str | None = None,
+        norm_params: dict | None = None,
         activation: str = "relu",
         dropout: float = 0,
         encoder_config=None,
@@ -400,7 +399,7 @@ class DateWave(Encoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return DateWaveConfig
 
     @property

@@ -16,7 +16,8 @@
 import copy
 import logging
 import warnings
-from typing import Any, Callable, Dict, List, Union
+from collections.abc import Callable
+from typing import Any
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
@@ -41,8 +42,6 @@ from ludwig.constants import (
     LOSS,
     MISSING_VALUE_STRATEGY,
     MODEL_ECD,
-    MODEL_GBM,
-    MODEL_TYPE,
     NAME,
     NUM_SAMPLES,
     NUMBER,
@@ -69,7 +68,6 @@ from ludwig.constants import (
 )
 from ludwig.features.feature_registries import get_base_type_registry, get_input_type_registry, get_output_type_registry
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.schema.defaults.gbm import GBMDefaultsConfig
 from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.types import (
     FeatureConfigDict,
@@ -88,7 +86,7 @@ config_transformation_registry = VersionTransformationRegistry()
 
 
 @DeveloperAPI
-def register_config_transformation(version: str, prefixes: Union[str, List[str]] = []) -> Callable:
+def register_config_transformation(version: str, prefixes: str | list[str] = []) -> Callable:
     """This decorator registers a transformation function for a config version. Version is the first version which
     requires the transform. For example, since "training" is renamed to "trainer" in 0.5, this change should be
     registered with 0.5.  from_version < version <= to_version.
@@ -103,7 +101,7 @@ def register_config_transformation(version: str, prefixes: Union[str, List[str]]
     if isinstance(prefixes, str):
         prefixes = [prefixes]
 
-    def wrap(fn: Callable[[Dict], Dict]):
+    def wrap(fn: Callable[[dict], dict]):
         config_transformation_registry.register(VersionTransformation(transform=fn, version=version, prefixes=prefixes))
         return fn
 
@@ -126,7 +124,7 @@ def upgrade_config_dict_to_latest_version(config: ModelConfigDict) -> ModelConfi
     )
 
 
-def upgrade_model_progress(model_progress: Dict) -> Dict:
+def upgrade_model_progress(model_progress: dict) -> dict:
     """Updates model progress info to be compatible with latest ProgressTracker implementation.
 
     Notably, we convert epoch-based stats to their step-based equivalents and reformat metrics into `TrainerMetric`
@@ -207,7 +205,7 @@ def upgrade_model_progress(model_progress: Dict) -> Dict:
     return ret
 
 
-def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
+def _traverse_dicts(config: Any, f: Callable[[dict], None]):
     """Recursively applies function f to every dictionary contained in config.
 
     f should in-place modify the config dict. f will be called on leaves first, root last.
@@ -222,7 +220,7 @@ def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
 
 
 @register_config_transformation("0.6", "backend")
-def _update_backend_cache_credentials(backend: Dict[str, Any]) -> Dict[str, Any]:
+def _update_backend_cache_credentials(backend: dict[str, Any]) -> dict[str, Any]:
     if "cache_credentials" in backend:
         credentials = backend.get("credentials", {})
         if "cache" in credentials:
@@ -299,7 +297,9 @@ def _update_level_metadata(config: ModelConfigDict) -> ModelConfigDict:
 @register_config_transformation("0.5")
 def rename_training_to_trainer(config: ModelConfigDict) -> ModelConfigDict:
     if TRAINING in config:
-        warnings.warn('Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning)
+        warnings.warn(
+            'Config section "training" renamed to "trainer" and will be removed in a future version', DeprecationWarning
+        )
         config[TRAINER] = config[TRAINING]
         del config[TRAINING]
     return config
@@ -309,18 +309,22 @@ def rename_training_to_trainer(config: ModelConfigDict) -> ModelConfigDict:
 def _upgrade_use_bias_in_features(feature: FeatureConfigDict) -> FeatureConfigDict:
     def upgrade_use_bias(config):
         if BIAS in config:
-            warnings.warn('Parameter "bias" renamed to "use_bias" and will be removed in v0.6', DeprecationWarning)
+            warnings.warn(
+                'Parameter "bias" renamed to "use_bias" and will be removed in a future version', DeprecationWarning
+            )
             config[USE_BIAS] = config[BIAS]
             del config[BIAS]
         if CONV_BIAS in config:
             warnings.warn(
-                'Parameter "conv_bias" renamed to "conv_use_bias" and will be removed in v0.6', DeprecationWarning
+                'Parameter "conv_bias" renamed to "conv_use_bias" and will be removed in a future version',
+                DeprecationWarning,
             )
             config[CONV_USE_BIAS] = config[CONV_BIAS]
             del config[CONV_BIAS]
         if DEFAULT_BIAS in config:
             warnings.warn(
-                'Parameter "default_bias" renamed to "default_use_bias" and will be removed in v0.6', DeprecationWarning
+                'Parameter "default_bias" renamed to "default_use_bias" and will be removed in a future version',
+                DeprecationWarning,
             )
             config[DEFAULT_USE_BIAS] = config[DEFAULT_BIAS]
             del config[DEFAULT_BIAS]
@@ -333,14 +337,16 @@ def _upgrade_use_bias_in_features(feature: FeatureConfigDict) -> FeatureConfigDi
 def _upgrade_feature(feature: FeatureConfigDict) -> FeatureConfigDict:
     """Upgrades feature config (in-place)"""
     if feature.get(TYPE) == "numerical":
-        warnings.warn('Feature type "numerical" renamed to "number" and will be removed in v0.6', DeprecationWarning)
+        warnings.warn(
+            'Feature type "numerical" renamed to "number" and will be removed in a future version', DeprecationWarning
+        )
         feature[TYPE] = NUMBER
     if feature.get(TYPE) == AUDIO:
         if PREPROCESSING in feature:
             feature[PREPROCESSING] = upgrade_audio_preprocessing(feature[PREPROCESSING])
         warnings.warn(
             "Parameters specified at the `audio_feature` parameter level have been unnested and should now "
-            "be specified at the preprocessing level. Support for `audio_feature` will be removed in v0.7",
+            "be specified at the preprocessing level. Support for `audio_feature` will be removed in a future version",
             DeprecationWarning,
         )
     return feature
@@ -430,7 +436,7 @@ def _upgrade_encoder_decoder_params(feature: FeatureConfigDict, input_feature: b
     if warn:
         warnings.warn(
             f"{module_type} specific parameters should now be nested within a dictionary under the '{module_type}' "
-            f"parameter. Support for un-nested {module_type} specific parameters will be removed in v0.7",
+            f"parameter. Support for un-nested {module_type} specific parameters will be removed in a future version",
             DeprecationWarning,
         )
     return feature
@@ -446,7 +452,8 @@ def _upgrade_hyperopt(hyperopt: HyperoptConfigDict) -> HyperoptConfigDict:
             substr = "training."
             if k.startswith(substr):
                 warnings.warn(
-                    'Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning
+                    'Config section "training" renamed to "trainer" and will be removed in a future version',
+                    DeprecationWarning,
                 )
                 hparams["trainer." + k[len(substr) :]] = v
                 del hparams[k]
@@ -458,7 +465,7 @@ def _upgrade_hyperopt(hyperopt: HyperoptConfigDict) -> HyperoptConfigDict:
         if executor_type is not None and executor_type != RAY:
             warnings.warn(
                 f'executor type "{executor_type}" not supported, converted to "ray" will be flagged as error '
-                "in v0.6",
+                "in a future version",
                 DeprecationWarning,
             )
             hpexecutor[TYPE] = RAY
@@ -473,7 +480,8 @@ def _upgrade_hyperopt(hyperopt: HyperoptConfigDict) -> HyperoptConfigDict:
             del hpexecutor[SEARCH_ALG]
     else:
         warnings.warn(
-            'Missing "executor" section, adding "ray" executor will be flagged as error in v0.6', DeprecationWarning
+            'Missing "executor" section, adding "ray" executor will be flagged as error in a future version',
+            DeprecationWarning,
         )
         hyperopt[EXECUTOR] = {TYPE: RAY}
 
@@ -481,7 +489,7 @@ def _upgrade_hyperopt(hyperopt: HyperoptConfigDict) -> HyperoptConfigDict:
     if SAMPLER in hyperopt:
         warnings.warn(
             f'"{SAMPLER}" is no longer supported, converted to "{SEARCH_ALG}". "{SAMPLER}" will be flagged as '
-            "error in v0.6",
+            "error in a future version",
             DeprecationWarning,
         )
         if SEARCH_ALG in hyperopt[SAMPLER]:
@@ -510,7 +518,8 @@ def _upgrade_hyperopt(hyperopt: HyperoptConfigDict) -> HyperoptConfigDict:
         # make top-level as search_alg, if missing put in default value
         hyperopt[SEARCH_ALG] = {TYPE: "variant_generator"}
         warnings.warn(
-            'Missing "search_alg" at hyperopt top-level, adding in default value, will be flagged as error ' "in v0.6",
+            'Missing "search_alg" at hyperopt top-level, adding in default value, will be flagged as error '
+            "in a future version",
             DeprecationWarning,
         )
     return hyperopt
@@ -522,7 +531,8 @@ def _upgrade_trainer(trainer: TrainerConfigDict) -> TrainerConfigDict:
     eval_batch_size = trainer.get(EVAL_BATCH_SIZE)
     if eval_batch_size == 0:
         warnings.warn(
-            "`trainer.eval_batch_size` value `0` changed to `None`, will be unsupported in v0.6", DeprecationWarning
+            "`trainer.eval_batch_size` value `0` changed to `None`, will be unsupported in a future version",
+            DeprecationWarning,
         )
         trainer[EVAL_BATCH_SIZE] = None
     return trainer
@@ -539,7 +549,7 @@ def _upgrade_preprocessing_defaults(config: ModelConfigDict) -> ModelConfigDict:
         if parameter in get_base_type_registry():
             warnings.warn(
                 f"Moving preprocessing configuration for `{parameter}` feature type from `preprocessing` section"
-                " to `defaults` section in Ludwig config. This will be unsupported in v0.8.",
+                " to `defaults` section in Ludwig config. This will be unsupported in a future version.",
                 DeprecationWarning,
             )
             type_specific_preprocessing_params[parameter] = config[PREPROCESSING].pop(parameter)
@@ -547,7 +557,7 @@ def _upgrade_preprocessing_defaults(config: ModelConfigDict) -> ModelConfigDict:
         if parameter == "numerical":
             warnings.warn(
                 f"Moving preprocessing configuration for `{parameter}` feature type from `preprocessing` section"
-                " to `defaults` section in Ludwig config. This will be unsupported in v0.8.",
+                " to `defaults` section in Ludwig config. This will be unsupported in a future version.",
                 DeprecationWarning,
             )
             type_specific_preprocessing_params[NUMBER] = config[PREPROCESSING].pop(parameter)
@@ -596,7 +606,7 @@ def _upgrade_preprocessing_split(preprocessing: PreprocessingConfigDict) -> Prep
         split_params[PROBABILITIES] = split_probabilities
         warnings.warn(
             "`preprocessing.split_probabilities` has been replaced by `preprocessing.split.probabilities`, "
-            "will be flagged as error in v0.7",
+            "will be flagged as error in a future version",
             DeprecationWarning,
         )
 
@@ -606,14 +616,14 @@ def _upgrade_preprocessing_split(preprocessing: PreprocessingConfigDict) -> Prep
         warnings.warn(
             "`preprocessing.stratify` has been replaced by `preprocessing.split.column` "
             'when setting `preprocessing.split.type` to "stratify", '
-            "will be flagged as error in v0.7",
+            "will be flagged as error in a future version",
             DeprecationWarning,
         )
 
     if force_split is not None:
         warnings.warn(
             "`preprocessing.force_split` has been replaced by `preprocessing.split.type`, "
-            "will be flagged as error in v0.7",
+            "will be flagged as error in a future version",
             DeprecationWarning,
         )
 
@@ -630,7 +640,7 @@ def _upgrade_preprocessing_split(preprocessing: PreprocessingConfigDict) -> Prep
             del preprocessing[AUDIO]["audio_feature"]
         warnings.warn(
             "Parameters specified at the `audio_feature` parameter level have been unnested and should now "
-            "be specified at the preprocessing level. Support for `audio_feature` will be removed in v0.7",
+            "be specified at the preprocessing level. Support for `audio_feature` will be removed in a future version",
             DeprecationWarning,
         )
     return preprocessing
@@ -639,7 +649,9 @@ def _upgrade_preprocessing_split(preprocessing: PreprocessingConfigDict) -> Prep
 @register_config_transformation("0.5")
 def update_training(config: ModelConfigDict) -> ModelConfigDict:
     if TRAINING in config:
-        warnings.warn('Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning)
+        warnings.warn(
+            'Config section "training" renamed to "trainer" and will be removed in a future version', DeprecationWarning
+        )
         config[TRAINER] = config[TRAINING]
         del config[TRAINING]
     return config
@@ -667,7 +679,7 @@ def _upgrade_max_batch_size(trainer: TrainerConfigDict) -> TrainerConfigDict:
     if "increase_batch_size_on_plateau_max" in trainer:
         warnings.warn(
             'Config param "increase_batch_size_on_plateau_max" renamed to "max_batch_size" and will be '
-            "removed in v0.8",
+            "removed in a future version",
             DeprecationWarning,
         )
         increase_batch_size_on_plateau_max_val = trainer.pop("increase_batch_size_on_plateau_max")
@@ -691,7 +703,7 @@ def remove_trainer_type(config: ModelConfigDict) -> ModelConfigDict:
     if TYPE in config.get("trainer", {}):
         warnings.warn(
             "Config param `type` has been removed from the trainer. The trainer type is determined by the top level "
-            " `model_type` parameter. Support for the `type` params in trainer will be removed in v0.8",
+            " `model_type` parameter. Support for the `type` params in trainer will be removed in a future version",
             DeprecationWarning,
         )
         del config["trainer"][TYPE]
@@ -785,7 +797,7 @@ def _upgrade_legacy_image_encoders(feature: FeatureConfigDict) -> FeatureConfigD
         warnings.warn(
             f"Encoder '{encoder_type}' with params '{user_legacy_fields}' has been renamed to "
             f"'{encoder_mapping[encoder_type]}'. Please upgrade your config to use the new '{encoder_type}' as "
-            f"support for '{encoder_mapping[encoder_type]}' is not guaranteed past v0.8.",
+            f"support for '{encoder_mapping[encoder_type]}' is not guaranteed in future versions.",
             DeprecationWarning,
         )
 
@@ -805,28 +817,6 @@ def upgrade_missing_hyperopt(config: ModelConfigDict) -> ModelConfigDict:
             DeprecationWarning,
         )
         del config[HYPEROPT]
-    return config
-
-
-@register_config_transformation("0.7")
-def upgrade_defaults_config_for_gbm(config: ModelConfigDict) -> ModelConfigDict:
-    model_type = config.get(MODEL_TYPE, "")
-    if model_type != MODEL_GBM:
-        return config
-
-    defaults_ref = config.get(DEFAULTS, {})
-    defaults = copy.deepcopy(defaults_ref)
-    gbm_feature_types = GBMDefaultsConfig.Schema().fields.keys()
-    for feature_type in defaults_ref:
-        # GBM only supports binary, number, category and text features
-        if feature_type not in gbm_feature_types:
-            del defaults[feature_type]
-            continue
-
-        # Remove decoder and loss from defaults since they only apply to ECD
-        defaults[feature_type].pop("decoder", None)
-        defaults[feature_type].pop("loss", None)
-    config[DEFAULTS] = defaults
     return config
 
 
@@ -870,7 +860,7 @@ def _update_old_missing_value_strategy(feature_config: FeatureConfigDict):
     feature_name = feature_config.get(NAME)
     warnings.warn(
         f"Using `{replacement_strategy}` instead of `{missing_value_strategy}` as the missing value strategy"
-        f" for `{feature_name}`. These are identical. `{missing_value_strategy}` will be removed in v0.8",
+        f" for `{feature_name}`. These are identical. `{missing_value_strategy}` will be removed in a future version",
         DeprecationWarning,
     )
     feature_config[PREPROCESSING].update({MISSING_VALUE_STRATEGY: replacement_strategy})

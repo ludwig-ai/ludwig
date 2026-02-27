@@ -14,7 +14,6 @@
 # ==============================================================================
 import calendar
 import os
-from typing import List
 
 import numpy as np
 import pandas as pd
@@ -25,7 +24,7 @@ from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 class RossmanStoreSalesLoader(DatasetLoader):
     """The Rossmann Store Sales dataset."""
 
-    def load_unprocessed_dataframe(self, file_paths: List[str]) -> pd.DataFrame:
+    def load_unprocessed_dataframe(self, file_paths: list[str]) -> pd.DataFrame:
         """Load dataset files into a dataframe."""
 
         stores_df = pd.read_csv(os.path.join(self.raw_dataset_dir, "store.csv"))

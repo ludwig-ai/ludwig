@@ -5,7 +5,7 @@ import os
 from collections import OrderedDict
 from functools import lru_cache
 from io import BytesIO
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Literal
 
 import yaml
 
@@ -36,11 +36,11 @@ def _load_dataset_config(config_filename: str):
 
 
 @lru_cache(maxsize=1)
-def _get_dataset_configs() -> Dict[str, DatasetConfig]:
+def _get_dataset_configs() -> dict[str, DatasetConfig]:
     """Returns all dataset configs indexed by name."""
     import importlib.resources
 
-    config_files = [f for f in importlib.resources.contents(configs) if f.endswith(".yaml")]
+    config_files = [f.name for f in importlib.resources.files(configs).iterdir() if f.name.endswith(".yaml")]
     config_objects = [_load_dataset_config(f) for f in config_files]
     return {c.name: c for c in config_objects}
 
@@ -68,16 +68,16 @@ def get_dataset(dataset_name, cache_dir=None) -> DatasetLoader:
 
 @DeveloperAPI
 def load_dataset_uris(
-    dataset: Optional[Union[str, DataFrame]],
-    training_set: Optional[Union[str, DataFrame]],
-    validation_set: Optional[Union[str, DataFrame]],
-    test_set: Optional[Union[str, DataFrame]],
+    dataset: str | DataFrame | None,
+    training_set: str | DataFrame | None,
+    validation_set: str | DataFrame | None,
+    test_set: str | DataFrame | None,
     backend: Backend,
-) -> Tuple[
-    Optional[CacheableDataframe],
-    Optional[CacheableDataframe],
-    Optional[CacheableDataframe],
-    Optional[CacheableDataframe],
+) -> tuple[
+    CacheableDataframe | None,
+    CacheableDataframe | None,
+    CacheableDataframe | None,
+    CacheableDataframe | None,
 ]:
     """Loads and returns any Ludwig dataset URIs as CacheableDataframes.
 
@@ -135,16 +135,16 @@ def _is_hf(dataset, training_set):
 
 
 def _load_hf_datasets(
-    dataset: Optional[Union[str, DataFrame]],
-    training_set: Optional[Union[str, DataFrame]],
-    validation_set: Optional[Union[str, DataFrame]],
-    test_set: Optional[Union[str, DataFrame]],
+    dataset: str | DataFrame | None,
+    training_set: str | DataFrame | None,
+    validation_set: str | DataFrame | None,
+    test_set: str | DataFrame | None,
     backend: Backend,
-) -> Tuple[
-    Optional[CacheableDataframe],
-    Optional[CacheableDataframe],
-    Optional[CacheableDataframe],
-    Optional[CacheableDataframe],
+) -> tuple[
+    CacheableDataframe | None,
+    CacheableDataframe | None,
+    CacheableDataframe | None,
+    CacheableDataframe | None,
 ]:
     """Loads and returns any Hugging Face datasets as CacheableDataframes.
 
@@ -177,7 +177,7 @@ def _load_hf_datasets(
             val_df = backend.df_engine.from_pandas(val_df)
             validation_set_out = CacheableDataframe(df=val_df, name=validation_set, checksum=None)
         else:  # This handles an edge case -- NOT EXPECTED USER BEHAVIOR
-            logging.warn(
+            logging.warning(
                 "A Hugging Face validation set has been passed in that is different from the test set. "
                 "This is not recommended."
             )
@@ -189,7 +189,7 @@ def _load_hf_datasets(
             test_df = backend.df_engine.from_pandas(test_df)
             test_set_out = CacheableDataframe(df=test_df, name=test_set, checksum=None)
         else:  # This handles an edge case -- NOT EXPECTED USER BEHAVIOR
-            logging.warn(
+            logging.warning(
                 "A Hugging Face test set has been passed in that is different from the training set. "
                 "This is not recommended."
             )
@@ -199,7 +199,7 @@ def _load_hf_datasets(
 
 
 def _load_cacheable_hf_dataset(
-    dataset: str, backend: Backend, split_set: Optional[Literal["train", "validation", "test"]] = None
+    dataset: str, backend: Backend, split_set: Literal["train", "validation", "test"] | None = None
 ) -> CacheableDataframe:
     loader = get_dataset("hugging_face")
     hf_id, hf_subsample = _get_hf_dataset_and_subsample(dataset)
@@ -223,7 +223,7 @@ def _load_cacheable_dataset(dataset: str, backend: Backend) -> CacheableDatafram
 
 
 @PublicAPI
-def list_datasets() -> List[str]:
+def list_datasets() -> list[str]:
     """Returns a list of the names of all available datasets."""
     return sorted(_get_dataset_configs().keys())
 
@@ -242,7 +242,7 @@ def get_datasets_output_features(
     :param include_competitions: (bool) whether to include the output features from kaggle competition datasets
     :param include_data_modalities: (bool) whether to include the data modalities associated with the prediction task
     :return: (dict) dictionary with the output features for each dataset or a dictionary with the output features for
-                    the specified dataset
+        the specified dataset
     """
     ordered_configs = OrderedDict(sorted(_get_dataset_configs().items()))
     competition_datasets = []
@@ -316,15 +316,13 @@ def get_buffer(dataset_name: str, kaggle_username: str = None, kaggle_key: str =
         logging.error(logging.ERROR, f"Failed to upload dataset {dataset_name}: {e}")
 
 
-def _get_hf_dataset_and_subsample(dataset_name: str) -> Tuple[str, Optional[str]]:
+def _get_hf_dataset_and_subsample(dataset_name: str) -> tuple[str, str | None]:
     """Returns the Hugging Face ID and subsample name from the dataset name.
 
     The dataset name should follow the format "{HF_PREFIX}{hf_id}--{hf_subsample}"
 
-    Examples (Dataset Name --> HF ID; HF subsample):
-    "hf://wikisql" --> "wikisql"; None
-    "hf://ColumbiaNLP/FLUTE" --> "ColumbiaNLP/FLUTE"; None
-    "hf://mstz/adult--income" --> "mstz/adult"; "income"
+    Examples (Dataset Name --> HF ID; HF subsample): "hf://wikisql" --> "wikisql"; None "hf://ColumbiaNLP/FLUTE" -->
+    "ColumbiaNLP/FLUTE"; None "hf://mstz/adult--income" --> "mstz/adult"; "income"
     """
     dataset_name = dataset_name[len(HF_PREFIX) :]
     dataset_name = dataset_name.split("--")

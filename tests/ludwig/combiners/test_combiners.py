@@ -1,6 +1,5 @@
 import logging
 from collections import OrderedDict
-from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pytest
@@ -16,7 +15,7 @@ from ludwig.combiners.combiners import (
     TabTransformerCombiner,
     TransformerCombiner,
 )
-from ludwig.constants import CATEGORY, ENCODER_OUTPUT, ENCODER_OUTPUT_STATE, TYPE
+from ludwig.constants import ENCODER_OUTPUT, ENCODER_OUTPUT_STATE, TYPE
 from ludwig.encoders.registry import get_sequence_encoder_registry
 from ludwig.schema.combiners.comparator import ComparatorCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
@@ -80,7 +79,7 @@ def check_combiner_output(combiner, combiner_output, batch_size):
 
 # generates encoder outputs and minimal input feature objects for testing
 @pytest.fixture
-def features_to_test(feature_list: List[Tuple[str, list]]) -> Tuple[dict, dict]:
+def features_to_test(feature_list: list[tuple[str, list]]) -> tuple[dict, dict]:
     # feature_list: list of tuples that define the output_shape and type
     #    of input features to generate.  tuple[0] is input feature type,
     #    tuple[1] is expected encoder output shape for the input feature
@@ -191,10 +190,10 @@ def encoder_comparator_outputs():
 @pytest.mark.parametrize("flatten_inputs", [True, False])
 @pytest.mark.parametrize("fc_layer", [None, [{"output_size": OUTPUT_SIZE}, {"output_size": OUTPUT_SIZE}]])
 def test_concat_combiner(
-    encoder_outputs: Tuple,
-    fc_layer: Optional[List[Dict]],
+    encoder_outputs: tuple,
+    fc_layer: list[dict] | None,
     flatten_inputs: bool,
-    number_inputs: Optional[int],
+    number_inputs: int | None,
     norm: str,
 ) -> None:
     # make repeatable
@@ -247,7 +246,7 @@ def test_concat_combiner(
 @pytest.mark.parametrize("reduce_output", [None, "sum"])
 @pytest.mark.parametrize("main_sequence_feature", [None, "feature_3"])
 def test_sequence_concat_combiner(
-    encoder_outputs: Tuple, main_sequence_feature: Optional[str], reduce_output: Optional[str]
+    encoder_outputs: tuple, main_sequence_feature: str | None, reduce_output: str | None
 ) -> None:
     # extract encoder outputs and input feature dictionaries
     encoder_outputs_dict, input_feature_dict = encoder_outputs
@@ -288,7 +287,7 @@ def test_sequence_concat_combiner(
 @pytest.mark.parametrize("encoder", get_sequence_encoder_registry())
 @pytest.mark.parametrize("main_sequence_feature", [None, "feature_3"])
 def test_sequence_combiner(
-    encoder_outputs: Tuple, main_sequence_feature: Optional[str], encoder: str, reduce_output: Optional[str]
+    encoder_outputs: tuple, main_sequence_feature: str | None, encoder: str, reduce_output: str | None
 ) -> None:
     # make repeatable
     set_random_seed(RANDOM_SEED)
@@ -355,7 +354,7 @@ def test_sequence_combiner(
 )
 @pytest.mark.parametrize("size", [4, 8])
 @pytest.mark.parametrize("output_size", [6, 10])
-def test_tabnet_combiner(features_to_test: Dict, size: int, output_size: int) -> None:
+def test_tabnet_combiner(features_to_test: dict, size: int, output_size: int) -> None:
     # make repeatable
     set_random_seed(RANDOM_SEED)
 
@@ -396,7 +395,7 @@ def test_tabnet_combiner(features_to_test: Dict, size: int, output_size: int) ->
 @pytest.mark.parametrize("entity_1", [["text_feature_1", "text_feature_4"]])
 @pytest.mark.parametrize("entity_2", [["image_feature_1", "image_feature_2"]])
 def test_comparator_combiner(
-    encoder_comparator_outputs: Tuple, fc_layer: Optional[List[Dict]], entity_1: str, entity_2: str
+    encoder_comparator_outputs: tuple, fc_layer: list[dict] | None, entity_1: str, entity_2: str
 ) -> None:
     # make repeatable
     set_random_seed(RANDOM_SEED)
@@ -543,8 +542,8 @@ UNEMBEDDABLE_LAYER_NORM_PARAMETERS = 2
 @pytest.mark.parametrize("embed_input_feature_name", [None, 64, "add"])
 def test_tabtransformer_combiner_binary_and_number_without_category(
     features_to_test: tuple,
-    embed_input_feature_name: Optional[Union[int, str]],
-    fc_layers: Optional[list],
+    embed_input_feature_name: int | str | None,
+    fc_layers: list | None,
     reduce_output: str,
     num_layers: int,
 ) -> None:
@@ -617,8 +616,8 @@ def test_tabtransformer_combiner_binary_and_number_without_category(
 @pytest.mark.parametrize("embed_input_feature_name", [None, 64, "add"])
 def test_tabtransformer_combiner_number_and_binary_with_category(
     features_to_test: tuple,
-    embed_input_feature_name: Optional[Union[int, str]],
-    fc_layers: Optional[list],
+    embed_input_feature_name: int | str | None,
+    fc_layers: list | None,
     reduce_output: str,
     num_layers: int,
 ) -> None:
@@ -659,14 +658,8 @@ def test_tabtransformer_combiner_number_and_binary_with_category(
     # combination of input feature types (NUMBER, BINARY, CATEGORY) in the dataset and parameters used to
     # instantiate the TabTransformerCombiner object.
 
-    # make adjustment for case with a single categorical input feature
-    # in the situation of a one categorical input feature, the query and key parameters are not updated
-    number_category_features = sum(input_features[i_f].type() == CATEGORY for i_f in input_features)
-    adjustment_for_single_category = 1 if number_category_features == 1 else 0
-
-    assert upc == (
-        tpc - adjustment_for_single_category * (num_layers * PARAMETERS_IN_SELF_ATTENTION)
-    ), f"Failed to update parameters. Parameters not updated: {not_updated}"
+    # With F.scaled_dot_product_attention, all parameters receive gradients even with a single category feature.
+    assert upc == tpc, f"Failed to update parameters. Parameters not updated: {not_updated}"
 
 
 @pytest.mark.parametrize(
@@ -692,8 +685,8 @@ def test_tabtransformer_combiner_number_and_binary_with_category(
 @pytest.mark.parametrize("embed_input_feature_name", [None, 64, "add"])
 def test_tabtransformer_combiner_number_or_binary_without_category(
     features_to_test: tuple,
-    embed_input_feature_name: Optional[Union[int, str]],
-    fc_layers: Optional[list],
+    embed_input_feature_name: int | str | None,
+    fc_layers: list | None,
     reduce_output: str,
     num_layers: int,
 ) -> None:
@@ -771,8 +764,8 @@ def test_tabtransformer_combiner_number_or_binary_without_category(
 @pytest.mark.parametrize("embed_input_feature_name", [None, 64, "add"])
 def test_tabtransformer_combiner_number_or_binary_with_category(
     features_to_test: tuple,
-    embed_input_feature_name: Optional[Union[int, str]],
-    fc_layers: Optional[list],
+    embed_input_feature_name: int | str | None,
+    fc_layers: list | None,
     reduce_output: str,
     num_layers: int,
 ) -> None:

@@ -15,7 +15,6 @@
 # ==============================================================================
 import logging
 import os
-from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -53,7 +52,7 @@ _TORCH_200 = version.parse(torch.__version__) >= version.parse("2.0.0")
 
 
 class _AudioPreprocessing(torch.nn.Module):
-    audio_feature_dict: Dict[str, Union[float, int, str]]
+    audio_feature_dict: dict[str, float | int | str]
 
     def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
@@ -68,7 +67,7 @@ class _AudioPreprocessing(torch.nn.Module):
         self.normalization_type = metadata["preprocessing"]["norm"]
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
-        if not torch.jit.isinstance(v, List[Tuple[torch.Tensor, int]]):
+        if not torch.jit.isinstance(v, list[tuple[torch.Tensor, int]]):
             raise ValueError(f"Unsupported input: {v}")
 
         processed_audio_matrix = []
@@ -225,11 +224,11 @@ class AudioFeatureMixin(BaseFeatureMixin):
     def _transform_to_feature(
         audio: torch.Tensor,
         sampling_rate_in_hz: int,
-        audio_feature_dict: Dict[str, Union[float, int, str]],
+        audio_feature_dict: dict[str, float | int | str],
         feature_dim: int,
         max_length: int,
         padding_value: float,
-        normalization_type: Optional[str] = None,
+        normalization_type: str | None = None,
         type_key: str = TYPE,
     ):
         feature_type: str = str(audio_feature_dict[type_key])
@@ -286,7 +285,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
     def _get_2D_feature(
         audio: torch.Tensor,
         feature_type: str,
-        audio_feature_dict: Dict[str, Union[float, int, str]],
+        audio_feature_dict: dict[str, float | int | str],
         sampling_rate_in_hz: int,
     ) -> torch.Tensor:
         window_length_in_s = audio_feature_dict["window_length_in_s"]

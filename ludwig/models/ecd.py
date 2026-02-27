@@ -1,6 +1,5 @@
 import logging
 import os
-from typing import Dict, Tuple, Union
 
 import numpy as np
 import torch
@@ -71,9 +70,9 @@ class ECD(BaseModel):
 
     def encode(
         self,
-        inputs: Union[
-            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
-        ],
+        inputs: (
+            dict[str, torch.Tensor] | dict[str, np.ndarray] | tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]
+        ),
     ):
         # Convert inputs to tensors.
         for input_feature_name, input_values in inputs.items():
@@ -114,11 +113,11 @@ class ECD(BaseModel):
 
     def forward(
         self,
-        inputs: Union[
-            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
-        ],
+        inputs: (
+            dict[str, torch.Tensor] | dict[str, np.ndarray] | tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]
+        ),
         mask=None,
-    ) -> Dict[str, torch.Tensor]:
+    ) -> dict[str, torch.Tensor]:
         """Forward pass of the model.
 
         Args:
@@ -161,6 +160,9 @@ class ECD(BaseModel):
         """Saves the model to the given path."""
         weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
         torch.save(self.state_dict(), weights_save_path)
+        # Ensure the file is fully flushed to disk before any other process reads it
+        with open(weights_save_path, "rb") as f:
+            os.fsync(f.fileno())
 
     def load(self, save_path):
         """Loads the model from the given path."""

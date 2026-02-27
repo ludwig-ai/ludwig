@@ -1,6 +1,5 @@
 import logging
 from collections import OrderedDict
-from typing import Dict, List, Tuple
 
 import numpy as np
 import torch
@@ -23,7 +22,7 @@ NUMPY_TO_TORCH_DTYPE = {
 }
 
 
-def extract_tensors(model: torch.nn.Module) -> Tuple[torch.nn.Module, List[Dict]]:
+def extract_tensors(model: torch.nn.Module) -> tuple[torch.nn.Module, list[dict]]:
     """Remove the tensors from a PyTorch model, convert them to NumPy arrays, and return the stripped model and
     tensors.
 
@@ -56,7 +55,7 @@ def extract_tensors(model: torch.nn.Module) -> Tuple[torch.nn.Module, List[Dict]
     return model, tensors
 
 
-def replace_tensors(m: torch.nn.Module, tensors: List[Dict], device: torch.device):
+def replace_tensors(m: torch.nn.Module, tensors: list[dict], device: torch.device):
     """Restore the tensors that extract_tensors() stripped out of a PyTorch model. This operation is performed in
     place.
 

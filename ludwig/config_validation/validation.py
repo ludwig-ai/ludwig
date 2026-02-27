@@ -40,7 +40,7 @@ def get_schema(model_type: str = MODEL_ECD):
         "title": "model_options",
         "description": "Settings for Ludwig configuration",
         "required": required,
-        "additionalProperties": True,  # TODO: Set to false after 0.8 releases.
+        "additionalProperties": True,
     }
 
 

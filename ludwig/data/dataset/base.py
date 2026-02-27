@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import contextlib
 from abc import ABC, abstractmethod
-from typing import Iterable
+from collections.abc import Iterable
 
 from ludwig.data.batcher.base import Batcher
 from ludwig.distributed import DistributedStrategy

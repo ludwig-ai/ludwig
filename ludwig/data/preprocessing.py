@@ -17,7 +17,6 @@ import contextlib
 import logging
 import warnings
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -120,6 +119,9 @@ from ludwig.utils.defaults import (
 from ludwig.utils.fs_utils import file_lock, path_exists
 from ludwig.utils.misc_utils import get_from_registry, merge_dict
 from ludwig.utils.types import DataFrame, Series
+
+# Opt-in to future pandas behavior: fillna/ffill/bfill will no longer silently downcast dtypes
+pd.set_option("future.no_silent_downcasting", True)
 
 REPARTITIONING_FEATURE_TYPES = {"image", "audio"}
 
@@ -1349,7 +1351,7 @@ def build_dataset(
     col_name_to_dtype = {}
     for col_name, col in proc_cols.items():
         # if col is a list of list-like objects, we assume the internal dtype of each col[i] remains unchanged.
-        if type(col) is list and type(col[0]) in {list, np.ndarray, torch.Tensor}:
+        if isinstance(col, list) and isinstance(col[0], (list, np.ndarray, torch.Tensor)):
             continue
         col_name_to_dtype[col_name] = col.dtype
     dataset = dataset.astype(col_name_to_dtype)
@@ -1367,7 +1369,7 @@ def build_dataset(
 
 
 def embed_fixed_features(
-    dataset: DataFrame, feature_configs: List[FeatureConfigDict], metadata: TrainingSetMetadataDict, backend: Backend
+    dataset: DataFrame, feature_configs: list[FeatureConfigDict], metadata: TrainingSetMetadataDict, backend: Backend
 ) -> DataFrame:
     """Transforms every input feature with cacheable encoder embeddings into its encoded form and updates
     metadata."""
@@ -1416,8 +1418,8 @@ def _get_sampled_dataset_df(dataset_df, df_engine, sample_ratio, sample_size, ra
 
 
 def get_features_with_cacheable_fixed_embeddings(
-    feature_configs: List[FeatureConfigDict], metadata: TrainingSetMetadataDict
-) -> List[FeatureConfigDict]:
+    feature_configs: list[FeatureConfigDict], metadata: TrainingSetMetadataDict
+) -> list[FeatureConfigDict]:
     """Returns list of features with `cache_encoder_embeddings=True` set in the preprocessing config."""
     features_to_encode = []
     for feature_config in feature_configs:
@@ -1429,9 +1431,7 @@ def get_features_with_cacheable_fixed_embeddings(
                 if preprocessing.get("cache_encoder_embeddings"):
                     # TODO(travis): passing in MODEL_ECD is a hack here that can be removed once we move to using
                     # the config object everywhere in preprocessing. Then we won't need to do the lookup on the
-                    # encoder schema at all. This hack works for now because all encoders are supported by ECD, so
-                    # there is no chance of a GBM model using an encoder not supported by ECD, but this could change
-                    # in the future.
+                    # encoder schema at all.
                     encoder_class = get_encoder_cls(MODEL_ECD, feature_config[TYPE], encoder_params[TYPE])
                     encoder = encoder_class.from_dict(encoder_params)
                     if not encoder.can_cache_embeddings():
@@ -1472,11 +1472,11 @@ def merge_preprocessing(
 
 
 def build_preprocessing_parameters(
-    dataset_cols: Dict[str, Series],
-    feature_configs: List[FeatureConfigDict],
+    dataset_cols: dict[str, Series],
+    feature_configs: list[FeatureConfigDict],
     global_preprocessing_parameters: PreprocessingConfigDict,
     backend: Backend,
-    metadata: Optional[TrainingSetMetadataDict] = None,
+    metadata: TrainingSetMetadataDict | None = None,
 ) -> PreprocessingConfigDict:
     if metadata is None:
         metadata = {}
@@ -1526,9 +1526,9 @@ def is_input_feature(feature_config: FeatureConfigDict) -> bool:
 def build_metadata(
     config: ModelConfigDict,
     metadata: TrainingSetMetadataDict,
-    feature_name_to_preprocessing_parameters: Dict[str, PreprocessingConfigDict],
-    dataset_cols: Dict[str, Series],
-    feature_configs: List[FeatureConfigDict],
+    feature_name_to_preprocessing_parameters: dict[str, PreprocessingConfigDict],
+    dataset_cols: dict[str, Series],
+    feature_configs: list[FeatureConfigDict],
     backend: Backend,
 ) -> TrainingSetMetadataDict:
     for feature_config in feature_configs:
@@ -1550,11 +1550,11 @@ def build_metadata(
 
 def build_data(
     input_cols: DataFrame,
-    feature_configs: List[Dict],
-    training_set_metadata: Dict,
+    feature_configs: list[dict],
+    training_set_metadata: dict,
     backend: Backend,
     skip_save_processed_input: bool,
-) -> Dict[str, DataFrame]:
+) -> dict[str, DataFrame]:
     """Preprocesses the input dataframe columns, handles missing values, and potentially adds metadata to
     training_set_metadata.
 
@@ -1597,8 +1597,8 @@ def build_data(
 
 def balance_data(
     dataset_df: DataFrame,
-    output_features: List[Dict],
-    preprocessing_parameters: Dict,
+    output_features: list[dict],
+    preprocessing_parameters: dict,
     backend: Backend,
     random_seed: int,
 ):
@@ -1722,7 +1722,7 @@ def handle_outliers(dataset_cols, feature, preprocessing_parameters: Preprocessi
 
 
 def _handle_missing_values(
-    dataset_cols, feature, missing_value_strategy: str, computed_fill_value: Optional[float], backend
+    dataset_cols, feature, missing_value_strategy: str, computed_fill_value: float | None, backend
 ):
     if (
         missing_value_strategy in {FILL_WITH_CONST, FILL_WITH_MODE, FILL_WITH_MEAN, FILL_WITH_FALSE, FILL_WITH_TRUE}
@@ -1732,18 +1732,20 @@ def _handle_missing_values(
             computed_fill_value,
         )
     elif missing_value_strategy in {BFILL, FFILL}:
-        dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
-            method=missing_value_strategy,
-        )
+        if missing_value_strategy == BFILL:
+            dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].bfill()
+        else:
+            dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].ffill()
 
         # If the first few rows or last few rows of a dataset is a NaN, it will still be a NaN after ffill or bfill are
         # applied. This causes downstream errors with Dask (https://github.com/ludwig-ai/ludwig/issues/2452)
         # To get around this issue, apply the primary missing value strategy (say bfill) first, and then follow it
         # up with the other missing value strategy (ffill) to ensure all NaNs are filled
         if backend.df_engine.compute(dataset_cols[feature[COLUMN]].isna().sum()) > 0:
-            dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
-                method=BFILL if missing_value_strategy == FFILL else FFILL,
-            )
+            if missing_value_strategy == FFILL:
+                dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].bfill()
+            else:
+                dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].ffill()
     elif missing_value_strategy == DROP_ROW:
         # Here we only drop from this series, but after preprocessing we'll do a second
         # round of dropping NA values from the entire output dataframe, which will
@@ -1765,10 +1767,10 @@ def _handle_missing_values(
 def handle_features_with_prompt_config(
     config: ModelConfigDict,
     dataset_df: DataFrame,
-    features: List[FeatureConfigDict],
+    features: list[FeatureConfigDict],
     backend: Backend,
-    split_col: Optional[Series] = None,
-) -> Dict[str, Series]:
+    split_col: Series | None = None,
+) -> dict[str, Series]:
     """Updates (in-place) dataset columns with prompt configurations containing a non-None task parameter.
 
     Dataset columns that are updated here are enriched to have prompts as specified by the prompt configuration.
@@ -1831,7 +1833,7 @@ def handle_features_with_prompt_config(
     return dataset_cols
 
 
-def _get_prompt_config(config: ModelConfigDict, input_feature_config: Dict) -> Dict:
+def _get_prompt_config(config: ModelConfigDict, input_feature_config: dict) -> dict:
     if input_feature_config[TYPE] != TEXT:
         # Prompt config is only applied to text features
         return None
@@ -1846,7 +1848,7 @@ def _get_prompt_config(config: ModelConfigDict, input_feature_config: Dict) -> D
     return None
 
 
-def _has_prompt_section(config: Dict) -> bool:
+def _has_prompt_section(config: dict) -> bool:
     return "prompt" in config and (config["prompt"]["template"] is not None or config["prompt"]["task"] is not None)
 
 
@@ -1898,7 +1900,7 @@ def preprocess_for_training(
     backend=LOCAL_BACKEND,
     random_seed=default_random_seed,
     callbacks=None,
-) -> Tuple[Dataset, Dataset, Dataset, TrainingSetMetadataDict]:
+) -> tuple[Dataset, Dataset, Dataset, TrainingSetMetadataDict]:
     """Returns training, val and test datasets with training set metadata."""
 
     # sanity check to make sure some data source is provided
@@ -2086,12 +2088,12 @@ def _preprocess_file_for_training(
 
     :param features: list of all features (input + output)
     :param dataset: path to the data
-    :param training_set:  training data
+    :param training_set: training data
     :param validation_set: validation data
     :param test_set: test data
     :param training_set_metadata: train set metadata
-    :param skip_save_processed_input: if False, the pre-processed data is saved
-    as .hdf5 files in the same location as the csv files with the same names.
+    :param skip_save_processed_input: if False, the pre-processed data is saved as .hdf5 files in the same location as
+        the csv files with the same names.
     :param preprocessing_params: preprocessing parameters
     :param random_seed: random seed
     :return: training, test, validation datasets, training metadata

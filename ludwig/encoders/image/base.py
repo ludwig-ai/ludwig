@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any
 
 import torch
 
@@ -51,34 +51,34 @@ class Stacked2DCNN(ImageEncoder):
         self,
         height: int,
         width: int,
-        conv_layers: Optional[List[Dict]] = None,
-        num_conv_layers: Optional[int] = None,
+        conv_layers: list[dict] | None = None,
+        num_conv_layers: int | None = None,
         num_channels: int = None,
         out_channels: int = 32,
-        kernel_size: Union[int, Tuple[int]] = 3,
-        stride: Union[int, Tuple[int]] = 1,
-        padding: Union[int, Tuple[int], str] = "valid",
-        dilation: Union[int, Tuple[int]] = 1,
+        kernel_size: int | tuple[int] = 3,
+        stride: int | tuple[int] = 1,
+        padding: int | tuple[int] | str = "valid",
+        dilation: int | tuple[int] = 1,
         conv_use_bias: bool = True,
         padding_mode: str = "zeros",
-        conv_norm: Optional[str] = None,
-        conv_norm_params: Optional[Dict[str, Any]] = None,
+        conv_norm: str | None = None,
+        conv_norm_params: dict[str, Any] | None = None,
         conv_activation: str = "relu",
         conv_dropout: int = 0,
         pool_function: str = "max",
-        pool_kernel_size: Union[int, Tuple[int]] = 2,
-        pool_stride: Union[int, Tuple[int]] = None,
-        pool_padding: Union[int, Tuple[int]] = 0,
-        pool_dilation: Union[int, Tuple[int]] = 1,
+        pool_kernel_size: int | tuple[int] = 2,
+        pool_stride: int | tuple[int] = None,
+        pool_padding: int | tuple[int] = 0,
+        pool_dilation: int | tuple[int] = 1,
         groups: int = 1,
-        fc_layers: Optional[List[Dict]] = None,
-        num_fc_layers: Optional[int] = 1,
+        fc_layers: list[dict] | None = None,
+        num_fc_layers: int | None = 1,
         output_size: int = 128,
         fc_use_bias: bool = True,
         fc_weights_initializer: str = "xavier_uniform",
         fc_bias_initializer: str = "zeros",
-        fc_norm: Optional[str] = None,
-        fc_norm_params: Optional[Dict[str, Any]] = None,
+        fc_norm: str | None = None,
+        fc_norm_params: dict[str, Any] | None = None,
         fc_activation: str = "relu",
         fc_dropout: float = 0,
         encoder_config=None,
@@ -157,7 +157,7 @@ class Stacked2DCNN(ImageEncoder):
         return {ENCODER_OUTPUT: outputs}
 
     @staticmethod
-    def get_schema_cls() -> Type[ImageEncoderConfig]:
+    def get_schema_cls() -> type[ImageEncoderConfig]:
         return Stacked2DCNNConfig
 
     @property
@@ -179,20 +179,20 @@ class ResNetEncoder(ImageEncoder):
         resnet_size: int = 50,
         num_channels: int = 3,
         out_channels: int = 16,
-        kernel_size: Union[int, Tuple[int]] = 3,
-        conv_stride: Union[int, Tuple[int]] = 1,
-        first_pool_kernel_size: Union[int, Tuple[int]] = None,
-        first_pool_stride: Union[int, Tuple[int]] = None,
+        kernel_size: int | tuple[int] = 3,
+        conv_stride: int | tuple[int] = 1,
+        first_pool_kernel_size: int | tuple[int] = None,
+        first_pool_stride: int | tuple[int] = None,
         batch_norm_momentum: float = 0.1,
         batch_norm_epsilon: float = 0.001,
-        fc_layers: Optional[List[Dict]] = None,
-        num_fc_layers: Optional[int] = 1,
+        fc_layers: list[dict] | None = None,
+        num_fc_layers: int | None = 1,
         output_size: int = 256,
         use_bias: bool = True,
         weights_initializer: str = "xavier_uniform",
         bias_initializer: str = "zeros",
-        norm: Optional[str] = None,
-        norm_params: Optional[Dict[str, Any]] = None,
+        norm: str | None = None,
+        norm_params: dict[str, Any] | None = None,
         activation: str = "relu",
         dropout: float = 0,
         encoder_config=None,
@@ -248,7 +248,7 @@ class ResNetEncoder(ImageEncoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[ImageEncoderConfig]:
+    def get_schema_cls() -> type[ImageEncoderConfig]:
         return ResNetConfig
 
     @property
@@ -313,7 +313,7 @@ class MLPMixerEncoder(ImageEncoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[ImageEncoderConfig]:
+    def get_schema_cls() -> type[ImageEncoderConfig]:
         return MLPMixerConfig
 
     @property
@@ -348,7 +348,6 @@ class ViTEncoder(ImageEncoder):
         gradient_checkpointing: bool = False,
         patch_size: int = 16,
         trainable: bool = True,
-        output_attentions: bool = False,
         encoder_config=None,
         **kwargs,
     ):
@@ -387,9 +386,6 @@ class ViTEncoder(ImageEncoder):
             config_dict = {
                 "pretrained_model_name_or_path": pretrained_model,
             }
-            if output_attentions:
-                config_dict["attn_implementation"] = "eager"
-
             transformer = ViTModel.from_pretrained(**config_dict)
         else:
             config_dict = {
@@ -407,26 +403,19 @@ class ViTEncoder(ImageEncoder):
                 "layer_norm_eps": layer_norm_eps,
                 "gradient_checkpointing": gradient_checkpointing,
             }
-            if output_attentions:
-                config_dict["attn_implementation"] = "eager"
-
             config = ViTConfig(**config_dict)
             transformer = ViTModel(config)
 
         self.transformer = FreezeModule(transformer, frozen=not trainable)
 
         self._output_shape = (transformer.config.hidden_size,)
-        self.output_attentions = output_attentions
 
-    def forward(self, inputs: torch.Tensor, head_mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
-        output = self.transformer.module(inputs, head_mask=head_mask, output_attentions=self.output_attentions)
-        return_dict: EncoderOutputDict = {ENCODER_OUTPUT: output.pooler_output}
-        if self.output_attentions:
-            return_dict["attentions"] = output.attentions
-        return return_dict
+    def forward(self, inputs: torch.Tensor, head_mask: torch.Tensor | None = None) -> EncoderOutputDict:
+        output = self.transformer.module(inputs, head_mask=head_mask)
+        return {ENCODER_OUTPUT: output.pooler_output}
 
     @staticmethod
-    def get_schema_cls() -> Type[ImageEncoderConfig]:
+    def get_schema_cls() -> type[ImageEncoderConfig]:
         return ViTConfig
 
     @property
@@ -446,7 +435,7 @@ class UNetEncoder(ImageEncoder):
         height: int,
         width: int,
         num_channels: int = 3,
-        conv_norm: Optional[str] = None,
+        conv_norm: str | None = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -469,7 +458,7 @@ class UNetEncoder(ImageEncoder):
         return {ENCODER_OUTPUT: hidden, ENCODER_OUTPUT_STATE: skips}
 
     @staticmethod
-    def get_schema_cls() -> Type[ImageEncoderConfig]:
+    def get_schema_cls() -> type[ImageEncoderConfig]:
         return UNetEncoderConfig
 
     @property

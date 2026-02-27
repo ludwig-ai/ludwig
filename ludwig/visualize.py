@@ -18,8 +18,9 @@ import itertools
 import logging
 import os
 import sys
+from collections.abc import Callable
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -60,7 +61,7 @@ _PARQUET_SUFFIX = "parquet"
 
 
 def _convert_ground_truth(ground_truth, feature_metadata, ground_truth_apply_idx, positive_label):
-    """converts non-np.array representation to be np.array."""
+    """Converts non-np.array representation to be np.array."""
     if "str2idx" in feature_metadata:
         # categorical output feature as binary
         ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
@@ -118,13 +119,12 @@ def validate_conf_thresholds_and_probabilities_2d_3d(probabilities, threshold_ou
 
 
 @DeveloperAPI
-def load_data_for_viz(load_type, model_file_statistics, dtype=int, ground_truth_split=2) -> Dict[str, Any]:
+def load_data_for_viz(load_type, model_file_statistics, dtype=int, ground_truth_split=2) -> dict[str, Any]:
     """Load JSON files (training stats, evaluation stats...) for a list of models.
 
     :param load_type: type of the data loader to be used.
-    :param model_file_statistics: JSON file or list of json files containing any
-           model experiment stats.
-    :return List of training statistics loaded as json objects.
+    :param model_file_statistics: JSON file or list of json files containing any model experiment stats. :return List of
+        training statistics loaded as json objects.
     """
     supported_load_types = dict(
         load_json=load_json,
@@ -145,9 +145,8 @@ def load_training_stats_for_viz(load_type, model_file_statistics, dtype=int, gro
     """Load model file data (specifically training stats) for a list of models.
 
     :param load_type: type of the data loader to be used.
-    :param model_file_statistics: JSON file or list of json files containing any
-           model experiment stats.
-    :return List of model statistics loaded as TrainingStats objects.
+    :param model_file_statistics: JSON file or list of json files containing any model experiment stats. :return List of
+        model statistics loaded as TrainingStats objects.
     """
     stats_per_model = load_data_for_viz(
         load_type, model_file_statistics, dtype=dtype, ground_truth_split=ground_truth_split
@@ -213,7 +212,7 @@ def _validate_output_feature_name_from_test_stats(output_feature_name, test_stat
 
 
 def _encode_categorical_feature(raw: np.array, str2idx: dict) -> np.array:
-    """encodes raw categorical string value to encoded numeric value.
+    """Encodes raw categorical string value to encoded numeric value.
 
     Args:
     :param raw: (np.array) string categorical representation
@@ -242,10 +241,10 @@ def _get_ground_truth_df(ground_truth: str) -> DataFrame:
 
 
 def _extract_ground_truth_values(
-    ground_truth: Union[str, DataFrame],
+    ground_truth: str | DataFrame,
     output_feature_name: str,
     ground_truth_split: int,
-    split_file: Union[str, None] = None,
+    split_file: str | None = None,
 ) -> pd.Series:
     """Helper function to extract ground truth values.
 
@@ -273,7 +272,7 @@ def _extract_ground_truth_values(
         if split_file.endswith(".csv"):
             # Legacy code path for previous split file format
             warnings.warn(
-                "Using a CSV split file is deprecated and will be removed in v0.7. "
+                "Using a CSV split file is deprecated and will be removed in a future version. "
                 "Please retrain or convert to Parquet",
                 DeprecationWarning,
             )
@@ -326,10 +325,8 @@ def generate_filename_template_path(output_dir, filename_template):
 
     Create output directory if yet does exist.
     :param output_dir: Directory that will contain the filename_template file
-    :param filename_template: name of the file template to be appended to the
-            filename template path
-    :return: path to filename template inside the output dir or None if the
-             output dir is None
+    :param filename_template: name of the file template to be appended to the filename template path
+    :return: path to filename template inside the output dir or None if the output dir is None
     """
     if output_dir:
         os.makedirs(output_dir, exist_ok=True)
@@ -338,17 +335,13 @@ def generate_filename_template_path(output_dir, filename_template):
 
 
 @DeveloperAPI
-def compare_performance_cli(test_statistics: Union[str, List[str]], **kwargs: dict) -> None:
+def compare_performance_cli(test_statistics: str | list[str], **kwargs: dict) -> None:
     """Load model data from files to be shown by compare_performance.
 
     # Inputs
 
-    :param test_statistics: (Union[str, List[str]]) path to experiment test
-        statistics file.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param test_statistics: (Union[str, List[str]]) path to experiment test statistics file.
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
     test_stats_per_model = load_data_for_viz("load_json", test_statistics)
@@ -356,17 +349,13 @@ def compare_performance_cli(test_statistics: Union[str, List[str]], **kwargs: di
 
 
 @DeveloperAPI
-def learning_curves_cli(training_statistics: Union[str, List[str]], **kwargs: dict) -> None:
+def learning_curves_cli(training_statistics: str | list[str], **kwargs: dict) -> None:
     """Load model data from files to be shown by learning_curves.
 
     # Inputs
 
-    :param training_statistics: (Union[str, List[str]]) path to experiment
-        training statistics file
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param training_statistics: (Union[str, List[str]]) path to experiment training statistics file
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
     train_stats_per_model = load_training_stats_for_viz("load_json", training_statistics)
@@ -375,7 +364,7 @@ def learning_curves_cli(training_statistics: Union[str, List[str]], **kwargs: di
 
 @DeveloperAPI
 def compare_classifiers_performance_from_prob_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: str | list[str],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
@@ -430,7 +419,7 @@ def compare_classifiers_performance_from_prob_cli(
 
 @DeveloperAPI
 def compare_classifiers_performance_from_pred_cli(
-    predictions: List[str],
+    predictions: list[str],
     ground_truth: str,
     ground_truth_metadata: str,
     ground_truth_split: int,
@@ -478,7 +467,7 @@ def compare_classifiers_performance_from_pred_cli(
 
 @DeveloperAPI
 def compare_classifiers_performance_subset_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: str | list[str],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
@@ -530,7 +519,7 @@ def compare_classifiers_performance_subset_cli(
 
 @DeveloperAPI
 def compare_classifiers_performance_changing_k_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: str | list[str],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
@@ -582,19 +571,15 @@ def compare_classifiers_performance_changing_k_cli(
 
 @DeveloperAPI
 def compare_classifiers_multiclass_multimetric_cli(
-    test_statistics: Union[str, List[str]], ground_truth_metadata: str, **kwargs: dict
+    test_statistics: str | list[str], ground_truth_metadata: str, **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by compare_classifiers_multiclass.
 
     # Inputs
 
-    :param test_statistics: (Union[str, List[str]]) path to experiment test
-        statistics file.
+    :param test_statistics: (Union[str, List[str]]) path to experiment test statistics file.
     :param ground_truth_metadata: (str) path to ground truth metadata file.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
     test_stats_per_model = load_data_for_viz("load_json", test_statistics)
@@ -604,7 +589,7 @@ def compare_classifiers_multiclass_multimetric_cli(
 
 @DeveloperAPI
 def compare_classifiers_predictions_cli(
-    predictions: List[str],
+    predictions: list[str],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
@@ -651,7 +636,7 @@ def compare_classifiers_predictions_cli(
 
 @DeveloperAPI
 def compare_classifiers_predictions_distribution_cli(
-    predictions: List[str],
+    predictions: list[str],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
@@ -697,7 +682,7 @@ def compare_classifiers_predictions_distribution_cli(
 
 @DeveloperAPI
 def confidence_thresholding_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: str | list[str],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
@@ -748,7 +733,7 @@ def confidence_thresholding_cli(
 
 @DeveloperAPI
 def confidence_thresholding_data_vs_acc_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: str | list[str],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
@@ -799,7 +784,7 @@ def confidence_thresholding_data_vs_acc_cli(
 
 @DeveloperAPI
 def confidence_thresholding_data_vs_acc_subset_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: str | list[str],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
@@ -850,7 +835,7 @@ def confidence_thresholding_data_vs_acc_subset_cli(
 
 @DeveloperAPI
 def confidence_thresholding_data_vs_acc_subset_per_class_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: str | list[str],
     ground_truth: str,
     ground_truth_metadata: str,
     ground_truth_split: int,
@@ -900,12 +885,12 @@ def confidence_thresholding_data_vs_acc_subset_per_class_cli(
 
 @DeveloperAPI
 def confidence_thresholding_2thresholds_2d_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: str | list[str],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
     ground_truth_metadata: str,
-    threshold_output_feature_names: List[str],
+    threshold_output_feature_names: list[str],
     output_directory: str,
     **kwargs: dict,
 ) -> None:
@@ -959,12 +944,12 @@ def confidence_thresholding_2thresholds_2d_cli(
 
 @DeveloperAPI
 def confidence_thresholding_2thresholds_3d_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: str | list[str],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
     ground_truth_metadata: str,
-    threshold_output_feature_names: List[str],
+    threshold_output_feature_names: list[str],
     output_directory: str,
     **kwargs: dict,
 ) -> None:
@@ -1017,7 +1002,7 @@ def confidence_thresholding_2thresholds_3d_cli(
 
 @DeveloperAPI
 def binary_threshold_vs_metric_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: str | list[str],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
@@ -1069,7 +1054,7 @@ def binary_threshold_vs_metric_cli(
 
 @DeveloperAPI
 def precision_recall_curves_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: str | list[str],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
@@ -1120,7 +1105,7 @@ def precision_recall_curves_cli(
 
 @DeveloperAPI
 def roc_curves_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: str | list[str],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
@@ -1171,16 +1156,12 @@ def roc_curves_cli(
 
 
 @DeveloperAPI
-def roc_curves_from_test_statistics_cli(test_statistics: Union[str, List[str]], **kwargs: dict) -> None:
+def roc_curves_from_test_statistics_cli(test_statistics: str | list[str], **kwargs: dict) -> None:
     """Load model data from files to be shown by roc_curves_from_test_statistics_cli.
 
     # Inputs
-    :param test_statistics: (Union[str, List[str]]) path to experiment test
-        statistics file.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param test_statistics: (Union[str, List[str]]) path to experiment test statistics file.
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
     test_stats_per_model = load_data_for_viz("load_json", test_statistics)
@@ -1188,7 +1169,7 @@ def roc_curves_from_test_statistics_cli(test_statistics: Union[str, List[str]], 
 
 
 @DeveloperAPI
-def precision_recall_curves_from_test_statistics_cli(test_statistics: Union[str, List[str]], **kwargs: dict) -> None:
+def precision_recall_curves_from_test_statistics_cli(test_statistics: str | list[str], **kwargs: dict) -> None:
     """Load model data from files to be shown by precision_recall_curves_from_test_statistics_cli.
 
     Args:
@@ -1207,14 +1188,14 @@ def precision_recall_curves_from_test_statistics_cli(test_statistics: Union[str,
 
 @DeveloperAPI
 def calibration_1_vs_all_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: str | list[str],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
     ground_truth_metadata: str,
     output_feature_name: str,
     output_directory: str,
-    output_feature_proc_name: Optional[str] = None,
+    output_feature_proc_name: str | None = None,
     ground_truth_apply_idx: bool = True,
     **kwargs: dict,
 ) -> None:
@@ -1269,7 +1250,7 @@ def calibration_1_vs_all_cli(
 
 @DeveloperAPI
 def calibration_multiclass_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: str | list[str],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
@@ -1320,18 +1301,14 @@ def calibration_multiclass_cli(
 
 
 @DeveloperAPI
-def confusion_matrix_cli(test_statistics: Union[str, List[str]], ground_truth_metadata: str, **kwargs: dict) -> None:
+def confusion_matrix_cli(test_statistics: str | list[str], ground_truth_metadata: str, **kwargs: dict) -> None:
     """Load model data from files to be shown by confusion_matrix.
 
     # Inputs
 
-    :param test_statistics: (Union[str, List[str]]) path to experiment test
-        statistics file.
+    :param test_statistics: (Union[str, List[str]]) path to experiment test statistics file.
     :param ground_truth_metadata: (str) path to ground truth metadata file.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
     test_stats_per_model = load_data_for_viz("load_json", test_statistics)
@@ -1340,18 +1317,14 @@ def confusion_matrix_cli(test_statistics: Union[str, List[str]], ground_truth_me
 
 
 @DeveloperAPI
-def frequency_vs_f1_cli(test_statistics: Union[str, List[str]], ground_truth_metadata: str, **kwargs: dict) -> None:
+def frequency_vs_f1_cli(test_statistics: str | list[str], ground_truth_metadata: str, **kwargs: dict) -> None:
     """Load model data from files to be shown by frequency_vs_f1.
 
     # Inputs
 
-    :param test_statistics: (Union[str, List[str]]) path to experiment test
-        statistics file.
+    :param test_statistics: (Union[str, List[str]]) path to experiment test statistics file.
     :param ground_truth_metadata: (str) path to ground truth metadata file.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
     test_stats_per_model = load_data_for_viz("load_json", test_statistics)
@@ -1361,12 +1334,12 @@ def frequency_vs_f1_cli(test_statistics: Union[str, List[str]], ground_truth_met
 
 @DeveloperAPI
 def learning_curves(
-    train_stats_per_model: List[dict],
-    output_feature_name: Union[str, None] = None,
-    model_names: Union[str, List[str]] = None,
+    train_stats_per_model: list[dict],
+    output_feature_name: str | None = None,
+    model_names: str | list[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
-    callbacks: List[Callback] = None,
+    callbacks: list[Callback] = None,
     **kwargs,
 ) -> None:
     """Show how model metrics change over training and validation data epochs.
@@ -1439,9 +1412,9 @@ def learning_curves(
 
 @DeveloperAPI
 def compare_performance(
-    test_stats_per_model: List[dict],
-    output_feature_name: Union[str, None] = None,
-    model_names: Union[str, List[str]] = None,
+    test_stats_per_model: list[dict],
+    output_feature_name: str | None = None,
+    model_names: str | list[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     **kwargs,
@@ -1545,13 +1518,13 @@ def compare_performance(
 
 @DeveloperAPI
 def compare_classifiers_performance_from_prob(
-    probabilities_per_model: List[np.ndarray],
-    ground_truth: Union[pd.Series, np.ndarray],
+    probabilities_per_model: list[np.ndarray],
+    ground_truth: pd.Series | np.ndarray,
     metadata: dict,
     output_feature_name: str,
     labels_limit: int = 0,
-    top_n_classes: Union[List[int], int] = 3,
-    model_names: Union[str, List[str]] = None,
+    top_n_classes: list[int] | int = 3,
+    model_names: str | list[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -1641,12 +1614,12 @@ def compare_classifiers_performance_from_prob(
 
 @DeveloperAPI
 def compare_classifiers_performance_from_pred(
-    predictions_per_model: List[np.ndarray],
-    ground_truth: Union[pd.Series, np.ndarray],
+    predictions_per_model: list[np.ndarray],
+    ground_truth: pd.Series | np.ndarray,
     metadata: dict,
     output_feature_name: str,
     labels_limit: int,
-    model_names: Union[str, List[str]] = None,
+    model_names: str | list[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -1728,14 +1701,14 @@ def compare_classifiers_performance_from_pred(
 
 @DeveloperAPI
 def compare_classifiers_performance_subset(
-    probabilities_per_model: List[np.array],
-    ground_truth: Union[pd.Series, np.ndarray],
+    probabilities_per_model: list[np.array],
+    ground_truth: pd.Series | np.ndarray,
     metadata: dict,
     output_feature_name: str,
-    top_n_classes: List[int],
-    labels_limit: (int),
+    top_n_classes: list[int],
+    labels_limit: int,
     subset: str,
-    model_names: Union[str, List[str]] = None,
+    model_names: str | list[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -1850,13 +1823,13 @@ def compare_classifiers_performance_subset(
 
 @DeveloperAPI
 def compare_classifiers_performance_changing_k(
-    probabilities_per_model: List[np.array],
-    ground_truth: Union[pd.Series, np.ndarray],
+    probabilities_per_model: list[np.array],
+    ground_truth: pd.Series | np.ndarray,
     metadata: dict,
     output_feature_name: str,
     top_k: int,
     labels_limit: int,
-    model_names: Union[str, List[str]] = None,
+    model_names: str | list[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -1936,11 +1909,11 @@ def compare_classifiers_performance_changing_k(
 
 @DeveloperAPI
 def compare_classifiers_multiclass_multimetric(
-    test_stats_per_model: List[dict],
+    test_stats_per_model: list[dict],
     metadata: dict,
     output_feature_name: str,
-    top_n_classes: List[int],
-    model_names: Union[str, List[str]] = None,
+    top_n_classes: list[int],
+    model_names: str | list[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     **kwargs,
@@ -2086,12 +2059,12 @@ def compare_classifiers_multiclass_multimetric(
 
 @DeveloperAPI
 def compare_classifiers_predictions(
-    predictions_per_model: List[list],
-    ground_truth: Union[pd.Series, np.ndarray],
+    predictions_per_model: list[list],
+    ground_truth: pd.Series | np.ndarray,
     metadata: dict,
     output_feature_name: str,
     labels_limit: int,
-    model_names: Union[str, List[str]] = None,
+    model_names: str | list[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -2227,12 +2200,12 @@ def compare_classifiers_predictions(
 
 @DeveloperAPI
 def compare_classifiers_predictions_distribution(
-    predictions_per_model: List[list],
-    ground_truth: Union[pd.Series, np.ndarray],
+    predictions_per_model: list[list],
+    ground_truth: pd.Series | np.ndarray,
     metadata: dict,
     output_feature_name: str,
     labels_limit: int,
-    model_names: Union[str, List[str]] = None,
+    model_names: str | list[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -2301,12 +2274,12 @@ def compare_classifiers_predictions_distribution(
 
 @DeveloperAPI
 def confidence_thresholding(
-    probabilities_per_model: List[np.array],
-    ground_truth: Union[pd.Series, np.ndarray],
+    probabilities_per_model: list[np.array],
+    ground_truth: pd.Series | np.ndarray,
     metadata: dict,
     output_feature_name: str,
     labels_limit: int,
-    model_names: Union[str, List[str]] = None,
+    model_names: str | list[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -2392,12 +2365,12 @@ def confidence_thresholding(
 
 @DeveloperAPI
 def confidence_thresholding_data_vs_acc(
-    probabilities_per_model: List[np.array],
-    ground_truth: Union[pd.Series, np.ndarray],
+    probabilities_per_model: list[np.array],
+    ground_truth: pd.Series | np.ndarray,
     metadata: dict,
     output_feature_name: str,
     labels_limit: int,
-    model_names: Union[str, List[str]] = None,
+    model_names: str | list[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -2489,14 +2462,14 @@ def confidence_thresholding_data_vs_acc(
 
 @DeveloperAPI
 def confidence_thresholding_data_vs_acc_subset(
-    probabilities_per_model: List[np.array],
-    ground_truth: Union[pd.Series, np.ndarray],
+    probabilities_per_model: list[np.array],
+    ground_truth: pd.Series | np.ndarray,
     metadata: dict,
     output_feature_name: str,
-    top_n_classes: List[int],
+    top_n_classes: list[int],
     labels_limit: int,
     subset: str,
-    model_names: Union[str, List[str]] = None,
+    model_names: str | list[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -2625,14 +2598,14 @@ def confidence_thresholding_data_vs_acc_subset(
 
 @DeveloperAPI
 def confidence_thresholding_data_vs_acc_subset_per_class(
-    probabilities_per_model: List[np.array],
-    ground_truth: Union[pd.Series, np.ndarray],
+    probabilities_per_model: list[np.array],
+    ground_truth: pd.Series | np.ndarray,
     metadata: dict,
     output_feature_name: str,
-    top_n_classes: Union[int, List[int]],
+    top_n_classes: int | list[int],
     labels_limit: int,
     subset: str,
-    model_names: Union[str, List[str]] = None,
+    model_names: str | list[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -2777,12 +2750,12 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
 
 @DeveloperAPI
 def confidence_thresholding_2thresholds_2d(
-    probabilities_per_model: List[np.array],
-    ground_truths: Union[List[np.array], List[pd.Series]],
+    probabilities_per_model: list[np.array],
+    ground_truths: list[np.array] | list[pd.Series],
     metadata,
-    threshold_output_feature_names: List[str],
+    threshold_output_feature_names: list[str],
     labels_limit: int,
-    model_names: Union[str, List[str]] = None,
+    model_names: str | list[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     **kwargs,
@@ -2968,10 +2941,10 @@ def confidence_thresholding_2thresholds_2d(
 
 @DeveloperAPI
 def confidence_thresholding_2thresholds_3d(
-    probabilities_per_model: List[np.array],
-    ground_truths: Union[List[np.array], List[pd.Series]],
+    probabilities_per_model: list[np.array],
+    ground_truths: list[np.array] | list[pd.Series],
     metadata,
-    threshold_output_feature_names: List[str],
+    threshold_output_feature_names: list[str],
     labels_limit: int,
     output_directory: str = None,
     file_format: str = "pdf",
@@ -3091,13 +3064,13 @@ def confidence_thresholding_2thresholds_3d(
 
 @DeveloperAPI
 def binary_threshold_vs_metric(
-    probabilities_per_model: List[np.array],
-    ground_truth: Union[pd.Series, np.ndarray],
+    probabilities_per_model: list[np.array],
+    ground_truth: pd.Series | np.ndarray,
     metadata: dict,
     output_feature_name: str,
-    metrics: List[str],
+    metrics: list[str],
     positive_label: int = 1,
-    model_names: List[str] = None,
+    model_names: list[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -3205,12 +3178,12 @@ def binary_threshold_vs_metric(
 
 @DeveloperAPI
 def precision_recall_curves(
-    probabilities_per_model: List[np.array],
-    ground_truth: Union[pd.Series, np.ndarray],
+    probabilities_per_model: list[np.array],
+    ground_truth: pd.Series | np.ndarray,
     metadata: dict,
     output_feature_name: str,
     positive_label: int = 1,
-    model_names: Union[str, List[str]] = None,
+    model_names: str | list[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -3277,9 +3250,9 @@ def precision_recall_curves(
 
 @DeveloperAPI
 def precision_recall_curves_from_test_statistics(
-    test_stats_per_model: List[dict],
+    test_stats_per_model: list[dict],
     output_feature_name: str,
-    model_names: Union[str, List[str]] = None,
+    model_names: str | list[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     **kwargs,
@@ -3324,12 +3297,12 @@ def precision_recall_curves_from_test_statistics(
 
 @DeveloperAPI
 def roc_curves(
-    probabilities_per_model: List[np.array],
-    ground_truth: Union[pd.Series, np.ndarray],
+    probabilities_per_model: list[np.array],
+    ground_truth: pd.Series | np.ndarray,
     metadata: dict,
     output_feature_name: str,
     positive_label: int = 1,
-    model_names: Union[str, List[str]] = None,
+    model_names: str | list[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -3394,9 +3367,9 @@ def roc_curves(
 
 @DeveloperAPI
 def roc_curves_from_test_statistics(
-    test_stats_per_model: List[dict],
+    test_stats_per_model: list[dict],
     output_feature_name: str,
-    model_names: Union[str, List[str]] = None,
+    model_names: str | list[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     **kwargs,
@@ -3439,13 +3412,13 @@ def roc_curves_from_test_statistics(
 
 @DeveloperAPI
 def calibration_1_vs_all(
-    probabilities_per_model: List[np.array],
-    ground_truth: Union[pd.Series, np.ndarray],
+    probabilities_per_model: list[np.array],
+    ground_truth: pd.Series | np.ndarray,
     metadata: dict,
     output_feature_name: str,
-    top_n_classes: List[int],
+    top_n_classes: list[int],
     labels_limit: int,
-    model_names: List[str] = None,
+    model_names: list[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -3534,7 +3507,7 @@ def calibration_1_vs_all(
             gt_class = (ground_truth == class_idx).astype(int)
             prob_class = prob[:, class_idx]
 
-            (curr_fraction_positives, curr_mean_predicted_vals) = calibration_curve(gt_class, prob_class, n_bins=21)
+            curr_fraction_positives, curr_mean_predicted_vals = calibration_curve(gt_class, prob_class, n_bins=21)
 
             if len(curr_fraction_positives) < 2:
                 curr_fraction_positives = np.concatenate((np.array([0.0]), curr_fraction_positives))
@@ -3584,12 +3557,12 @@ def calibration_1_vs_all(
 
 @DeveloperAPI
 def calibration_multiclass(
-    probabilities_per_model: List[np.array],
-    ground_truth: Union[pd.Series, np.ndarray],
+    probabilities_per_model: list[np.array],
+    ground_truth: pd.Series | np.ndarray,
     metadata: dict,
     output_feature_name: str,
     labels_limit: int,
-    model_names: Union[str, List[str]] = None,
+    model_names: str | list[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -3683,12 +3656,12 @@ def calibration_multiclass(
 
 @DeveloperAPI
 def confusion_matrix(
-    test_stats_per_model: List[dict],
+    test_stats_per_model: list[dict],
     metadata: dict,
-    output_feature_name: Union[str, None],
-    top_n_classes: List[int],
+    output_feature_name: str | None,
+    top_n_classes: list[int],
     normalize: bool,
-    model_names: Union[str, List[str]] = None,
+    model_names: str | list[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     **kwargs,
@@ -3799,11 +3772,11 @@ def confusion_matrix(
 
 @DeveloperAPI
 def frequency_vs_f1(
-    test_stats_per_model: List[dict],
+    test_stats_per_model: list[dict],
     metadata: dict,
-    output_feature_name: Union[str, None],
-    top_n_classes: List[int],
-    model_names: Union[str, List[str]] = None,
+    output_feature_name: str | None,
+    top_n_classes: list[int],
+    model_names: str | list[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     **kwargs,
@@ -4042,7 +4015,7 @@ def hyperopt_results_to_dataframe(hyperopt_results, hyperopt_parameters, metric)
 
 
 @DeveloperAPI
-def get_visualizations_registry() -> Dict[str, Callable]:
+def get_visualizations_registry() -> dict[str, Callable]:
     return {
         "compare_performance": compare_performance_cli,
         "compare_classifiers_performance_from_prob": compare_classifiers_performance_from_prob_cli,

@@ -1,6 +1,6 @@
 import copy
 from dataclasses import field
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from marshmallow import fields, ValidationError
 
@@ -19,7 +19,7 @@ def get_augmentation_config_registry() -> Registry:
 
 
 @DeveloperAPI
-def register_augmentation_config(name: str, features: Union[str, List[str]]):
+def register_augmentation_config(name: str, features: str | list[str]):
     if isinstance(features, str):
         features = [features]
 
@@ -46,8 +46,8 @@ def get_augmentation_classes(feature: str):
 @DeveloperAPI
 def AugmentationDataclassField(
     feature_type: str,
-    default: Union[str, BaseAugmentationConfig] = False,
-    default_augmentations: Optional[List[BaseAugmentationConfig]] = None,
+    default: str | BaseAugmentationConfig = False,
+    default_augmentations: list[BaseAugmentationConfig] | None = None,
     description: str = "",
 ):
     """Custom dataclass field that when used inside a dataclass will allow the user to specify an augmentation
@@ -133,7 +133,7 @@ def AugmentationDataclassField(
 
 
 @DeveloperAPI
-def get_augmentation_list_jsonschema(feature_type: str, default: List[Dict[str, Any]]):
+def get_augmentation_list_jsonschema(feature_type: str, default: list[dict[str, Any]]):
     """This function returns a JSON augmentation schema.
 
     Returns: JSON Schema

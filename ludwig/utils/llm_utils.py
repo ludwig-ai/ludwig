@@ -1,13 +1,17 @@
 import copy
 import logging
 import tempfile
-from typing import Dict, Optional, Tuple, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Union
 
 import torch
 import torch.nn.functional as F
 import transformers
-from bitsandbytes.nn.modules import Embedding
 from packaging import version
+
+try:
+    from bitsandbytes.nn.modules import Embedding as BnbEmbedding
+except ImportError:
+    BnbEmbedding = None
 from transformers import AutoConfig, AutoModelForCausalLM, PreTrainedModel, PreTrainedTokenizer, TextStreamer
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, PREDICTIONS, PROBABILITIES
@@ -33,19 +37,24 @@ _MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION = set()
 @default_retry(tries=8)
 def load_pretrained_from_config(
     config_obj: Union["LLMModelConfig", "LLMEncoderConfig"],
-    model_config: Optional[AutoConfig] = None,
-    weights_save_path: Optional[str] = None,
+    model_config: AutoConfig | None = None,
+    weights_save_path: str | None = None,
 ) -> PreTrainedModel:
     load_kwargs = {}
     if config_obj.quantization:
         # Apply quantization configuration at model load time
-        load_kwargs["torch_dtype"] = getattr(torch, config_obj.quantization.bnb_4bit_compute_dtype)
+        load_kwargs["dtype"] = getattr(torch, config_obj.quantization.bnb_4bit_compute_dtype)
         load_kwargs["quantization_config"] = config_obj.quantization.to_bitsandbytes()
         load_kwargs["device_map"] = "auto"
 
         if transformers_436:
             load_kwargs["attn_implementation"] = "eager"
+    else:
+        # Load in float32 by default to avoid CUBLAS errors with small hidden sizes
+        # and to ensure numerical stability during training without mixed-precision.
+        load_kwargs["dtype"] = torch.float32
 
+    config_modified = False
     if config_obj.model_parameters:
         # Add any model specific parameters to the load kwargs
         for param_name, param_value in config_obj.model_parameters.to_dict().items():
@@ -55,9 +64,21 @@ def load_pretrained_from_config(
                 continue
 
             if hasattr(model_config, param_name):
-                load_kwargs[param_name] = param_value
+                if isinstance(param_value, dict):
+                    # For nested dict params (e.g. rope_scaling), merge with existing
+                    # config values to preserve defaults like rope_theta.
+                    existing = getattr(model_config, param_name, {}) or {}
+                    existing.update(param_value)
+                    setattr(model_config, param_name, existing)
+                    config_modified = True
+                else:
+                    load_kwargs[param_name] = param_value
             else:
                 logger.warning(f"Parameter {param_name} is not supported by {config_obj.base_model}. Skipping.")
+
+    # Only pass config= when we've directly modified it (e.g. rope_scaling merge).
+    if config_modified:
+        load_kwargs["config"] = model_config
 
     logger.info("Loading large language model...")
     pretrained_model_name_or_path = weights_save_path or config_obj.base_model
@@ -67,10 +88,10 @@ def load_pretrained_from_config(
 
 def to_device(
     model: PreTrainedModel,
-    device: Union[str, torch.DeviceObjType],
+    device: str | torch.DeviceObjType,
     config_obj: "LLMModelConfig",  # noqa F821
     curr_device: torch.DeviceObjType,
-) -> Tuple[PreTrainedModel, torch.DeviceObjType]:
+) -> tuple[PreTrainedModel, torch.DeviceObjType]:
     """Move an LLM to the requested device, accounting for sharding and adapters.
 
     Args:
@@ -139,6 +160,25 @@ def to_device(
     return model, device
 
 
+def _load_peft_config(pretrained_adapter_weights: str):
+    """Load a PeftConfig, fixing known compatibility issues with newer PEFT versions."""
+    import json
+
+    from huggingface_hub import hf_hub_download
+    from peft import PeftConfig
+
+    config_file = hf_hub_download(pretrained_adapter_weights, "adapter_config.json")
+    with open(config_file) as f:
+        config_dict = json.load(f)
+
+    # AdaLoRA requires total_step > 0 in newer PEFT versions, but pretrained
+    # configs may have total_step=None.
+    if config_dict.get("peft_type") == "ADALORA" and not config_dict.get("total_step"):
+        config_dict["total_step"] = 10000
+
+    return PeftConfig.from_peft_type(**config_dict)
+
+
 def initialize_adapter(
     model: PreTrainedModel, config_obj: "LLMModelConfig"  # noqa F821
 ) -> Union["PeftModel", PreTrainedModel]:  # noqa F821
@@ -160,10 +200,10 @@ def initialize_adapter(
             # Leave this import inline to support a minimal install of Ludwig
             from peft import MODEL_TYPE_TO_PEFT_MODEL_MAPPING, PeftConfig  # noqa
 
-            peft_config = PeftConfig.from_pretrained(config_obj.adapter.pretrained_adapter_weights)
+            peft_config = _load_peft_config(config_obj.adapter.pretrained_adapter_weights)
 
             model = MODEL_TYPE_TO_PEFT_MODEL_MAPPING[peft_config.task_type].from_pretrained(
-                model, config_obj.adapter.pretrained_adapter_weights
+                model, config_obj.adapter.pretrained_adapter_weights, config=peft_config
             )
         else:
             # Leave this import inline to support a minimal install of Ludwig
@@ -375,11 +415,11 @@ def find_last_matching_index(tensor_a: torch.Tensor, tensor_b: torch.Tensor):
 
 
 def pad_target_tensor_for_fine_tuning(
-    targets: Dict[str, torch.Tensor],
-    predictions: Dict[str, torch.Tensor],
+    targets: dict[str, torch.Tensor],
+    predictions: dict[str, torch.Tensor],
     model_inputs: torch.Tensor,
     of_name: str,
-) -> Dict[str, torch.Tensor]:
+) -> dict[str, torch.Tensor]:
     """Pad and adjust target tensors for fine-tuning LLMS models.
 
     This function is used to pad and adjust the target tensors with IGNORE_INDEX_TOKEN_ID based on the model inputs and
@@ -489,16 +529,21 @@ def generate_merged_ids(
 
 
 def _get_decoded_targets_and_predictions(
-    targets: Dict[str, torch.Tensor],
-    predictions: Dict[str, Dict[str, torch.Tensor]],
+    targets: dict[str, torch.Tensor],
+    predictions: dict[str, dict[str, torch.Tensor]],
     tokenizer: PreTrainedTokenizer,
     of_name: str,
 ):
     """Returns the decoded targets and predictions, accounting for IGNORE_INDEX_TOKEN_ID."""
-    sanitized_targets = torch.where(targets[of_name] != IGNORE_INDEX_TOKEN_ID, targets[of_name], tokenizer.pad_token_id)
+    target_tensor = targets[of_name]
+    pred_tensor = predictions[of_name][PREDICTIONS]
+    # Ensure targets and predictions are on the same device
+    if target_tensor.device != pred_tensor.device:
+        target_tensor = target_tensor.to(pred_tensor.device)
+    sanitized_targets = torch.where(target_tensor != IGNORE_INDEX_TOKEN_ID, target_tensor, tokenizer.pad_token_id)
     sanitized_predictions = torch.where(
-        predictions[of_name][PREDICTIONS] != IGNORE_INDEX_TOKEN_ID,
-        predictions[of_name][PREDICTIONS],
+        pred_tensor != IGNORE_INDEX_TOKEN_ID,
+        pred_tensor,
         tokenizer.pad_token_id,
     )
     decoded_targets = tokenizer.batch_decode(sanitized_targets, skip_special_tokens=True)
@@ -507,12 +552,12 @@ def _get_decoded_targets_and_predictions(
 
 
 def get_realigned_target_and_prediction_tensors_for_inference(
-    targets: Dict[str, torch.Tensor],
-    predictions: Dict[str, Dict[str, torch.Tensor]],
+    targets: dict[str, torch.Tensor],
+    predictions: dict[str, dict[str, torch.Tensor]],
     of_name: str,
     tokenizer: PreTrainedTokenizer,
     pad_value: int = None,
-) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
+) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]:
     """Realigns the target tensor with the predictions.
 
     This is necessary for text metrics that require the target and prediction to be of the same length.
@@ -585,7 +630,7 @@ def update_embedding_layer(model: AutoModelForCausalLM, config_obj: LLMTrainerCo
             )
 
         # Initialize the BNB embedding layer with the same parameters and weights as the original embedding layer.
-        bnb_embedding = Embedding(
+        bnb_embedding = BnbEmbedding(
             num_embeddings=embedding_layer.num_embeddings,
             embedding_dim=embedding_layer.embedding_dim,
             padding_idx=embedding_layer.padding_idx,

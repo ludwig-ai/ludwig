@@ -1,7 +1,12 @@
 import torch
-from bitsandbytes.functional import dequantize_4bit
-from bitsandbytes.nn.modules import Linear4bit
 from torch import nn
+
+try:
+    from bitsandbytes.functional import dequantize_4bit
+    from bitsandbytes.nn.modules import Linear4bit
+except ImportError:
+    dequantize_4bit = None
+    Linear4bit = None
 
 from ludwig.api_annotations import DeveloperAPI
 

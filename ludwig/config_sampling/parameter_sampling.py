@@ -1,5 +1,5 @@
 import random
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
 from ludwig.schema.metadata.parameter_metadata import ExpectedImpact
 
@@ -8,8 +8,8 @@ ParameterBaseTypes = Union[str, float, int, bool, None]
 
 
 def handle_property_type(
-    property_type: str, item: Dict[str, Any], expected_impact: ExpectedImpact = ExpectedImpact.HIGH
-) -> List[Union[ParameterBaseTypes, List[ParameterBaseTypes]]]:
+    property_type: str, item: dict[str, Any], expected_impact: ExpectedImpact = ExpectedImpact.HIGH
+) -> list[ParameterBaseTypes | list[ParameterBaseTypes]]:
     """Return possible parameter values for a parameter type.
 
     Args:
@@ -45,7 +45,7 @@ def handle_property_type(
         return []
 
 
-def explore_array(item: Dict[str, Any]) -> List[List[ParameterBaseTypes]]:
+def explore_array(item: dict[str, Any]) -> list[list[ParameterBaseTypes]]:
     """Return possible parameter values for the `array` parameter type.
 
     Args:
@@ -77,7 +77,7 @@ def explore_array(item: Dict[str, Any]) -> List[List[ParameterBaseTypes]]:
     return [list(tup) for tup in merged]
 
 
-def explore_number(item: Dict[str, Any]) -> List[ParameterBaseTypes]:
+def explore_number(item: dict[str, Any]) -> list[ParameterBaseTypes]:
     """Return possible parameter values for the `number` parameter type.
 
     Args:
@@ -99,7 +99,7 @@ def explore_number(item: Dict[str, Any]) -> List[ParameterBaseTypes]:
     return candidates + [random.random() * 0.99 * maximum]
 
 
-def explore_integer(item: Dict[str, Any]) -> List[ParameterBaseTypes]:
+def explore_integer(item: dict[str, Any]) -> list[ParameterBaseTypes]:
     """Return possible parameter values for the `integer` parameter type.
 
     Args:
@@ -123,7 +123,7 @@ def explore_integer(item: Dict[str, Any]) -> List[ParameterBaseTypes]:
     return candidates + [random.randint(minimum, maximum)]
 
 
-def explore_string(item: Dict[str, Any]) -> List[ParameterBaseTypes]:
+def explore_string(item: dict[str, Any]) -> list[ParameterBaseTypes]:
     """Return possible parameter values for the `string` parameter type.
 
     Args:
@@ -135,11 +135,11 @@ def explore_string(item: Dict[str, Any]) -> List[ParameterBaseTypes]:
     return [item["default"]]
 
 
-def explore_boolean() -> List[bool]:
+def explore_boolean() -> list[bool]:
     """Return possible parameter values for the `boolean` parameter type (i.e. [True, False])"""
     return [True, False]
 
 
-def explore_null() -> List[None]:
+def explore_null() -> list[None]:
     """Return possible parameter values for the `null` parameter type (i.e. [None])"""
     return [None]

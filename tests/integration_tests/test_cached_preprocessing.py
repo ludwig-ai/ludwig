@@ -4,9 +4,15 @@ import numpy as np
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import MODEL_ECD, MODEL_GBM, PREPROCESSING, PROC_COLUMN, TRAINER
-from tests.integration_tests.test_gbm import category_feature
-from tests.integration_tests.utils import binary_feature, generate_data, number_feature, run_test_suite, text_feature
+from ludwig.constants import MODEL_ECD, PREPROCESSING, PROC_COLUMN, TRAINER
+from tests.integration_tests.utils import (
+    binary_feature,
+    category_feature,
+    generate_data,
+    number_feature,
+    run_test_suite,
+    text_feature,
+)
 
 
 @pytest.mark.slow
@@ -60,8 +66,7 @@ def test_hf_text_embedding(tmpdir, backend, ray_cluster_2cpu):
 
 @pytest.mark.slow
 @pytest.mark.parametrize("cache_encoder_embeddings", [True, False, None])
-@pytest.mark.parametrize("model_type", [MODEL_ECD, MODEL_GBM])
-def test_onehot_encoding_preprocessing(model_type, cache_encoder_embeddings, tmpdir):
+def test_onehot_encoding_preprocessing(cache_encoder_embeddings, tmpdir):
     vocab_size = 5
     input_features = [
         category_feature(encoder={"type": "onehot", "vocab_size": vocab_size}),
@@ -79,7 +84,7 @@ def test_onehot_encoding_preprocessing(model_type, cache_encoder_embeddings, tmp
     num_examples = 100
     dataset_fp = generate_data(input_features, output_features, data_csv_path, num_examples)
     config = {
-        "model_type": model_type,
+        "model_type": MODEL_ECD,
         "input_features": input_features,
         "output_features": output_features,
     }
@@ -93,8 +98,8 @@ def test_onehot_encoding_preprocessing(model_type, cache_encoder_embeddings, tmp
     proc_col = input_features[0][PROC_COLUMN]
     proc_series = proc_df[proc_col]
 
-    # GBMs always cache embeddings, ECD will not by default, but will if set to `cache_encoder_embeddings=true`
-    expected_cache_encoder_embeddings = (cache_encoder_embeddings or False) if model_type == MODEL_ECD else True
+    # ECD will not cache embeddings by default, but will if set to `cache_encoder_embeddings=true`
+    expected_cache_encoder_embeddings = cache_encoder_embeddings or False
     if expected_cache_encoder_embeddings:
         assert proc_series.values.dtype == "object"
         data = np.stack(proc_series.values)

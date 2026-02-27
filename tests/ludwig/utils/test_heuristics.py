@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any
 
 import pytest
 
@@ -19,7 +19,7 @@ from ludwig.utils.heuristics import get_auto_learning_rate
     ],
     ids=["no_text", "default_electra", "parallel_cnn", "bert_fixed", "bert_trainable", "bert_untrained"],
 )
-def test_get_auto_learning_rate(text_encoder: Optional[Dict[str, Any]], expected_lr: float):
+def test_get_auto_learning_rate(text_encoder: dict[str, Any] | None, expected_lr: float):
     input_features = [{"name": "bin1", "type": "binary"}]
     if text_encoder is not None:
         input_features.append({"name": "text1", "type": "text", "encoder": text_encoder})

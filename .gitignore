@@ -140,3 +140,15 @@ examples/*/visualizations/
 
 # benchmarking configs
 ludwig/benchmarking/configs/
+
+# Aim tracking
+.aim/
+
+# Comet
+.comet.config
+
+# Test-generated artifacts (image/audio features)
+*.png
+*.wav
+generated_audio/
+generated_images/

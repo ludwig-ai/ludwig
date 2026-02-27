@@ -15,13 +15,16 @@
 import os
 import shutil
 from copy import deepcopy
-from typing import List
 
 import numpy as np
 import pandas as pd
 import pytest
 import torch
-import torchtext
+
+try:
+    import torchtext
+except ImportError:
+    torchtext = None
 
 from ludwig.api import LudwigModel
 from ludwig.backend import RAY
@@ -54,8 +57,7 @@ from tests.integration_tests.utils import (
 
 @pytest.mark.integration_tests_e
 @pytest.mark.parametrize("should_load_model", [True, False])
-@pytest.mark.parametrize("model_type", ["ecd", "gbm"])
-def test_torchscript(tmpdir, csv_filename, should_load_model, model_type):
+def test_torchscript(tmpdir, csv_filename, should_load_model):
     #######
     # Setup
     #######
@@ -63,46 +65,36 @@ def test_torchscript(tmpdir, csv_filename, should_load_model, model_type):
     data_csv_path = os.path.join(tmpdir, csv_filename)
 
     # Single sequence input, single category output
+    image_dest_folder = os.path.join(tmpdir, "generated_images")
+    audio_dest_folder = os.path.join(tmpdir, "generated_audio")
     input_features = [
         binary_feature(),
         number_feature(),
         category_feature(encoder={"type": "passthrough", "vocab_size": 3}),
         category_feature(encoder={"type": "onehot", "vocab_size": 3}),
+        category_feature(encoder={"type": "dense", "vocab_size": 3}),
+        sequence_feature(encoder={"vocab_size": 3}),
+        text_feature(encoder={"vocab_size": 3}),
+        vector_feature(),
+        image_feature(image_dest_folder),
+        audio_feature(audio_dest_folder),
+        timeseries_feature(),
+        date_feature(),
+        date_feature(),
+        h3_feature(),
+        set_feature(encoder={"vocab_size": 3}),
+        bag_feature(encoder={"vocab_size": 3}),
     ]
-    if model_type == "ecd":
-        image_dest_folder = os.path.join(tmpdir, "generated_images")
-        audio_dest_folder = os.path.join(tmpdir, "generated_audio")
-        input_features.extend(
-            [
-                category_feature(encoder={"type": "dense", "vocab_size": 3}),
-                sequence_feature(encoder={"vocab_size": 3}),
-                text_feature(encoder={"vocab_size": 3}),
-                vector_feature(),
-                image_feature(image_dest_folder),
-                audio_feature(audio_dest_folder),
-                timeseries_feature(),
-                date_feature(),
-                date_feature(),
-                h3_feature(),
-                set_feature(encoder={"vocab_size": 3}),
-                bag_feature(encoder={"vocab_size": 3}),
-            ]
-        )
 
     output_features = [
         category_feature(decoder={"vocab_size": 3}),
+        binary_feature(),
+        number_feature(),
+        set_feature(decoder={"vocab_size": 3}),
+        vector_feature(),
+        sequence_feature(decoder={"vocab_size": 3}),
+        text_feature(decoder={"vocab_size": 3}),
     ]
-    if model_type == "ecd":
-        output_features.extend(
-            [
-                binary_feature(),
-                number_feature(),
-                set_feature(decoder={"vocab_size": 3}),
-                vector_feature(),
-                sequence_feature(decoder={"vocab_size": 3}),
-                text_feature(decoder={"vocab_size": 3}),
-            ]
-        )
 
     predictions_column_name = "{}_predictions".format(output_features[0]["name"])
 
@@ -114,16 +106,11 @@ def test_torchscript(tmpdir, csv_filename, should_load_model, model_type):
     #############
     backend = LocalTestBackend()
     config = {
-        "model_type": model_type,
+        "model_type": "ecd",
         "input_features": input_features,
         "output_features": output_features,
+        TRAINER: {"epochs": 2},
     }
-    if model_type == "ecd":
-        config[TRAINER] = {"epochs": 2}
-    else:
-        # Disable feature filtering to avoid having no features due to small test dataset,
-        # see https://stackoverflow.com/a/66405983/5222402
-        config[TRAINER] = {"num_boost_round": 2, "feature_pre_filter": False}
     ludwig_model = LudwigModel(config, backend=backend)
     ludwig_model.train(
         dataset=data_csv_path,
@@ -155,15 +142,12 @@ def test_torchscript(tmpdir, csv_filename, should_load_model, model_type):
     original_weights = deepcopy(list(ludwig_model.model.parameters()))
     original_weights = [t.cpu() for t in original_weights]
 
-    # Move the model to CPU for tracing
-    ludwig_model.model.cpu()
-
     #################
     # save torchscript
     #################
     torchscript_path = os.path.join(dir_path, "torchscript")
     shutil.rmtree(torchscript_path, ignore_errors=True)
-    ludwig_model.model.save_torchscript(torchscript_path)
+    ludwig_model.model.save_torchscript(torchscript_path, device="cpu")
 
     ###################################################
     # load Ludwig model, obtain predictions and weights
@@ -335,6 +319,7 @@ def test_torchscript_e2e_tabnet_combiner(csv_filename, tmpdir):
 
 
 @pytest.mark.integration_tests_e
+@pytest.mark.xfail(reason="torchaudio 2.x: DifferentiableFIR not TorchScript-compatible (upstream)")
 def test_torchscript_e2e_audio(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     audio_dest_folder = os.path.join(tmpdir, "generated_audio")
@@ -409,7 +394,7 @@ def test_torchscript_e2e_text(tmpdir, csv_filename):
 
 
 @pytest.mark.skipif(
-    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 14, 0),
+    torchtext is None or torch.torch_version.TorchVersion(torchtext.__version__) < (0, 14, 0),
     reason="requires torchtext 0.14.0 or higher",
 )
 @pytest.mark.integration_tests_e
@@ -431,7 +416,7 @@ def test_torchscript_e2e_text_hf_tokenizer(tmpdir, csv_filename):
 
 
 @pytest.mark.skipif(
-    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 14, 0),
+    torchtext is None or torch.torch_version.TorchVersion(torchtext.__version__) < (0, 14, 0),
     reason="requires torchtext 0.14.0 or higher",
 )
 @pytest.mark.integration_tests_e
@@ -533,7 +518,7 @@ def test_torchscript_e2e_date(tmpdir, csv_filename):
 
 
 @pytest.mark.integration_tests_e
-@pytest.mark.parametrize("vector_type", [torch.Tensor, List[torch.Tensor]])
+@pytest.mark.parametrize("vector_type", [torch.Tensor, list[torch.Tensor]])
 def test_torchscript_preproc_vector_alternative_type(tmpdir, csv_filename, vector_type):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     feature = vector_feature()
@@ -886,9 +871,9 @@ def initialize_torchscript_module(tmpdir, config, backend, training_data_csv_pat
         skip_save_processed_input=True,
     )
 
-    # Put torchscript model on GPU if available (LudwigModel will run train/predict on GPU if available)
+    # Always use CPU for torchscript since inference inputs are CPU tensors
     if device is None:
-        device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        device = torch.device("cpu")
 
     # Create graph inference model (Torchscript) from trained Ludwig model.
     script_module = ludwig_model.to_torchscript(device=device)

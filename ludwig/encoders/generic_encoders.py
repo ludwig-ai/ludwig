@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Optional, Type
 
 import torch
 
@@ -39,7 +38,7 @@ class PassthroughEncoder(Encoder):
         logger.debug(f" {self.name}")
         self.input_size = input_size
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         """
         :param inputs: The inputs fed into the encoder.
                Shape: [batch x 1], type tf.float32
@@ -47,7 +46,7 @@ class PassthroughEncoder(Encoder):
         return {ENCODER_OUTPUT: inputs}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return PassthroughEncoderConfig
 
     @property
@@ -99,7 +98,7 @@ class DenseEncoder(Encoder):
             default_dropout=dropout,
         )
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         """
         :param inputs: The inputs fed into the encoder.
                Shape: [batch x 1], type tf.float32
@@ -107,7 +106,7 @@ class DenseEncoder(Encoder):
         return {ENCODER_OUTPUT: self.fc_stack(inputs)}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return DenseEncoderConfig
 
     @property

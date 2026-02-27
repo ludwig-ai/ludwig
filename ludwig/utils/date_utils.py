@@ -14,8 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import time
-from datetime import date, datetime
-from typing import Union
+from datetime import date, datetime, timezone
 
 import numpy as np
 from dateutil.parser import parse, ParserError
@@ -46,7 +45,7 @@ def create_vector_from_datetime_obj(datetime_obj):
 
 
 @DeveloperAPI
-def parse_datetime(timestamp: Union[float, int, str]) -> datetime:
+def parse_datetime(timestamp: float | int | str) -> datetime:
     """Parse a datetime from a string or a numeric timestamp.
 
     Args:
@@ -64,7 +63,7 @@ def parse_datetime(timestamp: Union[float, int, str]) -> datetime:
 
 
 @DeveloperAPI
-def convert_number_to_datetime(timestamp: Union[float, int, str]) -> datetime:
+def convert_number_to_datetime(timestamp: float | int | str) -> datetime:
     """Convert a numeric timestamp to a datetime object.
 
     `datetime` objects can be created from POSIX timestamps like those returned by `time.time()`.
@@ -92,5 +91,5 @@ def convert_number_to_datetime(timestamp: Union[float, int, str]) -> datetime:
         timestamp = timestamp / np.power(10, delta)
 
     # Convert the timestamp to a datetime object. If it is not a valid timestamp, `ValueError` is raised.
-    dt = datetime.utcfromtimestamp(timestamp)
+    dt = datetime.fromtimestamp(timestamp, tz=timezone.utc).replace(tzinfo=None)
     return dt

@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import torch
 from torch import nn
@@ -22,10 +22,10 @@ class FSDPStrategy(DDPStrategy):
         model: nn.Module,
         trainer_config: "ECDTrainerConfig",
         base_learning_rate: float,
-    ) -> Tuple[nn.Module, Optimizer]:
+    ) -> tuple[nn.Module, Optimizer]:
         return FSDP(model), create_optimizer(model, trainer_config.optimizer, base_learning_rate)
 
-    def to_device(self, model: nn.Module, device: Optional[torch.device] = None) -> nn.Module:
+    def to_device(self, model: nn.Module, device: torch.device | None = None) -> nn.Module:
         return model
 
     @classmethod

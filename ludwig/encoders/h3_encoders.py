@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict, List, Optional, Type
 
 import torch
 
@@ -45,14 +44,14 @@ class H3Embed(Encoder):
         self,
         embedding_size: int = 10,
         embeddings_on_cpu: bool = False,
-        fc_layers: Optional[List] = None,
+        fc_layers: list | None = None,
         num_fc_layers: int = 0,
         output_size: int = 10,
         use_bias: bool = True,
         weights_initializer: str = "xavier_uniform",
         bias_initializer: str = "zeros",
         norm: str = None,
-        norm_params: Dict = None,
+        norm_params: dict = None,
         activation: str = "relu",
         dropout: float = 0,
         reduce_output: str = "sum",
@@ -206,7 +205,7 @@ class H3Embed(Encoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return H3EmbedConfig
 
     @property
@@ -226,14 +225,14 @@ class H3WeightedSum(Encoder):
         embedding_size: int = 10,
         embeddings_on_cpu: bool = False,
         should_softmax: bool = False,
-        fc_layers: Optional[List] = None,
+        fc_layers: list | None = None,
         num_fc_layers: int = 0,
         output_size: int = 10,
         use_bias: bool = True,
         weights_initializer: str = "xavier_uniform",
         bias_initializer: str = "zeros",
-        norm: Optional[str] = None,
-        norm_params: Dict = None,
+        norm: str | None = None,
+        norm_params: dict = None,
         activation: str = "relu",
         dropout: float = 0,
         encoder_config=None,
@@ -320,7 +319,7 @@ class H3WeightedSum(Encoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return H3WeightedSumConfig
 
     @property
@@ -456,7 +455,7 @@ class H3RNN(Encoder):
         return {ENCODER_OUTPUT: hidden, ENCODER_OUTPUT_STATE: final_state}
 
     @staticmethod
-    def get_schema_cls() -> Type[BaseEncoderConfig]:
+    def get_schema_cls() -> type[BaseEncoderConfig]:
         return H3RNNConfig
 
     @property

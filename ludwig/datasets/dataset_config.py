@@ -13,7 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Union
 
 from dataclasses_json import dataclass_json
 
@@ -26,7 +25,7 @@ class DatasetFallbackMirror:
 
     # List of paths to download from. Must map 1:1 to DatasetConfig.download_urls or to the archive_filenames
     # that we get from Kaggle.
-    download_paths: Union[str, List[str]]
+    download_paths: str | list[str]
 
 
 @dataclass_json
@@ -44,53 +43,53 @@ class DatasetConfig:
     description: str = ""
 
     # Fallback mirrors. Paths must be in local/remote filesystems.
-    fallback_mirrors: Optional[List[DatasetFallbackMirror]] = None
+    fallback_mirrors: list[DatasetFallbackMirror] | None = None
 
     # Optional. The (suggested) output features for this dataset. Helps users discover new datasets and filter for
     # relevance to a specific machine learning setting.
-    output_features: List[dict] = field(default_factory=list)
+    output_features: list[dict] = field(default_factory=list)
 
     # The kaggle competition this dataset belongs to, or None if this dataset is not hosted by a Kaggle competition.
-    kaggle_competition: Optional[str] = None
+    kaggle_competition: str | None = None
 
     # The kaggle dataset ID, or None if this dataset if not hosted by Kaggle.
-    kaggle_dataset_id: Optional[str] = None
+    kaggle_dataset_id: str | None = None
 
     # The list of URLs to download.
-    download_urls: Union[str, List[str]] = field(default_factory=list)
+    download_urls: str | list[str] = field(default_factory=list)
 
     # The list of file archives which will be downloaded. If download_urls contains a filename with extension, for
     # example https://domain.com/archive.zip, then archive_filenames does not need to be specified.
-    archive_filenames: Union[str, List[str]] = field(default_factory=list)
+    archive_filenames: str | list[str] = field(default_factory=list)
 
     # The names of files in the dataset (after extraction). Glob-style patterns are supported, see
     # https://docs.python.org/3/library/glob.html
-    dataset_filenames: Union[str, List[str]] = field(default_factory=list)
+    dataset_filenames: str | list[str] = field(default_factory=list)
 
     # If the dataset contains separate files for training, testing, or validation. Glob-style patterns are supported,
     # see https://docs.python.org/3/library/glob.html
-    train_filenames: Union[str, List[str]] = field(default_factory=list)
-    validation_filenames: Union[str, List[str]] = field(default_factory=list)
-    test_filenames: Union[str, List[str]] = field(default_factory=list)
+    train_filenames: str | list[str] = field(default_factory=list)
+    validation_filenames: str | list[str] = field(default_factory=list)
+    test_filenames: str | list[str] = field(default_factory=list)
 
     # If the dataset contains additional referenced files or directories (ex. images or audio) list them here and they
     # will be copied to the same location as the processed dataset. Glob-style patterns are supported,
     # see https://docs.python.org/3/library/glob.html
-    preserve_paths: Union[str, List[str]] = field(default_factory=list)
+    preserve_paths: str | list[str] = field(default_factory=list)
 
     # Optionally verify integrity of the dataset by providing sha256 checksums for important files. Maps filename to
     # sha256 digest.  Use `sha256sum <filename>` on linux, `shasum -a 256 <filename>` on Mac to get checksums.
     # If verification fails, loading the dataset will fail with a ValueError.
     # If no sha256 digests are in the config, a warning is logged and the dataset will load without verification.
-    sha256: Dict[str, str] = field(default_factory=dict)
+    sha256: dict[str, str] = field(default_factory=dict)
 
     # List of column names, for datasets which do not have column names. If specified, will override the column names
     # already present in the dataset.
-    columns: List[dict] = field(default_factory=list)
+    columns: list[dict] = field(default_factory=list)
 
     # Optional dictionary which maps column name to column type. Column's will be converted to the requested type, or
     # will be inferred from the dataset by default.
-    column_types: Dict[str, str] = field(default_factory=dict)
+    column_types: dict[str, str] = field(default_factory=dict)
 
     # The loader module and class to use, relative to ludwig.datasets.loaders. Only change this if the dataset requires
     # processing which is not handled by the default loader.

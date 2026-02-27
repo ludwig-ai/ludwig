@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List, Optional
+from collections.abc import Callable
 
 import numpy as np
 import pandas as pd
@@ -20,7 +20,7 @@ from ludwig.utils.torch_utils import get_torch_device, LudwigModule
 
 @DeveloperAPI
 class Embedder(LudwigModule):
-    def __init__(self, feature_configs: List[FeatureConfigDict], metadata: TrainingSetMetadataDict):
+    def __init__(self, feature_configs: list[FeatureConfigDict], metadata: TrainingSetMetadataDict):
         super().__init__()
 
         self.input_features = LudwigFeatureDict()
@@ -29,12 +29,9 @@ class Embedder(LudwigModule):
         for feature in feature_configs:
             feature_cls = get_from_registry(feature[TYPE], get_input_type_registry())
 
-            # TODO(travis): this assumes ECD is the selected model type, which is not problematic for now, as
-            # the only thing GBM vs ECD changes is the default encoder, but luckily at this point the encoder types
-            # have been fully materialized. However, this could change in the future as ECD and GBM feature configs
-            # diverge, so we should find a way to remove this. The best solution is to the change the input params from
-            # FeatureConfigDict types to BaseInputFeatureConfig types, which will require a refactor of preprocessing to
-            # use the schema, not the dict types.
+            # TODO(travis): this assumes ECD is the selected model type. The best solution is to change the
+            # input params from FeatureConfigDict types to BaseInputFeatureConfig types, which will require a
+            # refactor of preprocessing to use the schema, not the dict types.
             feature_obj = get_input_feature_cls(MODEL_ECD, feature[TYPE]).from_dict(feature)
             feature_cls.update_config_with_metadata(feature_obj, metadata[feature[NAME]])
 
@@ -53,7 +50,7 @@ class Embedder(LudwigModule):
                 f"An input feature has a name that conflicts with a class attribute of torch's ModuleDict: {e}"
             )
 
-    def forward(self, inputs: Dict[str, torch.Tensor]):
+    def forward(self, inputs: dict[str, torch.Tensor]):
         encoder_outputs = {}
         for input_feature_name, input_values in inputs.items():
             encoder = self.input_features.get(input_feature_name)
@@ -64,7 +61,7 @@ class Embedder(LudwigModule):
 
 @DeveloperAPI
 def create_embed_batch_size_evaluator(
-    features_to_encode: List[FeatureConfigDict], metadata: TrainingSetMetadataDict
+    features_to_encode: list[FeatureConfigDict], metadata: TrainingSetMetadataDict
 ) -> BatchSizeEvaluator:
     class _EmbedBatchSizeEvaluator(BatchSizeEvaluator):
         def __init__(self):
@@ -73,7 +70,7 @@ def create_embed_batch_size_evaluator(
             self.embedder = embedder.to(self.device)
             self.embedder.eval()
 
-        def step(self, batch_size: int, global_max_sequence_length: Optional[int] = None):
+        def step(self, batch_size: int, global_max_sequence_length: int | None = None):
             inputs = {
                 input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(self.device)
                 for input_feature_name, input_feature in self.embedder.input_features.items()
@@ -86,7 +83,7 @@ def create_embed_batch_size_evaluator(
 
 @DeveloperAPI
 def create_embed_transform_fn(
-    features_to_encode: List[FeatureConfigDict], metadata: TrainingSetMetadataDict
+    features_to_encode: list[FeatureConfigDict], metadata: TrainingSetMetadataDict
 ) -> Callable:
     class EmbedTransformFn:
         def __init__(self):
@@ -118,8 +115,8 @@ def create_embed_transform_fn(
 
 # TODO(travis): consolidate with implementation in data/ray.py
 def _prepare_batch(
-    df: pd.DataFrame, features: List[FeatureConfigDict], metadata: TrainingSetMetadataDict
-) -> Dict[str, np.ndarray]:
+    df: pd.DataFrame, features: list[FeatureConfigDict], metadata: TrainingSetMetadataDict
+) -> dict[str, np.ndarray]:
     batch = {}
     for feature in features:
         c = feature[PROC_COLUMN]

@@ -14,7 +14,6 @@
 # ==============================================================================
 import logging
 from copy import deepcopy
-from typing import Dict, List, Optional
 
 import torch
 from torch.nn import Dropout, Linear, ModuleList
@@ -42,8 +41,8 @@ class FCLayer(LudwigModule):
         use_bias: bool = True,
         weights_initializer: str = "xavier_uniform",
         bias_initializer: str = "zeros",
-        norm: Optional[str] = None,
-        norm_params: Optional[Dict] = None,
+        norm: str | None = None,
+        norm_params: dict | None = None,
         activation: str = "relu",
         dropout: float = 0,
     ):
@@ -110,15 +109,15 @@ class FCStack(LudwigModule):
     def __init__(
         self,
         first_layer_input_size: int,
-        layers: Optional[List[Dict]] = None,
+        layers: list[dict] | None = None,
         num_layers: int = 1,
         default_input_rank: int = 2,
         default_output_size: int = 256,
         default_use_bias: bool = True,
         default_weights_initializer: str = "xavier_uniform",
         default_bias_initializer: str = "zeros",
-        default_norm: Optional[str] = None,
-        default_norm_params: Optional[Dict] = None,
+        default_norm: str | None = None,
+        default_norm_params: dict | None = None,
         default_activation: str = "relu",
         default_dropout: float = 0,
         residual: bool = False,

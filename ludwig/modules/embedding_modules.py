@@ -13,7 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict, List, Optional, Tuple, Union
 
 import torch
 from torch import nn
@@ -29,14 +28,14 @@ DEVICE = get_torch_device()
 
 
 def embedding_matrix(
-    vocab: List[str],
+    vocab: list[str],
     embedding_size: int,
     representation: str = "dense",
     embeddings_trainable: bool = True,
-    pretrained_embeddings: Optional[str] = None,
+    pretrained_embeddings: str | None = None,
     force_embedding_size: bool = False,
-    embedding_initializer: Optional[Union[str, Dict]] = None,
-) -> Tuple[nn.Module, int]:
+    embedding_initializer: str | dict | None = None,
+) -> tuple[nn.Module, int]:
     """Returns initialized torch.nn.Embedding module and embedding size."""
 
     vocab_size = len(vocab)
@@ -85,15 +84,15 @@ def embedding_matrix(
 
 
 def embedding_matrix_on_device(
-    vocab: List[str],
+    vocab: list[str],
     embedding_size: int,
     representation: str = "dense",
     embeddings_trainable: bool = True,
-    pretrained_embeddings: Optional[str] = None,
+    pretrained_embeddings: str | None = None,
     force_embedding_size: bool = False,
     embeddings_on_cpu: bool = False,
-    embedding_initializer: Optional[str] = None,
-) -> Tuple[nn.Module, int]:
+    embedding_initializer: str | None = None,
+) -> tuple[nn.Module, int]:
     embeddings, embedding_size = embedding_matrix(
         vocab,
         embedding_size,
@@ -116,15 +115,15 @@ class Embed(LudwigModule):
 
     def __init__(
         self,
-        vocab: List[str],
+        vocab: list[str],
         embedding_size: int,
         representation: str = "dense",
         embeddings_trainable: bool = True,
-        pretrained_embeddings: Optional[str] = None,
+        pretrained_embeddings: str | None = None,
         force_embedding_size: bool = False,
         embeddings_on_cpu: bool = False,
         dropout: float = 0.0,
-        embedding_initializer: Optional[Union[str, Dict]] = None,
+        embedding_initializer: str | dict | None = None,
     ):
         super().__init__()
         self.supports_masking = True
@@ -146,7 +145,7 @@ class Embed(LudwigModule):
         else:
             self.dropout = None
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> torch.Tensor:
         if inputs.ndim != 2 or inputs.shape[1] != 1:
             raise RuntimeError(
                 f"Embed only takes inputs of shape [batch x 1]. Received inputs with size: {inputs.size()}"
@@ -171,15 +170,15 @@ class EmbedSet(LudwigModule):
 
     def __init__(
         self,
-        vocab: List[str],
+        vocab: list[str],
         embedding_size: int,
         representation: str = "dense",
         embeddings_trainable: bool = True,
-        pretrained_embeddings: Optional[str] = None,
+        pretrained_embeddings: str | None = None,
         force_embedding_size: bool = False,
         embeddings_on_cpu: bool = False,
         dropout: float = 0.0,
-        embedding_initializer: Optional[Union[str, Dict]] = None,
+        embedding_initializer: str | dict | None = None,
         aggregation_function: str = "sum",
     ):
         super().__init__()
@@ -211,7 +210,7 @@ class EmbedSet(LudwigModule):
 
         self.register_buffer("vocab_indices", torch.arange(self.vocab_size))
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> torch.Tensor:
         """
         Params:
             inputs: Boolean multi-hot tensor of size [batch x vocab_size], where
@@ -247,15 +246,15 @@ class EmbedWeighted(LudwigModule):
 
     def __init__(
         self,
-        vocab: List[str],
+        vocab: list[str],
         embedding_size: int,
         representation: str = "dense",
         embeddings_trainable: bool = True,
-        pretrained_embeddings: Optional[str] = None,
+        pretrained_embeddings: str | None = None,
         force_embedding_size: bool = False,
         embeddings_on_cpu: bool = False,
         dropout: float = 0.0,
-        embedding_initializer: Optional[str] = None,
+        embedding_initializer: str | None = None,
     ):
         super().__init__()
 
@@ -278,7 +277,7 @@ class EmbedWeighted(LudwigModule):
 
         self.register_buffer("vocab_indices", torch.arange(self.vocab_size, dtype=torch.int32))
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> torch.Tensor:
         """
         Params:
             inputs: Tensor of frequencies, where inputs[b, i] represents
@@ -306,83 +305,19 @@ class EmbedWeighted(LudwigModule):
         return torch.Size([self.embedding_size])
 
 
-# TODO(shreya): Implement sparse embedding lookup.
-# class EmbedSparse(LudwigModule):
-#     def __init__(
-#             self,
-#             vocab: List[str],
-#             embedding_size: int = 50,
-#             representation: str = 'dense',
-#             embeddings_trainable: bool = True,
-#             pretrained_embeddings: Optional[str] = None,
-#             force_embedding_size: bool = False,
-#             embeddings_on_cpu: bool = False,
-#             dropout: float = 0.0,
-#             embedding_initializer: Optional[str] = None,
-#             reduce_output: str = 'sum'
-#     ):
-#         super().__init__()
-
-#         self.embeddings, self.embedding_size = embedding_matrix_on_device(
-#             vocab,
-#             embedding_size,
-#             representation=representation,
-#             embeddings_trainable=embeddings_trainable,
-#             pretrained_embeddings=pretrained_embeddings,
-#             force_embedding_size=force_embedding_size,
-#             embeddings_on_cpu=embeddings_on_cpu,
-#             embedding_initializer=embedding_initializer,
-#         )
-
-#         if dropout > 0:
-#             self.dropout = nn.Dropout(dropout)
-#         else:
-#             self.dropout = None
-
-#         self.reduce_output = reduce_output
-
-#     def forward(self, inputs: torch.Tensor):
-#         # idx = tf.where(tf.equal(inputs, True))
-#         # TODO(shreya): Check if this is equivalent
-#         idx = torch.nonzero(inputs)
-
-#         # sparse_multiple_hot_indexes = tf.SparseTensor(
-#         #     idx,
-#         #     idx[:, 1],
-#         #     tf.shape(inputs, out_type=tf.int64)
-#         # )
-#         sparse_multiple_hot_index = torch.sparse_coo_tensor(
-#             idx, idx[:, 1], inputs.shape
-#         )
-
-#         # TODO(shreya): Check if supported in torch
-#         # embedded_reduced = tf.nn.embedding_lookup_sparse(
-#         #     self.embeddings,
-#         #     sparse_multiple_hot_indexes,
-#         #     sp_weights=None,
-#         #     combiner=self.reduce_output
-#         # )
-
-#         # if self.dropout:
-#         #     embedded_reduced = self.dropout(embedded_reduced)
-
-#         # return embedded_reduced
-#         return None
-
-
 class EmbedSequence(LudwigModule):
     def __init__(
         self,
-        vocab: List[str],
+        vocab: list[str],
         embedding_size: int,
         max_sequence_length: int,
         representation: str = "dense",
         embeddings_trainable: bool = True,
-        pretrained_embeddings: Optional[str] = None,
+        pretrained_embeddings: str | None = None,
         force_embedding_size: bool = False,
         embeddings_on_cpu: bool = False,
         dropout: float = 0.0,
-        embedding_initializer: Optional[str] = None,
+        embedding_initializer: str | None = None,
     ):
         super().__init__()
         self.supports_masking = True
@@ -405,7 +340,7 @@ class EmbedSequence(LudwigModule):
         else:
             self.dropout = None
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None):
         if inputs.dtype not in [torch.int, torch.long]:
             raise RuntimeError(
                 f"Expected tensor of type torch.int or torch.long as input." f"Received {inputs.dtype} instead."
@@ -467,7 +402,7 @@ class TokenAndPositionEmbedding(LudwigModule):
     def output_shape(self) -> torch.Size:
         return self.token_embed.output_shape
 
-    def forward(self, inputs, mask: Optional[torch.Tensor] = None):
+    def forward(self, inputs, mask: torch.Tensor | None = None):
         positions_hidden = self.position_embed(self.positions)
         token_hidden = self.token_embed(inputs)
         return token_hidden + positions_hidden

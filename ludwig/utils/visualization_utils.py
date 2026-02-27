@@ -17,12 +17,10 @@ import copy
 import logging
 from collections import Counter
 from sys import platform
-from typing import Dict, List
 
 import numpy as np
 import pandas as pd
 import ptitprince as pt
-from packaging import version
 
 from ludwig.constants import SPACE, TRAINING, VALIDATION
 
@@ -58,8 +56,6 @@ FLOAT_QUANTILES = 10
 RAY_TUNE_FLOAT_SPACES = {"uniform", "quniform", "loguniform", "qloguniform", "randn", "qrandn"}
 RAY_TUNE_INT_SPACES = {"randint", "qrandint", "lograndint", "qlograndint"}
 RAY_TUNE_CATEGORY_SPACES = {"choice", "grid_search"}
-
-_matplotlib_34 = version.parse(mpl.__version__) >= version.parse("3.4")
 
 
 def visualize_callbacks(callbacks, fig):
@@ -338,10 +334,7 @@ def radar_chart(
 
     # Set ticks to the number of properties (in radians)
     t = np.arange(0, 2 * np.pi, 2 * np.pi / num_classes)
-    if _matplotlib_34:
-        ax.set_xticks(t)
-    else:
-        ax.set_xticks(t, [])
+    ax.set_xticks(t)
     ax.set_xticklabels(np.arange(0, num_classes))
 
     # Set yticks from 0 to 10
@@ -731,20 +724,21 @@ def confidence_filtering_3d_plot(
     ax.set_zticklabels(z_ticks_major_labels)
     ax.set_zticks(z_ticks_minor, minor=True)
 
-    # ORRIBLE HACK, IT'S THE ONLY WAY TO REMOVE PADDING
+    # HACK: Remove padding from 3D axes by adjusting coordinate info
     from mpl_toolkits.mplot3d.axis3d import Axis
 
     if not hasattr(Axis, "_get_coord_info_old"):
 
-        def _get_coord_info_new(self, renderer):
-            mins, maxs, centers, deltas, tc, highs = self._get_coord_info_old(renderer)
+        def _get_coord_info_new(self):
+            result = self._get_coord_info_old()
+            mins, maxs = result[0], result[1]
+            deltas = maxs - mins
             mins += deltas / 4
             maxs -= deltas / 4
-            return mins, maxs, centers, deltas, tc, highs
+            return (mins, maxs) + result[2:]
 
         Axis._get_coord_info_old = Axis._get_coord_info
         Axis._get_coord_info = _get_coord_info_new
-    # END OF HORRIBLE HACK
 
     surf_1 = ax.plot_surface(
         thresholds_1,
@@ -913,8 +907,8 @@ def roc_curves(
 
 
 def precision_recall_curves_plot(
-    precision_recalls: Dict[str, List[float]],
-    model_names: List[str],
+    precision_recalls: dict[str, list[float]],
+    model_names: list[str],
     title: str = None,
     filename: str = None,
     callbacks=None,

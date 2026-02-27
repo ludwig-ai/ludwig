@@ -2,7 +2,6 @@ import argparse
 import logging
 import os
 import sys
-from typing import Optional
 
 from ludwig.globals import MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, MODEL_WEIGHTS_FILE_NAME
 from ludwig.utils.print_utils import get_logging_level_registry
@@ -25,9 +24,9 @@ def upload_cli(
     repo_type: str = "model",
     private: bool = False,
     commit_message: str = "Upload trained [Ludwig](https://ludwig.ai/latest/) model weights",
-    commit_description: Optional[str] = None,
-    dataset_file: Optional[str] = None,
-    dataset_name: Optional[str] = None,
+    commit_description: str | None = None,
+    dataset_file: str | None = None,
+    dataset_name: str | None = None,
     **kwargs,
 ) -> None:
     """Create an empty repo on the HuggingFace Hub and upload trained model artifacts to that repo.

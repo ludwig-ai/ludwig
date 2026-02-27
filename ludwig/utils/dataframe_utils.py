@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -31,7 +31,7 @@ def is_dask_series_or_df(df: DataFrame, backend: Optional["Backend"]) -> bool:  
 
 
 @DeveloperAPI
-def flatten_df(df: DataFrame, df_engine: DataFrameEngine) -> Tuple[DataFrame, Dict[str, Tuple]]:  # noqa: F821
+def flatten_df(df: DataFrame, df_engine: DataFrameEngine) -> tuple[DataFrame, dict[str, tuple]]:  # noqa: F821
     """Returns a flattened dataframe with a dictionary of the original shapes, keyed by dataframe columns."""
     # Workaround for: https://issues.apache.org/jira/browse/ARROW-5645
     column_shapes = {}
@@ -51,7 +51,7 @@ def flatten_df(df: DataFrame, df_engine: DataFrameEngine) -> Tuple[DataFrame, Di
 
 
 @DeveloperAPI
-def unflatten_df(df: DataFrame, column_shapes: Dict[str, Tuple], df_engine: DataFrameEngine) -> DataFrame:  # noqa: F821
+def unflatten_df(df: DataFrame, column_shapes: dict[str, tuple], df_engine: DataFrameEngine) -> DataFrame:  # noqa: F821
     """Returns an unflattened dataframe, the reverse of flatten_df."""
     for c in df.columns:
         shape = column_shapes.get(c)
@@ -61,7 +61,7 @@ def unflatten_df(df: DataFrame, column_shapes: Dict[str, Tuple], df_engine: Data
 
 
 @DeveloperAPI
-def to_numpy_dataset(df: DataFrame, backend: Optional["Backend"] = None) -> Dict[str, np.ndarray]:  # noqa: F821
+def to_numpy_dataset(df: DataFrame, backend: Optional["Backend"] = None) -> dict[str, np.ndarray]:  # noqa: F821
     """Returns a dictionary of numpy arrays, keyed by the columns of the given dataframe."""
     dataset = {}
     for col in df.columns:
@@ -101,12 +101,12 @@ def set_index_name(pd_df: pd.DataFrame, name: str) -> pd.DataFrame:
 
 
 @DeveloperAPI
-def to_batches(df: pd.DataFrame, batch_size: int) -> List[pd.DataFrame]:
+def to_batches(df: pd.DataFrame, batch_size: int) -> list[pd.DataFrame]:
     return [df[i : i + batch_size].copy() for i in range(0, df.shape[0], batch_size)]
 
 
 @DeveloperAPI
-def from_batches(batches: List[pd.DataFrame]) -> pd.DataFrame:
+def from_batches(batches: list[pd.DataFrame]) -> pd.DataFrame:
     return pd.concat(batches)
 
 

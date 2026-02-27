@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from typing import Callable, List
+from collections.abc import Callable
 
 import pytest
 import torch
@@ -320,7 +320,7 @@ def test_is_image_score(extension: str, score: int):
     ],
 )
 def test_unique_channels(
-    img_list: List[torch.Tensor], num_channels: int, num_classes: int, expected_class_map: torch.Tensor
+    img_list: list[torch.Tensor], num_channels: int, num_classes: int, expected_class_map: torch.Tensor
 ):
     channel_class_map = get_unique_channels(img_list, num_channels, num_classes)
 

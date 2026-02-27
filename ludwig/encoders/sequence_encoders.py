@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Optional, Type
 
 import torch
 from torch import nn
@@ -84,7 +83,7 @@ class SequencePassthroughEncoder(SequenceEncoder):
         if self.reduce_output is None:
             self.supports_masking = True
 
-    def forward(self, input_sequence: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, input_sequence: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         """
         :param input_sequence: The input sequence fed into the encoder.
                Shape: [batch x sequence length], type torch.int32 or
@@ -102,7 +101,7 @@ class SequencePassthroughEncoder(SequenceEncoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[SequenceEncoderConfig]:
+    def get_schema_cls() -> type[SequenceEncoderConfig]:
         return SequencePassthroughConfig
 
     @property
@@ -229,7 +228,7 @@ class SequenceEmbedEncoder(SequenceEncoder):
             encoding_size=self.embed_sequence.output_shape[-1],
         )
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         """
         :param inputs: The input sequence fed into the encoder.
                Shape: [batch x sequence length], type torch.int32
@@ -240,7 +239,7 @@ class SequenceEmbedEncoder(SequenceEncoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[SequenceEncoderConfig]:
+    def get_schema_cls() -> type[SequenceEncoderConfig]:
         return SequenceEmbedConfig
 
     @property
@@ -508,7 +507,7 @@ class ParallelCNN(SequenceEncoder):
                 default_dropout=dropout,
             )
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         """
         :param inputs: The input sequence fed into the encoder.
                Shape: [batch x sequence length], type torch.int32
@@ -539,7 +538,7 @@ class ParallelCNN(SequenceEncoder):
         return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls() -> Type[SequenceEncoderConfig]:
+    def get_schema_cls() -> type[SequenceEncoderConfig]:
         return ParallelCNNConfig
 
     @property
@@ -846,7 +845,7 @@ class StackedCNN(SequenceEncoder):
             )
 
     @staticmethod
-    def get_schema_cls() -> Type[SequenceEncoderConfig]:
+    def get_schema_cls() -> type[SequenceEncoderConfig]:
         return StackedCNNConfig
 
     @property
@@ -859,7 +858,7 @@ class StackedCNN(SequenceEncoder):
             return self.conv1d_stack.output_shape
         return self.fc_stack.output_shape
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         """
         :param inputs: The input sequence fed into the encoder.
                Shape: [batch x sequence length], type torch.int32
@@ -1159,7 +1158,7 @@ class StackedParallelCNN(SequenceEncoder):
             )
 
     @staticmethod
-    def get_schema_cls() -> Type[SequenceEncoderConfig]:
+    def get_schema_cls() -> type[SequenceEncoderConfig]:
         return StackedParallelCNNConfig
 
     @property
@@ -1172,7 +1171,7 @@ class StackedParallelCNN(SequenceEncoder):
             return self.fc_stack.output_shape
         return self.parallel_conv1d_stack.output_shape
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         """
         :param inputs: The input sequence fed into the encoder.
                Shape: [batch x sequence length], type torch.int32
@@ -1429,7 +1428,7 @@ class StackedRNN(SequenceEncoder):
             )
 
     @staticmethod
-    def get_schema_cls() -> Type[SequenceEncoderConfig]:
+    def get_schema_cls() -> type[SequenceEncoderConfig]:
         return StackedRNNConfig
 
     @property
@@ -1445,7 +1444,7 @@ class StackedRNN(SequenceEncoder):
     def input_dtype(self):
         return torch.int32
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         """
         :param inputs: The input sequence fed into the encoder.
                Shape: [batch x sequence length], type torch.int32
@@ -1712,7 +1711,7 @@ class StackedCNNRNN(SequenceEncoder):
             )
 
     @staticmethod
-    def get_schema_cls() -> Type[SequenceEncoderConfig]:
+    def get_schema_cls() -> type[SequenceEncoderConfig]:
         return StackedCNNRNNConfig
 
     @property
@@ -1725,7 +1724,7 @@ class StackedCNNRNN(SequenceEncoder):
             return self.fc_stack.output_shape
         return self.recurrent_stack.output_shape
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         """
         :param inputs: The input sequence fed into the encoder.
                Shape: [batch x sequence length], type torch.int32
@@ -1984,7 +1983,7 @@ class StackedTransformer(SequenceEncoder):
             )
 
     @staticmethod
-    def get_schema_cls() -> Type[SequenceEncoderConfig]:
+    def get_schema_cls() -> type[SequenceEncoderConfig]:
         return StackedTransformerConfig
 
     @property
@@ -1997,7 +1996,7 @@ class StackedTransformer(SequenceEncoder):
             return self.fc_stack.output_shape
         return self.transformer_stack.output_shape
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         """
         :param inputs: The input sequence fed into the encoder.
                Shape: [batch x sequence length], type torch.int32

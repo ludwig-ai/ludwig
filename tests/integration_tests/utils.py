@@ -23,20 +23,30 @@ import sys
 import tempfile
 import traceback
 import uuid
-from distutils.util import strtobool
-from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING, Union
 
-import cloudpickle
-import numpy as np
-import pandas as pd
-import pytest
-import torch
-from PIL import Image
-from transformers import file_utils
 
-from ludwig.api import LudwigModel
-from ludwig.backend import LocalBackend
-from ludwig.constants import (
+def strtobool(val):
+    val = str(val).strip().lower()
+    if val in ("y", "yes", "t", "true", "on", "1"):
+        return 1
+    elif val in ("n", "no", "f", "false", "off", "0"):
+        return 0
+    else:
+        raise ValueError(f"invalid truth value {val!r}")
+
+
+from typing import Any, TYPE_CHECKING  # noqa: E402
+
+import cloudpickle  # noqa: E402
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+import pytest  # noqa: E402
+import torch  # noqa: E402
+from PIL import Image  # noqa: E402
+
+from ludwig.api import LudwigModel  # noqa: E402
+from ludwig.backend import LocalBackend  # noqa: E402
+from ludwig.constants import (  # noqa: E402
     AUDIO,
     BAG,
     BATCH_SIZE,
@@ -61,15 +71,15 @@ from ludwig.constants import (
     TRAINER,
     VECTOR,
 )
-from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FORMATS
-from ludwig.experiment import experiment_cli
-from ludwig.features.feature_utils import compute_feature_hash
-from ludwig.globals import MODEL_FILE_NAME, PREDICTIONS_PARQUET_FILE_NAME
-from ludwig.schema.encoders.text_encoders import HFEncoderConfig
-from ludwig.schema.encoders.utils import get_encoder_classes
-from ludwig.trainers.trainer import Trainer
-from ludwig.utils import fs_utils
-from ludwig.utils.data_utils import read_csv, replace_file_extension, use_credentials
+from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FORMATS  # noqa: E402
+from ludwig.experiment import experiment_cli  # noqa: E402
+from ludwig.features.feature_utils import compute_feature_hash  # noqa: E402
+from ludwig.globals import MODEL_FILE_NAME, PREDICTIONS_PARQUET_FILE_NAME  # noqa: E402
+from ludwig.schema.encoders.text_encoders import HFEncoderConfig  # noqa: E402
+from ludwig.schema.encoders.utils import get_encoder_classes  # noqa: E402
+from ludwig.trainers.trainer import Trainer  # noqa: E402
+from ludwig.utils import fs_utils  # noqa: E402
+from ludwig.utils.data_utils import read_csv, replace_file_extension, use_credentials  # noqa: E402
 
 if TYPE_CHECKING:
     from ludwig.data.dataset.base import Dataset
@@ -660,12 +670,12 @@ def spawn(fn):
     return wrapped_fn
 
 
-def get_weights(model: torch.nn.Module) -> List[torch.Tensor]:
+def get_weights(model: torch.nn.Module) -> list[torch.Tensor]:
     return [param.data for param in model.parameters()]
 
 
 def has_no_grad(
-    val: Union[np.ndarray, torch.Tensor, str, list],
+    val: np.ndarray | torch.Tensor | str | list,
 ):
     """Checks if two values are close to each other."""
     if isinstance(val, list):
@@ -676,8 +686,8 @@ def has_no_grad(
 
 
 def is_all_close(
-    val1: Union[np.ndarray, torch.Tensor, str, list],
-    val2: Union[np.ndarray, torch.Tensor, str, list],
+    val1: np.ndarray | torch.Tensor | str | list,
+    val2: np.ndarray | torch.Tensor | str | list,
     tolerance=1e-4,
 ):
     """Checks if two values are close to each other."""
@@ -692,7 +702,7 @@ def is_all_close(
     return val1.shape == val2.shape and np.allclose(val1, val2, atol=tolerance)
 
 
-def is_all_tensors_cuda(val: Union[np.ndarray, torch.Tensor, str, list]) -> bool:
+def is_all_tensors_cuda(val: np.ndarray | torch.Tensor | str | list) -> bool:
     if isinstance(val, list):
         return all(is_all_tensors_cuda(v) for v in val)
 
@@ -855,7 +865,7 @@ def create_data_set_to_use(data_format, raw_data, nan_percent=0.0):
         for _, row in df.iterrows():
             processed_df_row = {}
             for feature_name, raw_feature in row.items():
-                if "image" in feature_name and not (type(raw_feature) == float and np.isnan(raw_feature)):
+                if "image" in feature_name and not (isinstance(raw_feature, float) and np.isnan(raw_feature)):
                     feature = np.array(Image.open(raw_feature))
                 else:
                     feature = raw_feature
@@ -870,7 +880,7 @@ def create_data_set_to_use(data_format, raw_data, nan_percent=0.0):
 
 
 def augment_dataset_with_none(
-    df: pd.DataFrame, first_row_none: bool = False, last_row_none: bool = False, nan_cols: Optional[List] = None
+    df: pd.DataFrame, first_row_none: bool = False, last_row_none: bool = False, nan_cols: list | None = None
 ) -> pd.DataFrame:
     """Optionally sets the first and last rows of nan_cols of the given dataframe to nan.
 
@@ -1002,7 +1012,7 @@ def train_with_backend(
 
 
 def assert_all_required_metrics_exist(
-    feature_to_metrics_dict: Dict[str, Dict[str, Any]], required_metrics: Optional[Dict[str, Set]] = None
+    feature_to_metrics_dict: dict[str, dict[str, Any]], required_metrics: dict[str, set] | None = None
 ):
     """Checks that all `required_metrics` exist in the dictionary returned during Ludwig model evaluation.
 
@@ -1050,7 +1060,7 @@ def assert_preprocessed_dataset_shape_and_dtype_for_feature(
     preprocessed_dataset: "Dataset",
     config_obj: "ModelConfig",
     expected_dtype: np.dtype,
-    expected_shape: Tuple,
+    expected_shape: tuple,
 ):
     """Asserts that the preprocessed dataset has the correct shape and dtype for a given feature type.
 
@@ -1110,9 +1120,8 @@ def remote_tmpdir(fs_protocol, bucket):
         try:
             with use_credentials(minio_test_creds()):
                 fs_utils.delete(tmpdir, recursive=True)
-        except FileNotFoundError as e:
-            logger.info(f"failed to delete remote tempdir, does not exist: {str(e)}")
-            pass
+        except Exception as e:
+            logger.info(f"failed to delete remote tempdir: {str(e)}")
 
 
 def minio_test_creds():
@@ -1131,7 +1140,12 @@ def clear_huggingface_cache():
     cache_path = os.environ.get("TRANSFORMERS_CACHE")
 
     if cache_path is None:
-        cache_path = file_utils.default_cache_path.rstrip("/")
+        try:
+            from huggingface_hub.constants import HF_HUB_CACHE
+
+            cache_path = HF_HUB_CACHE.rstrip("/")
+        except ImportError:
+            cache_path = os.path.expanduser("~/.cache/huggingface")
         while not cache_path.endswith("huggingface") and cache_path:
             cache_path = "/".join(cache_path.split("/")[:-1])
 

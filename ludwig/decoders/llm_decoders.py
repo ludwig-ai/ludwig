@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Any, Dict, List, Union
+from typing import Any
 
 import torch
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 # TODO(Arnav): Refactor to split into strategies like splitters
 class Matcher:
-    def __init__(self, match: Dict[str, Dict[str, Any]]):
+    def __init__(self, match: dict[str, dict[str, Any]]):
         self.match = match
 
     def contains(self, decoded_input: str, value: str) -> bool:
@@ -45,7 +45,7 @@ class Matcher:
         # to infer if there was a match or not and return a bool
         return len(matches) > 0
 
-    def __call__(self, decoded_input: str) -> Union[str, None]:
+    def __call__(self, decoded_input: str) -> str | None:
         # Greedy match on first label that matches the input
         for label, label_def in self.match.items():
             label_def_type = label_def["type"]
@@ -110,7 +110,7 @@ class TextExtractorDecoder(Decoder):
     def get_prediction_set(self):
         return {LOGITS, PREDICTIONS, PROBABILITIES}
 
-    def forward(self, inputs: List[torch.Tensor], input_lengths: List[int], max_new_tokens: int):
+    def forward(self, inputs: list[torch.Tensor], input_lengths: list[int], max_new_tokens: int):
         # Extract the sequences tensor from the LLMs forward pass
         generated_outputs = extract_generated_tokens(
             raw_generated_output_sequences=inputs,
@@ -178,7 +178,7 @@ class CategoryExtractorDecoder(Decoder):
     def get_prediction_set(self):
         return {LOGITS, PREDICTIONS, PROBABILITIES}
 
-    def forward(self, inputs: List[torch.Tensor], input_lengths: List[int], max_new_tokens: int):
+    def forward(self, inputs: list[torch.Tensor], input_lengths: list[int], max_new_tokens: int):
         # Extract the sequences tensor from the LLMs forward pass
         generated_outputs = extract_generated_tokens(
             raw_generated_output_sequences=inputs,

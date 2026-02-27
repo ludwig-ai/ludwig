@@ -16,7 +16,6 @@
 import argparse
 import logging
 import sys
-from typing import List, Optional, Union
 
 import pandas as pd
 
@@ -34,12 +33,12 @@ logger = logging.getLogger(__name__)
 
 
 def train_cli(
-    config: Union[str, dict] = None,
-    dataset: Union[str, dict, pd.DataFrame] = None,
-    training_set: Union[str, dict, pd.DataFrame] = None,
-    validation_set: Union[str, dict, pd.DataFrame] = None,
-    test_set: Union[str, dict, pd.DataFrame] = None,
-    training_set_metadata: Union[str, dict] = None,
+    config: str | dict = None,
+    dataset: str | dict | pd.DataFrame = None,
+    training_set: str | dict | pd.DataFrame = None,
+    validation_set: str | dict | pd.DataFrame = None,
+    test_set: str | dict | pd.DataFrame = None,
+    training_set_metadata: str | dict = None,
     data_format: str = None,
     experiment_name: str = "api_experiment",
     model_name: str = "run",
@@ -52,18 +51,17 @@ def train_cli(
     skip_save_log: bool = False,
     skip_save_processed_input: bool = False,
     output_directory: str = "results",
-    gpus: Union[str, int, List[int]] = None,
-    gpu_memory_limit: Optional[float] = None,
+    gpus: str | int | list[int] = None,
+    gpu_memory_limit: float | None = None,
     allow_parallel_threads: bool = True,
-    callbacks: List[Callback] = None,
-    backend: Union[Backend, str] = None,
+    callbacks: list[Callback] = None,
+    backend: Backend | str = None,
     random_seed: int = default_random_seed,
     logging_level: int = logging.INFO,
     **kwargs
 ) -> None:
-    """*train* defines the entire training procedure used by Ludwig's
-    internals. Requires most of the parameters that are taken into the model.
-    Builds a full ludwig model and performs the training.
+    """*train* defines the entire training procedure used by Ludwig's internals. Requires most of the parameters
+    that are taken into the model. Builds a full ludwig model and performs the training.
 
     :param config: (Union[str, dict]) in-memory representation of
             config or string path to a YAML config file.
@@ -364,8 +362,7 @@ def cli(sys_argv):
     parser.add_argument(
         "-b",
         "--backend",
-        help="specifies backend to use for parallel / distributed execution, "
-        "defaults to local execution or Horovod if called using horovodrun",
+        help="specifies backend to use for parallel / distributed execution, " "defaults to local execution",
         choices=ALL_BACKENDS,
     )
     parser.add_argument(

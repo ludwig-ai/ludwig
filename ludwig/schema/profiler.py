@@ -1,5 +1,4 @@
 from dataclasses import field
-from typing import Dict
 
 from marshmallow import fields, ValidationError
 
@@ -53,7 +52,7 @@ class ProfilerConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-def ProfilerDataclassField(description: str, default: Dict = {}):
+def ProfilerDataclassField(description: str, default: dict = {}):
     """Returns custom dataclass field for `ludwig.modules.profiler.ProfilerConfig`. Allows `None` by default.
 
     :param description: Description of the torch profiler field

@@ -1,5 +1,5 @@
 import copy
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import pytest
 
@@ -9,7 +9,6 @@ from ludwig.constants import (
     ENCODER,
     INPUT_FEATURES,
     MODEL_ECD,
-    MODEL_GBM,
     MODEL_LLM,
     MODEL_TYPE,
     NAME,
@@ -61,7 +60,7 @@ def test_set_fixed_preprocessing_params(pretrained_model_name_or_path: str):
     ],
     ids=["parallel_cnn", "bert_fixed", "bert_trainable"],
 )
-def test_set_fixed_preprocessing_params_cache_embeddings(encoder_params: Dict[str, Any], expected: Optional[bool]):
+def test_set_fixed_preprocessing_params_cache_embeddings(encoder_params: dict[str, Any], expected: bool | None):
     preprocessing = TextPreprocessingConfig.from_dict(
         {
             "tokenizer": "space",
@@ -76,7 +75,7 @@ def test_set_fixed_preprocessing_params_cache_embeddings(encoder_params: Dict[st
 
 
 @pytest.fixture(scope="module")
-def llm_config_dict() -> Dict[str, Any]:
+def llm_config_dict() -> dict[str, Any]:
     return {
         MODEL_TYPE: MODEL_LLM,
         BASE_MODEL: "HuggingFaceH4/tiny-random-LlamaForCausalLM",
@@ -86,7 +85,7 @@ def llm_config_dict() -> Dict[str, Any]:
 
 
 @pytest.fixture(scope="module")
-def ecd_config_dict_llm_encoder() -> Dict[str, Any]:
+def ecd_config_dict_llm_encoder() -> dict[str, Any]:
     return {
         MODEL_TYPE: MODEL_ECD,
         INPUT_FEATURES: [
@@ -101,7 +100,7 @@ def ecd_config_dict_llm_encoder() -> Dict[str, Any]:
 
 
 @pytest.fixture(scope="module")
-def ecd_config_dict_llm_encoder_multiple_features() -> Dict[str, Any]:
+def ecd_config_dict_llm_encoder_multiple_features() -> dict[str, Any]:
     return {
         MODEL_TYPE: MODEL_ECD,
         INPUT_FEATURES: [
@@ -117,7 +116,7 @@ def ecd_config_dict_llm_encoder_multiple_features() -> Dict[str, Any]:
 
 
 @pytest.fixture(scope="module")
-def ecd_config_dict_no_llm_encoder() -> Dict[str, Any]:
+def ecd_config_dict_no_llm_encoder() -> dict[str, Any]:
     return {
         MODEL_TYPE: MODEL_ECD,
         INPUT_FEATURES: [{TYPE: TEXT, NAME: "in1", ENCODER: {TYPE: "parallel_cnn"}}],
@@ -126,27 +125,9 @@ def ecd_config_dict_no_llm_encoder() -> Dict[str, Any]:
 
 
 @pytest.fixture(scope="module")
-def ecd_config_dict_no_text_features() -> Dict[str, Any]:
+def ecd_config_dict_no_text_features() -> dict[str, Any]:
     return {
         MODEL_TYPE: MODEL_ECD,
-        INPUT_FEATURES: [{TYPE: BINARY, NAME: "in1"}],
-        OUTPUT_FEATURES: [{TYPE: BINARY, NAME: "out1"}],
-    }
-
-
-@pytest.fixture(scope="module")
-def gbm_config_dict() -> Dict[str, Any]:
-    return {
-        MODEL_TYPE: MODEL_GBM,
-        INPUT_FEATURES: [{TYPE: TEXT, NAME: "in1", ENCODER: {TYPE: "tf_idf"}}],
-        OUTPUT_FEATURES: [{TYPE: BINARY, NAME: "out1"}],
-    }
-
-
-@pytest.fixture(scope="module")
-def gbm_config_dict_no_text_features() -> Dict[str, Any]:
-    return {
-        MODEL_TYPE: MODEL_GBM,
         INPUT_FEATURES: [{TYPE: BINARY, NAME: "in1"}],
         OUTPUT_FEATURES: [{TYPE: BINARY, NAME: "out1"}],
     }
@@ -165,14 +146,10 @@ def gbm_config_dict_no_text_features() -> Dict[str, Any]:
         ("ecd_config_dict_no_llm_encoder", False),
         # ECD configuration with no text features
         ("ecd_config_dict_no_text_features", False),
-        # GBM configuration with text feature. "tf_idf" is the only valid text encoder
-        ("gbm_config_dict", False),
-        # GBM configuration with no text features
-        ("gbm_config_dict_no_text_features", False),
     ],
 )
 @pytest.mark.parametrize("config_type", ["dict", "object"])
-def test_is_or_uses_llm(config: Dict[str, Any], expectation: bool, config_type, request):
+def test_is_or_uses_llm(config: dict[str, Any], expectation: bool, config_type, request):
     """Test LLM detection on a variety of configs. Configs that use an LLM anywhere should return True, otherwise
     False.
 
@@ -201,24 +178,24 @@ def test_is_or_uses_llm_invalid_input(invalid_config):
 
 
 @pytest.fixture(scope="module")
-def quantization_4bit_config() -> Dict[str, Any]:
+def quantization_4bit_config() -> dict[str, Any]:
     return {"quantization": {"bits": 4}}
 
 
 @pytest.fixture(scope="module")
-def quantization_8bit_config() -> Dict[str, Any]:
+def quantization_8bit_config() -> dict[str, Any]:
     return {"quantization": {"bits": 8}}
 
 
 @pytest.fixture(scope="module")
-def llm_config_dict_4bit(llm_config_dict: Dict[str, Any], quantization_4bit_config: Dict[str, Any]) -> Dict[str, Any]:
+def llm_config_dict_4bit(llm_config_dict: dict[str, Any], quantization_4bit_config: dict[str, Any]) -> dict[str, Any]:
     config = copy.deepcopy(llm_config_dict)
     config.update(quantization_4bit_config)
     return config
 
 
 @pytest.fixture(scope="module")
-def llm_config_dict_8bit(llm_config_dict: Dict[str, Any], quantization_8bit_config: Dict[str, Any]) -> Dict[str, Any]:
+def llm_config_dict_8bit(llm_config_dict: dict[str, Any], quantization_8bit_config: dict[str, Any]) -> dict[str, Any]:
     config = copy.deepcopy(llm_config_dict)
     config.update(quantization_8bit_config)
     return config
@@ -226,8 +203,8 @@ def llm_config_dict_8bit(llm_config_dict: Dict[str, Any], quantization_8bit_conf
 
 @pytest.fixture(scope="module")
 def ecd_config_dict_llm_encoder_4bit(
-    ecd_config_dict_llm_encoder: Dict[str, Any], quantization_4bit_config: Dict[str, Any]
-) -> Dict[str, Any]:
+    ecd_config_dict_llm_encoder: dict[str, Any], quantization_4bit_config: dict[str, Any]
+) -> dict[str, Any]:
     config = copy.deepcopy(ecd_config_dict_llm_encoder)
     config[INPUT_FEATURES][0][ENCODER].update(quantization_4bit_config)
     return config
@@ -235,8 +212,8 @@ def ecd_config_dict_llm_encoder_4bit(
 
 @pytest.fixture(scope="module")
 def ecd_config_dict_llm_encoder_8bit(
-    ecd_config_dict_llm_encoder: Dict[str, Any], quantization_8bit_config: Dict[str, Any]
-) -> Dict[str, Any]:
+    ecd_config_dict_llm_encoder: dict[str, Any], quantization_8bit_config: dict[str, Any]
+) -> dict[str, Any]:
     config = copy.deepcopy(ecd_config_dict_llm_encoder)
     config[INPUT_FEATURES][0][ENCODER].update(quantization_8bit_config)
     return config
@@ -253,17 +230,13 @@ def ecd_config_dict_llm_encoder_8bit(
         ("ecd_config_dict_llm_encoder", [None]),
         ("ecd_config_dict_llm_encoder_4bit", [4]),
         ("ecd_config_dict_llm_encoder_8bit", [8]),
-        # GBM configuration with text feature. "tf_idf" is the only valid text encoder
-        ("gbm_config_dict", [None]),
-        # GBM configuration with no text features
-        ("gbm_config_dict_no_text_features", [None]),
     ],
 )
 @pytest.mark.parametrize("config_type", ["dict", "object"])
 def test_get_quantization(
-    config: Dict[str, Any], expectation: Union[int, List[int], None, List[None]], config_type: str, request
+    config: dict[str, Any], expectation: int | list[int] | None | list[None], config_type: str, request
 ):
-    """Test get_quantization with LLM and single-feature ECD/GBM configs.
+    """Test get_quantization with LLM and single-feature ECD configs.
 
     Args:
         config: The configuration to test
@@ -322,10 +295,10 @@ TEST_FEATURE_CONFIGS_IDS = [BINARY, TEXT, MODEL_LLM, f"{MODEL_LLM}-4bit", f"{MOD
 @pytest.mark.parametrize("feature2,quantization2", TEST_FEATURE_CONFIGS, ids=TEST_FEATURE_CONFIGS_IDS)
 @pytest.mark.parametrize("config_type", ["dict", "object"])
 def test_get_quantization_multiple_features(
-    ecd_config_dict_llm_encoder_multiple_features: Dict[str, Any],
-    feature1: Dict[str, Any],
+    ecd_config_dict_llm_encoder_multiple_features: dict[str, Any],
+    feature1: dict[str, Any],
     quantization1: int,
-    feature2: Dict[str, Any],
+    feature2: dict[str, Any],
     quantization2: int,
     config_type: str,
 ):
