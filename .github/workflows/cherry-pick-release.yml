@@ -2,7 +2,7 @@ name: Cherry-Pick into Release Branch
 
 on:
   push:
-    branches: ["master"]
+    branches: ["main"]
 
 jobs:
   release_pull_requestk:
