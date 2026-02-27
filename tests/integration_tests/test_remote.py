@@ -53,7 +53,7 @@ def test_remote_training_set(csv_filename, fs_protocol, bucket, creds, backend, 
                 "input_features": input_features,
                 "output_features": output_features,
                 "combiner": {"type": "concat", "output_size": 14},
-                TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+                TRAINER: {"train_steps": 1, BATCH_SIZE: 128},
             }
 
             config_path = os.path.join(tmpdir, "config.yaml")

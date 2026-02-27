@@ -15,15 +15,7 @@ from tests.integration_tests.utils import (
 )
 
 
-@pytest.mark.slow
-@pytest.mark.parametrize(
-    "backend",
-    [
-        pytest.param("local", id="local"),
-        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
-    ],
-)
-def test_onehot_encoding(tmpdir, backend, ray_cluster_2cpu):
+def _onehot_encoding_config(tmpdir):
     input_features = [
         number_feature(),
         category_feature(encoder={"type": "onehot"}),
@@ -32,19 +24,23 @@ def test_onehot_encoding(tmpdir, backend, ray_cluster_2cpu):
 
     data_csv_path = os.path.join(tmpdir, "dataset.csv")
     dataset = generate_data(input_features, output_features, data_csv_path)
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
-    run_test_suite(config, dataset, backend)
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"train_steps": 1}}
+    return config, dataset
+
+
+def test_onehot_encoding(tmpdir):
+    config, dataset = _onehot_encoding_config(tmpdir)
+    run_test_suite(config, dataset, "local")
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize(
-    "backend",
-    [
-        pytest.param("local", id="local"),
-        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
-    ],
-)
-def test_hf_text_embedding(tmpdir, backend, ray_cluster_2cpu):
+@pytest.mark.distributed
+def test_onehot_encoding_ray(tmpdir, ray_cluster_2cpu):
+    config, dataset = _onehot_encoding_config(tmpdir)
+    run_test_suite(config, dataset, "ray")
+
+
+def _hf_text_embedding_config(tmpdir):
     input_features = [
         number_feature(),
         text_feature(
@@ -59,12 +55,22 @@ def test_hf_text_embedding(tmpdir, backend, ray_cluster_2cpu):
 
     data_csv_path = os.path.join(tmpdir, "dataset.csv")
     dataset = generate_data(input_features, output_features, data_csv_path)
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"train_steps": 1}}
+    return config, dataset
 
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 1}}
-    run_test_suite(config, dataset, backend)
+
+def test_hf_text_embedding(tmpdir):
+    config, dataset = _hf_text_embedding_config(tmpdir)
+    run_test_suite(config, dataset, "local")
 
 
 @pytest.mark.slow
+@pytest.mark.distributed
+def test_hf_text_embedding_ray(tmpdir, ray_cluster_2cpu):
+    config, dataset = _hf_text_embedding_config(tmpdir)
+    run_test_suite(config, dataset, "ray")
+
+
 @pytest.mark.parametrize("cache_encoder_embeddings", [True, False, None])
 def test_onehot_encoding_preprocessing(cache_encoder_embeddings, tmpdir):
     vocab_size = 5

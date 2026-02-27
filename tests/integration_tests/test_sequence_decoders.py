@@ -6,7 +6,6 @@ from ludwig.constants import (
     BATCH_SIZE,
     DECODER,
     ENCODER,
-    EPOCHS,
     INPUT_FEATURES,
     OUTPUT_FEATURES,
     SEQUENCE,
@@ -45,7 +44,7 @@ def test_sequence_decoder_predictions(tmpdir, csv_filename, ray_cluster_2cpu, fe
     )
     dataset_path = create_data_set_to_use("csv", dataset_path)
 
-    config = {INPUT_FEATURES: [input_feature], TRAINER: {EPOCHS: 1, BATCH_SIZE: 4}}
+    config = {INPUT_FEATURES: [input_feature], TRAINER: {"train_steps": 1, BATCH_SIZE: 4}}
 
     # Ensure that the decoder outputs the correct predictions through both the default and feature-specific configs.
     config[OUTPUT_FEATURES] = [output_feature]

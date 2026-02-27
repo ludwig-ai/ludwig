@@ -5,7 +5,6 @@ from ludwig.api import LudwigModel
 from tests.integration_tests.utils import generate_data_as_dataframe
 
 
-@pytest.mark.slow
 @pytest.mark.distributed
 def test_from_ray_dataset_empty(tmpdir, ray_cluster_2cpu):
     import dask.dataframe as dd

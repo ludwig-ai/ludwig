@@ -52,16 +52,7 @@ def random_set_logits(*args, num_predict_samples, vocab_size, pct_positive, **kw
     return torch.tensor(logits, dtype=torch.float32)  # simulate torch model output
 
 
-@pytest.mark.slow
-@pytest.mark.parametrize(
-    "backend",
-    [
-        pytest.param("local", id="local"),
-        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
-    ],
-)
-@pytest.mark.parametrize("distinct_values", [(False, True), ("No", "Yes")])
-def test_binary_predictions(tmpdir, backend, distinct_values, ray_cluster_2cpu):
+def _run_binary_predictions(tmpdir, backend, distinct_values, ray_cluster_2cpu):
     input_features = [
         category_feature(encoder={"vocab_size": 3}),
     ]
@@ -116,16 +107,19 @@ def test_binary_predictions(tmpdir, backend, distinct_values, ray_cluster_2cpu):
         assert np.allclose(prob_0, 1 - prob_1)
 
 
+@pytest.mark.parametrize("distinct_values", [(False, True), ("No", "Yes")])
+def test_binary_predictions(tmpdir, distinct_values, ray_cluster_2cpu):
+    _run_binary_predictions(tmpdir, "local", distinct_values, ray_cluster_2cpu)
+
+
 @pytest.mark.slow
-@pytest.mark.parametrize(
-    "backend",
-    [
-        pytest.param("local", id="local"),
-        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
-    ],
-)
-@pytest.mark.parametrize("distinct_values", [(0.0, 1.0), (0, 1)])
-def test_binary_predictions_with_number_dtype(tmpdir, backend, distinct_values, ray_cluster_2cpu):
+@pytest.mark.distributed
+@pytest.mark.parametrize("distinct_values", [(False, True), ("No", "Yes")])
+def test_binary_predictions_ray(tmpdir, distinct_values, ray_cluster_2cpu):
+    _run_binary_predictions(tmpdir, "ray", distinct_values, ray_cluster_2cpu)
+
+
+def _run_binary_predictions_with_number_dtype(tmpdir, backend, distinct_values, ray_cluster_2cpu):
     input_features = [
         category_feature(encoder={"vocab_size": 3}),
     ]
@@ -178,6 +172,18 @@ def test_binary_predictions_with_number_dtype(tmpdir, backend, distinct_values, 
         else:
             assert prob_0 == prob
         assert np.allclose(prob_0, 1 - prob_1)
+
+
+@pytest.mark.parametrize("distinct_values", [(0.0, 1.0), (0, 1)])
+def test_binary_predictions_with_number_dtype(tmpdir, distinct_values, ray_cluster_2cpu):
+    _run_binary_predictions_with_number_dtype(tmpdir, "local", distinct_values, ray_cluster_2cpu)
+
+
+@pytest.mark.slow
+@pytest.mark.distributed
+@pytest.mark.parametrize("distinct_values", [(0.0, 1.0), (0, 1)])
+def test_binary_predictions_with_number_dtype_ray(tmpdir, distinct_values, ray_cluster_2cpu):
+    _run_binary_predictions_with_number_dtype(tmpdir, "ray", distinct_values, ray_cluster_2cpu)
 
 
 @pytest.mark.parametrize("pct_positive", [1.0, 0.5, 0.0])
