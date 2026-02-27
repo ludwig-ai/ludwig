@@ -8,10 +8,9 @@ try:
     import bitsandbytes as bnb
 except Exception:
     bnb = None
-from marshmallow import fields, ValidationError
-
 import ludwig.schema.utils as schema_utils
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.error import ConfigValidationError
 from ludwig.schema.metadata import OPTIMIZER_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
 from ludwig.schema.utils import ludwig_dataclass
@@ -958,8 +957,8 @@ def GradientClippingDataclassField(description: str, default: dict = {}):
     """
     allow_none = True
 
-    class GradientClippingMarshmallowField(fields.Field):
-        """Custom marshmallow field class for gradient clipping.
+    class GradientClippingMarshmallowField(schema_utils.LudwigSchemaField):
+        """Custom field class for gradient clipping.
 
         Deserializes a dict to a valid instance of `ludwig.modules.optimization_modules.GradientClippingConfig` and
         creates a corresponding JSON schema for external usage.
@@ -971,11 +970,11 @@ def GradientClippingDataclassField(description: str, default: dict = {}):
             if isinstance(value, dict):
                 try:
                     return GradientClippingConfig.Schema().load(value)
-                except (TypeError, ValidationError):
-                    raise ValidationError(
+                except (TypeError, ConfigValidationError):
+                    raise ConfigValidationError(
                         f"Invalid params for gradient clipping: {value}, see GradientClippingConfig class."
                     )
-            raise ValidationError("Field should be None or dict")
+            raise ConfigValidationError("Field should be None or dict")
 
         def _jsonschema_type_mapping(self):
             return {
@@ -991,7 +990,7 @@ def GradientClippingDataclassField(description: str, default: dict = {}):
             }
 
     if not isinstance(default, dict):
-        raise ValidationError(f"Invalid default: `{default}`")
+        raise ConfigValidationError(f"Invalid default: `{default}`")
 
     def load_default():
         return GradientClippingConfig.Schema().load(default)

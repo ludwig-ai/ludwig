@@ -5,7 +5,6 @@ import warnings
 from collections.abc import Mapping
 from typing import Any, TYPE_CHECKING
 
-from marshmallow import ValidationError
 from transformers import AutoConfig
 
 from ludwig.api_annotations import DeveloperAPI
@@ -28,6 +27,7 @@ from ludwig.constants import (
     TEXT,
     TYPE,
 )
+from ludwig.error import ConfigValidationError
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.schema.features.utils import output_config_registry
 from ludwig.schema.hyperopt.scheduler import BaseHyperbandSchedulerConfig
@@ -121,14 +121,16 @@ def set_validation_parameters(config: "ModelConfig"):
                     if validation_field is None:
                         validation_field = feature_name
                     else:
-                        raise ValidationError(
+                        raise ConfigValidationError(
                             f"The validation_metric: '{config.trainer.validation_metric}' corresponds to multiple "
                             f"possible validation_fields, '{validation_field}' and '{feature_name}'. Please explicitly "
                             "specify the validation_field that should be used with the validation_metric "
                             f"'{config.trainer.validation_metric}'."
                         )
             if validation_field is None:
-                raise ValidationError("User-specified trainer.validation_metric is not valid for any output feature.")
+                raise ConfigValidationError(
+                    "User-specified trainer.validation_metric is not valid for any output feature."
+                )
 
             config.trainer.validation_field = validation_field
 
@@ -138,7 +140,7 @@ def set_validation_parameters(config: "ModelConfig"):
         if not config.trainer.validation_metric:
             config.trainer.validation_metric = LOSS
         elif config.trainer.validation_metric != LOSS:
-            raise ValidationError(
+            raise ConfigValidationError(
                 f"Must set validation_metric=loss when validation_field=combined, "
                 f"found validation_metric={config.trainer.validation_metric}"
             )
@@ -147,11 +149,13 @@ def set_validation_parameters(config: "ModelConfig"):
     # Field is not combined, so use the default validation metric for the single feature
     validation_features = [f for f in config.output_features if f.name == config.trainer.validation_field]
     if len(validation_features) > 1:
-        raise ValidationError(
+        raise ConfigValidationError(
             f"Found more than one feature matching validation field: {config.trainer.validation_field}"
         )
     if len(validation_features) == 0:
-        raise ValidationError(f"No output feature found matching validation field: {config.trainer.validation_field}")
+        raise ConfigValidationError(
+            f"No output feature found matching validation field: {config.trainer.validation_field}"
+        )
 
     validation_feature = validation_features[0]
     if not config.trainer.validation_metric:

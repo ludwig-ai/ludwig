@@ -2,12 +2,12 @@ import logging
 import os
 from dataclasses import field
 
-from marshmallow import fields, ValidationError
 from transformers import AutoConfig
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BASE_MODEL
 from ludwig.error import ConfigValidationError
+from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata import LLM_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
 
@@ -93,16 +93,16 @@ def BaseModelDataclassField():
                     "pretrained CausalLM from huggingface. See: "
                     "https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads for a full list."
                 )
-        raise ValidationError(
+        raise ConfigValidationError(
             f"`base_model` should be a string, instead given: {model_name}. This can be a preset or any pretrained "
             "CausalLM on huggingface. See: https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads"
         )
 
-    class BaseModelField(fields.Field):
+    class BaseModelField(schema_utils.LudwigSchemaField):
         def _serialize(self, value, attr, obj, **kwargs):
             if isinstance(value, str):
                 return value
-            raise ValidationError(f"Value to serialize is not a string: {value}")
+            raise ConfigValidationError(f"Value to serialize is not a string: {value}")
 
         def _deserialize(self, value, attr, obj, **kwargs):
             return validate(value)

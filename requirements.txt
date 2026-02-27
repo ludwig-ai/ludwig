@@ -19,8 +19,6 @@ tables
 fsspec[http]
 dataclasses-json
 jsonschema>=4.17
-marshmallow
-marshmallow-dataclass>=8.6
 tensorboard
 torchmetrics>=1.0
 torchinfo

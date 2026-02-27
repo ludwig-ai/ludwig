@@ -1,9 +1,8 @@
 from dataclasses import field
 
-from marshmallow import fields, ValidationError
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import RAY
+from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.hyperopt.scheduler import BaseSchedulerConfig, SchedulerDataclassField
 from ludwig.schema.utils import ludwig_dataclass
@@ -77,14 +76,14 @@ class ExecutorConfig(schema_utils.BaseMarshmallowConfig):
 
 @DeveloperAPI
 def ExecutorDataclassField(description: str, default: dict = {}):
-    class ExecutorMarshmallowField(fields.Field):
+    class ExecutorMarshmallowField(schema_utils.LudwigSchemaField):
         def _deserialize(self, value, attr, data, **kwargs):
             if isinstance(value, dict):
                 try:
                     return ExecutorConfig.Schema().load(value)
-                except (TypeError, ValidationError):
-                    raise ValidationError(f"Invalid params for executor: {value}, see ExecutorConfig class.")
-            raise ValidationError("Field should be dict")
+                except (TypeError, ConfigValidationError):
+                    raise ConfigValidationError(f"Invalid params for executor: {value}, see ExecutorConfig class.")
+            raise ConfigValidationError("Field should be dict")
 
         def _jsonschema_type_mapping(self):
             return {
@@ -94,7 +93,7 @@ def ExecutorDataclassField(description: str, default: dict = {}):
             }
 
     if not isinstance(default, dict):
-        raise ValidationError(f"Invalid default: `{default}`")
+        raise ConfigValidationError(f"Invalid default: `{default}`")
 
     load_default = lambda: ExecutorConfig.Schema().load(default)
     dump_default = ExecutorConfig.Schema().dump(default)

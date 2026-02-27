@@ -3,9 +3,8 @@ from collections.abc import Callable
 from dataclasses import field
 from importlib import import_module
 
-from marshmallow import fields, ValidationError
-
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.hyperopt import utils as hyperopt_utils
 from ludwig.schema.utils import ludwig_dataclass
@@ -497,8 +496,8 @@ def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt sche
     :return: Initialized dataclass field that converts untyped dicts with params to scheduler dataclass instances.
     """
 
-    class SchedulerMarshmallowField(fields.Field):
-        """Custom marshmallow field that deserializes a dict to a valid scheduler from
+    class SchedulerMarshmallowField(schema_utils.LudwigSchemaField):
+        """Custom field that deserializes a dict to a valid scheduler from
         `ludwig.schema.hyperopt.scheduler_registry` and creates a corresponding `oneOf` JSON schema for external
         usage."""
 
@@ -510,14 +509,14 @@ def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt sche
                     scheduler_config_cls = hyperopt_utils.scheduler_config_registry[value["type"].lower()]
                     try:
                         return scheduler_config_cls.Schema().load(value)
-                    except (TypeError, ValidationError) as e:
-                        raise ValidationError(
+                    except (TypeError, ConfigValidationError) as e:
+                        raise ConfigValidationError(
                             f"Invalid params for scheduler: {value}, see `{opt}` definition. Error: {e}"
                         )
-                raise ValidationError(
+                raise ConfigValidationError(
                     f"Invalid params for scheduler: {value}, expect dict with at least a valid `type` attribute."
                 )
-            raise ValidationError("Field should be None or dict")
+            raise ConfigValidationError("Field should be None or dict")
 
         def _jsonschema_type_mapping(self):
             # Note that this uses the same conditional pattern as combiners:
@@ -542,7 +541,7 @@ def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt sche
         or "type" not in default
         or default["type"] not in hyperopt_utils.scheduler_config_registry
     ):
-        raise ValidationError(f"Invalid default: `{default}`")
+        raise ConfigValidationError(f"Invalid default: `{default}`")
     try:
         opt = hyperopt_utils.scheduler_config_registry[default["type"].lower()]
         load_default = lambda: opt.Schema().load(default)
@@ -560,6 +559,6 @@ def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt sche
             default_factory=load_default,
         )
     except Exception as e:
-        raise ValidationError(
+        raise ConfigValidationError(
             f"Unsupported scheduler type: {default['type']}. See scheduler_config_registry. Details: {e}"
         )

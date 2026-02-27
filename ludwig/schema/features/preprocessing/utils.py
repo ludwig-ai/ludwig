@@ -1,8 +1,7 @@
 from dataclasses import field
 
-from marshmallow import fields, ValidationError
-
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.utils.registry import Registry
@@ -27,9 +26,9 @@ def PreprocessingDataclassField(feature_type: str):
     Returns: Initialized dataclass field that converts an untyped dict with params to a preprocessing config.
     """
 
-    class PreprocessingMarshmallowField(fields.Field):
-        """Custom marshmallow field that deserializes a dict for a valid preprocessing config from the
-        preprocessing_registry and creates a corresponding JSON schema for external usage."""
+    class PreprocessingMarshmallowField(schema_utils.LudwigSchemaField):
+        """Custom field that deserializes a dict for a valid preprocessing config from the preprocessing_registry
+        and creates a corresponding JSON schema for external usage."""
 
         def _deserialize(self, value, attr, data, **kwargs):
             if value is None:
@@ -39,14 +38,14 @@ def PreprocessingDataclassField(feature_type: str):
                     pre = preprocessing_registry[feature_type]
                     try:
                         return pre.Schema().load(value)
-                    except (TypeError, ValidationError) as error:
-                        raise ValidationError(
+                    except (TypeError, ConfigValidationError) as error:
+                        raise ConfigValidationError(
                             f"Invalid preprocessing params: {value}, see `{pre}` definition. Error: {error}"
                         )
-                raise ValidationError(
+                raise ConfigValidationError(
                     f"Invalid params for preprocessor: {value}, expect dict with at least a valid `type` attribute."
                 )
-            raise ValidationError("Field should be None or dict")
+            raise ConfigValidationError("Field should be None or dict")
 
         def _jsonschema_type_mapping(self):
             preprocessor_cls = preprocessing_registry[feature_type]
@@ -74,6 +73,6 @@ def PreprocessingDataclassField(feature_type: str):
             default_factory=load_default,
         )
     except Exception as e:
-        raise ValidationError(
+        raise ConfigValidationError(
             f"Unsupported preprocessing type: {feature_type}. See preprocessing_registry. " f"Details: {e}"
         )

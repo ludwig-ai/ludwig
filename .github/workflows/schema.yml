@@ -1,0 +1,47 @@
+name: Publish JSON Schema
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ludwig/schema/**"
+      - "ludwig/config_validation/**"
+      - "ludwig/constants.py"
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish-schema:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Ludwig
+        run: pip install -e ".[test]"
+
+      - name: Export schemas
+        run: |
+          mkdir -p schema-out
+          python -m ludwig.schema.export_schema --model-type combined -o schema-out/ludwig-config.json
+          python -m ludwig.schema.export_schema --model-type ecd -o schema-out/ludwig-config-ecd.json
+          python -m ludwig.schema.export_schema --model-type llm -o schema-out/ludwig-config-llm.json
+
+      - name: Publish to ludwig-ai/schema
+        uses: cpina/github-action-push-to-another-repository@v1.7.2
+        env:
+          SSH_DEPLOY_KEY: ${{ secrets.SCHEMA_REPO_DEPLOY_KEY }}
+        with:
+          source-directory: schema-out
+          destination-github-username: ludwig-ai
+          destination-repository-name: schema
+          target-branch: main
+          commit-message: "Update Ludwig JSON schema from ${{ github.sha }}"

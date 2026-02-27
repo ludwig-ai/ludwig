@@ -15,20 +15,58 @@ from functools import lru_cache
 from typing import Any
 
 import yaml
-from marshmallow import fields as mm_fields
-from marshmallow import ValidationError as MarshmallowValidationError
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pydantic import ValidationError as PydanticValidationError
 from pydantic.fields import FieldInfo
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import ACTIVE, COLUMN, LUDWIG_SCHEMA_VALIDATION_POLICY, NAME, PROC_COLUMN, TYPE
+from ludwig.error import ConfigValidationError
 from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.schema.metadata import COMMON_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
 from ludwig.utils.misc_utils import scrub_creds
 from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import activations, initializer_registry
+
+# ============================================================================
+# LudwigSchemaField - base class replacing marshmallow fields.Field
+# ============================================================================
+
+
+class LudwigSchemaField:
+    """Plain Python base class for Ludwig schema fields.
+
+    Replaces marshmallow fields.Field as the base for TypeSelection, DictMarshmallowField (NestedConfigField), and all
+    custom field classes. The contract (get_default_field, _jsonschema_type_mapping, _deserialize) stays identical.
+    """
+
+    def __init__(self, **kwargs):
+        # Store all keyword arguments as attributes for backward compat
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+    def get_default_field(self) -> FieldInfo:
+        """Create a pydantic FieldInfo for this field.
+
+        Override in subclasses.
+        """
+        return Field(default=None)
+
+    def _jsonschema_type_mapping(self):
+        """Return a JSON schema dict for this field.
+
+        Override in subclasses.
+        """
+        return None
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        """Deserialize a raw value.
+
+        Override in subclasses.
+        """
+        return value
+
 
 logger = logging.getLogger(__name__)
 
@@ -190,7 +228,7 @@ class _LudwigModelMeta(type(BaseModel)):
                 value = namespace[attr_name]
                 if isinstance(value, _dc.Field):
                     namespace[attr_name] = _convert_dataclass_field_to_pydantic(value)
-                elif isinstance(value, mm_fields.Field) and hasattr(value, "get_default_field"):
+                elif isinstance(value, LudwigSchemaField) and hasattr(value, "get_default_field"):
                     # TypeSelection and DictMarshmallowField instances need conversion
                     namespace[attr_name] = value.get_default_field()
 
@@ -352,8 +390,6 @@ class BaseMarshmallowConfig(BaseModel, metaclass=_LudwigModelMeta):
                         try:
                             data[fname] = meta.cls.model_validate(value)
                         except Exception as e:
-                            from ludwig.error import ConfigValidationError
-
                             raise ConfigValidationError(
                                 f"Invalid params: {value}, see `{meta.cls}` definition. Error: {e}"
                             )
@@ -369,10 +405,8 @@ class BaseMarshmallowConfig(BaseModel, metaclass=_LudwigModelMeta):
                             data[fname] = mfield._deserialize(value, fname, data)
                         except Exception as e:
                             # Re-raise ConfigValidationError (from __post_init__) and
-                            # MarshmallowValidationError (from _deserialize) rather than swallowing them
-                            from ludwig.error import ConfigValidationError
-
-                            if isinstance(e, (ConfigValidationError, MarshmallowValidationError)):
+                            # from _deserialize rather than swallowing them
+                            if isinstance(e, ConfigValidationError):
                                 raise
                             pass  # Let pydantic handle other validation errors
                     break
@@ -643,21 +677,16 @@ def _field_info_to_jsonschema(fname: str, finfo: FieldInfo, annotation: type | N
                 custom = mf._jsonschema_type_mapping()
                 if custom is not None:
                     return custom
-            # Handle marshmallow List fields (e.g., FeatureList)
-            if isinstance(mf, mm_fields.List) and mf.inner is not None:
+            # Handle FeatureList-style fields with inner and length constraints
+            if hasattr(mf, "inner") and mf.inner is not None:
                 inner_schema = {}
                 if hasattr(mf.inner, "_jsonschema_type_mapping"):
                     inner_schema = mf.inner._jsonschema_type_mapping() or {}
                 result = {"type": "array", "items": inner_schema}
-                # Copy validators
-                from marshmallow import validate
-
-                for v in mf.validators:
-                    if isinstance(v, validate.Length):
-                        if v.min is not None:
-                            result["minItems"] = v.min
-                        if v.max is not None:
-                            result["maxItems"] = v.max
+                if hasattr(mf, "min_length") and mf.min_length is not None:
+                    result["minItems"] = mf.min_length
+                if hasattr(mf, "max_length") and mf.max_length is not None:
+                    result["maxItems"] = mf.max_length
                 return result
             return {"type": "object"}
 
@@ -1351,13 +1380,10 @@ def OneOfOptionsField(
 # ============================================================================
 
 
-class TypeSelection(mm_fields.Field):
+class TypeSelection(LudwigSchemaField):
     """Resolves polymorphic config types from a registry based on a key field.
 
     Used for fields like encoder, decoder, optimizer where the config class depends on a "type" key in the dict value.
-
-    Inherits from marshmallow fields.Field for backward compatibility with code that uses TypeSelection instances as
-    inner fields in marshmallow List/Nested constructs.
     """
 
     def __init__(
@@ -1371,7 +1397,6 @@ class TypeSelection(mm_fields.Field):
         allow_none: bool = False,
         **kwargs,
     ):
-        super().__init__(**kwargs)
         self.registry = registry
         self.default_value = default_value
         self.key = key
@@ -1406,13 +1431,11 @@ class TypeSelection(mm_fields.Field):
                 try:
                     return cls.model_validate(value)
                 except (TypeError, PydanticValidationError) as e:
-                    raise MarshmallowValidationError(f"Invalid params: {value}, see `{cls}` definition") from e
-            raise MarshmallowValidationError(
-                f"Invalid type: '{cls_type}', expected one of: {list(self.registry.keys())}"
-            )
+                    raise ConfigValidationError(f"Invalid params: {value}, see `{cls}` definition") from e
+            raise ConfigValidationError(f"Invalid type: '{cls_type}', expected one of: {list(self.registry.keys())}")
 
         maybe_str = ", `str`," if self.allow_str_value else ""
-        raise MarshmallowValidationError(f"Invalid param {value}, expected `None`{maybe_str} or `dict`")
+        raise ConfigValidationError(f"Invalid param {value}, expected `None`{maybe_str} or `dict`")
 
     def str_value_to_object(self, value: str) -> dict:
         """Convert a string shorthand to a dict with the type key."""
@@ -1451,11 +1474,10 @@ class TypeSelection(mm_fields.Field):
 
 
 @DeveloperAPI
-class DictMarshmallowField(mm_fields.Field):
+class DictMarshmallowField(LudwigSchemaField):
     """Validates a dict as a specific config class (non-polymorphic).
 
-    Used for fields where a dict should be deserialized into a fixed config class. Inherits from marshmallow
-    fields.Field for backward compat.
+    Used for fields where a dict should be deserialized into a fixed config class.
     """
 
     def __init__(
@@ -1466,22 +1488,21 @@ class DictMarshmallowField(mm_fields.Field):
         description: str = "",
         **kwargs,
     ):
-        super().__init__(**kwargs)
         self.cls = cls
         self.allow_none = allow_none
         self.default_missing = default_missing
         self.description = description
 
     def _deserialize(self, value, attr, data, **kwargs):
-        """Marshmallow deserialization - delegates to pydantic model_validate."""
+        """Deserialize a dict to a config instance via pydantic model_validate."""
         if value is None:
             return value
         if isinstance(value, dict):
             try:
                 return self.cls.model_validate(value)
             except (TypeError, PydanticValidationError) as e:
-                raise MarshmallowValidationError(f"Invalid params: {value}, see `{self.cls}` definition") from e
-        raise MarshmallowValidationError("Field should be None or dict")
+                raise ConfigValidationError(f"Invalid params: {value}, see `{self.cls}` definition") from e
+        raise ConfigValidationError("Field should be None or dict")
 
     def get_default_field(self) -> FieldInfo:
         """Create a pydantic Field wrapping this DictMarshmallowField."""
@@ -1512,5 +1533,8 @@ class DictMarshmallowField(mm_fields.Field):
         return unload_jsonschema_from_marshmallow_class(self.cls)
 
 
-# Keep ValidationError accessible for backward compat
-ValidationError = MarshmallowValidationError
+# Backward compatibility aliases
+ValidationError = ConfigValidationError
+NestedConfigField = DictMarshmallowField
+LudwigConfig = BaseMarshmallowConfig
+unload_jsonschema_from_config_class = unload_jsonschema_from_marshmallow_class

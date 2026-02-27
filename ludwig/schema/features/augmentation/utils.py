@@ -2,10 +2,9 @@ import copy
 from dataclasses import field
 from typing import Any
 
-from marshmallow import fields, ValidationError
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TYPE
+from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.augmentation.base import BaseAugmentationConfig
 from ludwig.utils.registry import Registry
@@ -67,16 +66,16 @@ def AugmentationDataclassField(
     if isinstance(default, bool):
         default = default_augmentations if default else []
 
-    class AugmentationContainerMarshmallowField(fields.Field):
-        """Custom marshmallow field that deserializes a list for a valid augmentation config from the
-        augmentation_registry and creates a corresponding JSON schema for external usage."""
+    class AugmentationContainerMarshmallowField(schema_utils.LudwigSchemaField):
+        """Custom field that deserializes a list for a valid augmentation config from the augmentation_registry and
+        creates a corresponding JSON schema for external usage."""
 
         def _deserialize(self, value, attr, data, **kwargs):
             if isinstance(value, bool):
                 value = default_augmentations if value else []
 
             if not isinstance(value, list):
-                raise ValidationError(f"Augmentation config must be a list, found: {type(value)}")
+                raise ConfigValidationError(f"Augmentation config must be a list, found: {type(value)}")
 
             augmentation_classes = get_augmentation_classes(feature_type)
             augmentation_list = []
@@ -87,12 +86,12 @@ def AugmentationDataclassField(
                     pre = augmentation_cls()
                     try:
                         augmentation_list.append(pre.Schema().load(augmentation))
-                    except (TypeError, ValidationError) as error:
-                        raise ValidationError(
+                    except (TypeError, ConfigValidationError) as error:
+                        raise ConfigValidationError(
                             f"Invalid augmentation params: {value}, see `{pre}` definition. Error: {error}"
                         )
                 else:
-                    raise ValidationError(
+                    raise ConfigValidationError(
                         f"Invalid augmentation type: '{augmentation_op}', "
                         f"expected one of: {list(augmentation_classes.keys())}"
                     )
@@ -112,8 +111,10 @@ def AugmentationDataclassField(
             try:
                 load_augmentation_list.append(pre.Schema().load(augmentation))
                 dump_augmentation_list.append(pre.Schema().dump(augmentation))
-            except (TypeError, ValidationError) as error:
-                raise ValidationError(f"Invalid augmentation params: {default}, see `{pre}` definition. Error: {error}")
+            except (TypeError, ConfigValidationError) as error:
+                raise ConfigValidationError(
+                    f"Invalid augmentation params: {default}, see `{pre}` definition. Error: {error}"
+                )
 
         load_default = lambda: copy.deepcopy(load_augmentation_list)
         dump_default = dump_augmentation_list
@@ -129,7 +130,7 @@ def AugmentationDataclassField(
             default_factory=load_default,
         )
     except Exception as e:
-        raise ValidationError(f"Unsupported augmentation type. See augmentation_registry. " f"Details: {e}")
+        raise ConfigValidationError(f"Unsupported augmentation type. See augmentation_registry. " f"Details: {e}")
 
 
 @DeveloperAPI
