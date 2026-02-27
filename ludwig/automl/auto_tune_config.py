@@ -74,7 +74,7 @@ BYTES_OPTIMIZER_PER_WEIGHT = 8  # for optimizer m and v vectors
 
 
 def get_trainingset_metadata(config, dataset, backend):
-    (_, _, _, training_set_metadata) = preprocess_for_training(
+    _, _, _, training_set_metadata = preprocess_for_training(
         config, dataset=dataset, preprocessing_params=config[PREPROCESSING], backend=backend
     )
     return training_set_metadata

@@ -80,7 +80,7 @@ class Experiment:
         data_csv = generate_data(self.input_features, self.output_features, self.csv_file)
         self.model = self._create_model()
         test_df, train_df, val_df = obtain_df_splits(data_csv)
-        (self.train_stats, self.preprocessed_data, self.output_dir) = self.model.train(
+        self.train_stats, self.preprocessed_data, self.output_dir = self.model.train(
             training_set=train_df, validation_set=val_df, output_directory=os.path.join(tmpdir, "results")
         )
         self.test_stats_full, predictions, self.output_dir = self.model.evaluate(

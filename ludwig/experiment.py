@@ -213,7 +213,7 @@ def experiment_cli(
             allow_parallel_threads=allow_parallel_threads,
             callbacks=callbacks,
         )
-    (eval_stats, train_stats, preprocessed_data, output_directory) = model.experiment(
+    eval_stats, train_stats, preprocessed_data, output_directory = model.experiment(
         dataset=dataset,
         training_set=training_set,
         validation_set=validation_set,
@@ -265,7 +265,7 @@ def kfold_cross_validate_cli(
     :return: None
     """
 
-    (kfold_cv_stats, kfold_split_indices) = kfold_cross_validate(
+    kfold_cv_stats, kfold_split_indices = kfold_cross_validate(
         k_fold,
         config=config,
         dataset=dataset,

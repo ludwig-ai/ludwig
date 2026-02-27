@@ -1,6 +1,5 @@
 """Utility functions related to sequence decoders."""
 
-
 import torch
 
 from ludwig.constants import ENCODER_OUTPUT_STATE, HIDDEN

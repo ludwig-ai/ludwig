@@ -17,7 +17,7 @@ _Declarative deep learning framework built for scale and efficiency._
 
 </div>
 
-> \[!IMPORTANT\]
+> [!IMPORTANT]
 > Our community has moved to [Discord](https://discord.gg/CBgdrGnZjy) -- please join us there!
 
 # 📖 What is Ludwig?
@@ -335,6 +335,6 @@ more accessible and feature rich framework for everyone to use!
 # 👋 Getting Involved
 
 - [Discord](https://discord.gg/CBgdrGnZjy)
-- [X](https://twitter.com/ludwig_ai)
+- [X (Twitter)](https://twitter.com/ludwig_ai)
 - [Medium](https://medium.com/ludwig-ai)
 - [GitHub Issues](https://github.com/ludwig-ai/ludwig/issues)

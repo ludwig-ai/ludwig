@@ -38,8 +38,7 @@ train_df.to_csv("beans_train.csv", index=False)
 test_df.to_csv("beans_test.csv", index=False)
 
 
-config = yaml.safe_load(
-    r"""
+config = yaml.safe_load(r"""
 input_features:
   - name: image_path
     type: image
@@ -55,8 +54,7 @@ trainer:
   batch_size: 5
   layers_to_freeze_regex: '(layer1\.0\.*|layer2\.0\.*)'
 
-    """
-)
+    """)
 
 model = LudwigModel(config, logging_level=logging.INFO)
 train_stats = model.train(dataset="beans_train.csv", skip_save_model=True)

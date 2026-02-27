@@ -228,8 +228,7 @@ def test_experiment_binary_fill_with_const():
 
 
 def test_check_concat_combiner_requirements():
-    config = yaml.safe_load(
-        """
+    config = yaml.safe_load("""
 input_features:
   - name: description
     type: text
@@ -248,8 +247,7 @@ combiner:
 trainer:
   train_steps: 2
 model_type: ecd
-"""
-    )
+""")
 
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)
@@ -260,8 +258,7 @@ model_type: ecd
 
 
 def test_check_llm_input_features():
-    config = yaml.safe_load(
-        """
+    config = yaml.safe_load("""
 model_type: llm
 base_model: facebook/opt-350m
 input_features:
@@ -274,8 +271,7 @@ output_features:
     type: text
 backend:
   type: ray
-"""
-    )
+""")
 
     # do not allow more than one input feature
     with pytest.raises(ConfigValidationError):
@@ -293,8 +289,7 @@ backend:
 
 
 def test_retrieval_config_none_type():
-    config = yaml.safe_load(
-        """
+    config = yaml.safe_load("""
 model_type: llm
 base_model: facebook/opt-350m
 prompt:
@@ -310,8 +305,7 @@ output_features:
 -
     name: label
     type: text
-"""
-    )
+""")
 
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)
@@ -322,8 +316,7 @@ output_features:
 
 
 def test_retrieval_config_random_type():
-    config = yaml.safe_load(
-        """
+    config = yaml.safe_load("""
 model_type: llm
 base_model: facebook/opt-350m
 prompt:
@@ -338,16 +331,14 @@ output_features:
 -
     name: label
     type: text
-"""
-    )
+""")
 
     # should not fail because we auto-set k=1 if k=0 on __post_init__
     ModelConfig.from_dict(config)
 
 
 def test_retrieval_config_semantic_type():
-    config = yaml.safe_load(
-        """
+    config = yaml.safe_load("""
 model_type: llm
 base_model: facebook/opt-350m
 prompt:
@@ -362,8 +353,7 @@ output_features:
 -
     name: label
     type: text
-"""
-    )
+""")
 
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)
@@ -376,8 +366,7 @@ output_features:
     reason="TODO(geoffrey, arnav): re-enable this when we have reconciled the config with the backend kwarg in api.py"
 )
 def test_check_llm_quantization_backend_incompatibility():
-    config = yaml.safe_load(
-        """
+    config = yaml.safe_load("""
 model_type: llm
 base_model: facebook/opt-350m
 quantization:
@@ -390,8 +379,7 @@ output_features:
     type: text
 backend:
   type: ray
-"""
-    )
+""")
 
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)
@@ -408,8 +396,7 @@ backend:
 
 
 def test_check_qlora():
-    config = yaml.safe_load(
-        """
+    config = yaml.safe_load("""
 model_type: llm
 base_model: facebook/opt-350m
 quantization:
@@ -422,8 +409,7 @@ output_features:
     type: text
 trainer:
   type: finetune
-"""
-    )
+""")
 
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)

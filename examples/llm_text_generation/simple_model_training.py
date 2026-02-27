@@ -43,8 +43,7 @@ qa_pairs = [
 
 df = pd.DataFrame(qa_pairs)
 
-config = yaml.safe_load(
-    """
+config = yaml.safe_load("""
         input_features:
             - name: Question
               type: text
@@ -59,8 +58,7 @@ config = yaml.safe_load(
             num_beams: 4
             max_new_tokens: 5
         base_model: facebook/opt-350m
-    """
-)
+    """)
 
 # Define Ludwig model object that drive model training
 model = LudwigModel(config=config, logging_level=logging.INFO)

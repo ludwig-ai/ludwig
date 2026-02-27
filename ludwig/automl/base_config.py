@@ -140,8 +140,7 @@ def get_default_automl_hyperopt() -> dict[str, Any]:
 
     TODO: If settings seem reasonable, consider building this into the hyperopt schema, directly.
     """
-    return yaml.safe_load(
-        """
+    return yaml.safe_load("""
   search_alg:
     type: variant_generator
   executor:
@@ -154,8 +153,7 @@ def get_default_automl_hyperopt() -> dict[str, Any]:
       max_t: 3600
       grace_period: 72
       reduction_factor: 5
-"""
-    )
+""")
 
 
 def create_default_config(

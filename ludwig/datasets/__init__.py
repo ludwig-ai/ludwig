@@ -73,7 +73,12 @@ def load_dataset_uris(
     validation_set: str | DataFrame | None,
     test_set: str | DataFrame | None,
     backend: Backend,
-) -> tuple[CacheableDataframe | None, CacheableDataframe | None, CacheableDataframe | None, CacheableDataframe | None,]:
+) -> tuple[
+    CacheableDataframe | None,
+    CacheableDataframe | None,
+    CacheableDataframe | None,
+    CacheableDataframe | None,
+]:
     """Loads and returns any Ludwig dataset URIs as CacheableDataframes.
 
     Returns the input unmodified for any non-Ludwig datasets.
@@ -135,7 +140,12 @@ def _load_hf_datasets(
     validation_set: str | DataFrame | None,
     test_set: str | DataFrame | None,
     backend: Backend,
-) -> tuple[CacheableDataframe | None, CacheableDataframe | None, CacheableDataframe | None, CacheableDataframe | None,]:
+) -> tuple[
+    CacheableDataframe | None,
+    CacheableDataframe | None,
+    CacheableDataframe | None,
+    CacheableDataframe | None,
+]:
     """Loads and returns any Hugging Face datasets as CacheableDataframes.
 
     Returns the input unmodified for any non-HF datasets.

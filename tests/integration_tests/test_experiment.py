@@ -1138,8 +1138,7 @@ def test_experiment_ordinal_category(csv_filename):
 
 
 def test_experiment_feature_names_with_non_word_chars(tmpdir):
-    config = yaml.safe_load(
-        """
+    config = yaml.safe_load("""
 input_features:
     - name: Pclass (new)
       type: category
@@ -1165,8 +1164,7 @@ combiner:
     entity_2:
         - review.text
 
-"""
-    )
+""")
 
     df = build_synthetic_dataset_df(120, config)
     model = LudwigModel(config, logging_level=logging.INFO)

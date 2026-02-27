@@ -14,8 +14,7 @@ save_path = "/home/ray/" + dequantized_path
 hfhub_repo_id = os.path.join(hf_username, dequantized_path)
 
 
-config = yaml.safe_load(
-    f"""
+config = yaml.safe_load(f"""
     model_type: llm
     base_model: {base_model_name}
 
@@ -35,8 +34,7 @@ config = yaml.safe_load(
 
     backend:
       type: local
-  """
-)
+  """)
 
 # Define Ludwig model object that drive model training
 model = LudwigModel(config=config, logging_level=logging.INFO)

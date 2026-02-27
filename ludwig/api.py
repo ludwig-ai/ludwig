@@ -14,11 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 """
-    File name: LudwigModel.py
-    Author: Piero Molino
-    Date created: 5/21/2019
-    Python Version: 3+
+File name: LudwigModel.py
+Author: Piero Molino
+Date created: 5/21/2019
+Python Version: 3+
 """
+
 import copy
 import dataclasses
 import logging
@@ -599,7 +600,7 @@ class LudwigModel:
                     random_seed=random_seed,
                     **kwargs,
                 )
-                (training_set, validation_set, test_set, training_set_metadata) = preprocessed_data
+                training_set, validation_set, test_set, training_set_metadata = preprocessed_data
 
             self.training_set_metadata = training_set_metadata
 
@@ -685,7 +686,7 @@ class LudwigModel:
                         test_set=test_set,
                         save_path=model_dir,
                     )
-                    (self.model, train_trainset_stats, train_valiset_stats, train_testset_stats) = train_stats
+                    self.model, train_trainset_stats, train_valiset_stats, train_testset_stats = train_stats
 
                     # Calibrates output feature probabilities on validation set if calibration is enabled.
                     # Must be done after training, and before final model parameters are saved.
@@ -1539,7 +1540,7 @@ class LudwigModel:
             print_boxed("WARNING")
             logger.warning(HYPEROPT_WARNING)
 
-        (train_stats, preprocessed_data, output_directory) = self.train(
+        train_stats, preprocessed_data, output_directory = self.train(
             dataset=dataset,
             training_set=training_set,
             validation_set=validation_set,
@@ -1560,7 +1561,7 @@ class LudwigModel:
             random_seed=random_seed,
         )
 
-        (training_set, validation_set, test_set, training_set_metadata) = preprocessed_data
+        training_set, validation_set, test_set, training_set_metadata = preprocessed_data
 
         eval_set = validation_set
         if eval_split == TRAINING:
@@ -1754,7 +1755,7 @@ class LudwigModel:
                     callbacks=self.callbacks,
                 )
 
-            (proc_training_set, proc_validation_set, proc_test_set, training_set_metadata) = preprocessed_data
+            proc_training_set, proc_validation_set, proc_test_set, training_set_metadata = preprocessed_data
 
             return PreprocessedDataset(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)
         except Exception as e:
@@ -2296,7 +2297,7 @@ def kfold_cross_validate(
                 gpu_memory_limit=gpu_memory_limit,
                 allow_parallel_threads=allow_parallel_threads,
             )
-            (eval_stats, train_stats, preprocessed_data, output_directory) = model.experiment(
+            eval_stats, train_stats, preprocessed_data, output_directory = model.experiment(
                 training_set=curr_train_df,
                 test_set=curr_test_df,
                 experiment_name="cross_validation",

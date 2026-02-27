@@ -27,8 +27,7 @@ def _run_eval_steps_determinism():
             "split": ([0] * 10) + ([2] * 10),
         }
     )
-    config = yaml.safe_load(
-        """
+    config = yaml.safe_load("""
     model_type: llm
     base_model: hf-internal-testing/tiny-random-GPT2LMHeadModel
 
@@ -65,8 +64,7 @@ def _run_eval_steps_determinism():
 
     backend:
         type: local
-    """
-    )
+    """)
     model = LudwigModel(config=config)
     model.train(df)
     results1 = model.evaluate(df)

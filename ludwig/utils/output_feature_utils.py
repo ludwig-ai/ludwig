@@ -1,6 +1,5 @@
 """Utilities used for managing output feature dicts."""
 
-
 import numpy as np
 import torch
 

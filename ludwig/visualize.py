@@ -1706,7 +1706,7 @@ def compare_classifiers_performance_subset(
     metadata: dict,
     output_feature_name: str,
     top_n_classes: list[int],
-    labels_limit: (int),
+    labels_limit: int,
     subset: str,
     model_names: str | list[str] = None,
     output_directory: str = None,
@@ -3507,7 +3507,7 @@ def calibration_1_vs_all(
             gt_class = (ground_truth == class_idx).astype(int)
             prob_class = prob[:, class_idx]
 
-            (curr_fraction_positives, curr_mean_predicted_vals) = calibration_curve(gt_class, prob_class, n_bins=21)
+            curr_fraction_positives, curr_mean_predicted_vals = calibration_curve(gt_class, prob_class, n_bins=21)
 
             if len(curr_fraction_positives) < 2:
                 curr_fraction_positives = np.concatenate((np.array([0.0]), curr_fraction_positives))

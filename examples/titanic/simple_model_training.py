@@ -21,8 +21,7 @@ shutil.rmtree("./results", ignore_errors=True)
 # Download and prepare the dataset
 training_set, test_set, _ = titanic.load(split=True)
 
-config = yaml.safe_load(
-    """
+config = yaml.safe_load("""
 input_features:
     - name: Pclass
       type: category
@@ -47,8 +46,7 @@ output_features:
     - name: Survived
       type: binary
 
-"""
-)
+""")
 
 # Define Ludwig model object that drive model training
 model = LudwigModel(config=config, logging_level=logging.INFO)

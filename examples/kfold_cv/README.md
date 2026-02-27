@@ -64,10 +64,10 @@ retrieving results from  results
 
 ## Regression Example
 
-This illustrates using the Ludwig API to run the K-fold cross validation analysis.  To run the example, open the jupyter notebook `regression_example.ipynb`.  Following steps are performed:
+This illustrates using the Ludwig API to run the K-fold cross validation analysis. To run the example, open the jupyter notebook `regression_example.ipynb`. Following steps are performed:
 
 - Download and prepare data for training and create a Ludwig config data structure from a pandas dataframe structure
-- Use `ludwig.api.kfold_cross_validate()` function  to run the 5-fold cross validation
+- Use `ludwig.api.kfold_cross_validate()` function to run the 5-fold cross validation
 - Display results from the 5-fold cross validation analysis
 
 Expected output from running the example:

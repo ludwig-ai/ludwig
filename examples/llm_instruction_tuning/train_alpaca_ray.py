@@ -5,8 +5,7 @@ import yaml
 
 from ludwig.api import LudwigModel
 
-config = yaml.safe_load(
-    """
+config = yaml.safe_load("""
 model_type: llm
 base_model: bigscience/bloomz-3b
 
@@ -37,8 +36,7 @@ backend:
         offload_optimizer:
           device: cpu
           pin_memory: true
-"""
-)
+""")
 
 # Define Ludwig model object that drive model training
 model = LudwigModel(config=config, logging_level=logging.INFO)

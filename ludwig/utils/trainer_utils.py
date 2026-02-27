@@ -34,7 +34,7 @@ def initialize_trainer_metric_dict(output_features) -> dict[str, dict[str, list[
 
 
 def get_latest_metrics_dict(
-    progress_tracker_metrics: dict[str, dict[str, list[TrainerMetric]]]
+    progress_tracker_metrics: dict[str, dict[str, list[TrainerMetric]]],
 ) -> dict[str, dict[str, float]]:
     """Returns a dict of field name -> metric name -> latest metric value."""
     latest_metrics_dict = defaultdict(dict)

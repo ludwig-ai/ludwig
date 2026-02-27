@@ -33,7 +33,7 @@ RUN_SLOW=1 pytest -vs tests
 It is possible to run the CI test suite locally by executing the `pytest` action using
 [act](https://github.com/nektos/act).
 
-First start up the local minio container, if it is not already running.  Then call `act -j pytest` to run the test suite.
+First start up the local minio container, if it is not already running. Then call `act -j pytest` to run the test suite.
 
 ```
 # Start minio container in background
