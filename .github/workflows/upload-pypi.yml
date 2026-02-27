@@ -29,6 +29,7 @@ jobs:
 
       - name: Build source distribution
         run: |
+          pip install setuptools
           python setup.py sdist
 
       - name: Publish package distributions to PyPI
