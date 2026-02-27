@@ -12,7 +12,7 @@ _Declarative deep learning framework built for scale and efficiency._
 [![Discord](https://dcbadge.vercel.app/api/server/CBgdrGnZjy?style=flat&theme=discord-inverted)](https://discord.gg/CBgdrGnZjy)
 [![DockerHub](https://img.shields.io/docker/pulls/ludwigai/ludwig.svg)](https://hub.docker.com/r/ludwigai)
 [![Downloads](https://pepy.tech/badge/ludwig)](https://pepy.tech/project/ludwig)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/ludwig-ai/ludwig/blob/master/LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/ludwig-ai/ludwig/blob/main/LICENSE)
 [![X](https://img.shields.io/twitter/follow/ludwig_ai.svg?style=social&logo=twitter)](https://twitter.com/ludwig_ai)
 
 </div>
@@ -35,11 +35,13 @@ Key features:
 Ludwig is hosted by the
 [Linux Foundation AI & Data](https://lfaidata.foundation/).
 
+**Tech stack:** Python 3.12 | PyTorch 2.6 | Pydantic 2 | Transformers 5 | Ray 2.54
+
 ![img](https://raw.githubusercontent.com/ludwig-ai/ludwig-docs/master/docs/images/ludwig_legos_unanimated.gif)
 
 # 💾 Installation
 
-Install from PyPi. Be aware that Ludwig requires Python 3.10+.
+Install from PyPI. Be aware that Ludwig requires Python 3.12+.
 
 ```shell
 pip install ludwig
@@ -51,13 +53,13 @@ Or install with all optional dependencies:
 pip install ludwig[full]
 ```
 
-Please see [contributing](https://github.com/ludwig-ai/ludwig/blob/master/CONTRIBUTING.md) for more detailed installation instructions.
+Please see [contributing](https://github.com/ludwig-ai/ludwig/blob/main/CONTRIBUTING.md) for more detailed installation instructions.
 
 # 🚂 Getting Started
 
 Want to take a quick peek at some of Ludwig's features? Check out this Colab Notebook 🚀 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1lB4ALmEyvcMycE3Mlnsd7I3bc0zxvk39)
 
-Looking to fine-tune Llama-2 or Mistral? Check out these notebooks:
+Looking to fine-tune LLMs? Check out these notebooks:
 
 1. Fine-Tune Llama-2-7b: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1r4oSEwRJpYKBPM0M0RSh0pBEYK_gBKbe)
 1. Fine-Tune Llama-2-13b: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1zmSEzqZ7v4twBrXagj1TE_C--RNyVAyu)
@@ -69,12 +71,12 @@ For a full tutorial, check out the official [getting started guide](https://ludw
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1c3AO8l_H6V_x37RwQ8V7M6A-RmcBf2tG?usp=sharing)
 
-Let's fine-tune a pretrained LLaMA-2-7b large language model to follow instructions like a chatbot ("instruction tuning").
+Let's fine-tune a pretrained LLM to follow instructions like a chatbot ("instruction tuning").
 
 ### Prerequisites
 
 - [HuggingFace API Token](https://huggingface.co/docs/hub/security-tokens)
-- Access approval to [Llama2-7b-hf](https://huggingface.co/meta-llama/Llama-2-7b-hf)
+- Access approval to your chosen base model (e.g., [Llama-3.1-8B](https://huggingface.co/meta-llama/Llama-3.1-8B))
 - GPU with at least 12 GiB of VRAM (in our tests, we used an Nvidia T4)
 
 ### Running
@@ -92,7 +94,7 @@ Create a YAML config file named `model.yaml` with the following:
 
 ```yaml
 model_type: llm
-base_model: meta-llama/Llama-2-7b-hf
+base_model: meta-llama/Llama-3.1-8B
 
 quantization:
   bits: 4
@@ -315,7 +317,7 @@ Read our publications on [Ludwig](https://arxiv.org/pdf/1909.07930.pdf), [declar
 
 Learn more about [how Ludwig works](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/how_ludwig_works/), [how to get started](https://ludwig-ai.github.io/ludwig-docs/latest/getting_started/), and work through more [examples](https://ludwig-ai.github.io/ludwig-docs/latest/examples).
 
-If you are interested in [contributing](https://github.com/ludwig-ai/ludwig/blob/master/CONTRIBUTING.md), have questions, comments, or thoughts to share, or if you just want to be in the
+If you are interested in [contributing](https://github.com/ludwig-ai/ludwig/blob/main/CONTRIBUTING.md), have questions, comments, or thoughts to share, or if you just want to be in the
 know, please consider [joining our Community Discord](https://discord.gg/CBgdrGnZjy) and follow us on [X](https://twitter.com/ludwig_ai)!
 
 # 🤝 Join the community to build Ludwig with us
