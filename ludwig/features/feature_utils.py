@@ -98,7 +98,7 @@ def compute_sequence_probability(
     sequence_probabilities = sequence_probabilities[:max_sequence_length]
 
     if return_log_prob:
-        return np.sum(np.log(sequence_probabilities))
+        return np.sum(np.log(np.clip(sequence_probabilities, 1e-10, 1.0)))
     else:
         return np.prod(sequence_probabilities)
 

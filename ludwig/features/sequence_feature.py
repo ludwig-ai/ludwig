@@ -167,7 +167,7 @@ class _SequencePostprocessing(torch.nn.Module):
             predictions.append(sequence_predictions)
 
         probabilities, _ = torch.max(pred_probabilities, dim=-1)
-        probability = torch.sum(torch.log(probabilities), dim=-1)
+        probability = torch.sum(torch.log(probabilities.clamp(min=1e-10)), dim=-1)
 
         return {
             self.predictions_key: predictions,
