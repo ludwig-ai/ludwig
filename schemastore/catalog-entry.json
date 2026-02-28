@@ -1,0 +1,15 @@
+{
+  "name": "Ludwig",
+  "description": "Ludwig declarative deep learning framework configuration",
+  "fileMatch": [
+    "ludwig.yaml",
+    "ludwig.yml",
+    "ludwig.json",
+    "ludwig_config.yaml",
+    "ludwig_config.yml",
+    "ludwig_config.json",
+    "**/ludwig/**/config.yaml",
+    "**/ludwig/**/config.yml"
+  ],
+  "url": "https://ludwig-ai.github.io/schema/ludwig-config.json"
+}
