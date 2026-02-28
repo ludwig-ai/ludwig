@@ -97,13 +97,8 @@ class AutoTrainResults:
             logger.warning("No best model found")
             return None
 
-        ckpt_type, ckpt_path = checkpoint.get_internal_representation()
-        if ckpt_type == "uri":
-            # Read remote URIs using Ludwig's internal remote file loading APIs, as
-            # Ray's do not handle custom credentials at the moment.
-            with use_credentials(self._creds):
-                return LudwigModel.load(os.path.join(ckpt_path, MODEL_FILE_NAME))
-        else:
+        # Use credentials context for remote checkpoints that may need custom auth
+        with use_credentials(self._creds):
             with checkpoint.as_directory() as ckpt_path:
                 return LudwigModel.load(os.path.join(ckpt_path, MODEL_FILE_NAME))
 

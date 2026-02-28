@@ -946,6 +946,17 @@ class RayTuneExecutor:
         # https://docs.ray.io/en/latest/tune/tutorials/tune-stopping.html
         should_resume = "AUTO" if resume is None else resume
 
+        # If the output directory is an S3 path and AWS_ENDPOINT_URL is set,
+        # configure a custom S3 filesystem for Ray Tune (PyArrow doesn't read
+        # AWS_ENDPOINT_URL automatically).
+        storage_filesystem = None
+        if output_directory and output_directory.startswith("s3://"):
+            endpoint_url = os.environ.get("AWS_ENDPOINT_URL")
+            if endpoint_url:
+                import pyarrow.fs
+
+                storage_filesystem = pyarrow.fs.S3FileSystem(endpoint_override=endpoint_url)
+
         try:
             analysis = tune.run(
                 f"trainable_func_f{hash_dict(config).decode('ascii')}",
@@ -963,6 +974,7 @@ class RayTuneExecutor:
                 time_budget_s=self.time_budget_s,
                 sync_config=self.sync_config,
                 storage_path=output_directory,
+                storage_filesystem=storage_filesystem,
                 metric=metric,
                 mode=mode,
                 trial_name_creator=lambda trial: f"trial_{trial.trial_id}",

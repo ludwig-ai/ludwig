@@ -11,8 +11,11 @@ jobs:
     name: py-slow
     runs-on: ubuntu-latest
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
+      # Use Minio credentials for all S3 operations in tests.
+      # PyArrow/Ray S3 clients use these env vars directly, so they must point to Minio.
+      AWS_ACCESS_KEY_ID: minio
+      AWS_SECRET_ACCESS_KEY: minio123
+      AWS_ENDPOINT_URL: http://localhost:9000
       KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
       KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
       IS_NOT_FORK: ${{ !(github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && github.event.pull_request.head.repo.fork) }}
@@ -52,7 +55,6 @@ jobs:
 
       - name: Create Minio test bucket
         run: |
-          pip install boto3
           python -c "
           import boto3
           s3 = boto3.client('s3', endpoint_url='http://localhost:9000',

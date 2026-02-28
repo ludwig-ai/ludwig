@@ -968,6 +968,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
         name = name or "Batch Transform"
         from ludwig.utils.dataframe_utils import from_batches, to_batches
 
+        # Compute Dask DataFrame to pandas before batching, as Dask-expr
+        # doesn't support row slicing via integer indexing (df[i:j]).
+        df = self.df_engine.compute(df)
         batches = to_batches(df, batch_size)
         transform = transform_fn()
         out_batches = [transform(batch.reset_index(drop=True)) for batch in batches]
