@@ -1,5 +1,5 @@
 from dataclasses import field
-from importlib import import_module
+from importlib.util import find_spec
 from typing import Any
 
 from ludwig.api_annotations import DeveloperAPI
@@ -54,9 +54,7 @@ class BaseSearchAlgorithmConfig(schema_utils.BaseMarshmallowConfig):
         missing_packages = []
         missing_installs = []
         for package_name, install_name in hyperopt_utils.get_search_algorithm_dependencies(self.type):
-            try:
-                import_module(package_name)
-            except ImportError:
+            if find_spec(package_name) is None:
                 missing_packages.append(package_name)
                 missing_installs.append(install_name)
 

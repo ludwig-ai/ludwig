@@ -102,7 +102,7 @@ def set_index_name(pd_df: pd.DataFrame, name: str) -> pd.DataFrame:
 
 @DeveloperAPI
 def to_batches(df: pd.DataFrame, batch_size: int) -> list[pd.DataFrame]:
-    return [df[i : i + batch_size].copy() for i in range(0, df.shape[0], batch_size)]
+    return [df[i : i + batch_size].copy() for i in range(0, int(df.shape[0]), batch_size)]
 
 
 @DeveloperAPI

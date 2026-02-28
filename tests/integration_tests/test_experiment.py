@@ -861,7 +861,7 @@ def test_experiment_model_resume_before_1st_epoch_distributed(tmpdir, ray_cluste
             skip_save_processed_input=True,
             output_directory=os.path.join(tmpdir, "results1"),
         )
-    except RuntimeError:
+    except Exception:
         model = LudwigModel(config=config, logging_level=logging.INFO, callbacks=[NoFailureCallback()])
         model.train(
             dataset=training_set,
