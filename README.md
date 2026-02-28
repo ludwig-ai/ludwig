@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://ludwig.ai">
-    <img src="https://github.com/ludwig-ai/ludwig-docs/raw/master/docs/images/ludwig_hero_smaller.jpg" height="150">
+    <img src="https://github.com/ludwig-ai/ludwig-docs/raw/main/docs/images/ludwig_hero_smaller.jpg" height="150">
   </a>
 </p>
 
@@ -34,7 +34,7 @@ Ludwig is hosted by the
 
 **Tech stack:** Python 3.12 | PyTorch 2.6 | Pydantic 2 | Transformers 5 | Ray 2.54
 
-![img](https://raw.githubusercontent.com/ludwig-ai/ludwig-docs/master/docs/images/ludwig_legos_unanimated.gif)
+![img](https://raw.githubusercontent.com/ludwig-ai/ludwig-docs/main/docs/images/ludwig_legos_unanimated.gif)
 
 # 💾 Installation
 
@@ -62,7 +62,7 @@ Looking to fine-tune LLMs? Check out these notebooks:
 1. Fine-Tune Llama-2-13b: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1zmSEzqZ7v4twBrXagj1TE_C--RNyVAyu)
 1. Fine-Tune Mistral-7b: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1i_8A1n__b7ljRWHzIsAdhO7u7r49vUm4)
 
-For a full tutorial, check out the official [getting started guide](https://ludwig-ai.github.io/ludwig-docs/latest/getting_started/), or take a look at end-to-end [Examples](https://ludwig-ai.github.io/ludwig-docs/latest/examples).
+For a full tutorial, check out the official [getting started guide](https://ludwig.ai/latest/getting_started/), or take a look at end-to-end [Examples](https://ludwig.ai/latest/examples).
 
 ## Large Language Model Fine-Tuning
 
@@ -227,7 +227,7 @@ if you have any questions.
   search, and backend infrastructure can be modified as additional fields in
   the declarative configuration to customize the pipeline to meet your
   requirements. For details on what can be configured, check out
-  [Ludwig Configuration](https://ludwig-ai.github.io/ludwig-docs/latest/configuration/)
+  [Ludwig Configuration](https://ludwig.ai/latest/configuration/)
   docs.
 
 - **Multi-modal, multi-task learning out-of-the-box**
@@ -258,7 +258,7 @@ if you have any questions.
 
 - **Low-code interface for AutoML**
 
-  [Ludwig AutoML](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/automl/)
+  [Ludwig AutoML](https://ludwig.ai/latest/user_guide/automl/)
   allows users to obtain trained models by providing just a dataset, the
   target column, and a time budget.
 
@@ -283,36 +283,36 @@ if you have any questions.
 
 # 📚 Tutorials
 
-- [Text Classification](https://ludwig-ai.github.io/ludwig-docs/latest/examples/text_classification)
-- [Tabular Data Classification](https://ludwig-ai.github.io/ludwig-docs/latest/examples/adult_census_income)
-- [Image Classification](https://ludwig-ai.github.io/ludwig-docs/latest/examples/mnist)
-- [Multimodal Classification](https://ludwig-ai.github.io/ludwig-docs/latest/examples/multimodal_classification)
+- [Text Classification](https://ludwig.ai/latest/examples/text_classification)
+- [Tabular Data Classification](https://ludwig.ai/latest/examples/adult_census_income)
+- [Image Classification](https://ludwig.ai/latest/examples/mnist)
+- [Multimodal Classification](https://ludwig.ai/latest/examples/multimodal_classification)
 
 # 🔬 Example Use Cases
 
-- [Named Entity Recognition Tagging](https://ludwig-ai.github.io/ludwig-docs/latest/examples/ner_tagging)
-- [Natural Language Understanding](https://ludwig-ai.github.io/ludwig-docs/latest/examples/nlu)
-- [Machine Translation](https://ludwig-ai.github.io/ludwig-docs/latest/examples/machine_translation)
-- [Chit-Chat Dialogue Modeling through seq2seq](https://ludwig-ai.github.io/ludwig-docs/latest/examples/seq2seq)
-- [Sentiment Analysis](https://ludwig-ai.github.io/ludwig-docs/latest/examples/sentiment_analysis)
-- [One-shot Learning with Siamese Networks](https://ludwig-ai.github.io/ludwig-docs/latest/examples/oneshot)
-- [Visual Question Answering](https://ludwig-ai.github.io/ludwig-docs/latest/examples/visual_qa)
-- [Spoken Digit Speech Recognition](https://ludwig-ai.github.io/ludwig-docs/latest/examples/speech_recognition)
-- [Speaker Verification](https://ludwig-ai.github.io/ludwig-docs/latest/examples/speaker_verification)
-- [Binary Classification (Titanic)](https://ludwig-ai.github.io/ludwig-docs/latest/examples/titanic)
-- [Timeseries forecasting](https://ludwig-ai.github.io/ludwig-docs/latest/examples/forecasting)
-- [Timeseries forecasting (Weather)](https://ludwig-ai.github.io/ludwig-docs/latest/examples/weather)
-- [Movie rating prediction](https://ludwig-ai.github.io/ludwig-docs/latest/examples/movie_ratings)
-- [Multi-label classification](https://ludwig-ai.github.io/ludwig-docs/latest/examples/multi_label)
-- [Multi-Task Learning](https://ludwig-ai.github.io/ludwig-docs/latest/examples/multi_task)
-- [Simple Regression: Fuel Efficiency Prediction](https://ludwig-ai.github.io/ludwig-docs/latest/examples/fuel_efficiency)
-- [Fraud Detection](https://ludwig-ai.github.io/ludwig-docs/latest/examples/fraud)
+- [Named Entity Recognition Tagging](https://ludwig.ai/latest/examples/ner_tagging)
+- [Natural Language Understanding](https://ludwig.ai/latest/examples/nlu)
+- [Machine Translation](https://ludwig.ai/latest/examples/machine_translation)
+- [Chit-Chat Dialogue Modeling through seq2seq](https://ludwig.ai/latest/examples/seq2seq)
+- [Sentiment Analysis](https://ludwig.ai/latest/examples/sentiment_analysis)
+- [One-shot Learning with Siamese Networks](https://ludwig.ai/latest/examples/oneshot)
+- [Visual Question Answering](https://ludwig.ai/latest/examples/visual_qa)
+- [Spoken Digit Speech Recognition](https://ludwig.ai/latest/examples/speech_recognition)
+- [Speaker Verification](https://ludwig.ai/latest/examples/speaker_verification)
+- [Binary Classification (Titanic)](https://ludwig.ai/latest/examples/titanic)
+- [Timeseries forecasting](https://ludwig.ai/latest/examples/forecasting)
+- [Timeseries forecasting (Weather)](https://ludwig.ai/latest/examples/weather)
+- [Movie rating prediction](https://ludwig.ai/latest/examples/movie_ratings)
+- [Multi-label classification](https://ludwig.ai/latest/examples/multi_label)
+- [Multi-Task Learning](https://ludwig.ai/latest/examples/multi_task)
+- [Simple Regression: Fuel Efficiency Prediction](https://ludwig.ai/latest/examples/fuel_efficiency)
+- [Fraud Detection](https://ludwig.ai/latest/examples/fraud)
 
 # 💡 More Information
 
 Read our publications on [Ludwig](https://arxiv.org/pdf/1909.07930.pdf), [declarative ML](https://arxiv.org/pdf/2107.08148.pdf), and [Ludwig’s SoTA benchmarks](https://openreview.net/pdf?id=hwjnu6qW7E4).
 
-Learn more about [how Ludwig works](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/how_ludwig_works/), [how to get started](https://ludwig-ai.github.io/ludwig-docs/latest/getting_started/), and work through more [examples](https://ludwig-ai.github.io/ludwig-docs/latest/examples).
+Learn more about [how Ludwig works](https://ludwig.ai/latest/user_guide/how_ludwig_works/), [how to get started](https://ludwig.ai/latest/getting_started/), and work through more [examples](https://ludwig.ai/latest/examples).
 
 If you are interested in [contributing](https://github.com/ludwig-ai/ludwig/blob/main/CONTRIBUTING.md), have questions, comments, or thoughts to share, or if you just want to be in the
 know, please consider [joining our Community Discord](https://discord.gg/CBgdrGnZjy) and follow us on [X](https://twitter.com/ludwig_ai)!

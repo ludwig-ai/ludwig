@@ -1,245 +1,311 @@
-![Ludwig logo](https://github.com/ludwig-ai/ludwig-docs/raw/master/docs/images/ludwig_hero.png "Ludwig logo")
+<p align="center">
+  <a href="https://ludwig.ai">
+    <img src="https://github.com/ludwig-ai/ludwig-docs/raw/main/docs/images/ludwig_hero_smaller.jpg" height="150">
+  </a>
+</p>
 
 <div align="center">
 
+_확장성과 효율성을 위해 설계된 선언적 딥러닝 프레임워크_
+
 [![PyPI version](https://badge.fury.io/py/ludwig.svg)](https://badge.fury.io/py/ludwig)
+[![Discord](https://img.shields.io/discord/1088532068498198609?logo=discord&label=Discord)](https://discord.gg/CBgdrGnZjy)
+[![DockerHub](https://img.shields.io/docker/pulls/ludwigai/ludwig.svg)](https://hub.docker.com/r/ludwigai)
 [![Downloads](https://pepy.tech/badge/ludwig)](https://pepy.tech/project/ludwig)
-[![Build Status](https://github.com/ludwig-ai/ludwig/actions/workflows/pytest.yml/badge.svg)](https://github.com/ludwig-ai/ludwig/actions/workflows/pytest.yml)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/ludwig-ai/ludwig/blob/master/LICENSE)
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fuber%2Fludwig.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fuber%2Fludwig?ref=badge_shield)
-[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/4210/badge)](https://bestpractices.coreinfrastructure.org/projects/4210)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/ludwig-ai/ludwig/blob/main/LICENSE)
+[![X](https://img.shields.io/twitter/follow/ludwig_ai.svg?style=social&logo=twitter)](https://twitter.com/ludwig_ai)
 
 </div>
 
-Ludwig은 사용자들이 코드를 작성할 필요 없이 딥러닝 모델을 학습시키고 사용할 수 있게 하는 PyTorch 기반으로 만들어진 toolbox입니다.
+# 📖 Ludwig란?
 
-이 모델을 학습시키기 위해서는 입출력 데이터가 들어있는 파일이 제공되어야 합니다. 나머지는 Ludwig가 알아서 처리해 줄 것입니다. 간단한 명령어들은 단일 기기 혹은 분산 기기를 통해 모델을 학습하는 데에 사용될 수 있고, 또한 새로운 데이터를 예측하는 데에 사용됩니다.
+Ludwig는 **LLM** 및 기타 심층 신경망과 같은 **맞춤형** AI 모델을 구축하기 위한 **로우코드** 프레임워크입니다.
 
-파이썬 프로그램 API 또한 Ludwig에서 사용 가능합니다. 시각화 기능의 모음은 모델 훈련을 분석하고 모델 성능을 test하고 그것들을 비교하는 것을 가능하게 해줍니다.
+주요 기능:
 
-Ludwig는 확장성을 염두에 두고 설계되었으며, 데이터 타입 추상화에 기반을 두고 있어서 새로운 모델 아키텍처뿐만 아니라 새로운 데이터 타입에 대한 지원을 쉽게 추가할 수 있습니다.
+- 🛠 **손쉬운 맞춤형 모델 구축:** 선언적 YAML 설정 파일만으로 최신 LLM을 데이터에 맞춰 학습시킬 수 있습니다. 멀티태스크 및 멀티모달 학습을 지원합니다. 포괄적인 설정 검증으로 잘못된 매개변수 조합을 감지하고 런타임 오류를 방지합니다.
+- ⚡ **확장성과 효율성 최적화:** 자동 배치 크기 선택, 분산 학습([DDP](https://pytorch.org/tutorials/beginner/ddp_series_theory.html), [DeepSpeed](https://github.com/microsoft/DeepSpeed)), 매개변수 효율적 미세 조정([PEFT](https://github.com/huggingface/peft)), 4비트 양자화(QLoRA), 페이지 및 8비트 옵티마이저, 메모리 초과 데이터셋 지원.
+- 📐 **전문가 수준의 제어:** 활성화 함수까지 모델을 완전히 제어할 수 있습니다. 하이퍼파라미터 최적화, 설명 가능성, 풍부한 메트릭 시각화를 지원합니다.
+- 🧱 **모듈식 및 확장 가능:** 설정에서 몇 가지 매개변수만 변경하여 다양한 모델 아키텍처, 태스크, 피처, 모달리티를 실험할 수 있습니다. 딥러닝을 위한 빌딩 블록이라고 생각하세요.
+- 🚢 **프로덕션을 위한 설계:** 사전 빌드된 [Docker](https://hub.docker.com/u/ludwigai) 컨테이너, [Kubernetes](https://github.com/ray-project/kuberay)에서 [Ray](https://www.ray.io/) 실행 네이티브 지원, [Torchscript](https://pytorch.org/docs/stable/jit.html) 및 [Triton](https://developer.nvidia.com/triton-inference-server)으로 모델 내보내기, 한 번의 명령으로 [HuggingFace](https://huggingface.co/models)에 업로드.
 
-Ludwig은 사용자들이 딥러닝 모델을 빠르게 학습하고 테스트하는 것은 물론, 연구자들이 딥러닝 모델과 비교할 수 있는 강력한 기준과 동일한 데이터 평가를 통해 비교 가능성을 보장하는 테스트 설정을 확보할 수 있도록 활용됩니다.
+Ludwig는 [Linux Foundation AI & Data](https://lfaidata.foundation/)에서 호스팅합니다.
 
-Ludwig는 특정 use case의 end-to-end 모델을 작성하기 위해 조합할 수 있는 일련의 모델 아키텍처를 제공합니다. 도시를 설계하는 것을 예로 들어, 딥러닝 라이브러리가 도시 내부 건물의 구성요소(기둥, 바닥, 등)를 제공하고 있다면, Ludwig는 도시를 구성하는 건물을 제공하고 있습니다. 그러면 사용자는 도시 내부의 만들어진 건물 중 하나를 선택해 사용하거나, 새로운 건물을 추가할 수 있습니다.
+**기술 스택:** Python 3.12 | PyTorch 2.6 | Pydantic 2 | Transformers 5 | Ray 2.54
 
-Toolbox에 반영된 핵심 설계 원리는 아래와 같습니다:
+![img](https://raw.githubusercontent.com/ludwig-ai/ludwig-docs/main/docs/images/ludwig_legos_unanimated.gif)
 
-- No coding required: 모델을 학습시키고 예측된 데이터를 얻는 데에 코딩 스킬이 필요하지 않습니다.
-- Generality: 딥러닝 모델 설계에 대한 새로운 데이터 유형 기반 접근 방식은 다양한 use case들에 적용할 수 있는 tool을 만들어줍니다.
-- Flexibility: 숙련된 사용자들은 모델 제작과 훈련을 광범위하게 제어하는 반면, 초보자들은 그것을 쉽게 사용할 수 있습니다.
-- Extensibility: 새로운 모델 아키텍처와 새로운 데이터 타입을 쉽게 추가할 수 있습니다.
-- Understandability: 종종 딥러닝 모델 내부는 진행 상황을 확인할 수 없는 것처럼 여겨지지만, Ludwig는 성능을 이해하고 예측된 데이터들을 비교하기 위한 표준 시각화 기능을 제공합니다.
-- Open Source: Apache License 2.0
+# 💾 설치
 
-# Installation
+PyPI에서 설치합니다. Ludwig는 Python 3.12 이상을 요구합니다.
 
-Ludwig는 Python 3.12이상 버전을 요구합니다. 만약 Python 3가 설치되어 있지 않으면 다음 명령어를 이용해서 설치하세요.
-
-```
-sudo apt install python3  # on ubuntu
-brew install python3      # on mac
-```
-
-만약 [파이썬 가상환경](https://docs.python-guide.org/dev/virtualenvs/)에서 사용하고 싶다면 아래 명령어를 사용하세요.
-
-```
-virtualenv -p python3 venv
-```
-
-Ludwig를 설치하려면 아래 명령어를 사용하세요.
-
-```
+```shell
 pip install ludwig
 ```
 
-위의 명령어는 Ludwig을 실행하기 위해 필요한 파일만 설치하게 되며, 더 많은 기능이 필요하다면 아래와 같은 파일들을 설치하면 됩니다.
+모든 선택적 의존성을 포함하여 설치:
 
-- `ludwig[text]` for text dependencies.
-- `ludwig[audio]` for audio and speech dependencies.
-- `ludwig[image]` for image dependencies.
-- `ludwig[hyperopt]` for hyperparameter optimization dependencies.
-- `ludwig[distributed]` for distributed training dependencies.
-- `ludwig[serve]` for serving dependencies.
-- `ludwig[viz]` for visualization dependencies.
-- `ludwig[test]` for dependencies needed for testing.
-
-[Ray](https://www.ray.io/)를 통해 분산 학습이 지원되며, `pip install ludwig[distributed]`와 같이 설치가 가능합니다.
-
-추가하려는 package들은 `pip install ludwig[extra1,extra2,...]` 의 명령어를 통해 설치가 가능합니다. 예를 들어, `pip install ludwig[text,viz]` 와 같은 조합으로 설치가 가능합니다. 모든 파일들을 한 번에 설치하려면 `pip install ludwig[full]`을 사용하면 됩니다.
-
-소스코드를 repository에서 build하려는 개발자들은 아래와 같은 방법을 사용하면 됩니다.
-
-```
-git clone git@github.com:ludwig-ai/ludwig.git
-cd ludwig
-virtualenv -p python3 venv
-source venv/bin/activate
-pip install -e '.[test]'
+```shell
+pip install ludwig[full]
 ```
 
-**Note:** 만약 GPU 없이 실행 중이라면, CPU 전용 PyTorch를 설치할 수 있습니다. 자세한 내용은 [PyTorch 설치 가이드](https://pytorch.org/get-started/locally/)를 참고하세요.
+더 자세한 설치 방법은 [기여 가이드](https://github.com/ludwig-ai/ludwig/blob/main/CONTRIBUTING.md)를 참조하세요.
 
-## Basic Principles
+# 🚂 시작하기
 
-Ludwig는 모델학습, 학습된 모델을 이용한 예측, 평가의 3가지 주요 기능을 제공합니다. 이것은 데이터 유형 추상화에 기반합니다. 그래서 같은 데이터를 이용해 사전, 사후 처리 과정을 데이터 유형을 공유하는 서로 다른 dataset으로 실행되고, 개발된 encoding 및 decoding 모델을 다른 여러 작업에서 재사용이 가능합니다.
+Ludwig의 기능을 빠르게 살펴보고 싶으시다면 이 Colab 노트북을 확인하세요 🚀 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1lB4ALmEyvcMycE3Mlnsd7I3bc0zxvk39)
 
-Ludwig로 모델을 학습시키는 것은 굉장히 간단합니다. 단지 dataset file과 yaml file만 제공해 주면 됩니다.
+LLM 미세 조정을 원하시나요? 다음 노트북을 확인하세요:
 
-config파일에는, 입출력 값의 속성을 포함합니다. 당신이 해야 할 것은 dataset파일에서 열에 해당하는 데이터들의 이름만 정의해 주면 됩니다. 여기에 필요한 것은 모델에 대한 입력 데이터 유형, 그리고 모델이 예측하는 대상 변수인 출력 dataset파일에서의 열 이름입니다. Ludwig는 그에 따라 딥러닝 모델을 만들어 당신을 위해 학습할 것입니다.
+1. Fine-Tune Llama-2-7b: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1r4oSEwRJpYKBPM0M0RSh0pBEYK_gBKbe)
+1. Fine-Tune Llama-2-13b: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1zmSEzqZ7v4twBrXagj1TE_C--RNyVAyu)
+1. Fine-Tune Mistral-7b: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1i_8A1n__b7ljRWHzIsAdhO7u7r49vUm4)
 
-현재, Ludwig에서 사용 가능한 데이터 유형은 아래와 같습니다.
+전체 튜토리얼은 공식 [시작 가이드](https://ludwig.ai/latest/getting_started/)를 확인하시거나, 엔드투엔드 [예제](https://ludwig.ai/latest/examples)를 살펴보세요.
 
-- binary
-- number
-- category
-- set
-- bag
-- sequence
-- text
-- timeseries
-- image
-- audio
-- date
-- h3
-- vector
+## 대규모 언어 모델 미세 조정
 
-서로 다른 입력과 출력의 데이터 유형을 사용하는 경우, 사용자들은 다양한 작업을 진행할 수 있습니다. 아래는 그 예시입니다.
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1c3AO8l_H6V_x37RwQ8V7M6A-RmcBf2tG?usp=sharing)
 
-- text input + category output = text classifier
-- image input + category output = image classifier
-- image input + text output = image captioning
-- audio input + binary output = speaker verification
-- text input + sequence output = named entity recognition / summarization
-- category, number and binary inputs + number output = regression
-- timeseries input + number output = forecasting model
-- category, number and binary inputs + binary output = fraud detection
+사전 학습된 LLM을 챗봇처럼 지시를 따르도록 미세 조정("인스트럭션 튜닝")해 봅시다.
 
-[예시](https://ludwig-ai.github.io/ludwig-docs/latest/examples/)를 참고하여 Ludwig을 통해 어떤 작업을 실행하는지 확인하세요.
+### 사전 요구 사항
 
-Config 파일은 인코더와 디코더가 사용할 각 열에 저장된 데이터를 사전 처리하는 방법, 최적화할 아키텍처 및 학습 매개변수, 하이퍼 파라미터 등의 추가 정보를 저장합니다. 이를 통해 초보자는 쉽게 사용할 수 있고, 전문가도 유연하게 사용할 수 있습니다.
+- [HuggingFace API 토큰](https://huggingface.co/docs/hub/security-tokens)
+- 선택한 베이스 모델에 대한 접근 승인 (예: [Llama-3.1-8B](https://huggingface.co/meta-llama/Llama-3.1-8B))
+- 최소 12 GiB VRAM의 GPU (테스트에서는 Nvidia T4를 사용했습니다)
 
-## Training
+### 실행
 
-예를 들어, 아래와 같이 분류된 dataset형식의 파일을 보면:
+[Stanford Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html) 데이터셋을 사용합니다. 다음과 같은 테이블 형식의 파일로 구성됩니다:
 
-| doc_text                             | class    |
-| ------------------------------------ | -------- |
-| Former president Barack Obama ...    | politics |
-| Juventus hired Cristiano Ronaldo ... | sport    |
-| LeBron James joins the Lakers ...    | sport    |
-| ...                                  | ...      |
+|                    instruction                    |      input       |                      output                       |
+| :-----------------------------------------------: | :--------------: | :-----------------------------------------------: |
+|       Give three tips for staying healthy.        |                  | 1.Eat a balanced diet and make sure to include... |
+| Arrange the items given below in the order to ... | cake, me, eating |                  I eating cake.                   |
+| Write an introductory paragraph about a famous... |  Michelle Obama  | Michelle Obama is an inspirational woman who r... |
+|                        ...                        |       ...        |                        ...                        |
 
-`doc_text`열의 내용을 입력으로 사용하여 `class`열의 값을 예측하는 모델을 학습시키려고 할 때 다음과 같은 config파일 구성을 사용할 수 있습니다:
+`model.yaml`이라는 YAML 설정 파일을 다음 내용으로 생성하세요:
 
 ```yaml
-{input_features: [{name: doc_text, type: text}], output_features: [{name: class, type: category}]}
+model_type: llm
+base_model: meta-llama/Llama-3.1-8B
+
+quantization:
+  bits: 4
+
+adapter:
+  type: lora
+
+prompt:
+  template: |
+    Below is an instruction that describes a task, paired with an input that may provide further context.
+    Write a response that appropriately completes the request.
+
+    ### Instruction:
+    {instruction}
+
+    ### Input:
+    {input}
+
+    ### Response:
+
+input_features:
+  - name: prompt
+    type: text
+
+output_features:
+  - name: output
+    type: text
+
+trainer:
+  type: finetune
+  learning_rate: 0.0001
+  batch_size: 1
+  gradient_accumulation_steps: 16
+  epochs: 3
+  learning_rate_scheduler:
+    decay: cosine
+    warmup_fraction: 0.01
+
+preprocessing:
+  sample_ratio: 0.1
+
+backend:
+  type: local
 ```
 
-그리고 사용자의 콘솔 창에서 다음의 명령을 입력하여 학습을 시작합니다:
+이제 모델을 학습시켜 봅시다:
 
+```bash
+export HUGGING_FACE_HUB_TOKEN = "<api_token>"
+
+ludwig train --config model.yaml --dataset "ludwig://alpaca"
 ```
-ludwig train --dataset path/to/file.csv --config_str "{input_features: [{name: doc_text, type: text}], output_features: [{name: class, type: category}]}"
+
+## 지도 학습 ML
+
+[Rotten Tomatoes](https://www.kaggle.com/stefanoleone992/rotten-tomatoes-movies-and-critic-reviews-dataset) 영화 평론가의 리뷰가 긍정적인지 부정적인지 예측하는 신경망을 만들어 봅시다.
+
+데이터셋은 다음과 같은 CSV 파일입니다:
+
+|     movie_title      | content_rating |              genres              | runtime | top_critic | review_content                                                                                                                                                                                                   | recommended |
+| :------------------: | :------------: | :------------------------------: | :-----: | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| Deliver Us from Evil |       R        |    Action & Adventure, Horror    |  117.0  | TRUE       | Director Scott Derrickson and his co-writer, Paul Harris Boardman, deliver a routine procedural with unremarkable frights.                                                                                       | 0           |
+|       Barbara        |     PG-13      | Art House & International, Drama |  105.0  | FALSE      | Somehow, in this stirring narrative, Barbara manages to keep hold of her principles, and her humanity and courage, and battles to save a dissident teenage girl whose life the Communists are trying to destroy. | 1           |
+|   Horrible Bosses    |       R        |              Comedy              |  98.0   | FALSE      | These bosses cannot justify either murder or lasting comic memories, fatally compromising a farce that could have been great but ends up merely mediocre.                                                        | 0           |
+|         ...          |      ...       |               ...                |   ...   | ...        | ...                                                                                                                                                                                                              | ...         |
+
+[여기](https://ludwig.ai/latest/data/rotten_tomatoes.csv)에서 데이터셋 샘플을 다운로드하세요.
+
+```bash
+wget https://ludwig.ai/latest/data/rotten_tomatoes.csv
 ```
 
-위의 명령어에서 `path/to/file.csv`부분은 위의 표(이외에 많은 데이터 타입이 지원됩니다)에서 UTF-8로 인코딩 되어 있는 dataset파일을 포함하는 경로입니다.
-
-Ludwig은 다음과 같은 동작을 합니다:
-
-1. data의 무작위 분할을 실시합니다
-1. dataset을 사전 처리합니다.
-1. Softmax classifier를 통해 결과를 해석하는 ParallelCNN모델(text 기능의 기본값)을 구축합니다.
-1. 검증 세트의 성능이 더 이상 개선되지 않을 때까지 학습을 반복합니다.
-
-학습 과정이 콘솔창에서 보일 것이고 TensorBoard 또한 사용될 수 있습니다.
-
-만약 RNN encoder를 사용하거나 epoch의 숫자를 더 키워 학습시키는 것을 더 선호한다면 아래와 같은 형식의 config파일 형식을 사용하면 됩니다:
+다음으로 `model.yaml`이라는 YAML 설정 파일을 생성하세요:
 
 ```yaml
-{input_features: [{name: doc_text, type: text, encoder: rnn}], output_features: [{name: class, type: category}], training: {epochs: 50}}
+input_features:
+  - name: genres
+    type: set
+    preprocessing:
+      tokenizer: comma
+  - name: content_rating
+    type: category
+  - name: top_critic
+    type: binary
+  - name: runtime
+    type: number
+  - name: review_content
+    type: text
+    encoder:
+      type: embed
+output_features:
+  - name: recommended
+    type: binary
 ```
 
-사용자가 config파일에서 사용 가능한 명령어들을 확인하고 싶으시다면 [User Guide](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/)를 참고하고, [Examples](https://ludwig-ai.github.io/ludwig-docs/latest/examples/)을 통해 여러 가지 다른 작업에 Ludwig을 사용하는 방법을 확인하세요.
+이게 전부입니다! 이제 모델을 학습시켜 봅시다:
 
-학습 후, Ludwig는 학습된 모델과 hyperparameter, 학습 과정의 통계 요약이 포함된 `results`폴더를 생성할 것입니다.
-사용자들은 시각화 방법들 중 하나인 도구를 사용하여 시각화를 할 수 있습니다. 예를 들어:
-
-```
-ludwig visualize --visualization learning_curves --training_statistics path/to/training_statistics.json
+```bash
+ludwig train --config model.yaml --dataset rotten_tomatoes.csv
 ```
 
-위의 명령어는 아래와 같이 그래프를 나타낼 것이고 학습 과정에 있어서의 손실과 정확도를 확인할 수 있습니다.
+**즐거운 모델링 되세요**
 
-![Learning Curves](https://github.com/ludwig-ai/ludwig-docs/raw/master/docs/images/getting_started_learning_curves.png "Learning Curves")
+Ludwig를 여러분의 데이터에 적용해 보세요. 질문이 있으시면 [Discord에서 문의](https://discord.gg/CBgdrGnZjy)해 주세요.
 
-시각화하는 더 다양한 방법을 알고 싶으시다면 [Visualizations](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/visualizations)에서 확인해 주시기 바랍니다.
+# ❓ Ludwig를 사용해야 하는 이유
 
-## Distributed Training
+- **최소한의 머신러닝 보일러플레이트**
 
-사용자는 [Ray](https://www.ray.io/)를 통해 사용자가 훈련시킨 모델을 배포할 수 있고 여러 GPU가 있는 단일 기계 및 여러 GPU가 있는 다중 기계를 통해 학습하는 것을 허용합니다. 더 자세한 정보를 알고 싶으시다면 [User Guide](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/distributed_training/)를 확인해 주시기 바랍니다.
+  Ludwig는 머신러닝의 엔지니어링 복잡성을 기본으로 처리하여, 연구자들이 가장 높은 수준의 추상화에서 모델 구축에 집중할 수 있게 합니다. `torch.nn.Module` 모델에 대한 데이터 전처리, 하이퍼파라미터 최적화, 디바이스 관리, 분산 학습이 완전히 무료로 제공됩니다.
 
-## Prediction and Evaluation
+- **손쉬운 벤치마크 구축**
 
-이전에 학습시킨 모델로 새로운 data의 출력값을 예측하고 싶다면 콘솔 창에서 다음의 명령어를 입력하면 됩니다:
+  최신 기준 모델을 만들고 새 모델과 비교하는 것이 간단한 설정 변경만으로 가능합니다.
 
-```
-ludwig predict --dataset path/to/data.csv --model_path /path/to/model
-```
+- **새로운 아키텍처를 여러 문제와 데이터셋에 쉽게 적용**
 
-이 명령어를 실행하면 모델이 예측 값을 반환합니다.
+  Ludwig가 지원하는 광범위한 태스크 및 데이터셋 세트에 새 모델을 적용하세요. Ludwig에는 간단한 설정만으로 여러 데이터셋에서 여러 모델 실험을 실행할 수 있는 [전체 벤치마킹 도구](https://arxiv.org/abs/2111.04260)가 모든 사용자에게 제공됩니다.
 
-dataset에 출력의 진리 값이 포함된 경우 모델에서 얻은 예측 값과 비교하여 모델 성능을 평가할 수 있습니다.
+- **데이터 전처리, 모델링, 메트릭의 높은 설정 가능성**
 
-```
-ludwig evaluate --dataset path/to/data.csv --model_path /path/to/model
-```
+  모델 아키텍처, 학습 루프, 하이퍼파라미터 검색, 백엔드 인프라의 모든 측면을 선언적 설정에서 추가 필드로 수정하여 파이프라인을 요구 사항에 맞게 커스터마이즈할 수 있습니다. 설정 가능한 항목에 대한 자세한 내용은 [Ludwig 설정](https://ludwig.ai/latest/configuration/) 문서를 확인하세요.
 
-위 명령어는 `visualize` tool에 의해 시각화되고 다른 모델들 간의 성능과 예측을 비교하는데 사용되는 평가 성능 통계를 만들어 냅니다. 예를 들어:
+- **멀티모달, 멀티태스크 학습 기본 지원**
 
-```
-ludwig visualize --visualization compare_performance --test_statistics path/to/test_statistics_model_1.json path/to/test_statistics_model_2.json
-```
+  코드 작성 없이 테이블 데이터, 텍스트, 이미지, 오디오까지 복잡한 모델 설정으로 혼합하여 사용할 수 있습니다.
 
-여러 측정 기준에 대한 모델들을 비교하는 막대그래프를 반환합니다:
+- **풍부한 모델 내보내기 및 추적**
 
-![Performance Comparison](https://github.com/ludwig-ai/ludwig-docs/raw/master/docs/images/compare_performance.png "Performance Comparison")
+  Tensorboard, Comet ML, Weights & Biases, MLFlow, Aim Stack 등의 도구로 모든 시도와 메트릭을 자동으로 추적합니다.
 
-학습과 예측을 교대로 수행하는 간단한 `ludwig experiment`명령어 또한 사용 가능합니다.
+- **멀티 GPU, 멀티 노드 클러스터로 학습 자동 확장**
 
-## Programmatic API
+  로컬 머신에서 클라우드로 코드 변경 없이 전환할 수 있습니다.
 
-Ludwig는 사용자가 모델을 학습시키거나 불러오게 해주고 새로운 데이터에 대한 예측 값을 얻는 데에 사용하는 간단한 프로그램 API를 제공합니다:
+- **사전 학습된 Huggingface Transformers를 포함한 최신 모델의 로우코드 인터페이스**
 
-```python
-from ludwig.api import LudwigModel
+  Ludwig는 [Huggingface Transformers](https://huggingface.co/docs/transformers/index)에서 제공하는 사전 학습된 모델과 네이티브로 통합됩니다. 사용자는 코드를 전혀 작성하지 않고도 방대한 최신 사전 학습 PyTorch 모델을 사용할 수 있습니다. 예를 들어, Ludwig로 BERT 기반 감성 분석 모델을 학습시키는 것은 다음과 같이 간단합니다:
 
-# train a model
-config = {...}
-model = LudwigModel(config)
-train_stats = model.train(training_data)
+  ```shell
+  ludwig train --dataset sst5 --config_str "{input_features: [{name: sentence, type: text, encoder: bert}], output_features: [{name: label, type: category}]}"
+  ```
 
-# or load a model
-model = LudwigModel.load(model_path)
+- **AutoML을 위한 로우코드 인터페이스**
 
-# obtain predictions
-predictions = model.predict(test_data)
-```
+  [Ludwig AutoML](https://ludwig.ai/latest/user_guide/automl/)을 사용하면 데이터셋, 대상 컬럼, 시간 예산만 제공하여 학습된 모델을 얻을 수 있습니다.
 
-YAML 파일에 대한 같은 정보를 포함하고 있는 `config`는 CLI(Command Line Interface)에 제공됩니다. 더 자세한 정보는 [Configuration](https://ludwig-ai.github.io/ludwig-docs/latest/configuration/)과 [API documentation](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/api/LudwigModel/)에서 제공됩니다.
+  ```python
+  auto_train_results = ludwig.automl.auto_train(dataset=my_dataset_df, target=target_column_name, time_limit_s=7200)
+  ```
 
-## Extensibility
+- **손쉬운 프로덕션화**
 
-Ludwig는 처음부터 확장성을 염두에 두고 제작되었습니다.
-데이터를 사전 처리, 부호화 및 복호화 기능을 포함한 추상 클래스의 데이터 유형별 구현을 추가하면 현재 지원되지 않는 데이터형을 쉽게 추가할 수 있습니다.
+  Ludwig는 GPU를 포함한 딥러닝 모델 서빙을 쉽게 만들어 줍니다. 학습된 Ludwig 모델에 대한 REST API를 실행하세요.
 
-나아가 자체적인 특정 hyperparameters가 있는 새로운 모델들은 (데이터 타입에 따라, 특정 등급의) tensor들을 입력으로 받아들이고 tensor들을 출력으로 제공하는 클래스를 구현함으로써 쉽게 추가할 수 있습니다.
-이것은 모델의 재사용과 커뮤니티와의 공유를 장려합니다.
-자세한 내용은 [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/latest/developer_guide/)를 참조하십시오.
+  ```shell
+  ludwig serve --model_path=/path/to/model
+  ```
 
-## Full documentation
+  Ludwig는 효율적인 Torchscript 번들로 모델 내보내기를 지원합니다.
 
-전체 문서는 [여기](https://ludwig-ai.github.io/ludwig-docs)에서 확인할 수 있습니다.
+  ```shell
+  ludwig export_torchscript --model_path=/path/to/model
+  ```
 
-## License
+# 📚 튜토리얼
 
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fuber%2Fludwig.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fuber%2Fludwig?ref=badge_large)
+- [텍스트 분류](https://ludwig.ai/latest/examples/text_classification)
+- [테이블 데이터 분류](https://ludwig.ai/latest/examples/adult_census_income)
+- [이미지 분류](https://ludwig.ai/latest/examples/mnist)
+- [멀티모달 분류](https://ludwig.ai/latest/examples/multimodal_classification)
+
+# 🔬 예제 사용 사례
+
+- [개체명 인식 태깅](https://ludwig.ai/latest/examples/ner_tagging)
+- [자연어 이해](https://ludwig.ai/latest/examples/nlu)
+- [기계 번역](https://ludwig.ai/latest/examples/machine_translation)
+- [seq2seq를 통한 대화 모델링](https://ludwig.ai/latest/examples/seq2seq)
+- [감성 분석](https://ludwig.ai/latest/examples/sentiment_analysis)
+- [시아미즈 네트워크를 이용한 원샷 학습](https://ludwig.ai/latest/examples/oneshot)
+- [시각적 질의응답](https://ludwig.ai/latest/examples/visual_qa)
+- [음성 숫자 인식](https://ludwig.ai/latest/examples/speech_recognition)
+- [화자 인증](https://ludwig.ai/latest/examples/speaker_verification)
+- [이진 분류 (타이타닉)](https://ludwig.ai/latest/examples/titanic)
+- [시계열 예측](https://ludwig.ai/latest/examples/forecasting)
+- [시계열 예측 (날씨)](https://ludwig.ai/latest/examples/weather)
+- [영화 평점 예측](https://ludwig.ai/latest/examples/movie_ratings)
+- [다중 레이블 분류](https://ludwig.ai/latest/examples/multi_label)
+- [멀티태스크 학습](https://ludwig.ai/latest/examples/multi_task)
+- [단순 회귀: 연비 예측](https://ludwig.ai/latest/examples/fuel_efficiency)
+- [사기 탐지](https://ludwig.ai/latest/examples/fraud)
+
+# 💡 추가 정보
+
+[Ludwig](https://arxiv.org/pdf/1909.07930.pdf), [선언적 ML](https://arxiv.org/pdf/2107.08148.pdf), [Ludwig의 SoTA 벤치마크](https://openreview.net/pdf?id=hwjnu6qW7E4)에 대한 논문을 읽어보세요.
+
+[Ludwig의 작동 방식](https://ludwig.ai/latest/user_guide/how_ludwig_works/), [시작 가이드](https://ludwig.ai/latest/getting_started/), 더 많은 [예제](https://ludwig.ai/latest/examples)를 확인하세요.
+
+[기여](https://github.com/ludwig-ai/ludwig/blob/main/CONTRIBUTING.md)에 관심이 있으시거나, 질문, 의견, 공유하고 싶은 생각이 있으시거나, 최신 정보를 받고 싶으시다면 [Discord 커뮤니티에 참여](https://discord.gg/CBgdrGnZjy)하시고 [X](https://twitter.com/ludwig_ai)에서 팔로우해 주세요!
+
+# 🤝 함께 Ludwig를 만들어 갈 커뮤니티에 참여하세요
+
+Ludwig는 여러분과 같은 분들의 기여에 의존하는 활발하게 관리되는 오픈소스 프로젝트입니다. Ludwig를 모든 사람이 사용할 수 있는 더 접근 가능하고 기능이 풍부한 프레임워크로 만들기 위해 활발한 Ludwig 기여자 그룹에 참여하는 것을 고려해 주세요!
+
+<a href="https://github.com/ludwig-ai/ludwig/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=ludwig-ai/ludwig" />
+</a><br/>
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=ludwig-ai/ludwig&type=Date)](https://star-history.com/#ludwig-ai/ludwig&Date)
+
+# 👋 참여하기
+
+- [Discord](https://discord.gg/CBgdrGnZjy)
+- [X (Twitter)](https://twitter.com/ludwig_ai)
+- [Medium](https://medium.com/ludwig-ai)
+- [GitHub Issues](https://github.com/ludwig-ai/ludwig/issues)
