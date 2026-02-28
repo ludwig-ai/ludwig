@@ -1,0 +1,23 @@
+# Rotten Tomatoes review classification - multimodal Ludwig config
+input_features:
+  - name: genres
+    type: set
+    preprocessing:
+      tokenizer: comma
+  - name: content_rating
+    type: category
+  - name: top_critic
+    type: binary
+  - name: runtime
+    type: number
+  - name: review_content
+    type: text
+    encoder:
+      type: embed
+
+output_features:
+  - name: recommended
+    type: binary
+
+trainer:
+  epochs: 3

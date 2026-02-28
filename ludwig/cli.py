@@ -50,6 +50,7 @@ Available sub-commands:
    export_torchscript    Exports Ludwig models to Torchscript
    export_triton         Exports Ludwig models to Triton
    export_mlflow         Exports Ludwig models to MLflow
+   export_schema         Exports the Ludwig config JSON schema
    preprocess            Preprocess data and saves it into HDF5 and JSON format
    synthesize_dataset    Creates synthetic data for testing purposes
    init_config           Initialize a user config from a dataset and targets
@@ -143,6 +144,11 @@ Available sub-commands:
         from ludwig import export
 
         export.cli_export_mlflow(sys.argv[2:])
+
+    def export_schema(self):
+        from ludwig.schema.export_schema import main as export_schema_main
+
+        export_schema_main(sys.argv[2:])
 
     def preprocess(self):
         from ludwig import preprocess

@@ -31,9 +31,35 @@ jobs:
       - name: Export schemas
         run: |
           mkdir -p schema-out
-          python -m ludwig.schema.export_schema --model-type combined -o schema-out/ludwig-config.json
-          python -m ludwig.schema.export_schema --model-type ecd -o schema-out/ludwig-config-ecd.json
-          python -m ludwig.schema.export_schema --model-type llm -o schema-out/ludwig-config-llm.json
+          ludwig export_schema --model-type combined -o schema-out/ludwig-config.json
+          ludwig export_schema --model-type ecd -o schema-out/ludwig-config-ecd.json
+          ludwig export_schema --model-type llm -o schema-out/ludwig-config-llm.json
+
+      - name: Generate index.html
+        run: |
+          cat > schema-out/index.html << 'HTMLEOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <title>Ludwig JSON Schema</title>
+            <style>body{font-family:system-ui,sans-serif;max-width:640px;margin:2rem auto;padding:0 1rem}a{color:#0066cc}</style>
+          </head>
+          <body>
+            <h1>Ludwig JSON Schema</h1>
+            <p>JSON Schema files for <a href="https://github.com/ludwig-ai/ludwig">Ludwig</a> config validation and IDE auto-complete.</p>
+            <ul>
+              <li><a href="ludwig-config.json">ludwig-config.json</a> — Combined (ECD + LLM)</li>
+              <li><a href="ludwig-config-ecd.json">ludwig-config-ecd.json</a> — ECD only</li>
+              <li><a href="ludwig-config-llm.json">ludwig-config-llm.json</a> — LLM only</li>
+            </ul>
+            <h2>Usage</h2>
+            <p>Add to your Ludwig YAML config:</p>
+            <pre># yaml-language-server: $schema=https://ludwig-ai.github.io/schema/ludwig-config.json</pre>
+            <p>Or see <a href="https://www.schemastore.org/json/">SchemaStore</a> for automatic IDE integration.</p>
+          </body>
+          </html>
+          HTMLEOF
 
       - name: Publish to ludwig-ai/schema
         uses: cpina/github-action-push-to-another-repository@v1.7.2
