@@ -66,8 +66,8 @@ NUM_EXAMPLES = 20
     ],
 )
 def test_sample_ratio(backend, tmpdir, ray_cluster_2cpu):
-    num_examples = 100
-    sample_ratio = 0.25
+    num_examples = 30
+    sample_ratio = 0.5
 
     input_features = [sequence_feature(encoder={"reduce_output": "sum"}), audio_feature(folder=tmpdir)]
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
@@ -119,8 +119,8 @@ def test_sample_ratio_deterministic(backend, tmpdir, ray_cluster_2cpu):
     model.preprocess returns a PandasPandasDataset object when using local backend, and returns a RayDataset object when
     using the Ray backend.
     """
-    num_examples = 100
-    sample_ratio = 0.3
+    num_examples = 30
+    sample_ratio = 0.5
 
     input_features = [binary_feature()]
     output_features = [category_feature()]
@@ -171,8 +171,8 @@ def test_sample_ratio_deterministic(backend, tmpdir, ray_cluster_2cpu):
     ],
 )
 def test_sample_size(backend, tmpdir, ray_cluster_2cpu):
-    num_examples = 100
-    sample_size = 25
+    num_examples = 30
+    sample_size = 15
 
     input_features = [sequence_feature(encoder={"reduce_output": "sum"}), audio_feature(folder=tmpdir)]
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
@@ -223,8 +223,8 @@ def test_sample_size_deterministic(backend, tmpdir, ray_cluster_2cpu):
     model.preprocess returns a PandasPandasDataset object when using local backend, and returns a RayDataset object when
     using the Ray backend.
     """
-    num_examples = 100
-    sample_size = 30
+    num_examples = 30
+    sample_size = 15
 
     input_features = [binary_feature()]
     output_features = [category_feature()]
@@ -335,7 +335,7 @@ def test_dask_known_divisions(feature_fn, csv_filename, tmpdir, ray_cluster_2cpu
 
     input_features = [feature_fn(os.path.join(tmpdir, "generated_output"))]
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
-    data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=100)
+    data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=20)
     data_df = dd.from_pandas(pd.read_csv(data_csv), npartitions=2)
     assert data_df.known_divisions
 

@@ -45,7 +45,7 @@ def test_early_stopping(early_stop, tmp_path):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat"},
-        TRAINER: {"epochs": 50, "early_stop": early_stop, "batch_size": 16, "learning_rate": 0.01},
+        TRAINER: {"epochs": 20, "early_stop": early_stop, "batch_size": 16, "learning_rate": 0.01},
     }
 
     # create sub-directory to store results

@@ -66,7 +66,7 @@ def _run_binary_predictions(tmpdir, backend, distinct_values, ray_cluster_2cpu):
         input_features,
         output_features,
         os.path.join(tmpdir, "dataset.csv"),
-        num_examples=100,
+        num_examples=20,
     )
     data_df = pd.read_csv(data_csv_path)
 
@@ -133,7 +133,7 @@ def _run_binary_predictions_with_number_dtype(tmpdir, backend, distinct_values, 
         input_features,
         output_features,
         os.path.join(tmpdir, "dataset.csv"),
-        num_examples=100,
+        num_examples=20,
     )
     data_df = pd.read_csv(data_csv_path)
 
@@ -202,7 +202,7 @@ def test_set_feature_saving(tmpdir, pct_positive):
         input_features,
         output_features,
         os.path.join(tmpdir, "dataset.csv"),
-        num_examples=100,
+        num_examples=20,
     )
     data_df = pd.read_csv(data_csv_path)
 

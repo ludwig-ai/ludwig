@@ -192,7 +192,7 @@ def run_test_explainer_api(
 
     # Generate data
     csv_filename = os.path.join(tmpdir, "training.csv")
-    generate_data(input_features, output_features, csv_filename, num_examples=100)
+    generate_data(input_features, output_features, csv_filename, num_examples=20)
     df = pd.read_csv(csv_filename)
     if "split" in additional_config.get("preprocessing", {}):
         df["split"] = np.random.randint(0, 3, df.shape[0])

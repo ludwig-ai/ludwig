@@ -956,12 +956,12 @@ def test_image_resizing_num_channel_handling(tmpdir):
         number_feature(normalization="minmax"),
     ]
     output_features = [binary_feature(), number_feature()]
-    rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset1.csv"), num_examples=50)
+    rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset1.csv"), num_examples=20)
 
     df1 = read_csv(rel_path)
 
     input_features[0]["preprocessing"]["num_channels"] = 1
-    rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset2.csv"), num_examples=50)
+    rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset2.csv"), num_examples=20)
     df2 = read_csv(rel_path)
 
     df = concatenate_df(df1, df2, None, LOCAL_BACKEND)

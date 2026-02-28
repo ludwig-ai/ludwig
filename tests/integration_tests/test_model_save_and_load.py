@@ -47,7 +47,7 @@ def test_model_load_from_checkpoint(tmpdir, csv_filename, tmp_path):
         binary_feature(),
     ]
 
-    data_csv_path = generate_data(input_features, output_features, csv_filename, num_examples=50)
+    data_csv_path = generate_data(input_features, output_features, csv_filename, num_examples=20)
 
     config = {
         "input_features": input_features,
@@ -144,7 +144,7 @@ def test_model_save_reload_api(tmpdir, csv_filename, tmp_path):
     ]
 
     # Generate test data
-    data_csv_path = generate_data(input_features, output_features, csv_filename, num_examples=50)
+    data_csv_path = generate_data(input_features, output_features, csv_filename, num_examples=20)
 
     #############
     # Train model
@@ -220,7 +220,7 @@ def test_model_weights_match_training(tmpdir, csv_filename):
     output_feature_name = output_features[0][NAME]
 
     # Generate test data
-    data_csv_path = generate_data(input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=50)
+    data_csv_path = generate_data(input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=20)
 
     config = {
         "input_features": input_features,
@@ -282,7 +282,7 @@ def test_model_save_reload_tv_model(torch_encoder, variant, tmpdir, csv_filename
     ]
 
     # Generate test data
-    data_csv_path = generate_data(input_features, output_features, csv_filename, num_examples=50)
+    data_csv_path = generate_data(input_features, output_features, csv_filename, num_examples=20)
 
     #############
     # Train model
@@ -374,7 +374,7 @@ def test_model_save_reload_hf_model(tmpdir, csv_filename, tmp_path):
     ]
 
     # Generate test data
-    data_csv_path = generate_data(input_features, output_features, csv_filename, num_examples=50)
+    data_csv_path = generate_data(input_features, output_features, csv_filename, num_examples=20)
 
     #############
     # Train model

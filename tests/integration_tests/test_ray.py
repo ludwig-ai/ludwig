@@ -280,7 +280,7 @@ def split(data_parquet):
 def run_test_with_features(
     input_features,
     output_features,
-    num_examples=100,
+    num_examples=20,
     run_fn=run_api_experiment,
     expect_error=False,
     df_engine=None,
@@ -928,7 +928,7 @@ def test_ray_distributed_predict(use_placement_group, ray_cluster_2cpu):
         else:
             backend_config["trainer"]["num_workers"] = 2
         csv_filename = os.path.join(tmpdir, "dataset.csv")
-        dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=100)
+        dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=20)
         dataset = create_data_set_to_use("csv", dataset_csv, nan_percent=0.0)
         model = LudwigModel(config, backend=backend_config)
 

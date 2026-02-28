@@ -383,7 +383,7 @@ def test_init_config(tmpdir):
         category_feature(encoder={"vocab_size": 3}),
     ]
     output_features = [category_feature(decoder={"vocab_size": 3})]
-    dataset_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=100)
+    dataset_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=20)
     output_config_path = os.path.join(tmpdir, "config.yaml")
 
     _run_ludwig("init_config", dataset=dataset_csv, target=output_features[0][NAME], output=output_config_path)

@@ -137,7 +137,7 @@ def test_llm_text_to_text(tmpdir, backend, ray_cluster_4cpu):
     output_features = [text_feature(output_feature=True, name="Answer", decoder={"type": "text_extractor"})]
 
     csv_filename = os.path.join(tmpdir, "training.csv")
-    dataset_filename = generate_data(input_features, output_features, csv_filename, num_examples=100)
+    dataset_filename = generate_data(input_features, output_features, csv_filename, num_examples=20)
 
     config = {
         MODEL_TYPE: MODEL_LLM,

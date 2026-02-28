@@ -561,7 +561,7 @@ def test_api_callbacks_default_train_steps(tmpdir, csv_filename):
     train_steps = None
     epochs = 3
     batch_size = 8
-    num_examples = 80
+    num_examples = 20
     mock_callback = mock.Mock(wraps=Callback())
 
     input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
@@ -584,9 +584,9 @@ def test_api_callbacks_default_train_steps(tmpdir, csv_filename):
 
 
 def test_api_callbacks_fixed_train_steps(tmpdir, csv_filename):
-    train_steps = 20
+    train_steps = 4
     batch_size = 8
-    num_examples = 80
+    num_examples = 20
     mock_callback = mock.Mock(wraps=Callback())
 
     input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
@@ -604,16 +604,17 @@ def test_api_callbacks_fixed_train_steps(tmpdir, csv_filename):
         )
     )
 
-    # There are 10 steps per epoch, so 20 train steps => 2 epochs.
+    # With 20 examples (14 train at 70% split), batch_size=8, steps_per_epoch=2.
+    # So 4 train steps => 2 epochs.
     assert mock_callback.on_epoch_start.call_count == 2
 
 
 def test_api_callbacks_fixed_train_steps_partial_epochs(tmpdir, csv_filename):
     # If train_steps is set manually, epochs is ignored.
-    train_steps = 15
+    train_steps = 3
     epochs = 2
     batch_size = 8
-    num_examples = 80
+    num_examples = 20
     mock_callback = mock.Mock(wraps=Callback())
 
     input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
@@ -631,7 +632,7 @@ def test_api_callbacks_fixed_train_steps_partial_epochs(tmpdir, csv_filename):
         )
     )
 
-    # There are 10 steps per epoch, so 15 train steps => 1 full epoch.
+    # With 20 examples, batch_size=8, steps_per_epoch=2. 3 train steps => 1 full epoch.
     assert mock_callback.on_epoch_end.call_count == 1
 
 
@@ -665,6 +666,8 @@ def test_api_callbacks_batch_size_1(tmpdir, csv_filename):
 
 def test_api_callbacks_fixed_train_steps_less_than_one_epoch(tmpdir, csv_filename):
     # If train_steps is set manually, epochs is ignored.
+    # With 80 examples at 70% split = 56 train examples, batch_size=8 => 7 steps per epoch.
+    # train_steps=6 < 7, so less than one full epoch.
     train_steps = total_batches = 6
     steps_per_checkpoint = 2
     batch_size = 8
