@@ -950,7 +950,7 @@ class RayTuneExecutor:
         # configure a custom S3 filesystem for Ray Tune (PyArrow doesn't read
         # AWS_ENDPOINT_URL automatically).
         storage_filesystem = None
-        if output_directory and output_directory.startswith("s3://"):
+        if output_directory and str(output_directory).startswith("s3://"):
             endpoint_url = os.environ.get("AWS_ENDPOINT_URL")
             if endpoint_url:
                 import pyarrow.fs
