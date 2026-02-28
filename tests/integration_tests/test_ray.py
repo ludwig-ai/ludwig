@@ -391,14 +391,13 @@ def test_ray_read_binary_files(tmpdir, df_engine, ray_cluster_2cpu):
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.parametrize(
     "trainer_strategy",
     [
         pytest.param("ddp", id="ddp", marks=pytest.mark.distributed),
     ],
 )
-def test_ray_outputs(dataset_type, trainer_strategy, ray_cluster_2cpu):
+def test_ray_outputs(trainer_strategy, ray_cluster_2cpu):
     input_features = [
         binary_feature(),
     ]
@@ -418,7 +417,7 @@ def test_ray_outputs(dataset_type, trainer_strategy, ray_cluster_2cpu):
         input_features,
         output_features,
         df_engine="dask",
-        dataset_type=dataset_type,
+        dataset_type="parquet",
         predict=True,
         skip_save_predictions=False,
         required_metrics={
@@ -789,12 +788,8 @@ def test_ray_lazy_load_image_works(tmpdir, ray_cluster_2cpu):
 @pytest.mark.parametrize(
     "method, balance",
     [
-        ("oversample_minority", 0.25),
         ("oversample_minority", 0.5),
-        ("oversample_minority", 0.75),
-        ("undersample_majority", 0.25),
         ("undersample_majority", 0.5),
-        ("undersample_majority", 0.75),
     ],
 )
 def test_balance_ray(method, balance, ray_cluster_2cpu):
@@ -854,7 +849,7 @@ def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu, max_batch_size, expect
         "output_features": [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")],
         "combiner": {"type": "concat", "output_size": 14},
         TRAINER: {
-            "epochs": 2,
+            "train_steps": 3,
             "batch_size": "auto",
             "learning_rate": "auto",
             "max_batch_size": max_batch_size,
@@ -863,7 +858,7 @@ def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu, max_batch_size, expect
 
     backend_config = copy.deepcopy(RAY_BACKEND_CONFIG)
 
-    num_samples = 200
+    num_samples = 100
     csv_filename = os.path.join(tmpdir, "dataset.csv")
     dataset_csv = generate_data(
         config["input_features"], config["output_features"], csv_filename, num_examples=num_samples

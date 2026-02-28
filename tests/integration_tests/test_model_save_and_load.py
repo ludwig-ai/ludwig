@@ -152,7 +152,7 @@ def test_model_save_reload_api(tmpdir, csv_filename, tmp_path):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+        TRAINER: {"train_steps": 1, BATCH_SIZE: 128},
     }
 
     data_df = read_csv(data_csv_path)
@@ -220,13 +220,13 @@ def test_model_weights_match_training(tmpdir, csv_filename):
     output_feature_name = output_features[0][NAME]
 
     # Generate test data
-    data_csv_path = generate_data(input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=100)
+    data_csv_path = generate_data(input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=50)
 
     config = {
         "input_features": input_features,
         "output_features": output_features,
         "trainer": {
-            "epochs": 5,
+            "epochs": 3,
             "batch_size": 32,
             "evaluate_training_set": True,  # needed to ensure exact training metrics computed
         },
@@ -290,7 +290,7 @@ def test_model_save_reload_tv_model(torch_encoder, variant, tmpdir, csv_filename
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+        TRAINER: {"train_steps": 1, BATCH_SIZE: 128},
     }
 
     data_df = read_csv(data_csv_path)

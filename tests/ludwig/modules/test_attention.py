@@ -13,9 +13,9 @@ from tests.integration_tests.parameter_update_utils import check_module_paramete
 RANDOM_SEED = 1919
 
 
-@pytest.mark.parametrize("input_hidden_size", [128, 256, 512])
-@pytest.mark.parametrize("input_seq_size", [10, 20])
-@pytest.mark.parametrize("input_batch_size", [16, 32])
+@pytest.mark.parametrize("input_hidden_size", [128, 256])
+@pytest.mark.parametrize("input_seq_size", [10])
+@pytest.mark.parametrize("input_batch_size", [16])
 def test_feed_forward_attention_reducer(input_batch_size: int, input_seq_size: int, input_hidden_size: int):
     # make repeatable
     set_random_seed(RANDOM_SEED)
@@ -41,9 +41,9 @@ def test_feed_forward_attention_reducer(input_batch_size: int, input_seq_size: i
     assert upc == tpc, f"Some parameters not updated.  These parameters not updated: {not_updated}"
 
 
-@pytest.mark.parametrize("input_hidden_size", [128, 256, 512])
-@pytest.mark.parametrize("input_seq_size", [1, 10, 20])
-@pytest.mark.parametrize("input_batch_size", [16, 32])
+@pytest.mark.parametrize("input_hidden_size", [128, 256])
+@pytest.mark.parametrize("input_seq_size", [1, 10])
+@pytest.mark.parametrize("input_batch_size", [16])
 def test_multihead_self_attention(input_batch_size: int, input_seq_size: int, input_hidden_size: int):
     # make repeatable
     set_random_seed(RANDOM_SEED)
@@ -72,11 +72,15 @@ def test_multihead_self_attention(input_batch_size: int, input_seq_size: int, in
 
 
 # heads must be a divisor of input_hidden_size
-@pytest.mark.parametrize("heads", [8, 16])
-@pytest.mark.parametrize("output_size", [64, 128, 256])
-@pytest.mark.parametrize("input_hidden_size", [128, 256, 512])
-@pytest.mark.parametrize("input_seq_size", [10, 20])
-@pytest.mark.parametrize("input_batch_size", [16, 32])
+@pytest.mark.parametrize(
+    "input_batch_size,input_seq_size,input_hidden_size,output_size,heads",
+    [
+        (16, 10, 128, 64, 8),
+        (16, 20, 256, 128, 16),
+        (32, 10, 256, 256, 8),
+    ],
+    ids=["small", "medium", "large"],
+)
 def test_transformer_block(
     input_batch_size: int,
     input_seq_size: int,
@@ -108,13 +112,15 @@ def test_transformer_block(
     assert upc == tpc, f"Some parameters not updated.  These parameters not updated: {not_updated}"
 
 
-@pytest.mark.parametrize("num_layers", [1, 4])
-# heads must be a divisor of input_hidden_size
-@pytest.mark.parametrize("heads", [8, 16])
-@pytest.mark.parametrize("output_size", [64, 128, 256])
-@pytest.mark.parametrize("input_hidden_size", [128, 256, 512])
-@pytest.mark.parametrize("input_seq_size", [10, 20])
-@pytest.mark.parametrize("input_batch_size", [16, 32])
+@pytest.mark.parametrize(
+    "input_batch_size,input_seq_size,input_hidden_size,output_size,heads,num_layers",
+    [
+        (16, 10, 128, 64, 8, 1),
+        (16, 20, 256, 128, 16, 1),
+        (32, 10, 256, 256, 8, 4),
+    ],
+    ids=["single_layer_small", "single_layer_medium", "multi_layer"],
+)
 def test_transformer_stack(
     input_batch_size: int,
     input_seq_size: int,

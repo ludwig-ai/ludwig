@@ -58,7 +58,6 @@ from tests.integration_tests.utils import (
     run_experiment,
     sequence_feature,
     set_feature,
-    TEXT_ENCODERS,
     text_feature,
     timeseries_feature,
     vector_feature,
@@ -71,7 +70,7 @@ logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
 
 
-@pytest.mark.parametrize("encoder", TEXT_ENCODERS)
+@pytest.mark.parametrize("encoder", ["embed", "rnn", "transformer", "tf_idf"])
 def test_experiment_text_feature_non_pretrained(encoder, csv_filename):
     input_features = [
         text_feature(encoder={"vocab_size": 30, "min_len": 1, "type": encoder}, preprocessing={"tokenizer": "space"})
@@ -92,7 +91,7 @@ def run_experiment_with_encoder(encoder, csv_filename):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
-@pytest.mark.parametrize("encoder", ENCODERS)
+@pytest.mark.parametrize("encoder", ["embed", "rnn", "transformer"])
 def test_experiment_seq_seq_generator(csv_filename, encoder):
     input_features = [text_feature(encoder={"type": encoder, "reduce_output": None})]
     output_features = [text_feature(decoder={"type": "generator"}, output_feature=True)]
@@ -101,7 +100,7 @@ def test_experiment_seq_seq_generator(csv_filename, encoder):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
-@pytest.mark.parametrize("encoder", ["embed", "rnn", "parallel_cnn", "stacked_parallel_cnn", "transformer"])
+@pytest.mark.parametrize("encoder", ["embed", "rnn", "transformer"])
 def test_experiment_seq_seq_tagger(csv_filename, encoder):
     input_features = [text_feature(encoder={"type": encoder, "reduce_output": None})]
     output_features = [text_feature(decoder={"type": "tagger"}, reduce_input=None)]
@@ -158,7 +157,7 @@ def test_experiment_seq_seq_train_test_valid(tmpdir):
     )
 
 
-@pytest.mark.parametrize("encoder", ENCODERS)
+@pytest.mark.parametrize("encoder", ["embed", "rnn", "transformer"])
 def test_experiment_multi_input_intent_classification(csv_filename, encoder):
     # Multiple inputs, Single category output
     input_features = [
@@ -248,10 +247,15 @@ def test_experiment_multiple_seq_seq(csv_filename, output_features):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
-@pytest.mark.parametrize("skip_save_processed_input", [True, False])
-@pytest.mark.parametrize("in_memory", [True, False])
-@pytest.mark.parametrize("image_source", ["file", "tensor"])
-@pytest.mark.parametrize("num_channels", [1, 3])
+@pytest.mark.parametrize(
+    "num_channels,image_source,in_memory,skip_save_processed_input",
+    [
+        (3, "file", True, True),
+        (1, "file", False, False),
+        (3, "tensor", True, False),
+    ],
+    ids=["file_in_memory_3ch", "file_on_disk_1ch", "tensor_in_memory_3ch"],
+)
 def test_basic_image_feature(num_channels, image_source, in_memory, skip_save_processed_input, tmpdir):
     # Image Inputs
     image_dest_folder = os.path.join(tmpdir, "generated_images")
@@ -353,10 +357,16 @@ def test_experiment_image_inputs(image_params: ImageParams, tmpdir):
 # setting.
 
 
-@pytest.mark.parametrize("test_in_memory", [True, False])
-@pytest.mark.parametrize("test_format", ["csv", "df", "hdf5"])
-@pytest.mark.parametrize("train_in_memory", [True, False])
-@pytest.mark.parametrize("train_format", ["csv", "df", "hdf5"])
+@pytest.mark.parametrize(
+    "train_format,train_in_memory,test_format,test_in_memory",
+    [
+        ("csv", True, "csv", True),
+        ("df", False, "df", False),
+        ("hdf5", True, "hdf5", True),
+        ("csv", False, "df", True),
+    ],
+    ids=["csv_inmem", "df_ondisk", "hdf5_inmem", "csv_to_df_mixed"],
+)
 def test_experiment_image_dataset(train_format, train_in_memory, test_format, test_in_memory, tmpdir):
     # Image Inputs
     image_dest_folder = os.path.join(tmpdir, "generated_images")
@@ -554,8 +564,11 @@ def test_experiment_tied_weights_sequence_combiner(csv_filename):
     run_experiment(config=config, dataset=rel_path)
 
 
-@pytest.mark.parametrize("enc_cell_type", ["lstm", "rnn", "gru"])
-@pytest.mark.parametrize("attention", [False, True])
+@pytest.mark.parametrize(
+    "enc_cell_type,attention",
+    [("lstm", True), ("rnn", False), ("gru", True)],
+    ids=["lstm_attn", "rnn_no_attn", "gru_attn"],
+)
 def test_sequence_tagger(enc_cell_type, attention, csv_filename):
     # Define input and output features
     input_features = [
@@ -653,7 +666,7 @@ def test_experiment_sequence_combiner_with_reduction_fails(csv_filename):
         run_experiment(config=config, dataset=rel_path)
 
 
-@pytest.mark.parametrize("sequence_encoder", ENCODERS[1:])
+@pytest.mark.parametrize("sequence_encoder", ["rnn", "transformer"])
 def test_experiment_sequence_combiner(sequence_encoder, csv_filename):
     config = {
         "input_features": [

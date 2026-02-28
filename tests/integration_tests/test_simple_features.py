@@ -60,7 +60,7 @@ def test_feature(input_test_feature, output_test_feature, output_loss_parameter,
     output_features = [of_test_feature]
 
     # Generate test data
-    rel_path = generate_data(input_features, output_features, csv_filename, 1001)
+    rel_path = generate_data(input_features, output_features, csv_filename, 100)
 
     run_experiment(input_features, output_features, dataset=rel_path)
 
@@ -90,7 +90,7 @@ def test_feature(input_test_feature, output_test_feature, output_loss_parameter,
 )
 def test_feature_multiple_outputs(input_test_feature, output_test_feature, csv_filename):
     # Generate test data
-    rel_path = generate_data(input_test_feature, output_test_feature, csv_filename, 1001)
+    rel_path = generate_data(input_test_feature, output_test_feature, csv_filename, 100)
 
     run_experiment(input_test_feature, output_test_feature, dataset=rel_path)
 

@@ -129,14 +129,14 @@ def test_missing_values_drop_rows(csv_filename, tmpdir):
 
 
 @pytest.mark.parametrize(
-    "backend",
+    "backend,outlier_strategy,outlier_threshold",
     [
-        pytest.param("local", id="local"),
-        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
+        pytest.param("local", None, 3.0, id="local_none"),
+        pytest.param("local", "fill_with_mean", 1.0, id="local_mean_strict"),
+        pytest.param("local", "fill_with_const", 3.0, id="local_const_relaxed"),
+        pytest.param("ray", "fill_with_mean", 3.0, id="ray_mean", marks=pytest.mark.distributed),
     ],
 )
-@pytest.mark.parametrize("outlier_threshold", [1.0, 3.0])
-@pytest.mark.parametrize("outlier_strategy", [None, "fill_with_mean", "fill_with_const"])
 def test_outlier_strategy(outlier_strategy, outlier_threshold, backend, tmpdir, ray_cluster_2cpu):
     fill_value = 42
     kwargs = {

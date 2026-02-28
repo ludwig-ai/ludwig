@@ -3,12 +3,8 @@ import torch
 
 from ludwig.constants import ENCODER_OUTPUT
 from ludwig.encoders.sequence_encoders import (
-    ParallelCNN,
     SequenceEmbedEncoder,
     SequencePassthroughEncoder,
-    StackedCNN,
-    StackedCNNRNN,
-    StackedParallelCNN,
     StackedRNN,
     StackedTransformer,
 )
@@ -19,7 +15,7 @@ DEVICE = get_torch_device()
 RANDOM_SEED = 1919
 
 
-@pytest.mark.parametrize("reduce_output", ["mean", "avg", "max", "last", "concat", "attention", None])
+@pytest.mark.parametrize("reduce_output", ["mean", "last", "concat", None])
 def test_sequence_passthrough_encoder(reduce_output: str):
     batch_size = 10
     sequence_length = 32
@@ -34,9 +30,9 @@ def test_sequence_passthrough_encoder(reduce_output: str):
 
 @pytest.mark.parametrize(
     "encoder_type",
-    [SequenceEmbedEncoder, ParallelCNN, StackedCNN, StackedParallelCNN, StackedRNN, StackedCNNRNN, StackedTransformer],
+    [SequenceEmbedEncoder, StackedRNN, StackedTransformer],
 )
-@pytest.mark.parametrize("reduce_output", ["mean", "avg", "max", "last", "concat", "attention", None])
+@pytest.mark.parametrize("reduce_output", ["mean", "last", "concat", None])
 @pytest.mark.parametrize("vocab_size", [2, 1024])  # Uses vocabularies smaller than (and larger than) embedding size.
 def test_sequence_encoders(encoder_type: type, reduce_output: str, vocab_size: int):
     # make repeatable

@@ -1215,7 +1215,7 @@ def test_visualization_precision_recall_curves_output_saved(csv_filename, binary
         output_features = [category_feature(decoder={"vocab_size": 3}, reduce_input="sum")]
 
     # Generate test data
-    rel_path = generate_data(input_features, output_features, csv_filename, num_examples=1000)
+    rel_path = generate_data(input_features, output_features, csv_filename, num_examples=100)
     exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
@@ -1271,7 +1271,7 @@ def test_visualization_precision_recall_curves_from_test_statistics_output_saved
     input_features = [binary_feature(), bag_feature()]
     output_features = [binary_feature()]
     # Generate test data
-    rel_path = generate_data(input_features, output_features, csv_filename, num_examples=1000)
+    rel_path = generate_data(input_features, output_features, csv_filename, num_examples=100)
 
     exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")

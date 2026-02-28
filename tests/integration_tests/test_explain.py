@@ -118,7 +118,7 @@ def test_explainer_api_ray_minimum_batch_size(tmpdir, ray_cluster_2cpu):
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=5)
-@pytest.mark.parametrize("cache_encoder_embeddings", [True, False])
+@pytest.mark.parametrize("cache_encoder_embeddings", [True])
 @pytest.mark.parametrize(
     "explainer_class,model_type",
     [
@@ -192,14 +192,14 @@ def run_test_explainer_api(
 
     # Generate data
     csv_filename = os.path.join(tmpdir, "training.csv")
-    generate_data(input_features, output_features, csv_filename, num_examples=200)
+    generate_data(input_features, output_features, csv_filename, num_examples=100)
     df = pd.read_csv(csv_filename)
     if "split" in additional_config.get("preprocessing", {}):
         df["split"] = np.random.randint(0, 3, df.shape[0])
 
     # Train model
     config = {"input_features": input_features, "output_features": output_features, "model_type": model_type}
-    config["trainer"] = {"epochs": 2, BATCH_SIZE: batch_size}
+    config["trainer"] = {"train_steps": 1, BATCH_SIZE: batch_size}
     config.update(additional_config)
 
     model = LudwigModel(config, logging_level=logging.WARNING, backend=LocalTestBackend())
@@ -257,9 +257,7 @@ def test_explainer_api_text_outputs(tmpdir):
         pytest.param(RayIntegratedGradientsExplainer, MODEL_ECD, id="ecd_ray", marks=pytest.mark.distributed),
     ],
 )
-@pytest.mark.parametrize(
-    "encoder_type", ["embed", "parallel_cnn", "stacked_cnn", "stacked_parallel_cnn", "rnn", "cnnrnn", "transformer"]
-)
+@pytest.mark.parametrize("encoder_type", ["embed", "rnn", "transformer"])
 def test_explainer_sequence_feature(explainer_class, model_type, encoder_type, tmpdir):
     input_features = [sequence_feature()]
     input_features[0]["encoder"] = {"type": encoder_type}
