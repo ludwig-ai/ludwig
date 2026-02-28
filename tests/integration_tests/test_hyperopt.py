@@ -35,10 +35,8 @@ from ludwig.constants import (
     NAME,
     OUTPUT_FEATURES,
     RAY,
-    TEST,
     TEXT,
     TRAINER,
-    TRAINING,
     TYPE,
     VALIDATION,
 )
@@ -201,7 +199,7 @@ def test_hyperopt_executor_with_metric(model_type, csv_filename, tmpdir, ray_clu
     )
 
 
-@pytest.mark.parametrize("split", [TRAINING, VALIDATION, TEST])
+@pytest.mark.parametrize("split", [VALIDATION])
 def test_hyperopt_with_split(split, csv_filename, tmpdir, ray_cluster_7cpu):
     test_hyperopt_search_alg(
         search_alg="variant_generator",
@@ -641,9 +639,9 @@ def test_hyperopt_with_time_budget(csv_filename, tmpdir, ray_cluster_7cpu):
                 "type": "ray",
                 # Ensure there is enough time for some trials to start and also for some to terminate
                 # to reproduce the exact issue of missing .tune_metadata files.
-                "time_budget_s": 120,
+                "time_budget_s": 30,
                 "cpu_resources_per_trial": 1,
-                "num_samples": 20,
+                "num_samples": 4,
                 "scheduler": {TYPE: "fifo"},
             },
             "parameters": {

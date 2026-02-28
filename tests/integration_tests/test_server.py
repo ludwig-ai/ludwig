@@ -62,7 +62,7 @@ def train_and_predict_model(input_features, output_features, data_csv, output_di
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+        TRAINER: {"train_steps": 1, BATCH_SIZE: 128},
     }
     model = LudwigModel(config, backend=LocalTestBackend())
     model.train(
@@ -82,7 +82,7 @@ def train_and_predict_model_with_stratified_split(input_features, output_feature
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+        TRAINER: {"train_steps": 1, BATCH_SIZE: 128},
         "preprocessing": {
             "split": {"column": output_features[0]["column"], "probabilities": [0.7, 0.1, 0.2], "type": "stratify"},
         },

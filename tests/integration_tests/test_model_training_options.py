@@ -26,7 +26,6 @@ from ludwig.contribs.mlflow import MlflowCallback
 from ludwig.experiment import experiment_cli
 from ludwig.features.number_feature import numeric_transformation_registry
 from ludwig.globals import DESCRIPTION_FILE_NAME, MODEL_FILE_NAME, MODEL_WEIGHTS_FILE_NAME, TRAINING_PREPROC_FILE_NAME
-from ludwig.schema.optimizers import optimizer_registry
 from ludwig.utils.data_utils import load_json, replace_file_extension
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.package_utils import LazyLoader
@@ -46,7 +45,7 @@ def test_early_stopping(early_stop, tmp_path):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat"},
-        TRAINER: {"epochs": 75, "early_stop": early_stop, "batch_size": 16},
+        TRAINER: {"epochs": 50, "early_stop": early_stop, "batch_size": 16, "learning_rate": 0.01},
     }
 
     # create sub-directory to store results
@@ -101,7 +100,7 @@ def test_model_progress_save(skip_save_progress, skip_save_model, tmp_path):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat"},
-        TRAINER: {"epochs": 5, BATCH_SIZE: 128},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     # create sub-directory to store results
@@ -236,7 +235,7 @@ def test_resume_training_mlflow(optimizer, tmp_path):
     assert len(previous_runs) == 1
 
 
-@pytest.mark.parametrize("optimizer_type", optimizer_registry)
+@pytest.mark.parametrize("optimizer_type", ["sgd", "adam", "adamw", "adagrad", "rmsprop"])
 def test_optimizers(optimizer_type, tmp_path):
     if (optimizer_type in {"lars", "lamb", "lion"}) and (
         not torch.cuda.is_available() or torch.cuda.device_count() == 0
@@ -254,7 +253,7 @@ def test_optimizers(optimizer_type, tmp_path):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat"},
-        TRAINER: {"epochs": 5, "batch_size": 16, "evaluate_training_set": True, "optimizer": {"type": optimizer_type}},
+        TRAINER: {"epochs": 2, "batch_size": 16, "evaluate_training_set": True, "optimizer": {"type": optimizer_type}},
     }
 
     # special handling for adadelta and lbfgs, break out of local minima

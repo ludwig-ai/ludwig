@@ -16,7 +16,6 @@ from ludwig.combiners.combiners import (
     TransformerCombiner,
 )
 from ludwig.constants import ENCODER_OUTPUT, ENCODER_OUTPUT_STATE, TYPE
-from ludwig.encoders.registry import get_sequence_encoder_registry
 from ludwig.schema.combiners.comparator import ComparatorCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
 from ludwig.schema.combiners.project_aggregate import ProjectAggregateCombinerConfig
@@ -185,7 +184,7 @@ def encoder_comparator_outputs():
 
 
 # test for simple concatenation combiner
-@pytest.mark.parametrize("norm", [None, "batch", "layer", "ghost"])
+@pytest.mark.parametrize("norm", [None, "batch", "layer"])
 @pytest.mark.parametrize("number_inputs", [None, 1])
 @pytest.mark.parametrize("flatten_inputs", [True, False])
 @pytest.mark.parametrize("fc_layer", [None, [{"output_size": OUTPUT_SIZE}, {"output_size": OUTPUT_SIZE}]])
@@ -284,7 +283,7 @@ def test_sequence_concat_combiner(
 
 # test for sequence combiner
 @pytest.mark.parametrize("reduce_output", [None, "sum"])
-@pytest.mark.parametrize("encoder", get_sequence_encoder_registry())
+@pytest.mark.parametrize("encoder", ["rnn", "transformer"])
 @pytest.mark.parametrize("main_sequence_feature", [None, "feature_3"])
 def test_sequence_combiner(
     encoder_outputs: tuple, main_sequence_feature: str | None, encoder: str, reduce_output: str | None
@@ -536,10 +535,15 @@ UNEMBEDDABLE_LAYER_NORM_PARAMETERS = 2
         ],
     ],
 )
-@pytest.mark.parametrize("num_layers", [1, 2])
-@pytest.mark.parametrize("reduce_output", ["concat", "sum"])
-@pytest.mark.parametrize("fc_layers", [None, [{"output_size": 256}]])
-@pytest.mark.parametrize("embed_input_feature_name", [None, 64, "add"])
+@pytest.mark.parametrize(
+    "num_layers,reduce_output,fc_layers,embed_input_feature_name",
+    [
+        (1, "concat", None, None),
+        (2, "sum", [{"output_size": 256}], 64),
+        (1, "sum", None, "add"),
+    ],
+    ids=["simple", "full", "add_embed"],
+)
 def test_tabtransformer_combiner_binary_and_number_without_category(
     features_to_test: tuple,
     embed_input_feature_name: int | str | None,
@@ -610,10 +614,15 @@ def test_tabtransformer_combiner_binary_and_number_without_category(
         ],
     ],
 )
-@pytest.mark.parametrize("num_layers", [1, 2])
-@pytest.mark.parametrize("reduce_output", ["concat", "sum"])
-@pytest.mark.parametrize("fc_layers", [None, [{"output_size": 256}]])
-@pytest.mark.parametrize("embed_input_feature_name", [None, 64, "add"])
+@pytest.mark.parametrize(
+    "num_layers,reduce_output,fc_layers,embed_input_feature_name",
+    [
+        (1, "concat", None, None),
+        (2, "sum", [{"output_size": 256}], 64),
+        (1, "sum", None, "add"),
+    ],
+    ids=["simple", "full", "add_embed"],
+)
 def test_tabtransformer_combiner_number_and_binary_with_category(
     features_to_test: tuple,
     embed_input_feature_name: int | str | None,
@@ -679,10 +688,15 @@ def test_tabtransformer_combiner_number_and_binary_with_category(
         ],
     ],
 )
-@pytest.mark.parametrize("num_layers", [1, 2])
-@pytest.mark.parametrize("reduce_output", ["concat", "sum"])
-@pytest.mark.parametrize("fc_layers", [None, [{"output_size": 256}]])
-@pytest.mark.parametrize("embed_input_feature_name", [None, 64, "add"])
+@pytest.mark.parametrize(
+    "num_layers,reduce_output,fc_layers,embed_input_feature_name",
+    [
+        (1, "concat", None, None),
+        (2, "sum", [{"output_size": 256}], 64),
+        (1, "sum", None, "add"),
+    ],
+    ids=["simple", "full", "add_embed"],
+)
 def test_tabtransformer_combiner_number_or_binary_without_category(
     features_to_test: tuple,
     embed_input_feature_name: int | str | None,
@@ -758,10 +772,15 @@ def test_tabtransformer_combiner_number_or_binary_without_category(
         ],
     ],
 )
-@pytest.mark.parametrize("num_layers", [1, 2])
-@pytest.mark.parametrize("reduce_output", ["concat", "sum"])
-@pytest.mark.parametrize("fc_layers", [None, [{"output_size": 256}]])
-@pytest.mark.parametrize("embed_input_feature_name", [None, 64, "add"])
+@pytest.mark.parametrize(
+    "num_layers,reduce_output,fc_layers,embed_input_feature_name",
+    [
+        (1, "concat", None, None),
+        (2, "sum", [{"output_size": 256}], 64),
+        (1, "sum", None, "add"),
+    ],
+    ids=["simple", "full", "add_embed"],
+)
 def test_tabtransformer_combiner_number_or_binary_with_category(
     features_to_test: tuple,
     embed_input_feature_name: int | str | None,

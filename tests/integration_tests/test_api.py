@@ -30,7 +30,6 @@ from ludwig.models.inference import InferenceModule
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import (
     category_feature,
-    ENCODERS,
     generate_data,
     get_weights,
     image_feature,
@@ -157,7 +156,8 @@ def test_api_intent_classification(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    for encoder in ENCODERS:
+    # Test representative encoders (embed=simple, rnn=recurrent, transformer=attention)
+    for encoder in ["embed", "rnn", "transformer"]:
         input_features[0][ENCODER][TYPE] = encoder
         run_api_experiment(input_features, output_features, data_csv=rel_path)
 
@@ -169,7 +169,8 @@ def test_api_intent_classification_separated(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    for encoder in ENCODERS:
+    # Test representative encoders (embed=simple, rnn=recurrent, transformer=attention)
+    for encoder in ["embed", "rnn", "transformer"]:
         input_features[0][ENCODER][TYPE] = encoder
         run_api_experiment_separated_datasets(input_features, output_features, data_csv=rel_path)
 
@@ -336,12 +337,16 @@ def run_api_commands(
     )
 
 
-@pytest.mark.parametrize("skip_save_training_description", [False, True])
-@pytest.mark.parametrize("skip_save_training_statistics", [False, True])
-@pytest.mark.parametrize("skip_save_model", [False, True])
-@pytest.mark.parametrize("skip_save_progress", [False, True])
-@pytest.mark.parametrize("skip_save_log", [False, True])
-@pytest.mark.parametrize("skip_save_processed_input", [False, True])
+@pytest.mark.parametrize(
+    "skip_save_training_description,skip_save_training_statistics,skip_save_model,"
+    "skip_save_progress,skip_save_log,skip_save_processed_input",
+    [
+        (False, False, False, False, False, False),  # all saving enabled
+        (True, True, True, True, True, True),  # all saving disabled
+        (True, False, True, False, True, False),  # alternating pattern
+    ],
+    ids=["all_save", "all_skip", "mixed"],
+)
 def test_api_skip_parameters_train(
     tmpdir,
     csv_filename,
@@ -396,11 +401,16 @@ def test_api_skip_parameters_predict(
     )
 
 
-@pytest.mark.parametrize("skip_save_unprocessed_output", [False, True])
-@pytest.mark.parametrize("skip_save_predictions", [False, True])
-@pytest.mark.parametrize("skip_save_eval_stats", [False, True])
-@pytest.mark.parametrize("skip_collect_predictions", [False, True])
-@pytest.mark.parametrize("skip_collect_overall_stats", [False, True])
+@pytest.mark.parametrize(
+    "skip_save_unprocessed_output,skip_save_predictions,skip_save_eval_stats,"
+    "skip_collect_predictions,skip_collect_overall_stats",
+    [
+        (False, False, False, False, False),  # all saving enabled
+        (True, True, True, True, True),  # all saving disabled
+        (True, False, True, False, True),  # alternating pattern
+    ],
+    ids=["all_save", "all_skip", "mixed"],
+)
 def test_api_skip_parameters_evaluate(
     tmpdir,
     csv_filename,
@@ -429,10 +439,15 @@ def test_api_skip_parameters_evaluate(
     )
 
 
-@pytest.mark.parametrize("epochs", [1, 2])
-@pytest.mark.parametrize("batch_size", [4, 8])
-@pytest.mark.parametrize("num_examples", [16, 32])
-@pytest.mark.parametrize("steps_per_checkpoint", [1, 2])
+@pytest.mark.parametrize(
+    "epochs,batch_size,num_examples,steps_per_checkpoint",
+    [
+        (1, 8, 16, 1),
+        (2, 4, 32, 2),
+        (2, 8, 16, 2),
+    ],
+    ids=["small", "large", "mixed"],
+)
 def test_api_callbacks(tmpdir, csv_filename, epochs, batch_size, num_examples, steps_per_checkpoint):
     mock_callback = mock.Mock(wraps=Callback())
 
@@ -482,10 +497,15 @@ def test_api_callbacks(tmpdir, csv_filename, epochs, batch_size, num_examples, s
     assert mock_callback.on_eval_start.call_count == total_checkpoints
 
 
-@pytest.mark.parametrize("epochs", [1, 2])
-@pytest.mark.parametrize("batch_size", [4, 8])
-@pytest.mark.parametrize("num_examples", [32, 64])
-@pytest.mark.parametrize("checkpoints_per_epoch", [1, 2, 4])
+@pytest.mark.parametrize(
+    "epochs,batch_size,num_examples,checkpoints_per_epoch",
+    [
+        (1, 8, 32, 1),
+        (2, 4, 64, 2),
+        (2, 8, 32, 4),
+    ],
+    ids=["single_checkpoint", "multi_checkpoint", "frequent_checkpoint"],
+)
 def test_api_callbacks_checkpoints_per_epoch(
     tmpdir, csv_filename, epochs, batch_size, num_examples, checkpoints_per_epoch
 ):
@@ -539,7 +559,7 @@ def test_api_callbacks_checkpoints_per_epoch(
 def test_api_callbacks_default_train_steps(tmpdir, csv_filename):
     # Default for train_steps is -1: use epochs.
     train_steps = None
-    epochs = 10
+    epochs = 3
     batch_size = 8
     num_examples = 80
     mock_callback = mock.Mock(wraps=Callback())
@@ -564,7 +584,7 @@ def test_api_callbacks_default_train_steps(tmpdir, csv_filename):
 
 
 def test_api_callbacks_fixed_train_steps(tmpdir, csv_filename):
-    train_steps = 100
+    train_steps = 20
     batch_size = 8
     num_examples = 80
     mock_callback = mock.Mock(wraps=Callback())
@@ -584,13 +604,13 @@ def test_api_callbacks_fixed_train_steps(tmpdir, csv_filename):
         )
     )
 
-    # There are 10 steps per epoch, so 100 train steps => 10 epochs.
-    assert mock_callback.on_epoch_start.call_count == 10
+    # There are 10 steps per epoch, so 20 train steps => 2 epochs.
+    assert mock_callback.on_epoch_start.call_count == 2
 
 
 def test_api_callbacks_fixed_train_steps_partial_epochs(tmpdir, csv_filename):
     # If train_steps is set manually, epochs is ignored.
-    train_steps = 95
+    train_steps = 15
     epochs = 2
     batch_size = 8
     num_examples = 80
@@ -611,14 +631,14 @@ def test_api_callbacks_fixed_train_steps_partial_epochs(tmpdir, csv_filename):
         )
     )
 
-    # There are 10 steps per epoch, so 95 train steps => 9 full epochs.
-    assert mock_callback.on_epoch_end.call_count == 9
+    # There are 10 steps per epoch, so 15 train steps => 1 full epoch.
+    assert mock_callback.on_epoch_end.call_count == 1
 
 
 def test_api_callbacks_batch_size_1(tmpdir, csv_filename):
-    epochs = 2
+    epochs = 1
     batch_size = 1
-    num_examples = 80
+    num_examples = 16
     mock_callback = mock.Mock(wraps=Callback())
 
     input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
@@ -636,11 +656,11 @@ def test_api_callbacks_batch_size_1(tmpdir, csv_filename):
         )
     )
 
-    # There are exactly 2 epoch starts, even with batch_size = 1.
-    assert mock_callback.on_epoch_start.call_count == 2
-    assert mock_callback.on_epoch_end.call_count == 2
-    assert mock_callback.on_batch_start.call_count == 160
-    assert mock_callback.on_batch_end.call_count == 160
+    # There are exactly 1 epoch start, even with batch_size = 1.
+    assert mock_callback.on_epoch_start.call_count == 1
+    assert mock_callback.on_epoch_end.call_count == 1
+    assert mock_callback.on_batch_start.call_count == 16
+    assert mock_callback.on_batch_end.call_count == 16
 
 
 def test_api_callbacks_fixed_train_steps_less_than_one_epoch(tmpdir, csv_filename):

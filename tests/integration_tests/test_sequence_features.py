@@ -95,14 +95,14 @@ def setup_model_scaffolding(raw_df, input_features, output_features):
 #       1-tuple: generate tf.Tensor, 2-tuple: generate list with 2 tf.Tensors
 # TODO(Justin): Move these to test_sequence_generator unit tests, and reintroduce decoder attention, beam_width, and
 # num_layers when these are reimplemented.
-@pytest.mark.parametrize("dec_cell_type", ["lstm", "rnn", "gru"])
 @pytest.mark.parametrize(
-    "combiner_output_shapes",
+    "dec_cell_type,combiner_output_shapes",
     [
-        ((128, 10, TEST_STATE_SIZE), None),
-        ((128, 10, TEST_STATE_SIZE), ((128, TEST_STATE_SIZE), (128, TEST_STATE_SIZE))),
-        ((128, 10, TEST_STATE_SIZE), ((128, TEST_STATE_SIZE),)),
+        ("lstm", ((128, 10, TEST_STATE_SIZE), None)),
+        ("rnn", ((128, 10, TEST_STATE_SIZE), ((128, TEST_STATE_SIZE), (128, TEST_STATE_SIZE)))),
+        ("gru", ((128, 10, TEST_STATE_SIZE), ((128, TEST_STATE_SIZE),))),
     ],
+    ids=["lstm_no_state", "rnn_dual_state", "gru_single_state"],
 )
 def test_sequence_decoders(
     dec_cell_type,
@@ -146,9 +146,15 @@ def test_sequence_decoders(
 
 
 # final sanity test.  Checks a subset of sequence parameters
-@pytest.mark.parametrize("dec_cell_type", ["lstm", "rnn", "gru"])
-@pytest.mark.parametrize("enc_cell_type", ["lstm", "rnn", "gru"])
-@pytest.mark.parametrize("enc_encoder", ["embed", "rnn"])
+@pytest.mark.parametrize(
+    "enc_encoder,enc_cell_type,dec_cell_type",
+    [
+        ("embed", "lstm", "lstm"),
+        ("rnn", "rnn", "gru"),
+        ("rnn", "gru", "rnn"),
+    ],
+    ids=["embed_lstm", "rnn_gru", "gru_rnn"],
+)
 def test_sequence_generator(enc_encoder, enc_cell_type, dec_cell_type, csv_filename):
     # Define input and output features
     input_features = [

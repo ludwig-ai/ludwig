@@ -282,7 +282,7 @@ def test_autoconfig_preprocessing_text_image(tmpdir):
 
 @pytest.mark.slow
 @pytest.mark.distributed
-@pytest.mark.parametrize("time_budget", [30, 1], ids=["high", "low"])
+@pytest.mark.parametrize("time_budget", [10, 1], ids=["high", "low"])
 def test_train_with_config(time_budget, test_data_tabular_large, ray_cluster_2cpu, tmpdir):
     _run_train_with_config(time_budget, test_data_tabular_large, tmpdir)
 

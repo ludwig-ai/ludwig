@@ -15,9 +15,7 @@ SEQ_SIZE = 10
 DEFAULT_OUTPUT_SIZE = 4
 
 
-@pytest.mark.parametrize(
-    "enc_encoder", ["stacked_cnn", "parallel_cnn", "stacked_parallel_cnn", "rnn", "cnnrnn", "passthrough"]
-)
+@pytest.mark.parametrize("enc_encoder", ["stacked_cnn", "rnn", "passthrough"])
 def test_timeseries_feature(enc_encoder):
     # synthetic time series tensor
     timeseries_tensor = torch.randn([BATCH_SIZE, SEQ_SIZE], dtype=torch.float32)

@@ -256,7 +256,7 @@ def test_hyperopt_run_hyperopt(csv_filename, backend, tmpdir, ray_cluster_4cpu):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat"},
-        TRAINER: {"epochs": 2, "learning_rate": 0.001, BATCH_SIZE: 128},
+        TRAINER: {"train_steps": 3, "learning_rate": 0.001, BATCH_SIZE: 128},
         "backend": {
             "type": backend,
         },

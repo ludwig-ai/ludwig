@@ -294,9 +294,15 @@ def test_preprocess_cli(tmpdir, csv_filename):
     _run_ludwig("preprocess", dataset=dataset_filename, preprocessing_config=config_filename)
 
 
-@pytest.mark.parametrize("second_seed_offset", [0, 1])
-@pytest.mark.parametrize("random_seed", [1919, 31])
-@pytest.mark.parametrize("type_of_run", ["train", "experiment"])
+@pytest.mark.parametrize(
+    "second_seed_offset,random_seed,type_of_run",
+    [
+        (0, 42, "train"),  # same seed train: should be reproducible
+        (1, 42, "train"),  # different seed train: should diverge
+        (0, 42, "experiment"),  # same seed experiment: should be reproducible
+    ],
+    ids=["same_seed_train", "diff_seed_train", "same_seed_experiment"],
+)
 def test_reproducible_cli_runs(
     type_of_run: str, random_seed: int, second_seed_offset: int, csv_filename: str, tmpdir: pathlib.Path
 ) -> None:

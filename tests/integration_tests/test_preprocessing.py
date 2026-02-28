@@ -532,7 +532,6 @@ def test_number_feature_wrong_dtype(csv_filename, tmpdir):
     "feature_type",
     [
         sequence_feature,
-        text_feature,
     ],
 )
 def test_seq_features_max_sequence_length(

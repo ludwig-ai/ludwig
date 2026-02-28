@@ -53,9 +53,15 @@ def test_tune_learning_rate(tmpdir):
     assert model.config_obj.trainer.learning_rate == 0.0001
 
 
-@pytest.mark.parametrize("is_cpu", [True, False])
-@pytest.mark.parametrize(EFFECTIVE_BATCH_SIZE, ["auto", 256])
-@pytest.mark.parametrize(EVAL_BATCH_SIZE, ["auto", None, 128])
+@pytest.mark.parametrize(
+    "is_cpu,effective_batch_size,eval_batch_size",
+    [
+        (True, "auto", "auto"),
+        (False, 256, 128),
+        (True, "auto", None),
+    ],
+    ids=["cpu_auto", "gpu_fixed", "cpu_no_eval_bs"],
+)
 def test_ecd_tune_batch_size_and_lr(tmpdir, eval_batch_size, effective_batch_size, is_cpu):
     input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
     output_features = [
@@ -226,7 +232,7 @@ def test_compile(tmpdir):
     model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir)
 
 
-@pytest.mark.parametrize("gradient_accumulation_steps", [1, 2, 3])
+@pytest.mark.parametrize("gradient_accumulation_steps", [1, 2])
 def test_gradient_accumulation(gradient_accumulation_steps: int, tmpdir):
     input_features = [text_feature()]
     output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]

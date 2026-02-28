@@ -685,7 +685,7 @@ def test_precision_recall_curves_from_test_statistics_vis_api(csv_filename):
     with TemporaryDirectory() as tmpvizdir:
         # Generate test data
         data_csv = generate_data(
-            input_features, output_features, os.path.join(tmpvizdir, csv_filename), num_examples=1000
+            input_features, output_features, os.path.join(tmpvizdir, csv_filename), num_examples=100
         )
         output_feature_name = output_features[0]["name"]
 
