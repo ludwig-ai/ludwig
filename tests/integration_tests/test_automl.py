@@ -326,8 +326,8 @@ def _run_train_with_config(time_budget, test_data, tmpdir, **kwargs):
         "trainer": {"epochs": 2},
         "hyperopt": {
             "search_alg": {
-                "type": "hyperopt",
-                "random_state_seed": 42,
+                "type": "variant_generator",
+                "random_state": 42,
             },
             "executor": {
                 "type": "ray",

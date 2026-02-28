@@ -3,3 +3,4 @@ ray[default,tune]>=2.9
 # required for Ray Tune Search Algorithm support for AutoML
 #search_alg: hyperopt
 hyperopt
+future<1.0  # hyperopt 0.2.7 requires future's Python 2 compat shims
