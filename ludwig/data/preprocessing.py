@@ -1353,7 +1353,12 @@ def build_dataset(
         # if col is a list of list-like objects, we assume the internal dtype of each col[i] remains unchanged.
         if isinstance(col, list) and isinstance(col[0], (list, np.ndarray, torch.Tensor)):
             continue
-        col_name_to_dtype[col_name] = col.dtype
+        dtype = col.dtype
+        # Skip non-numpy extension dtypes (e.g. TensorDtype from Ray, ArrowDtype from PyArrow)
+        # as they cannot be used with DataFrame.astype() reliably.
+        if not isinstance(dtype, np.dtype):
+            continue
+        col_name_to_dtype[col_name] = dtype
     dataset = dataset.astype(col_name_to_dtype)
 
     # Persist the completed dataset with no NaNs

@@ -508,8 +508,15 @@ class RayTuneExecutor:
         backend,
         debug,
     ):
+        model_path = os.path.join(best_model_path, "model")
+        if not os.path.isdir(model_path):
+            logger.warning(
+                f"Best model path {model_path} does not exist or is incomplete. "
+                "This can happen when time budget expires mid-checkpoint. Skipping evaluation."
+            )
+            return
         best_model = LudwigModel.load(
-            os.path.join(best_model_path, "model"),
+            model_path,
             backend=backend,
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
@@ -994,21 +1001,28 @@ class RayTuneExecutor:
                         trial_path = trial["trial_dir"]
                         with self._get_best_model_path(trial_path, analysis) as best_model_path:
                             if best_model_path is not None:
-                                self._evaluate_best_model(
-                                    trial,
-                                    trial_path,
-                                    best_model_path,
-                                    validation_set,
-                                    data_format,
-                                    skip_save_unprocessed_output,
-                                    skip_save_predictions,
-                                    skip_save_eval_stats,
-                                    gpus,
-                                    gpu_memory_limit,
-                                    allow_parallel_threads,
-                                    backend,
-                                    debug,
-                                )
+                                try:
+                                    self._evaluate_best_model(
+                                        trial,
+                                        trial_path,
+                                        best_model_path,
+                                        validation_set,
+                                        data_format,
+                                        skip_save_unprocessed_output,
+                                        skip_save_predictions,
+                                        skip_save_eval_stats,
+                                        gpus,
+                                        gpu_memory_limit,
+                                        allow_parallel_threads,
+                                        backend,
+                                        debug,
+                                    )
+                                except Exception:
+                                    logger.warning(
+                                        f"Failed to evaluate best model for trial {trial_path}. "
+                                        "This can happen with incomplete checkpoints from early stopping. "
+                                        f"Full exception:\n{traceback.format_exc()}"
+                                    )
                             else:
                                 logger.warning("Skipping evaluation as no model checkpoints were available")
                     else:

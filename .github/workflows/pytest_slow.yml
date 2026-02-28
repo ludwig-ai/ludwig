@@ -50,6 +50,20 @@ jobs:
           pip list
         shell: bash
 
+      - name: Create Minio test bucket
+        run: |
+          pip install boto3
+          python -c "
+          import boto3
+          s3 = boto3.client('s3', endpoint_url='http://localhost:9000',
+                            aws_access_key_id='minio', aws_secret_access_key='minio123')
+          try:
+              s3.create_bucket(Bucket='ludwig-tests')
+          except s3.exceptions.BucketAlreadyOwnedByYou:
+              pass
+          "
+        shell: bash
+
       - name: Tests
         run: |
           RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 600 --durations 100 -m "slow" --junitxml pytest.xml tests/integration_tests/

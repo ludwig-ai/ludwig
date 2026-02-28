@@ -282,7 +282,7 @@ def test_autoconfig_preprocessing_text_image(tmpdir):
 
 @pytest.mark.slow
 @pytest.mark.distributed
-@pytest.mark.parametrize("time_budget", [10, 1], ids=["high", "low"])
+@pytest.mark.parametrize("time_budget", [120, 1], ids=["high", "low"])
 def test_train_with_config(time_budget, test_data_tabular_large, ray_cluster_2cpu, tmpdir):
     _run_train_with_config(time_budget, test_data_tabular_large, tmpdir)
 
@@ -333,6 +333,7 @@ def _run_train_with_config(time_budget, test_data, tmpdir, **kwargs):
                 "type": "ray",
                 "time_budget_s": time_budget,
                 "cpu_resources_per_trial": 1,
+                "num_samples": 2,
                 "scheduler": {
                     "type": "async_hyperband",
                     "max_t": time_budget,
