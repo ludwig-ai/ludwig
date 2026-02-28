@@ -297,18 +297,18 @@ def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_
             + ".decoder.fc_layers": {
                 "space": "choice",
                 "categories": [
-                    [{"output_size": 64}, {"output_size": 32}],
-                    [{"output_size": 64}],
-                    [{"output_size": 32}],
+                    [{"output_size": 8}, {"output_size": 4}],
+                    [{"output_size": 8}],
+                    [{"output_size": 4}],
                 ],
             },
-            output_feature_name + ".decoder.fc_output_size": {"space": "choice", "categories": [16, 21, 26, 31, 36]},
+            output_feature_name + ".decoder.fc_output_size": {"space": "choice", "categories": [4, 8, 12]},
         }
     else:
         # grid search space will be product each parameter size
         search_parameters = {
             "trainer.learning_rate": {"space": "grid_search", "values": [0.001, 0.01]},
-            output_feature_name + ".decoder.fc_output_size": {"space": "grid_search", "values": [16, 21]},
+            output_feature_name + ".decoder.fc_output_size": {"space": "grid_search", "values": [4, 8]},
         }
 
     hyperopt_configs = {
@@ -524,7 +524,7 @@ def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster_7cpu):
                         {
                             "combiner": {
                                 "type": "tabnet",
-                                "bn_virtual_bs": 256,
+                                "bn_virtual_bs": 32,
                             },
                             "trainer": {
                                 "learning_rate_scaling": "sqrt",
@@ -572,7 +572,7 @@ def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster_7cpu):
 
         assert trial_config[COMBINER][TYPE] in {"tabnet", "concat"}
         if trial_config[COMBINER][TYPE] == "tabnet":
-            assert trial_config[COMBINER]["bn_virtual_bs"] == 256
+            assert trial_config[COMBINER]["bn_virtual_bs"] == 32
             assert trial_config[TRAINER]["learning_rate_scaling"] == "sqrt"
             assert trial_config[TRAINER]["learning_rate_scheduler"]["decay"] == "exponential"
             assert trial_config[TRAINER]["learning_rate_scheduler"]["decay_steps"] == 20000

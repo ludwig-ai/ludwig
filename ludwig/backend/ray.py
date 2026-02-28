@@ -966,16 +966,20 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
     def batch_transform(self, df, batch_size: int, transform_fn, name: str | None = None):
         name = name or "Batch Transform"
+        import dask.dataframe as dd
+
         from ludwig.utils.dataframe_utils import from_batches, to_batches
 
         # Compute Dask DataFrame to pandas before batching, as Dask-expr
         # doesn't support row slicing via integer indexing (df[i:j]).
+        npartitions = df.npartitions if hasattr(df, "npartitions") else 1
         df = self.df_engine.compute(df)
         batches = to_batches(df, batch_size)
         transform = transform_fn()
         out_batches = [transform(batch.reset_index(drop=True)) for batch in batches]
         out_df = from_batches(out_batches).reset_index(drop=True)
-        return out_df
+        # Convert back to Dask so downstream code (split, etc.) still works
+        return dd.from_pandas(out_df, npartitions=max(1, npartitions))
 
     def get_available_resources(self) -> Resources:
         resources = ray.cluster_resources()

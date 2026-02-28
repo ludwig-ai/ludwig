@@ -521,6 +521,7 @@ class RayTuneExecutor:
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
+            from_checkpoint=True,
         )
         if best_model.config[TRAINER]["eval_batch_size"]:
             batch_size = best_model.config[TRAINER]["eval_batch_size"]
@@ -953,9 +954,21 @@ class RayTuneExecutor:
         if output_directory and str(output_directory).startswith("s3://"):
             endpoint_url = os.environ.get("AWS_ENDPOINT_URL")
             if endpoint_url:
+                from urllib.parse import urlparse
+
                 import pyarrow.fs
 
-                storage_filesystem = pyarrow.fs.S3FileSystem(endpoint_override=endpoint_url)
+                parsed = urlparse(endpoint_url)
+                scheme = parsed.scheme or "https"
+                # endpoint_override expects host:port, not a full URL
+                endpoint = parsed.netloc or parsed.path
+                storage_filesystem = pyarrow.fs.S3FileSystem(
+                    endpoint_override=endpoint,
+                    scheme=scheme,
+                )
+                # When storage_filesystem is set, storage_path must be a plain
+                # path (bucket/key...), not a URI (s3://bucket/key...).
+                output_directory = str(output_directory).removeprefix("s3://")
 
         try:
             analysis = tune.run(

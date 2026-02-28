@@ -100,7 +100,17 @@ class AutoTrainResults:
         # Use credentials context for remote checkpoints that may need custom auth
         with use_credentials(self._creds):
             with checkpoint.as_directory() as ckpt_path:
-                return LudwigModel.load(os.path.join(ckpt_path, MODEL_FILE_NAME))
+                model_dir = os.path.join(ckpt_path, MODEL_FILE_NAME)
+                if not os.path.isdir(model_dir):
+                    logger.warning(
+                        f"Best checkpoint does not contain model files at {model_dir}. "
+                        "The trial may not have completed a full training epoch."
+                    )
+                    return None
+                # Ray Tune checkpoints contain training_checkpoints/ (from
+                # mid-training saves) but not model_weights (only saved after
+                # training completes). Load from the training checkpoint.
+                return LudwigModel.load(model_dir, from_checkpoint=True)
 
 
 @PublicAPI
