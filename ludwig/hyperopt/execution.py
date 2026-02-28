@@ -948,24 +948,23 @@ class RayTuneExecutor:
         should_resume = "AUTO" if resume is None else resume
 
         # If the output directory is an S3 path and AWS_ENDPOINT_URL is set,
-        # configure a custom S3 filesystem for Ray Tune (PyArrow doesn't read
-        # AWS_ENDPOINT_URL automatically).
+        # configure a custom S3 filesystem for Ray Tune. We use fsspec's s3fs
+        # wrapped in PyArrow's FSSpecHandler because PyArrow's native S3 C++
+        # client doesn't read AWS_ENDPOINT_URL and its chunked transfer encoding
+        # is incompatible with some S3-compatible stores (e.g. MinIO).
         storage_filesystem = None
         if output_directory and str(output_directory).startswith("s3://"):
             endpoint_url = os.environ.get("AWS_ENDPOINT_URL")
             if endpoint_url:
-                from urllib.parse import urlparse
-
                 import pyarrow.fs
+                import s3fs
 
-                parsed = urlparse(endpoint_url)
-                scheme = parsed.scheme or "https"
-                # endpoint_override expects host:port, not a full URL
-                endpoint = parsed.netloc or parsed.path
-                storage_filesystem = pyarrow.fs.S3FileSystem(
-                    endpoint_override=endpoint,
-                    scheme=scheme,
+                s3 = s3fs.S3FileSystem(
+                    endpoint_url=endpoint_url,
+                    key=os.environ.get("AWS_ACCESS_KEY_ID"),
+                    secret=os.environ.get("AWS_SECRET_ACCESS_KEY"),
                 )
+                storage_filesystem = pyarrow.fs.PyFileSystem(pyarrow.fs.FSSpecHandler(s3))
                 # When storage_filesystem is set, storage_path must be a plain
                 # path (bucket/key...), not a URI (s3://bucket/key...).
                 output_directory = str(output_directory).removeprefix("s3://")

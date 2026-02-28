@@ -85,7 +85,7 @@ def test_data_tabular_large():
         ]
         output_features = [category_feature(decoder={"vocab_size": 3})]
         dataset_csv = generate_data(
-            input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=20
+            input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=50
         )
         yield input_features, output_features, dataset_csv
 
@@ -99,7 +99,7 @@ def test_data_tabular_small():
         ]
         output_features = [category_feature(decoder={"vocab_size": 3})]
         dataset_csv = generate_data(
-            input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=20
+            input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=50
         )
         yield input_features, output_features, dataset_csv
 
