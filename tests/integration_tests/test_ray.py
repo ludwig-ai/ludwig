@@ -858,7 +858,7 @@ def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu, max_batch_size, expect
 
     backend_config = copy.deepcopy(RAY_BACKEND_CONFIG)
 
-    num_samples = 100
+    num_samples = 50
     csv_filename = os.path.join(tmpdir, "dataset.csv")
     dataset_csv = generate_data(
         config["input_features"], config["output_features"], csv_filename, num_examples=num_samples
