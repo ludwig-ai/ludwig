@@ -66,7 +66,7 @@ NUM_EXAMPLES = 20
     ],
 )
 def test_sample_ratio(backend, tmpdir, ray_cluster_2cpu):
-    num_examples = 30
+    num_examples = 50
     sample_ratio = 0.5
 
     input_features = [sequence_feature(encoder={"reduce_output": "sum"}), audio_feature(folder=tmpdir)]
@@ -119,7 +119,7 @@ def test_sample_ratio_deterministic(backend, tmpdir, ray_cluster_2cpu):
     model.preprocess returns a PandasPandasDataset object when using local backend, and returns a RayDataset object when
     using the Ray backend.
     """
-    num_examples = 30
+    num_examples = 50
     sample_ratio = 0.5
 
     input_features = [binary_feature()]
@@ -171,8 +171,8 @@ def test_sample_ratio_deterministic(backend, tmpdir, ray_cluster_2cpu):
     ],
 )
 def test_sample_size(backend, tmpdir, ray_cluster_2cpu):
-    num_examples = 30
-    sample_size = 15
+    num_examples = 50
+    sample_size = 25
 
     input_features = [sequence_feature(encoder={"reduce_output": "sum"}), audio_feature(folder=tmpdir)]
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
@@ -223,8 +223,8 @@ def test_sample_size_deterministic(backend, tmpdir, ray_cluster_2cpu):
     model.preprocess returns a PandasPandasDataset object when using local backend, and returns a RayDataset object when
     using the Ray backend.
     """
-    num_examples = 30
-    sample_size = 15
+    num_examples = 50
+    sample_size = 25
 
     input_features = [binary_feature()]
     output_features = [category_feature()]

@@ -212,7 +212,7 @@ def test_server_integration_with_stratified_split(tmpdir):
     output_features = [category_feature(decoder={"vocab_size": 4})]
 
     np.random.seed(123)  # reproducible synthetic data
-    rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=20)
+    rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=50)
 
     model = train_and_predict_model_with_stratified_split(
         input_features, output_features, data_csv=rel_path, output_directory=tmpdir
