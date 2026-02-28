@@ -101,7 +101,7 @@ def _setup_ludwig_config(dataset_fp: str, model_type: str = MODEL_ECD) -> tuple[
     input_features = [category_feature(encoder={"vocab_size": 3})]
     output_features = [category_feature(decoder={"vocab_size": 3})]
 
-    rel_path = generate_data(input_features, output_features, dataset_fp)
+    rel_path = generate_data(input_features, output_features, dataset_fp, num_examples=6)
 
     trainer_cfg = {"learning_rate": 0.001}
     if model_type == MODEL_ECD:
@@ -273,7 +273,7 @@ def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_
     input_features = [category_feature(encoder={"vocab_size": 3})]
     output_features = [category_feature(decoder={"vocab_size": 3})]
 
-    rel_path = generate_data(input_features, output_features, csv_filename)
+    rel_path = generate_data(input_features, output_features, csv_filename, num_examples=6)
 
     config = {
         INPUT_FEATURES: input_features,
@@ -400,7 +400,7 @@ def test_hyperopt_with_feature_specific_parameters(csv_filename, tmpdir, ray_clu
 
     output_features = [category_feature(vocab_size=3, output_feature=True)]
 
-    rel_path = generate_data(input_features, output_features, csv_filename)
+    rel_path = generate_data(input_features, output_features, csv_filename, num_examples=6)
 
     filter_size_search_space = [5, 7]
     embedding_size_search_space = [4, 8, 12]
@@ -493,7 +493,7 @@ def test_hyperopt_old_config(csv_filename, tmpdir, ray_cluster_7cpu):
 
     input_features = old_config[INPUT_FEATURES]
     output_features = old_config[OUTPUT_FEATURES]
-    rel_path = generate_data(input_features, output_features, csv_filename)
+    rel_path = generate_data(input_features, output_features, csv_filename, num_examples=6)
 
     hyperopt(old_config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
 
@@ -549,7 +549,7 @@ def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster_7cpu):
 
     input_features = config[INPUT_FEATURES]
     output_features = config[OUTPUT_FEATURES]
-    rel_path = generate_data(input_features, output_features, csv_filename)
+    rel_path = generate_data(input_features, output_features, csv_filename, num_examples=6)
 
     results = hyperopt(
         config,
@@ -589,7 +589,7 @@ def test_hyperopt_without_config_defaults(csv_filename, tmpdir, ray_cluster_7cpu
     input_features = [category_feature(encoder={"vocab_size": 3})]
     output_features = [category_feature(decoder={"vocab_size": 3})]
 
-    rel_path = generate_data(input_features, output_features, csv_filename)
+    rel_path = generate_data(input_features, output_features, csv_filename, num_examples=6)
 
     config = {
         INPUT_FEATURES: input_features,
@@ -624,7 +624,7 @@ def test_hyperopt_with_time_budget(csv_filename, tmpdir, ray_cluster_7cpu):
     input_features = [text_feature()]
     output_features = [category_feature(output_feature=True)]
 
-    rel_path = generate_data(input_features, output_features, csv_filename)
+    rel_path = generate_data(input_features, output_features, csv_filename, num_examples=6)
 
     config = {
         INPUT_FEATURES: input_features,
