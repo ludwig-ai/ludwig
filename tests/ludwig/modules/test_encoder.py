@@ -301,9 +301,8 @@ def test_sequence_encoders(encoder_type: Encoder, trainable: bool, reduce_output
     output_shape = [num_sentences, output_size]
 
     encoder_kwargs["embeddings_trainable"] = trainable
-    encoder_kwargs["dropout"] = DROPOUT
-    encoder_kwargs["recurrent_dropout"] = DROPOUT
-    encoder_kwargs["fc_dropout"] = DROPOUT
+    # Dropout is left at default (0) because with small inputs (4 sentences, max_len=7)
+    # high dropout causes vanishing gradients, making the parameter update check flaky.
     encoder_kwargs["reduce_output"] = reduce_output
     encoder = create_encoder(encoder_type, max_sequence_length=max_len, **encoder_kwargs)
 
@@ -327,12 +326,7 @@ def test_sequence_encoders(encoder_type: Encoder, trainable: bool, reduce_output
     else:
         assert fpc == 1, "Embedding layer expected to be frozen, but found to be trainable."
 
-    # With dropout=0.5 and small sequences (4 sentences, max_len=7), many parameters
-    # may legitimately not receive gradients in a single step. ParallelCNN with max
-    # reduction is especially susceptible since max selects sparse gradients, and dropout
-    # can zero out entire channels.
     if trainable:
-        # At least some trainable parameters should update
-        assert upc > 0 or encoder_type in (ParallelCNN, StackedCNN), (
+        assert upc > 0, (
             f"No trainable parameters updated. Parameters not updated: {not_updated}." f"  Module structure\n{encoder}"
         )
