@@ -451,7 +451,7 @@ class Trainer(BaseTrainer):
             train_summary_writer.add_scalar("combined/step_learning_rate", learning_rate, global_step=step)
 
         # Log CUDA memory stats.
-        if torch.cuda.is_available():
+        if torch.cuda.is_available() and torch.cuda.device_count() > 0 and os.environ.get("CUDA_VISIBLE_DEVICES") != "":
             for i in range(torch.cuda.device_count()):
                 device = torch.device(f"cuda:{i}")
                 memory_stats = torch.cuda.memory_stats(device=device)

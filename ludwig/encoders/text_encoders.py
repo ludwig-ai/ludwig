@@ -2502,7 +2502,7 @@ class LLMEncoder(Encoder):
             super()._save_to_state_dict(destination, prefix=prefix, keep_vars=keep_vars)
 
     def state_dict(self, *args, destination=None, prefix="", keep_vars=False):
-        destination = super().state_dict(destination, prefix=prefix, keep_vars=keep_vars)
+        destination = super().state_dict(destination=destination, prefix=prefix, keep_vars=keep_vars)
 
         if self.config.adapter and self.adapter_is_initialized:
             adapter_type_prefix = self.ADAPTER_PARAM_NAME_PREFIX[self.config.adapter.type]

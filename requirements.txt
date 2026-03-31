@@ -35,7 +35,7 @@ sacremoses
 sentencepiece
 
 # requirement for various paged and 8-bit optimizers
-bitsandbytes<0.41.0
+bitsandbytes>=0.44.0
 
 # new data format support
 xlwt            # excel
