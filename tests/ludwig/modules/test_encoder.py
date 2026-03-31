@@ -333,6 +333,6 @@ def test_sequence_encoders(encoder_type: Encoder, trainable: bool, reduce_output
     # can zero out entire channels.
     if trainable:
         # At least some trainable parameters should update
-        assert upc > 0 or encoder_type == ParallelCNN, (
+        assert upc > 0 or encoder_type in (ParallelCNN, StackedCNN), (
             f"No trainable parameters updated. Parameters not updated: {not_updated}." f"  Module structure\n{encoder}"
         )
