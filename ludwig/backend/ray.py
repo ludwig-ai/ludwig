@@ -639,14 +639,17 @@ class RayPredictor(BasePredictor):
 
         num_cpus, num_gpus = self.get_resources_per_worker()
 
-        predictions = dataset.ds.map_batches(to_tensors, batch_format="pandas").map_batches(
-            batch_predictor,
-            batch_size=self.batch_size,
-            compute=ray.data.ActorPoolStrategy(),
-            batch_format="pandas",
-            num_cpus=num_cpus,
-            num_gpus=num_gpus,
-        )
+        from ludwig.data.dataframe.dask import tensor_extension_casting
+
+        with tensor_extension_casting(False):
+            predictions = dataset.ds.map_batches(to_tensors, batch_format="pandas").map_batches(
+                batch_predictor,
+                batch_size=self.batch_size,
+                compute=ray.data.ActorPoolStrategy(),
+                batch_format="pandas",
+                num_cpus=num_cpus,
+                num_gpus=num_gpus,
+            )
 
         predictions = self.df_engine.from_ray_dataset(predictions)
 
