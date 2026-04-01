@@ -1,5 +1,5 @@
 # requirements for dask
-dask[dataframe]
+dask[dataframe]>=2026.1.2
 pyarrow>=14.0
 
 # requirements for ray
