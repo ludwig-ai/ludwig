@@ -17,7 +17,8 @@
 LUDWIG_VERSION = "0.11.4"
 
 MODEL_FILE_NAME = "model"
-MODEL_WEIGHTS_FILE_NAME = "model_weights"
+MODEL_WEIGHTS_FILE_NAME = "model_weights"  # legacy pickle format
+MODEL_WEIGHTS_SAFETENSORS_FILE_NAME = "model_weights.safetensors"
 MODEL_HYPERPARAMETERS_FILE_NAME = "model_hyperparameters.json"
 TRAIN_SET_METADATA_FILE_NAME = "training_set_metadata.json"
 TRAINING_PROGRESS_TRACKER_FILE_NAME = "training_progress.json"
@@ -35,6 +36,16 @@ TRAINING_PREPROC_FILE_NAME = "training.hdf5"
 HYPEROPT_STATISTICS_FILE_NAME = "hyperopt_statistics.json"
 
 CONFIG_YAML = "config.yaml"
+
+
+def model_weights_exist(directory):
+    """Check if model weights exist in either SafeTensors or legacy pickle format."""
+    import os
+
+    return os.path.exists(os.path.join(directory, MODEL_WEIGHTS_SAFETENSORS_FILE_NAME)) or os.path.exists(
+        os.path.join(directory, MODEL_WEIGHTS_FILE_NAME)
+    )
+
 
 DISABLE_PROGRESSBAR = False
 

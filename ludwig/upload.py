@@ -3,7 +3,7 @@ import logging
 import os
 import sys
 
-from ludwig.globals import MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, MODEL_WEIGHTS_FILE_NAME
+from ludwig.globals import MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, model_weights_exist
 from ludwig.utils.print_utils import get_logging_level_registry
 from ludwig.utils.upload_utils import HuggingFaceHub, Predibase
 
@@ -62,17 +62,15 @@ def upload_cli(
     """
     model_service = get_upload_registry().get(service, "hf_hub")
     hub: HuggingFaceHub = model_service()
-    if os.path.exists(os.path.join(model_path, MODEL_FILE_NAME, MODEL_WEIGHTS_FILE_NAME)) and os.path.exists(
+    if model_weights_exist(os.path.join(model_path, MODEL_FILE_NAME)) and os.path.exists(
         os.path.join(model_path, MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME)
     ):
         experiment_path = model_path
-    elif os.path.exists(os.path.join(model_path, MODEL_WEIGHTS_FILE_NAME)) and os.path.exists(
-        os.path.join(model_path, MODEL_HYPERPARAMETERS_FILE_NAME)
-    ):
+    elif model_weights_exist(model_path) and os.path.exists(os.path.join(model_path, MODEL_HYPERPARAMETERS_FILE_NAME)):
         experiment_path = os.path.normpath(os.path.join(model_path, ".."))
     else:
         raise ValueError(
-            f"Can't find 'model_weights' and '{MODEL_HYPERPARAMETERS_FILE_NAME}' either at "
+            f"Can't find model weights and '{MODEL_HYPERPARAMETERS_FILE_NAME}' either at "
             f"'{model_path}' or at '{model_path}/model'"
         )
     hub.upload(

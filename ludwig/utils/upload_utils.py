@@ -7,7 +7,12 @@ from abc import ABC, abstractmethod
 from huggingface_hub import HfApi, login
 from huggingface_hub.hf_api import CommitInfo
 
-from ludwig.globals import MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, MODEL_WEIGHTS_FILE_NAME
+from ludwig.globals import (
+    MODEL_FILE_NAME,
+    MODEL_HYPERPARAMETERS_FILE_NAME,
+    model_weights_exist,
+    MODEL_WEIGHTS_FILE_NAME,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -100,10 +105,10 @@ class BaseModelUpload(ABC):
             raise FileNotFoundError(f"The path '{model_path}' does not exist.")
 
         # Make sure the model is actually trained
-        trained_model_artifacts_path = os.path.join(model_path, MODEL_FILE_NAME, MODEL_WEIGHTS_FILE_NAME)
-        if not os.path.exists(trained_model_artifacts_path):
+        model_dir = os.path.join(model_path, MODEL_FILE_NAME)
+        if not model_weights_exist(model_dir):
             raise Exception(
-                f"Model artifacts not found at {trained_model_artifacts_path}. "
+                f"Model artifacts not found at {model_dir}. "
                 f"It is possible that model at '{model_path}' hasn't been trained yet, or something went"
                 "wrong during training where the model's weights were not saved."
             )

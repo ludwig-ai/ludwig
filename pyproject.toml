@@ -68,6 +68,7 @@ dependencies = [
     "pyarrow>=14.0",
     "lxml",
     "datasets",
+    "safetensors>=0.4",
 ]
 
 [project.optional-dependencies]

@@ -980,12 +980,10 @@ def is_model_dir(path: str) -> bool:
     ts_metadata_fn = os.path.join(path, TRAIN_SET_METADATA_FILE_NAME)
     is_a_model_dir = False
     if os.path.isdir(path) and os.path.isfile(hyperparameters_fn) and os.path.isfile(ts_metadata_fn):
-        weights_files_count = 0
         for file_name in os.listdir(path):
             if file_name.startswith(MODEL_WEIGHTS_FILE_NAME):
-                weights_files_count += 1
-        if weights_files_count >= 2:
-            is_a_model_dir = True
+                is_a_model_dir = True
+                break
     return is_a_model_dir
 
 
