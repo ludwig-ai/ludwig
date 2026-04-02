@@ -965,7 +965,10 @@ def GradientClippingDataclassField(description: str, default: dict = {}):
     def load_default():
         return GradientClippingConfig.model_validate(default)
 
-    dump_default = GradientClippingConfig.model_validate(default).to_dict()
+    try:
+        dump_default = GradientClippingConfig.model_validate(default).to_dict()
+    except Exception:
+        dump_default = default if isinstance(default, dict) else {}
 
     return field(
         metadata={

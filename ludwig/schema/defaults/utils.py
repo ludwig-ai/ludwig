@@ -42,7 +42,10 @@ def DefaultsDataclassField(feature_type: str, defaults_registry: Registry = ecd_
 
     try:
         defaults_cls = defaults_registry[feature_type]
-        dump_default = defaults_cls.model_validate({}).to_dict()
+        try:
+            dump_default = defaults_cls.model_validate({}).to_dict()
+        except Exception:
+            dump_default = {}
         load_default = lambda: defaults_cls.model_validate({})
 
         return field(

@@ -94,7 +94,10 @@ def ExecutorDataclassField(description: str, default: dict = {}):
         raise ConfigValidationError(f"Invalid default: `{default}`")
 
     load_default = lambda: ExecutorConfig.model_validate(default)
-    dump_default = ExecutorConfig.model_validate(default).to_dict()
+    try:
+        dump_default = ExecutorConfig.model_validate(default).to_dict()
+    except Exception:
+        dump_default = default if isinstance(default, dict) else {}
 
     return field(
         metadata={

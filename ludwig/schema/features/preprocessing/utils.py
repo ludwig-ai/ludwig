@@ -60,7 +60,10 @@ def PreprocessingDataclassField(feature_type: str):
     try:
         preprocessor = preprocessing_registry[feature_type]
         load_default = lambda: preprocessor.model_validate({})
-        dump_default = preprocessor.model_validate({}).to_dict()
+        try:
+            dump_default = preprocessor.model_validate({}).to_dict()
+        except Exception:
+            dump_default = {}
 
         return field(
             metadata={

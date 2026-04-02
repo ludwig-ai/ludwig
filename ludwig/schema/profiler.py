@@ -89,7 +89,10 @@ def ProfilerDataclassField(description: str, default: dict = {}):
     def load_default():
         return ProfilerConfig.model_validate(default)
 
-    dump_default = ProfilerConfig.model_validate(default).to_dict()
+    try:
+        dump_default = ProfilerConfig.model_validate(default).to_dict()
+    except Exception:
+        dump_default = default if isinstance(default, dict) else {}
 
     return field(
         metadata={

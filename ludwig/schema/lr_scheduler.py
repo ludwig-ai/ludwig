@@ -165,7 +165,10 @@ def LRSchedulerDataclassField(description: str, default: dict = None):
         raise ConfigValidationError(f"Invalid default: `{default}`")
 
     load_default = lambda: LRSchedulerConfig.model_validate(default)
-    dump_default = LRSchedulerConfig.model_validate(default).to_dict()
+    try:
+        dump_default = LRSchedulerConfig.model_validate(default).to_dict()
+    except Exception:
+        dump_default = default if isinstance(default, dict) else {}
 
     return field(
         metadata={

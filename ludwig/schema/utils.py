@@ -311,15 +311,15 @@ class LudwigBaseConfig(BaseModel, metaclass=_LudwigModelMeta):
         if not isinstance(data, dict):
             return data
 
-        # Log deprecation warnings for unknown fields
+        # Strip and warn about unknown fields (prevents pydantic extra="forbid" from rejecting them)
         valid_fields = set(cls.model_fields.keys())
         for key in list(data.keys()):
             if key not in valid_fields and key != "type":
                 warnings.warn(
-                    f'"{key}" is not a valid parameter for the "{cls.__name__}" schema, will be flagged '
-                    "as an error in a future version",
+                    f'"{key}" is not a valid parameter for the "{cls.__name__}" schema and will be ignored',
                     DeprecationWarning,
                 )
+                del data[key]
 
         # Resolve TypeSelection, NestedConfigField, and legacy marshmallow fields
         for fname, finfo in cls.model_fields.items():

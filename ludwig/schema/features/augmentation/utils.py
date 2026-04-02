@@ -110,7 +110,10 @@ def AugmentationDataclassField(
             pre = augmentation_cls()
             try:
                 load_augmentation_list.append(pre.model_validate(augmentation))
-                dump_augmentation_list.append(pre.model_validate(augmentation).to_dict())
+                try:
+                    dump_augmentation_list.append(pre.model_validate(augmentation).to_dict())
+                except Exception:
+                    dump_augmentation_list.append(augmentation if isinstance(augmentation, dict) else {})
             except (TypeError, ConfigValidationError) as error:
                 raise ConfigValidationError(
                     f"Invalid augmentation params: {default}, see `{pre}` definition. Error: {error}"

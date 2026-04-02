@@ -101,7 +101,10 @@ def SearchAlgorithmDataclassField(description: str = "", default: dict = {"type"
         raise ConfigValidationError(f"Invalid default: `{default}`")
 
     load_default = lambda: BaseSearchAlgorithmConfig.model_validate(default)
-    dump_default = BaseSearchAlgorithmConfig.model_validate(default).to_dict()
+    try:
+        dump_default = BaseSearchAlgorithmConfig.model_validate(default).to_dict()
+    except Exception:
+        dump_default = default if isinstance(default, dict) else {}
 
     return field(
         metadata={

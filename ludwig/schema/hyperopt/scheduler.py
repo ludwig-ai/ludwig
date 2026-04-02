@@ -533,7 +533,10 @@ def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt sche
     try:
         opt = hyperopt_utils.scheduler_config_registry[default["type"].lower()]
         load_default = lambda: opt.model_validate(default)
-        dump_default = opt.model_validate(default).to_dict()
+        try:
+            dump_default = opt.model_validate(default).to_dict()
+        except Exception:
+            dump_default = default if isinstance(default, dict) else {}
 
         return field(
             metadata={
