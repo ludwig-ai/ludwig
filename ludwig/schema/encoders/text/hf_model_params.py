@@ -1,6 +1,5 @@
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import ludwig_dataclass
 
 """
 NOTE TO DEVELOPERS: the implementation of the schema classes below must match the parameters of the HF PretrainedConfig
@@ -18,7 +17,6 @@ for any params it includes that are not present in your schema config.
 """
 
 
-@ludwig_dataclass
 class DebertaModelParams(schema_utils.BaseMarshmallowConfig):
     @classmethod
     def get_hf_config_param_names(cls) -> set[str]:

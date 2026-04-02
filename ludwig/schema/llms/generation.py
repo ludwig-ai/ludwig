@@ -4,7 +4,6 @@ from ludwig.schema.metadata import LLM_METADATA
 
 
 @DeveloperAPI
-@schema_utils.ludwig_dataclass
 class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
     """Parameters for LLM Generation Config.
 

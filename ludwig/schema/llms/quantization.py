@@ -6,7 +6,6 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata import LLM_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
-from ludwig.schema.utils import ludwig_dataclass
 
 warnings.filterwarnings(
     action="ignore",
@@ -16,7 +15,6 @@ warnings.filterwarnings(
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class QuantizationConfig(schema_utils.BaseMarshmallowConfig):
     bits: int = schema_utils.IntegerOptions(
         options=[4, 8],

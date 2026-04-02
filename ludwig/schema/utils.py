@@ -73,14 +73,6 @@ logger = logging.getLogger(__name__)
 RECURSION_STOP_ENUM = {"weights_initializer", "bias_initializer", "norm_params"}
 
 
-def ludwig_dataclass(cls):
-    """No-op decorator.
-
-    Config classes now inherit directly from BaseMarshmallowConfig (pydantic BaseModel).
-    """
-    return cls
-
-
 # TODO: Change to RAISE and update descriptions once we want to enforce strict schemas.
 LUDWIG_SCHEMA_VALIDATION_POLICY_VAR = os.environ.get(LUDWIG_SCHEMA_VALIDATION_POLICY, "exclude").lower()
 

@@ -1,0 +1,20 @@
+[flake8]
+max-line-length = 120
+exclude =
+    .tox,
+    *.egg,
+    *_pb2.py,
+    build,
+    temp
+
+select = E,W,F
+doctests = True
+verbose = 2
+format = pylint
+# E731: Do not assign a lambda expression, use a def
+# W503: Line break occurred before a binary operator
+# E203: whitespace before ':'
+ignore =
+    E731,
+    W503,
+    E203

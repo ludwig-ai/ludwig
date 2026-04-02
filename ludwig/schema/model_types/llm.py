@@ -18,12 +18,10 @@ from ludwig.schema.llms.quantization import QuantizationConfig, QuantizationConf
 from ludwig.schema.model_types.base import ModelConfig, register_model_type
 from ludwig.schema.preprocessing import PreprocessingConfig, PreprocessingField
 from ludwig.schema.trainer import LLMTrainerConfig, LLMTrainerDataclassField
-from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
 @register_model_type(name="llm")
-@ludwig_dataclass
 class LLMModelConfig(ModelConfig):
     """Parameters for LLM Model Type."""
 

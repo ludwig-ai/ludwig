@@ -19,12 +19,11 @@ from ludwig.schema.features.utils import (
 )
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
+from ludwig.schema.utils import BaseMarshmallowConfig
 
 
 @DeveloperAPI
 @input_mixin_registry.register(VECTOR)
-@ludwig_dataclass
 class VectorInputFeatureConfigMixin(BaseMarshmallowConfig):
     """VectorInputFeatureConfigMixin is a dataclass that configures the parameters used in both the vector input
     feature and the vector global defaults section of the Ludwig Config."""
@@ -40,7 +39,6 @@ class VectorInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @ecd_input_config_registry.register(VECTOR)
-@ludwig_dataclass
 class VectorInputFeatureConfig(VectorInputFeatureConfigMixin, BaseInputFeatureConfig):
     """VectorInputFeatureConfig is a dataclass that configures the parameters used for a vector input feature."""
 
@@ -49,7 +47,6 @@ class VectorInputFeatureConfig(VectorInputFeatureConfigMixin, BaseInputFeatureCo
 
 @DeveloperAPI
 @output_mixin_registry.register(VECTOR)
-@ludwig_dataclass
 class VectorOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """VectorOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the vector output
     feature and the vector global defaults section of the Ludwig Config."""
@@ -68,7 +65,6 @@ class VectorOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @ecd_output_config_registry.register(VECTOR)
-@ludwig_dataclass
 class VectorOutputFeatureConfig(VectorOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """VectorOutputFeatureConfig is a dataclass that configures the parameters used for a vector output feature."""
 
@@ -119,6 +115,5 @@ class VectorOutputFeatureConfig(VectorOutputFeatureConfigMixin, BaseOutputFeatur
 
 @DeveloperAPI
 @ecd_defaults_config_registry.register(VECTOR)
-@ludwig_dataclass
 class VectorDefaultsConfig(VectorInputFeatureConfigMixin, VectorOutputFeatureConfigMixin):
     pass

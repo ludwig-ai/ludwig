@@ -5,11 +5,9 @@ from ludwig.constants import RAY
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.hyperopt.scheduler import BaseSchedulerConfig, SchedulerDataclassField
-from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class ExecutorConfig(schema_utils.BaseMarshmallowConfig):
     """Basic executor settings."""
 

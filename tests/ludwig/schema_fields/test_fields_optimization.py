@@ -5,7 +5,6 @@ from pydantic import ValidationError as PydanticValidationError
 
 import ludwig.schema.optimizers as lso
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.utils import ludwig_dataclass
 
 
 def test_torch_description_pull():
@@ -40,7 +39,6 @@ def test_OptimizerDataclassField():
         lso.OptimizerDataclassField(1)
 
     # Test creating a schema with default options:
-    @ludwig_dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
         foo: lso.BaseOptimizerConfig | None = lso.OptimizerDataclassField()
 
@@ -50,7 +48,6 @@ def test_OptimizerDataclassField():
     assert CustomTestSchema.Schema().load({}).foo == lso.AdamOptimizerConfig()
 
     # Test creating a schema with set default:
-    @ludwig_dataclass
     class CustomTestSchema2(schema_utils.BaseMarshmallowConfig):
         foo: lso.BaseOptimizerConfig | None = lso.OptimizerDataclassField("adamax")
 
@@ -86,7 +83,6 @@ def test_ClipperDataclassField():
         lso.GradientClippingDataclassField(description="", default=1)
 
     # Test creating a schema with set default:
-    @ludwig_dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
         foo: lso.GradientClippingConfig | None = lso.GradientClippingDataclassField(
             description="", default={"clipglobalnorm": 0.1}

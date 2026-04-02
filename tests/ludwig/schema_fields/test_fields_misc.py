@@ -3,7 +3,6 @@ from pydantic import ValidationError as PydanticValidationError
 
 from ludwig.config_validation.validation import get_validator, validate
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.utils import ludwig_dataclass
 
 
 def get_marshmallow_field_from_metadata(dfield):
@@ -30,7 +29,6 @@ def test_StringOptions():
     # Test creating a schema with simple option, null not allowed:
     test_options = ["one"]
 
-    @ludwig_dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
         foo: str = schema_utils.StringOptions(test_options, "one", allow_none=False)
 
@@ -43,7 +41,6 @@ def test_StringOptions():
 
 def test_Embed():
     # Test simple schema creation:
-    @ludwig_dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
         foo: str | int | None = schema_utils.Embed()
 
@@ -62,7 +59,6 @@ def test_InitializerOrDict():
         schema_utils.InitializerOrDict("test")
 
     # Test simple schema creation:
-    @ludwig_dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
         foo: str | dict | None = schema_utils.InitializerOrDict()
 
@@ -80,7 +76,6 @@ def test_FloatRangeTupleDataclassField():
         schema_utils.FloatRangeTupleDataclassField(n=3, default=(1, 1))
 
     # Test default schema creation:
-    @ludwig_dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
         foo: tuple[float, float] | None = schema_utils.FloatRangeTupleDataclassField(allow_none=True)
 
@@ -92,7 +87,6 @@ def test_FloatRangeTupleDataclassField():
     assert CustomTestSchema.Schema().load({"foo": [0.5, 0.6]}).foo == (0.5, 0.6)
 
     # Test non-default schema (N=3, other custom metadata):
-    @ludwig_dataclass
     class CustomTestSchema2(schema_utils.BaseMarshmallowConfig):
         foo: tuple[float, float, float] | None = schema_utils.FloatRangeTupleDataclassField(
             n=3, default=(1, 1, 1), min=-10, max=10
@@ -103,7 +97,6 @@ def test_FloatRangeTupleDataclassField():
 
 
 def test_OneOfOptionsField():
-    @ludwig_dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
         foo: float | str = schema_utils.OneOfOptionsField(
             default=0.1,
@@ -120,7 +113,6 @@ def test_OneOfOptionsField():
     assert CustomTestSchema().foo == 0.1
 
     # Reverse the order and allow none (via StringOptions):
-    @ludwig_dataclass
     class CustomTestSchema2(schema_utils.BaseMarshmallowConfig):
         foo: float | str | None = schema_utils.OneOfOptionsField(
             default="placeholder",
@@ -144,7 +136,6 @@ def test_OneOfOptionsField():
 
 
 def test_OneOfOptionsField_allows_none():
-    @ludwig_dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
         foo: float | str | None = schema_utils.OneOfOptionsField(
             default=None,
@@ -169,7 +160,6 @@ def test_OneOfOptionsField_allows_none():
 
 def test_OneOfOptionsField_multiple_fields_allow_none():
     # With pydantic, multiple fields allowing none is handled by union validation.
-    @ludwig_dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
         foo: float | str | None = schema_utils.OneOfOptionsField(
             default=None,
@@ -184,7 +174,6 @@ def test_OneOfOptionsField_multiple_fields_allow_none():
 
 
 def test_OneOfOptionsField_allows_none_one_field_allows_none():
-    @ludwig_dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
         foo: float | str | None = schema_utils.OneOfOptionsField(
             default=None,

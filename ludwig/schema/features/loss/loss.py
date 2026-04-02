@@ -24,7 +24,6 @@ from ludwig.constants import (
 )
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata import LOSS_METADATA
-from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 
 ROBUST_LAMBDA_DESCRIPTION = (
@@ -63,7 +62,6 @@ CLASS_SIMILARITIES_TEMPERATURE_DESCRIPTION = (
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class BaseLossConfig(schema_utils.BaseMarshmallowConfig):
     """Base class for feature configs."""
 
@@ -112,7 +110,6 @@ def register_loss(features: str | list[str]):
 
 @DeveloperAPI
 @register_loss([NUMBER, TIMESERIES, VECTOR])
-@ludwig_dataclass
 class MSELossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         MEAN_SQUARED_ERROR,
@@ -132,7 +129,6 @@ class MSELossConfig(BaseLossConfig):
 
 @DeveloperAPI
 @register_loss([NUMBER, TIMESERIES, VECTOR])
-@ludwig_dataclass
 class MAELossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         MEAN_ABSOLUTE_ERROR,
@@ -152,7 +148,6 @@ class MAELossConfig(BaseLossConfig):
 
 @DeveloperAPI
 @register_loss([NUMBER, TIMESERIES, VECTOR])
-@ludwig_dataclass
 class MAPELossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         MEAN_ABSOLUTE_PERCENTAGE_ERROR,
@@ -172,7 +167,6 @@ class MAPELossConfig(BaseLossConfig):
 
 @DeveloperAPI
 @register_loss([NUMBER])
-@ludwig_dataclass
 class RMSELossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         ROOT_MEAN_SQUARED_ERROR,
@@ -192,7 +186,6 @@ class RMSELossConfig(BaseLossConfig):
 
 @DeveloperAPI
 @register_loss([NUMBER])
-@ludwig_dataclass
 class RMSPELossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
@@ -212,7 +205,6 @@ class RMSPELossConfig(BaseLossConfig):
 
 @DeveloperAPI
 @register_loss([BINARY])
-@ludwig_dataclass
 class BWCEWLossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         BINARY_WEIGHTED_CROSS_ENTROPY,
@@ -251,7 +243,6 @@ class BWCEWLossConfig(BaseLossConfig):
 
 @DeveloperAPI
 @register_loss([CATEGORY, VECTOR, IMAGE])
-@ludwig_dataclass
 class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         SOFTMAX_CROSS_ENTROPY,
@@ -306,7 +297,6 @@ class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
 
 @DeveloperAPI
 @register_loss([SEQUENCE, TEXT])
-@ludwig_dataclass
 class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         SEQUENCE_SOFTMAX_CROSS_ENTROPY,
@@ -367,7 +357,6 @@ class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
 
 @DeveloperAPI
 @register_loss([SEQUENCE, TEXT])
-@ludwig_dataclass
 class NextTokenSoftmaxCrossEntropyLossConfig(SequenceSoftmaxCrossEntropyLossConfig):
     type: str = schema_utils.ProtectedString(
         NEXT_TOKEN_SOFTMAX_CROSS_ENTROPY,
@@ -381,7 +370,6 @@ class NextTokenSoftmaxCrossEntropyLossConfig(SequenceSoftmaxCrossEntropyLossConf
 
 @DeveloperAPI
 @register_loss([SET])
-@ludwig_dataclass
 class SigmoidCrossEntropyLossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         SIGMOID_CROSS_ENTROPY,
@@ -411,7 +399,6 @@ class SigmoidCrossEntropyLossConfig(BaseLossConfig):
 
 @DeveloperAPI
 @register_loss([NUMBER, TIMESERIES, VECTOR])
-@ludwig_dataclass
 class HuberLossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         HUBER,
@@ -442,7 +429,6 @@ class HuberLossConfig(BaseLossConfig):
 
 @DeveloperAPI
 @register_loss([CATEGORY])
-@ludwig_dataclass
 class CORNLossConfig(BaseLossConfig):
     """Conditional Ordinal Regression for Neural networks, used for ordered cateogry values.
 

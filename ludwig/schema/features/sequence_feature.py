@@ -19,12 +19,11 @@ from ludwig.schema.features.utils import (
 )
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
+from ludwig.schema.utils import BaseMarshmallowConfig
 
 
 @DeveloperAPI
 @input_mixin_registry.register(SEQUENCE)
-@ludwig_dataclass
 class SequenceInputFeatureConfigMixin(BaseMarshmallowConfig):
     """SequenceInputFeatureConfigMixin is a dataclass that configures the parameters used in both the sequence
     input feature and the sequence global defaults section of the Ludwig Config."""
@@ -40,7 +39,6 @@ class SequenceInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @ecd_input_config_registry.register(SEQUENCE)
-@ludwig_dataclass
 class SequenceInputFeatureConfig(SequenceInputFeatureConfigMixin, BaseInputFeatureConfig):
     """SequenceInputFeatureConfig is a dataclass that configures the parameters used for a sequence input
     feature."""
@@ -50,7 +48,6 @@ class SequenceInputFeatureConfig(SequenceInputFeatureConfigMixin, BaseInputFeatu
 
 @DeveloperAPI
 @output_mixin_registry.register(SEQUENCE)
-@ludwig_dataclass
 class SequenceOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """SequenceOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the sequence
     output feature and the sequence global defaults section of the Ludwig Config."""
@@ -69,7 +66,6 @@ class SequenceOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @ecd_output_config_registry.register(SEQUENCE)
-@ludwig_dataclass
 class SequenceOutputFeatureConfig(SequenceOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """SequenceOutputFeatureConfig is a dataclass that configures the parameters used for a sequence output
     feature."""
@@ -107,6 +103,5 @@ class SequenceOutputFeatureConfig(SequenceOutputFeatureConfigMixin, BaseOutputFe
 
 @DeveloperAPI
 @ecd_defaults_config_registry.register(SEQUENCE)
-@ludwig_dataclass
 class SequenceDefaultsConfig(SequenceInputFeatureConfigMixin, SequenceOutputFeatureConfigMixin):
     pass

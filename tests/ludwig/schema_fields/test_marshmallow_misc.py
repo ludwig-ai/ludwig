@@ -6,11 +6,9 @@ from ludwig.schema.utils import (
     assert_is_a_marshmallow_class,
     BaseMarshmallowConfig,
     load_config_with_kwargs,
-    ludwig_dataclass,
 )
 
 
-@ludwig_dataclass
 class CustomTestSchema(BaseMarshmallowConfig):
     """Sample docstring."""
 

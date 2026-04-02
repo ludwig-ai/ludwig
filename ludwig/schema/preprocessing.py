@@ -3,11 +3,9 @@ from ludwig.constants import RANDOM
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata import PREPROCESSING_METADATA
 from ludwig.schema.split import BaseSplitConfig, SplitDataclassField
-from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     """Global preprocessing config is a dataclass that configures the parameters used for global preprocessing."""
 

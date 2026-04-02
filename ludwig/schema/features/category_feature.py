@@ -20,12 +20,11 @@ from ludwig.schema.features.utils import (
 )
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
+from ludwig.schema.utils import BaseMarshmallowConfig
 
 
 @DeveloperAPI
 @input_mixin_registry.register(CATEGORY)
-@ludwig_dataclass
 class CategoryInputFeatureConfigMixin(BaseMarshmallowConfig):
     """CategoryInputFeatureConfigMixin is a dataclass that configures the parameters used in both the category
     input feature and the category global defaults section of the Ludwig Config."""
@@ -34,7 +33,6 @@ class CategoryInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class CategoryInputFeatureConfig(CategoryInputFeatureConfigMixin, BaseInputFeatureConfig):
     """CategoryInputFeatureConfig is a dataclass that configures the parameters used for a category input
     feature."""
@@ -46,7 +44,6 @@ class CategoryInputFeatureConfig(CategoryInputFeatureConfigMixin, BaseInputFeatu
 
 @DeveloperAPI
 @ecd_input_config_registry.register(CATEGORY)
-@ludwig_dataclass
 class ECDCategoryInputFeatureConfig(CategoryInputFeatureConfig):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_ECD,
@@ -57,7 +54,6 @@ class ECDCategoryInputFeatureConfig(CategoryInputFeatureConfig):
 
 @DeveloperAPI
 @output_mixin_registry.register(CATEGORY)
-@ludwig_dataclass
 class CategoryOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """CategoryOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the category
     output feature and the category global defaults section of the Ludwig Config."""
@@ -71,7 +67,6 @@ class CategoryOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class CategoryOutputFeatureConfig(CategoryOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """CategoryOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature."""
@@ -123,7 +118,6 @@ class CategoryOutputFeatureConfig(CategoryOutputFeatureConfigMixin, BaseOutputFe
 
 @DeveloperAPI
 @ecd_output_config_registry.register(CATEGORY)
-@ludwig_dataclass
 class ECDCategoryOutputFeatureConfig(CategoryOutputFeatureConfig):
     decoder: BaseDecoderConfig = DecoderDataclassField(
         MODEL_ECD,
@@ -134,7 +128,6 @@ class ECDCategoryOutputFeatureConfig(CategoryOutputFeatureConfig):
 
 @DeveloperAPI
 @ecd_output_config_registry.register(CATEGORY_DISTRIBUTION)
-@ludwig_dataclass
 class CategoryDistributionOutputFeatureConfig(CategoryOutputFeatureConfig):
     """CategoryDistributionOutputFeatureConfig is a dataclass that configures the parameters used for a
     category_distribution output feature."""
@@ -152,7 +145,6 @@ class CategoryDistributionOutputFeatureConfig(CategoryOutputFeatureConfig):
 
 @DeveloperAPI
 @ecd_defaults_config_registry.register(CATEGORY)
-@ludwig_dataclass
 class CategoryDefaultsConfig(CategoryInputFeatureConfigMixin, CategoryOutputFeatureConfigMixin):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_ECD,
@@ -169,14 +161,12 @@ class CategoryDefaultsConfig(CategoryInputFeatureConfigMixin, CategoryOutputFeat
 
 @DeveloperAPI
 @ecd_defaults_config_registry.register(CATEGORY_DISTRIBUTION)
-@ludwig_dataclass
 class CategoryDistributionDefaultsConfig(CategoryOutputFeatureConfigMixin):
     pass
 
 
 @DeveloperAPI
 @llm_output_config_registry.register(CATEGORY)
-@ludwig_dataclass
 class LLMCategoryOutputFeatureConfig(CategoryOutputFeatureConfig):
     """LLMCategoryOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature when using the Ludwig Light Model."""

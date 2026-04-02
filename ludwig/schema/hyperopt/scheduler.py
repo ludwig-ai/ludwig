@@ -7,7 +7,6 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.hyperopt import utils as hyperopt_utils
-from ludwig.schema.utils import ludwig_dataclass
 
 # ----------------------------------------------------------------------------------------------------------------------
 # To prevent direct dependency on ray import, the following static key stores are duplicated:
@@ -69,7 +68,6 @@ def max_t_alias(default=100):
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class BaseSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Base class for schedulers.
 
@@ -119,7 +117,6 @@ class BaseSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class BaseHyperbandSchedulerConfig(BaseSchedulerConfig):
     max_t: int = max_t_alias()
 
@@ -128,7 +125,6 @@ class BaseHyperbandSchedulerConfig(BaseSchedulerConfig):
 @hyperopt_utils.register_scheduler_config("async_hyperband")
 @hyperopt_utils.register_scheduler_config("asynchyperband")
 @hyperopt_utils.register_scheduler_config("asha")
-@ludwig_dataclass
 class AsyncHyperbandSchedulerConfig(BaseHyperbandSchedulerConfig):
     """Asynchronous hyperband (ASHA) scheduler settings."""
 
@@ -161,7 +157,6 @@ class AsyncHyperbandSchedulerConfig(BaseHyperbandSchedulerConfig):
 
 @DeveloperAPI
 @hyperopt_utils.register_scheduler_config("hyperband")
-@ludwig_dataclass
 class HyperbandSchedulerConfig(BaseHyperbandSchedulerConfig):
     """Standard hyperband scheduler settings."""
 
@@ -181,7 +176,6 @@ class HyperbandSchedulerConfig(BaseHyperbandSchedulerConfig):
 @DeveloperAPI
 @hyperopt_utils.register_scheduler_config("median_stopping_rule")
 @hyperopt_utils.register_scheduler_config("medianstoppingrule")
-@ludwig_dataclass
 class MedianStoppingRuleSchedulerConfig(BaseSchedulerConfig):
     """Median Stopping Rule scheduler settings."""
 
@@ -221,7 +215,6 @@ class MedianStoppingRuleSchedulerConfig(BaseSchedulerConfig):
 
 @DeveloperAPI
 @hyperopt_utils.register_scheduler_config("pbt")
-@ludwig_dataclass
 class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
     """Population Based Training scheduler settings."""
 
@@ -328,7 +321,6 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
 
 @DeveloperAPI
 @hyperopt_utils.register_scheduler_config("pbt_replay")
-@ludwig_dataclass
 class PopulationBasedTrainingReplaySchedulerConfig(BaseSchedulerConfig):
     """Population Based Training Replay scheduler settings."""
 
@@ -347,7 +339,6 @@ class PopulationBasedTrainingReplaySchedulerConfig(BaseSchedulerConfig):
 
 @DeveloperAPI
 @hyperopt_utils.register_scheduler_config("pb2", dependencies=[("sklearn", "scikit-learn"), ("GPy", "GPy")])
-@ludwig_dataclass
 class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig):
     """Population Based Bandits (PB2) scheduler settings."""
 
@@ -412,7 +403,6 @@ class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig):
 
 @DeveloperAPI
 @hyperopt_utils.register_scheduler_config("hb_bohb")
-@ludwig_dataclass
 class BOHBSchedulerConfig(BaseHyperbandSchedulerConfig):
     """Hyperband for BOHB (hb_bohb) scheduler settings."""
 
@@ -432,7 +422,6 @@ class BOHBSchedulerConfig(BaseHyperbandSchedulerConfig):
 # TODO: Double-check support for this
 @DeveloperAPI
 @hyperopt_utils.register_scheduler_config("fifo")
-@ludwig_dataclass
 class FIFOSchedulerConfig(BaseSchedulerConfig):
     """FIFO trial scheduler settings."""
 
@@ -442,7 +431,6 @@ class FIFOSchedulerConfig(BaseSchedulerConfig):
 # TODO: Double-check support for this as well as whether Callable args work properly
 @DeveloperAPI
 @hyperopt_utils.register_scheduler_config("resource_changing")
-@ludwig_dataclass
 class ResourceChangingSchedulerConfig(BaseSchedulerConfig):
     """Resource changing scheduler settings."""
 

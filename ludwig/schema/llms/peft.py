@@ -6,7 +6,6 @@ from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata import LLM_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
-from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 
 if TYPE_CHECKING:
@@ -26,7 +25,6 @@ def register_adapter(name: str):
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class LoraPostprocessorConfig(schema_utils.BaseMarshmallowConfig):
     """This Dataclass is a schema for the nested postprocessing config under adapter of type "lora"."""
 
@@ -52,7 +50,6 @@ class LoraPostprocessorConfigField(schema_utils.DictMarshmallowField):
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class BaseAdapterConfig(schema_utils.BaseMarshmallowConfig, ABC):
     type: str
 
@@ -69,7 +66,6 @@ class BaseAdapterConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 @DeveloperAPI
 @register_adapter(name="lora")
-@ludwig_dataclass
 class LoraConfig(BaseAdapterConfig):
     def __post_init__(self):
         if self.alpha is None:
@@ -165,7 +161,6 @@ class LoraConfig(BaseAdapterConfig):
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class BasePromptLearningConfig(BaseAdapterConfig):
     """Config for prompt learning adapters. Not meant to be used directly.
 
@@ -208,7 +203,6 @@ class BasePromptLearningConfig(BaseAdapterConfig):
 #     RuntimeError: shape '[-1, 17]' is invalid for input of size 9
 # @DeveloperAPI
 # @register_adapter("prompt_tuning")
-# @ludwig_dataclass
 # class PromptTuningConfig(BasePromptLearningConfig):
 #     """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/prompt_tuning.py."""
 
@@ -251,7 +245,6 @@ class BasePromptLearningConfig(BaseAdapterConfig):
 # TODO(travis): fix prefix tuning and p-tuning to work with DDP
 # @DeveloperAPI
 # @register_adapter("prefix_tuning")
-# @schema_utils.ludwig_dataclass
 # class PrefixTuningConfig(BasePromptLearningConfig):
 #     """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/prefix_tuning.py."""
 
@@ -285,7 +278,6 @@ class BasePromptLearningConfig(BaseAdapterConfig):
 
 # @DeveloperAPI
 # @register_adapter("p_tuning")
-# @ludwig_dataclass
 # class PTuningConfig(BasePromptLearningConfig):
 """#     type: str = schema_utils.ProtectedString("p_tuning")"""  # Quotes allow mypy to run without syntax errors.
 
@@ -334,7 +326,6 @@ class BasePromptLearningConfig(BaseAdapterConfig):
 
 @DeveloperAPI
 @register_adapter("adalora")
-@ludwig_dataclass
 class AdaloraConfig(LoraConfig):
     """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/adalora.py."""
 
@@ -437,7 +428,6 @@ class AdaloraConfig(LoraConfig):
 # (this is reflected in https://github.com/ludwig-ai/ludwig/issues/3938).
 # </Alex>
 # @register_adapter("adaption_prompt")
-@ludwig_dataclass
 class AdaptionPromptConfig(BaseAdapterConfig):
     """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/adaption_prompt/config.py."""
 
@@ -492,7 +482,6 @@ class AdaptionPromptConfig(BaseAdapterConfig):
 
 @DeveloperAPI
 @register_adapter("ia3")
-@ludwig_dataclass
 class IA3Config(BaseAdapterConfig):
     type: str = schema_utils.ProtectedString(
         "ia3",

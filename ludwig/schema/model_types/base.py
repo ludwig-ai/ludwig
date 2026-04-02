@@ -35,7 +35,6 @@ from ludwig.schema.model_types.utils import (
 )
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.trainer import BaseTrainerConfig
-from ludwig.schema.utils import ludwig_dataclass
 from ludwig.types import ModelConfigDict
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.data_utils import get_sanitized_feature_name, load_yaml
@@ -45,7 +44,6 @@ model_type_schema_registry = Registry()
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
     input_features: FeatureCollection[BaseInputFeatureConfig]
     output_features: FeatureCollection[BaseOutputFeatureConfig]

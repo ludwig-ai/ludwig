@@ -3,11 +3,9 @@ from ludwig.constants import SEMANTIC
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata import LLM_METADATA
-from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class RetrievalConfig(schema_utils.BaseMarshmallowConfig):
     """This Dataclass is a schema for the nested retrieval config under prompt."""
 
@@ -71,7 +69,6 @@ class RetrievalConfigField(schema_utils.DictMarshmallowField):
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class PromptConfig(schema_utils.BaseMarshmallowConfig):
     """This Dataclass is a schema for the nested prompt config under preprocessing."""
 

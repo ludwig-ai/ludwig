@@ -26,7 +26,6 @@ from ludwig.schema.optimizers import (
     OptimizerDataclassField,
 )
 from ludwig.schema.profiler import ProfilerConfig, ProfilerDataclassField
-from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 
 _torch_200 = parse_version(torch.__version__) >= parse_version("2.0")
@@ -61,7 +60,6 @@ def get_llm_trainer_cls(trainer_type: str):
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Common trainer parameter values."""
 
@@ -119,7 +117,6 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 @DeveloperAPI
 @register_trainer_schema(MODEL_ECD)
-@ludwig_dataclass
 class ECDTrainerConfig(BaseTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for ECD model training."""
 
@@ -469,7 +466,6 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class LLMTrainerConfig(BaseTrainerConfig):
     """Base class for all LLM trainer configs."""
 
@@ -552,7 +548,6 @@ class LLMTrainerConfig(BaseTrainerConfig):
 
 @DeveloperAPI
 @register_llm_trainer_schema("none")
-@ludwig_dataclass
 class NoneTrainerConfig(LLMTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for zero-shot / few-shot LLM model training."""
 
@@ -569,7 +564,6 @@ class NoneTrainerConfig(LLMTrainerConfig):
 
 @DeveloperAPI
 @register_llm_trainer_schema("finetune")
-@ludwig_dataclass
 class FineTuneTrainerConfig(ECDTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for fine-tuning LLM model training."""
 

@@ -6,7 +6,6 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import register_decoder_config
 from ludwig.schema.metadata import DECODER_METADATA
-from ludwig.schema.utils import ludwig_dataclass
 
 if TYPE_CHECKING:
     from ludwig.schema.features.preprocessing.image import ImagePreprocessingConfig
@@ -21,7 +20,6 @@ class ImageDecoderConfig(BaseDecoderConfig):
 
 @DeveloperAPI
 @register_decoder_config("unet", [IMAGE], model_types=[MODEL_ECD])
-@ludwig_dataclass
 class UNetDecoderConfig(ImageDecoderConfig):
     @staticmethod
     def module_name():

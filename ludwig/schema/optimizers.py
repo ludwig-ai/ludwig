@@ -13,7 +13,6 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
 from ludwig.schema.metadata import OPTIMIZER_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
-from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 
 optimizer_registry = Registry()
@@ -35,7 +34,6 @@ def get_optimizer_cls(name: str):
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class BaseOptimizerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Base class for optimizers. Not meant to be used directly.
 
@@ -67,7 +65,6 @@ class BaseOptimizerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 @DeveloperAPI
 @register_optimizer(name="sgd")
-@ludwig_dataclass
 class SGDOptimizerConfig(BaseOptimizerConfig):
     """Parameters for stochastic gradient descent."""
 
@@ -108,7 +105,6 @@ if bnb is not None:
 
     @DeveloperAPI
     @register_optimizer(name="sgd_8bit")
-    @ludwig_dataclass
     class SGD8BitOptimizerConfig(SGDOptimizerConfig):
         """Parameters for stochastic gradient descent."""
 
@@ -135,7 +131,6 @@ if bnb is not None:
 
 @DeveloperAPI
 @register_optimizer(name="lbfgs")
-@ludwig_dataclass
 class LBFGSOptimizerConfig(BaseOptimizerConfig):
     """Parameters for stochastic gradient descent."""
 
@@ -187,7 +182,6 @@ class LBFGSOptimizerConfig(BaseOptimizerConfig):
 
 @DeveloperAPI
 @register_optimizer(name="adam")
-@ludwig_dataclass
 class AdamOptimizerConfig(BaseOptimizerConfig):
     """Parameters for adam optimization."""
 
@@ -227,7 +221,6 @@ if bnb is not None:
 
     @DeveloperAPI
     @register_optimizer(name="adam_8bit")
-    @ludwig_dataclass
     class Adam8BitOptimizerConfig(AdamOptimizerConfig):
         optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.Adam8bit
 
@@ -251,7 +244,6 @@ if bnb is not None:
 
     @DeveloperAPI
     @register_optimizer(name="paged_adam")
-    @ludwig_dataclass
     class PagedAdamOptimizerConfig(Adam8BitOptimizerConfig):
         optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedAdam
 
@@ -267,7 +259,6 @@ if bnb is not None:
 
     @DeveloperAPI
     @register_optimizer(name="paged_adam_8bit")
-    @ludwig_dataclass
     class PagedAdam8BitOptimizerConfig(PagedAdamOptimizerConfig):
         optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedAdam8bit
 
@@ -280,7 +271,6 @@ if bnb is not None:
 
 @DeveloperAPI
 @register_optimizer(name="adamw")
-@ludwig_dataclass
 class AdamWOptimizerConfig(BaseOptimizerConfig):
     """Parameters for adamw optimization."""
 
@@ -320,7 +310,6 @@ if bnb is not None:
 
     @DeveloperAPI
     @register_optimizer(name="adamw_8bit")
-    @ludwig_dataclass
     class AdamW8BitOptimizerConfig(AdamWOptimizerConfig):
         optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.AdamW8bit
 
@@ -344,7 +333,6 @@ if bnb is not None:
 
     @DeveloperAPI
     @register_optimizer(name="paged_adamw")
-    @ludwig_dataclass
     class PagedAdamWOptimizerConfig(AdamW8BitOptimizerConfig):
         optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedAdamW
 
@@ -360,7 +348,6 @@ if bnb is not None:
 
     @DeveloperAPI
     @register_optimizer(name="paged_adamw_8bit")
-    @ludwig_dataclass
     class PagedAdamW8BitOptimizerConfig(PagedAdamWOptimizerConfig):
         optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedAdamW8bit
 
@@ -373,7 +360,6 @@ if bnb is not None:
 
 @DeveloperAPI
 @register_optimizer(name="adadelta")
-@ludwig_dataclass
 class AdadeltaOptimizerConfig(BaseOptimizerConfig):
     """Parameters for adadelta optimization."""
 
@@ -406,7 +392,6 @@ class AdadeltaOptimizerConfig(BaseOptimizerConfig):
 
 @DeveloperAPI
 @register_optimizer(name="adagrad")
-@ludwig_dataclass
 class AdagradOptimizerConfig(BaseOptimizerConfig):
     """Parameters for adagrad optimization."""
 
@@ -442,7 +427,6 @@ if bnb is not None:
 
     @DeveloperAPI
     @register_optimizer(name="adagrad_8bit")
-    @ludwig_dataclass
     class Adagrad8BitOptimizerConfig(AdagradOptimizerConfig):
         optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.Adagrad8bit
 
@@ -467,7 +451,6 @@ if bnb is not None:
 
 @DeveloperAPI
 @register_optimizer(name="adamax")
-@ludwig_dataclass
 class AdamaxOptimizerConfig(BaseOptimizerConfig):
     """Parameters for adamax optimization."""
 
@@ -499,7 +482,6 @@ class AdamaxOptimizerConfig(BaseOptimizerConfig):
 # NOTE: keep ftrl and nadam optimizers out of registry:
 # @register_optimizer(name="ftrl")
 @DeveloperAPI
-@ludwig_dataclass
 class FtrlOptimizerConfig(BaseOptimizerConfig):
     # optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Ftrl
     type: str = schema_utils.ProtectedString("ftrl")
@@ -523,7 +505,6 @@ class FtrlOptimizerConfig(BaseOptimizerConfig):
 
 @DeveloperAPI
 @register_optimizer(name="nadam")
-@ludwig_dataclass
 class NadamOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.NAdam
     """Points to `torch.optim.NAdam`."""
@@ -555,7 +536,6 @@ class NadamOptimizerConfig(BaseOptimizerConfig):
 
 @DeveloperAPI
 @register_optimizer(name="rmsprop")
-@ludwig_dataclass
 class RMSPropOptimizerConfig(BaseOptimizerConfig):
     """Parameters for rmsprop optimization."""
 
@@ -599,7 +579,6 @@ if bnb is not None:
 
     @DeveloperAPI
     @register_optimizer(name="rmsprop_8bit")
-    @ludwig_dataclass
     class RMSProp8BitOptimizerConfig(RMSPropOptimizerConfig):
         optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.RMSprop8bit
 
@@ -626,7 +605,6 @@ if bnb is not None:
 
     @DeveloperAPI
     @register_optimizer(name="lamb")
-    @ludwig_dataclass
     class LAMBOptimizerConfig(BaseOptimizerConfig):
         """Layer-wise Adaptive Moments optimizer for Batch training.
 
@@ -694,7 +672,6 @@ if bnb is not None:
 
     @DeveloperAPI
     @register_optimizer(name="lamb_8bit")
-    @ludwig_dataclass
     class LAMB8BitOptimizerConfig(LAMBOptimizerConfig):
         optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.LAMB8bit
 
@@ -709,7 +686,6 @@ if bnb is not None:
 
     @DeveloperAPI
     @register_optimizer(name="lars")
-    @ludwig_dataclass
     class LARSOptimizerConfig(BaseOptimizerConfig):
         """Layerwise Adaptive Rate Scaling.
 
@@ -766,7 +742,6 @@ if bnb is not None:
 
     @DeveloperAPI
     @register_optimizer(name="lars_8bit")
-    @ludwig_dataclass
     class LARS8BitOptimizerConfig(LARSOptimizerConfig):
         optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.LARS8bit
 
@@ -781,7 +756,6 @@ if bnb is not None:
 
     @DeveloperAPI
     @register_optimizer(name="lion")
-    @ludwig_dataclass
     class LIONOptimizerConfig(BaseOptimizerConfig):
         """Evolved Sign Momentum.
 
@@ -818,7 +792,6 @@ if bnb is not None:
 
     @DeveloperAPI
     @register_optimizer(name="lion_8bit")
-    @ludwig_dataclass
     class LION8BitOptimizerConfig(LIONOptimizerConfig):
         optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.Lion8bit
 
@@ -830,7 +803,6 @@ if bnb is not None:
 
     @DeveloperAPI
     @register_optimizer(name="paged_lion")
-    @ludwig_dataclass
     class PagedLionOptimizerConfig(LIONOptimizerConfig):
         optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedLion
 
@@ -842,7 +814,6 @@ if bnb is not None:
 
     @DeveloperAPI
     @register_optimizer(name="paged_lion_8bit")
-    @ludwig_dataclass
     class PagedLion8BitOptimizerConfig(PagedLionOptimizerConfig):
         optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedLion8bit
 
@@ -920,7 +891,6 @@ def OptimizerDataclassField(default="adam", description="", parameter_metadata: 
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class GradientClippingConfig(schema_utils.BaseMarshmallowConfig):
     """Dataclass that holds gradient clipping parameters."""
 

@@ -6,7 +6,6 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.hyperopt import utils as hyperopt_utils
-from ludwig.schema.utils import ludwig_dataclass
 
 
 def points_to_evaluate_field(description: str | None = None):
@@ -32,7 +31,6 @@ def evaluated_rewards_field(description: str | None = None):
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class BaseSearchAlgorithmConfig(schema_utils.BaseMarshmallowConfig):
     """Basic search algorithm settings."""
 
@@ -121,7 +119,6 @@ def SearchAlgorithmDataclassField(description: str = "", default: dict = {"type"
 @DeveloperAPI
 @hyperopt_utils.register_search_algorithm_config("random", random_state_field="random_state")
 @hyperopt_utils.register_search_algorithm_config("variant_generator", random_state_field="random_state")
-@ludwig_dataclass
 class BasicVariantSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.StringOptions(options=["random", "variant_generator"], default="random", allow_none=False)
 
@@ -161,7 +158,6 @@ class BasicVariantSAConfig(BaseSearchAlgorithmConfig):
 @hyperopt_utils.register_search_algorithm_config(
     "ax", dependencies=[("ax", "ax-platform"), ("sqlalchemy", "sqlalchemy")]
 )
-@ludwig_dataclass
 class AxSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("ax")
 
@@ -189,7 +185,6 @@ class AxSAConfig(BaseSearchAlgorithmConfig):
 @hyperopt_utils.register_search_algorithm_config(
     "bayesopt", random_state_field="random_state", dependencies=[("bayes_opt", "bayesian-optimization")]
 )
-@ludwig_dataclass
 class BayesOptSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("bayesopt")
 
@@ -238,7 +233,6 @@ class BayesOptSAConfig(BaseSearchAlgorithmConfig):
 
 @DeveloperAPI
 @hyperopt_utils.register_search_algorithm_config("blendsearch", dependencies=[("flaml", "flaml[blendsearch]")])
-@ludwig_dataclass
 class BlendsearchSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("blendsearch")
 
@@ -247,7 +241,6 @@ class BlendsearchSAConfig(BaseSearchAlgorithmConfig):
 @hyperopt_utils.register_search_algorithm_config(
     "bohb", random_state_field="seed", dependencies=[("hpbandster", "hpbandster"), ("ConfigSpace", "ConfigSpace")]
 )
-@ludwig_dataclass
 class BOHBSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("bohb")
 
@@ -283,7 +276,6 @@ class BOHBSAConfig(BaseSearchAlgorithmConfig):
 
 @DeveloperAPI
 @hyperopt_utils.register_search_algorithm_config("cfo", dependencies=[("flaml", "flaml")])
-@ludwig_dataclass
 class CFOSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("cfo")
 
@@ -292,7 +284,6 @@ class CFOSAConfig(BaseSearchAlgorithmConfig):
 @hyperopt_utils.register_search_algorithm_config(
     "dragonfly", random_state_field="random_state_seed", dependencies=[("dragonfly", "dragonfly-opt")]
 )
-@ludwig_dataclass
 class DragonflySAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("dragonfly")
 
@@ -342,7 +333,6 @@ class DragonflySAConfig(BaseSearchAlgorithmConfig):
 @hyperopt_utils.register_search_algorithm_config(
     "hebo", random_state_field="random_state_seed", dependencies=[("hebo", "HEBO")]
 )
-@ludwig_dataclass
 class HEBOSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("hebo")
 
@@ -376,7 +366,6 @@ class HEBOSAConfig(BaseSearchAlgorithmConfig):
 @hyperopt_utils.register_search_algorithm_config(
     "hyperopt", random_state_field="random_state_seed", dependencies=[("hyperopt", "hyperopt")]
 )
-@ludwig_dataclass
 class HyperoptSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("hyperopt")
 
@@ -418,7 +407,6 @@ class HyperoptSAConfig(BaseSearchAlgorithmConfig):
 
 @DeveloperAPI
 @hyperopt_utils.register_search_algorithm_config("nevergrad", dependencies=[("nevergrad", "nevergrad")])
-@ludwig_dataclass
 class NevergradSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("nevergrad")
 
@@ -442,7 +430,6 @@ class NevergradSAConfig(BaseSearchAlgorithmConfig):
 @hyperopt_utils.register_search_algorithm_config(
     "optuna", random_state_field="seed", dependencies=[("optuna", "optuna")]
 )
-@ludwig_dataclass
 class OptunaSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("optuna")
 
@@ -509,7 +496,6 @@ class SkoptSAConfig(BaseSearchAlgorithmConfig):
 
 @DeveloperAPI
 @hyperopt_utils.register_search_algorithm_config("zoopt", dependencies=[("zoopt", "zoopt")])
-@ludwig_dataclass
 class ZooptSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("zoopt")
 

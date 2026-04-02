@@ -1,11 +1,9 @@
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class RoPEScalingConfig(schema_utils.BaseMarshmallowConfig):
     """Dynamic RoPE-scaling (rotary position embeddings) to extend the context length of LLM like LLaMA, GPT-NeoX,
     or Falcon.
@@ -53,7 +51,6 @@ class RoPEScalingConfigField(schema_utils.DictMarshmallowField):
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class ModelParametersConfig(schema_utils.BaseMarshmallowConfig):
     rope_scaling: RoPEScalingConfig = RoPEScalingConfigField().get_default_field()
 

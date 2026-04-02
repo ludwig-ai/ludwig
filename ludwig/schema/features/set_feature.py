@@ -19,12 +19,11 @@ from ludwig.schema.features.utils import (
 )
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
+from ludwig.schema.utils import BaseMarshmallowConfig
 
 
 @DeveloperAPI
 @input_mixin_registry.register(SET)
-@ludwig_dataclass
 class SetInputFeatureConfigMixin(BaseMarshmallowConfig):
     """SetInputFeatureConfigMixin is a dataclass that configures the parameters used in both the set input feature
     and the set global defaults section of the Ludwig Config."""
@@ -40,7 +39,6 @@ class SetInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @ecd_input_config_registry.register(SET)
-@ludwig_dataclass
 class SetInputFeatureConfig(SetInputFeatureConfigMixin, BaseInputFeatureConfig):
     """SetInputFeatureConfig is a dataclass that configures the parameters used for a set input feature."""
 
@@ -49,7 +47,6 @@ class SetInputFeatureConfig(SetInputFeatureConfigMixin, BaseInputFeatureConfig):
 
 @DeveloperAPI
 @output_mixin_registry.register(SET)
-@ludwig_dataclass
 class SetOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """SetOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the set output
     feature and the set global defaults section of the Ludwig Config."""
@@ -68,7 +65,6 @@ class SetOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @ecd_output_config_registry.register(SET)
-@ludwig_dataclass
 class SetOutputFeatureConfig(SetOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """SetOutputFeatureConfig is a dataclass that configures the parameters used for a set output feature."""
 
@@ -114,6 +110,5 @@ class SetOutputFeatureConfig(SetOutputFeatureConfigMixin, BaseOutputFeatureConfi
 
 @DeveloperAPI
 @ecd_defaults_config_registry.register(SET)
-@ludwig_dataclass
 class SetDefaultsConfig(SetInputFeatureConfigMixin, SetOutputFeatureConfigMixin):
     pass

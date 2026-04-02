@@ -6,11 +6,9 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import LOSS, MODEL_ECD, TRAINING
 from ludwig.error import ConfigValidationError
 from ludwig.schema.metadata import TRAINER_METADATA
-from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Configuration for learning rate scheduler parameters."""
 

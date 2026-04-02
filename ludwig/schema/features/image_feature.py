@@ -22,7 +22,7 @@ from ludwig.schema.features.utils import (
 )
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
+from ludwig.schema.utils import BaseMarshmallowConfig
 
 # Augmentation operations when augmentation is set to True
 AUGMENTATION_DEFAULT_OPERATIONS = [
@@ -34,7 +34,6 @@ AUGMENTATION_DEFAULT_OPERATIONS = [
 @DeveloperAPI
 @ecd_defaults_config_registry.register(IMAGE)
 @input_mixin_registry.register(IMAGE)
-@ludwig_dataclass
 class ImageInputFeatureConfigMixin(BaseMarshmallowConfig):
     """ImageInputFeatureConfigMixin is a dataclass that configures the parameters used in both the image input
     feature and the image global defaults section of the Ludwig Config."""
@@ -61,7 +60,6 @@ class ImageInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @ecd_input_config_registry.register(IMAGE)
-@ludwig_dataclass
 class ImageInputFeatureConfig(ImageInputFeatureConfigMixin, BaseInputFeatureConfig):
     """ImageInputFeatureConfig is a dataclass that configures the parameters used for an image input feature."""
 
@@ -70,7 +68,6 @@ class ImageInputFeatureConfig(ImageInputFeatureConfigMixin, BaseInputFeatureConf
 
 @DeveloperAPI
 @output_mixin_registry.register(IMAGE)
-@ludwig_dataclass
 class ImageOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """ImageOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the image output
     feature and the image global defaults section of the Ludwig Config."""
@@ -89,7 +86,6 @@ class ImageOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @ecd_output_config_registry.register(IMAGE)
-@ludwig_dataclass
 class ImageOutputFeatureConfig(ImageOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """ImageOutputFeatureConfig is a dataclass that configures the parameters used for an image output feature."""
 
@@ -126,6 +122,5 @@ class ImageOutputFeatureConfig(ImageOutputFeatureConfigMixin, BaseOutputFeatureC
 
 @DeveloperAPI
 @ecd_defaults_config_registry.register(IMAGE)
-@ludwig_dataclass
 class ImageDefaultsConfig(ImageInputFeatureConfigMixin, ImageOutputFeatureConfigMixin):
     pass

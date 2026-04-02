@@ -5,12 +5,10 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import register_decoder_config
 from ludwig.schema.metadata import DECODER_METADATA
-from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
 @register_decoder_config("generator", [SEQUENCE, TEXT], model_types=[MODEL_ECD])
-@ludwig_dataclass
 class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
     @staticmethod
     def module_name():
@@ -55,7 +53,6 @@ class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
 
 @DeveloperAPI
 @register_decoder_config("tagger", [SEQUENCE, TEXT], model_types=[MODEL_ECD])
-@ludwig_dataclass
 class SequenceTaggerDecoderConfig(BaseDecoderConfig):
     @classmethod
     def module_name(cls):

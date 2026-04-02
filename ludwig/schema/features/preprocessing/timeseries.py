@@ -4,11 +4,9 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
 from ludwig.schema.metadata import FEATURE_METADATA
-from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.tokenizers import tokenizer_registry
 
 
-@ludwig_dataclass
 class BaseTimeseriesPreprocessingConfig(BasePreprocessingConfig):
     tokenizer: str = schema_utils.StringOptions(
         tokenizer_registry.keys(),
@@ -74,7 +72,6 @@ class BaseTimeseriesPreprocessingConfig(BasePreprocessingConfig):
 
 @DeveloperAPI
 @register_preprocessor(TIMESERIES)
-@ludwig_dataclass
 class TimeseriesPreprocessingConfig(BaseTimeseriesPreprocessingConfig):
     window_size: int = schema_utils.NonNegativeInteger(
         default=0,
@@ -99,7 +96,6 @@ class TimeseriesPreprocessingConfig(BaseTimeseriesPreprocessingConfig):
 
 @DeveloperAPI
 @register_preprocessor("timeseries_output")
-@ludwig_dataclass
 class TimeseriesOutputPreprocessingConfig(BaseTimeseriesPreprocessingConfig):
     horizon: int = schema_utils.NonNegativeInteger(
         default=0,

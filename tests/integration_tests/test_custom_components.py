@@ -22,7 +22,6 @@ from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.features.loss.loss import BaseLossConfig
 from ludwig.schema.features.loss.loss import register_loss as register_loss_schema
-from ludwig.schema.utils import ludwig_dataclass as dataclass
 from tests.integration_tests.utils import (
     category_feature,
     generate_data,
@@ -33,7 +32,6 @@ from tests.integration_tests.utils import (
 
 
 @register_encoder_config("custom_number_encoder", NUMBER)
-@dataclass
 class CustomNumberEncoderConfig(BaseEncoderConfig):
     type: str = "custom_number_encoder"
 
@@ -41,7 +39,6 @@ class CustomNumberEncoderConfig(BaseEncoderConfig):
 
 
 @register_decoder_config("custom_number_decoder", NUMBER)
-@dataclass
 class CustomNumberDecoderConfig(BaseDecoderConfig):
     type: str = "custom_number_decoder"
 
@@ -49,13 +46,11 @@ class CustomNumberDecoderConfig(BaseDecoderConfig):
 
 
 @register_loss_schema([NUMBER])
-@dataclass
 class CustomLossConfig(BaseLossConfig):
     type: str = "custom_loss"
 
 
 @register_combiner_config("custom_combiner")
-@dataclass
 class CustomTestCombinerConfig(BaseCombinerConfig):
     type: str = "custom_combiner"
 

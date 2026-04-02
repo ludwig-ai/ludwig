@@ -19,12 +19,11 @@ from ludwig.schema.features.utils import (
 )
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
+from ludwig.schema.utils import BaseMarshmallowConfig
 
 
 @DeveloperAPI
 @input_mixin_registry.register(NUMBER)
-@ludwig_dataclass
 class NumberInputFeatureConfigMixin(BaseMarshmallowConfig):
     """NumberInputFeatureConfigMixin is a dataclass that configures the parameters used in both the number input
     feature and the number global defaults section of the Ludwig Config."""
@@ -33,7 +32,6 @@ class NumberInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class NumberInputFeatureConfig(NumberInputFeatureConfigMixin, BaseInputFeatureConfig):
     """NumberInputFeatureConfig is a dataclass that configures the parameters used for a number input feature."""
 
@@ -44,7 +42,6 @@ class NumberInputFeatureConfig(NumberInputFeatureConfigMixin, BaseInputFeatureCo
 
 @DeveloperAPI
 @ecd_input_config_registry.register(NUMBER)
-@ludwig_dataclass
 class ECDNumberInputFeatureConfig(NumberInputFeatureConfig):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_ECD,
@@ -55,7 +52,6 @@ class ECDNumberInputFeatureConfig(NumberInputFeatureConfig):
 
 @DeveloperAPI
 @output_mixin_registry.register(NUMBER)
-@ludwig_dataclass
 class NumberOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """NumberOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the number output
     feature and the number global defaults section of the Ludwig Config."""
@@ -69,7 +65,6 @@ class NumberOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class NumberOutputFeatureConfig(NumberOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """NumberOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature."""
@@ -117,7 +112,6 @@ class NumberOutputFeatureConfig(NumberOutputFeatureConfigMixin, BaseOutputFeatur
 
 @DeveloperAPI
 @ecd_output_config_registry.register(NUMBER)
-@ludwig_dataclass
 class ECDNumberOutputFeatureConfig(NumberOutputFeatureConfig):
     decoder: BaseDecoderConfig = DecoderDataclassField(
         MODEL_ECD,
@@ -128,7 +122,6 @@ class ECDNumberOutputFeatureConfig(NumberOutputFeatureConfig):
 
 @DeveloperAPI
 @ecd_defaults_config_registry.register(NUMBER)
-@ludwig_dataclass
 class NumberDefaultsConfig(NumberInputFeatureConfigMixin, NumberOutputFeatureConfigMixin):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_ECD,

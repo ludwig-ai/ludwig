@@ -3,11 +3,9 @@ from dataclasses import field
 import ludwig.schema.utils as schema_utils
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
-from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class ProfilerConfig(schema_utils.BaseMarshmallowConfig):
     """Dataclass that holds profiling parameters for torch profile scheduler.
 

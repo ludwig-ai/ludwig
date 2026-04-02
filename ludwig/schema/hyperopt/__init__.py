@@ -8,11 +8,9 @@ from ludwig.modules.metric_registry import get_metric_registry
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.hyperopt.executor import ExecutorConfig, ExecutorDataclassField
 from ludwig.schema.hyperopt.search_algorithm import BaseSearchAlgorithmConfig, SearchAlgorithmDataclassField
-from ludwig.schema.utils import ludwig_dataclass as dataclass
 
 
 @DeveloperAPI
-@dataclass
 class HyperoptConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Basic hyperopt settings."""
 

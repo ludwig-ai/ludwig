@@ -178,18 +178,3 @@ order_by_type = false
 [tool.black]
 line-length = 120
 exclude = "./python/"
-
-[tool.flake8]
-max-line-length = 120
-exclude = [
-    ".tox",
-    "*.egg",
-    "*_pb2.py",
-    "build",
-    "temp",
-]
-select = ["E", "W", "F"]
-doctests = true
-verbose = 2
-format = "pylint"
-ignore = ["E731", "W503", "E203"]
