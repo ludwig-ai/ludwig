@@ -36,8 +36,7 @@ BEST = "best"
 @DeveloperAPI
 def mkdir(s):
     """Create a directory if it doesn't already exist."""
-    if not os.path.exists(s):
-        os.makedirs(s)
+    os.makedirs(s, exist_ok=True)
 
 
 @DeveloperAPI

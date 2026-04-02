@@ -650,8 +650,7 @@ class RayPredictor(BasePredictor):
                 num_cpus=num_cpus,
                 num_gpus=num_gpus,
             )
-
-        predictions = self.df_engine.from_ray_dataset(predictions)
+            predictions = self.df_engine.from_ray_dataset(predictions)
 
         return predictions
 
