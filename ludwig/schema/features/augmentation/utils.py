@@ -85,7 +85,7 @@ def AugmentationDataclassField(
                     augmentation_cls = augmentation_classes[augmentation_op]
                     pre = augmentation_cls()
                     try:
-                        augmentation_list.append(pre.Schema().load(augmentation))
+                        augmentation_list.append(pre.model_validate(augmentation))
                     except (TypeError, ConfigValidationError) as error:
                         raise ConfigValidationError(
                             f"Invalid augmentation params: {value}, see `{pre}` definition. Error: {error}"
@@ -109,8 +109,8 @@ def AugmentationDataclassField(
             augmentation_cls = get_augmentation_cls(feature_type, augmentation_op)
             pre = augmentation_cls()
             try:
-                load_augmentation_list.append(pre.Schema().load(augmentation))
-                dump_augmentation_list.append(pre.Schema().dump(augmentation))
+                load_augmentation_list.append(pre.model_validate(augmentation))
+                dump_augmentation_list.append(pre.model_validate(augmentation).to_dict())
             except (TypeError, ConfigValidationError) as error:
                 raise ConfigValidationError(
                     f"Invalid augmentation params: {default}, see `{pre}` definition. Error: {error}"

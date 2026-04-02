@@ -496,7 +496,7 @@ def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt sche
                 if "type" in value and value["type"] in hyperopt_utils.scheduler_config_registry:
                     scheduler_config_cls = hyperopt_utils.scheduler_config_registry[value["type"].lower()]
                     try:
-                        return scheduler_config_cls.Schema().load(value)
+                        return scheduler_config_cls.model_validate(value)
                     except (TypeError, ConfigValidationError) as e:
                         raise ConfigValidationError(
                             f"Invalid params for scheduler: {value}, see `{opt}` definition. Error: {e}"
@@ -532,8 +532,8 @@ def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt sche
         raise ConfigValidationError(f"Invalid default: `{default}`")
     try:
         opt = hyperopt_utils.scheduler_config_registry[default["type"].lower()]
-        load_default = lambda: opt.Schema().load(default)
-        dump_default = opt.Schema().dump(default)
+        load_default = lambda: opt.model_validate(default)
+        dump_default = opt.model_validate(default).to_dict()
 
         return field(
             metadata={

@@ -43,18 +43,18 @@ def test_OptimizerDataclassField():
         foo: lso.BaseOptimizerConfig | None = lso.OptimizerDataclassField()
 
     with pytest.raises((PydanticValidationError, Exception)):
-        CustomTestSchema.Schema().load({"foo": "test"})
+        CustomTestSchema.model_validate({"foo": "test"})
 
-    assert CustomTestSchema.Schema().load({}).foo == lso.AdamOptimizerConfig()
+    assert CustomTestSchema.model_validate({}).foo == lso.AdamOptimizerConfig()
 
     # Test creating a schema with set default:
     class CustomTestSchema2(schema_utils.BaseMarshmallowConfig):
         foo: lso.BaseOptimizerConfig | None = lso.OptimizerDataclassField("adamax")
 
     with pytest.raises((PydanticValidationError, Exception)):
-        CustomTestSchema2.Schema().load({"foo": "test"})
+        CustomTestSchema2.model_validate({"foo": "test"})
 
-    assert CustomTestSchema2.Schema().load(
+    assert CustomTestSchema2.model_validate(
         {"foo": {"type": "adamax", "betas": (0.2, 0.2)}}
     ).foo == lso.AdamaxOptimizerConfig(betas=(0.2, 0.2))
 
@@ -89,9 +89,9 @@ def test_ClipperDataclassField():
         )
 
     with pytest.raises((PydanticValidationError, Exception)):
-        CustomTestSchema.Schema().load({"foo": "test"})
+        CustomTestSchema.model_validate({"foo": "test"})
 
-    assert CustomTestSchema.Schema().load({}).foo == lso.GradientClippingConfig(clipglobalnorm=0.1)
-    assert CustomTestSchema.Schema().load({"foo": {"clipglobalnorm": 1}}).foo == lso.GradientClippingConfig(
+    assert CustomTestSchema.model_validate({}).foo == lso.GradientClippingConfig(clipglobalnorm=0.1)
+    assert CustomTestSchema.model_validate({"foo": {"clipglobalnorm": 1}}).foo == lso.GradientClippingConfig(
         clipglobalnorm=1
     )

@@ -69,7 +69,7 @@ def ProfilerDataclassField(description: str, default: dict = {}):
                 return value
             if isinstance(value, dict):
                 try:
-                    return ProfilerConfig.Schema().load(value)
+                    return ProfilerConfig.model_validate(value)
                 except (TypeError, ConfigValidationError):
                     raise ConfigValidationError(
                         f"Invalid params for profiling config: {value}, see ProfilerConfig class."
@@ -87,9 +87,9 @@ def ProfilerDataclassField(description: str, default: dict = {}):
         raise ConfigValidationError(f"Invalid default: `{default}`")
 
     def load_default():
-        return ProfilerConfig.Schema().load(default)
+        return ProfilerConfig.model_validate(default)
 
-    dump_default = ProfilerConfig.Schema().dump(default)
+    dump_default = ProfilerConfig.model_validate(default).to_dict()
 
     return field(
         metadata={

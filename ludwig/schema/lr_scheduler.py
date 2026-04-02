@@ -147,7 +147,7 @@ def LRSchedulerDataclassField(description: str, default: dict = None):
                 return value
             if isinstance(value, dict):
                 try:
-                    return LRSchedulerConfig.Schema().load(value)
+                    return LRSchedulerConfig.model_validate(value)
                 except (TypeError, ConfigValidationError) as e:
                     raise ConfigValidationError(
                         f"Invalid params for learning rate scheduler: {value}, see LRSchedulerConfig class. Error: {e}"
@@ -164,8 +164,8 @@ def LRSchedulerDataclassField(description: str, default: dict = None):
     if not isinstance(default, dict):
         raise ConfigValidationError(f"Invalid default: `{default}`")
 
-    load_default = lambda: LRSchedulerConfig.Schema().load(default)
-    dump_default = LRSchedulerConfig.Schema().dump(default)
+    load_default = lambda: LRSchedulerConfig.model_validate(default)
+    dump_default = LRSchedulerConfig.model_validate(default).to_dict()
 
     return field(
         metadata={

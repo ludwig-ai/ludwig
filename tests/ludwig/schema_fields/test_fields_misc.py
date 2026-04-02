@@ -33,7 +33,7 @@ def test_StringOptions():
         foo: str = schema_utils.StringOptions(test_options, "one", allow_none=False)
 
     with pytest.raises(PydanticValidationError):
-        CustomTestSchema.Schema().load({"foo": None})
+        CustomTestSchema.model_validate({"foo": None})
 
 
 # Complex, custom marshmallow fields:
@@ -45,12 +45,12 @@ def test_Embed():
         foo: str | int | None = schema_utils.Embed()
 
     # Test null/empty loading cases:
-    assert CustomTestSchema.Schema().load({}).foo is None
-    assert CustomTestSchema.Schema().load({"foo": None}).foo is None
+    assert CustomTestSchema.model_validate({}).foo is None
+    assert CustomTestSchema.model_validate({"foo": None}).foo is None
 
     # Test valid strings/numbers:
-    assert CustomTestSchema.Schema().load({"foo": "add"}).foo == "add"
-    assert CustomTestSchema.Schema().load({"foo": 1}).foo == 1
+    assert CustomTestSchema.model_validate({"foo": "add"}).foo == "add"
+    assert CustomTestSchema.model_validate({"foo": 1}).foo == 1
 
 
 def test_InitializerOrDict():
@@ -63,11 +63,11 @@ def test_InitializerOrDict():
         foo: str | dict | None = schema_utils.InitializerOrDict()
 
     # Test valid loads:
-    assert CustomTestSchema.Schema().load({}).foo == "xavier_uniform"
-    assert CustomTestSchema.Schema().load({"foo": "zeros"}).foo == "zeros"
+    assert CustomTestSchema.model_validate({}).foo == "xavier_uniform"
+    assert CustomTestSchema.model_validate({"foo": "zeros"}).foo == "zeros"
 
     # Test valid dict loads:
-    assert CustomTestSchema.Schema().load({"foo": {"type": "zeros"}}).foo == {"type": "zeros"}
+    assert CustomTestSchema.model_validate({"foo": {"type": "zeros"}}).foo == {"type": "zeros"}
 
 
 def test_FloatRangeTupleDataclassField():
@@ -80,11 +80,11 @@ def test_FloatRangeTupleDataclassField():
         foo: tuple[float, float] | None = schema_utils.FloatRangeTupleDataclassField(allow_none=True)
 
     # Test empty load:
-    assert CustomTestSchema.Schema().load({}).foo == (0.9, 0.999)
-    assert CustomTestSchema.Schema().load({"foo": None}).foo is None
+    assert CustomTestSchema.model_validate({}).foo == (0.9, 0.999)
+    assert CustomTestSchema.model_validate({"foo": None}).foo is None
 
     # Test valid loads:
-    assert CustomTestSchema.Schema().load({"foo": [0.5, 0.6]}).foo == (0.5, 0.6)
+    assert CustomTestSchema.model_validate({"foo": [0.5, 0.6]}).foo == (0.5, 0.6)
 
     # Test non-default schema (N=3, other custom metadata):
     class CustomTestSchema2(schema_utils.BaseMarshmallowConfig):
@@ -92,8 +92,8 @@ def test_FloatRangeTupleDataclassField():
             n=3, default=(1, 1, 1), min=-10, max=10
         )
 
-    assert CustomTestSchema2.Schema().load({}).foo == (1, 1, 1)
-    assert CustomTestSchema2.Schema().load({"foo": [2, 2, 2]}).foo == (2, 2, 2)
+    assert CustomTestSchema2.model_validate({}).foo == (1, 1, 1)
+    assert CustomTestSchema2.model_validate({"foo": [2, 2, 2]}).foo == (2, 2, 2)
 
 
 def test_OneOfOptionsField():
@@ -109,7 +109,7 @@ def test_OneOfOptionsField():
         )
 
     # Test valid loads:
-    assert CustomTestSchema.Schema().load({}).foo == 0.1
+    assert CustomTestSchema.model_validate({}).foo == 0.1
     assert CustomTestSchema().foo == 0.1
 
     # Reverse the order and allow none (via StringOptions):
@@ -125,10 +125,10 @@ def test_OneOfOptionsField():
         )
 
     # Test valid loads:
-    assert CustomTestSchema2.Schema().load({}).foo == "placeholder"
-    assert CustomTestSchema2.Schema().load({"foo": 0.1}).foo == 0.1
+    assert CustomTestSchema2.model_validate({}).foo == "placeholder"
+    assert CustomTestSchema2.model_validate({"foo": 0.1}).foo == 0.1
     assert CustomTestSchema2().foo == "placeholder"
-    CustomTestSchema2.Schema().load({"foo": None})
+    CustomTestSchema2.model_validate({"foo": None})
 
     # Test JSON schema generation:
     json = schema_utils.unload_jsonschema_from_marshmallow_class(CustomTestSchema2)

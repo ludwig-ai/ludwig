@@ -77,42 +77,6 @@ RECURSION_STOP_ENUM = {"weights_initializer", "bias_initializer", "norm_params"}
 LUDWIG_SCHEMA_VALIDATION_POLICY_VAR = os.environ.get(LUDWIG_SCHEMA_VALIDATION_POLICY, "exclude").lower()
 
 
-class _SchemaAdapter:
-    """Adapts pydantic model to marshmallow-like Schema interface for backward compatibility.
-
-    This allows existing code that calls cls.Schema().load(data), cls.Schema().dump(data), and cls.Schema().fields to
-    continue working.
-    """
-
-    def __init__(self, cls):
-        self._cls = cls
-
-    def __call__(self):
-        """Allow Schema()() pattern (double-call)."""
-        return self
-
-    def load(self, data):
-        """Validate and create a config instance from a dict."""
-        return self._cls.model_validate(data)
-
-    def dump(self, data):
-        """Serialize a config instance or dict to a plain dict."""
-        if isinstance(data, BaseMarshmallowConfig):
-            return data.to_dict()
-        if isinstance(data, dict):
-            try:
-                instance = self._cls.model_validate(data)
-                return instance.to_dict()
-            except Exception:
-                return data
-        return data
-
-    @property
-    def fields(self):
-        """Return field info dict (pydantic model_fields)."""
-        return self._cls.model_fields
-
-
 # Sentinel for TypeSelection and DictMarshmallowField metadata markers
 class _TypeSelectionMarker:
     """Marker stored in Field.metadata to indicate this field uses TypeSelection dispatch."""
@@ -329,8 +293,7 @@ class _LudwigModelMeta(type(BaseModel)):
 class BaseMarshmallowConfig(BaseModel, metaclass=_LudwigModelMeta):
     """Base pydantic model for all Ludwig config classes.
 
-    Maintains backward-compatible API (from_dict, to_dict, Schema, etc.) while using pydantic 2 internally for
-    validation and serialization.
+    Provides from_dict, to_dict, and other convenience methods on top of pydantic 2 validation.
     """
 
     model_config = ConfigDict(
@@ -491,20 +454,6 @@ class BaseMarshmallowConfig(BaseModel, metaclass=_LudwigModelMeta):
     def get_valid_field_names(cls) -> set[str]:
         """Return the set of valid field names for this config class."""
         return set(cls.model_fields.keys())
-
-    @classmethod
-    @lru_cache(maxsize=None)
-    def get_class_schema(cls):
-        """Return a schema adapter for backward compatibility.
-
-        Returns an object with .load() and .fields methods.
-        """
-        return _SchemaAdapter(cls)
-
-    @classmethod
-    def Schema(cls):
-        """Backward compatibility: return a schema adapter with .load(), .dump(), .fields."""
-        return _SchemaAdapter(cls)
 
     def __repr__(self):
         return yaml.dump(self.to_dict(), sort_keys=False)

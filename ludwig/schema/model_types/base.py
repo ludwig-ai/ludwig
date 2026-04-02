@@ -132,9 +132,8 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
         check_schema(config)
 
         cls = model_type_schema_registry[model_type]
-        schema = cls.get_class_schema()()
         try:
-            config_obj: ModelConfig = schema.load(config)
+            config_obj: ModelConfig = cls.model_validate(config)
         except ConfigValidationError:
             raise
         except ValueError as e:

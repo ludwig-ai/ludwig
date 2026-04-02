@@ -37,7 +37,7 @@ def PreprocessingDataclassField(feature_type: str):
                 if feature_type in preprocessing_registry:
                     pre = preprocessing_registry[feature_type]
                     try:
-                        return pre.Schema().load(value)
+                        return pre.model_validate(value)
                     except (TypeError, ConfigValidationError) as error:
                         raise ConfigValidationError(
                             f"Invalid preprocessing params: {value}, see `{pre}` definition. Error: {error}"
@@ -59,8 +59,8 @@ def PreprocessingDataclassField(feature_type: str):
 
     try:
         preprocessor = preprocessing_registry[feature_type]
-        load_default = lambda: preprocessor.Schema().load({})
-        dump_default = preprocessor.Schema().dump({})
+        load_default = lambda: preprocessor.model_validate({})
+        dump_default = preprocessor.model_validate({}).to_dict()
 
         return field(
             metadata={

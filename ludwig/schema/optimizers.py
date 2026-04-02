@@ -939,7 +939,7 @@ def GradientClippingDataclassField(description: str, default: dict = {}):
                 return value
             if isinstance(value, dict):
                 try:
-                    return GradientClippingConfig.Schema().load(value)
+                    return GradientClippingConfig.model_validate(value)
                 except (TypeError, ConfigValidationError):
                     raise ConfigValidationError(
                         f"Invalid params for gradient clipping: {value}, see GradientClippingConfig class."
@@ -963,9 +963,9 @@ def GradientClippingDataclassField(description: str, default: dict = {}):
         raise ConfigValidationError(f"Invalid default: `{default}`")
 
     def load_default():
-        return GradientClippingConfig.Schema().load(default)
+        return GradientClippingConfig.model_validate(default)
 
-    dump_default = GradientClippingConfig.Schema().dump(default)
+    dump_default = GradientClippingConfig.model_validate(default).to_dict()
 
     return field(
         metadata={

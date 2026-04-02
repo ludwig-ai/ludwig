@@ -25,7 +25,7 @@ def DefaultsDataclassField(feature_type: str, defaults_registry: Registry = ecd_
             if isinstance(value, dict):
                 defaults_class = defaults_registry[feature_type]
                 try:
-                    return defaults_class.Schema().load(value)
+                    return defaults_class.model_validate(value)
                 except (TypeError, ConfigValidationError) as error:
                     raise ConfigValidationError(f"Invalid params: {value}, see `{attr}` definition. Error: {error}")
             raise ConfigValidationError(f"Invalid params: {value}")
@@ -42,8 +42,8 @@ def DefaultsDataclassField(feature_type: str, defaults_registry: Registry = ecd_
 
     try:
         defaults_cls = defaults_registry[feature_type]
-        dump_default = defaults_cls.Schema().dump({})
-        load_default = lambda: defaults_cls.Schema().load({})
+        dump_default = defaults_cls.model_validate({}).to_dict()
+        load_default = lambda: defaults_cls.model_validate({})
 
         return field(
             metadata={

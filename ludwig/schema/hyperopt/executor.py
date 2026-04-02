@@ -78,7 +78,7 @@ def ExecutorDataclassField(description: str, default: dict = {}):
         def _deserialize(self, value, attr, data, **kwargs):
             if isinstance(value, dict):
                 try:
-                    return ExecutorConfig.Schema().load(value)
+                    return ExecutorConfig.model_validate(value)
                 except (TypeError, ConfigValidationError):
                     raise ConfigValidationError(f"Invalid params for executor: {value}, see ExecutorConfig class.")
             raise ConfigValidationError("Field should be dict")
@@ -93,8 +93,8 @@ def ExecutorDataclassField(description: str, default: dict = {}):
     if not isinstance(default, dict):
         raise ConfigValidationError(f"Invalid default: `{default}`")
 
-    load_default = lambda: ExecutorConfig.Schema().load(default)
-    dump_default = ExecutorConfig.Schema().dump(default)
+    load_default = lambda: ExecutorConfig.model_validate(default)
+    dump_default = ExecutorConfig.model_validate(default).to_dict()
 
     return field(
         metadata={

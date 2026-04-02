@@ -73,7 +73,7 @@ def SearchAlgorithmDataclassField(description: str = "", default: dict = {"type"
         def _deserialize(self, value, attr, data, **kwargs):
             if isinstance(value, dict):
                 try:
-                    return BaseSearchAlgorithmConfig.Schema().load(value)
+                    return BaseSearchAlgorithmConfig.model_validate(value)
                 except (TypeError, ConfigValidationError):
                     raise ConfigValidationError(
                         f"Invalid params for scheduler: {value}, see SearchAlgorithmConfig class."
@@ -100,8 +100,8 @@ def SearchAlgorithmDataclassField(description: str = "", default: dict = {"type"
     if not isinstance(default, dict):
         raise ConfigValidationError(f"Invalid default: `{default}`")
 
-    load_default = lambda: BaseSearchAlgorithmConfig.Schema().load(default)
-    dump_default = BaseSearchAlgorithmConfig.Schema().dump(default)
+    load_default = lambda: BaseSearchAlgorithmConfig.model_validate(default)
+    dump_default = BaseSearchAlgorithmConfig.model_validate(default).to_dict()
 
     return field(
         metadata={
