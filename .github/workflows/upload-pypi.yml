@@ -27,10 +27,10 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Build source distribution
+      - name: Build source distribution and wheel
         run: |
-          pip install setuptools
-          python setup.py sdist
+          pip install build
+          python -m build
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
