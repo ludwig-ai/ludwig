@@ -73,8 +73,8 @@ logger = logging.getLogger(__name__)
 RECURSION_STOP_ENUM = {"weights_initializer", "bias_initializer", "norm_params"}
 
 
-# TODO: Change to RAISE and update descriptions once we want to enforce strict schemas.
-LUDWIG_SCHEMA_VALIDATION_POLICY_VAR = os.environ.get(LUDWIG_SCHEMA_VALIDATION_POLICY, "exclude").lower()
+# Strict by default: reject unknown fields. Set LUDWIG_SCHEMA_VALIDATION_POLICY=exclude to allow extra fields.
+LUDWIG_SCHEMA_VALIDATION_POLICY_VAR = os.environ.get(LUDWIG_SCHEMA_VALIDATION_POLICY, "forbid").lower()
 
 
 # Sentinel for TypeSelection and NestedConfigField metadata markers
