@@ -29,12 +29,12 @@ from ludwig.schema.features.utils import (
 )
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig
+from ludwig.schema.utils import LudwigBaseConfig
 
 
 @DeveloperAPI
 @input_mixin_registry.register(TEXT)
-class TextInputFeatureConfigMixin(BaseMarshmallowConfig):
+class TextInputFeatureConfigMixin(LudwigBaseConfig):
     """TextInputFeatureConfigMixin is a dataclass that configures the parameters used in both the text input
     feature and the text global defaults section of the Ludwig Config."""
 
@@ -74,7 +74,7 @@ class LLMTextInputFeatureConfig(TextInputFeatureConfig):
 
 @DeveloperAPI
 @output_mixin_registry.register(TEXT)
-class TextOutputFeatureConfigMixin(BaseMarshmallowConfig):
+class TextOutputFeatureConfigMixin(LudwigBaseConfig):
     """TextOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the text output
     feature and the text global defaults section of the Ludwig Config."""
 

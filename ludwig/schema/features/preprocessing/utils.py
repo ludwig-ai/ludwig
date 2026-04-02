@@ -49,7 +49,7 @@ def PreprocessingDataclassField(feature_type: str):
 
         def _jsonschema_type_mapping(self):
             preprocessor_cls = preprocessing_registry[feature_type]
-            props = schema_utils.unload_jsonschema_from_marshmallow_class(preprocessor_cls)["properties"]
+            props = schema_utils.unload_jsonschema_from_config_class(preprocessor_cls)["properties"]
             return {
                 "type": "object",
                 "properties": props,

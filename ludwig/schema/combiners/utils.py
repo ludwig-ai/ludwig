@@ -84,7 +84,7 @@ def get_combiner_conds() -> list[dict[str, Any]]:
     for combiner_type in combiner_types:
         combiner_cls = combiner_config_registry[combiner_type]
         schema_cls = combiner_cls
-        combiner_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
+        combiner_schema = schema_utils.unload_jsonschema_from_config_class(schema_cls)
         combiner_props = combiner_schema["properties"]
         schema_utils.remove_duplicate_fields(combiner_props)
         combiner_cond = schema_utils.create_cond({"type": combiner_type}, combiner_props)
@@ -99,7 +99,7 @@ class CombinerSelection(schema_utils.TypeSelection):
 
         super().__init__(registry=combiner_config_registry, default_value=DEFAULT_VALUE, description=DESCRIPTION)
 
-    def get_schema_from_registry(self, key: str) -> type[schema_utils.BaseMarshmallowConfig]:
+    def get_schema_from_registry(self, key: str) -> type[schema_utils.LudwigBaseConfig]:
         return self.registry[key]
 
     def _jsonschema_type_mapping(self):

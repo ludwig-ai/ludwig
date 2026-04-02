@@ -86,7 +86,7 @@ def get_input_feature_conds(model_type: str):
     conds = []
     for feature_type in input_feature_types:
         schema_cls = get_input_feature_cls(model_type, feature_type)
-        feature_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
+        feature_schema = schema_utils.unload_jsonschema_from_config_class(schema_cls)
         feature_props = feature_schema["properties"]
         schema_utils.remove_duplicate_fields(feature_props)
 
@@ -135,7 +135,7 @@ def get_output_feature_conds(model_type: str):
     conds = []
     for feature_type in output_feature_types:
         schema_cls = get_output_feature_cls(model_type, feature_type)
-        feature_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
+        feature_schema = schema_utils.unload_jsonschema_from_config_class(schema_cls)
         feature_props = feature_schema["properties"]
         schema_utils.remove_duplicate_fields(feature_props)
         feature_cond = schema_utils.create_cond({"type": feature_type}, feature_props)

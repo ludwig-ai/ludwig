@@ -17,7 +17,7 @@ for any params it includes that are not present in your schema config.
 """
 
 
-class DebertaModelParams(schema_utils.BaseMarshmallowConfig):
+class DebertaModelParams(schema_utils.LudwigBaseConfig):
     @classmethod
     def get_hf_config_param_names(cls) -> set[str]:
         return DebertaModelParams.get_valid_field_names()

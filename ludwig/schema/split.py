@@ -16,7 +16,7 @@ def get_split_cls(name: str):
 
 
 @DeveloperAPI
-class BaseSplitConfig(schema_utils.BaseMarshmallowConfig):
+class BaseSplitConfig(schema_utils.LudwigBaseConfig):
     """This Dataclass is a base schema for the nested split config under preprocessing."""
 
     type: str
@@ -150,7 +150,7 @@ def get_split_conds():
     conds = []
     for splitter in split_config_registry.data:
         splitter_cls = split_config_registry.data[splitter]
-        other_props = schema_utils.unload_jsonschema_from_marshmallow_class(splitter_cls)["properties"]
+        other_props = schema_utils.unload_jsonschema_from_config_class(splitter_cls)["properties"]
         schema_utils.remove_duplicate_fields(other_props, [TYPE])
         splitter_cond = schema_utils.create_cond(
             {"type": splitter},
@@ -172,7 +172,7 @@ def SplitDataclassField(default: str) -> Field:
         def __init__(self):
             super().__init__(registry=split_config_registry.data, default_value=default)
 
-        def get_schema_from_registry(self, key: str) -> type[schema_utils.BaseMarshmallowConfig]:
+        def get_schema_from_registry(self, key: str) -> type[schema_utils.LudwigBaseConfig]:
             return split_config_registry.data[key]
 
         def _jsonschema_type_mapping(self):

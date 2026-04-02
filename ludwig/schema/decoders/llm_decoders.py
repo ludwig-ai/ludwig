@@ -5,11 +5,11 @@ from ludwig.constants import CATEGORY, MODEL_LLM, TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import register_decoder_config
-from ludwig.schema.utils import BaseMarshmallowConfig
+from ludwig.schema.utils import LudwigBaseConfig
 
 
 @DeveloperAPI
-class BaseExtractorDecoderConfig(BaseMarshmallowConfig):
+class BaseExtractorDecoderConfig(LudwigBaseConfig):
     tokenizer: str = "hf_tokenizer"
 
     input_size: int = schema_utils.PositiveInteger(

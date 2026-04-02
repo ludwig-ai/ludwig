@@ -22,7 +22,7 @@ from ludwig.schema.features.utils import (
 )
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig
+from ludwig.schema.utils import LudwigBaseConfig
 
 # Augmentation operations when augmentation is set to True
 AUGMENTATION_DEFAULT_OPERATIONS = [
@@ -34,7 +34,7 @@ AUGMENTATION_DEFAULT_OPERATIONS = [
 @DeveloperAPI
 @ecd_defaults_config_registry.register(IMAGE)
 @input_mixin_registry.register(IMAGE)
-class ImageInputFeatureConfigMixin(BaseMarshmallowConfig):
+class ImageInputFeatureConfigMixin(LudwigBaseConfig):
     """ImageInputFeatureConfigMixin is a dataclass that configures the parameters used in both the image input
     feature and the image global defaults section of the Ludwig Config."""
 
@@ -68,7 +68,7 @@ class ImageInputFeatureConfig(ImageInputFeatureConfigMixin, BaseInputFeatureConf
 
 @DeveloperAPI
 @output_mixin_registry.register(IMAGE)
-class ImageOutputFeatureConfigMixin(BaseMarshmallowConfig):
+class ImageOutputFeatureConfigMixin(LudwigBaseConfig):
     """ImageOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the image output
     feature and the image global defaults section of the Ludwig Config."""
 

@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 @DeveloperAPI
-class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
+class BaseEncoderConfig(schema_utils.LudwigBaseConfig, ABC):
     """Base class for encoders."""
 
     type: str

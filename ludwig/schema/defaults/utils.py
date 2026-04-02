@@ -32,7 +32,7 @@ def DefaultsDataclassField(feature_type: str, defaults_registry: Registry = ecd_
 
         def _jsonschema_type_mapping(self):
             defaults_cls = defaults_registry[feature_type]
-            props = schema_utils.unload_jsonschema_from_marshmallow_class(defaults_cls)["properties"]
+            props = schema_utils.unload_jsonschema_from_config_class(defaults_cls)["properties"]
             return {
                 "type": "object",
                 "properties": props,

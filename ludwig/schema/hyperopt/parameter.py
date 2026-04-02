@@ -24,7 +24,7 @@ def log_base_field(default: float = 10) -> FieldInfo:
 
 @DeveloperAPI
 @register_parameter_config("choice")
-class ChoiceParameterConfig(schema_utils.BaseMarshmallowConfig):
+class ChoiceParameterConfig(schema_utils.LudwigBaseConfig):
     """Config for a randomly sampled categorical search space."""
 
     space: str = schema_utils.ProtectedString("choice")
@@ -53,7 +53,7 @@ class ChoiceParameterConfig(schema_utils.BaseMarshmallowConfig):
 
 @DeveloperAPI
 @register_parameter_config("grid_search")
-class GridSearchParameterConfig(schema_utils.BaseMarshmallowConfig):
+class GridSearchParameterConfig(schema_utils.LudwigBaseConfig):
     """Config for a grid search space."""
 
     space: str = schema_utils.ProtectedString("grid_search")
@@ -75,7 +75,7 @@ class GridSearchParameterConfig(schema_utils.BaseMarshmallowConfig):
 
 @DeveloperAPI
 @register_parameter_config("uniform")
-class UniformParameterConfig(schema_utils.BaseMarshmallowConfig):
+class UniformParameterConfig(schema_utils.LudwigBaseConfig):
     """Config for a real-valued uniform search space."""
 
     space: str = schema_utils.ProtectedString("uniform")
@@ -119,7 +119,7 @@ class QLogUniformParameterConfig(UniformParameterConfig):
 
 @DeveloperAPI
 @register_parameter_config("randn")
-class RandnParameterConfig(schema_utils.BaseMarshmallowConfig):
+class RandnParameterConfig(schema_utils.LudwigBaseConfig):
     """Config for a Gaussian search space."""
 
     space: str = schema_utils.ProtectedString("randn")
@@ -141,7 +141,7 @@ class QRandnParameterConfig(RandnParameterConfig):
 
 @DeveloperAPI
 @register_parameter_config("randint")
-class RandintParameterConfig(schema_utils.BaseMarshmallowConfig):
+class RandintParameterConfig(schema_utils.LudwigBaseConfig):
     """Config for an integer-valued uniform search space."""
 
     space: str = schema_utils.ProtectedString("randint")

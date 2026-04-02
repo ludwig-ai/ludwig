@@ -31,7 +31,7 @@ def evaluated_rewards_field(description: str | None = None):
 
 
 @DeveloperAPI
-class BaseSearchAlgorithmConfig(schema_utils.BaseMarshmallowConfig):
+class BaseSearchAlgorithmConfig(schema_utils.LudwigBaseConfig):
     """Basic search algorithm settings."""
 
     type: str = schema_utils.String(default="variant_generator", description="The search algorithm to use.")
@@ -82,7 +82,7 @@ def SearchAlgorithmDataclassField(description: str = "", default: dict = {"type"
 
         def _jsonschema_type_mapping(self):
             return {
-                # **schema_utils.unload_jsonschema_from_marshmallow_class(BaseSearchAlgorithmConfig),
+                # **schema_utils.unload_jsonschema_from_config_class(BaseSearchAlgorithmConfig),
                 "type": "object",
                 "properties": {
                     "type": {

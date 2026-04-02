@@ -41,7 +41,7 @@ _info_console = Console(stderr=True, style="bold green")
 
 
 @DeveloperAPI
-class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
+class BaseFeatureConfig(schema_utils.LudwigBaseConfig):
     """Base class for feature configs."""
 
     def __post_init__(self):

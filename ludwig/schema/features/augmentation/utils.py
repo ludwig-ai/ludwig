@@ -178,7 +178,7 @@ def get_augmentation_list_conds(feature_type: str):
     conds = []
     for augmentation_op in get_augmentation_classes(feature_type):
         schema_cls = get_augmentation_cls(feature_type, augmentation_op)
-        augmentation_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
+        augmentation_schema = schema_utils.unload_jsonschema_from_config_class(schema_cls)
         augmentation_props = augmentation_schema["properties"]
         schema_utils.remove_duplicate_fields(augmentation_props)
         augmentation_cond = schema_utils.create_cond({"type": augmentation_op}, augmentation_props)

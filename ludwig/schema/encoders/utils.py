@@ -78,7 +78,7 @@ def get_encoder_conds(encoder_classes: dict[str, type["BaseEncoderConfig"]]) -> 
     """Returns a JSON schema of conditionals to validate against encoder types for specific feature types."""
     conds = []
     for encoder_type, encoder_cls in encoder_classes.items():
-        other_props = schema_utils.unload_jsonschema_from_marshmallow_class(encoder_cls)["properties"]
+        other_props = schema_utils.unload_jsonschema_from_config_class(encoder_cls)["properties"]
         schema_utils.remove_duplicate_fields(other_props)
         encoder_cond = schema_utils.create_cond(
             {"type": encoder_type},
@@ -104,7 +104,7 @@ def EncoderDataclassField(
                 registry=encoder_registry, default_value=default, description=description, allow_str_value=True
             )
 
-        def get_schema_from_registry(self, key: str) -> type[schema_utils.BaseMarshmallowConfig]:
+        def get_schema_from_registry(self, key: str) -> type[schema_utils.LudwigBaseConfig]:
             return encoder_registry[key]
 
         def _jsonschema_type_mapping(self):

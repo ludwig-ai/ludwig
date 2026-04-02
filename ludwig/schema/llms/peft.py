@@ -25,7 +25,7 @@ def register_adapter(name: str):
 
 
 @DeveloperAPI
-class LoraPostprocessorConfig(schema_utils.BaseMarshmallowConfig):
+class LoraPostprocessorConfig(schema_utils.LudwigBaseConfig):
     """This Dataclass is a schema for the nested postprocessing config under adapter of type "lora"."""
 
     merge_adapter_into_base_model: bool = schema_utils.Boolean(
@@ -41,16 +41,16 @@ model (rather than having to load base and fine-tuned models separately).""",
 
 
 @DeveloperAPI
-class LoraPostprocessorConfigField(schema_utils.DictMarshmallowField):
+class LoraPostprocessorConfigField(schema_utils.NestedConfigField):
     def __init__(self):
         super().__init__(LoraPostprocessorConfig)
 
     def _jsonschema_type_mapping(self):
-        return schema_utils.unload_jsonschema_from_marshmallow_class(LoraPostprocessorConfig, title="LoraPostprocessor")
+        return schema_utils.unload_jsonschema_from_config_class(LoraPostprocessorConfig, title="LoraPostprocessor")
 
 
 @DeveloperAPI
-class BaseAdapterConfig(schema_utils.BaseMarshmallowConfig, ABC):
+class BaseAdapterConfig(schema_utils.LudwigBaseConfig, ABC):
     type: str
 
     pretrained_adapter_weights: str | None = schema_utils.String(
@@ -556,7 +556,7 @@ class IA3Config(BaseAdapterConfig):
 def get_adapter_conds():
     conds = []
     for adapter_type, adapter_cls in adapter_registry.items():
-        other_props = schema_utils.unload_jsonschema_from_marshmallow_class(adapter_cls)["properties"]
+        other_props = schema_utils.unload_jsonschema_from_config_class(adapter_cls)["properties"]
         schema_utils.remove_duplicate_fields(other_props)
         preproc_cond = schema_utils.create_cond(
             {"type": adapter_type},
@@ -581,7 +581,7 @@ def AdapterDataclassField(default: str | None = None):
                 allow_none=True,
             )
 
-        def get_schema_from_registry(self, key: str) -> type[schema_utils.BaseMarshmallowConfig]:
+        def get_schema_from_registry(self, key: str) -> type[schema_utils.LudwigBaseConfig]:
             return adapter_registry[key]
 
         @staticmethod

@@ -6,7 +6,7 @@ from ludwig.error import ConfigValidationError
 
 
 @DeveloperAPI
-class ProfilerConfig(schema_utils.BaseMarshmallowConfig):
+class ProfilerConfig(schema_utils.LudwigBaseConfig):
     """Dataclass that holds profiling parameters for torch profile scheduler.
 
     The profiler will skip the first skip_first steps, then wait for wait steps, then do the warmup for the next warmup
@@ -78,7 +78,7 @@ def ProfilerDataclassField(description: str, default: dict = {}):
 
         def _jsonschema_type_mapping(self):
             return {
-                **schema_utils.unload_jsonschema_from_marshmallow_class(ProfilerConfig),
+                **schema_utils.unload_jsonschema_from_config_class(ProfilerConfig),
                 "title": "profiler_options",
                 "description": description,
             }

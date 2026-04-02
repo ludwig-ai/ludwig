@@ -8,7 +8,7 @@ from ludwig.schema.hyperopt.scheduler import BaseSchedulerConfig, SchedulerDatac
 
 
 @DeveloperAPI
-class ExecutorConfig(schema_utils.BaseMarshmallowConfig):
+class ExecutorConfig(schema_utils.LudwigBaseConfig):
     """Basic executor settings."""
 
     type: str = schema_utils.ProtectedString(RAY)
@@ -85,7 +85,7 @@ def ExecutorDataclassField(description: str, default: dict = {}):
 
         def _jsonschema_type_mapping(self):
             return {
-                **schema_utils.unload_jsonschema_from_marshmallow_class(ExecutorConfig),
+                **schema_utils.unload_jsonschema_from_config_class(ExecutorConfig),
                 "title": "executor",
                 "description": description,
             }

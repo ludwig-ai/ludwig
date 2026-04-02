@@ -19,12 +19,12 @@ from ludwig.schema.features.utils import (
 )
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig
+from ludwig.schema.utils import LudwigBaseConfig
 
 
 @DeveloperAPI
 @input_mixin_registry.register(NUMBER)
-class NumberInputFeatureConfigMixin(BaseMarshmallowConfig):
+class NumberInputFeatureConfigMixin(LudwigBaseConfig):
     """NumberInputFeatureConfigMixin is a dataclass that configures the parameters used in both the number input
     feature and the number global defaults section of the Ludwig Config."""
 
@@ -52,7 +52,7 @@ class ECDNumberInputFeatureConfig(NumberInputFeatureConfig):
 
 @DeveloperAPI
 @output_mixin_registry.register(NUMBER)
-class NumberOutputFeatureConfigMixin(BaseMarshmallowConfig):
+class NumberOutputFeatureConfigMixin(LudwigBaseConfig):
     """NumberOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the number output
     feature and the number global defaults section of the Ludwig Config."""
 

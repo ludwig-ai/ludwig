@@ -7,13 +7,13 @@ from ludwig.schema.features.base import BaseInputFeatureConfig
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import ecd_defaults_config_registry, ecd_input_config_registry, input_mixin_registry
-from ludwig.schema.utils import BaseMarshmallowConfig
+from ludwig.schema.utils import LudwigBaseConfig
 
 
 @DeveloperAPI
 @ecd_defaults_config_registry.register(DATE)
 @input_mixin_registry.register(DATE)
-class DateInputFeatureConfigMixin(BaseMarshmallowConfig):
+class DateInputFeatureConfigMixin(LudwigBaseConfig):
     """DateInputFeatureConfigMixin is a dataclass that configures the parameters used in both the date input
     feature and the date global defaults section of the Ludwig Config."""
 

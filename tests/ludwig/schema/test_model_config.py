@@ -44,7 +44,7 @@ from ludwig.schema.features.number_feature import NumberOutputFeatureConfig
 from ludwig.schema.features.text_feature import TextOutputFeatureConfig
 from ludwig.schema.llms.quantization import QuantizationConfig
 from ludwig.schema.model_config import ModelConfig
-from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules
+from ludwig.schema.utils import convert_submodules, LudwigBaseConfig
 
 config_sections = {INPUT_FEATURES, OUTPUT_FEATURES, PREPROCESSING, TRAINER, COMBINER, DEFAULTS, HYPEROPT}
 
@@ -563,8 +563,8 @@ def test_convert_submodules():
     trainer = convert_submodules(config_obj.trainer.__dict__)
     input_features = config_obj.input_features.to_list()
 
-    assert not isinstance(trainer[OPTIMIZER], BaseMarshmallowConfig)
-    assert not isinstance(input_features[0][PREPROCESSING], BaseMarshmallowConfig)
+    assert not isinstance(trainer[OPTIMIZER], LudwigBaseConfig)
+    assert not isinstance(input_features[0][PREPROCESSING], LudwigBaseConfig)
 
 
 def test_defaults_mixins():

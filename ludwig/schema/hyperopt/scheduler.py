@@ -68,7 +68,7 @@ def max_t_alias(default=100):
 
 
 @DeveloperAPI
-class BaseSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
+class BaseSchedulerConfig(schema_utils.LudwigBaseConfig, ABC):
     """Base class for schedulers.
 
     Not meant to be used directly.
@@ -464,7 +464,7 @@ def get_scheduler_conds():
     conds = []
     for scheduler_config in hyperopt_utils.scheduler_config_registry:
         scheduler_cls = hyperopt_utils.scheduler_config_registry[scheduler_config]
-        other_props = schema_utils.unload_jsonschema_from_marshmallow_class(scheduler_cls)["properties"]
+        other_props = schema_utils.unload_jsonschema_from_config_class(scheduler_cls)["properties"]
         schema_utils.remove_duplicate_fields(other_props)
         preproc_cond = schema_utils.create_cond(
             {"type": scheduler_config},

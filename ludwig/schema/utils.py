@@ -1,7 +1,7 @@
 """Ludwig schema utilities - pydantic 2 based.
 
 This module provides the foundation for Ludwig's declarative config system.
-All config classes inherit from BaseMarshmallowConfig (a pydantic BaseModel)
+All config classes inherit from LudwigBaseConfig (a pydantic BaseModel)
 and use field factory functions (String, Integer, Float, etc.) that return
 pydantic Field() objects.
 """
@@ -37,7 +37,7 @@ from ludwig.utils.torch_utils import activations, initializer_registry
 class LudwigSchemaField:
     """Plain Python base class for Ludwig schema fields.
 
-    Replaces marshmallow fields.Field as the base for TypeSelection, DictMarshmallowField (NestedConfigField), and all
+    Replaces marshmallow fields.Field as the base for TypeSelection, NestedConfigField (NestedConfigField), and all
     custom field classes. The contract (get_default_field, _jsonschema_type_mapping, _deserialize) stays identical.
     """
 
@@ -77,7 +77,7 @@ RECURSION_STOP_ENUM = {"weights_initializer", "bias_initializer", "norm_params"}
 LUDWIG_SCHEMA_VALIDATION_POLICY_VAR = os.environ.get(LUDWIG_SCHEMA_VALIDATION_POLICY, "exclude").lower()
 
 
-# Sentinel for TypeSelection and DictMarshmallowField metadata markers
+# Sentinel for TypeSelection and NestedConfigField metadata markers
 class _TypeSelectionMarker:
     """Marker stored in Field.metadata to indicate this field uses TypeSelection dispatch."""
 
@@ -86,14 +86,14 @@ class _TypeSelectionMarker:
 
 
 class _NestedConfigMarker:
-    """Marker stored in Field.metadata to indicate this field uses DictMarshmallowField dispatch."""
+    """Marker stored in Field.metadata to indicate this field uses NestedConfigField dispatch."""
 
     def __init__(self, cls, allow_none=True):
         self.cls = cls
         self.allow_none = allow_none
 
 
-ConfigT = Any  # TypeVar("ConfigT", bound="BaseMarshmallowConfig")
+ConfigT = Any  # TypeVar("ConfigT", bound="LudwigBaseConfig")
 
 
 def _convert_dataclass_field_to_pydantic(dc_field) -> FieldInfo:
@@ -115,20 +115,19 @@ def _convert_dataclass_field_to_pydantic(dc_field) -> FieldInfo:
             # Store as a marker so model_validator can use it for dispatch
             if isinstance(marshmallow_field, TypeSelection):
                 metadata_list.append(_TypeSelectionMarker(marshmallow_field))
-            elif isinstance(marshmallow_field, DictMarshmallowField):
+            elif isinstance(marshmallow_field, NestedConfigField):
                 # Check if the subclass overrides _jsonschema_type_mapping
                 has_custom_schema = (
-                    type(marshmallow_field)._jsonschema_type_mapping
-                    is not DictMarshmallowField._jsonschema_type_mapping
+                    type(marshmallow_field)._jsonschema_type_mapping is not NestedConfigField._jsonschema_type_mapping
                 )
                 if has_custom_schema:
                     # Store as MarshmallowFieldMarker to preserve custom JSON schema generation
-                    metadata_list.append(_MarshmallowFieldMarker(marshmallow_field))
+                    metadata_list.append(_LegacyFieldMarker(marshmallow_field))
                 else:
                     metadata_list.append(_NestedConfigMarker(marshmallow_field.cls, marshmallow_field.allow_none))
             else:
                 # Generic marshmallow field - store for reference
-                metadata_list.append(_MarshmallowFieldMarker(marshmallow_field))
+                metadata_list.append(_LegacyFieldMarker(marshmallow_field))
 
     # Extract default and create FieldInfo.
     # Note: pydantic 2's Field() does not accept a `metadata` kwarg — set it on the FieldInfo after creation.
@@ -144,7 +143,7 @@ def _convert_dataclass_field_to_pydantic(dc_field) -> FieldInfo:
     return fi
 
 
-class _MarshmallowFieldMarker:
+class _LegacyFieldMarker:
     """Stores a marshmallow field for backward compat during migration."""
 
     def __init__(self, marshmallow_field):
@@ -185,7 +184,7 @@ class _LudwigModelMeta(type(BaseModel)):
                 if isinstance(value, _dc.Field):
                     namespace[attr_name] = _convert_dataclass_field_to_pydantic(value)
                 elif isinstance(value, LudwigSchemaField) and hasattr(value, "get_default_field"):
-                    # TypeSelection and DictMarshmallowField instances need conversion
+                    # TypeSelection and NestedConfigField instances need conversion
                     namespace[attr_name] = value.get_default_field()
 
         # Auto-widen annotations to bridge marshmallow→pydantic gap.
@@ -204,18 +203,18 @@ class _LudwigModelMeta(type(BaseModel)):
 
             value = namespace[attr_name]
 
-            # For fields with markers (TypeSelection/DictMarshmallowField/MarshmallowField),
+            # For fields with markers (TypeSelection/NestedConfigField/MarshmallowField),
             # set annotation to Any since the actual validation happens in the marker
             if isinstance(value, FieldInfo):
                 jse = getattr(value, "json_schema_extra", None)
                 has_marker = False
                 if isinstance(jse, dict) and "metadata" in jse:
                     has_marker = any(
-                        isinstance(m, (_TypeSelectionMarker, _NestedConfigMarker, _MarshmallowFieldMarker))
+                        isinstance(m, (_TypeSelectionMarker, _NestedConfigMarker, _LegacyFieldMarker))
                         for m in jse["metadata"]
                     )
                 for meta in getattr(value, "metadata", None) or []:
-                    if isinstance(meta, (_TypeSelectionMarker, _NestedConfigMarker, _MarshmallowFieldMarker)):
+                    if isinstance(meta, (_TypeSelectionMarker, _NestedConfigMarker, _LegacyFieldMarker)):
                         has_marker = True
                         break
 
@@ -290,7 +289,7 @@ class _LudwigModelMeta(type(BaseModel)):
 
 
 @DeveloperAPI
-class BaseMarshmallowConfig(BaseModel, metaclass=_LudwigModelMeta):
+class LudwigBaseConfig(BaseModel, metaclass=_LudwigModelMeta):
     """Base pydantic model for all Ludwig config classes.
 
     Provides from_dict, to_dict, and other convenience methods on top of pydantic 2 validation.
@@ -322,7 +321,7 @@ class BaseMarshmallowConfig(BaseModel, metaclass=_LudwigModelMeta):
                     DeprecationWarning,
                 )
 
-        # Resolve TypeSelection, DictMarshmallowField, and legacy marshmallow fields
+        # Resolve TypeSelection, NestedConfigField, and legacy marshmallow fields
         for fname, finfo in cls.model_fields.items():
             if fname not in data:
                 continue
@@ -339,7 +338,7 @@ class BaseMarshmallowConfig(BaseModel, metaclass=_LudwigModelMeta):
                     data[fname] = meta.type_selection.resolve(value)
                     break
                 elif isinstance(meta, _NestedConfigMarker):
-                    if isinstance(value, BaseMarshmallowConfig):
+                    if isinstance(value, LudwigBaseConfig):
                         break  # Already a config instance, skip re-validation
                     if isinstance(value, dict):
                         try:
@@ -349,10 +348,10 @@ class BaseMarshmallowConfig(BaseModel, metaclass=_LudwigModelMeta):
                                 f"Invalid params: {value}, see `{meta.cls}` definition. Error: {e}"
                             )
                     break
-                elif isinstance(meta, _MarshmallowFieldMarker):
+                elif isinstance(meta, _LegacyFieldMarker):
                     # Legacy marshmallow field - use its _deserialize for validation
                     # Skip if value is already a config instance (avoid double-validation)
-                    if isinstance(value, BaseMarshmallowConfig):
+                    if isinstance(value, LudwigBaseConfig):
                         break
                     mfield = meta.marshmallow_field
                     if hasattr(mfield, "_deserialize") and value is not None:
@@ -445,7 +444,7 @@ class BaseMarshmallowConfig(BaseModel, metaclass=_LudwigModelMeta):
         return scrub_creds(convert_submodules(vars(self)))
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> "BaseMarshmallowConfig":
+    def from_dict(cls, d: dict[str, Any]) -> "LudwigBaseConfig":
         """Create a config instance from a dictionary."""
         return cls.model_validate(d)
 
@@ -477,14 +476,14 @@ def get_marshmallow_field_class_name(field_info):
 
 
 @DeveloperAPI
-def load_config(cls: type["BaseMarshmallowConfig"], **kwargs) -> "BaseMarshmallowConfig":
+def load_config(cls: type["LudwigBaseConfig"], **kwargs) -> "LudwigBaseConfig":
     """Takes a config class and instantiates it with the given keyword args as parameters."""
-    assert_is_a_marshmallow_class(cls)
+    assert_is_a_config_class(cls)
     return cls.model_validate(kwargs)
 
 
 @DeveloperAPI
-def load_trainer_with_kwargs(model_type: str, kwargs: dict) -> tuple["BaseMarshmallowConfig", dict[str, Any]]:
+def load_trainer_with_kwargs(model_type: str, kwargs: dict) -> tuple["LudwigBaseConfig", dict[str, Any]]:
     """Special case of `load_config_with_kwargs` for the trainer schemas."""
     from ludwig.constants import MODEL_LLM
     from ludwig.schema.trainer import ECDTrainerConfig, LLMTrainerConfig
@@ -499,13 +498,13 @@ def load_trainer_with_kwargs(model_type: str, kwargs: dict) -> tuple["BaseMarshm
 
 @DeveloperAPI
 def load_config_with_kwargs(
-    cls: type["BaseMarshmallowConfig"], kwargs_overrides
-) -> tuple["BaseMarshmallowConfig", dict[str, Any]]:
+    cls: type["LudwigBaseConfig"], kwargs_overrides
+) -> tuple["LudwigBaseConfig", dict[str, Any]]:
     """Instantiates a config class filtering kwargs to only valid fields.
 
     Returns a tuple of (config, remaining_kwargs).
     """
-    assert_is_a_marshmallow_class(cls)
+    assert_is_a_config_class(cls)
     fields = cls.model_fields.keys()
     return load_config(cls, **{k: v for k, v in kwargs_overrides.items() if k in fields}), {
         k: v for k, v in kwargs_overrides.items() if k not in fields
@@ -520,11 +519,11 @@ def convert_submodules(config_dict: dict) -> dict[str, Any]:
     for k, v in output_dict.items():
         if isinstance(v, dict):
             convert_submodules(v)
-        elif isinstance(v, BaseMarshmallowConfig):
+        elif isinstance(v, LudwigBaseConfig):
             output_dict[k] = v.to_dict()
             convert_submodules(output_dict[k])
         elif isinstance(v, list):
-            output_dict[k] = [x.to_dict() if isinstance(x, BaseMarshmallowConfig) else x for x in v]
+            output_dict[k] = [x.to_dict() if isinstance(x, LudwigBaseConfig) else x for x in v]
         elif isinstance(v, ListSerializable):
             output_dict[k] = v.to_list()
 
@@ -557,11 +556,11 @@ class ListSerializable(ABC):
 
 
 @DeveloperAPI
-def assert_is_a_marshmallow_class(cls):
+def assert_is_a_config_class(cls):
     """Assert that cls is a Ludwig config class (pydantic BaseModel)."""
     assert issubclass(
-        cls, BaseMarshmallowConfig
-    ), f"Expected a Ludwig config class (BaseMarshmallowConfig subclass), but `{cls}` is not."
+        cls, LudwigBaseConfig
+    ), f"Expected a Ludwig config class (LudwigBaseConfig subclass), but `{cls}` is not."
 
 
 def _default_matches_json_type(default_val, type_str) -> bool:
@@ -592,8 +591,8 @@ def _default_matches_json_type(default_val, type_str) -> bool:
 def _field_info_to_jsonschema(fname: str, finfo: FieldInfo, annotation: type | None = None) -> dict:
     """Convert a pydantic FieldInfo to a JSON schema fragment.
 
-    Checks metadata markers for TypeSelection/DictMarshmallowField/legacy marshmallow fields, and falls back to type-
-    based mapping for plain fields.
+    Checks metadata markers for TypeSelection/NestedConfigField/legacy marshmallow fields, and falls back to type- based
+    mapping for plain fields.
     """
     # Check for markers in both metadata and json_schema_extra
     markers = list(finfo.metadata or [])
@@ -610,9 +609,9 @@ def _field_info_to_jsonschema(fname: str, finfo: FieldInfo, annotation: type | N
             return {"type": "object"}
 
         if isinstance(meta, _NestedConfigMarker):
-            return unload_jsonschema_from_marshmallow_class(meta.cls)
+            return unload_jsonschema_from_config_class(meta.cls)
 
-        if isinstance(meta, _MarshmallowFieldMarker):
+        if isinstance(meta, _LegacyFieldMarker):
             mf = meta.marshmallow_field
             if hasattr(mf, "_jsonschema_type_mapping"):
                 custom = mf._jsonschema_type_mapping()
@@ -774,13 +773,13 @@ def _annotation_to_json_type(annotation) -> str | list | None:
 
 
 @DeveloperAPI
-def unload_jsonschema_from_marshmallow_class(mclass, additional_properties: bool = True, title: str = None) -> dict:
+def unload_jsonschema_from_config_class(mclass, additional_properties: bool = True, title: str = None) -> dict:
     """Get a JSON schema dict for a Ludwig config class.
 
-    Iterates over pydantic model_fields and checks metadata markers for TypeSelection, DictMarshmallowField, and legacy
+    Iterates over pydantic model_fields and checks metadata markers for TypeSelection, NestedConfigField, and legacy
     marshmallow fields.
     """
-    assert_is_a_marshmallow_class(mclass)
+    assert_is_a_config_class(mclass)
 
     properties = {}
     annotations = {}
@@ -807,7 +806,7 @@ def unload_jsonschema_from_marshmallow_class(mclass, additional_properties: bool
 # Field Factory Functions
 # ============================================================================
 # All return pydantic Field() objects (FieldInfo) that can be used as class
-# variable defaults in BaseMarshmallowConfig subclasses.
+# variable defaults in LudwigBaseConfig subclasses.
 # ============================================================================
 
 
@@ -1358,7 +1357,7 @@ class TypeSelection(LudwigSchemaField):
             return None
 
         # Already a config instance
-        if isinstance(value, BaseMarshmallowConfig):
+        if isinstance(value, LudwigBaseConfig):
             return value
 
         if self.allow_str_value and isinstance(value, str):
@@ -1382,7 +1381,7 @@ class TypeSelection(LudwigSchemaField):
         """Convert a string shorthand to a dict with the type key."""
         return {self.key: value}
 
-    def get_schema_from_registry(self, key: str) -> type[BaseMarshmallowConfig]:
+    def get_schema_from_registry(self, key: str) -> type[LudwigBaseConfig]:
         """Look up a config class from the registry."""
         return self.registry[key]
 
@@ -1415,7 +1414,7 @@ class TypeSelection(LudwigSchemaField):
 
 
 @DeveloperAPI
-class DictMarshmallowField(LudwigSchemaField):
+class NestedConfigField(LudwigSchemaField):
     """Validates a dict as a specific config class (non-polymorphic).
 
     Used for fields where a dict should be deserialized into a fixed config class.
@@ -1423,7 +1422,7 @@ class DictMarshmallowField(LudwigSchemaField):
 
     def __init__(
         self,
-        cls: type[BaseMarshmallowConfig],
+        cls: type[LudwigBaseConfig],
         allow_none: bool = True,
         default_missing: bool = False,
         description: str = "",
@@ -1446,7 +1445,7 @@ class DictMarshmallowField(LudwigSchemaField):
         raise ConfigValidationError("Field should be None or dict")
 
     def get_default_field(self) -> FieldInfo:
-        """Create a pydantic Field wrapping this DictMarshmallowField."""
+        """Create a pydantic Field wrapping this NestedConfigField."""
         if not self.default_missing:
             cls = self.cls
 
@@ -1460,9 +1459,9 @@ class DictMarshmallowField(LudwigSchemaField):
 
         # Check if subclass overrides _jsonschema_type_mapping - if so, use
         # MarshmallowFieldMarker to preserve custom JSON schema generation
-        has_custom_schema = type(self)._jsonschema_type_mapping is not DictMarshmallowField._jsonschema_type_mapping
+        has_custom_schema = type(self)._jsonschema_type_mapping is not NestedConfigField._jsonschema_type_mapping
         if has_custom_schema:
-            marker = _MarshmallowFieldMarker(self)
+            marker = _LegacyFieldMarker(self)
         else:
             marker = _NestedConfigMarker(self.cls, self.allow_none)
 
@@ -1471,11 +1470,13 @@ class DictMarshmallowField(LudwigSchemaField):
         return fi
 
     def _jsonschema_type_mapping(self):
-        return unload_jsonschema_from_marshmallow_class(self.cls)
+        return unload_jsonschema_from_config_class(self.cls)
 
 
-# Backward compatibility aliases
+# Backward compatibility aliases (old names -> new names)
 ValidationError = ConfigValidationError
-NestedConfigField = DictMarshmallowField
-LudwigConfig = BaseMarshmallowConfig
-unload_jsonschema_from_config_class = unload_jsonschema_from_marshmallow_class
+BaseMarshmallowConfig = LudwigBaseConfig
+DictMarshmallowField = NestedConfigField
+LudwigConfig = LudwigBaseConfig
+unload_jsonschema_from_marshmallow_class = unload_jsonschema_from_config_class
+assert_is_a_marshmallow_class = assert_is_a_config_class

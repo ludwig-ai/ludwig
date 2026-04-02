@@ -20,12 +20,12 @@ from ludwig.schema.features.utils import (
 )
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig
+from ludwig.schema.utils import LudwigBaseConfig
 
 
 @DeveloperAPI
 @input_mixin_registry.register(CATEGORY)
-class CategoryInputFeatureConfigMixin(BaseMarshmallowConfig):
+class CategoryInputFeatureConfigMixin(LudwigBaseConfig):
     """CategoryInputFeatureConfigMixin is a dataclass that configures the parameters used in both the category
     input feature and the category global defaults section of the Ludwig Config."""
 
@@ -54,7 +54,7 @@ class ECDCategoryInputFeatureConfig(CategoryInputFeatureConfig):
 
 @DeveloperAPI
 @output_mixin_registry.register(CATEGORY)
-class CategoryOutputFeatureConfigMixin(BaseMarshmallowConfig):
+class CategoryOutputFeatureConfigMixin(LudwigBaseConfig):
     """CategoryOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the category
     output feature and the category global defaults section of the Ludwig Config."""
 

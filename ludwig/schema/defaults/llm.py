@@ -13,6 +13,6 @@ class LLMDefaultsConfig(BaseDefaultsConfig):
 
 
 @DeveloperAPI
-class LLMDefaultsField(schema_utils.DictMarshmallowField):
+class LLMDefaultsField(schema_utils.NestedConfigField):
     def __init__(self):
         super().__init__(LLMDefaultsConfig)

@@ -44,7 +44,7 @@ model_type_schema_registry = Registry()
 
 
 @DeveloperAPI
-class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
+class ModelConfig(schema_utils.LudwigBaseConfig, ABC):
     input_features: FeatureCollection[BaseInputFeatureConfig]
     output_features: FeatureCollection[BaseOutputFeatureConfig]
 

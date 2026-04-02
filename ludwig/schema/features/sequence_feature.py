@@ -19,12 +19,12 @@ from ludwig.schema.features.utils import (
 )
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig
+from ludwig.schema.utils import LudwigBaseConfig
 
 
 @DeveloperAPI
 @input_mixin_registry.register(SEQUENCE)
-class SequenceInputFeatureConfigMixin(BaseMarshmallowConfig):
+class SequenceInputFeatureConfigMixin(LudwigBaseConfig):
     """SequenceInputFeatureConfigMixin is a dataclass that configures the parameters used in both the sequence
     input feature and the sequence global defaults section of the Ludwig Config."""
 
@@ -48,7 +48,7 @@ class SequenceInputFeatureConfig(SequenceInputFeatureConfigMixin, BaseInputFeatu
 
 @DeveloperAPI
 @output_mixin_registry.register(SEQUENCE)
-class SequenceOutputFeatureConfigMixin(BaseMarshmallowConfig):
+class SequenceOutputFeatureConfigMixin(LudwigBaseConfig):
     """SequenceOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the sequence
     output feature and the sequence global defaults section of the Ludwig Config."""
 

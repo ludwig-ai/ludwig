@@ -9,7 +9,7 @@ from ludwig.schema.metadata import TRAINER_METADATA
 
 
 @DeveloperAPI
-class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
+class LRSchedulerConfig(schema_utils.LudwigBaseConfig, ABC):
     """Configuration for learning rate scheduler parameters."""
 
     decay: str = schema_utils.StringOptions(
@@ -156,7 +156,7 @@ def LRSchedulerDataclassField(description: str, default: dict = None):
 
         def _jsonschema_type_mapping(self):
             return {
-                **schema_utils.unload_jsonschema_from_marshmallow_class(LRSchedulerConfig),
+                **schema_utils.unload_jsonschema_from_config_class(LRSchedulerConfig),
                 "title": "learning_rate_scheduler_options",
                 "description": description,
             }

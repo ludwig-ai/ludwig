@@ -19,12 +19,12 @@ from ludwig.schema.features.utils import (
 )
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig
+from ludwig.schema.utils import LudwigBaseConfig
 
 
 @DeveloperAPI
 @input_mixin_registry.register(BINARY)
-class BinaryInputFeatureConfigMixin(BaseMarshmallowConfig):
+class BinaryInputFeatureConfigMixin(LudwigBaseConfig):
     """BinaryInputFeatureConfigMixin is a dataclass that configures the parameters used in both the binary input
     feature and the binary global defaults section of the Ludwig Config."""
 
@@ -52,7 +52,7 @@ class ECDBinaryInputFeatureConfig(BinaryInputFeatureConfig):
 
 @DeveloperAPI
 @output_mixin_registry.register(BINARY)
-class BinaryOutputFeatureConfigMixin(BaseMarshmallowConfig):
+class BinaryOutputFeatureConfigMixin(LudwigBaseConfig):
     """BinaryOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the binary output
     feature and the binary global defaults section of the Ludwig Config."""
 

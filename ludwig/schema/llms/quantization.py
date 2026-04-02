@@ -15,7 +15,7 @@ warnings.filterwarnings(
 
 
 @DeveloperAPI
-class QuantizationConfig(schema_utils.BaseMarshmallowConfig):
+class QuantizationConfig(schema_utils.LudwigBaseConfig):
     bits: int = schema_utils.IntegerOptions(
         options=[4, 8],
         default=4,
@@ -82,7 +82,7 @@ class QuantizationConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-class QuantizationConfigField(schema_utils.DictMarshmallowField):
+class QuantizationConfigField(schema_utils.NestedConfigField):
     def __init__(self):
         super().__init__(QuantizationConfig, default_missing=True)
 
@@ -96,7 +96,7 @@ class QuantizationConfigField(schema_utils.DictMarshmallowField):
                     "parameter_metadata": convert_metadata_to_json(LLM_METADATA["quantization"]["_oneOf"]["none"]),
                 },
                 {
-                    **schema_utils.unload_jsonschema_from_marshmallow_class(QuantizationConfig),
+                    **schema_utils.unload_jsonschema_from_config_class(QuantizationConfig),
                     "title": "enabled",
                     "description": "Set quantization options.",
                     "parameter_metadata": convert_metadata_to_json(LLM_METADATA["quantization"]["_oneOf"]["object"]),

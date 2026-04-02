@@ -7,13 +7,13 @@ from ludwig.schema.features.base import BaseInputFeatureConfig
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import ecd_defaults_config_registry, ecd_input_config_registry, input_mixin_registry
-from ludwig.schema.utils import BaseMarshmallowConfig
+from ludwig.schema.utils import LudwigBaseConfig
 
 
 @DeveloperAPI
 @ecd_defaults_config_registry.register(H3)
 @input_mixin_registry.register(H3)
-class H3InputFeatureConfigMixin(BaseMarshmallowConfig):
+class H3InputFeatureConfigMixin(LudwigBaseConfig):
     """H3InputFeatureConfigMixin is a dataclass that configures the parameters used in both the h3 input feature
     and the h3 global defaults section of the Ludwig Config."""
 

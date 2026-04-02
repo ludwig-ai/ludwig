@@ -6,7 +6,7 @@ from ludwig.schema.split import BaseSplitConfig, SplitDataclassField
 
 
 @DeveloperAPI
-class PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
+class PreprocessingConfig(schema_utils.LudwigBaseConfig):
     """Global preprocessing config is a dataclass that configures the parameters used for global preprocessing."""
 
     sample_ratio: float = schema_utils.NonNegativeFloat(
@@ -55,6 +55,6 @@ class PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-class PreprocessingField(schema_utils.DictMarshmallowField):
+class PreprocessingField(schema_utils.NestedConfigField):
     def __init__(self):
         super().__init__(PreprocessingConfig)

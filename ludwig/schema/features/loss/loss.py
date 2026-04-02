@@ -62,7 +62,7 @@ CLASS_SIMILARITIES_TEMPERATURE_DESCRIPTION = (
 
 
 @DeveloperAPI
-class BaseLossConfig(schema_utils.BaseMarshmallowConfig):
+class BaseLossConfig(schema_utils.LudwigBaseConfig):
     """Base class for feature configs."""
 
     type: str

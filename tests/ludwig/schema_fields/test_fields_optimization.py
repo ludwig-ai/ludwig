@@ -8,9 +8,9 @@ from ludwig.schema import utils as schema_utils
 
 
 def test_torch_description_pull():
-    example_empty_desc_prop = schema_utils.unload_jsonschema_from_marshmallow_class(lso.AdamOptimizerConfig)[
-        "properties"
-    ]["eps"]
+    example_empty_desc_prop = schema_utils.unload_jsonschema_from_config_class(lso.AdamOptimizerConfig)["properties"][
+        "eps"
+    ]
     assert (
         isinstance(example_empty_desc_prop, dict)
         and "description" in example_empty_desc_prop
@@ -39,7 +39,7 @@ def test_OptimizerDataclassField():
         lso.OptimizerDataclassField(1)
 
     # Test creating a schema with default options:
-    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema(schema_utils.LudwigBaseConfig):
         foo: lso.BaseOptimizerConfig | None = lso.OptimizerDataclassField()
 
     with pytest.raises((PydanticValidationError, Exception)):
@@ -48,7 +48,7 @@ def test_OptimizerDataclassField():
     assert CustomTestSchema.model_validate({}).foo == lso.AdamOptimizerConfig()
 
     # Test creating a schema with set default:
-    class CustomTestSchema2(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema2(schema_utils.LudwigBaseConfig):
         foo: lso.BaseOptimizerConfig | None = lso.OptimizerDataclassField("adamax")
 
     with pytest.raises((PydanticValidationError, Exception)):
@@ -83,7 +83,7 @@ def test_ClipperDataclassField():
         lso.GradientClippingDataclassField(description="", default=1)
 
     # Test creating a schema with set default:
-    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema(schema_utils.LudwigBaseConfig):
         foo: lso.GradientClippingConfig | None = lso.GradientClippingDataclassField(
             description="", default={"clipglobalnorm": 0.1}
         )

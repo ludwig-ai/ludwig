@@ -50,6 +50,6 @@ class ECDDefaultsConfig(BaseDefaultsConfig):
 
 
 @DeveloperAPI
-class ECDDefaultsField(schema_utils.DictMarshmallowField):
+class ECDDefaultsField(schema_utils.NestedConfigField):
     def __init__(self):
         super().__init__(ECDDefaultsConfig)

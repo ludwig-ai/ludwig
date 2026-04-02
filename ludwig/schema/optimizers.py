@@ -34,7 +34,7 @@ def get_optimizer_cls(name: str):
 
 
 @DeveloperAPI
-class BaseOptimizerConfig(schema_utils.BaseMarshmallowConfig, ABC):
+class BaseOptimizerConfig(schema_utils.LudwigBaseConfig, ABC):
     """Base class for optimizers. Not meant to be used directly.
 
     The dataclass format prevents arbitrary properties from being set. Consequently, in child classes, all properties
@@ -831,7 +831,7 @@ def get_optimizer_conds():
     conds = []
     for optimizer in optimizer_registry:
         optimizer_cls = optimizer_registry[optimizer][1]
-        other_props = schema_utils.unload_jsonschema_from_marshmallow_class(optimizer_cls)["properties"]
+        other_props = schema_utils.unload_jsonschema_from_config_class(optimizer_cls)["properties"]
         schema_utils.remove_duplicate_fields(other_props)
         preproc_cond = schema_utils.create_cond(
             {"type": optimizer},
@@ -866,7 +866,7 @@ def OptimizerDataclassField(default="adam", description="", parameter_metadata: 
                 parameter_metadata=parameter_metadata,
             )
 
-        def get_schema_from_registry(self, key: str) -> type[schema_utils.BaseMarshmallowConfig]:
+        def get_schema_from_registry(self, key: str) -> type[schema_utils.LudwigBaseConfig]:
             return get_optimizer_cls(key)
 
         def _jsonschema_type_mapping(self):
@@ -891,7 +891,7 @@ def OptimizerDataclassField(default="adam", description="", parameter_metadata: 
 
 
 @DeveloperAPI
-class GradientClippingConfig(schema_utils.BaseMarshmallowConfig):
+class GradientClippingConfig(schema_utils.LudwigBaseConfig):
     """Dataclass that holds gradient clipping parameters."""
 
     clipglobalnorm: float | None = schema_utils.FloatRange(
@@ -951,7 +951,7 @@ def GradientClippingDataclassField(description: str, default: dict = {}):
                 "oneOf": [
                     {"type": "null", "title": "disabled", "description": "Disable gradient clipping."},
                     {
-                        **schema_utils.unload_jsonschema_from_marshmallow_class(GradientClippingConfig),
+                        **schema_utils.unload_jsonschema_from_config_class(GradientClippingConfig),
                         "title": "enabled_options",
                     },
                 ],

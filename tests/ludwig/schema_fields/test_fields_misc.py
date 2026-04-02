@@ -29,7 +29,7 @@ def test_StringOptions():
     # Test creating a schema with simple option, null not allowed:
     test_options = ["one"]
 
-    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema(schema_utils.LudwigBaseConfig):
         foo: str = schema_utils.StringOptions(test_options, "one", allow_none=False)
 
     with pytest.raises(PydanticValidationError):
@@ -41,7 +41,7 @@ def test_StringOptions():
 
 def test_Embed():
     # Test simple schema creation:
-    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema(schema_utils.LudwigBaseConfig):
         foo: str | int | None = schema_utils.Embed()
 
     # Test null/empty loading cases:
@@ -59,7 +59,7 @@ def test_InitializerOrDict():
         schema_utils.InitializerOrDict("test")
 
     # Test simple schema creation:
-    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema(schema_utils.LudwigBaseConfig):
         foo: str | dict | None = schema_utils.InitializerOrDict()
 
     # Test valid loads:
@@ -76,7 +76,7 @@ def test_FloatRangeTupleDataclassField():
         schema_utils.FloatRangeTupleDataclassField(n=3, default=(1, 1))
 
     # Test default schema creation:
-    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema(schema_utils.LudwigBaseConfig):
         foo: tuple[float, float] | None = schema_utils.FloatRangeTupleDataclassField(allow_none=True)
 
     # Test empty load:
@@ -87,7 +87,7 @@ def test_FloatRangeTupleDataclassField():
     assert CustomTestSchema.model_validate({"foo": [0.5, 0.6]}).foo == (0.5, 0.6)
 
     # Test non-default schema (N=3, other custom metadata):
-    class CustomTestSchema2(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema2(schema_utils.LudwigBaseConfig):
         foo: tuple[float, float, float] | None = schema_utils.FloatRangeTupleDataclassField(
             n=3, default=(1, 1, 1), min=-10, max=10
         )
@@ -97,7 +97,7 @@ def test_FloatRangeTupleDataclassField():
 
 
 def test_OneOfOptionsField():
-    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema(schema_utils.LudwigBaseConfig):
         foo: float | str = schema_utils.OneOfOptionsField(
             default=0.1,
             description="",
@@ -113,7 +113,7 @@ def test_OneOfOptionsField():
     assert CustomTestSchema().foo == 0.1
 
     # Reverse the order and allow none (via StringOptions):
-    class CustomTestSchema2(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema2(schema_utils.LudwigBaseConfig):
         foo: float | str | None = schema_utils.OneOfOptionsField(
             default="placeholder",
             description="",
@@ -131,12 +131,12 @@ def test_OneOfOptionsField():
     CustomTestSchema2.model_validate({"foo": None})
 
     # Test JSON schema generation:
-    json = schema_utils.unload_jsonschema_from_marshmallow_class(CustomTestSchema2)
+    json = schema_utils.unload_jsonschema_from_config_class(CustomTestSchema2)
     assert "foo" in json["properties"]
 
 
 def test_OneOfOptionsField_allows_none():
-    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema(schema_utils.LudwigBaseConfig):
         foo: float | str | None = schema_utils.OneOfOptionsField(
             default=None,
             allow_none=True,
@@ -147,7 +147,7 @@ def test_OneOfOptionsField_allows_none():
             ],
         )
 
-    json = schema_utils.unload_jsonschema_from_marshmallow_class(CustomTestSchema)
+    json = schema_utils.unload_jsonschema_from_config_class(CustomTestSchema)
     schema = {
         "type": "object",
         "properties": {
@@ -160,7 +160,7 @@ def test_OneOfOptionsField_allows_none():
 
 def test_OneOfOptionsField_multiple_fields_allow_none():
     # With pydantic, multiple fields allowing none is handled by union validation.
-    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema(schema_utils.LudwigBaseConfig):
         foo: float | str | None = schema_utils.OneOfOptionsField(
             default=None,
             description="",
@@ -174,7 +174,7 @@ def test_OneOfOptionsField_multiple_fields_allow_none():
 
 
 def test_OneOfOptionsField_allows_none_one_field_allows_none():
-    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema(schema_utils.LudwigBaseConfig):
         foo: float | str | None = schema_utils.OneOfOptionsField(
             default=None,
             description="",
@@ -184,7 +184,7 @@ def test_OneOfOptionsField_allows_none_one_field_allows_none():
             ],
         )
 
-    json = schema_utils.unload_jsonschema_from_marshmallow_class(CustomTestSchema)
+    json = schema_utils.unload_jsonschema_from_config_class(CustomTestSchema)
     schema = {
         "type": "object",
         "properties": {

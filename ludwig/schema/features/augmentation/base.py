@@ -3,7 +3,7 @@ from ludwig.schema import utils as schema_utils
 
 
 @DeveloperAPI
-class BaseAugmentationConfig(schema_utils.BaseMarshmallowConfig):
+class BaseAugmentationConfig(schema_utils.LudwigBaseConfig):
     """Base class for augmentation."""
 
     type: str

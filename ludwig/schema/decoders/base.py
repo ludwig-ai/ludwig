@@ -9,7 +9,7 @@ from ludwig.schema.metadata import DECODER_METADATA
 
 
 @DeveloperAPI
-class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
+class BaseDecoderConfig(schema_utils.LudwigBaseConfig, ABC):
     """Base class for decoders."""
 
     type: str = schema_utils.StringOptions(

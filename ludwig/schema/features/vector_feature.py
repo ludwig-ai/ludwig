@@ -19,12 +19,12 @@ from ludwig.schema.features.utils import (
 )
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig
+from ludwig.schema.utils import LudwigBaseConfig
 
 
 @DeveloperAPI
 @input_mixin_registry.register(VECTOR)
-class VectorInputFeatureConfigMixin(BaseMarshmallowConfig):
+class VectorInputFeatureConfigMixin(LudwigBaseConfig):
     """VectorInputFeatureConfigMixin is a dataclass that configures the parameters used in both the vector input
     feature and the vector global defaults section of the Ludwig Config."""
 
@@ -47,7 +47,7 @@ class VectorInputFeatureConfig(VectorInputFeatureConfigMixin, BaseInputFeatureCo
 
 @DeveloperAPI
 @output_mixin_registry.register(VECTOR)
-class VectorOutputFeatureConfigMixin(BaseMarshmallowConfig):
+class VectorOutputFeatureConfigMixin(LudwigBaseConfig):
     """VectorOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the vector output
     feature and the vector global defaults section of the Ludwig Config."""
 
