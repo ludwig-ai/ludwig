@@ -334,6 +334,20 @@ class NumberFeatureMixin(BaseFeatureMixin):
         if outlier_strategy is not None and ("mean" not in params or "std" not in params):
             params.update(ZScoreTransformer.fit_transform_params(column, backend))
 
+        # Compute PLE bin edges if this is an input feature using the PLE encoder
+        if is_input_feature:
+            input_features = config.get("input_features", [])
+            for feat in input_features:
+                if isinstance(feat, dict) and feat.get("name") == config.get("_current_feature_name"):
+                    encoder_cfg = feat.get("encoder", {})
+                    if isinstance(encoder_cfg, dict) and encoder_cfg.get("type") == "ple":
+                        num_bins = encoder_cfg.get("num_bins", 64)
+                        quantiles = np.linspace(0, 1, num_bins + 1)
+                        col_values = column.dropna().astype(np.float32) if hasattr(column, "dropna") else column
+                        bin_edges = np.percentile(col_values, quantiles * 100).tolist()
+                        params["ple_bin_edges"] = bin_edges
+                        break
+
         return params
 
     @staticmethod
@@ -386,6 +400,14 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
+        # Set PLE bin edges from config metadata if available
+        if (
+            hasattr(input_feature_config.encoder, "ple_bin_edges")
+            and input_feature_config.encoder.ple_bin_edges is not None
+            and hasattr(self.encoder_obj, "set_bin_edges")
+        ):
+            self.encoder_obj.set_bin_edges(input_feature_config.encoder.ple_bin_edges)
+
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype == torch.float32 or inputs.dtype == torch.float64
@@ -407,7 +429,10 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
 
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
-        pass
+        # Pass PLE bin edges from metadata to encoder config
+        if hasattr(feature_config, "encoder") and hasattr(feature_config.encoder, "type"):
+            if feature_config.encoder.type == "ple" and "ple_bin_edges" in feature_metadata:
+                feature_config.encoder.ple_bin_edges = feature_metadata["ple_bin_edges"]
 
     @staticmethod
     def get_schema_cls():

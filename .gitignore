@@ -3,6 +3,7 @@
 ###################
 
 *.lock_preprocessing
+.plans/
 results/
 ludwig/results/
 results_*/
