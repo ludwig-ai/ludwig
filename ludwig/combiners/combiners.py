@@ -1092,6 +1092,12 @@ class CrossAttentionCombiner(Combiner):
         self.num_features = len(input_features)
         self.hidden_size = config.hidden_size
 
+        if self.num_features < 2:
+            logger.warning(
+                "CrossAttentionCombiner with a single input feature has no cross-modal pairs to attend over. "
+                "Consider using ConcatCombiner or adding more input features."
+            )
+
         logger.debug("  Projectors")
         self.projectors = ModuleList(
             [
