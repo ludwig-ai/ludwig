@@ -49,7 +49,7 @@ Work on your self-assigned issue and eventually create a Pull Request.
    pip install -e .
    ```
 
-   The above command will install only the packages in "requirements.txt" in the developer mode. If you would like to
+   The above command will install the core dependencies in developer mode. If you would like to
    be able to potentially make changes to the overall Ludwig codebase, then use the following command:
 
    ```bash
@@ -72,7 +72,7 @@ Work on your self-assigned issue and eventually create a Pull Request.
    (Please use `pip install -e ."[test]"` where your Shell environment requires quotes around the square brackets.)
 
    For the full list of the optional dependencies available in Ludwig, please see
-   [Installation Guide](https://ludwig.ai/latest/getting_started/installation/) and "setup.py" in the root of the Ludwig
+   [Installation Guide](https://ludwig.ai/latest/getting_started/installation/) and `pyproject.toml` in the root of the Ludwig
    repository.
 
 1. On MacOS with Apple Silicon, if this installation approach runs into errors, you may need to install the following
