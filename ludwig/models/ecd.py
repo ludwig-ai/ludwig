@@ -53,6 +53,18 @@ class ECD(BaseModel):
             self.build_outputs(output_feature_configs=self.config_obj.output_features, combiner=self.combiner)
         )
 
+        # ================ Loss Balancing ================
+        loss_balancing = getattr(config_obj.trainer, "loss_balancing", "none")
+        if loss_balancing and loss_balancing != "none":
+            from ludwig.modules.loss_balancing import create_loss_balancer
+
+            output_feature_names = [f.name for f in config_obj.output_features]
+            alpha = getattr(config_obj.trainer, "loss_balancing_alpha", 1.5)
+            lr = getattr(config_obj.trainer, "loss_balancing_lr", 0.01)
+            self.loss_balancer = create_loss_balancer(loss_balancing, output_feature_names, alpha=alpha, lr=lr)
+        else:
+            self.loss_balancer = None
+
         # After constructing all layers, clear the cache to free up memory
         clear_data_cache()
 

@@ -459,6 +459,64 @@ class ECDTrainerConfig(BaseTrainerConfig):
         ),
     )
 
+    # ================ Loss Balancing ================
+
+    loss_balancing: str = schema_utils.StringOptions(
+        options=["none", "log_transform", "uncertainty", "famo", "gradnorm"],
+        default="none",
+        allow_none=False,
+        description=(
+            "Multi-task loss balancing strategy for models with multiple output features. "
+            "'none': static weighted sum (default). "
+            "'log_transform': log(1+loss) compression (DB-MTL). "
+            "'uncertainty': learnable homoscedastic uncertainty weighting (Kendall et al., CVPR 2018). "
+            "'famo': fast adaptive multitask optimization (Liu et al., NeurIPS 2023). "
+            "'gradnorm': gradient normalization (Chen et al., ICML 2018)."
+        ),
+    )
+
+    loss_balancing_alpha: float = schema_utils.Float(
+        default=1.5,
+        description="Asymmetry parameter for gradnorm and smoothing for famo loss balancing.",
+    )
+
+    loss_balancing_lr: float = schema_utils.Float(
+        default=0.01,
+        description="Learning rate for famo loss balancing weight updates.",
+    )
+
+    # ================ Modality Dropout ================
+
+    modality_dropout: float = schema_utils.FloatRange(
+        default=0.0,
+        min=0.0,
+        max=1.0,
+        description=(
+            "Probability of dropping each input feature's encoder output during training. "
+            "Dropped features are replaced with learnable missing-modality embeddings. "
+            "Set to 0.0 to disable (default). Improves robustness to missing inputs at inference."
+        ),
+    )
+
+    # ================ Model Soup ================
+
+    model_soup: str | None = schema_utils.StringOptions(
+        options=["uniform", "greedy"],
+        default=None,
+        allow_none=True,
+        description=(
+            "Model soup strategy for averaging top-K checkpoint weights after training. "
+            "'uniform': average all top-K checkpoints. "
+            "'greedy': greedily add checkpoints that improve validation metric. "
+            "None to disable (default)."
+        ),
+    )
+
+    model_soup_top_k: int = schema_utils.PositiveInteger(
+        default=5,
+        description="Number of top checkpoints to keep for model soup.",
+    )
+
     def update_batch_size_grad_accum(self, num_workers: int):
         from ludwig.utils.trainer_utils import get_rendered_batch_size_grad_accum
 

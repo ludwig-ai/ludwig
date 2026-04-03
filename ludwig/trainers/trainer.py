@@ -396,6 +396,10 @@ class Trainer(BaseTrainer):
 
         self.distributed.zero_grad(self.optimizer)
 
+        # Post-step hook for loss balancing strategies (FAMO, GradNorm EMA updates)
+        if hasattr(self.model, "loss_balancer") and self.model.loss_balancer is not None:
+            self.model.loss_balancer.post_step(all_losses)
+
         if profiler:
             profiler.step()
 
