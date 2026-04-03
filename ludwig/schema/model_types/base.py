@@ -81,6 +81,14 @@ class ModelConfig(schema_utils.LudwigBaseConfig, ABC):
     @staticmethod
     def from_dict(config: ModelConfigDict) -> "ModelConfig":
         config = copy.deepcopy(config)
+
+        # Apply quality preset if specified (before any other processing)
+        preset = config.get("preset")
+        if preset:
+            from ludwig.presets import apply_preset
+
+            config = apply_preset(config, preset)
+
         config = upgrade_config_dict_to_latest_version(config)
 
         # Use sanitized feature names.
