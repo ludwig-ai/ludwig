@@ -191,7 +191,8 @@ class MultiNodeCheckpoint(Checkpoint):
         if self.is_local_rank_0():
             from safetensors.torch import save_file
 
-            model_weights = self.get_model_state_dict()
+            # Clone tensors to avoid shared memory errors with safetensors
+            model_weights = {k: v.clone().contiguous() for k, v in self.get_model_state_dict().items()}
 
             # Metadata state (optimizer, scheduler, global_step) — still uses torch.save
             meta_state = {"global_step": global_step}

@@ -38,6 +38,7 @@ dependencies = [
     "tqdm>=4.60",
     "torch>=2.0",
     "torchaudio>=2.0",
+    "torchcodec>=0.1",
     "torchvision>=0.15",
     "transformers>=4.36",
     "sentencepiece>=0.2",

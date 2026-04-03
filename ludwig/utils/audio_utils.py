@@ -21,7 +21,6 @@ from typing import Any
 import torch
 import torch.nn.functional as F
 import torchaudio
-from packaging import version
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DEFAULT_AUDIO_TENSOR_LENGTH
@@ -31,10 +30,6 @@ logger = logging.getLogger(__name__)
 
 # https://github.com/pytorch/audio/blob/main/torchaudio/csrc/sox/types.cpp
 AUDIO_EXTENSIONS = (".wav", ".amb", ".mp3", ".ogg", ".vorbis", ".flac", ".opus", ".sphere")
-
-
-_TORCH_AUDIO_210 = version.parse(torchaudio.__version__) >= version.parse("2.1.0")
-_TORCH_AUDIO_201 = version.parse(torchaudio.__version__) >= version.parse("2.0.1")
 
 
 @DeveloperAPI
@@ -74,12 +69,7 @@ def read_audio_from_path(path: str) -> TorchAudioTuple | None:
     Useful for reading from a small number of paths. For more intensive reads, use backend.read_binary_files instead.
     """
     try:
-        if _TORCH_AUDIO_210:
-            return torchaudio.load(path, backend="sox")
-        elif _TORCH_AUDIO_201:
-            return torchaudio.backend.sox_io_backend.load(path)
-        else:
-            return torchaudio.backend.sox_backend.load(path)
+        return torchaudio.load(path)
     except Exception as e:
         logger.warning(e)
         return None

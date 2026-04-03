@@ -158,10 +158,10 @@ class ECD(BaseModel):
 
     def save(self, save_path):
         """Saves the model to the given path using SafeTensors format."""
-        from safetensors.torch import save_file
+        from safetensors.torch import save_model
 
         weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_SAFETENSORS_FILE_NAME)
-        save_file(self.state_dict(), weights_save_path)
+        save_model(self, weights_save_path)
         # Ensure the file is fully flushed to disk before any other process reads it
         with open(weights_save_path, "rb") as f:
             os.fsync(f.fileno())
