@@ -3,12 +3,10 @@ from dataclasses import field
 import ludwig.schema.utils as schema_utils
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
-from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@ludwig_dataclass
-class ProfilerConfig(schema_utils.BaseMarshmallowConfig):
+class ProfilerConfig(schema_utils.LudwigBaseConfig):
     """Dataclass that holds profiling parameters for torch profile scheduler.
 
     The profiler will skip the first skip_first steps, then wait for wait steps, then do the warmup for the next warmup
@@ -71,7 +69,7 @@ def ProfilerDataclassField(description: str, default: dict = {}):
                 return value
             if isinstance(value, dict):
                 try:
-                    return ProfilerConfig.Schema().load(value)
+                    return ProfilerConfig.model_validate(value)
                 except (TypeError, ConfigValidationError):
                     raise ConfigValidationError(
                         f"Invalid params for profiling config: {value}, see ProfilerConfig class."
@@ -80,7 +78,7 @@ def ProfilerDataclassField(description: str, default: dict = {}):
 
         def _jsonschema_type_mapping(self):
             return {
-                **schema_utils.unload_jsonschema_from_marshmallow_class(ProfilerConfig),
+                **schema_utils.unload_jsonschema_from_config_class(ProfilerConfig),
                 "title": "profiler_options",
                 "description": description,
             }
@@ -89,9 +87,12 @@ def ProfilerDataclassField(description: str, default: dict = {}):
         raise ConfigValidationError(f"Invalid default: `{default}`")
 
     def load_default():
-        return ProfilerConfig.Schema().load(default)
+        return ProfilerConfig.model_validate(default)
 
-    dump_default = ProfilerConfig.Schema().dump(default)
+    try:
+        dump_default = ProfilerConfig.model_validate(default).to_dict()
+    except Exception:
+        dump_default = default if isinstance(default, dict) else {}
 
     return field(
         metadata={

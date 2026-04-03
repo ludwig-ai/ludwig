@@ -14,7 +14,6 @@ from ludwig.schema.llms.peft import AdapterDataclassField, BaseAdapterConfig
 from ludwig.schema.llms.quantization import QuantizationConfig, QuantizationConfigField
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY, ParameterMetadata
-from ludwig.schema.utils import ludwig_dataclass
 
 if TYPE_CHECKING:
     from ludwig.schema.features.preprocessing.text import TextPreprocessingConfig
@@ -48,7 +47,6 @@ class HFEncoderConfig(SequenceEncoderConfig):
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class HFEncoderImplConfig(HFEncoderConfig):
     """This dataclass configures the base HF encoder implmenetation."""
 
@@ -98,7 +96,6 @@ class HFEncoderImplConfig(HFEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("albert", TEXT)
-@ludwig_dataclass
 class ALBERTConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an ALBERT encoder."""
 
@@ -299,7 +296,6 @@ class ALBERTConfig(HFEncoderConfig):
 # TODO: uncomment when sentencepiece doesn't cause segfaults: https://github.com/ludwig-ai/ludwig/issues/2983
 @DeveloperAPI
 # @register_encoder_config("mt5", TEXT)
-@ludwig_dataclass
 class MT5Config(HFEncoderConfig):
     """This dataclass configures the schema used for an MT5 encoder."""
 
@@ -491,7 +487,6 @@ class MT5Config(HFEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("xlmroberta", TEXT)
-@ludwig_dataclass
 class XLMRoBERTaConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an XLMRoBERTa encoder."""
 
@@ -604,7 +599,6 @@ class XLMRoBERTaConfig(HFEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("bert", TEXT)
-@ludwig_dataclass
 class BERTConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an BERT encoder."""
 
@@ -780,7 +774,6 @@ class BERTConfig(HFEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("deberta", TEXT)
-@ludwig_dataclass
 class DebertaV2Config(HFEncoderImplConfig, DebertaModelParams):
     """This dataclass configures the schema used for a DeBERTa-v2 / v3 encoder."""
 
@@ -810,7 +803,6 @@ class DebertaV2Config(HFEncoderImplConfig, DebertaModelParams):
 # TODO: uncomment once we figure out host memory issue: https://github.com/ludwig-ai/ludwig/issues/3107
 @DeveloperAPI
 # @register_encoder_config("xlm", TEXT)
-@ludwig_dataclass
 class XLMConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an XLM encoder."""
 
@@ -1061,7 +1053,6 @@ class XLMConfig(HFEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("gpt", TEXT)
-@ludwig_dataclass
 class GPTConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an GPT encoder."""
 
@@ -1205,7 +1196,6 @@ class GPTConfig(HFEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("gpt2", TEXT)
-@ludwig_dataclass
 class GPT2Config(HFEncoderConfig):
     """This dataclass configures the schema used for an GPT2 encoder."""
 
@@ -1361,7 +1351,6 @@ class GPT2Config(HFEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("roberta", TEXT)
-@ludwig_dataclass
 class RoBERTaConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an RoBERTa encoder."""
 
@@ -1455,7 +1444,6 @@ class RoBERTaConfig(HFEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("transformer_xl", TEXT)
-@ludwig_dataclass
 class TransformerXLConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an TransformerXL encoder."""
 
@@ -1686,7 +1674,6 @@ class TransformerXLConfig(HFEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("xlnet", TEXT)
-@ludwig_dataclass
 class XLNetConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an XLNet encoder."""
 
@@ -1929,7 +1916,6 @@ class XLNetConfig(HFEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("distilbert", TEXT)
-@ludwig_dataclass
 class DistilBERTConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an DistilBERT encoder."""
 
@@ -2088,7 +2074,6 @@ class DistilBERTConfig(HFEncoderConfig):
 # TODO: uncomment when CTRL bug (https://github.com/ludwig-ai/ludwig/issues/2977) has been fixed to add back in
 @DeveloperAPI
 # @register_encoder_config("ctrl", TEXT)
-@ludwig_dataclass
 class CTRLConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an CTRL encoder."""
 
@@ -2233,7 +2218,6 @@ class CTRLConfig(HFEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("camembert", TEXT)
-@ludwig_dataclass
 class CamemBERTConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an CamemBERT encoder."""
 
@@ -2408,7 +2392,6 @@ class CamemBERTConfig(HFEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("t5", TEXT)
-@ludwig_dataclass
 class T5Config(HFEncoderConfig):
     """This dataclass configures the schema used for an T5 encoder."""
 
@@ -2557,7 +2540,6 @@ class T5Config(HFEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("flaubert", TEXT)
-@ludwig_dataclass
 class FlauBERTConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an FlauBERT encoder."""
 
@@ -2800,7 +2782,6 @@ class FlauBERTConfig(HFEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("electra", TEXT)
-@ludwig_dataclass
 class ELECTRAConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an ELECTRA encoder."""
 
@@ -2970,7 +2951,6 @@ class ELECTRAConfig(HFEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("longformer", TEXT)
-@ludwig_dataclass
 class LongformerConfig(HFEncoderConfig):
     """This dataclass configures the schema used for a Longformer encoder."""
 
@@ -3077,7 +3057,6 @@ class LongformerConfig(HFEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("auto_transformer", TEXT)
-@ludwig_dataclass
 class AutoTransformerConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an AutoTransformer encoder."""
 
@@ -3155,7 +3134,6 @@ class AutoTransformerConfig(HFEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("tf_idf", TEXT, model_types=[MODEL_ECD])
-@ludwig_dataclass
 class TfIdfEncoderConfig(SequenceEncoderConfig):
     type: str = schema_utils.ProtectedString("tf_idf")
 
@@ -3176,7 +3154,6 @@ class TfIdfEncoderConfig(SequenceEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("llm", TEXT, model_types=[MODEL_ECD])
-@ludwig_dataclass
 class LLMEncoderConfig(SequenceEncoderConfig):
     type: str = schema_utils.ProtectedString("llm")
     base_model: str = BaseModelDataclassField()

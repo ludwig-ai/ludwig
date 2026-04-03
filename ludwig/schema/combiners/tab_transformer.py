@@ -4,12 +4,10 @@ from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.combiners.common_transformer_options import CommonTransformerConfig
 from ludwig.schema.combiners.utils import register_combiner_config
 from ludwig.schema.metadata import COMBINER_METADATA
-from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
 @register_combiner_config("tabtransformer")
-@ludwig_dataclass
 class TabTransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):
     """Parameters for tab transformer combiner."""
 

@@ -29,13 +29,12 @@ from ludwig.schema.features.utils import (
 )
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
+from ludwig.schema.utils import LudwigBaseConfig
 
 
 @DeveloperAPI
 @input_mixin_registry.register(TEXT)
-@ludwig_dataclass
-class TextInputFeatureConfigMixin(BaseMarshmallowConfig):
+class TextInputFeatureConfigMixin(LudwigBaseConfig):
     """TextInputFeatureConfigMixin is a dataclass that configures the parameters used in both the text input
     feature and the text global defaults section of the Ludwig Config."""
 
@@ -43,7 +42,6 @@ class TextInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class TextInputFeatureConfig(TextInputFeatureConfigMixin, BaseInputFeatureConfig):
     """TextInputFeatureConfig is a dataclass that configures the parameters used for a text input feature."""
 
@@ -54,7 +52,6 @@ class TextInputFeatureConfig(TextInputFeatureConfigMixin, BaseInputFeatureConfig
 
 @DeveloperAPI
 @ecd_input_config_registry.register(TEXT)
-@ludwig_dataclass
 class ECDTextInputFeatureConfig(TextInputFeatureConfig):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_ECD,
@@ -65,7 +62,6 @@ class ECDTextInputFeatureConfig(TextInputFeatureConfig):
 
 @DeveloperAPI
 @llm_input_config_registry.register(TEXT)
-@ludwig_dataclass
 class LLMTextInputFeatureConfig(TextInputFeatureConfig):
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="text_llm_input")
 
@@ -78,8 +74,7 @@ class LLMTextInputFeatureConfig(TextInputFeatureConfig):
 
 @DeveloperAPI
 @output_mixin_registry.register(TEXT)
-@ludwig_dataclass
-class TextOutputFeatureConfigMixin(BaseMarshmallowConfig):
+class TextOutputFeatureConfigMixin(LudwigBaseConfig):
     """TextOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the text output
     feature and the text global defaults section of the Ludwig Config."""
 
@@ -92,7 +87,6 @@ class TextOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class TextOutputFeatureConfig(TextOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """TextOutputFeatureConfig is a dataclass that configures the parameters used for a text output feature."""
 
@@ -137,7 +131,6 @@ class TextOutputFeatureConfig(TextOutputFeatureConfigMixin, BaseOutputFeatureCon
 
 @DeveloperAPI
 @ecd_output_config_registry.register(TEXT)
-@ludwig_dataclass
 class ECDTextOutputFeatureConfig(TextOutputFeatureConfig):
     decoder: BaseDecoderConfig = DecoderDataclassField(
         MODEL_ECD,
@@ -148,7 +141,6 @@ class ECDTextOutputFeatureConfig(TextOutputFeatureConfig):
 
 @DeveloperAPI
 @llm_output_config_registry.register(TEXT)
-@ludwig_dataclass
 class LLMTextOutputFeatureConfig(TextOutputFeatureConfig):
     default_validation_metric: str = schema_utils.StringOptions(
         [LOSS],
@@ -173,7 +165,6 @@ class LLMTextOutputFeatureConfig(TextOutputFeatureConfig):
 
 @DeveloperAPI
 @ecd_defaults_config_registry.register(TEXT)
-@ludwig_dataclass
 class ECDTextDefaultsConfig(TextInputFeatureConfigMixin, TextOutputFeatureConfigMixin):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_ECD,
@@ -195,7 +186,6 @@ class ECDTextDefaultsConfig(TextInputFeatureConfigMixin, TextOutputFeatureConfig
 
 @DeveloperAPI
 @llm_defaults_config_registry.register(TEXT)
-@ludwig_dataclass
 class LLMTextDefaultsConfig(TextInputFeatureConfigMixin, TextOutputFeatureConfigMixin):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_LLM,

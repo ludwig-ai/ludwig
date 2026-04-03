@@ -26,7 +26,6 @@ from ludwig.schema.optimizers import (
     OptimizerDataclassField,
 )
 from ludwig.schema.profiler import ProfilerConfig, ProfilerDataclassField
-from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 
 _torch_200 = parse_version(torch.__version__) >= parse_version("2.0")
@@ -61,8 +60,7 @@ def get_llm_trainer_cls(trainer_type: str):
 
 
 @DeveloperAPI
-@ludwig_dataclass
-class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
+class BaseTrainerConfig(schema_utils.LudwigBaseConfig, ABC):
     """Common trainer parameter values."""
 
     validation_field: str = schema_utils.String(
@@ -119,7 +117,6 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 @DeveloperAPI
 @register_trainer_schema(MODEL_ECD)
-@ludwig_dataclass
 class ECDTrainerConfig(BaseTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for ECD model training."""
 
@@ -469,7 +466,6 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class LLMTrainerConfig(BaseTrainerConfig):
     """Base class for all LLM trainer configs."""
 
@@ -552,7 +548,6 @@ class LLMTrainerConfig(BaseTrainerConfig):
 
 @DeveloperAPI
 @register_llm_trainer_schema("none")
-@ludwig_dataclass
 class NoneTrainerConfig(LLMTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for zero-shot / few-shot LLM model training."""
 
@@ -569,7 +564,6 @@ class NoneTrainerConfig(LLMTrainerConfig):
 
 @DeveloperAPI
 @register_llm_trainer_schema("finetune")
-@ludwig_dataclass
 class FineTuneTrainerConfig(ECDTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for fine-tuning LLM model training."""
 
@@ -628,7 +622,7 @@ def get_model_type_jsonschema(model_type: str = MODEL_ECD):
 @DeveloperAPI
 def get_trainer_jsonschema(model_type: str):
     trainer_cls = trainer_schema_registry[model_type]
-    props = schema_utils.unload_jsonschema_from_marshmallow_class(trainer_cls)["properties"]
+    props = schema_utils.unload_jsonschema_from_config_class(trainer_cls)["properties"]
 
     return {
         "type": "object",
@@ -640,7 +634,7 @@ def get_trainer_jsonschema(model_type: str):
 
 
 @DeveloperAPI
-class ECDTrainerField(schema_utils.DictMarshmallowField):
+class ECDTrainerField(schema_utils.NestedConfigField):
     def __init__(self):
         super().__init__(ECDTrainerConfig)
 
@@ -654,7 +648,7 @@ def get_llm_trainer_conds():
     conds = []
     for trainer in _llm_trainer_schema_registry:
         trainer_cls = _llm_trainer_schema_registry[trainer]
-        other_props = schema_utils.unload_jsonschema_from_marshmallow_class(trainer_cls)["properties"]
+        other_props = schema_utils.unload_jsonschema_from_config_class(trainer_cls)["properties"]
         schema_utils.remove_duplicate_fields(other_props)
         preproc_cond = schema_utils.create_cond(
             {"type": trainer},
@@ -674,7 +668,7 @@ def LLMTrainerDataclassField(default="none", description=""):
                 description=description,
             )
 
-        def get_schema_from_registry(self, key: str) -> type[schema_utils.BaseMarshmallowConfig]:
+        def get_schema_from_registry(self, key: str) -> type[schema_utils.LudwigBaseConfig]:
             return get_llm_trainer_cls(key)
 
         def _jsonschema_type_mapping(self):

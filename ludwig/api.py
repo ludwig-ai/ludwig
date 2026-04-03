@@ -67,6 +67,7 @@ from ludwig.globals import (
     LUDWIG_VERSION,
     MODEL_FILE_NAME,
     MODEL_HYPERPARAMETERS_FILE_NAME,
+    model_weights_exist,
     MODEL_WEIGHTS_FILE_NAME,
     set_disable_progressbar,
     TRAIN_SET_METADATA_FILE_NAME,
@@ -1965,17 +1966,17 @@ class LudwigModel:
 
         :return: (bool) True for success, False for failure.
         """
-        if os.path.exists(os.path.join(model_path, MODEL_FILE_NAME, MODEL_WEIGHTS_FILE_NAME)) and os.path.exists(
+        if model_weights_exist(os.path.join(model_path, MODEL_FILE_NAME)) and os.path.exists(
             os.path.join(model_path, MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME)
         ):
             experiment_path = model_path
-        elif os.path.exists(os.path.join(model_path, MODEL_WEIGHTS_FILE_NAME)) and os.path.exists(
+        elif model_weights_exist(model_path) and os.path.exists(
             os.path.join(model_path, MODEL_HYPERPARAMETERS_FILE_NAME)
         ):
             experiment_path = os.path.dirname(model_path)
         else:
             raise ValueError(
-                f"Can't find 'model_weights' and '{MODEL_HYPERPARAMETERS_FILE_NAME}' either at "
+                f"Can't find model weights and '{MODEL_HYPERPARAMETERS_FILE_NAME}' either at "
                 f"'{model_path}' or at '{model_path}/model'"
             )
         model_service = get_upload_registry()["hf_hub"]

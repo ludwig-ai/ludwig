@@ -2,7 +2,7 @@ import pytest
 
 from ludwig.schema.hyperopt.scheduler import BaseSchedulerConfig
 from ludwig.schema.hyperopt.utils import register_scheduler_config, scheduler_config_registry
-from ludwig.schema.utils import ludwig_dataclass, ProtectedString
+from ludwig.schema.utils import ProtectedString
 
 
 @pytest.fixture(
@@ -18,7 +18,6 @@ def dependency_check_config(request):
     key, deps, raises_exception = request.param
 
     @register_scheduler_config(key, dependencies=deps)
-    @ludwig_dataclass
     class DependencyCheckConfig(BaseSchedulerConfig):
         type: str = ProtectedString(key)
 

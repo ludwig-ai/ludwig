@@ -1,9 +1,181 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ludwig"
+dynamic = ["version"]
+description = "Declarative machine learning: End-to-end machine learning pipelines using data-driven configurations."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.12"
+authors = [
+    { name = "Piero Molino", email = "piero.molino@gmail.com" },
+]
+keywords = [
+    "ludwig",
+    "deep learning",
+    "machine learning",
+    "natural language processing",
+    "computer vision",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "h5py>=3.8",
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "scipy>=1.10",
+    "tabulate>=0.9",
+    "scikit-learn>=1.3",
+    "tqdm>=4.60",
+    "torch>=2.0",
+    "torchaudio>=2.0",
+    "torchcodec>=0.1",
+    "torchvision>=0.15",
+    "transformers>=4.36",
+    "sentencepiece>=0.2",
+    "spacy>=2.3",
+    "PyYAML>=6.0",
+    "absl-py",
+    "kaggle",
+    "requests>=2.28",
+    "tables",
+    "fsspec[http]",
+    "dataclasses-json",
+    "jsonschema>=4.17",
+    "tensorboard",
+    "torchmetrics>=1.0",
+    "torchinfo",
+    "filelock",
+    "psutil",
+    "protobuf>=4.0",
+    "gpustat",
+    "rich~=12.4.4",
+    "packaging",
+    "retry",
+    "sacremoses",
+    "bitsandbytes>=0.44.0",
+    "xlwt",
+    "xlrd",
+    "openpyxl",
+    "pyarrow>=14.0",
+    "lxml",
+    "datasets",
+    "safetensors>=0.4",
+]
+
+[project.optional-dependencies]
+serve = [
+    "uvicorn",
+    "httpx",
+    "fastapi",
+    "python-multipart",
+]
+viz = [
+    "matplotlib>=3.4",
+    "seaborn",
+    "hiplot",
+    "ptitprince",
+]
+distributed = [
+    "dask[dataframe]>=2026.1.2",
+    "pyarrow>=14.0",
+    "ray[default,data,serve,tune]>=2.9",
+    "GPUtil",
+    "tblib",
+    "awscli",
+]
+hyperopt = [
+    "ray[default,tune]>=2.9",
+    "hyperopt",
+    "future<1.0",
+]
+llm = [
+    "sentence-transformers",
+    "faiss-cpu",
+    "accelerate",
+    "loralib",
+    "peft>=0.10.0",
+]
+explain = [
+    "captum",
+]
+benchmarking = [
+    "s3fs",
+]
+extra = [
+    "modin[ray]",
+    "predibase>=2023.10.2",
+]
+full = [
+    "ludwig[serve,viz,distributed,hyperopt,llm,explain,benchmarking]",
+]
+test = [
+    "ludwig[full]",
+    "pytest",
+    "pytest-timeout",
+    "pytest-rerunfailures",
+    "tifffile",
+    "wget",
+    "aim",
+    "wandb",
+    "comet_ml",
+    "mlflow",
+    "hpbandster",
+    "ConfigSpace>=1.0",
+    "ax-platform",
+    "sqlalchemy",
+    "bayesian-optimization",
+    "flaml[blendsearch]",
+    "HEBO",
+    "nevergrad",
+    "optuna",
+    "scikit-optimize",
+    "zoopt",
+    "hyperopt",
+    "s3fs>=2022.8.2",
+]
+
+[project.scripts]
+ludwig = "ludwig.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/ludwig-ai/ludwig"
+Documentation = "https://ludwig.ai"
+Repository = "https://github.com/ludwig-ai/ludwig"
+"Bug Tracker" = "https://github.com/ludwig-ai/ludwig/issues"
+
+[tool.hatch.version]
+source = "regex"
+path = "ludwig/globals.py"
+pattern = 'LUDWIG_VERSION = "(?P<version>[^"]+)"'
+
+[tool.hatch.build.targets.wheel]
+packages = ["ludwig"]
+
+[tool.hatch.build.targets.wheel.shared-data]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "ludwig/",
+    "README.md",
+    "LICENSE",
+    "pyproject.toml",
+]
+
 [tool.isort]
 profile = "black"
 line_length = 120
-force_sort_within_sections = "False"
-order_by_type = "False"
-
+force_sort_within_sections = false
+order_by_type = false
 
 [tool.black]
 line-length = 120

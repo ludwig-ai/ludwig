@@ -44,7 +44,7 @@ def preprocess_cli(
     logging_level: int = logging.INFO,
     callbacks: list[Callback] = None,
     backend: Backend | str = None,
-    **kwargs
+    **kwargs,
 ) -> None:
     """*train* defines the entire training procedure used by Ludwig's internals. Requires most of the parameters
     that are taken into the model. Builds a full ludwig model and performs the training.

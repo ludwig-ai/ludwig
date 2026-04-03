@@ -7,7 +7,7 @@ import torch
 from ludwig.accounting.used_tokens import get_used_tokens_for_ecd
 from ludwig.combiners.combiners import create_combiner
 from ludwig.constants import MODEL_ECD, MODEL_LLM, USED_TOKENS
-from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
+from ludwig.globals import MODEL_WEIGHTS_FILE_NAME, MODEL_WEIGHTS_SAFETENSORS_FILE_NAME
 from ludwig.models.base import BaseModel
 from ludwig.schema.model_types.ecd import ECDModelConfig
 from ludwig.utils import output_feature_utils
@@ -157,20 +157,50 @@ class ECD(BaseModel):
             self.input_features.set(k, self.input_features.get(k).unskip())
 
     def save(self, save_path):
-        """Saves the model to the given path."""
-        weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-        torch.save(self.state_dict(), weights_save_path)
+        """Saves the model to the given path using SafeTensors format.
+
+        Uses save_model() which correctly handles tied/shared weights (e.g. RNN decoder embedding-projection tying) by
+        recording sharing metadata in the safetensors file.
+        """
+        from safetensors.torch import save_model
+
+        weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_SAFETENSORS_FILE_NAME)
+        save_model(self, weights_save_path)
         # Ensure the file is fully flushed to disk before any other process reads it
         with open(weights_save_path, "rb") as f:
             os.fsync(f.fileno())
 
     def load(self, save_path):
-        """Loads the model from the given path."""
-        weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-        device = torch.device(get_torch_device())
-        with open_file(weights_save_path, "rb") as f:
-            state_dict = torch.load(f, map_location=device)
-            self.load_state_dict(update_state_dict(state_dict))
+        """Loads the model from the given path.
+
+        Tries SafeTensors first (using load_model to restore tied weights), falls back to legacy pickle.
+        """
+        safetensors_path = os.path.join(save_path, MODEL_WEIGHTS_SAFETENSORS_FILE_NAME)
+        legacy_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
+        device = str(torch.device(get_torch_device()))
+
+        if os.path.exists(safetensors_path):
+            from safetensors.torch import load_model
+
+            load_model(self, safetensors_path, device=device)
+        elif os.path.exists(legacy_path):
+            logger.info("Loading legacy pickle checkpoint (no SafeTensors file found)")
+            with open_file(legacy_path, "rb") as f:
+                state_dict = torch.load(f, map_location=device)
+                self.load_state_dict(update_state_dict(state_dict))
+        else:
+            # Try open_file for remote paths (fsspec)
+            try:
+                with open_file(safetensors_path, "rb") as f:
+                    from safetensors.torch import load as safetensors_load
+
+                    # Remote path: load bytes, then load_state_dict (ties may not be restored)
+                    state_dict = safetensors_load(f.read())
+                    self.load_state_dict(update_state_dict(state_dict))
+            except FileNotFoundError:
+                with open_file(legacy_path, "rb") as f:
+                    state_dict = torch.load(f, map_location=device)
+                    self.load_state_dict(update_state_dict(state_dict))
 
     def get_args(self):
         """Returns init arguments for constructing this model."""

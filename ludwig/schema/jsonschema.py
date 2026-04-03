@@ -9,22 +9,18 @@ def marshmallow_schema_to_jsonschema_dict(schema_instance):
 
     Previously converted marshmallow schemas. Now uses pydantic's model_json_schema().
     The schema_instance can be either:
-    - A pydantic model class (BaseMarshmallowConfig subclass)
-    - A _SchemaAdapter instance
+    - A pydantic model class (LudwigBaseConfig subclass)
     - Legacy: called with a marshmallow Schema instance (raises helpful error)
     """
-    from ludwig.schema.utils import _SchemaAdapter, BaseMarshmallowConfig
+    from ludwig.schema.utils import LudwigBaseConfig
 
-    # Handle _SchemaAdapter
-    if isinstance(schema_instance, _SchemaAdapter):
-        cls = schema_instance._cls
-    elif isinstance(schema_instance, type) and issubclass(schema_instance, BaseMarshmallowConfig):
+    if isinstance(schema_instance, type) and issubclass(schema_instance, LudwigBaseConfig):
         cls = schema_instance
-    elif isinstance(schema_instance, BaseMarshmallowConfig):
+    elif isinstance(schema_instance, LudwigBaseConfig):
         cls = type(schema_instance)
     else:
         raise TypeError(
-            f"Expected a Ludwig config class or schema adapter, got {type(schema_instance)}. "
+            f"Expected a Ludwig config class, got {type(schema_instance)}. "
             "Marshmallow schemas are no longer supported. Use pydantic BaseModel subclasses."
         )
 

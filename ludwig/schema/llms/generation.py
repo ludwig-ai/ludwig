@@ -4,8 +4,7 @@ from ludwig.schema.metadata import LLM_METADATA
 
 
 @DeveloperAPI
-@schema_utils.ludwig_dataclass
-class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
+class LLMGenerationConfig(schema_utils.LudwigBaseConfig):
     """Parameters for LLM Generation Config.
 
     Should match the parameters in
@@ -327,9 +326,9 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-class LLMGenerationConfigField(schema_utils.DictMarshmallowField):
+class LLMGenerationConfigField(schema_utils.NestedConfigField):
     def __init__(self):
         super().__init__(LLMGenerationConfig)
 
     def _jsonschema_type_mapping(self):
-        return schema_utils.unload_jsonschema_from_marshmallow_class(LLMGenerationConfig)
+        return schema_utils.unload_jsonschema_from_config_class(LLMGenerationConfig)

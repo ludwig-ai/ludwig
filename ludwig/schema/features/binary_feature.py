@@ -19,13 +19,12 @@ from ludwig.schema.features.utils import (
 )
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
+from ludwig.schema.utils import LudwigBaseConfig
 
 
 @DeveloperAPI
 @input_mixin_registry.register(BINARY)
-@ludwig_dataclass
-class BinaryInputFeatureConfigMixin(BaseMarshmallowConfig):
+class BinaryInputFeatureConfigMixin(LudwigBaseConfig):
     """BinaryInputFeatureConfigMixin is a dataclass that configures the parameters used in both the binary input
     feature and the binary global defaults section of the Ludwig Config."""
 
@@ -33,7 +32,6 @@ class BinaryInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class BinaryInputFeatureConfig(BinaryInputFeatureConfigMixin, BaseInputFeatureConfig):
     """BinaryInputFeatureConfig is a dataclass that configures the parameters used for a binary input feature."""
 
@@ -44,7 +42,6 @@ class BinaryInputFeatureConfig(BinaryInputFeatureConfigMixin, BaseInputFeatureCo
 
 @DeveloperAPI
 @ecd_input_config_registry.register(BINARY)
-@ludwig_dataclass
 class ECDBinaryInputFeatureConfig(BinaryInputFeatureConfig):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_ECD,
@@ -55,8 +52,7 @@ class ECDBinaryInputFeatureConfig(BinaryInputFeatureConfig):
 
 @DeveloperAPI
 @output_mixin_registry.register(BINARY)
-@ludwig_dataclass
-class BinaryOutputFeatureConfigMixin(BaseMarshmallowConfig):
+class BinaryOutputFeatureConfigMixin(LudwigBaseConfig):
     """BinaryOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the binary output
     feature and the binary global defaults section of the Ludwig Config."""
 
@@ -69,7 +65,6 @@ class BinaryOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class BinaryOutputFeatureConfig(BinaryOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """BinaryOutputFeatureConfig is a dataclass that configures the parameters used for a binary output feature."""
 
@@ -121,7 +116,6 @@ class BinaryOutputFeatureConfig(BinaryOutputFeatureConfigMixin, BaseOutputFeatur
 
 @DeveloperAPI
 @ecd_output_config_registry.register(BINARY)
-@ludwig_dataclass
 class ECDBinaryOutputFeatureConfig(BinaryOutputFeatureConfig):
     decoder: BaseDecoderConfig = DecoderDataclassField(
         MODEL_ECD,
@@ -132,7 +126,6 @@ class ECDBinaryOutputFeatureConfig(BinaryOutputFeatureConfig):
 
 @DeveloperAPI
 @ecd_defaults_config_registry.register(BINARY)
-@ludwig_dataclass
 class BinaryDefaultsConfig(BinaryInputFeatureConfigMixin, BinaryOutputFeatureConfigMixin):
     # NOTE(travis): defaults use ECD input feature as it contains all the encoders
     encoder: BaseEncoderConfig = EncoderDataclassField(

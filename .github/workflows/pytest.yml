@@ -37,7 +37,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-unit-${{ hashFiles('requirements*.txt', '.github/workflows/pytest.yml') }}
+          key: ${{ runner.os }}-pip-unit-${{ hashFiles('pyproject.toml', '.github/workflows/pytest.yml') }}
 
       - name: Install dependencies
         run: |
@@ -108,7 +108,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-integration-${{ hashFiles('requirements*.txt', '.github/workflows/pytest.yml') }}
+          key: ${{ runner.os }}-pip-integration-${{ hashFiles('pyproject.toml', '.github/workflows/pytest.yml') }}
 
       - name: Install dependencies
         run: |
@@ -174,7 +174,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-distributed-${{ hashFiles('requirements*.txt', '.github/workflows/pytest.yml') }}
+          key: ${{ runner.os }}-pip-distributed-${{ hashFiles('pyproject.toml', '.github/workflows/pytest.yml') }}
 
       - name: Install dependencies
         run: |

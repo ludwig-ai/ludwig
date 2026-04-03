@@ -3,7 +3,6 @@ from pydantic import ValidationError as PydanticValidationError
 
 from ludwig.config_validation.validation import get_validator, validate
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.utils import ludwig_dataclass
 
 
 def get_marshmallow_field_from_metadata(dfield):
@@ -30,12 +29,11 @@ def test_StringOptions():
     # Test creating a schema with simple option, null not allowed:
     test_options = ["one"]
 
-    @ludwig_dataclass
-    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema(schema_utils.LudwigBaseConfig):
         foo: str = schema_utils.StringOptions(test_options, "one", allow_none=False)
 
     with pytest.raises(PydanticValidationError):
-        CustomTestSchema.Schema().load({"foo": None})
+        CustomTestSchema.model_validate({"foo": None})
 
 
 # Complex, custom marshmallow fields:
@@ -43,17 +41,16 @@ def test_StringOptions():
 
 def test_Embed():
     # Test simple schema creation:
-    @ludwig_dataclass
-    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema(schema_utils.LudwigBaseConfig):
         foo: str | int | None = schema_utils.Embed()
 
     # Test null/empty loading cases:
-    assert CustomTestSchema.Schema().load({}).foo is None
-    assert CustomTestSchema.Schema().load({"foo": None}).foo is None
+    assert CustomTestSchema.model_validate({}).foo is None
+    assert CustomTestSchema.model_validate({"foo": None}).foo is None
 
     # Test valid strings/numbers:
-    assert CustomTestSchema.Schema().load({"foo": "add"}).foo == "add"
-    assert CustomTestSchema.Schema().load({"foo": 1}).foo == 1
+    assert CustomTestSchema.model_validate({"foo": "add"}).foo == "add"
+    assert CustomTestSchema.model_validate({"foo": 1}).foo == 1
 
 
 def test_InitializerOrDict():
@@ -62,16 +59,15 @@ def test_InitializerOrDict():
         schema_utils.InitializerOrDict("test")
 
     # Test simple schema creation:
-    @ludwig_dataclass
-    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema(schema_utils.LudwigBaseConfig):
         foo: str | dict | None = schema_utils.InitializerOrDict()
 
     # Test valid loads:
-    assert CustomTestSchema.Schema().load({}).foo == "xavier_uniform"
-    assert CustomTestSchema.Schema().load({"foo": "zeros"}).foo == "zeros"
+    assert CustomTestSchema.model_validate({}).foo == "xavier_uniform"
+    assert CustomTestSchema.model_validate({"foo": "zeros"}).foo == "zeros"
 
     # Test valid dict loads:
-    assert CustomTestSchema.Schema().load({"foo": {"type": "zeros"}}).foo == {"type": "zeros"}
+    assert CustomTestSchema.model_validate({"foo": {"type": "zeros"}}).foo == {"type": "zeros"}
 
 
 def test_FloatRangeTupleDataclassField():
@@ -80,31 +76,28 @@ def test_FloatRangeTupleDataclassField():
         schema_utils.FloatRangeTupleDataclassField(n=3, default=(1, 1))
 
     # Test default schema creation:
-    @ludwig_dataclass
-    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema(schema_utils.LudwigBaseConfig):
         foo: tuple[float, float] | None = schema_utils.FloatRangeTupleDataclassField(allow_none=True)
 
     # Test empty load:
-    assert CustomTestSchema.Schema().load({}).foo == (0.9, 0.999)
-    assert CustomTestSchema.Schema().load({"foo": None}).foo is None
+    assert CustomTestSchema.model_validate({}).foo == (0.9, 0.999)
+    assert CustomTestSchema.model_validate({"foo": None}).foo is None
 
     # Test valid loads:
-    assert CustomTestSchema.Schema().load({"foo": [0.5, 0.6]}).foo == (0.5, 0.6)
+    assert CustomTestSchema.model_validate({"foo": [0.5, 0.6]}).foo == (0.5, 0.6)
 
     # Test non-default schema (N=3, other custom metadata):
-    @ludwig_dataclass
-    class CustomTestSchema2(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema2(schema_utils.LudwigBaseConfig):
         foo: tuple[float, float, float] | None = schema_utils.FloatRangeTupleDataclassField(
             n=3, default=(1, 1, 1), min=-10, max=10
         )
 
-    assert CustomTestSchema2.Schema().load({}).foo == (1, 1, 1)
-    assert CustomTestSchema2.Schema().load({"foo": [2, 2, 2]}).foo == (2, 2, 2)
+    assert CustomTestSchema2.model_validate({}).foo == (1, 1, 1)
+    assert CustomTestSchema2.model_validate({"foo": [2, 2, 2]}).foo == (2, 2, 2)
 
 
 def test_OneOfOptionsField():
-    @ludwig_dataclass
-    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema(schema_utils.LudwigBaseConfig):
         foo: float | str = schema_utils.OneOfOptionsField(
             default=0.1,
             description="",
@@ -116,12 +109,11 @@ def test_OneOfOptionsField():
         )
 
     # Test valid loads:
-    assert CustomTestSchema.Schema().load({}).foo == 0.1
+    assert CustomTestSchema.model_validate({}).foo == 0.1
     assert CustomTestSchema().foo == 0.1
 
     # Reverse the order and allow none (via StringOptions):
-    @ludwig_dataclass
-    class CustomTestSchema2(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema2(schema_utils.LudwigBaseConfig):
         foo: float | str | None = schema_utils.OneOfOptionsField(
             default="placeholder",
             description="",
@@ -133,19 +125,18 @@ def test_OneOfOptionsField():
         )
 
     # Test valid loads:
-    assert CustomTestSchema2.Schema().load({}).foo == "placeholder"
-    assert CustomTestSchema2.Schema().load({"foo": 0.1}).foo == 0.1
+    assert CustomTestSchema2.model_validate({}).foo == "placeholder"
+    assert CustomTestSchema2.model_validate({"foo": 0.1}).foo == 0.1
     assert CustomTestSchema2().foo == "placeholder"
-    CustomTestSchema2.Schema().load({"foo": None})
+    CustomTestSchema2.model_validate({"foo": None})
 
     # Test JSON schema generation:
-    json = schema_utils.unload_jsonschema_from_marshmallow_class(CustomTestSchema2)
+    json = schema_utils.unload_jsonschema_from_config_class(CustomTestSchema2)
     assert "foo" in json["properties"]
 
 
 def test_OneOfOptionsField_allows_none():
-    @ludwig_dataclass
-    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema(schema_utils.LudwigBaseConfig):
         foo: float | str | None = schema_utils.OneOfOptionsField(
             default=None,
             allow_none=True,
@@ -156,7 +147,7 @@ def test_OneOfOptionsField_allows_none():
             ],
         )
 
-    json = schema_utils.unload_jsonschema_from_marshmallow_class(CustomTestSchema)
+    json = schema_utils.unload_jsonschema_from_config_class(CustomTestSchema)
     schema = {
         "type": "object",
         "properties": {
@@ -169,8 +160,7 @@ def test_OneOfOptionsField_allows_none():
 
 def test_OneOfOptionsField_multiple_fields_allow_none():
     # With pydantic, multiple fields allowing none is handled by union validation.
-    @ludwig_dataclass
-    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema(schema_utils.LudwigBaseConfig):
         foo: float | str | None = schema_utils.OneOfOptionsField(
             default=None,
             description="",
@@ -184,8 +174,7 @@ def test_OneOfOptionsField_multiple_fields_allow_none():
 
 
 def test_OneOfOptionsField_allows_none_one_field_allows_none():
-    @ludwig_dataclass
-    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema(schema_utils.LudwigBaseConfig):
         foo: float | str | None = schema_utils.OneOfOptionsField(
             default=None,
             description="",
@@ -195,7 +184,7 @@ def test_OneOfOptionsField_allows_none_one_field_allows_none():
             ],
         )
 
-    json = schema_utils.unload_jsonschema_from_marshmallow_class(CustomTestSchema)
+    json = schema_utils.unload_jsonschema_from_config_class(CustomTestSchema)
     schema = {
         "type": "object",
         "properties": {

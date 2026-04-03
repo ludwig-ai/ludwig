@@ -14,12 +14,10 @@ from ludwig.schema.hyperopt import HyperoptConfig, HyperoptField
 from ludwig.schema.model_types.base import ModelConfig, register_model_type
 from ludwig.schema.preprocessing import PreprocessingConfig, PreprocessingField
 from ludwig.schema.trainer import ECDTrainerConfig, ECDTrainerField
-from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
 @register_model_type(name="ecd")
-@ludwig_dataclass
 class ECDModelConfig(ModelConfig):
     """Parameters for ECD."""
 

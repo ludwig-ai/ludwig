@@ -7,12 +7,10 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.combiners.utils import register_combiner_config
 from ludwig.schema.metadata import COMBINER_METADATA
-from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
 @register_combiner_config("comparator")
-@ludwig_dataclass
 class ComparatorCombinerConfig(BaseCombinerConfig):
     """Parameters for comparator combiner."""
 

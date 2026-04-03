@@ -39,7 +39,7 @@ from ludwig.schema.features.preprocessing.vector import VectorPreprocessingConfi
 from ludwig.schema.features.utils import get_input_feature_jsonschema, get_output_feature_jsonschema
 from ludwig.schema.llms.peft import LoraConfig
 from ludwig.schema.model_types.base import ModelConfig
-from ludwig.schema.utils import ludwig_dataclass, unload_jsonschema_from_marshmallow_class
+from ludwig.schema.utils import unload_jsonschema_from_config_class
 from tests.integration_tests.utils import (
     audio_feature,
     bag_feature,
@@ -427,14 +427,13 @@ def test_text_encoder_adapter(encoder_config, expected_adapter):
 
 
 def test_default_param_metadata():
-    @ludwig_dataclass
-    class TestClass(schema_utils.BaseMarshmallowConfig):
+    class TestClass(schema_utils.LudwigBaseConfig):
         test_schema_entry: str = schema_utils.StringOptions(
             options=["test"],
             default="test",
             description="",
         )
 
-    test_class = unload_jsonschema_from_marshmallow_class(TestClass)
+    test_class = unload_jsonschema_from_config_class(TestClass)
 
     assert test_class["properties"]["test_schema_entry"]["parameter_metadata"] is not None

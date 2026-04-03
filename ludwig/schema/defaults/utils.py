@@ -25,14 +25,14 @@ def DefaultsDataclassField(feature_type: str, defaults_registry: Registry = ecd_
             if isinstance(value, dict):
                 defaults_class = defaults_registry[feature_type]
                 try:
-                    return defaults_class.Schema().load(value)
+                    return defaults_class.model_validate(value)
                 except (TypeError, ConfigValidationError) as error:
                     raise ConfigValidationError(f"Invalid params: {value}, see `{attr}` definition. Error: {error}")
             raise ConfigValidationError(f"Invalid params: {value}")
 
         def _jsonschema_type_mapping(self):
             defaults_cls = defaults_registry[feature_type]
-            props = schema_utils.unload_jsonschema_from_marshmallow_class(defaults_cls)["properties"]
+            props = schema_utils.unload_jsonschema_from_config_class(defaults_cls)["properties"]
             return {
                 "type": "object",
                 "properties": props,
@@ -42,8 +42,11 @@ def DefaultsDataclassField(feature_type: str, defaults_registry: Registry = ecd_
 
     try:
         defaults_cls = defaults_registry[feature_type]
-        dump_default = defaults_cls.Schema().dump({})
-        load_default = lambda: defaults_cls.Schema().load({})
+        try:
+            dump_default = defaults_cls.model_validate({}).to_dict()
+        except Exception:
+            dump_default = {}
+        load_default = lambda: defaults_cls.model_validate({})
 
         return field(
             metadata={

@@ -34,7 +34,6 @@ from ludwig.schema.features.utils import (
     llm_output_config_registry,
 )
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY, ParameterMetadata
-from ludwig.schema.utils import ludwig_dataclass
 
 logger = logging.getLogger(__name__)
 _error_console = Console(stderr=True, style="bold red")
@@ -42,8 +41,7 @@ _info_console = Console(stderr=True, style="bold green")
 
 
 @DeveloperAPI
-@ludwig_dataclass
-class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
+class BaseFeatureConfig(schema_utils.LudwigBaseConfig):
     """Base class for feature configs."""
 
     def __post_init__(self):
@@ -112,7 +110,6 @@ class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class BaseInputFeatureConfig(BaseFeatureConfig):
     """Base input feature config class."""
 
@@ -130,13 +127,11 @@ class BaseInputFeatureConfig(BaseFeatureConfig):
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class ECDInputFeatureConfig(BaseFeatureConfig):
     pass
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class BaseOutputFeatureConfig(BaseFeatureConfig):
     """Base output feature config class."""
 

@@ -37,7 +37,7 @@ def PreprocessingDataclassField(feature_type: str):
                 if feature_type in preprocessing_registry:
                     pre = preprocessing_registry[feature_type]
                     try:
-                        return pre.Schema().load(value)
+                        return pre.model_validate(value)
                     except (TypeError, ConfigValidationError) as error:
                         raise ConfigValidationError(
                             f"Invalid preprocessing params: {value}, see `{pre}` definition. Error: {error}"
@@ -49,7 +49,7 @@ def PreprocessingDataclassField(feature_type: str):
 
         def _jsonschema_type_mapping(self):
             preprocessor_cls = preprocessing_registry[feature_type]
-            props = schema_utils.unload_jsonschema_from_marshmallow_class(preprocessor_cls)["properties"]
+            props = schema_utils.unload_jsonschema_from_config_class(preprocessor_cls)["properties"]
             return {
                 "type": "object",
                 "properties": props,
@@ -59,8 +59,11 @@ def PreprocessingDataclassField(feature_type: str):
 
     try:
         preprocessor = preprocessing_registry[feature_type]
-        load_default = lambda: preprocessor.Schema().load({})
-        dump_default = preprocessor.Schema().dump({})
+        load_default = lambda: preprocessor.model_validate({})
+        try:
+            dump_default = preprocessor.model_validate({}).to_dict()
+        except Exception:
+            dump_default = {}
 
         return field(
             metadata={

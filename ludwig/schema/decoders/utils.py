@@ -78,7 +78,7 @@ def get_decoder_conds(decoder_classes: dict[str, type["BaseDecoderConfig"]]) -> 
     """Returns a JSON schema of conditionals to validate against decoder types for specific feature types."""
     conds = []
     for decoder_type, decoder_cls in decoder_classes.items():
-        other_props = schema_utils.unload_jsonschema_from_marshmallow_class(decoder_cls)["properties"]
+        other_props = schema_utils.unload_jsonschema_from_config_class(decoder_cls)["properties"]
         schema_utils.remove_duplicate_fields(other_props)
         decoder_cond = schema_utils.create_cond(
             {"type": decoder_type},
@@ -100,7 +100,7 @@ def DecoderDataclassField(model_type: str, feature_type: str, default: str) -> F
         def __init__(self):
             super().__init__(registry=decoder_registry, default_value=default, allow_str_value=True)
 
-        def get_schema_from_registry(self, key: str) -> type[schema_utils.BaseMarshmallowConfig]:
+        def get_schema_from_registry(self, key: str) -> type[schema_utils.LudwigBaseConfig]:
             return decoder_registry[key]
 
         def _jsonschema_type_mapping(self):

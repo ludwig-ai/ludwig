@@ -3,7 +3,6 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.combiners.utils import register_combiner_config
 from ludwig.schema.metadata import COMBINER_METADATA
-from ludwig.schema.utils import ludwig_dataclass
 
 MAIN_SEQUENCE_FEATURE_DESCRIPTION = """
 Name of a sequence, text, or time series feature to concatenate the outputs
@@ -18,7 +17,6 @@ have identical `s` dimension, otherwise an error will be thrown.
 
 @DeveloperAPI
 @register_combiner_config("sequence_concat")
-@ludwig_dataclass
 class SequenceConcatCombinerConfig(BaseCombinerConfig):
     """Parameters for sequence concat combiner."""
 

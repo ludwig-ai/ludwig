@@ -4,13 +4,11 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
 from ludwig.schema.metadata import FEATURE_METADATA
-from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils import strings_utils
 
 
 @DeveloperAPI
 @register_preprocessor(SET)
-@ludwig_dataclass
 class SetPreprocessingConfig(BasePreprocessingConfig):
     tokenizer: str = schema_utils.String(
         default="space",
@@ -62,7 +60,6 @@ class SetPreprocessingConfig(BasePreprocessingConfig):
 
 @DeveloperAPI
 @register_preprocessor("set_output")
-@ludwig_dataclass
 class SetOutputPreprocessingConfig(SetPreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,

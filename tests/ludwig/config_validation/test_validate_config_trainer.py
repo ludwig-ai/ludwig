@@ -29,7 +29,7 @@ def test_config_trainer_empty_null_and_default():
     with pytest.raises(ConfigValidationError):
         check_schema(config)
 
-    config[TRAINER] = ECDTrainerConfig.Schema().dump({})
+    config[TRAINER] = ECDTrainerConfig.model_validate({}).to_dict()
     check_schema(config)
 
 
@@ -51,7 +51,7 @@ def test_config_trainer_bad_optimizer():
     config[TRAINER]["optimizer"] = None
     with pytest.raises(ConfigValidationError):
         check_schema(config)
-    assert ECDTrainerConfig.Schema().load({}).optimizer is not None
+    assert ECDTrainerConfig.model_validate({}).optimizer is not None
 
     # Test all types in optimizer_registry supported:
     for key in optimizer_registry.keys():
@@ -93,7 +93,7 @@ def test_optimizer_property_validation():
     config[TRAINER]["optimizer"]["momentum"] = 10
     config[TRAINER]["optimizer"]["extra_key"] = "invalid"
     check_schema(config)
-    assert not hasattr(ECDTrainerConfig.Schema().load(config[TRAINER]).optimizer, "extra_key")
+    assert not hasattr(ECDTrainerConfig.model_validate(config[TRAINER]).optimizer, "extra_key")
 
     # Test bad parameter range:
     config[TRAINER]["optimizer"] = {"type": "rmsprop", "eps": -1}
@@ -125,8 +125,8 @@ def test_clipper_property_validation():
     config[TRAINER]["gradient_clipping"] = {}
     check_schema(config)
     assert (
-        ECDTrainerConfig.Schema().load(config[TRAINER]).gradient_clipping
-        == ECDTrainerConfig.Schema().load({}).gradient_clipping
+        ECDTrainerConfig.model_validate(config[TRAINER]).gradient_clipping
+        == ECDTrainerConfig.model_validate({}).gradient_clipping
     )
 
     # Test invalid clipper type:
@@ -149,4 +149,4 @@ def test_clipper_property_validation():
     # Test extra keys are excluded and defaults are loaded appropriately:
     config[TRAINER]["gradient_clipping"] = {"clipnorm": 1}
     config[TRAINER]["gradient_clipping"]["extra_key"] = "invalid"
-    assert not hasattr(ECDTrainerConfig.Schema().load(config[TRAINER]).gradient_clipping, "extra_key")
+    assert not hasattr(ECDTrainerConfig.model_validate(config[TRAINER]).gradient_clipping, "extra_key")

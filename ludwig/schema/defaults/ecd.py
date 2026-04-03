@@ -18,11 +18,9 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.defaults.base import BaseDefaultsConfig
 from ludwig.schema.defaults.utils import DefaultsDataclassField
 from ludwig.schema.features.base import BaseFeatureConfig
-from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@ludwig_dataclass
 class ECDDefaultsConfig(BaseDefaultsConfig):
     audio: BaseFeatureConfig = DefaultsDataclassField(feature_type=AUDIO)
 
@@ -52,6 +50,6 @@ class ECDDefaultsConfig(BaseDefaultsConfig):
 
 
 @DeveloperAPI
-class ECDDefaultsField(schema_utils.DictMarshmallowField):
+class ECDDefaultsField(schema_utils.NestedConfigField):
     def __init__(self):
         super().__init__(ECDDefaultsConfig)

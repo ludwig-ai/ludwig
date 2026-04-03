@@ -1,12 +1,10 @@
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@ludwig_dataclass
-class RoPEScalingConfig(schema_utils.BaseMarshmallowConfig):
+class RoPEScalingConfig(schema_utils.LudwigBaseConfig):
     """Dynamic RoPE-scaling (rotary position embeddings) to extend the context length of LLM like LLaMA, GPT-NeoX,
     or Falcon.
 
@@ -44,17 +42,16 @@ class RoPEScalingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-class RoPEScalingConfigField(schema_utils.DictMarshmallowField):
+class RoPEScalingConfigField(schema_utils.NestedConfigField):
     def __init__(self):
         super().__init__(RoPEScalingConfig, default_missing=True)
 
     def _jsonschema_type_mapping(self):
-        return schema_utils.unload_jsonschema_from_marshmallow_class(RoPEScalingConfig, title="rope_scaling")
+        return schema_utils.unload_jsonschema_from_config_class(RoPEScalingConfig, title="rope_scaling")
 
 
 @DeveloperAPI
-@ludwig_dataclass
-class ModelParametersConfig(schema_utils.BaseMarshmallowConfig):
+class ModelParametersConfig(schema_utils.LudwigBaseConfig):
     rope_scaling: RoPEScalingConfig = RoPEScalingConfigField().get_default_field()
 
     neftune_noise_alpha: int | None = schema_utils.IntegerRange(
@@ -77,7 +74,7 @@ class ModelParametersConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-class ModelParametersConfigField(schema_utils.DictMarshmallowField):
+class ModelParametersConfigField(schema_utils.NestedConfigField):
     def __init__(self):
         super().__init__(ModelParametersConfig, default_missing=True)
 
@@ -86,7 +83,7 @@ class ModelParametersConfigField(schema_utils.DictMarshmallowField):
             "oneOf": [
                 {"type": "null", "title": "disabled", "description": "Skip configurable model parameters."},
                 {
-                    **schema_utils.unload_jsonschema_from_marshmallow_class(ModelParametersConfig),
+                    **schema_utils.unload_jsonschema_from_config_class(ModelParametersConfig),
                     "title": "enabled",
                     "description": "Set model parameters options.",
                 },

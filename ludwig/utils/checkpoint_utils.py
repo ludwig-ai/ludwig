@@ -124,23 +124,38 @@ class MultiNodeCheckpoint(Checkpoint):
             super().prepare(directory)
         self.distributed.barrier()
 
+    @staticmethod
+    def _safetensors_path(save_path: str) -> str:
+        """Return the companion safetensors path for a checkpoint path."""
+        return save_path + ".safetensors"
+
     def load(self, save_path: str, device: torch.device | None = None) -> bool:
         """Load state from a saved checkpoint.
 
+        Loads model weights from SafeTensors if available, falls back to legacy pickle format.
+
         Args:
           save_path (str): The filepath to the saved checkpoint.
-          device (torch.device): The device on which to
-            load the state.
+          device (torch.device): The device on which to load the state.
 
         Returns:
-          True if the checkpoint was sucessfully loaded, False if the checkpoint file
-            could not be found.
+          True if the checkpoint was successfully loaded, False if the checkpoint file could not be found.
         """
         try:
+            safetensors_path = self._safetensors_path(save_path)
             state = torch.load(save_path, map_location=device)
             try:
                 self.global_step = self._get_global_step(state, save_path)
-                _, unexpected_keys = self.model.load_state_dict(state[MODEL_WEIGHTS_FILE_NAME], strict=False)
+
+                # Load model weights: prefer safetensors, fall back to pickle
+                if os.path.exists(safetensors_path):
+                    from safetensors.torch import load_file
+
+                    model_weights = load_file(safetensors_path, device=str(device) if device else "cpu")
+                else:
+                    model_weights = state[MODEL_WEIGHTS_FILE_NAME]
+
+                _, unexpected_keys = self.model.load_state_dict(model_weights, strict=False)
                 assert unexpected_keys == [], f"Unexpected keys found in state dict: {unexpected_keys}"
                 if self.optimizer is not None:
                     self.optimizer.load_state_dict(state["optim_state"])
@@ -149,63 +164,62 @@ class MultiNodeCheckpoint(Checkpoint):
                 logger.info(f"Successfully loaded model weights from {save_path}.")
                 return True
             except Exception as e:
-                # there was an issue loading the state which means
-                # either the model definition and saved weights
-                # do not agree or they were not saved in the first
-                # place.
-                # since this is a severe issue, we raise an error
-                # rather than allowing the program to proceed.
                 raise e
         except FileNotFoundError as e:
             logger.error(e)
             return False
 
     def get_state_for_inference(self, save_path: str, device: torch.device | None = None) -> Mapping[str, Any]:
+        """Load only model weights for inference."""
+        safetensors_path = self._safetensors_path(save_path)
+        if os.path.exists(safetensors_path):
+            from safetensors.torch import load_file
+
+            return load_file(safetensors_path, device=str(device) if device else "cpu")
         state = torch.load(save_path, map_location=device)
         return state[MODEL_WEIGHTS_FILE_NAME]
 
     def save(self, save_path: str, global_step: int):
         """Save a state to disk.
 
-        Modified from brentyi/fannypack.
+        Model weights are saved in SafeTensors format alongside a pickle file for optimizer/scheduler/metadata.
 
         Args:
           save_path (str): The name of the checkpoint to save.
-          global_step (int): The iteration number which will be used
-             to name the checkpoint.
+          global_step (int): The iteration number which will be used to name the checkpoint.
         """
         if self.is_local_rank_0():
-            state = {
-                "global_step": global_step,
-                MODEL_WEIGHTS_FILE_NAME: self.get_model_state_dict(),
-            }
+            from safetensors.torch import save_file
+
+            # Clone tensors to avoid shared memory errors with safetensors
+            model_weights = {k: v.clone().contiguous() for k, v in self.get_model_state_dict().items()}
+
+            # Metadata state (optimizer, scheduler, global_step) — still uses torch.save
+            meta_state = {"global_step": global_step}
             if self.optimizer is not None:
-                state["optim_state"] = self.optimizer.state_dict()
+                meta_state["optim_state"] = self.optimizer.state_dict()
             if self.scheduler is not None:
-                state["scheduler_state"] = self.scheduler.state_dict()
+                meta_state["scheduler_state"] = self.scheduler.state_dict()
 
             # ignore ctrl+c while saving
             try:
                 orig_handler = signal.getsignal(signal.SIGINT)
                 signal.signal(signal.SIGINT, lambda _sig, _frame: None)
             except ValueError:
-                # signal throws a ValueError if we're not in the main thread
                 orig_handler = None
 
             try:
                 # atomic save
                 with tempfile.TemporaryDirectory() as tmpdir:
-                    # Save to a temporary directory outside of the checkpoint dir so
-                    # async processes do not try and copy a partially-written checkpoint.
-                    # See Ray Tune and MLFlow for examples of background processes that
-                    # are affected by this.
-                    tmp_path = os.path.join(tmpdir, "temp.ckpt")
-                    torch.save(state, tmp_path)
+                    tmp_meta_path = os.path.join(tmpdir, "temp.ckpt")
+                    tmp_weights_path = os.path.join(tmpdir, "temp.ckpt.safetensors")
+                    torch.save(meta_state, tmp_meta_path)
+                    save_file(model_weights, tmp_weights_path)
 
-                    self.safe_move_file(tmp_path, save_path)
+                    self.safe_move_file(tmp_meta_path, save_path)
+                    self.safe_move_file(tmp_weights_path, self._safetensors_path(save_path))
                     logger.debug(f"Saved checkpoint at {save_path}.")
             finally:
-                # restore SIGINT handler
                 if orig_handler is not None:
                     signal.signal(signal.SIGINT, orig_handler)
         self.distributed.barrier()

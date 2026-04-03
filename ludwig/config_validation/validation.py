@@ -14,7 +14,7 @@ from ludwig.schema.combiners.utils import get_combiner_jsonschema  # noqa
 from ludwig.schema.features.utils import get_input_feature_jsonschema, get_output_feature_jsonschema  # noqa
 from ludwig.schema.hyperopt import get_hyperopt_jsonschema  # noqa
 from ludwig.schema.trainer import get_model_type_jsonschema, get_trainer_jsonschema  # noqa
-from ludwig.schema.utils import unload_jsonschema_from_marshmallow_class
+from ludwig.schema.utils import unload_jsonschema_from_config_class
 
 VALIDATION_LOCK = Lock()
 
@@ -27,7 +27,7 @@ def get_schema(model_type: str = MODEL_ECD):
     from ludwig.schema.model_types.base import model_type_schema_registry
 
     cls = model_type_schema_registry[model_type]
-    props = unload_jsonschema_from_marshmallow_class(cls)["properties"]
+    props = unload_jsonschema_from_config_class(cls)["properties"]
 
     # TODO: Replace with more robust required logic later.
     required = ["input_features", "output_features"]

@@ -7,15 +7,13 @@ from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
-from ludwig.schema.utils import ludwig_dataclass
 
 if TYPE_CHECKING:
     from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 
 
 @DeveloperAPI
-@ludwig_dataclass
-class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
+class BaseEncoderConfig(schema_utils.LudwigBaseConfig, ABC):
     """Base class for encoders."""
 
     type: str
@@ -39,7 +37,6 @@ class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 @DeveloperAPI
 @register_encoder_config("passthrough", [TEXT], model_types=[MODEL_LLM])
 @register_encoder_config("passthrough", [BINARY, NUMBER, VECTOR], model_types=[MODEL_ECD])
-@ludwig_dataclass
 class PassthroughEncoderConfig(BaseEncoderConfig):
     """PassthroughEncoderConfig is a dataclass that configures the parameters used for a passthrough encoder."""
 
@@ -55,7 +52,6 @@ class PassthroughEncoderConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("dense", [BINARY, NUMBER, VECTOR, TIMESERIES])
-@ludwig_dataclass
 class DenseEncoderConfig(BaseEncoderConfig):
     """DenseEncoderConfig is a dataclass that configures the parameters used for a dense encoder."""
 

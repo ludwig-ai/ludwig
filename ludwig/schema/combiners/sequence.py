@@ -7,7 +7,6 @@ from ludwig.schema.combiners.utils import register_combiner_config
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.metadata import COMBINER_METADATA
-from ludwig.schema.utils import ludwig_dataclass
 
 """
 SEQUENCE encoders that always return 2D [batch_size, hidden_size] tensors, regardless of how they are parameterized.
@@ -18,7 +17,6 @@ _2D_SEQUENCE_ENCODERS = ["embed"]
 
 @DeveloperAPI
 @register_combiner_config("sequence")
-@ludwig_dataclass
 class SequenceCombinerConfig(BaseCombinerConfig):
     """Parameters for sequence combiner."""
 

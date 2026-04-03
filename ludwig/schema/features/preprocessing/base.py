@@ -3,7 +3,7 @@ from ludwig.schema import utils as schema_utils
 
 
 @DeveloperAPI
-class BasePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
+class BasePreprocessingConfig(schema_utils.LudwigBaseConfig):
     """Base class for input feature preprocessing. Not meant to be used directly.
 
     The dataclass format prevents arbitrary properties from being set. Consequently, in child classes, all properties

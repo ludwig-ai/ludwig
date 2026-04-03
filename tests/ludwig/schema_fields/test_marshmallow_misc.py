@@ -3,15 +3,13 @@ import pytest
 import ludwig.combiners.combiners as lcc
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.schema.utils import (
-    assert_is_a_marshmallow_class,
-    BaseMarshmallowConfig,
+    assert_is_a_config_class,
     load_config_with_kwargs,
-    ludwig_dataclass,
+    LudwigBaseConfig,
 )
 
 
-@ludwig_dataclass
-class CustomTestSchema(BaseMarshmallowConfig):
+class CustomTestSchema(LudwigBaseConfig):
     """Sample docstring."""
 
     foo: int = 5
@@ -19,9 +17,9 @@ class CustomTestSchema(BaseMarshmallowConfig):
 
 
 def test_assert_is_a_marshmallow_clas():
-    assert_is_a_marshmallow_class(ECDTrainerConfig)
+    assert_is_a_config_class(ECDTrainerConfig)
     with pytest.raises(AssertionError, match=r"Expected.*config class"):
-        assert_is_a_marshmallow_class(lcc.ConcatCombiner)
+        assert_is_a_config_class(lcc.ConcatCombiner)
 
 
 def test_load_config_with_kwargs():

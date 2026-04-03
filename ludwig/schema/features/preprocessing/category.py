@@ -5,13 +5,11 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
 from ludwig.schema.metadata import FEATURE_METADATA, PREPROCESSING_METADATA
-from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils import strings_utils
 
 
 @DeveloperAPI
 @register_preprocessor(CATEGORY)
-@ludwig_dataclass
 class CategoryPreprocessingConfig(BasePreprocessingConfig):
     """CategoryPreprocessingConfig is a dataclass that configures the parameters used for a category input
     feature."""
@@ -68,7 +66,6 @@ class CategoryPreprocessingConfig(BasePreprocessingConfig):
 
 @DeveloperAPI
 @register_preprocessor("category_output")
-@ludwig_dataclass
 class CategoryOutputPreprocessingConfig(CategoryPreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
@@ -95,7 +92,6 @@ class CategoryOutputPreprocessingConfig(CategoryPreprocessingConfig):
 
 @DeveloperAPI
 @register_preprocessor("category_distribution_output")
-@ludwig_dataclass
 class CategoryDistributionOutputPreprocessingConfig(BasePreprocessingConfig):
     def __post_init__(self):
         if self.vocab is None:
@@ -114,7 +110,6 @@ class CategoryDistributionOutputPreprocessingConfig(BasePreprocessingConfig):
 
 @DeveloperAPI
 @register_preprocessor("category_llm")
-@ludwig_dataclass
 class LLMCategoryOutputPreprocessingConfig(CategoryOutputPreprocessingConfig):
     def __post_init__(self):
         if self.vocab is None:

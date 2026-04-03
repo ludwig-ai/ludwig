@@ -8,12 +8,10 @@ from ludwig.modules.metric_registry import get_metric_registry
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.hyperopt.executor import ExecutorConfig, ExecutorDataclassField
 from ludwig.schema.hyperopt.search_algorithm import BaseSearchAlgorithmConfig, SearchAlgorithmDataclassField
-from ludwig.schema.utils import ludwig_dataclass as dataclass
 
 
 @DeveloperAPI
-@dataclass
-class HyperoptConfig(schema_utils.BaseMarshmallowConfig, ABC):
+class HyperoptConfig(schema_utils.LudwigBaseConfig, ABC):
     """Basic hyperopt settings."""
 
     output_feature: str = schema_utils.String(  # TODO: make more restrictive
@@ -94,7 +92,7 @@ class HyperoptConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 @DeveloperAPI
 def get_hyperopt_jsonschema():
-    props = schema_utils.unload_jsonschema_from_marshmallow_class(HyperoptConfig)["properties"]
+    props = schema_utils.unload_jsonschema_from_config_class(HyperoptConfig)["properties"]
 
     return {
         "type": ["object", "null"],
@@ -105,7 +103,7 @@ def get_hyperopt_jsonschema():
 
 
 @DeveloperAPI
-class HyperoptField(schema_utils.DictMarshmallowField):
+class HyperoptField(schema_utils.NestedConfigField):
     def __init__(self):
         super().__init__(HyperoptConfig, default_missing=True)
 

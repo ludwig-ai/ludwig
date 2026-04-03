@@ -185,8 +185,7 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
 
     def initialize_encoder(self, encoder_config):
         encoder_cls = get_encoder_cls(self.type(), encoder_config.type)
-        encoder_schema = encoder_cls.get_schema_cls().Schema()
-        encoder_params_dict = encoder_schema.dump(encoder_config)
+        encoder_params_dict = encoder_config.to_dict()
         return encoder_cls(encoder_config=encoder_config, **encoder_params_dict)
 
     @classmethod
@@ -279,8 +278,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         # Input to the decoder is the output feature's FC hidden layer.
         decoder_config.input_size = self.fc_stack.output_shape[-1]
         decoder_cls = get_decoder_cls(self.type(), decoder_config.type)
-        decoder_schema = decoder_cls.get_schema_cls().Schema()
-        decoder_params_dict = decoder_schema.dump(decoder_config)
+        decoder_params_dict = decoder_config.to_dict()
         return decoder_cls(decoder_config=decoder_config, **decoder_params_dict)
 
     def train_loss(self, targets: Tensor, predictions: dict[str, Tensor], feature_name):

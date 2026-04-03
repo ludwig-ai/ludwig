@@ -85,7 +85,7 @@ def AugmentationDataclassField(
                     augmentation_cls = augmentation_classes[augmentation_op]
                     pre = augmentation_cls()
                     try:
-                        augmentation_list.append(pre.Schema().load(augmentation))
+                        augmentation_list.append(pre.model_validate(augmentation))
                     except (TypeError, ConfigValidationError) as error:
                         raise ConfigValidationError(
                             f"Invalid augmentation params: {value}, see `{pre}` definition. Error: {error}"
@@ -109,8 +109,11 @@ def AugmentationDataclassField(
             augmentation_cls = get_augmentation_cls(feature_type, augmentation_op)
             pre = augmentation_cls()
             try:
-                load_augmentation_list.append(pre.Schema().load(augmentation))
-                dump_augmentation_list.append(pre.Schema().dump(augmentation))
+                load_augmentation_list.append(pre.model_validate(augmentation))
+                try:
+                    dump_augmentation_list.append(pre.model_validate(augmentation).to_dict())
+                except Exception:
+                    dump_augmentation_list.append(augmentation if isinstance(augmentation, dict) else {})
             except (TypeError, ConfigValidationError) as error:
                 raise ConfigValidationError(
                     f"Invalid augmentation params: {default}, see `{pre}` definition. Error: {error}"
@@ -178,7 +181,7 @@ def get_augmentation_list_conds(feature_type: str):
     conds = []
     for augmentation_op in get_augmentation_classes(feature_type):
         schema_cls = get_augmentation_cls(feature_type, augmentation_op)
-        augmentation_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
+        augmentation_schema = schema_utils.unload_jsonschema_from_config_class(schema_cls)
         augmentation_props = augmentation_schema["properties"]
         schema_utils.remove_duplicate_fields(augmentation_props)
         augmentation_cond = schema_utils.create_cond({"type": augmentation_op}, augmentation_props)

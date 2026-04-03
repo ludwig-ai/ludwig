@@ -4,10 +4,8 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
-from ludwig.schema.utils import ludwig_dataclass
 
 
-@ludwig_dataclass
 class TimmBaseConfig(BaseEncoderConfig):
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
@@ -33,7 +31,6 @@ class TimmBaseConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("timm", IMAGE)
-@ludwig_dataclass
 class TimmEncoderConfig(TimmBaseConfig):
     type: str = schema_utils.ProtectedString("timm", description="Type of encoder.")
 
@@ -95,7 +92,6 @@ POOLFORMER_MODELS = [
 
 @DeveloperAPI
 @register_encoder_config("caformer", IMAGE)
-@ludwig_dataclass
 class TimmCAFormerEncoderConfig(TimmBaseConfig):
     type: str = schema_utils.ProtectedString("caformer", description="Type of encoder.")
 
@@ -114,7 +110,6 @@ class TimmCAFormerEncoderConfig(TimmBaseConfig):
 
 @DeveloperAPI
 @register_encoder_config("convformer", IMAGE)
-@ludwig_dataclass
 class TimmConvFormerEncoderConfig(TimmBaseConfig):
     type: str = schema_utils.ProtectedString("convformer", description="Type of encoder.")
 
@@ -132,7 +127,6 @@ class TimmConvFormerEncoderConfig(TimmBaseConfig):
 
 @DeveloperAPI
 @register_encoder_config("poolformer", IMAGE)
-@ludwig_dataclass
 class TimmPoolFormerEncoderConfig(TimmBaseConfig):
     type: str = schema_utils.ProtectedString("poolformer", description="Type of encoder.")
 

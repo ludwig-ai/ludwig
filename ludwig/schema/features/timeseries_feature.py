@@ -19,13 +19,12 @@ from ludwig.schema.features.utils import (
 )
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
+from ludwig.schema.utils import LudwigBaseConfig
 
 
 @DeveloperAPI
 @input_mixin_registry.register(TIMESERIES)
-@ludwig_dataclass
-class TimeseriesInputFeatureConfigMixin(BaseMarshmallowConfig):
+class TimeseriesInputFeatureConfigMixin(LudwigBaseConfig):
     """TimeseriesInputFeatureConfigMixin is a dataclass that configures the parameters used in both the timeseries
     input feature and the timeseries global defaults section of the Ludwig Config."""
 
@@ -40,7 +39,6 @@ class TimeseriesInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @ecd_input_config_registry.register(TIMESERIES)
-@ludwig_dataclass
 class TimeseriesInputFeatureConfig(TimeseriesInputFeatureConfigMixin, BaseInputFeatureConfig):
     """TimeseriesInputFeatureConfig is a dataclass that configures the parameters used for a timeseries input
     feature."""
@@ -50,8 +48,7 @@ class TimeseriesInputFeatureConfig(TimeseriesInputFeatureConfigMixin, BaseInputF
 
 @DeveloperAPI
 @output_mixin_registry.register(TIMESERIES)
-@ludwig_dataclass
-class TimeseriesOutputFeatureConfigMixin(BaseMarshmallowConfig):
+class TimeseriesOutputFeatureConfigMixin(LudwigBaseConfig):
     """TimeseriesOutputFeatureConfigMixin configures the parameters used in both the timeseries output feature and
     the timeseries global defaults section of the Ludwig Config."""
 
@@ -69,7 +66,6 @@ class TimeseriesOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @ecd_output_config_registry.register(TIMESERIES)
-@ludwig_dataclass
 class TimeseriesOutputFeatureConfig(BaseOutputFeatureConfig, TimeseriesOutputFeatureConfigMixin):
     """TimeseriesOutputFeatureConfig configures the parameters used for a timeseries output feature."""
 
@@ -113,6 +109,5 @@ class TimeseriesOutputFeatureConfig(BaseOutputFeatureConfig, TimeseriesOutputFea
 
 @DeveloperAPI
 @ecd_defaults_config_registry.register(TIMESERIES)
-@ludwig_dataclass
 class TimeseriesDefaultsConfig(TimeseriesInputFeatureConfigMixin, TimeseriesOutputFeatureConfigMixin):
     pass

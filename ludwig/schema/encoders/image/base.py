@@ -6,7 +6,6 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
-from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.torch_utils import initializer_registry
 
 if TYPE_CHECKING:
@@ -22,7 +21,6 @@ class ImageEncoderConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("stacked_cnn", IMAGE)
-@ludwig_dataclass
 class Stacked2DCNNConfig(ImageEncoderConfig):
     @staticmethod
     def module_name():
@@ -310,7 +308,6 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("_resnet_legacy", IMAGE)
-@ludwig_dataclass
 class ResNetConfig(ImageEncoderConfig):
     @staticmethod
     def module_name():
@@ -493,7 +490,6 @@ class ResNetConfig(ImageEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("mlp_mixer", IMAGE)
-@ludwig_dataclass
 class MLPMixerConfig(ImageEncoderConfig):
     @staticmethod
     def module_name():
@@ -575,7 +571,6 @@ class MLPMixerConfig(ImageEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("_vit_legacy", IMAGE)
-@ludwig_dataclass
 class ViTConfig(ImageEncoderConfig):
     @staticmethod
     def module_name():
@@ -722,7 +717,6 @@ class ViTConfig(ImageEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("unet", IMAGE)
-@ludwig_dataclass
 class UNetEncoderConfig(ImageEncoderConfig):
     @staticmethod
     def module_name():

@@ -1,4 +1,0 @@
-matplotlib>=3.4
-seaborn
-hiplot
-ptitprince

@@ -3,12 +3,10 @@ from ludwig.constants import SEMANTIC
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata import LLM_METADATA
-from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@ludwig_dataclass
-class RetrievalConfig(schema_utils.BaseMarshmallowConfig):
+class RetrievalConfig(schema_utils.LudwigBaseConfig):
     """This Dataclass is a schema for the nested retrieval config under prompt."""
 
     def __post_init__(self):
@@ -62,17 +60,16 @@ class RetrievalConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-class RetrievalConfigField(schema_utils.DictMarshmallowField):
+class RetrievalConfigField(schema_utils.NestedConfigField):
     def __init__(self):
         super().__init__(RetrievalConfig)
 
     def _jsonschema_type_mapping(self):
-        return schema_utils.unload_jsonschema_from_marshmallow_class(RetrievalConfig, title="Retrieval")
+        return schema_utils.unload_jsonschema_from_config_class(RetrievalConfig, title="Retrieval")
 
 
 @DeveloperAPI
-@ludwig_dataclass
-class PromptConfig(schema_utils.BaseMarshmallowConfig):
+class PromptConfig(schema_utils.LudwigBaseConfig):
     """This Dataclass is a schema for the nested prompt config under preprocessing."""
 
     template: str = schema_utils.String(
@@ -101,9 +98,9 @@ class PromptConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-class PromptConfigField(schema_utils.DictMarshmallowField):
+class PromptConfigField(schema_utils.NestedConfigField):
     def __init__(self):
         super().__init__(PromptConfig)
 
     def _jsonschema_type_mapping(self):
-        return schema_utils.unload_jsonschema_from_marshmallow_class(PromptConfig)
+        return schema_utils.unload_jsonschema_from_config_class(PromptConfig)

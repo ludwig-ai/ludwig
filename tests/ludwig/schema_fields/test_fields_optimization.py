@@ -5,13 +5,12 @@ from pydantic import ValidationError as PydanticValidationError
 
 import ludwig.schema.optimizers as lso
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.utils import ludwig_dataclass
 
 
 def test_torch_description_pull():
-    example_empty_desc_prop = schema_utils.unload_jsonschema_from_marshmallow_class(lso.AdamOptimizerConfig)[
-        "properties"
-    ]["eps"]
+    example_empty_desc_prop = schema_utils.unload_jsonschema_from_config_class(lso.AdamOptimizerConfig)["properties"][
+        "eps"
+    ]
     assert (
         isinstance(example_empty_desc_prop, dict)
         and "description" in example_empty_desc_prop
@@ -40,24 +39,22 @@ def test_OptimizerDataclassField():
         lso.OptimizerDataclassField(1)
 
     # Test creating a schema with default options:
-    @ludwig_dataclass
-    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema(schema_utils.LudwigBaseConfig):
         foo: lso.BaseOptimizerConfig | None = lso.OptimizerDataclassField()
 
     with pytest.raises((PydanticValidationError, Exception)):
-        CustomTestSchema.Schema().load({"foo": "test"})
+        CustomTestSchema.model_validate({"foo": "test"})
 
-    assert CustomTestSchema.Schema().load({}).foo == lso.AdamOptimizerConfig()
+    assert CustomTestSchema.model_validate({}).foo == lso.AdamOptimizerConfig()
 
     # Test creating a schema with set default:
-    @ludwig_dataclass
-    class CustomTestSchema2(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema2(schema_utils.LudwigBaseConfig):
         foo: lso.BaseOptimizerConfig | None = lso.OptimizerDataclassField("adamax")
 
     with pytest.raises((PydanticValidationError, Exception)):
-        CustomTestSchema2.Schema().load({"foo": "test"})
+        CustomTestSchema2.model_validate({"foo": "test"})
 
-    assert CustomTestSchema2.Schema().load(
+    assert CustomTestSchema2.model_validate(
         {"foo": {"type": "adamax", "betas": (0.2, 0.2)}}
     ).foo == lso.AdamaxOptimizerConfig(betas=(0.2, 0.2))
 
@@ -86,16 +83,15 @@ def test_ClipperDataclassField():
         lso.GradientClippingDataclassField(description="", default=1)
 
     # Test creating a schema with set default:
-    @ludwig_dataclass
-    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+    class CustomTestSchema(schema_utils.LudwigBaseConfig):
         foo: lso.GradientClippingConfig | None = lso.GradientClippingDataclassField(
             description="", default={"clipglobalnorm": 0.1}
         )
 
     with pytest.raises((PydanticValidationError, Exception)):
-        CustomTestSchema.Schema().load({"foo": "test"})
+        CustomTestSchema.model_validate({"foo": "test"})
 
-    assert CustomTestSchema.Schema().load({}).foo == lso.GradientClippingConfig(clipglobalnorm=0.1)
-    assert CustomTestSchema.Schema().load({"foo": {"clipglobalnorm": 1}}).foo == lso.GradientClippingConfig(
+    assert CustomTestSchema.model_validate({}).foo == lso.GradientClippingConfig(clipglobalnorm=0.1)
+    assert CustomTestSchema.model_validate({"foo": {"clipglobalnorm": 1}}).foo == lso.GradientClippingConfig(
         clipglobalnorm=1
     )

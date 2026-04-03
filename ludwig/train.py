@@ -58,7 +58,7 @@ def train_cli(
     backend: Backend | str = None,
     random_seed: int = default_random_seed,
     logging_level: int = logging.INFO,
-    **kwargs
+    **kwargs,
 ) -> None:
     """*train* defines the entire training procedure used by Ludwig's internals. Requires most of the parameters
     that are taken into the model. Builds a full ludwig model and performs the training.

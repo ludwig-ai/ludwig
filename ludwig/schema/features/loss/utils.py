@@ -11,7 +11,7 @@ def get_loss_conds(feature_type: str):
     conds = []
     for loss in get_loss_classes(feature_type):
         loss_cls = get_loss_cls(feature_type, loss)
-        other_props = schema_utils.unload_jsonschema_from_marshmallow_class(loss_cls)["properties"]
+        other_props = schema_utils.unload_jsonschema_from_config_class(loss_cls)["properties"]
         schema_utils.remove_duplicate_fields(other_props)
         loss_cond = schema_utils.create_cond(
             {"type": loss},
@@ -29,7 +29,7 @@ def LossDataclassField(feature_type: str, default: str) -> Field:
         def __init__(self):
             super().__init__(registry=loss_registry, default_value=default)
 
-        def get_schema_from_registry(self, key: str) -> type[schema_utils.BaseMarshmallowConfig]:
+        def get_schema_from_registry(self, key: str) -> type[schema_utils.LudwigBaseConfig]:
             return get_loss_cls(feature_type, key)
 
         def _jsonschema_type_mapping(self):

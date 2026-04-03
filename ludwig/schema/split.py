@@ -4,7 +4,6 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import SPLIT, TYPE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata import PREPROCESSING_METADATA
-from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 
 split_config_registry = Registry()
@@ -17,8 +16,7 @@ def get_split_cls(name: str):
 
 
 @DeveloperAPI
-@ludwig_dataclass
-class BaseSplitConfig(schema_utils.BaseMarshmallowConfig):
+class BaseSplitConfig(schema_utils.LudwigBaseConfig):
     """This Dataclass is a base schema for the nested split config under preprocessing."""
 
     type: str
@@ -27,7 +25,6 @@ class BaseSplitConfig(schema_utils.BaseMarshmallowConfig):
 
 @DeveloperAPI
 @split_config_registry.register("random")
-@ludwig_dataclass
 class RandomSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the random splitting config."""
 
@@ -46,7 +43,6 @@ class RandomSplitConfig(BaseSplitConfig):
 
 @DeveloperAPI
 @split_config_registry.register("fixed")
-@ludwig_dataclass
 class FixedSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the fixed splitting config."""
 
@@ -65,7 +61,6 @@ class FixedSplitConfig(BaseSplitConfig):
 
 @DeveloperAPI
 @split_config_registry.register("stratify")
-@ludwig_dataclass
 class StratifySplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the fixed splitting config."""
 
@@ -91,7 +86,6 @@ class StratifySplitConfig(BaseSplitConfig):
 
 @DeveloperAPI
 @split_config_registry.register("datetime")
-@ludwig_dataclass
 class DateTimeSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the fixed splitting config."""
 
@@ -117,7 +111,6 @@ class DateTimeSplitConfig(BaseSplitConfig):
 
 @DeveloperAPI
 @split_config_registry.register("hash")
-@ludwig_dataclass
 class HashSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the hash splitting config.
 
@@ -157,7 +150,7 @@ def get_split_conds():
     conds = []
     for splitter in split_config_registry.data:
         splitter_cls = split_config_registry.data[splitter]
-        other_props = schema_utils.unload_jsonschema_from_marshmallow_class(splitter_cls)["properties"]
+        other_props = schema_utils.unload_jsonschema_from_config_class(splitter_cls)["properties"]
         schema_utils.remove_duplicate_fields(other_props, [TYPE])
         splitter_cond = schema_utils.create_cond(
             {"type": splitter},
@@ -179,7 +172,7 @@ def SplitDataclassField(default: str) -> Field:
         def __init__(self):
             super().__init__(registry=split_config_registry.data, default_value=default)
 
-        def get_schema_from_registry(self, key: str) -> type[schema_utils.BaseMarshmallowConfig]:
+        def get_schema_from_registry(self, key: str) -> type[schema_utils.LudwigBaseConfig]:
             return split_config_registry.data[key]
 
         def _jsonschema_type_mapping(self):

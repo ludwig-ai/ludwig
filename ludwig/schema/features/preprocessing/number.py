@@ -11,12 +11,10 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
 from ludwig.schema.metadata import FEATURE_METADATA
-from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
 @register_preprocessor(NUMBER)
-@ludwig_dataclass
 class NumberPreprocessingConfig(BasePreprocessingConfig):
     """NumberPreprocessingConfig is a dataclass that configures the parameters used for a number input feature."""
 
@@ -93,7 +91,6 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
 
 @DeveloperAPI
 @register_preprocessor("number_output")
-@ludwig_dataclass
 class NumberOutputPreprocessingConfig(NumberPreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS + [FILL_WITH_MEAN],

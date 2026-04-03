@@ -13,13 +13,11 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
 from ludwig.schema.metadata import FEATURE_METADATA
-from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils import strings_utils
 
 
 @DeveloperAPI
 @register_preprocessor(BINARY)
-@ludwig_dataclass
 class BinaryPreprocessingConfig(BasePreprocessingConfig):
     """BinaryPreprocessingConfig is a dataclass that configures the parameters used for a binary input feature."""
 
@@ -67,7 +65,6 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
 
 @DeveloperAPI
 @register_preprocessor("binary_output")
-@ludwig_dataclass
 class BinaryOutputPreprocessingConfig(BinaryPreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
         [FILL_WITH_MODE, BFILL, FFILL, DROP_ROW, FILL_WITH_FALSE, FILL_WITH_TRUE],
