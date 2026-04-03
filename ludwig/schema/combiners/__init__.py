@@ -1,5 +1,9 @@
 import ludwig.schema.combiners.comparator  # noqa: F401
 import ludwig.schema.combiners.concat  # noqa: F401
+import ludwig.schema.combiners.cross_attention  # noqa: F401
+import ludwig.schema.combiners.ft_transformer  # noqa: F401
+import ludwig.schema.combiners.gated_fusion  # noqa: F401
+import ludwig.schema.combiners.perceiver  # noqa: F401
 import ludwig.schema.combiners.project_aggregate  # noqa: F401
 import ludwig.schema.combiners.sequence  # noqa: F401
 import ludwig.schema.combiners.sequence_concat  # noqa: F401
