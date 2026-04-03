@@ -65,6 +65,16 @@ class ECD(BaseModel):
         else:
             self.loss_balancer = None
 
+        # ================ Modality Dropout ================
+        modality_dropout_prob = getattr(config_obj.trainer, "modality_dropout", 0.0)
+        if modality_dropout_prob > 0:
+            from ludwig.modules.modality_dropout import ModalityDropout
+
+            feature_shapes = {name: feat.output_shape for name, feat in self.input_features.items()}
+            self.modality_dropout = ModalityDropout(feature_shapes, modality_dropout_prob)
+        else:
+            self.modality_dropout = None
+
         # After constructing all layers, clear the cache to free up memory
         clear_data_cache()
 
@@ -157,6 +167,8 @@ class ECD(BaseModel):
         assert list(inputs.keys()) == self.input_features.keys()
 
         encoder_outputs = self.encode(inputs)
+        if self.modality_dropout is not None:
+            encoder_outputs = self.modality_dropout(encoder_outputs)
         combiner_outputs = self.combine(encoder_outputs)
         decoder_outputs = self.decode(combiner_outputs, targets, mask)
 
