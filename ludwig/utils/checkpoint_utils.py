@@ -278,19 +278,21 @@ class MultiNodeCheckpoint(Checkpoint):
 class CheckpointManager:
     """A model and optimizer checkpoint manager."""
 
-    def __init__(self, checkpoint: Checkpoint, directory: str, device: torch.device):
+    def __init__(self, checkpoint: Checkpoint, directory: str, device: torch.device, top_k: int = 0):
         """Constructor.
 
         Args:
           checkpoint (Checkpoint): An instance of `Checkpoint`.
           directory (str): The directory in which checkpoints will be saved.
-          device (torch.device): The computing device on which to restore
-            checkpoints.
+          device (torch.device): The computing device on which to restore checkpoints.
+          top_k (int): Number of top checkpoints to keep for model soup. 0 to disable.
         """
         self.checkpoint = checkpoint
         self.directory = directory
         self.device = device
         self.latest_checkpoint = None
+        self.top_k = top_k
+        self.top_k_entries: list[tuple[float, str]] = []  # (metric_value, path)
         self.checkpoint.prepare(self.directory)
 
     def restore_or_initialize(self) -> int:
@@ -342,6 +344,48 @@ class CheckpointManager:
             # NaN loss because of NaN or inf values in the weights before the first checkpoint is saved. In this case,
             logger.error(f"Could not load best checkpoint state from {save_path}. Best checkpoint may not exist.")
             return None
+
+    def save_top_k(self, global_step: int, metric_value: float, is_minimize: bool):
+        """Save a checkpoint and maintain top-K based on validation metric.
+
+        Args:
+            global_step: Current training step.
+            metric_value: Validation metric value for ranking.
+            is_minimize: If True, lower metric is better.
+        """
+        if self.top_k <= 0:
+            return
+
+        tag = f"topk_{global_step}"
+        save_path = os.path.join(self.directory, f"{tag}.ckpt")
+        self.checkpoint.save(save_path, global_step)
+        self.top_k_entries.append((metric_value, save_path))
+
+        # Sort: best first
+        self.top_k_entries.sort(key=lambda x: x[0], reverse=not is_minimize)
+
+        # Prune excess checkpoints
+        while len(self.top_k_entries) > self.top_k:
+            _, removed_path = self.top_k_entries.pop()
+            # Clean up checkpoint files
+            for path in [removed_path, removed_path + ".safetensors"]:
+                if os.path.exists(path):
+                    os.remove(path)
+
+    def get_top_k_state_dicts(self, device: torch.device) -> list[dict[str, Any]]:
+        """Load all top-K checkpoint model weights for model soup.
+
+        Returns:
+            List of model state dicts, sorted by metric (best first).
+        """
+        state_dicts = []
+        for _, path in self.top_k_entries:
+            try:
+                sd = self.checkpoint.get_state_for_inference(path, device)
+                state_dicts.append(sd)
+            except Exception as e:
+                logger.warning(f"Could not load top-K checkpoint from {path}: {e}")
+        return state_dicts
 
     def close(self):
         pass
