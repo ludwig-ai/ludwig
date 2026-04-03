@@ -157,13 +157,15 @@ class ECD(BaseModel):
             self.input_features.set(k, self.input_features.get(k).unskip())
 
     def save(self, save_path):
-        """Saves the model to the given path using SafeTensors format."""
-        from safetensors.torch import save_file
+        """Saves the model to the given path using SafeTensors format.
+
+        Uses save_model() which correctly handles tied/shared weights (e.g. RNN decoder embedding-projection tying) by
+        recording sharing metadata in the safetensors file.
+        """
+        from safetensors.torch import save_model
 
         weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_SAFETENSORS_FILE_NAME)
-        # Clone tensors to handle shared memory (e.g. tied weights in RNN decoders)
-        state_dict = {k: v.clone().contiguous() for k, v in self.state_dict().items()}
-        save_file(state_dict, weights_save_path)
+        save_model(self, weights_save_path)
         # Ensure the file is fully flushed to disk before any other process reads it
         with open(weights_save_path, "rb") as f:
             os.fsync(f.fileno())
@@ -171,17 +173,16 @@ class ECD(BaseModel):
     def load(self, save_path):
         """Loads the model from the given path.
 
-        Tries SafeTensors first, falls back to legacy pickle.
+        Tries SafeTensors first (using load_model to restore tied weights), falls back to legacy pickle.
         """
         safetensors_path = os.path.join(save_path, MODEL_WEIGHTS_SAFETENSORS_FILE_NAME)
         legacy_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-        device = torch.device(get_torch_device())
+        device = str(torch.device(get_torch_device()))
 
         if os.path.exists(safetensors_path):
-            from safetensors.torch import load_file
+            from safetensors.torch import load_model
 
-            state_dict = load_file(safetensors_path, device=str(device))
-            self.load_state_dict(update_state_dict(state_dict))
+            load_model(self, safetensors_path, device=device)
         elif os.path.exists(legacy_path):
             logger.info("Loading legacy pickle checkpoint (no SafeTensors file found)")
             with open_file(legacy_path, "rb") as f:
@@ -193,6 +194,7 @@ class ECD(BaseModel):
                 with open_file(safetensors_path, "rb") as f:
                     from safetensors.torch import load as safetensors_load
 
+                    # Remote path: load bytes, then load_state_dict (ties may not be restored)
                     state_dict = safetensors_load(f.read())
                     self.load_state_dict(update_state_dict(state_dict))
             except FileNotFoundError:
