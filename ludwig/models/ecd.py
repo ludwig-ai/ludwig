@@ -158,10 +158,12 @@ class ECD(BaseModel):
 
     def save(self, save_path):
         """Saves the model to the given path using SafeTensors format."""
-        from safetensors.torch import save_model
+        from safetensors.torch import save_file
 
         weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_SAFETENSORS_FILE_NAME)
-        save_model(self, weights_save_path)
+        # Clone tensors to handle shared memory (e.g. tied weights in RNN decoders)
+        state_dict = {k: v.clone().contiguous() for k, v in self.state_dict().items()}
+        save_file(state_dict, weights_save_path)
         # Ensure the file is fully flushed to disk before any other process reads it
         with open(weights_save_path, "rb") as f:
             os.fsync(f.fileno())
