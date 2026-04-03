@@ -33,6 +33,10 @@ from ludwig.modules.tabnet_modules import TabNet
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.combiners.comparator import ComparatorCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
+from ludwig.schema.combiners.cross_attention import CrossAttentionCombinerConfig
+from ludwig.schema.combiners.ft_transformer import FTTransformerCombinerConfig
+from ludwig.schema.combiners.gated_fusion import GatedFusionCombinerConfig
+from ludwig.schema.combiners.perceiver import PerceiverCombinerConfig
 from ludwig.schema.combiners.project_aggregate import ProjectAggregateCombinerConfig
 from ludwig.schema.combiners.sequence import SequenceCombinerConfig
 from ludwig.schema.combiners.sequence_concat import SequenceConcatCombinerConfig
@@ -996,3 +1000,328 @@ class ProjectAggregateCombiner(Combiner):
                     return_data[key] = value
 
         return return_data
+
+
+@register_combiner(FTTransformerCombinerConfig)
+class FTTransformerCombiner(Combiner):
+    """FT-Transformer: project each encoder output to a token, prepend [CLS], apply Transformer self-attention.
+
+    Output is the [CLS] token embedding followed by optional FC layers.
+    Based on Gorishniy et al., "Revisiting Deep Learning Models for Tabular Data", NeurIPS 2021.
+    """
+
+    def __init__(
+        self, input_features: dict[str, "InputFeature"] = None, config: FTTransformerCombinerConfig = None, **kwargs
+    ):
+        super().__init__(input_features)
+        self.name = "FTTransformerCombiner"
+        logger.debug(f" {self.name}")
+
+        self.cls_token = torch.nn.Parameter(torch.randn(1, 1, config.hidden_size))
+
+        logger.debug("  Projectors")
+        self.projectors = ModuleList(
+            [
+                Linear(
+                    torch.prod(torch.Tensor([*input_features.get(inp).output_shape])).type(torch.int32),
+                    config.hidden_size,
+                )
+                for inp in input_features
+            ]
+        )
+
+        logger.debug("  TransformerStack")
+        self.transformer_stack = TransformerStack(
+            input_size=config.hidden_size,
+            max_sequence_length=len(input_features) + 1,
+            hidden_size=config.hidden_size,
+            num_heads=config.num_heads,
+            output_size=config.transformer_output_size,
+            num_layers=config.num_layers,
+            dropout=config.dropout,
+        )
+
+        logger.debug("  FCStack")
+        self.fc_stack = FCStack(
+            self.transformer_stack.output_shape[-1],
+            layers=config.fc_layers,
+            num_layers=config.num_fc_layers,
+            default_output_size=config.output_size,
+            default_use_bias=config.use_bias,
+            default_weights_initializer=config.weights_initializer,
+            default_bias_initializer=config.bias_initializer,
+            default_norm=config.norm,
+            default_norm_params=config.norm_params,
+            default_activation=config.fc_activation,
+            default_dropout=config.fc_dropout,
+            fc_residual=config.fc_residual,
+        )
+
+    def forward(self, inputs) -> dict:
+        encoder_outputs = [inputs[k][ENCODER_OUTPUT] for k in inputs]
+        batch_size = encoder_outputs[0].shape[0]
+        encoder_outputs = [torch.reshape(eo, [batch_size, -1]) for eo in encoder_outputs]
+
+        projected = [self.projectors[i](eo) for i, eo in enumerate(encoder_outputs)]
+        tokens = torch.stack(projected, dim=1)
+
+        cls_token = self.cls_token.expand(batch_size, -1, -1)
+        tokens = torch.cat([cls_token, tokens], dim=1)
+
+        hidden = self.transformer_stack(tokens)
+        hidden = hidden[:, 0, :]  # [CLS] token output
+        hidden = self.fc_stack(hidden)
+
+        return {"combiner_output": hidden}
+
+
+@register_combiner(CrossAttentionCombinerConfig)
+class CrossAttentionCombiner(Combiner):
+    """Pairwise cross-attention between all feature pairs.
+
+    Each feature selectively queries relevant information from all other features via multi-head cross-attention.
+    Research consistently shows 2-10% improvement over concatenation across modalities.
+    """
+
+    def __init__(
+        self, input_features: dict[str, "InputFeature"] = None, config: CrossAttentionCombinerConfig = None, **kwargs
+    ):
+        super().__init__(input_features)
+        self.name = "CrossAttentionCombiner"
+        logger.debug(f" {self.name}")
+        self.num_features = len(input_features)
+        self.hidden_size = config.hidden_size
+
+        if self.num_features < 2:
+            logger.warning(
+                "CrossAttentionCombiner with a single input feature has no cross-modal pairs to attend over. "
+                "Consider using ConcatCombiner or adding more input features."
+            )
+
+        logger.debug("  Projectors")
+        self.projectors = ModuleList(
+            [
+                Linear(
+                    torch.prod(torch.Tensor([*input_features.get(inp).output_shape])).type(torch.int32),
+                    config.hidden_size,
+                )
+                for inp in input_features
+            ]
+        )
+
+        self.cross_attn_layers = ModuleList(
+            [
+                torch.nn.MultiheadAttention(
+                    config.hidden_size, config.num_heads, dropout=config.dropout, batch_first=True
+                )
+                for _ in range(self.num_features)
+            ]
+        )
+        self.layer_norms = ModuleList([torch.nn.LayerNorm(config.hidden_size) for _ in range(self.num_features)])
+
+        logger.debug("  FCStack")
+        self.fc_stack = FCStack(
+            config.hidden_size * self.num_features,
+            layers=config.fc_layers,
+            num_layers=config.num_fc_layers,
+            default_output_size=config.output_size,
+            default_use_bias=config.use_bias,
+            default_weights_initializer=config.weights_initializer,
+            default_bias_initializer=config.bias_initializer,
+            default_norm=config.norm,
+            default_norm_params=config.norm_params,
+            default_activation=config.activation,
+            default_dropout=config.dropout,
+        )
+
+    def forward(self, inputs) -> dict:
+        encoder_outputs = [inputs[k][ENCODER_OUTPUT] for k in inputs]
+        batch_size = encoder_outputs[0].shape[0]
+        encoder_outputs = [torch.reshape(eo, [batch_size, -1]) for eo in encoder_outputs]
+        projected = [self.projectors[i](eo) for i, eo in enumerate(encoder_outputs)]
+
+        fused = []
+        for i in range(self.num_features):
+            query = projected[i].unsqueeze(1)
+            others = [projected[j] for j in range(self.num_features) if j != i]
+            if others:
+                kv = torch.stack(others, dim=1)
+                attended, _ = self.cross_attn_layers[i](query, kv, kv)
+                attended = attended.squeeze(1)
+            else:
+                attended = torch.zeros_like(projected[i])
+            fused.append(self.layer_norms[i](projected[i] + attended))
+
+        hidden = torch.cat(fused, dim=-1)
+        hidden = self.fc_stack(hidden)
+        return {"combiner_output": hidden}
+
+
+@register_combiner(PerceiverCombinerConfig)
+class PerceiverCombiner(Combiner):
+    """Perceiver IO-style combiner with learnable latent bottleneck tokens.
+
+    Learnable latent tokens cross-attend to all encoder outputs, then self-attend. Based on Jaegle et al., "Perceiver
+    IO", ICML 2022.
+    """
+
+    def __init__(
+        self, input_features: dict[str, "InputFeature"] = None, config: PerceiverCombinerConfig = None, **kwargs
+    ):
+        super().__init__(input_features)
+        self.name = "PerceiverCombiner"
+        logger.debug(f" {self.name}")
+        self.latent_dim = config.latent_dim
+        self.reduce_output = config.reduce_output
+
+        self.latents = torch.nn.Parameter(torch.randn(config.num_latents, config.latent_dim) * 0.02)
+
+        logger.debug("  Projectors")
+        self.projectors = ModuleList(
+            [
+                Linear(
+                    torch.prod(torch.Tensor([*input_features.get(inp).output_shape])).type(torch.int32),
+                    config.latent_dim,
+                )
+                for inp in input_features
+            ]
+        )
+
+        self.cross_attn = torch.nn.MultiheadAttention(
+            config.latent_dim, config.num_heads, dropout=config.dropout, batch_first=True
+        )
+        self.cross_attn_norm = torch.nn.LayerNorm(config.latent_dim)
+
+        self.self_attn_stack = TransformerStack(
+            input_size=config.latent_dim,
+            max_sequence_length=config.num_latents,
+            hidden_size=config.latent_dim,
+            num_heads=config.num_heads,
+            output_size=config.latent_dim,
+            num_layers=config.num_self_attention_layers,
+            dropout=config.dropout,
+        )
+
+        self.reduce_sequence = SequenceReducer(
+            reduce_mode=config.reduce_output,
+            max_sequence_length=config.num_latents,
+            encoding_size=config.latent_dim,
+        )
+
+        if config.reduce_output is not None:
+            logger.debug("  FCStack")
+            self.fc_stack = FCStack(
+                config.latent_dim,
+                layers=config.fc_layers,
+                num_layers=config.num_fc_layers,
+                default_output_size=config.output_size,
+                default_use_bias=config.use_bias,
+                default_weights_initializer=config.weights_initializer,
+                default_bias_initializer=config.bias_initializer,
+                default_norm=config.norm,
+                default_norm_params=config.norm_params,
+                default_activation=config.activation,
+                default_dropout=config.dropout,
+            )
+        else:
+            self.fc_stack = None
+
+    def forward(self, inputs) -> dict:
+        encoder_outputs = [inputs[k][ENCODER_OUTPUT] for k in inputs]
+        batch_size = encoder_outputs[0].shape[0]
+        encoder_outputs = [torch.reshape(eo, [batch_size, -1]) for eo in encoder_outputs]
+        projected = [self.projectors[i](eo).unsqueeze(1) for i, eo in enumerate(encoder_outputs)]
+
+        all_tokens = torch.cat(projected, dim=1)
+        latents = self.latents.unsqueeze(0).expand(batch_size, -1, -1)
+
+        attended, _ = self.cross_attn(latents, all_tokens, all_tokens)
+        latents = self.cross_attn_norm(latents + attended)
+
+        hidden = self.self_attn_stack(latents)
+
+        if self.reduce_output is not None:
+            hidden = self.reduce_sequence(hidden)
+            if self.fc_stack is not None:
+                hidden = self.fc_stack(hidden)
+
+        return {"combiner_output": hidden}
+
+
+@register_combiner(GatedFusionCombinerConfig)
+class GatedFusionCombiner(Combiner):
+    """Gated cross-modal fusion inspired by Flamingo's gated cross-attention.
+
+    Per-feature gates are initialized near zero for stable training, allowing cross-modal residuals to be added
+    gradually as training progresses.
+    """
+
+    def __init__(
+        self, input_features: dict[str, "InputFeature"] = None, config: GatedFusionCombinerConfig = None, **kwargs
+    ):
+        super().__init__(input_features)
+        self.name = "GatedFusionCombiner"
+        logger.debug(f" {self.name}")
+        self.num_features = len(input_features)
+        self.hidden_size = config.hidden_size
+
+        logger.debug("  Projectors")
+        self.projectors = ModuleList(
+            [
+                Linear(
+                    torch.prod(torch.Tensor([*input_features.get(inp).output_shape])).type(torch.int32),
+                    config.hidden_size,
+                )
+                for inp in input_features
+            ]
+        )
+
+        self.gates = torch.nn.ParameterList(
+            [torch.nn.Parameter(torch.zeros(config.hidden_size) * 0.01) for _ in range(self.num_features)]
+        )
+
+        if self.num_features > 1:
+            self.cross_projections = ModuleList(
+                [
+                    Linear(config.hidden_size * (self.num_features - 1), config.hidden_size)
+                    for _ in range(self.num_features)
+                ]
+            )
+        else:
+            self.cross_projections = None
+
+        logger.debug("  FCStack")
+        self.fc_stack = FCStack(
+            config.hidden_size * self.num_features,
+            layers=config.fc_layers,
+            num_layers=config.num_fc_layers,
+            default_output_size=config.output_size,
+            default_use_bias=config.use_bias,
+            default_weights_initializer=config.weights_initializer,
+            default_bias_initializer=config.bias_initializer,
+            default_norm=config.norm,
+            default_norm_params=config.norm_params,
+            default_activation=config.activation,
+            default_dropout=config.dropout,
+        )
+
+    def forward(self, inputs) -> dict:
+        encoder_outputs = [inputs[k][ENCODER_OUTPUT] for k in inputs]
+        batch_size = encoder_outputs[0].shape[0]
+        encoder_outputs = [torch.reshape(eo, [batch_size, -1]) for eo in encoder_outputs]
+        projected = [self.projectors[i](eo) for i, eo in enumerate(encoder_outputs)]
+
+        fused = []
+        for i in range(self.num_features):
+            if self.cross_projections is not None:
+                others = [projected[j] for j in range(self.num_features) if j != i]
+                cross_input = torch.cat(others, dim=-1)
+                cross_modal = self.cross_projections[i](cross_input)
+                fused_i = projected[i] + torch.tanh(self.gates[i]) * cross_modal
+            else:
+                fused_i = projected[i]
+            fused.append(fused_i)
+
+        hidden = torch.cat(fused, dim=-1)
+        hidden = self.fc_stack(hidden)
+        return {"combiner_output": hidden}

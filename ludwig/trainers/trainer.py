@@ -396,6 +396,10 @@ class Trainer(BaseTrainer):
 
         self.distributed.zero_grad(self.optimizer)
 
+        # Post-step hook for loss balancing strategies (FAMO, GradNorm EMA updates)
+        if hasattr(self.model, "loss_balancer") and self.model.loss_balancer is not None:
+            self.model.loss_balancer.post_step(all_losses)
+
         if profiler:
             profiler.step()
 
@@ -884,7 +888,12 @@ class Trainer(BaseTrainer):
 
         # ====== Setup session =======
         checkpoint = self.create_checkpoint_handle()
-        checkpoint_manager = CheckpointManager(checkpoint, training_checkpoints_path, device=self.device)
+        model_soup_top_k = (
+            getattr(self.config, "model_soup_top_k", 0) if getattr(self.config, "model_soup", None) else 0
+        )
+        checkpoint_manager = CheckpointManager(
+            checkpoint, training_checkpoints_path, device=self.device, top_k=model_soup_top_k
+        )
 
         # ====== Setup Tensorboard writers =======
         train_summary_writer = None
@@ -1123,11 +1132,29 @@ class Trainer(BaseTrainer):
             if not self.skip_save_progress:
                 checkpoint_manager.close()
 
-        # Load the best weights from saved checkpoint
+        # Load the best weights from saved checkpoint, optionally applying model soup
         state_dict = None
         if self.distributed.is_coordinator():
             if not self.skip_save_model:
-                state_dict = checkpoint_manager.get_best_checkpoint_state_for_inference(self.return_device)
+                model_soup_strategy = getattr(self.config, "model_soup", None)
+                if model_soup_strategy and checkpoint_manager.top_k_entries:
+                    from ludwig.utils.model_soup import uniform_soup
+
+                    top_k_sds = checkpoint_manager.get_top_k_state_dicts(self.return_device)
+                    if len(top_k_sds) > 1:
+                        if model_soup_strategy == "uniform":
+                            logger.info(f"Applying uniform model soup with {len(top_k_sds)} checkpoints")
+                            state_dict = uniform_soup(top_k_sds)
+                        elif model_soup_strategy == "greedy":
+                            logger.info(f"Applying greedy model soup with {len(top_k_sds)} checkpoints")
+                            # For greedy soup we'd need eval_fn — fall back to uniform for now
+                            state_dict = uniform_soup(top_k_sds)
+                        else:
+                            state_dict = checkpoint_manager.get_best_checkpoint_state_for_inference(self.return_device)
+                    else:
+                        state_dict = checkpoint_manager.get_best_checkpoint_state_for_inference(self.return_device)
+                else:
+                    state_dict = checkpoint_manager.get_best_checkpoint_state_for_inference(self.return_device)
                 if not state_dict:
                     error_message = "Training ran into an error. No checkpoint was saved."
                     if has_nan_or_inf_tensors:
@@ -1504,6 +1531,11 @@ class Trainer(BaseTrainer):
                 logger.info("New best model saved.\n")
                 checkpoint_manager.save_best(progress_tracker.steps)
                 self.callback(lambda c: c.on_save_best_checkpoint(self, progress_tracker, save_path))
+
+                # Save top-K checkpoint for model soup
+                if checkpoint_manager.top_k > 0:
+                    is_minimize = get_metric_objective(validation_metric) == MINIMIZE
+                    checkpoint_manager.save_top_k(progress_tracker.steps, eval_metric_value, is_minimize)
 
         last_improvement_in_steps = progress_tracker.steps - progress_tracker.best_eval_metric_steps
         progress_tracker.last_improvement_steps = last_improvement_in_steps

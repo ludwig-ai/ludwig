@@ -23,6 +23,19 @@ class ECDModelConfig(ModelConfig):
 
     model_type: str = schema_utils.ProtectedString("ecd")
 
+    preset: str | None = schema_utils.StringOptions(
+        options=["medium_quality", "high_quality", "best_quality"],
+        default=None,
+        allow_none=True,
+        description=(
+            "Quality preset that sets sensible defaults for combiner, trainer, and other settings. "
+            "User-specified values always take precedence. "
+            "'medium_quality': fast training with concat combiner. "
+            "'high_quality': transformer combiner with uncertainty loss balancing. "
+            "'best_quality': FT-Transformer, uncertainty loss balancing, model soup."
+        ),
+    )
+
     input_features: FeatureCollection[BaseInputFeatureConfig] = ECDInputFeatureSelection().get_list_field()
     output_features: FeatureCollection[BaseOutputFeatureConfig] = ECDOutputFeatureSelection().get_list_field()
 

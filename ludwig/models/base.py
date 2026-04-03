@@ -231,12 +231,18 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
             A tuple of the loss tensor and a dictionary of loss for every
             output feature.
         """
-        train_loss = 0
         of_train_losses = {}
+        of_weights = {}
         for of_name, of_obj in self.output_features.items():
             of_train_loss = of_obj.train_loss(targets[of_name], predictions, of_name)
-            train_loss += of_obj.loss.weight * of_train_loss
             of_train_losses[of_name] = of_train_loss
+            of_weights[of_name] = of_obj.loss.weight
+
+        # Use loss balancer if available, otherwise static weighted sum
+        if hasattr(self, "loss_balancer") and self.loss_balancer is not None:
+            train_loss = self.loss_balancer(of_train_losses, of_weights)
+        else:
+            train_loss = sum(of_weights[k] * of_train_losses[k] for k in of_train_losses)
 
         additional_losses = self.losses()
         if additional_losses:

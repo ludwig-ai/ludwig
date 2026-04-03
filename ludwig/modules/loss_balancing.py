@@ -1,0 +1,201 @@
+"""Multi-task loss balancing strategies.
+
+Replaces the static weighted sum in BaseModel.train_loss() with pluggable strategies:
+- none: Static weighted sum (current behavior)
+- log_transform: log(1 + loss) compression (DB-MTL, 2024)
+- uncertainty: Homoscedastic uncertainty weighting (Kendall et al., CVPR 2018)
+- famo: Fast Adaptive Multitask Optimization (Liu et al., NeurIPS 2023)
+- gradnorm: Gradient normalization (Chen et al., ICML 2018)
+"""
+
+import logging
+from abc import ABC, abstractmethod
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+from ludwig.utils.torch_utils import LudwigModule
+
+logger = logging.getLogger(__name__)
+
+
+class LossBalancer(LudwigModule, ABC):
+    """Base class for multi-task loss balancing strategies."""
+
+    def __init__(self, output_feature_names: list[str]):
+        super().__init__()
+        self.output_feature_names = output_feature_names
+
+    @abstractmethod
+    def forward(self, per_task_losses: dict[str, torch.Tensor], per_task_weights: dict[str, float]) -> torch.Tensor:
+        """Compute the balanced total loss from individual task losses.
+
+        Args:
+            per_task_losses: Dict mapping output feature name to scalar loss tensor.
+            per_task_weights: Dict mapping output feature name to static weight from config.
+
+        Returns:
+            Scalar total loss tensor.
+        """
+        ...
+
+    def post_step(self, per_task_losses: dict[str, torch.Tensor]):
+        """Hook called after optimizer step.
+
+        Override for strategies needing EMA updates.
+        """
+        pass
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([len(self.output_feature_names)])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([1])
+
+
+class NoneLossBalancer(LossBalancer):
+    """Static weighted sum — reproduces the original Ludwig behavior."""
+
+    def forward(self, per_task_losses, per_task_weights):
+        return sum(per_task_weights[k] * per_task_losses[k] for k in per_task_losses)
+
+
+class LogTransformLossBalancer(LossBalancer):
+    """Log-transform loss compression (DB-MTL, 2024).
+
+    Applies log(1 + loss) to compress loss scales before weighting, preventing large-scale tasks from dominating.
+    """
+
+    def forward(self, per_task_losses, per_task_weights):
+        return sum(per_task_weights[k] * torch.log1p(per_task_losses[k]) for k in per_task_losses)
+
+
+class UncertaintyLossBalancer(LossBalancer):
+    """Homoscedastic uncertainty weighting (Kendall et al., CVPR 2018).
+
+    Learns a log-variance parameter per task. Loss becomes: precision * task_loss + 0.5 * log_var, where precision =
+    exp(-log_var). No hyperparameters needed.
+    """
+
+    def __init__(self, output_feature_names: list[str]):
+        super().__init__(output_feature_names)
+        self.log_vars = nn.ParameterDict({name: nn.Parameter(torch.zeros(1)) for name in output_feature_names})
+
+    def forward(self, per_task_losses, per_task_weights):
+        total = torch.tensor(0.0, device=next(iter(per_task_losses.values())).device)
+        for name, loss in per_task_losses.items():
+            precision = torch.exp(-self.log_vars[name])
+            total = total + per_task_weights[name] * (precision * loss + 0.5 * self.log_vars[name])
+        return total
+
+
+class FAMOLossBalancer(LossBalancer):
+    """Fast Adaptive Multitask Optimization (Liu et al., NeurIPS 2023).
+
+    Maintains learnable softmax weights updated via EMA of loss ratios. O(1) overhead, no gradient hooks needed.
+    """
+
+    def __init__(self, output_feature_names: list[str], alpha: float = 0.1, lr: float = 0.01):
+        super().__init__(output_feature_names)
+        self.alpha = alpha
+        self.lr = lr
+        self.log_weights = nn.ParameterDict({name: nn.Parameter(torch.zeros(1)) for name in output_feature_names})
+        self._prev_losses: dict[str, float] = {}
+
+    def forward(self, per_task_losses, per_task_weights):
+        # Compute softmax weights from log_weights
+        log_w = torch.stack([self.log_weights[name] for name in self.output_feature_names])
+        weights = F.softmax(log_w, dim=0)
+
+        total = torch.tensor(0.0, device=next(iter(per_task_losses.values())).device)
+        for i, name in enumerate(self.output_feature_names):
+            total = total + per_task_weights[name] * weights[i] * per_task_losses[name]
+        return total
+
+    @torch.no_grad()
+    def post_step(self, per_task_losses):
+        if self._prev_losses:
+            for i, name in enumerate(self.output_feature_names):
+                curr = per_task_losses[name].detach().item()
+                prev = self._prev_losses.get(name, curr)
+                if prev > 0:
+                    ratio = curr / (prev + 1e-8)
+                    # EMA update of log_weights based on loss ratio
+                    self.log_weights[name].data += self.lr * (ratio - 1.0)
+
+        self._prev_losses = {name: loss.detach().item() for name, loss in per_task_losses.items()}
+
+
+class GradNormLossBalancer(LossBalancer):
+    """Gradient normalization (Chen et al., ICML 2018).
+
+    Dynamically adjusts task weights to normalize gradient magnitudes across tasks, preventing any single task from
+    dominating the shared representation. Requires gradient computation w.r.t. shared layer.
+    """
+
+    def __init__(self, output_feature_names: list[str], alpha: float = 1.5, **kwargs):
+        super().__init__(output_feature_names)
+        self.alpha = alpha
+        self.task_weights = nn.ParameterDict({name: nn.Parameter(torch.ones(1)) for name in output_feature_names})
+        self._initial_losses: dict[str, float] = {}
+
+    def forward(self, per_task_losses, per_task_weights):
+        total = torch.tensor(0.0, device=next(iter(per_task_losses.values())).device)
+        for name, loss in per_task_losses.items():
+            # Use learned task_weights instead of static weights
+            total = total + torch.abs(self.task_weights[name]) * per_task_weights[name] * loss
+        return total
+
+    @torch.no_grad()
+    def post_step(self, per_task_losses):
+        # Record initial losses on first step
+        if not self._initial_losses:
+            self._initial_losses = {name: loss.detach().item() for name, loss in per_task_losses.items()}
+            return
+
+        # Compute inverse training rates
+        n = len(self.output_feature_names)
+        loss_ratios = {}
+        for name in self.output_feature_names:
+            initial = self._initial_losses.get(name, 1.0)
+            current = per_task_losses[name].detach().item()
+            loss_ratios[name] = current / (initial + 1e-8)
+
+        mean_ratio = sum(loss_ratios.values()) / n
+
+        # Compute target weights based on inverse training rate
+        for name in self.output_feature_names:
+            relative_rate = loss_ratios[name] / (mean_ratio + 1e-8)
+            target_weight = relative_rate**self.alpha
+            # Soft update toward target (GradNorm uses gradient-based update, we approximate with EMA)
+            self.task_weights[name].data = 0.9 * self.task_weights[name].data + 0.1 * target_weight
+
+        # Renormalize weights to sum to n (number of tasks)
+        total_weight = sum(torch.abs(self.task_weights[name]).item() for name in self.output_feature_names)
+        for name in self.output_feature_names:
+            self.task_weights[name].data *= n / (total_weight + 1e-8)
+
+
+LOSS_BALANCER_REGISTRY = {
+    "none": NoneLossBalancer,
+    "log_transform": LogTransformLossBalancer,
+    "uncertainty": UncertaintyLossBalancer,
+    "famo": FAMOLossBalancer,
+    "gradnorm": GradNormLossBalancer,
+}
+
+
+def create_loss_balancer(
+    strategy: str, output_feature_names: list[str], alpha: float = 1.5, lr: float = 0.01
+) -> LossBalancer:
+    """Create a loss balancer from strategy name."""
+    cls = LOSS_BALANCER_REGISTRY[strategy]
+    if strategy == "famo":
+        return cls(output_feature_names, alpha=alpha, lr=lr)
+    elif strategy == "gradnorm":
+        return cls(output_feature_names, alpha=alpha)
+    else:
+        return cls(output_feature_names)

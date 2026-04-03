@@ -53,6 +53,28 @@ class ECD(BaseModel):
             self.build_outputs(output_feature_configs=self.config_obj.output_features, combiner=self.combiner)
         )
 
+        # ================ Loss Balancing ================
+        loss_balancing = getattr(config_obj.trainer, "loss_balancing", "none")
+        if loss_balancing and loss_balancing != "none":
+            from ludwig.modules.loss_balancing import create_loss_balancer
+
+            output_feature_names = [f.name for f in config_obj.output_features]
+            alpha = getattr(config_obj.trainer, "loss_balancing_alpha", 1.5)
+            lr = getattr(config_obj.trainer, "loss_balancing_lr", 0.01)
+            self.loss_balancer = create_loss_balancer(loss_balancing, output_feature_names, alpha=alpha, lr=lr)
+        else:
+            self.loss_balancer = None
+
+        # ================ Modality Dropout ================
+        modality_dropout_prob = getattr(config_obj.trainer, "modality_dropout", 0.0)
+        if modality_dropout_prob > 0:
+            from ludwig.modules.modality_dropout import ModalityDropout
+
+            feature_shapes = {name: feat.output_shape for name, feat in self.input_features.items()}
+            self.modality_dropout = ModalityDropout(feature_shapes, modality_dropout_prob)
+        else:
+            self.modality_dropout = None
+
         # After constructing all layers, clear the cache to free up memory
         clear_data_cache()
 
@@ -145,6 +167,8 @@ class ECD(BaseModel):
         assert list(inputs.keys()) == self.input_features.keys()
 
         encoder_outputs = self.encode(inputs)
+        if self.modality_dropout is not None:
+            encoder_outputs = self.modality_dropout(encoder_outputs)
         combiner_outputs = self.combine(encoder_outputs)
         decoder_outputs = self.decode(combiner_outputs, targets, mask)
 
