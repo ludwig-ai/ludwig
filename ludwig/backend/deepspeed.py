@@ -17,7 +17,7 @@ class DeepSpeedBackend(DataParallelBackend):
         fp16: dict[str, Any] | None = None,
         bf16: dict[str, Any] | None = None,
         compression_training: dict[str, Any] | None = None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.zero_optimization = zero_optimization
