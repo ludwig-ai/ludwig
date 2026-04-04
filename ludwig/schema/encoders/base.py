@@ -24,6 +24,17 @@ class BaseEncoderConfig(schema_utils.LudwigBaseConfig, ABC):
         parameter_metadata=ENCODER_METADATA["BaseEncoder"]["skip"],
     )
 
+    adapter: dict | None = schema_utils.Dict(
+        default=None,
+        allow_none=True,
+        description=(
+            "PEFT adapter configuration for parameter-efficient fine-tuning of pretrained encoders. "
+            "Supports any adapter type registered in Ludwig (lora, vera, loha, etc.). "
+            "Example: {type: lora, r: 8, alpha: 16, target_modules: [query, value]}. "
+            "Only applicable to pretrained encoders (HuggingFace text encoders, TIMM image encoders)."
+        ),
+    )
+
     def set_fixed_preprocessing_params(self, model_type: str, preprocessing: "BasePreprocessingConfig"):
         pass
 
