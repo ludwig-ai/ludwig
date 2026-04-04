@@ -32,7 +32,7 @@ Key features:
 Ludwig is hosted by the
 [Linux Foundation AI & Data](https://lfaidata.foundation/).
 
-**Tech stack:** Python 3.12 | PyTorch 2.6 | Pydantic 2 | Transformers 5 | Ray 2.54
+**Tech stack:** Python 3.12 | PyTorch 2.7+ | Pydantic 2 | Transformers 5 | Ray 2.54
 
 ![img](https://raw.githubusercontent.com/ludwig-ai/ludwig-docs/main/docs/images/ludwig_legos_unanimated.gif)
 
