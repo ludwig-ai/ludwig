@@ -603,6 +603,21 @@ class LLMTrainerConfig(BaseTrainerConfig):
         description="Whether to evaluate the training set in the LLM trainer. Note: this operation may be slow.",
     )
 
+    packing: bool = schema_utils.Boolean(
+        default=False,
+        description=(
+            "Enable sequence packing for LLM training. Packs multiple short sequences into "
+            "a single batch entry with block-diagonal attention masks to prevent cross-sequence "
+            "attention. Typically provides 2-4x training throughput improvement by eliminating "
+            "wasted computation on pad tokens."
+        ),
+    )
+
+    packing_max_sequences_per_pack: int = schema_utils.PositiveInteger(
+        default=8,
+        description="Maximum number of sequences to pack into a single batch entry.",
+    )
+
 
 @DeveloperAPI
 @register_llm_trainer_schema("none")
