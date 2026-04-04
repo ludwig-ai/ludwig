@@ -1,0 +1,38 @@
+# Sample Ludwig config for Ray Job Submission
+# Customize this for your dataset and task.
+#
+# The Ray backend is set automatically when running on a Ray cluster.
+# You do NOT need to specify backend: {type: ray} here -- Ludwig detects
+# the Ray cluster and uses it for distributed training.
+
+input_features:
+  - name: age
+    type: number
+  - name: workclass
+    type: category
+  - name: education
+    type: category
+  - name: occupation
+    type: category
+  - name: hours-per-week
+    type: number
+  - name: capital-gain
+    type: number
+
+output_features:
+  - name: income
+    type: binary
+
+combiner:
+  type: ft_transformer
+  hidden_size: 128
+  num_heads: 8
+  num_layers: 2
+
+trainer:
+  epochs: 50
+  batch_size: 256
+  early_stop: 10
+  learning_rate: 0.0001
+  optimizer:
+    type: adamw
