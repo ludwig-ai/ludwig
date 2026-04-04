@@ -186,6 +186,7 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
     def initialize_encoder(self, encoder_config):
         encoder_cls = get_encoder_cls(self.type(), encoder_config.type)
         encoder_params_dict = encoder_config.to_dict()
+        encoder_params_dict.pop("adapter", None)  # adapter is handled separately below
         encoder = encoder_cls(encoder_config=encoder_config, **encoder_params_dict)
 
         # Apply PEFT adapter to pretrained encoders if configured
