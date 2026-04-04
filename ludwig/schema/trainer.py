@@ -662,6 +662,46 @@ class FineTuneTrainerConfig(ECDTrainerConfig):
 
 
 @DeveloperAPI
+@register_llm_trainer_schema("dpo")
+class DPOTrainerConfig(FineTuneTrainerConfig):
+    """Configuration for Direct Preference Optimization (DPO) training.
+
+    DPO trains a model to prefer chosen completions over rejected ones without a separate reward model. Based on
+    Rafailov et al., NeurIPS 2023.
+
+    Requires data with 'chosen' and 'rejected' text columns alongside the prompt.
+    """
+
+    type: str = schema_utils.ProtectedString("dpo")
+
+    dpo_beta: float = schema_utils.Float(
+        default=0.1,
+        description=(
+            "Temperature parameter for DPO loss. Controls how much the policy "
+            "can deviate from the reference model. Lower values keep the policy "
+            "closer to the reference. Typical range: 0.05 to 0.5."
+        ),
+    )
+
+    dpo_loss_type: str = schema_utils.StringOptions(
+        options=["sigmoid", "ipo"],
+        default="sigmoid",
+        allow_none=False,
+        description=(
+            "DPO loss variant. 'sigmoid' is the standard DPO loss. "
+            "'ipo' is Identity Preference Optimization which uses a squared loss."
+        ),
+    )
+
+    dpo_label_smoothing: float = schema_utils.FloatRange(
+        default=0.0,
+        min=0.0,
+        max=0.5,
+        description="Label smoothing for DPO preference targets. 0 means no smoothing.",
+    )
+
+
+@DeveloperAPI
 def get_model_type_jsonschema(model_type: str = MODEL_ECD):
     if model_type == MODEL_LLM:
         enum = [MODEL_LLM]
