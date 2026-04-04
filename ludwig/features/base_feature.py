@@ -186,12 +186,25 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
     def initialize_encoder(self, encoder_config):
         encoder_cls = get_encoder_cls(self.type(), encoder_config.type)
         encoder_params_dict = encoder_config.to_dict()
-        encoder_params_dict.pop("adapter", None)  # adapter is handled separately below
+
+        # HF text encoders (auto_transformer, bert, etc.) handle adapters natively
+        # via their _wrap_transformer() method. For those, pass adapter through.
+        # For all other encoders, remove adapter from kwargs (they don't expect it)
+        # and apply it generically via PEFT after construction.
+        has_native_adapter_support = hasattr(encoder_cls, "_wrap_transformer")
+        if not has_native_adapter_support:
+            encoder_params_dict.pop("adapter", None)
+
         encoder = encoder_cls(encoder_config=encoder_config, **encoder_params_dict)
 
-        # Apply PEFT adapter to pretrained encoders if configured
+        # Apply generic PEFT adapter for pretrained encoders without native adapter support
         adapter_config = getattr(encoder_config, "adapter", None)
-        if adapter_config and isinstance(adapter_config, dict) and encoder_config.is_pretrained():
+        if (
+            adapter_config
+            and isinstance(adapter_config, dict)
+            and encoder_config.is_pretrained()
+            and not has_native_adapter_support
+        ):
             encoder = self._apply_adapter(encoder, adapter_config)
 
         return encoder
