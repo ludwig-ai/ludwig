@@ -830,7 +830,7 @@ def test_vit_encoder_different_dimension_image(tmpdir, csv_filename, use_pretrai
         image_feature(
             os.path.join(tmpdir, "generated_output"),
             preprocessing={"in_memory": True, "height": 224, "width": 206, "num_channels": 3},
-            encoder={TYPE: "_vit_legacy", "use_pretrained": use_pretrained},
+            encoder={TYPE: "vit", "model_variant": "b_16", "use_pretrained": use_pretrained},
         )
     ]
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]

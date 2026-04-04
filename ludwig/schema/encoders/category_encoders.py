@@ -100,3 +100,59 @@ class CategoricalOneHotEncoderConfig(BaseEncoderConfig):
 
     def can_cache_embeddings(self) -> bool:
         return True
+
+
+@DeveloperAPI
+@register_encoder_config("target", CATEGORY, model_types=[MODEL_ECD])
+class CategoricalTargetEncoderConfig(BaseEncoderConfig):
+    """Target encoding: encode categories by smoothed mean target value.
+
+    Cite: Micci-Barreca, "A Preprocessing Scheme for High-Cardinality Categorical
+    Attributes in Classification and Prediction Problems", ACM SIGKDD 2001.
+    """
+
+    @staticmethod
+    def module_name():
+        return "CategoricalTargetEncoder"
+
+    type: str = schema_utils.ProtectedString(
+        "target",
+        description="Target encoding: maps each category to a learned embedding initialized from target statistics.",
+    )
+
+    vocab: list[str] = common_fields.VocabField()
+
+    output_size: int = schema_utils.PositiveInteger(
+        default=1,
+        description="Size of the target encoding output per category.",
+    )
+
+
+@DeveloperAPI
+@register_encoder_config("hash", CATEGORY, model_types=[MODEL_ECD])
+class CategoricalHashEncoderConfig(BaseEncoderConfig):
+    """Feature hashing encoder for ultra-high-cardinality categoricals.
+
+    Cite: Weinberger et al., "Feature Hashing for Large Scale Multitask Learning", ICML 2009.
+    """
+
+    @staticmethod
+    def module_name():
+        return "CategoricalHashEncoder"
+
+    type: str = schema_utils.ProtectedString(
+        "hash",
+        description="Feature hashing: maps categories to a fixed number of hash buckets with learned embeddings.",
+    )
+
+    vocab: list[str] = common_fields.VocabField()
+
+    num_hash_buckets: int = schema_utils.PositiveInteger(
+        default=1024,
+        description="Number of hash buckets to map categories into.",
+    )
+
+    embedding_size: int = common_fields.EmbeddingSizeField(
+        default=50,
+        description="Size of the embedding for each hash bucket.",
+    )

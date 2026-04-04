@@ -36,20 +36,18 @@ from ludwig.schema.encoders.text_encoders import (
     AutoTransformerConfig,
     BERTConfig,
     CamemBERTConfig,
-    CTRLConfig,
     DebertaV2Config,
     DistilBERTConfig,
     ELECTRAConfig,
-    FlauBERTConfig,
     GPT2Config,
     GPTConfig,
     LLMEncoderConfig,
     LongformerConfig,
+    ModernBERTConfig,
     MT5Config,
     RoBERTaConfig,
     T5Config,
     TfIdfEncoderConfig,
-    TransformerXLConfig,
     XLMConfig,
     XLMRoBERTaConfig,
     XLNetConfig,
@@ -247,6 +245,20 @@ class HFTextEncoderImpl(HFTextEncoder):
 @DeveloperAPI
 @register_encoder("albert", TEXT)
 class ALBERTEncoder(HFTextEncoder):
+    """ALBERT encoder (Lan et al., ICLR 2020).
+
+    A Lite BERT architecture that uses parameter-sharing across layers and factorized embedding
+    parameterization to drastically reduce model size while maintaining competitive performance.
+
+    Use when: you need a smaller, faster model with comparable quality to BERT. Good for
+    resource-constrained environments.
+
+    Alternatives: DistilBERT (different compression approach), BERT (full-size baseline),
+    AutoTransformer (flexible, any HF model).
+
+    Default model: ``albert-base-v2``
+    """
+
     DEFAULT_MODEL_NAME = "albert-base-v2"
 
     def __init__(
@@ -375,6 +387,19 @@ class ALBERTEncoder(HFTextEncoder):
 @DeveloperAPI
 @register_encoder("mt5", TEXT)
 class MT5Encoder(HFTextEncoder):
+    """MT5 encoder (Xue et al., NAACL 2021).
+
+    Multilingual variant of T5 pre-trained on the mC4 corpus covering 101 languages.
+    Uses the encoder portion of the T5 architecture with relative position embeddings.
+
+    Use when: multilingual text understanding tasks. Supports 101 languages out of the box.
+
+    Alternatives: XLM-RoBERTa (multilingual, BERT-style), T5 (English only, same architecture),
+    AutoTransformer (flexible, any HF model).
+
+    Default model: ``google/mt5-base``
+    """
+
     DEFAULT_MODEL_NAME = "google/mt5-base"
 
     def __init__(
@@ -497,6 +522,20 @@ class MT5Encoder(HFTextEncoder):
 @DeveloperAPI
 @register_encoder("xlmroberta", TEXT)
 class XLMRoBERTaEncoder(HFTextEncoder):
+    """XLM-RoBERTa encoder (Conneau et al., ACL 2020).
+
+    Cross-lingual language model pre-trained on 2.5TB of filtered CommonCrawl data in 100
+    languages using masked language modeling. Based on the RoBERTa architecture.
+
+    Use when: cross-lingual transfer learning or multilingual text classification. Strong
+    zero-shot cross-lingual performance.
+
+    Alternatives: mT5 (multilingual seq2seq), CamemBERT (French-specific), BERT (English only),
+    AutoTransformer (flexible, any HF model).
+
+    Default model: ``xlm-roberta-base``
+    """
+
     DEFAULT_MODEL_NAME = "xlm-roberta-base"
 
     def __init__(
@@ -599,6 +638,20 @@ class XLMRoBERTaEncoder(HFTextEncoder):
 @DeveloperAPI
 @register_encoder("bert", TEXT)
 class BERTEncoder(HFTextEncoder):
+    """BERT encoder (Devlin et al., NAACL 2019).
+
+    Bidirectional transformer pre-trained on masked language modeling and next sentence
+    prediction. Produces contextual word embeddings.
+
+    Use when: general NLU tasks (classification, NER, QA). Good default for English text
+    up to 512 tokens. For longer text, consider Longformer.
+
+    Alternatives: DistilBERT (6x faster, 97% of BERT quality), RoBERTa (better pretraining),
+    DeBERTa (SOTA on many benchmarks), AutoTransformer (flexible, any HF model).
+
+    Default model: ``bert-base-uncased``
+    """
+
     DEFAULT_MODEL_NAME = "bert-base-uncased"
 
     def __init__(
@@ -722,6 +775,19 @@ class BERTEncoder(HFTextEncoder):
 @DeveloperAPI
 @register_encoder("xlm", TEXT)
 class XLMEncoder(HFTextEncoder):
+    """XLM encoder (Lample & Conneau, NeurIPS 2019).
+
+    Cross-lingual language model pre-trained with masked language modeling and translation
+    language modeling objectives. Supports multiple languages.
+
+    Use when: legacy multilingual tasks. Largely superseded by XLM-RoBERTa.
+
+    Alternatives: XLM-RoBERTa (stronger cross-lingual transfer), mT5 (multilingual seq2seq),
+    AutoTransformer (flexible, any HF model).
+
+    Default model: ``xlm-mlm-en-2048``
+    """
+
     DEFAULT_MODEL_NAME = "xlm-mlm-en-2048"
 
     def __init__(
@@ -861,6 +927,19 @@ class XLMEncoder(HFTextEncoder):
 @DeveloperAPI
 @register_encoder("gpt", TEXT)
 class GPTEncoder(HFTextEncoder):
+    """GPT encoder (Radford et al., 2018).
+
+    Original unidirectional (left-to-right) transformer language model from OpenAI.
+    Pre-trained on BookCorpus with causal language modeling.
+
+    Use when: legacy compatibility. Largely superseded by GPT-2 and later models.
+
+    Alternatives: GPT2 (larger, better quality), LLMEncoder (modern LLMs with adapter support),
+    AutoTransformer (flexible, any HF model).
+
+    Default model: ``openai-gpt``
+    """
+
     DEFAULT_MODEL_NAME = "openai-gpt"
 
     def __init__(
@@ -965,6 +1044,20 @@ class GPTEncoder(HFTextEncoder):
 @DeveloperAPI
 @register_encoder("gpt2", TEXT)
 class GPT2Encoder(HFTextEncoder):
+    """GPT-2 encoder (Radford et al., 2019).
+
+    Unidirectional (left-to-right) transformer language model. Produces contextual embeddings
+    using causal attention. Supports sequences up to 1024 tokens.
+
+    Use when: you need causal (left-to-right) text representations, or when the downstream task
+    benefits from autoregressive pre-training (e.g., text generation features).
+
+    Alternatives: LLMEncoder (modern LLMs with adapter/quantization support), BERT (bidirectional),
+    AutoTransformer (flexible, any HF model).
+
+    Default model: ``gpt2``
+    """
+
     DEFAULT_MODEL_NAME = "gpt2"
 
     def __init__(
@@ -1070,6 +1163,20 @@ class GPT2Encoder(HFTextEncoder):
 @DeveloperAPI
 @register_encoder("deberta", TEXT)
 class DeBERTaEncoder(HFTextEncoderImpl):
+    """DeBERTa v2/v3 encoder (He et al., ICLR 2021).
+
+    Disentangled attention mechanism with enhanced mask decoder. DeBERTa v3 uses ELECTRA-style
+    pre-training for improved efficiency. Achieves state-of-the-art on many NLU benchmarks.
+
+    Use when: you want the best quality on NLU tasks and can afford slightly higher compute
+    than BERT. Excellent for classification, NER, and QA.
+
+    Alternatives: BERT (simpler, faster), RoBERTa (strong baseline), ELECTRA (efficient pre-training),
+    AutoTransformer (flexible, any HF model).
+
+    Default model: ``microsoft/deberta-v3-base``
+    """
+
     def __init__(self, *args, **kwargs):
         from transformers import DebertaV2Config as _DebertaV2Config
         from transformers import DebertaV2Model
@@ -1084,6 +1191,20 @@ class DeBERTaEncoder(HFTextEncoderImpl):
 @DeveloperAPI
 @register_encoder("roberta", TEXT)
 class RoBERTaEncoder(HFTextEncoder):
+    """RoBERTa encoder (Liu et al., 2019).
+
+    Robustly optimized BERT with dynamic masking, larger batches, and no next sentence
+    prediction objective. Consistently outperforms BERT on downstream tasks.
+
+    Use when: you want better-than-BERT quality with the same architecture. Strong general-purpose
+    encoder for English text.
+
+    Alternatives: DeBERTa (even better quality), BERT (simpler baseline), DistilBERT (faster),
+    AutoTransformer (flexible, any HF model).
+
+    Default model: ``roberta-base``
+    """
+
     DEFAULT_MODEL_NAME = "roberta-base"
 
     def __init__(
@@ -1174,134 +1295,23 @@ class RoBERTaEncoder(HFTextEncoder):
 
 
 @DeveloperAPI
-@register_encoder("transformer_xl", TEXT)
-class TransformerXLEncoder(HFTextEncoder):
-    DEFAULT_MODEL_NAME = "transfo-xl-wt103"
-
-    def __init__(
-        self,
-        max_sequence_length: int,
-        use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
-        saved_weights_in_checkpoint: bool = False,
-        reduce_output: str = "sum",
-        trainable: bool = False,
-        adapter: BaseAdapterConfig | None = None,
-        vocab_size: int = 267735,
-        cutoffs: list[int] = [20000, 40000, 200000],
-        d_model: int = 1024,
-        d_embed: int = 1024,
-        n_head: int = 16,
-        d_head: int = 64,
-        d_inner: int = 4096,
-        div_val: int = 4,
-        pre_lnorm: bool = False,
-        n_layer: int = 18,
-        mem_len: int = 1600,
-        clamp_len: int = 1000,
-        same_length: bool = True,
-        proj_share_all_but_first: bool = True,
-        attn_type: int = 0,
-        sample_softmax: int = -1,
-        adaptive: bool = True,
-        dropout: float = 0.1,
-        dropatt: float = 0.0,
-        untie_r: bool = True,
-        init: str = "normal",
-        init_range: float = 0.01,
-        proj_init_std: float = 0.01,
-        init_std: float = 0.02,
-        layer_norm_epsilon: float = 1e-5,
-        eos_token_id: int = 0,
-        pretrained_kwargs: dict = None,
-        encoder_config=None,
-        **kwargs,
-    ):
-        super().__init__()
-
-        from transformers import TransfoXLConfig, TransfoXLModel
-
-        hf_config_params = dict(
-            vocab_size=vocab_size,
-            cutoffs=cutoffs,
-            d_model=d_model,
-            d_embed=d_embed,
-            n_head=n_head,
-            d_head=d_head,
-            d_inner=d_inner,
-            div_val=div_val,
-            pre_lnorm=pre_lnorm,
-            n_layer=n_layer,
-            mem_len=mem_len,
-            clamp_len=clamp_len,
-            same_length=same_length,
-            proj_share_all_but_first=proj_share_all_but_first,
-            attn_type=attn_type,
-            sample_softmax=sample_softmax,
-            adaptive=adaptive,
-            dropout=dropout,
-            dropatt=dropatt,
-            untie_r=untie_r,
-            init=init,
-            init_range=init_range,
-            proj_init_std=proj_init_std,
-            init_std=init_std,
-            layer_norm_epsilon=layer_norm_epsilon,
-            eos_token_id=eos_token_id,
-        )
-
-        if use_pretrained and not saved_weights_in_checkpoint:
-            pretrained_kwargs = pretrained_kwargs or {}
-            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
-                TransfoXLModel, pretrained_model_name_or_path, **pretrained_kwargs
-            )
-        else:
-            config = TransfoXLConfig(**hf_config_params)
-            transformer = TransfoXLModel(config)
-
-        if encoder_config is not None:
-            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
-        else:
-            self.config = None
-
-        self.reduce_output = reduce_output
-        if self.reduce_output == "cls_pooled":
-            _cls_pooled_error_message(self.__class__.__name__)
-        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-        self.transformer = self._wrap_transformer(transformer, adapter, trainable)
-        self.max_sequence_length = max_sequence_length
-
-    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
-        transformer_outputs = self.transformer.module(inputs)
-        hidden = transformer_outputs[0]
-        hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {ENCODER_OUTPUT: hidden}
-
-    @staticmethod
-    def get_schema_cls() -> type[BaseEncoderConfig]:
-        return TransformerXLConfig
-
-    @property
-    def input_shape(self) -> torch.Size:
-        return torch.Size([self.max_sequence_length])
-
-    @property
-    def output_shape(self) -> torch.Size:
-        if self.reduce_output is None:
-            return torch.Size([self.max_sequence_length, self.transformer.module.config.d_model])
-        elif self.reduce_output == "concat":
-            # add the -2 to account of start and end tokens.
-            return torch.Size([self.transformer.module.config.d_model * self.max_sequence_length])
-        return torch.Size([self.transformer.module.config.d_model])
-
-    @property
-    def input_dtype(self) -> torch.dtype:
-        return torch.int32
-
-
-@DeveloperAPI
 @register_encoder("xlnet", TEXT)
 class XLNetEncoder(HFTextEncoder):
+    """XLNet encoder (Yang et al., NeurIPS 2019).
+
+    Generalized autoregressive pre-training with permutation language modeling. Captures
+    bidirectional context without the [MASK] token discrepancy between pre-training and
+    fine-tuning. Uses Transformer-XL's segment recurrence for longer context.
+
+    Use when: tasks requiring long-range dependencies or when permutation-based pre-training
+    is beneficial.
+
+    Alternatives: BERT (simpler bidirectional), RoBERTa (often comparable quality),
+    Longformer (explicit long-context support), AutoTransformer (flexible, any HF model).
+
+    Default model: ``xlnet-base-cased``
+    """
+
     DEFAULT_MODEL_NAME = "xlnet-base-cased"
 
     def __init__(
@@ -1434,6 +1444,20 @@ class XLNetEncoder(HFTextEncoder):
 @DeveloperAPI
 @register_encoder("distilbert", TEXT)
 class DistilBERTEncoder(HFTextEncoder):
+    """DistilBERT encoder (Sanh et al., NeurIPS 2019 Workshop).
+
+    Knowledge-distilled version of BERT that is 60% faster and 40% smaller while retaining
+    97% of BERT's language understanding. Uses 6 transformer layers instead of 12.
+
+    Use when: you need fast inference or have limited compute/memory. Excellent trade-off
+    between speed and quality.
+
+    Alternatives: BERT (full quality), ALBERT (parameter-efficient), RoBERTa (better quality),
+    AutoTransformer (flexible, any HF model).
+
+    Default model: ``distilbert-base-uncased``
+    """
+
     DEFAULT_MODEL_NAME = "distilbert-base-uncased"
 
     def __init__(
@@ -1544,113 +1568,22 @@ class DistilBERTEncoder(HFTextEncoder):
 
 
 @DeveloperAPI
-@register_encoder("ctrl", TEXT)
-class CTRLEncoder(HFTextEncoder):
-    DEFAULT_MODEL_NAME = "ctrl"
-
-    def __init__(
-        self,
-        max_sequence_length: int,
-        use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
-        saved_weights_in_checkpoint: bool = False,
-        reduce_output: str = "sum",
-        trainable: bool = False,
-        adapter: BaseAdapterConfig | None = None,
-        vocab_size: int = 246534,
-        n_positions: int = 256,
-        n_ctx: int = 256,
-        n_embd: int = 1280,
-        dff: int = 8192,
-        n_layer: int = 48,
-        n_head: int = 16,
-        resid_pdrop: float = 0.1,
-        embd_pdrop: float = 0.1,
-        attn_pdrop: float = 0.1,
-        layer_norm_epsilon: float = 1e-6,
-        initializer_range: float = 0.02,
-        pretrained_kwargs: dict = None,
-        encoder_config=None,
-        **kwargs,
-    ):
-        super().__init__()
-
-        from transformers import CTRLConfig, CTRLModel
-
-        hf_config_params = dict(
-            vocab_size=vocab_size,
-            n_positions=n_positions,
-            n_ctx=n_ctx,
-            n_embd=n_embd,
-            dff=dff,
-            n_layer=n_layer,
-            n_head=n_head,
-            resid_pdrop=resid_pdrop,
-            embd_pdrop=embd_pdrop,
-            attn_pdrop=attn_pdrop,
-            layer_norm_epsilon=layer_norm_epsilon,
-            initializer_range=initializer_range,
-        )
-
-        if use_pretrained and not saved_weights_in_checkpoint:
-            pretrained_kwargs = pretrained_kwargs or {}
-            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
-                CTRLModel, pretrained_model_name_or_path, **pretrained_kwargs
-            )
-            self.vocab_size = transformer.config.vocab_size
-        else:
-            transformer = self._init_transformer_from_scratch(CTRLModel, CTRLConfig, hf_config_params, vocab_size)
-            self.vocab_size = vocab_size
-
-        if encoder_config is not None:
-            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
-        else:
-            self.config = None
-
-        self.max_sequence_length = max_sequence_length
-        self.transformer = self._wrap_transformer(transformer, adapter, trainable)
-        self.reduce_output = reduce_output
-        if self.reduce_output == "cls_pooled":
-            _cls_pooled_error_message(self.__class__.__name__)
-        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-
-    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
-        if mask is not None:
-            mask = mask.to(torch.int32)
-        transformer_outputs = self.transformer.module(
-            input_ids=inputs,
-            attention_mask=mask,
-            token_type_ids=torch.zeros_like(inputs),
-        )
-        hidden = transformer_outputs[0]
-        hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {ENCODER_OUTPUT: hidden}
-
-    @staticmethod
-    def get_schema_cls():
-        return CTRLConfig
-
-    @property
-    def input_shape(self) -> torch.Size:
-        return torch.Size([self.max_sequence_length])
-
-    @property
-    def output_shape(self) -> torch.Size:
-        if self.reduce_output is None:
-            return torch.Size([self.max_sequence_length, self.transformer.module.config.n_embd])
-        elif self.reduce_output == "concat":
-            # add the -2 to account of start and end tokens.
-            return torch.Size([self.transformer.module.config.n_embd * (self.max_sequence_length - 2)])
-        return torch.Size([self.transformer.module.config.n_embd])
-
-    @property
-    def input_dtype(self) -> torch.dtype:
-        return torch.int32
-
-
-@DeveloperAPI
 @register_encoder("camembert", TEXT)
 class CamemBERTEncoder(HFTextEncoder):
+    """CamemBERT encoder (Martin et al., ACL 2020).
+
+    French language model based on the RoBERTa architecture, pre-trained on 138GB of French
+    text from the OSCAR corpus. State-of-the-art for French NLP tasks.
+
+    Use when: French text understanding tasks. Preferred over multilingual models for
+    French-specific applications.
+
+    Alternatives: XLM-RoBERTa (multilingual including French), BERT (English),
+    AutoTransformer (flexible, any HF model).
+
+    Default model: ``camembert-base``
+    """
+
     DEFAULT_MODEL_NAME = "camembert-base"
 
     def __init__(
@@ -1773,6 +1706,21 @@ class CamemBERTEncoder(HFTextEncoder):
 @DeveloperAPI
 @register_encoder("t5", TEXT)
 class T5Encoder(HFTextEncoder):
+    """T5 encoder (Raffel et al., JMLR 2020).
+
+    Text-to-Text Transfer Transformer pre-trained on the C4 corpus. Uses the encoder portion
+    of the encoder-decoder architecture with relative position embeddings. Treats every NLP
+    task as a text-to-text problem.
+
+    Use when: tasks that benefit from the T5 pre-training approach, or when you need the
+    encoder half of a T5 model for representation learning.
+
+    Alternatives: mT5 (multilingual variant), BERT (classification-oriented), LLMEncoder
+    (full decoder-based LLMs), AutoTransformer (flexible, any HF model).
+
+    Default model: ``t5-small``
+    """
+
     DEFAULT_MODEL_NAME = "t5-small"
 
     def __init__(
@@ -1880,147 +1828,23 @@ class T5Encoder(HFTextEncoder):
 
 
 @DeveloperAPI
-@register_encoder("flaubert", TEXT)
-class FlauBERTEncoder(HFTextEncoder):
-    DEFAULT_MODEL_NAME = "flaubert/flaubert_small_cased"
-
-    def __init__(
-        self,
-        max_sequence_length: int,
-        use_pretrained: bool,
-        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
-        saved_weights_in_checkpoint: bool = False,
-        reduce_output: str = "sum",
-        trainable: bool = False,
-        adapter: BaseAdapterConfig | None = None,
-        vocab_size: int = 30145,
-        pre_norm: bool = False,
-        layerdrop: float = 0.0,
-        emb_dim: int = 2048,
-        n_layers: int = 12,
-        n_heads: int = 16,
-        dropout: float = 0.1,
-        attention_dropout: float = 0.1,
-        gelu_activation: bool = True,
-        sinusoidal_embeddings: bool = False,
-        causal: bool = False,
-        asm: bool = False,
-        n_langs: int = 1,
-        use_lang_emb: bool = True,
-        max_position_embeddings: int = 512,
-        embed_init_std: float = 2048**-0.5,
-        init_std: int = 0.02,
-        layer_norm_eps: float = 1e-12,
-        bos_index: int = 0,
-        eos_index: int = 1,
-        pad_index: int = 2,
-        unk_index: int = 3,
-        mask_index: int = 5,
-        is_encoder: bool = True,
-        mask_token_id: int = 0,
-        lang_id: int = 1,
-        pretrained_kwargs: dict = None,
-        encoder_config=None,
-        **kwargs,
-    ):
-        super().__init__()
-
-        from transformers import FlaubertConfig, FlaubertModel
-
-        hf_config_params = dict(
-            vocab_size=vocab_size,
-            pre_norm=pre_norm,
-            layerdrop=layerdrop,
-            emb_dim=emb_dim,
-            n_layers=n_layers,
-            n_heads=n_heads,
-            dropout=dropout,
-            attention_dropout=dropout,
-            gelu_activation=gelu_activation,
-            sinusoidal_embeddings=sinusoidal_embeddings,
-            causal=causal,
-            asm=asm,
-            n_langs=n_langs,
-            use_lang_emb=use_lang_emb,
-            max_position_embeddings=max_position_embeddings,
-            embed_init_std=embed_init_std,
-            init_std=init_std,
-            layer_norm_eps=layer_norm_eps,
-            bos_index=bos_index,
-            eos_index=eos_index,
-            pad_index=pad_index,
-            unk_index=unk_index,
-            mask_index=mask_index,
-            is_encoder=is_encoder,
-            mask_token_id=mask_token_id,
-            lang_id=lang_id,
-        )
-
-        if use_pretrained and not saved_weights_in_checkpoint:
-            pretrained_kwargs = pretrained_kwargs or {}
-            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
-                FlaubertModel, pretrained_model_name_or_path, **pretrained_kwargs
-            )
-        else:
-            transformer = self._init_transformer_from_scratch(
-                FlaubertModel, FlaubertConfig, hf_config_params, vocab_size
-            )
-
-        if encoder_config is not None:
-            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
-        else:
-            self.config = None
-
-        self.max_sequence_length = max_sequence_length
-        self.reduce_output = reduce_output
-        if self.reduce_output == "cls_pooled":
-            _cls_pooled_error_message(self.__class__.__name__)
-        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-        self.transformer = self._wrap_transformer(transformer, adapter, trainable)
-
-    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
-        if mask is not None:
-            mask = mask.to(torch.int32)
-        transformer_outputs = self.transformer.module(
-            input_ids=inputs,
-            attention_mask=mask,
-            token_type_ids=torch.zeros_like(inputs),
-        )
-        hidden = transformer_outputs[0][:, 1:-1, :]
-        hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {ENCODER_OUTPUT: hidden}
-
-    @staticmethod
-    def get_schema_cls() -> type[BaseEncoderConfig]:
-        return FlauBERTConfig
-
-    @property
-    def input_shape(self) -> torch.Size:
-        return torch.Size([self.max_sequence_length])
-
-    @property
-    def output_shape(self) -> torch.Size:
-        if self.reduce_output is None:
-            # Subtract 2 to remove CLS and PAD tokens added by tokenizer.
-            return torch.Size(
-                [
-                    self.max_sequence_length - 2,
-                    self.transformer.module.config.hidden_size,
-                ]
-            )
-        elif self.reduce_output == "concat":
-            # add the -2 to account of start and end tokens.
-            return torch.Size([self.transformer.module.config.hidden_size * (self.max_sequence_length - 2)])
-        return torch.Size([self.transformer.module.config.emb_dim])
-
-    @property
-    def input_dtype(self) -> torch.dtype:
-        return torch.int32
-
-
-@DeveloperAPI
 @register_encoder("electra", TEXT)
 class ELECTRAEncoder(HFTextEncoder):
+    """ELECTRA encoder (Clark et al., ICLR 2020).
+
+    Uses a replaced token detection pre-training objective instead of masked language modeling.
+    A small generator produces plausible replacements and the discriminator (this encoder)
+    learns to detect them, making pre-training much more sample-efficient than BERT.
+
+    Use when: you want BERT-level quality with significantly less pre-training compute, or
+    when using smaller model sizes (ELECTRA-small outperforms similarly-sized BERT variants).
+
+    Alternatives: DeBERTa (highest quality), BERT (simpler), ALBERT (parameter-efficient),
+    AutoTransformer (flexible, any HF model).
+
+    Default model: ``google/electra-small-discriminator``
+    """
+
     DEFAULT_MODEL_NAME = "google/electra-small-discriminator"
 
     def __init__(
@@ -2136,6 +1960,20 @@ class ELECTRAEncoder(HFTextEncoder):
 @DeveloperAPI
 @register_encoder("longformer", TEXT)
 class LongformerEncoder(HFTextEncoder):
+    """Longformer encoder (Beltagy et al., 2020).
+
+    Transformer with a sliding-window local attention pattern combined with task-motivated
+    global attention, enabling efficient processing of documents up to 4096 tokens.
+
+    Use when: text exceeds BERT's 512-token limit. Ideal for document classification,
+    long-form QA, and summarization features.
+
+    Alternatives: BERT (shorter text, up to 512 tokens), RoBERTa (shorter text),
+    AutoTransformer (flexible, any HF model).
+
+    Default model: ``allenai/longformer-base-4096``
+    """
+
     DEFAULT_MODEL_NAME = "allenai/longformer-base-4096"
 
     def __init__(
@@ -2231,8 +2069,154 @@ class LongformerEncoder(HFTextEncoder):
 
 
 @DeveloperAPI
+@register_encoder("modernbert", TEXT)
+class ModernBERTEncoder(HFTextEncoder):
+    """ModernBERT encoder (Warner et al., December 2024).
+
+    First major architectural upgrade to BERT, incorporating modern transformer
+    improvements: Flash Attention 2, Rotary Position Embeddings (RoPE), GeGLU
+    activations, unpadding for efficiency, and alternating local/global attention.
+    Supports up to 8192 tokens (vs BERT's 512).
+
+    Use when: general NLU tasks where you would use BERT or RoBERTa. Faster
+    and more accurate than both, especially on longer texts. Best for
+    classification, NER, and embedding tasks.
+
+    Alternatives: BERT (legacy baseline), RoBERTa (established alternative),
+    DeBERTa (strong on benchmarks but slower), AutoTransformer (for any HF model).
+
+    Default model: ``answerdotai/ModernBERT-base``
+    """
+
+    DEFAULT_MODEL_NAME = "answerdotai/ModernBERT-base"
+
+    def __init__(
+        self,
+        max_sequence_length: int,
+        use_pretrained: bool = True,
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
+        saved_weights_in_checkpoint: bool = False,
+        trainable: bool = False,
+        adapter: BaseAdapterConfig | None = None,
+        reduce_output: str = "cls_pooled",
+        vocab_size: int = 50368,
+        hidden_size: int = 768,
+        num_hidden_layers: int = 22,
+        num_attention_heads: int = 12,
+        intermediate_size: int = 1152,
+        hidden_act: str | Callable = "gelu",
+        hidden_dropout_prob: float = 0.0,
+        max_position_embeddings: int = 8192,
+        initializer_range: float = 0.02,
+        layer_norm_eps: float = 1e-5,
+        pad_token_id: int = 50283,
+        pretrained_kwargs: dict = None,
+        encoder_config=None,
+        **kwargs,
+    ):
+        super().__init__()
+
+        from transformers import ModernBertConfig, ModernBertModel
+
+        hf_config_params = dict(
+            vocab_size=vocab_size,
+            hidden_size=hidden_size,
+            num_hidden_layers=num_hidden_layers,
+            num_attention_heads=num_attention_heads,
+            intermediate_size=intermediate_size,
+            hidden_act=hidden_act,
+            hidden_dropout_prob=hidden_dropout_prob,
+            max_position_embeddings=max_position_embeddings,
+            initializer_range=initializer_range,
+            layer_norm_eps=layer_norm_eps,
+            pad_token_id=pad_token_id,
+        )
+
+        if use_pretrained and not saved_weights_in_checkpoint:
+            pretrained_kwargs = pretrained_kwargs or {}
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                ModernBertModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
+        else:
+            transformer = self._init_transformer_from_scratch(
+                ModernBertModel, ModernBertConfig, hf_config_params, vocab_size
+            )
+
+        if encoder_config is not None:
+            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        else:
+            self.config = None
+
+        self.reduce_output = reduce_output
+        if not self.reduce_output == "cls_pooled":
+            self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+
+        self.transformer = self._wrap_transformer(transformer, adapter, trainable)
+
+        self.max_sequence_length = max_sequence_length
+
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
+        if mask is not None:
+            mask = mask.to(torch.int32)
+        transformer_outputs = self.transformer.module(
+            input_ids=inputs,
+            attention_mask=mask,
+        )
+        if self.reduce_output == "cls_pooled":
+            # ModernBERT does not have a pooler layer, so use CLS token hidden state
+            hidden = transformer_outputs[0][:, 0, :]
+        else:
+            hidden = transformer_outputs[0][:, 1:-1, :]
+            hidden = self.reduce_sequence(hidden, self.reduce_output)
+
+        return {ENCODER_OUTPUT: hidden}
+
+    @staticmethod
+    def get_schema_cls() -> type[BaseEncoderConfig]:
+        return ModernBERTConfig
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            return torch.Size(
+                [
+                    self.max_sequence_length - 2,
+                    self.transformer.module.config.hidden_size,
+                ]
+            )
+        elif self.reduce_output == "concat":
+            return torch.Size([self.transformer.module.config.hidden_size * (self.max_sequence_length - 2)])
+        return torch.Size([self.transformer.module.config.hidden_size])
+
+    @property
+    def input_dtype(self) -> torch.dtype:
+        return torch.int32
+
+
+@DeveloperAPI
 @register_encoder("auto_transformer", TEXT)
 class AutoTransformerEncoder(HFTextEncoder):
+    """Generic HuggingFace AutoModel encoder.
+
+    Loads any HuggingFace model using ``AutoModel.from_pretrained()``. This is the most
+    flexible text encoder -- it works with any model on the HuggingFace Hub without
+    requiring a dedicated Ludwig encoder class.
+
+    Use when: you want to use a model not covered by the named encoders (e.g., ModernBERT,
+    Mistral, custom fine-tuned models), or when you want a single configuration entry point
+    for any HuggingFace model.
+
+    Note: ``pretrained_model_name_or_path`` is required (no default model). The encoder
+    auto-detects the model's forward signature to avoid passing unsupported arguments.
+
+    Alternatives: Named encoders (BERT, RoBERTa, etc.) for model-specific parameter control,
+    LLMEncoder (for decoder-based LLMs with adapter/quantization support).
+    """
+
     DEFAULT_MODEL_NAME = None
 
     def __init__(
@@ -2335,6 +2319,19 @@ class AutoTransformerEncoder(HFTextEncoder):
 @DeveloperAPI
 @register_encoder("tf_idf", [TEXT])
 class TfIdfEncoder(Encoder):
+    """TF-IDF (Term Frequency - Inverse Document Frequency) encoder.
+
+    Classical sparse text representation that weights each token by its frequency in the
+    document (TF) multiplied by its rarity across the corpus (IDF). Produces a fixed-size
+    dense vector of size ``vocab_size``.
+
+    Use when: you want a simple, non-neural baseline, or when training data is very small
+    and pretrained transformers are overkill. No GPU required.
+
+    Alternatives: Any HF encoder (BERT, DistilBERT, etc.) for contextual embeddings,
+    AutoTransformer for pretrained representations.
+    """
+
     def __init__(
         self,
         max_sequence_length: int,
@@ -2388,6 +2385,19 @@ class TfIdfEncoder(Encoder):
 @DeveloperAPI
 @register_encoder("llm", [TEXT])
 class LLMEncoder(Encoder):
+    """Large Language Model encoder for ECD (Encoder-Combiner-Decoder) architectures.
+
+    Loads a causal language model (e.g., Llama, Mistral, Phi) and uses its last hidden state
+    as text representations. Supports PEFT adapters (LoRA, IA3, AdaLoRA) for parameter-efficient
+    fine-tuning and quantization (4-bit, 8-bit) for reduced memory usage.
+
+    Use when: you want to use a modern decoder-only LLM as a text encoder within Ludwig's ECD
+    framework, especially with adapter-based fine-tuning.
+
+    Alternatives: AutoTransformer (encoder-only HF models), named encoders (BERT, RoBERTa, etc.)
+    for smaller, bidirectional models.
+    """
+
     # Per-adapter type prefixes for parameter names in the state dict, taken from
     # https://github.com/huggingface/peft/blob/0f1e9091cc975eb5458cc163bf1843a34fb42b76/src/peft/utils/save_and_load.py#L173C9-L180
     ADAPTER_PARAM_NAME_PREFIX = {

@@ -19,7 +19,7 @@ from datetime import date, datetime
 import numpy as np
 import torch
 
-from ludwig.constants import COLUMN, DATE, PROC_COLUMN
+from ludwig.constants import COLUMN, DATE, DATE_VECTOR_LENGTH, PROC_COLUMN
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.date_feature import DateInputFeatureConfig
 from ludwig.types import (
@@ -33,8 +33,6 @@ from ludwig.utils.date_utils import create_vector_from_datetime_obj, parse_datet
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
-
-DATE_VECTOR_LENGTH = 9
 
 
 class _DatePreprocessing(torch.nn.Module):

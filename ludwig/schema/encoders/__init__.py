@@ -1,4 +1,5 @@
 # Register all encoder schemas
+import ludwig.schema.encoders.audio_encoders
 import ludwig.schema.encoders.bag_encoders
 import ludwig.schema.encoders.category_encoders
 import ludwig.schema.encoders.date_encoders

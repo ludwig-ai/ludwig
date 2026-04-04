@@ -127,3 +127,55 @@ class PeriodicEncoder(Encoder):
     @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self._output_size])
+
+
+@DeveloperAPI
+@register_encoder("bins", [NUMBER])
+class BinsEncoder(Encoder):
+    """Binning encoder: discretize numbers into equal-width or equal-frequency bins.
+
+    Simpler alternative to PLE. Good for small/medium datasets where PLE may overfit.
+    Each bin gets a learned embedding.
+    """
+
+    def __init__(self, input_size: int = 1, num_bins: int = 32, output_size: int = 256, encoder_config=None, **kwargs):
+        super().__init__()
+        self.config = encoder_config
+        self.num_bins = num_bins
+        self._input_size = input_size
+        self._output_size = output_size
+        # Bin edges will be set from training data metadata, default: uniform [0,1]
+        self.register_buffer("bin_edges", torch.linspace(0, 1, num_bins + 1))
+        self.bin_embeddings = nn.Embedding(num_bins, output_size)
+
+    def set_bin_edges(self, bin_edges: list[float]):
+        """Set bin edges from training data statistics."""
+        edges = torch.tensor(bin_edges, dtype=torch.float32)
+        # Ensure edges are strictly increasing by adding small epsilon to duplicates
+        for i in range(1, len(edges)):
+            if edges[i] <= edges[i - 1]:
+                edges[i] = edges[i - 1] + 1e-8
+        self.bin_edges.copy_(edges)
+
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
+        # inputs: [batch, 1] or [batch]
+        x = inputs.float()
+        if x.dim() == 1:
+            x = x.unsqueeze(-1)
+        # Digitize: find bin index for each input value using searchsorted, clamp to valid range
+        bin_idx = torch.searchsorted(self.bin_edges[1:-1], x.squeeze(-1)).clamp(0, self.num_bins - 1)
+        return {ENCODER_OUTPUT: self.bin_embeddings(bin_idx)}
+
+    @staticmethod
+    def get_schema_cls():
+        from ludwig.schema.encoders.number_encoders import BinsEncoderConfig
+
+        return BinsEncoderConfig
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([1])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self._output_size])

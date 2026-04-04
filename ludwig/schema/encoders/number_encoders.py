@@ -75,3 +75,38 @@ class PeriodicEncoderConfig(BaseEncoderConfig):
         default=1.0,
         description="Standard deviation for initializing frequency parameters.",
     )
+
+
+@DeveloperAPI
+@register_encoder_config("bins", [NUMBER])
+class BinsEncoderConfig(BaseEncoderConfig):
+    """Binning encoder: discretize numbers into equal-width or equal-frequency bins.
+
+    Simpler alternative to PLE. Good for small/medium datasets where PLE may overfit.
+    Each bin gets a learned embedding.
+    """
+
+    @staticmethod
+    def module_name():
+        return "BinsEncoder"
+
+    type: str = schema_utils.ProtectedString(
+        "bins",
+        description="Binning encoder: discretize numbers into bins with learned embeddings.",
+    )
+
+    num_bins: int = schema_utils.PositiveInteger(
+        default=32,
+        description="Number of bins to discretize numeric values into.",
+    )
+
+    output_size: int = schema_utils.PositiveInteger(
+        default=256,
+        description="Size of the output embedding per bin.",
+    )
+
+    # Internal field: set from training data metadata, not user-configurable
+    bins_bin_edges: list[float] | None = schema_utils.List(
+        default=None,
+        description="[Internal] Bin edges computed from training data. Set automatically.",
+    )

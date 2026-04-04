@@ -1,6 +1,5 @@
 import logging
 import os
-from abc import abstractmethod
 
 import torch
 import torchvision.models as tvm
@@ -39,6 +38,15 @@ logger = logging.getLogger(__name__)
 
 @DeveloperAPI
 class TVBaseEncoder(ImageEncoder):
+    # Softmax removal strategy. Override in subclasses.
+    # "classifier_last" -> model.classifier[-1] = Identity()
+    # "classifier"      -> model.classifier = Identity()
+    # "fc"              -> model.fc = Identity()
+    # "head"            -> model.head = Identity()
+    # "heads_last"      -> model.heads[-1] = Identity()
+    # "none"            -> no-op
+    _softmax_removal: str = "classifier_last"
+
     def __init__(
         self,
         model_variant: str | int = None,
@@ -118,16 +126,21 @@ class TVBaseEncoder(ImageEncoder):
     def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
         return {ENCODER_OUTPUT: self.model(inputs)}
 
-    @abstractmethod
     def _remove_softmax_layer(self):
-        """Model specific method that allows the final softmax layer to be implemented in the Ludwig Decoder
-        component.  The model specific implementation should change the final softmax layer in the torchvision
-        model architecture to torch.nn.Identity().  This allows the output tensor from the preceding layer to be
-        passed to the Ludwig Combiner and then to the Decoder.
-
-        Returns: None
-        """
-        raise NotImplementedError()
+        """Remove the final classification layer, replacing it with Identity() so the encoder outputs features
+        instead of class logits."""
+        strategy = self._softmax_removal
+        if strategy == "classifier_last":
+            self.model.classifier[-1] = torch.nn.Identity()
+        elif strategy == "classifier":
+            self.model.classifier = torch.nn.Identity()
+        elif strategy == "fc":
+            self.model.fc = torch.nn.Identity()
+        elif strategy == "head":
+            self.model.head = torch.nn.Identity()
+        elif strategy == "heads_last":
+            self.model.heads[-1] = torch.nn.Identity()
+        # else: "none" — no-op (e.g. squeezenet)
 
     @property
     def output_shape(self) -> torch.Size:
@@ -145,31 +158,25 @@ class TVBaseEncoder(ImageEncoder):
         return torch.Size([self.num_channels, *(2 * self.crop_size)])
 
 
+# ---------------------------------------------------------------------------
+# TorchVision encoder subclasses
+#
+# Each subclass only needs to set:
+#   - torchvision_model_type (str)
+#   - _softmax_removal (str) if different from "classifier_last"
+#   - get_schema_cls()
+#   - optional __init__ overrides for special cases (googlenet, inceptionv3, vit)
+# ---------------------------------------------------------------------------
+
+
 @DeveloperAPI
 @register_torchvision_model_variants(
-    [
-        TVModelVariant(variant_id="base", create_model_function=tvm.alexnet, model_weights=tvm.AlexNet_Weights),
-    ]
+    [TVModelVariant(variant_id="base", create_model_function=tvm.alexnet, model_weights=tvm.AlexNet_Weights)]
 )
 @register_encoder("alexnet", IMAGE)
 class TVAlexNetEncoder(TVBaseEncoder):
-    # specify base model type
     torchvision_model_type: str = "alexnet"
-
-    def __init__(
-        self,
-        **kwargs,
-    ):
-        logger.debug(f" {self.name}")
-        super().__init__(**kwargs)
-
-    # TODO: discussion w/ justin
-    # @property
-    # def get_torchvision_model_type(self):
-    #     return "alexnet"
-
-    def _remove_softmax_layer(self):
-        self.model.classifier[-1] = torch.nn.Identity()
+    _softmax_removal: str = "classifier_last"
 
     @staticmethod
     def get_schema_cls() -> type[BaseEncoderConfig]:
@@ -179,34 +186,16 @@ class TVAlexNetEncoder(TVBaseEncoder):
 @DeveloperAPI
 @register_torchvision_model_variants(
     [
-        TVModelVariant(
-            variant_id="tiny", create_model_function=tvm.convnext_tiny, model_weights=tvm.ConvNeXt_Tiny_Weights
-        ),
-        TVModelVariant(
-            variant_id="small", create_model_function=tvm.convnext_small, model_weights=tvm.ConvNeXt_Small_Weights
-        ),
-        TVModelVariant(
-            variant_id="base", create_model_function=tvm.convnext_base, model_weights=tvm.ConvNeXt_Base_Weights
-        ),
-        TVModelVariant(
-            variant_id="large", create_model_function=tvm.convnext_large, model_weights=tvm.ConvNeXt_Large_Weights
-        ),
+        TVModelVariant("tiny", tvm.convnext_tiny, tvm.ConvNeXt_Tiny_Weights),
+        TVModelVariant("small", tvm.convnext_small, tvm.ConvNeXt_Small_Weights),
+        TVModelVariant("base", tvm.convnext_base, tvm.ConvNeXt_Base_Weights),
+        TVModelVariant("large", tvm.convnext_large, tvm.ConvNeXt_Large_Weights),
     ]
 )
 @register_encoder("convnext", IMAGE)
 class TVConvNeXtEncoder(TVBaseEncoder):
-    # specify base torchvision model
     torchvision_model_type: str = "convnext"
-
-    def __init__(
-        self,
-        **kwargs,
-    ):
-        logger.debug(f" {self.name}")
-        super().__init__(**kwargs)
-
-    def _remove_softmax_layer(self) -> None:
-        self.model.classifier[-1] = torch.nn.Identity()
+    _softmax_removal: str = "classifier_last"
 
     @staticmethod
     def get_schema_cls() -> type[BaseEncoderConfig]:
@@ -224,18 +213,8 @@ class TVConvNeXtEncoder(TVBaseEncoder):
 )
 @register_encoder("densenet", IMAGE)
 class TVDenseNetEncoder(TVBaseEncoder):
-    # specify base torchvision model
     torchvision_model_type: str = "densenet"
-
-    def __init__(
-        self,
-        **kwargs,
-    ):
-        logger.debug(f" {self.name}")
-        super().__init__(**kwargs)
-
-    def _remove_softmax_layer(self) -> None:
-        self.model.classifier = torch.nn.Identity()
+    _softmax_removal: str = "classifier"
 
     @staticmethod
     def get_schema_cls() -> type[BaseEncoderConfig]:
@@ -260,18 +239,8 @@ class TVDenseNetEncoder(TVBaseEncoder):
 )
 @register_encoder("efficientnet", IMAGE)
 class TVEfficientNetEncoder(TVBaseEncoder):
-    # specify base torchvision model
     torchvision_model_type: str = "efficientnet"
-
-    def __init__(
-        self,
-        **kwargs,
-    ):
-        logger.debug(f" {self.name}")
-        super().__init__(**kwargs)
-
-    def _remove_softmax_layer(self) -> None:
-        self.model.classifier[-1] = torch.nn.Identity()
+    _softmax_removal: str = "classifier_last"
 
     @staticmethod
     def get_schema_cls() -> type[BaseEncoderConfig]:
@@ -279,33 +248,20 @@ class TVEfficientNetEncoder(TVBaseEncoder):
 
 
 @DeveloperAPI
-@register_torchvision_model_variants(
-    [
-        TVModelVariant("base", tvm.googlenet, tvm.GoogLeNet_Weights),
-    ]
-)
+@register_torchvision_model_variants([TVModelVariant("base", tvm.googlenet, tvm.GoogLeNet_Weights)])
 @register_encoder("googlenet", IMAGE)
 class TVGoogLeNetEncoder(TVBaseEncoder):
-    # specify base torchvision model
     torchvision_model_type: str = "googlenet"
+    _softmax_removal: str = "fc"
 
-    def __init__(
-        self,
-        **kwargs,
-    ):
-        logger.debug(f" {self.name}")
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
-        # if auxiliary network exists, eliminate auxiliary network
-        # to resolve issue when loading a saved model which does not
-        # contain the auxiliary network
+        # Eliminate auxiliary network to resolve issues when loading a saved model
+        # that does not contain the auxiliary network
         if self.model.aux_logits:
             self.model.aux_logits = False
             self.model.aux1 = None
             self.model.aux2 = None
-
-    def _remove_softmax_layer(self) -> None:
-        self.model.fc = torch.nn.Identity()
 
     @staticmethod
     def get_schema_cls() -> type[BaseEncoderConfig]:
@@ -313,32 +269,19 @@ class TVGoogLeNetEncoder(TVBaseEncoder):
 
 
 @DeveloperAPI
-@register_torchvision_model_variants(
-    [
-        TVModelVariant("base", tvm.inception_v3, tvm.Inception_V3_Weights),
-    ]
-)
+@register_torchvision_model_variants([TVModelVariant("base", tvm.inception_v3, tvm.Inception_V3_Weights)])
 @register_encoder("inceptionv3", IMAGE)
 class TVInceptionV3Encoder(TVBaseEncoder):
-    # specify base torchvision model
     torchvision_model_type: str = "inceptionv3"
+    _softmax_removal: str = "fc"
 
-    def __init__(
-        self,
-        **kwargs,
-    ):
-        logger.debug(f" {self.name}")
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
-        # if auxiliary network exists, eliminate auxiliary network
-        # to resolve issue when loading a saved model which does not
-        # contain the auxiliary network
+        # Eliminate auxiliary network to resolve issues when loading a saved model
+        # that does not contain the auxiliary network
         if self.model.aux_logits:
             self.model.aux_logits = False
             self.model.AuxLogits = None
-
-    def _remove_softmax_layer(self) -> None:
-        self.model.fc = torch.nn.Identity()
 
     @staticmethod
     def get_schema_cls() -> type[BaseEncoderConfig]:
@@ -346,25 +289,11 @@ class TVInceptionV3Encoder(TVBaseEncoder):
 
 
 @DeveloperAPI
-@register_torchvision_model_variants(
-    [
-        TVModelVariant("t", tvm.maxvit_t, tvm.MaxVit_T_Weights),
-    ]
-)
+@register_torchvision_model_variants([TVModelVariant("t", tvm.maxvit_t, tvm.MaxVit_T_Weights)])
 @register_encoder("maxvit", IMAGE)
 class TVMaxVitEncoder(TVBaseEncoder):
-    # specify base torchvision model
     torchvision_model_type: str = "maxvit"
-
-    def __init__(
-        self,
-        **kwargs,
-    ):
-        logger.debug(f" {self.name}")
-        super().__init__(**kwargs)
-
-    def _remove_softmax_layer(self) -> None:
-        self.model.classifier[-1] = torch.nn.Identity()
+    _softmax_removal: str = "classifier_last"
 
     @staticmethod
     def get_schema_cls() -> type[BaseEncoderConfig]:
@@ -382,18 +311,8 @@ class TVMaxVitEncoder(TVBaseEncoder):
 )
 @register_encoder("mnasnet", IMAGE)
 class TVMNASNetEncoder(TVBaseEncoder):
-    # specify base torchvision model
     torchvision_model_type: str = "mnasnet"
-
-    def __init__(
-        self,
-        **kwargs,
-    ):
-        logger.debug(f" {self.name}")
-        super().__init__(**kwargs)
-
-    def _remove_softmax_layer(self) -> None:
-        self.model.classifier[-1] = torch.nn.Identity()
+    _softmax_removal: str = "classifier_last"
 
     @staticmethod
     def get_schema_cls() -> type[BaseEncoderConfig]:
@@ -401,25 +320,11 @@ class TVMNASNetEncoder(TVBaseEncoder):
 
 
 @DeveloperAPI
-@register_torchvision_model_variants(
-    [
-        TVModelVariant("base", tvm.mobilenet_v2, tvm.MobileNet_V2_Weights),
-    ]
-)
+@register_torchvision_model_variants([TVModelVariant("base", tvm.mobilenet_v2, tvm.MobileNet_V2_Weights)])
 @register_encoder("mobilenetv2", IMAGE)
 class TVMobileNetV2Encoder(TVBaseEncoder):
-    # specify base torchvision model
     torchvision_model_type: str = "mobilenetv2"
-
-    def __init__(
-        self,
-        **kwargs,
-    ):
-        logger.debug(f" {self.name}")
-        super().__init__(**kwargs)
-
-    def _remove_softmax_layer(self) -> None:
-        self.model.classifier[-1] = torch.nn.Identity()
+    _softmax_removal: str = "classifier_last"
 
     @staticmethod
     def get_schema_cls() -> type[BaseEncoderConfig]:
@@ -435,18 +340,8 @@ class TVMobileNetV2Encoder(TVBaseEncoder):
 )
 @register_encoder("mobilenetv3", IMAGE)
 class TVMobileNetV3Encoder(TVBaseEncoder):
-    # specify base torchvision model
     torchvision_model_type: str = "mobilenetv3"
-
-    def __init__(
-        self,
-        **kwargs,
-    ):
-        logger.debug(f" {self.name}")
-        super().__init__(**kwargs)
-
-    def _remove_softmax_layer(self) -> None:
-        self.model.classifier[-1] = torch.nn.Identity()
+    _softmax_removal: str = "classifier_last"
 
     @staticmethod
     def get_schema_cls() -> type[BaseEncoderConfig]:
@@ -475,18 +370,8 @@ class TVMobileNetV3Encoder(TVBaseEncoder):
 )
 @register_encoder("regnet", IMAGE)
 class TVRegNetEncoder(TVBaseEncoder):
-    # specify base torchvision model
     torchvision_model_type: str = "regnet"
-
-    def __init__(
-        self,
-        **kwargs,
-    ):
-        logger.debug(f" {self.name}")
-        super().__init__(**kwargs)
-
-    def _remove_softmax_layer(self) -> None:
-        self.model.fc = torch.nn.Identity()
+    _softmax_removal: str = "fc"
 
     @staticmethod
     def get_schema_cls() -> type[BaseEncoderConfig]:
@@ -505,18 +390,8 @@ class TVRegNetEncoder(TVBaseEncoder):
 )
 @register_encoder("resnet", IMAGE)
 class TVResNetEncoder(TVBaseEncoder):
-    # specify base torchvision model
     torchvision_model_type: str = "resnet"
-
-    def __init__(
-        self,
-        **kwargs,
-    ):
-        logger.debug(f" {self.name}")
-        super().__init__(**kwargs)
-
-    def _remove_softmax_layer(self) -> None:
-        self.model.fc = torch.nn.Identity()
+    _softmax_removal: str = "fc"
 
     @staticmethod
     def get_schema_cls() -> type[BaseEncoderConfig]:
@@ -533,18 +408,8 @@ class TVResNetEncoder(TVBaseEncoder):
 )
 @register_encoder("resnext", IMAGE)
 class TVResNeXtEncoder(TVBaseEncoder):
-    # specify base torchvision model
     torchvision_model_type: str = "resnext"
-
-    def __init__(
-        self,
-        **kwargs,
-    ):
-        logger.debug(f" {self.name}")
-        super().__init__(**kwargs)
-
-    def _remove_softmax_layer(self) -> None:
-        self.model.fc = torch.nn.Identity()
+    _softmax_removal: str = "fc"
 
     @staticmethod
     def get_schema_cls() -> type[BaseEncoderConfig]:
@@ -562,18 +427,8 @@ class TVResNeXtEncoder(TVBaseEncoder):
 )
 @register_encoder("shufflenet_v2", IMAGE)
 class TVShuffleNetV2Encoder(TVBaseEncoder):
-    # specify base torchvision model
     torchvision_model_type: str = "shufflenet_v2"
-
-    def __init__(
-        self,
-        **kwargs,
-    ):
-        logger.debug(f" {self.name}")
-        super().__init__(**kwargs)
-
-    def _remove_softmax_layer(self) -> None:
-        self.model.fc = torch.nn.Identity()
+    _softmax_removal: str = "fc"
 
     @staticmethod
     def get_schema_cls() -> type[BaseEncoderConfig]:
@@ -589,21 +444,8 @@ class TVShuffleNetV2Encoder(TVBaseEncoder):
 )
 @register_encoder("squeezenet", IMAGE)
 class TVSqueezeNetEncoder(TVBaseEncoder):
-    # specify base torchvision model
     torchvision_model_type: str = "squeezenet"
-
-    def __init__(
-        self,
-        **kwargs,
-    ):
-        logger.debug(f" {self.name}")
-        super().__init__(**kwargs)
-
-    def _remove_softmax_layer(self) -> None:
-        # SqueezeNet does not have a final nn.Linear() layer
-        # Use flatten output from last AdaptiveAvgPool2d layer
-        # as encoder output.
-        pass
+    _softmax_removal: str = "none"
 
     @staticmethod
     def get_schema_cls() -> type[BaseEncoderConfig]:
@@ -620,18 +462,8 @@ class TVSqueezeNetEncoder(TVBaseEncoder):
 )
 @register_encoder("swin_transformer", IMAGE)
 class TVSwinTransformerEncoder(TVBaseEncoder):
-    # specify base torchvision model
     torchvision_model_type: str = "swin_transformer"
-
-    def __init__(
-        self,
-        **kwargs,
-    ):
-        logger.debug(f" {self.name}")
-        super().__init__(**kwargs)
-
-    def _remove_softmax_layer(self) -> None:
-        self.model.head = torch.nn.Identity()
+    _softmax_removal: str = "head"
 
     @staticmethod
     def get_schema_cls() -> type[BaseEncoderConfig]:
@@ -653,18 +485,8 @@ class TVSwinTransformerEncoder(TVBaseEncoder):
 )
 @register_encoder("vgg", IMAGE)
 class TVVGGEncoder(TVBaseEncoder):
-    # specify base torchvison model
     torchvision_model_type: str = "vgg"
-
-    def __init__(
-        self,
-        **kwargs,
-    ):
-        logger.debug(f" {self.name}")
-        super().__init__(**kwargs)
-
-    def _remove_softmax_layer(self) -> None:
-        self.model.classifier[-1] = torch.nn.Identity()
+    _softmax_removal: str = "classifier_last"
 
     @staticmethod
     def get_schema_cls() -> type[BaseEncoderConfig]:
@@ -683,30 +505,18 @@ class TVVGGEncoder(TVBaseEncoder):
 )
 @register_encoder("vit", IMAGE)
 class TVViTEncoder(TVBaseEncoder):
-    # specify base torchvision model
     torchvision_model_type: str = "vit"
+    _softmax_removal: str = "heads_last"
 
-    def __init__(
-        self,
-        **kwargs,
-    ):
-        logger.debug(f" {self.name}")
-
-        # Depending on model variant and weight specification, the expected image size
-        # will vary.  This code determines at run time what the expected image size will be
-        # and adds to the kwargs dictionary the parameter that specifies the image size.
-        # this is needed only if not using pretrained weights.  If pre-trained weights are
-        # specified, then the correct image size is set.
+    def __init__(self, **kwargs):
+        # For unpretrained ViT, determine the expected image size at runtime
+        # and pass it as a kwarg. Pretrained weights set the correct image size automatically.
         if not kwargs["use_pretrained"]:
             weights_specification = torchvision_model_registry[self.torchvision_model_type][
                 kwargs["model_variant"]
             ].model_weights.DEFAULT
             kwargs["image_size"] = weights_specification.transforms.keywords["crop_size"]
-
         super().__init__(**kwargs)
-
-    def _remove_softmax_layer(self) -> None:
-        self.model.heads[-1] = torch.nn.Identity()
 
     @staticmethod
     def get_schema_cls() -> type[BaseEncoderConfig]:
@@ -722,18 +532,8 @@ class TVViTEncoder(TVBaseEncoder):
 )
 @register_encoder("wide_resnet", IMAGE)
 class TVWideResNetEncoder(TVBaseEncoder):
-    # specify base torchvision model
     torchvision_model_type: str = "wide_resnet"
-
-    def __init__(
-        self,
-        **kwargs,
-    ):
-        logger.debug(f" {self.name}")
-        super().__init__(**kwargs)
-
-    def _remove_softmax_layer(self) -> None:
-        self.model.fc = torch.nn.Identity()
+    _softmax_removal: str = "fc"
 
     @staticmethod
     def get_schema_cls() -> type[BaseEncoderConfig]:

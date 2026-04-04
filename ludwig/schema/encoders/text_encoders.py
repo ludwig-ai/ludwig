@@ -773,6 +773,143 @@ class BERTConfig(HFEncoderConfig):
 
 
 @DeveloperAPI
+@register_encoder_config("modernbert", TEXT)
+class ModernBERTConfig(HFEncoderConfig):
+    """This dataclass configures the schema used for a ModernBERT encoder."""
+
+    @staticmethod
+    def module_name():
+        return "ModernBERT"
+
+    type: str = schema_utils.ProtectedString(
+        "modernbert",
+        description=ENCODER_METADATA["ModernBERT"]["type"].long_description,
+    )
+
+    max_sequence_length: int = schema_utils.PositiveInteger(
+        default=None,
+        allow_none=True,
+        description="Maximum length of the input sequence.",
+        parameter_metadata=ENCODER_METADATA["ModernBERT"]["max_sequence_length"],
+    )
+
+    use_pretrained: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
+        parameter_metadata=ENCODER_METADATA["ModernBERT"]["use_pretrained"],
+    )
+
+    pretrained_model_name_or_path: str = schema_utils.String(
+        default="answerdotai/ModernBERT-base",
+        description="Name or path of the pretrained model.",
+        parameter_metadata=ENCODER_METADATA["ModernBERT"]["pretrained_model_name_or_path"],
+    )
+
+    saved_weights_in_checkpoint: bool = schema_utils.Boolean(
+        default=False,
+        description="Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
+        "True for trained models to prevent loading pretrained encoder weights from model hub.",
+        parameter_metadata=ENCODER_METADATA["ModernBERT"]["saved_weights_in_checkpoint"],
+    )
+
+    trainable: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to finetune the model on your dataset.",
+        parameter_metadata=ENCODER_METADATA["ModernBERT"]["trainable"],
+    )
+
+    adapter: BaseAdapterConfig | None = AdapterDataclassField()
+
+    reduce_output: str = schema_utils.String(
+        default="cls_pooled",
+        description="The method used to reduce a sequence of tensors down to a single tensor.",
+        parameter_metadata=ENCODER_METADATA["ModernBERT"]["reduce_output"],
+    )
+
+    vocab: list = schema_utils.List(
+        default=None,
+        description="Vocabulary for the encoder",
+        parameter_metadata=ENCODER_METADATA["ModernBERT"]["vocab"],
+    )
+
+    vocab_size: int = schema_utils.PositiveInteger(
+        default=50368,
+        description="Vocabulary size of the ModernBERT model.",
+        parameter_metadata=ENCODER_METADATA["ModernBERT"]["vocab_size"],
+    )
+
+    hidden_size: int = schema_utils.PositiveInteger(
+        default=768,
+        description="Dimensionality of the encoder layers and the pooler layer.",
+        parameter_metadata=ENCODER_METADATA["ModernBERT"]["hidden_size"],
+    )
+
+    num_hidden_layers: int = schema_utils.PositiveInteger(
+        default=22,
+        description="Number of hidden layers in the Transformer encoder.",
+        parameter_metadata=ENCODER_METADATA["ModernBERT"]["num_hidden_layers"],
+    )
+
+    num_attention_heads: int = schema_utils.PositiveInteger(
+        default=12,
+        description="Number of attention heads for each attention layer in the Transformer encoder.",
+        parameter_metadata=ENCODER_METADATA["ModernBERT"]["num_attention_heads"],
+    )
+
+    intermediate_size: int = schema_utils.PositiveInteger(
+        default=1152,
+        description="Dimensionality of the 'intermediate' (often named feed-forward) layer in the Transformer encoder.",
+        parameter_metadata=ENCODER_METADATA["ModernBERT"]["intermediate_size"],
+    )
+
+    hidden_act: str | Callable = schema_utils.StringOptions(
+        ["gelu", "relu", "silu", "gelu_new"],
+        default="gelu",
+        description="The non-linear activation function (function or string) in the encoder and pooler.",
+        parameter_metadata=ENCODER_METADATA["ModernBERT"]["hidden_act"],
+    )
+
+    hidden_dropout_prob: float = schema_utils.FloatRange(
+        default=0.0,
+        min=0,
+        max=1,
+        description="The dropout probability for all fully connected layers in the embeddings, encoder, and pooler.",
+        parameter_metadata=ENCODER_METADATA["ModernBERT"]["hidden_dropout_prob"],
+    )
+
+    max_position_embeddings: int = schema_utils.PositiveInteger(
+        default=8192,
+        description="The maximum sequence length that this model might ever be used with.",
+        parameter_metadata=ENCODER_METADATA["ModernBERT"]["max_position_embeddings"],
+    )
+
+    initializer_range: float = schema_utils.NonNegativeFloat(
+        default=0.02,
+        description="The standard deviation of the truncated_normal_initializer for initializing all weight matrices.",
+        parameter_metadata=ENCODER_METADATA["ModernBERT"]["initializer_range"],
+    )
+
+    layer_norm_eps: float = schema_utils.NonNegativeFloat(
+        default=1e-5,
+        description="The epsilon used by the layer normalization layers.",
+        parameter_metadata=ENCODER_METADATA["ModernBERT"]["layer_norm_eps"],
+    )
+
+    pad_token_id: int = schema_utils.Integer(
+        default=50283,
+        description="The ID of the token to use as padding.",
+        parameter_metadata=ENCODER_METADATA["ModernBERT"]["pad_token_id"],
+    )
+
+    pretrained_kwargs: dict = schema_utils.Dict(
+        default=None,
+        description="Additional kwargs to pass to the pretrained model.",
+        parameter_metadata=ENCODER_METADATA["ModernBERT"]["pretrained_kwargs"],
+    )
+
+
+@DeveloperAPI
 @register_encoder_config("deberta", TEXT)
 class DebertaV2Config(HFEncoderImplConfig, DebertaModelParams):
     """This dataclass configures the schema used for a DeBERTa-v2 / v3 encoder."""
@@ -1443,236 +1580,6 @@ class RoBERTaConfig(HFEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("transformer_xl", TEXT)
-class TransformerXLConfig(HFEncoderConfig):
-    """This dataclass configures the schema used for an TransformerXL encoder."""
-
-    @staticmethod
-    def module_name():
-        return "TransformerXL"
-
-    type: str = schema_utils.ProtectedString(
-        "transformer_xl",
-        description=ENCODER_METADATA["TransformerXL"]["type"].long_description,
-    )
-
-    max_sequence_length: int = schema_utils.PositiveInteger(
-        default=None,
-        allow_none=True,
-        description="Maximum length of the input sequence.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["max_sequence_length"],
-    )
-
-    use_pretrained: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether to use the pretrained weights for the model. If false, the model will train from "
-        "scratch which is very computationally expensive.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["use_pretrained"],
-    )
-
-    pretrained_model_name_or_path: str = schema_utils.String(
-        default="transfo-xl-wt103",
-        description="Name or path of the pretrained model.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["pretrained_model_name_or_path"],
-    )
-
-    saved_weights_in_checkpoint: bool = schema_utils.Boolean(
-        default=False,
-        description="Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
-        "True for trained models to prevent loading pretrained encoder weights from model hub.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["saved_weights_in_checkpoint"],
-    )
-
-    reduce_output: str = schema_utils.String(
-        default="sum",
-        description="The method used to reduce a sequence of tensors down to a single tensor.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["reduce_output"],
-    )
-
-    trainable: bool = schema_utils.Boolean(
-        default=False,
-        description="Whether to finetune the model on your dataset.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["trainable"],
-    )
-
-    adapter: BaseAdapterConfig | None = AdapterDataclassField()
-
-    vocab: list = schema_utils.List(
-        default=None,
-        description="Vocabulary for the encoder",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["vocab"],
-    )
-
-    vocab_size: int = schema_utils.PositiveInteger(
-        default=267735,
-        description="Vocabulary size of the TransfoXL model. Defines the number of different tokens that can be "
-        "represented by the inputs_ids passed when calling TransfoXLModel or TFTransfoXLModel.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["vocab_size"],
-    )
-
-    cutoffs: list[int] = schema_utils.List(
-        int,
-        default=[20000, 40000, 200000],
-        description="Cutoffs for the adaptive softmax.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["cutoffs"],
-    )
-
-    d_model: int = schema_utils.PositiveInteger(
-        default=1024,
-        description="Dimensionality of the model’s hidden states.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["d_model"],
-    )
-
-    d_embed: int = schema_utils.PositiveInteger(
-        default=1024,
-        description="Dimensionality of the embeddings",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["d_embed"],
-    )
-
-    n_head: int = schema_utils.PositiveInteger(
-        default=16,
-        description="Number of attention heads for each attention layer in the Transformer encoder.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["n_head"],
-    )
-
-    d_head: int = schema_utils.PositiveInteger(
-        default=64,
-        description="Dimensionality of the model’s heads.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["d_head"],
-    )
-
-    d_inner: int = schema_utils.PositiveInteger(
-        default=4096,
-        description=" Inner dimension in FF",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["d_inner"],
-    )
-
-    div_val: int = schema_utils.PositiveInteger(
-        default=4,
-        description="Divident value for adapative input and softmax.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["div_val"],
-    )
-
-    pre_lnorm: bool = schema_utils.Boolean(
-        default=False,
-        description="Whether or not to apply LayerNorm to the input instead of the output in the blocks.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["pre_lnorm"],
-    )
-
-    n_layer: int = schema_utils.PositiveInteger(
-        default=18,
-        description="Number of hidden layers in the Transformer encoder.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["n_layer"],
-    )
-
-    mem_len: int = schema_utils.PositiveInteger(
-        default=1600,
-        description="Length of the retained previous heads.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["mem_len"],
-    )
-
-    clamp_len: int = schema_utils.PositiveInteger(
-        default=1000,
-        description="Use the same pos embeddings after clamp_len.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["clamp_len"],
-    )
-
-    same_length: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether or not to use the same attn length for all tokens",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["same_length"],
-    )
-
-    proj_share_all_but_first: bool = schema_utils.Boolean(
-        default=True,
-        description="True to share all but first projs, False not to share.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["proj_share_all_but_first"],
-    )
-
-    attn_type: int = schema_utils.IntegerRange(
-        default=0,
-        min=0,
-        max=3,
-        description="Attention type. 0 for Transformer-XL, 1 for Shaw et al, 2 for Vaswani et al, 3 for Al Rfou et al.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["attn_type"],
-    )
-
-    sample_softmax: int = schema_utils.Integer(
-        default=-1,
-        description="Number of samples in the sampled softmax.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["sample_softmax"],
-    )
-
-    adaptive: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether or not to use adaptive softmax.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["adaptive"],
-    )
-
-    dropout: float = schema_utils.FloatRange(
-        default=0.1,
-        min=0,
-        max=1,
-        description="The dropout probability for all fully connected layers in the embeddings, encoder, and pooler.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["dropout"],
-    )
-
-    dropatt: float = schema_utils.NonNegativeFloat(
-        default=0.0,
-        description="The dropout ratio for the attention probabilities.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["dropatt"],
-    )
-
-    untie_r: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether ot not to untie relative position biases.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["untie_r"],
-    )
-
-    init: str = schema_utils.String(
-        default="normal",
-        description="Parameter initializer to use.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["init"],
-    )
-
-    init_range: float = schema_utils.NonNegativeFloat(
-        default=0.01,
-        description="Parameters initialized by U(-init_range, init_range).",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["init_range"],
-    )
-
-    proj_init_std: float = schema_utils.NonNegativeFloat(
-        default=0.01,
-        description="Parameters initialized by N(0, init_std)",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["proj_init_std"],
-    )
-
-    init_std: float = schema_utils.NonNegativeFloat(
-        default=0.02,
-        description="Parameters initialized by N(0, init_std)",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["init_std"],
-    )
-
-    layer_norm_epsilon: float = schema_utils.NonNegativeFloat(
-        default=1e-5,
-        description="The epsilon to use in the layer normalization layers",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["layer_norm_epsilon"],
-    )
-
-    eos_token_id: int = schema_utils.Integer(
-        default=0,
-        description="The end of sequence token ID.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["eos_token_id"],
-    )
-
-    pretrained_kwargs: dict = schema_utils.Dict(
-        default=None,
-        description="Additional kwargs to pass to the pretrained model.",
-        parameter_metadata=ENCODER_METADATA["TransformerXL"]["pretrained_kwargs"],
-    )
-
-
-@DeveloperAPI
 @register_encoder_config("xlnet", TEXT)
 class XLNetConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an XLNet encoder."""
@@ -2071,151 +1978,6 @@ class DistilBERTConfig(HFEncoderConfig):
     )
 
 
-# TODO: uncomment when CTRL bug (https://github.com/ludwig-ai/ludwig/issues/2977) has been fixed to add back in
-@DeveloperAPI
-# @register_encoder_config("ctrl", TEXT)
-class CTRLConfig(HFEncoderConfig):
-    """This dataclass configures the schema used for an CTRL encoder."""
-
-    @staticmethod
-    def module_name():
-        return "CTRL"
-
-    type: str = schema_utils.ProtectedString(
-        "ctrl",
-        description=ENCODER_METADATA["CTRL"]["type"].long_description,
-    )
-
-    max_sequence_length: int = schema_utils.PositiveInteger(
-        default=None,
-        allow_none=True,
-        description="Maximum length of the input sequence.",
-        parameter_metadata=ENCODER_METADATA["CTRL"]["max_sequence_length"],
-    )
-
-    use_pretrained: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether to use the pretrained weights for the model. If false, the model will train from "
-        "scratch which is very computationally expensive.",
-        parameter_metadata=ENCODER_METADATA["CTRL"]["use_pretrained"],
-    )
-
-    pretrained_model_name_or_path: str = schema_utils.String(
-        default="ctrl",
-        description="Name or path of the pretrained model.",
-        parameter_metadata=ENCODER_METADATA["CTRL"]["pretrained_model_name_or_path"],
-    )
-
-    saved_weights_in_checkpoint: bool = schema_utils.Boolean(
-        default=False,
-        description="Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
-        "True for trained models to prevent loading pretrained encoder weights from model hub.",
-        parameter_metadata=ENCODER_METADATA["CTRL"]["saved_weights_in_checkpoint"],
-    )
-
-    reduce_output: str = schema_utils.String(
-        default="sum",
-        description="The method used to reduce a sequence of tensors down to a single tensor.",
-        parameter_metadata=ENCODER_METADATA["CTRL"]["reduce_output"],
-    )
-
-    trainable: bool = schema_utils.Boolean(
-        default=False,
-        description="Whether to finetune the model on your dataset.",
-        parameter_metadata=ENCODER_METADATA["CTRL"]["trainable"],
-    )
-
-    adapter: BaseAdapterConfig | None = AdapterDataclassField()
-
-    vocab: list = schema_utils.List(
-        default=None,
-        description="Vocabulary for the encoder",
-        parameter_metadata=ENCODER_METADATA["CTRL"]["vocab"],
-    )
-
-    vocab_size: int = schema_utils.PositiveInteger(
-        default=246534,
-        description="Vocabulary size of the CTRL model. Defines the number of different tokens that can be "
-        "represented by the inputs_ids passed when calling CTRLModel or TFCTRLModel.",
-        parameter_metadata=ENCODER_METADATA["CTRL"]["vocab_size"],
-    )
-
-    n_positions: int = schema_utils.PositiveInteger(
-        default=256,
-        description="The maximum sequence length that this model might ever be used with. Typically set this to "
-        "something large just in case (e.g., 512 or 1024 or 2048).",
-        parameter_metadata=ENCODER_METADATA["CTRL"]["n_positions"],
-    )
-
-    n_ctx: int = schema_utils.PositiveInteger(
-        default=256,
-        description="Dimensionality of the causal mask (usually same as n_positions)",
-        parameter_metadata=ENCODER_METADATA["CTRL"]["n_ctx"],
-    )
-
-    n_embd: int = schema_utils.PositiveInteger(
-        default=1280,
-        description="Dimensionality of the embeddings and hidden states.",
-        parameter_metadata=ENCODER_METADATA["CTRL"]["n_embd"],
-    )
-
-    dff: int = schema_utils.PositiveInteger(
-        default=8192,
-        description="Dimensionality of the inner dimension of the feed forward networks (FFN).",
-        parameter_metadata=ENCODER_METADATA["CTRL"]["dff"],
-    )
-
-    n_layer: int = schema_utils.PositiveInteger(
-        default=48,
-        description="Number of hidden layers in the Transformer encoder.",
-        parameter_metadata=ENCODER_METADATA["CTRL"]["n_layer"],
-    )
-
-    n_head: int = schema_utils.PositiveInteger(
-        default=16,
-        description="Number of attention heads for each attention layer in the Transformer encoder.",
-        parameter_metadata=ENCODER_METADATA["CTRL"]["n_head"],
-    )
-
-    resid_pdrop: float = schema_utils.FloatRange(
-        default=0.1,
-        min=0,
-        max=1,
-        description=" The dropout probability for all fully connected layers in the embeddings, encoder, and pooler.",
-        parameter_metadata=ENCODER_METADATA["CTRL"]["resid_pdrop"],
-    )
-
-    embd_pdrop: float = schema_utils.NonNegativeFloat(
-        default=0.1,
-        description="The dropout ratio for the embeddings.",
-        parameter_metadata=ENCODER_METADATA["CTRL"]["embd_pdrop"],
-    )
-
-    attn_pdrop: float = schema_utils.NonNegativeFloat(
-        default=0.1,
-        description="The dropout ratio for the attention.",
-        parameter_metadata=ENCODER_METADATA["CTRL"]["attn_pdrop"],
-    )
-
-    layer_norm_epsilon: float = schema_utils.NonNegativeFloat(
-        default=1e-6,
-        description="The epsilon to use in the layer normalization layers",
-        parameter_metadata=ENCODER_METADATA["CTRL"]["layer_norm_epsilon"],
-    )
-
-    initializer_range: float = schema_utils.NonNegativeFloat(
-        default=0.02,
-        description="The standard deviation of the truncated_normal_initializer for initializing all weight matrices.",
-        parameter_metadata=ENCODER_METADATA["CTRL"]["initializer_range"],
-    )
-
-    pretrained_kwargs: dict = schema_utils.Dict(
-        default=None,
-        description="Additional kwargs to pass to the pretrained model.",
-        parameter_metadata=ENCODER_METADATA["CTRL"]["pretrained_kwargs"],
-    )
-
-
 @DeveloperAPI
 @register_encoder_config("camembert", TEXT)
 class CamemBERTConfig(HFEncoderConfig):
@@ -2535,248 +2297,6 @@ class T5Config(HFEncoderConfig):
         default=None,
         description="Additional kwargs to pass to the pretrained model.",
         parameter_metadata=ENCODER_METADATA["T5"]["pretrained_kwargs"],
-    )
-
-
-@DeveloperAPI
-@register_encoder_config("flaubert", TEXT)
-class FlauBERTConfig(HFEncoderConfig):
-    """This dataclass configures the schema used for an FlauBERT encoder."""
-
-    @staticmethod
-    def module_name():
-        return "FlauBERT"
-
-    type: str = schema_utils.ProtectedString(
-        "flaubert",
-        description=ENCODER_METADATA["FlauBERT"]["type"].long_description,
-    )
-
-    max_sequence_length: int = schema_utils.PositiveInteger(
-        default=None,
-        allow_none=True,
-        description="Maximum length of the input sequence.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["max_sequence_length"],
-    )
-
-    use_pretrained: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether to use the pretrained weights for the model. If false, the model will train from "
-        "scratch which is very computationally expensive.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["use_pretrained"],
-    )
-
-    pretrained_model_name_or_path: str = schema_utils.String(
-        default="flaubert/flaubert_small_cased",
-        description="Name of path of the pretrained model.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["pretrained_model_name_or_path"],
-    )
-
-    saved_weights_in_checkpoint: bool = schema_utils.Boolean(
-        default=False,
-        description="Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
-        "True for trained models to prevent loading pretrained encoder weights from model hub.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["saved_weights_in_checkpoint"],
-    )
-
-    reduce_output: str = schema_utils.String(
-        default="sum",
-        description="The method used to reduce a sequence of tensors down to a single tensor.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["reduce_output"],
-    )
-
-    trainable: bool = schema_utils.Boolean(
-        default=False,
-        description="Whether to finetune the model on your dataset.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["trainable"],
-    )
-
-    adapter: BaseAdapterConfig | None = AdapterDataclassField()
-
-    vocab: list = schema_utils.List(
-        default=None,
-        description="Vocabulary for the encoder",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["vocab"],
-    )
-
-    vocab_size: int = schema_utils.PositiveInteger(
-        default=30145,
-        description="Vocabulary size of the FlauBERT model. Defines the number of different tokens that can be "
-        "represented by the inputs_ids passed when calling FlaubertModel or TFFlaubertModel.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["vocab_size"],
-    )
-
-    pre_norm: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether to apply the layer normalization before or after the feed forward layer following the "
-        "attention in each layer (Vaswani et al., Tensor2Tensor for Neural Machine Translation. 2018)",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["pre_norm"],
-    )
-
-    layerdrop: float = schema_utils.FloatRange(
-        default=0.2,
-        min=0,
-        max=1,
-        description="Probability to drop layers during training (Fan et al., Reducing Transformer Depth on Demand "
-        "with Structured Dropout. ICLR 2020)",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["layerdrop"],
-    )
-
-    emb_dim: int = schema_utils.PositiveInteger(
-        default=512,
-        description="Dimensionality of the encoder layers and the pooler layer.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["emb_dim"],
-    )
-
-    n_layers: int = schema_utils.PositiveInteger(
-        default=6,
-        description="Number of hidden layers in the Transformer encoder.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["n_layers"],
-    )
-
-    n_heads: int = schema_utils.PositiveInteger(
-        default=8,
-        description="Number of attention heads for each attention layer in the Transformer encoder.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["n_heads"],
-    )
-
-    dropout: float = schema_utils.FloatRange(
-        default=0.1,
-        min=0,
-        max=1,
-        description="The dropout probability for all fully connected layers in the embeddings, encoder, and pooler.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["dropout"],
-    )
-
-    attention_dropout: float = schema_utils.FloatRange(
-        default=0.1,
-        min=0,
-        max=1,
-        description="The dropout probability for the attention mechanism",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["attention_dropout"],
-    )
-
-    gelu_activation: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether or not to use a gelu activation instead of relu.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["gelu_activation"],
-    )
-
-    sinusoidal_embeddings: bool = schema_utils.Boolean(
-        default=False,
-        description="Whether or not to use sinusoidal positional embeddings instead of absolute positional embeddings.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["sinusoidal_embeddings"],
-    )
-
-    causal: bool = schema_utils.Boolean(
-        default=False,
-        description="Whether or not the model should behave in a causal manner. Causal models use a triangular "
-        "attention mask in order to only attend to the left-side context instead if a bidirectional "
-        "context.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["causal"],
-    )
-
-    asm: bool = schema_utils.Boolean(
-        default=False,
-        description="Whether or not to use an adaptive log softmax projection layer instead of a linear layer for the "
-        "prediction layer.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["asm"],
-    )
-
-    n_langs: int = schema_utils.PositiveInteger(
-        default=1,
-        description="The number of languages the model handles. Set to 1 for monolingual models.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["n_langs"],
-    )
-
-    use_lang_emb: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether to use language embeddings. Some models use additional language embeddings, "
-        "see the multilingual models page for information on how to use them.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["use_lang_emb"],
-    )
-
-    max_position_embeddings: int = schema_utils.PositiveInteger(
-        default=512,
-        description="The maximum sequence length that this model might ever be used with. Typically set this to "
-        "something large just in case (e.g., 512 or 1024 or 2048).",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["max_position_embeddings"],
-    )
-
-    embed_init_std: float = schema_utils.NonNegativeFloat(
-        default=2048**-0.5,
-        description="The standard deviation of the truncated_normal_initializer for initializing the embedding "
-        "matrices.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["embed_init_std"],
-    )
-
-    init_std: int = schema_utils.NonNegativeFloat(
-        default=0.02,
-        description="The standard deviation of the truncated_normal_initializer for initializing all weight matrices "
-        "except the embedding matrices.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["init_std"],
-    )
-
-    layer_norm_eps: float = schema_utils.NonNegativeFloat(
-        default=1e-06,
-        description="The epsilon used by the layer normalization layers.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["layer_norm_eps"],
-    )
-
-    bos_index: int = schema_utils.NonNegativeInteger(
-        default=0,
-        description="The index of the beginning of sentence token in the vocabulary.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["bos_index"],
-    )
-
-    eos_index: int = schema_utils.NonNegativeInteger(
-        default=1,
-        description="The index of the end of sentence token in the vocabulary.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["eos_index"],
-    )
-
-    pad_index: int = schema_utils.NonNegativeInteger(
-        default=2,
-        description="The index of the padding token in the vocabulary.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["pad_index"],
-    )
-
-    unk_index: int = schema_utils.NonNegativeInteger(
-        default=3,
-        description="The index of the unknown token in the vocabulary.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["unk_index"],
-    )
-
-    mask_index: int = schema_utils.NonNegativeInteger(
-        default=5,
-        description="The index of the masking token in the vocabulary.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["mask_index"],
-    )
-
-    is_encoder: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether or not the initialized model should be a transformer encoder or decoder as seen in "
-        "Vaswani et al.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["is_encoder"],
-    )
-
-    mask_token_id: int = schema_utils.Integer(
-        default=0,
-        description="Model agnostic parameter to identify masked tokens when generating text in an MLM context.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["mask_token_id"],
-    )
-
-    lang_id: int = schema_utils.Integer(
-        default=0,
-        description="The ID of the language used by the model. This parameter is used when generating text in a given "
-        "language.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["lang_id"],
-    )
-
-    pretrained_kwargs: dict = schema_utils.Dict(
-        default=None,
-        description="Additional kwargs to pass to the pretrained model.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["pretrained_kwargs"],
     )
 
 

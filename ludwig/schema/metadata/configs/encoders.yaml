@@ -653,6 +653,86 @@ BERT:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
+ModernBERT:
+    type:
+        short_description: Modern BERT with Flash Attention 2, RoPE, and 8192 token context.
+        long_description:
+            The modernbert encoder loads a pretrained ModernBERT (default answerdotai/ModernBERT-base)
+            model using the Hugging Face transformers package. ModernBERT is the first major architectural
+            upgrade to BERT, incorporating Flash Attention 2, Rotary Position Embeddings (RoPE), GeGLU
+            activations, unpadding for efficiency, and alternating local/global attention. It supports up
+            to 8192 tokens (vs BERT's 512).
+        literature_references:
+            - https://arxiv.org/abs/2412.13663
+        compute_tier: 2
+    hidden_act:
+        default_value_reasoning: Taken from huggingface.
+        description_implications:
+            Changing this activation function will only affect
+            the feed-forward layers of the transformer.
+        expected_impact: 1
+        suggested_values: gelu
+        suggested_values_reasoning: Taken from huggingface defaults.
+        ui_display_name: Hidden Layer Activation
+    hidden_dropout_prob:
+        default_value_reasoning: ModernBERT uses no dropout by default.
+        expected_impact: 2
+        ui_display_name: hidden_dropout_prob
+    hidden_size:
+        default_value_reasoning: Huggingface default for ModernBERT-base.
+        expected_impact: 1
+        ui_display_name: Hidden Size
+    initializer_range:
+        expected_impact: 1
+        ui_display_name: null
+    intermediate_size:
+        ui_display_name: null
+        expected_impact: 1
+    layer_norm_eps:
+        ui_display_name: null
+        expected_impact: 1
+    max_position_embeddings:
+        default_value_reasoning: ModernBERT supports up to 8192 tokens.
+        expected_impact: 2
+        ui_display_name: Max Position Embeddings
+    max_sequence_length:
+        internal_only: true
+        ui_display_name: null
+    num_attention_heads:
+        ui_display_name: null
+        expected_impact: 1
+    num_hidden_layers:
+        ui_display_name: null
+        expected_impact: 1
+    pad_token_id:
+        ui_display_name: null
+        expected_impact: 1
+    pretrained_kwargs:
+        ui_display_name: null
+        expected_impact: 1
+    pretrained_model_name_or_path:
+        ui_display_name: null
+        expected_impact: 2
+    reduce_output:
+        ui_display_name: null
+        expected_impact: 1
+    saved_weights_in_checkpoint:
+        internal_only: true
+        ui_display_name: null
+    trainable:
+        expected_impact: 3
+        ui_display_name: null
+    use_pretrained:
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained model.
+        expected_impact: 3
+        ui_display_name: Use Pretrained
+    vocab:
+        internal_only: true
+        ui_display_name: Not Displayed
+    vocab_size:
+        internal_only: true
+        ui_display_name: Not displayed
 BagEmbedWeighted:
     type:
         short_description: Transforms feature to vector, maps to sparse or dense embeddings, then aggregates.
@@ -4923,274 +5003,6 @@ CategoricalPassthroughEncoder:
         related_parameters:
             - "No"
         ui_display_name: Not Displayed
-ResNet:
-    type:
-        short_description: Residual network achieving very high performance on computer vision tasks.
-        long_description:
-            ResNet - short for residual network is part of a family of extremely deep architectures showing
-            compelling accuracy and nice convergence behaviors for computer vision applications. It is a type
-            of CNN architecture designed to support hundreds or thousands of convolutional layers.
-        compute_tier: 2
-    activation:
-        default_value_reasoning:
-            The Rectified Linear Units (ReLU) function is the
-            standard activation function used for adding non-linearity. It is simple,
-            fast, and empirically works well (https://arxiv.org/abs/1803.08375).
-        description_implications:
-            Changing the activation functions has an impact
-            on the computational load of the model and might require further hypterparameter
-            tuning
-        expected_impact: 2
-        suggested_values:
-            The default value will work well in the majority of the
-            cases
-        ui_display_name: Activation
-    batch_norm_epsilon:
-        ui_display_name: null
-    batch_norm_momentum:
-        ui_display_name: null
-    bias_initializer:
-        default_value_reasoning:
-            It is possible and common to initialize the biases
-            to be zero, since the asymmetry breaking is provided by the small random
-            numbers in the weights.
-        description_implications:
-            It's rare to see any performance gains from choosing
-            a different bias initialization. Some practitioners like to use a small
-            constant value such as 0.01 for all biases to ensure that all ReLU units
-            are activated in the beginning and have some effect on the gradient. However,
-            it's still an open question as to whether this provides consistent improvement.
-        expected_impact: 1
-        literature_references:
-            - https://cs231n.github.io/neural-networks-2/
-        related_parameters:
-            - weights_initializer
-        suggested_values: zeros
-        suggested_values_reasoning:
-            It is possible and common to initialize the biases
-            to be zero, since the asymmetry breaking is provided by the small random
-            numbers in the weights. For ReLU non-linearities, some people like to
-            use small constant value such as 0.01 for all biases because this ensures
-            that all ReLU units fire in the beginning and therefore obtain and propagate
-            some gradient. However, it is not clear if this provides a consistent
-            improvement (in fact some results seem to indicate that this performs
-            worse) and it is more common to simply use 0 bias initialization.
-        ui_display_name: Bias Initializer
-    conv_stride:
-        ui_display_name: null
-    dropout:
-        default_value_reasoning:
-            Dropout can cause training to become less stable.
-            Consider start with a dropout-free baseline, and add dropout gradually
-            in subsequent experiments.
-        description_implications:
-            "Dropout is a computationally cheap regularization\
-            \ method where during training, some neurons are randomly ignored or \u201C\
-            dropped out\u201D. Increasing dropout has the effect of making the training\
-            \ process more noisy and lowering overall network capacity, but it can\
-            \ be an effective regularization method to reduce overfitting and improve\
-            \ generalization."
-        example_value:
-            - 0.2
-        expected_impact: 3
-        literature_references:
-            - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
-        suggested_values: 0.05 - 0.8
-        suggested_values_reasoning:
-            Tuning dropout is really something to be done
-            when all of the big choices about architecture have been settled. Consider
-            starting with 0.5 and adjusting the dropout depending on observed model
-            performance.
-        ui_display_name: Dropout
-    fc_layers:
-        default_value_reasoning:
-            By default the stack is built by using num_fc_layers,
-            output_size, use_bias, weights_initializer, bias_initializer, norm, norm_params,
-            activation, dropout. When a list of dictionaries is provided, the stack
-            is built following the parameters of each dict for building each layer.
-        description_implications:
-            The more layers that are specified the deeper and
-            higher capacity the model will be. This makes it possible to potentially
-            achieve better performance when a big anough amount of data is provided,
-            but also makes the model more computationally expensive and potentially
-            more prone to overfitting.
-        example_value:
-            - dropout: 0.1
-              output_size: 128
-            - norm: layer
-              output_size: 64
-        expected_impact: 1
-        related_parameters:
-            - output_size
-            - use_bias
-            - weights_initializer
-            - bias_initializer
-            - norm
-            - norm_params
-            - activation
-            - dropout
-        suggested_values_reasoning:
-            It is easier to define a stack of fully connected
-            layers by just specifying num_fc_layers, output_size and the other individual
-            parameters. It will create a stack of layers with identical properties.
-            Use this parameter only if you need a fine grained level of control of
-            each individual layer in the stack.
-        ui_display_name: Fully Connected Layers
-    first_pool_kernel_size:
-        ui_display_name: null
-        expected_impact: 1
-    first_pool_stride:
-        ui_display_name: null
-        expected_impact: 1
-    height:
-        internal_only: true
-        ui_display_name: null
-    kernel_size:
-        ui_display_name: null
-    norm:
-        default_value_reasoning:
-            While batch normalization and layer normalization
-            usually lead to improvements, it can be useful to start with fewer bells
-            and whistles.
-        description_implications:
-            Normalization helps stabilize the learning process
-            and can have a regularizing effect that can help with generalization.
-            It's often suggested that with normalization, you can use a higher learning
-            rate.
-        example_value:
-            - batch
-        expected_impact: 2
-        literature_references:
-            - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
-        related_parameters:
-            - norm_params
-        suggested_values: '"batch" or "layer"'
-        suggested_values_reasoning:
-            Normalization tries to solve "internal covariate
-            shift" that comes from the changing distributions of the inputs to layers
-            deep in the network when weights are updated. For example, batch normalization
-            standardizes the inputs to a layer for each mini-batch. Try out different
-            normalizations to see if that helps with training stability
-        ui_display_name: Normalization Type
-    norm_params:
-        default_value_reasoning:
-            The default parameters that come with Torch's implementation
-            of these normalization types are a trusted starting point.
-        description_implications:
-            There are a variety of ways a certain set of parameters
-            specificed could influence performance here. Broadly speaking the different
-            values passed in here allow for different levels of smoothness to be observed
-            in the learning curves. Since setting this parameters depends on the type
-            of `norm` set, see [BatchNorm2d](https://pytorch.org/docs/stable/generated/torch.nn.BatchNorm2d.html)
-            for more information on the parameters to set for batch normalization,
-            and see [LayerNorm](https://pytorch.org/docs/stable/generated/torch.nn.LayerNorm.html)
-            for more information on the parameters to set for layer normalization.
-        example_value:
-            - affine: false
-              momentum: 0.2
-              num_features: 100
-        expected_impact: 1
-        literature_references:
-            - "For BatchNorm2d: https://arxiv.org/abs/1502.03167
-
-
-              For LayerNorm: https://arxiv.org/abs/1607.06450"
-        related_parameters:
-            - "`norm`"
-        suggested_values: Depends on the type of `norm` set.
-        suggested_values_reasoning: "NO"
-        ui_display_name: Normalization Parameters
-    num_channels:
-        ui_display_name: null
-    num_fc_layers:
-        default_value_reasoning:
-            The encoder already has learnable parameters.Sometimes
-            the default is 1 for modules where the FC stack is used for shape management,
-            or the only source of learnable parameters.
-        description_implications:
-            Increasing num_fc_layers will increase the capacity
-            of the model. The model will be slower to train, and there's a higher
-            risk of overfitting.
-        example_value:
-            - 1
-        expected_impact: 1
-        other_information:
-            Not all modules that have fc_layers also have an accompanying
-            num_fc_layers parameter. Where both are present, fc_layers takes precedent
-            over num_fc_layers. Specifying num_fc_layers alone uses fully connected
-            layers that are configured by the defaults in FCStack.
-        related_parameters:
-            - fc_layers
-        suggested_values: 0-1
-        suggested_values_reasoning:
-            The full model likely contains many learnable
-            parameters. Consider starting with very few, or without any additional
-            fully connected layers and add them if you observe evidence of limited
-            model capacity. Sometimes the default is 1 for modules where the FC stack
-            is used for shape management, or the only source of learnable parameters.
-        ui_display_name: Number of Fully Connected Layers
-    out_channels:
-        ui_display_name: null
-    output_size:
-        default_value_reasoning: A modest value, not too small, not too large.
-        description_implications:
-            If there are fully connected layers in this module,
-            increasing the output size of each fully connected layer will increase
-            the capacity of the model. However, the model may be slower to train,
-            and there's a higher risk of overfitting. If it seems like the model could
-            use even more capacity, consider increasing the number of fully connected
-            layers, or explore other architectures.
-        expected_impact: 3
-        other_information:
-            If num_fc_layers=0 and fc_layers=None, and there are no
-            fully connected layers defined on the module, then this parameter may
-            have no effect on the module's final output shape.
-        related_parameters:
-            - num_fc_layers, fc_layers
-        suggested_values: 10 - 1024
-        suggested_values_reasoning:
-            Increasing the output size increases the capacity
-            of the model. If this seems to have a positive effect, then it could be
-            worth increasing the number of layers, or trying a different architecture
-            with a larger capacity.
-        ui_display_name: Output Size
-    resnet_size:
-        ui_display_name: null
-    use_bias:
-        ui_display_name: null
-        expected_impact: 1
-    weights_initializer:
-        default_value_reasoning: Taken from [this paper](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf).
-        description_implications:
-            The method you choose to initialize layer weights
-            during training can have a big impact on performance as well as the reproducibility
-            of your final model between runs. As an example, if you were to randomly
-            initialize weights you would risk non-reproducibility (and possibly general
-            training performance), but sticking with constant values for initialization
-            might significantly increase the time needed for model convergence. Generally,
-            choosing one of the probabilistic approaches strikes a balance between
-            the two extremes, and the literature kicked off by the landmark [*Xavier
-            et al.* paper](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf)
-            provides a few good options. See this nice discussion from [Weights and
-            Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
-            for more information.
-        expected_impact: 1
-        literature_references:
-            - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.
-
-
-              Xavier et al. paper: http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf"
-        suggested_values: xavier_uniform
-        suggested_values_reasoning:
-            Changing the weights initialization scheme is
-            something to consider if a model is having trouble with convergence, or
-            otherwise it is something to experiment with after other factors are considered.
-            The default choice (`xavier_uniform`) is a suitable starting point for
-            most tasks.
-        ui_display_name: Layer Weights Initializer
-    width:
-        internal_only: true
-        ui_display_name: null
 DeBERTa:
     type:
         short_description: Improved version of BERT and RoBERTa, achieving good baseline performance on many tasks.
@@ -8808,240 +8620,6 @@ TVWideResNetEncoder:
         ui_display_name: Model Variant
     type:
         ui_display_name: Type
-ViT:
-    type:
-        short_description: ViT encoder divides images into patches, performs a linear transformation, and then applies a transformer.
-        long_description:
-            ViT, short for Vision Transformer, divides the image into equal-sized patches, uses a linear
-            transformation to encode each flattened patch, then applies a deep transformer architecture to
-            the sequence of encoded patches.
-        compute_tier: 2
-    attention_probs_dropout_prob:
-        default_value_reasoning: Taken from literature (https://arxiv.org/abs/2010.11929).
-        description_implications:
-            "Dropout is a computationally cheap regularization\
-            \ method where during training, some neurons are randomly ignored or \u201C\
-            dropped out\u201D. Increasing dropout has the effect of making the training\
-            \ process more noisy and lowering overall network capacity, but it can\
-            \ be an effective regularization method to reduce overfitting and improve\
-            \ generalization."
-        example_value:
-            - 0.2
-        expected_impact: 3
-        literature_references:
-            - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
-        related_parameters:
-            - "hidden_dropout_prob,
-
-              attention_probs_dropout_prob"
-        suggested_values: 0.05 - 0.8
-        suggested_values_reasoning:
-            Tuning dropout is really something to be done
-            when all of the big choices about architecture have been settled. Consider
-            starting with 0.5 and adjusting the dropout depending on observed model
-            performance.
-        ui_display_name: Attention Dropout
-    gradient_checkpointing:
-        ui_display_name: null
-    height:
-        internal_only: true
-        ui_display_name: null
-    hidden_act:
-        default_value_reasoning: Taken from huggingface.
-        description_implications:
-            Changing this activation function will only affect
-            the feed-forward layers of the transformer.
-        example_value:
-            - relu
-        expected_impact: 2
-        literature_references:
-            - "[Huggingface docs for ViT config](https://huggingface.co/docs/transformers/model_doc/vit#transformers.ViTConfig.hidden_act)
-
-
-              [Relevant StackOverflow discussion](https://ai.stackexchange.com/questions/30341/why-does-a-transformer-not-use-an-activation-function-following-the-multi-head-a)"
-        suggested_values: gelu
-        suggested_values_reasoning: Taken from huggingface defaults.
-        ui_display_name: Hidden Layer Activation
-    hidden_dropout_prob:
-        default_value_reasoning: Taken from literature (https://arxiv.org/abs/2010.11929).
-        description_implications:
-            "Dropout is a computationally cheap regularization\
-            \ method where during training, some neurons are randomly ignored or \u201C\
-            dropped out\u201D. Increasing dropout has the effect of making the training\
-            \ process more noisy and lowering overall network capacity, but it can\
-            \ be an effective regularization method to reduce overfitting and improve\
-            \ generalization."
-        example_value:
-            - 0.2
-        expected_impact: 3
-        literature_references:
-            - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
-        related_parameters:
-            - "hidden_dropout_prob,
-
-              attention_probs_dropout_prob"
-        suggested_values: 0.05 - 0.8
-        suggested_values_reasoning:
-            Tuning dropout is really something to be done
-            when all of the big choices about architecture have been settled. Consider
-            starting with 0.5 and adjusting the dropout depending on observed model
-            performance.
-        ui_display_name: Hidden Dropout
-    hidden_size:
-        default_value_reasoning: Huggingface default.
-        description_implications:
-            Increasing the hidden size makes the model larger
-            and slower to train, increases the model's capacity to capture more complexity.
-            It also increases the chance of overfitting.
-        expected_impact: 2
-        suggested_values: 10 - 2048
-        suggested_values_reasoning:
-            Increasing the hidden size makes sense if the
-            model is underfitting. It's useful to train both smaller and larger models
-            to see how model capacity affects performance. This should only be explored
-            after the architecture of the model has been settled.
-        ui_display_name: Hidden Size
-    initializer_range:
-        description_implications:
-            There is an ideal value for this variable that doesn't
-            lead to the outputs of these matrices to vanish or explode
-        example_value:
-            - 0.02
-        expected_impact: 1
-        other_information: Must be greater than 0
-        related_parameters:
-            - weights_initializer
-        suggested_values: 0.01-0.05
-        suggested_values_reasoning:
-            Large values will likely lead to very large outputs.
-            Small values will lead to vanishing outputs.
-        ui_display_name: null
-    intermediate_size:
-        ui_display_name: null
-    layer_norm_eps:
-        ui_display_name: null
-    num_attention_heads:
-        ui_display_name: null
-    num_channels:
-        ui_display_name: null
-    num_hidden_layers:
-        ui_display_name: null
-    patch_size:
-        default_value_reasoning: Taken from ViT paper.
-        description_implications:
-            "The implications of the image patch size for this\
-            \ layer depend on other factors, such as the true resolution of the incoming\
-            \ image dataset. If the patch size is kept consistent but a higher resolution\
-            \ image is used as input, then the resulting chunked sequence of tokens\
-            \ will be longer than it would have been if the input resolution was lower.\
-            \ \n\nThe ViT paper notes that decreasing the patch size in this way led\
-            \ to robust improvements without introducing other parameters."
-        expected_impact: 2
-        literature_references:
-            - "[Huggingface docs](https://huggingface.co/docs/transformers/model_doc/vit)
-
-
-              [ViT paper](https://arxiv.org/abs/2010.11929)"
-        suggested_values:
-            - 16
-            - 32
-        suggested_values_reasoning:
-            16 and 32 are the values used in the original
-            ViT paper.
-        ui_display_name: Patch Size
-    pretrained_model:
-        default_value_reasoning:
-            The default model is the canonical model for this
-            model architecture, and is therefore a good starting point for most use
-            cases.
-        description_implications:
-            "There are two factors to consider when choosing\
-            \ a pre-trained model: (1) size, and (2) task similarity. \n\nThe larger\
-            \ the model, the more subtle its comprehension of inputs can become. However,\
-            \ larger models are also more compute and memory-intensive to train.\n\
-            \nModels pretrained on highly-related source tasks are more likely to\
-            \ be successful on the target task. Consider searching the HuggingFace\
-            \ model repository for models trained on similar tasks."
-        expected_impact: 3
-        literature_references:
-            - https://arxiv.org/abs/2010.11929
-        related_parameters:
-            - use_pretrained, trainable, pretrained_kwargs
-        suggested_values: google/vit-large-patch16-224
-        suggested_values_reasoning:
-            "If you would like better performance and are
-            not compute/memory-constrained, increasing model capacity can potentially
-            provide a richer representation than the default. The suggested value
-            upsizes the model while maintaining the same model architecture.
-
-
-            Model trained on internet-scale datasets typically generalize well. Consider
-            deviating from the default only if the images in the dataset originate
-            from another domain (e.g. medical images, geospatial data)."
-        ui_display_name: Pretrained model name
-    saved_weights_in_checkpoint:
-        default_value_reasoning:
-            The weights of the encoder are not necessarily saved
-            in the checkpoint. The user has to save them first.
-        description_implications:
-            The memory footprint for some of these encoders
-            can be large.
-        internal_only: true
-        related_parameters:
-            - skip_save_model
-        suggested_values:
-            - false
-        suggested_values_reasoning:
-            Some of these encoders are large, so it might
-            be better to load them as needed, especially if 1. they're not used frequently
-            2. the user doesn't have a lot of storage.
-        ui_display_name: null
-    trainable:
-        default_value_reasoning: By default, model components are trainable.
-        description_implications:
-            The tradeoff when using `trainable` is between speed
-            and flexibility. If False, less weights are subject to change and the
-            model will therefore train faster. However, the representations output
-            by this component are fixed for each input.
-        expected_impact: 3
-        literature_references:
-            - "https://www.ibm.com/cloud/learn/overfitting
-
-
-              http://d2l.ai/chapter_computer-vision/fine-tuning.html"
-        related_parameters:
-            - use_pretrained, pretrained_model, saved_weights_in_checkpoint
-        suggested_values:
-            - false
-        suggested_values_reasoning:
-            Freezing the weights (i.e. `trainable = False`)
-            is only worth trying if you are loading in pretrained weights. In that
-            case, check to see if your model is overfitting. If so, freezing the weights
-            (and therefore reducing model complexity) may be beneficial.
-        ui_display_name: Trainable
-    use_pretrained:
-        default_value_reasoning:
-            By default, the model is initialized as a pretrained
-            model.
-        description_implications:
-            Pretrained models have typically already learned
-            features that are difficult to learn from scratch. They are particularly
-            beneficial when training on small amounts of data.
-        expected_impact: 3
-        literature_references:
-            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
-        related_parameters:
-            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
-        suggested_values:
-            - false
-        suggested_values_reasoning:
-            If you have a large amount of data and/or you
-            have data that differs from the typical distribution, then it might be
-            worth training the model from scratch.
-        ui_display_name: Use Pretrained
-    width:
-        internal_only: true
-        ui_display_name: null
 XLM:
     type:
         short_description: XLM is pre-trained by cross-language modeling.
@@ -9620,3 +9198,24 @@ TimmConvFormerEncoder:
 TimmPoolFormerEncoder:
     model_name:
         ui_display_name: Model Name
+MambaEncoder:
+    type:
+        short_description: State space model encoder for sequences.
+        long_description:
+            The Mamba encoder uses selective state space model (SSM) layers for sequence encoding.
+            It provides an alternative to Transformer attention that scales linearly with sequence length
+            instead of quadratically. Requires the mamba_ssm package for full Mamba support. Without it,
+            a simplified SSM-inspired encoder using gated convolutions is used as a fallback.
+        literature_references:
+            - https://arxiv.org/abs/2312.00752
+        compute_tier: 2
+    d_model:
+        ui_display_name: Model Dimension
+    n_layers:
+        ui_display_name: Number of Layers
+    d_state:
+        ui_display_name: State Dimension
+    d_conv:
+        ui_display_name: Convolution Width
+    expand_factor:
+        ui_display_name: Expansion Factor
