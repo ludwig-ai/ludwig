@@ -186,7 +186,83 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
     def initialize_encoder(self, encoder_config):
         encoder_cls = get_encoder_cls(self.type(), encoder_config.type)
         encoder_params_dict = encoder_config.to_dict()
-        return encoder_cls(encoder_config=encoder_config, **encoder_params_dict)
+
+        # HF text encoders (auto_transformer, bert, etc.) handle adapters natively
+        # via their _wrap_transformer() method. For those, pass adapter through.
+        # For all other encoders, remove adapter from kwargs (they don't expect it)
+        # and apply it generically via PEFT after construction.
+        has_native_adapter_support = hasattr(encoder_cls, "_wrap_transformer")
+        if not has_native_adapter_support:
+            encoder_params_dict.pop("adapter", None)
+
+        encoder = encoder_cls(encoder_config=encoder_config, **encoder_params_dict)
+
+        # Apply generic PEFT adapter for pretrained encoders without native adapter support
+        adapter_config = getattr(encoder_config, "adapter", None)
+        if (
+            adapter_config
+            and isinstance(adapter_config, dict)
+            and encoder_config.is_pretrained()
+            and not has_native_adapter_support
+        ):
+            encoder = self._apply_adapter(encoder, adapter_config)
+
+        return encoder
+
+    @staticmethod
+    def _apply_adapter(encoder, adapter_config: dict):
+        """Apply a PEFT adapter to a pretrained encoder for parameter-efficient fine-tuning.
+
+        This enables using LoRA, DoRA, VeRA, etc. on pretrained text encoders (BERT, etc.) and image encoders (TIMM,
+        torchvision) in ECD mode, not just for LLMs.
+        """
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        try:
+            from peft import get_peft_model
+
+            adapter_type = adapter_config.get("type", "lora")
+
+            # Look up the Ludwig adapter config class and convert to PEFT config
+            from ludwig.schema.llms.peft import adapter_registry
+
+            if adapter_type not in adapter_registry:
+                logger.warning(f"Unknown adapter type '{adapter_type}' for encoder. Skipping.")
+                return encoder
+
+            ludwig_adapter_cls = adapter_registry[adapter_type]
+            ludwig_adapter = ludwig_adapter_cls.model_validate(adapter_config)
+            peft_config = ludwig_adapter.to_config()
+
+            # Apply PEFT to the encoder's underlying model
+            # For HF text encoders, the transformer is usually at encoder.transformer
+            # For TIMM image encoders, the model is the encoder itself
+            target = getattr(encoder, "transformer", None) or getattr(encoder, "model", encoder)
+            wrapped = get_peft_model(target, peft_config)
+
+            # Replace the model in the encoder
+            if hasattr(encoder, "transformer"):
+                encoder.transformer = wrapped
+            elif hasattr(encoder, "model"):
+                encoder.model = wrapped
+            else:
+                encoder = wrapped
+
+            trainable = sum(p.numel() for p in wrapped.parameters() if p.requires_grad)
+            total = sum(p.numel() for p in wrapped.parameters())
+            logger.info(
+                f"Applied {adapter_type} adapter to encoder: "
+                f"{trainable:,} trainable / {total:,} total params ({100 * trainable / total:.2f}%)"
+            )
+
+        except ImportError:
+            logger.warning("PEFT not installed. Cannot apply adapter to encoder. pip install peft")
+        except Exception as e:
+            logger.warning(f"Failed to apply adapter to encoder: {e}")
+
+        return encoder
 
     @classmethod
     def get_preproc_input_dtype(cls, metadata: TrainingSetMetadataDict) -> str:

@@ -137,6 +137,17 @@ class LoraConfig(BaseAdapterConfig):
         parameter_metadata=LLM_METADATA["adapter"]["lora"]["use_dora"],
     )
 
+    loraplus_lr_ratio: float | None = schema_utils.Float(
+        default=None,
+        allow_none=True,
+        description=(
+            "LoRA+ learning rate ratio (Hayou et al., ICML 2024). When set, the B matrices use "
+            "lr * loraplus_lr_ratio while A matrices use the base lr. Typical values: 2-16. "
+            "Provides 1-2%% accuracy gain and up to 2x speedup over standard LoRA. "
+            "Paper: https://arxiv.org/abs/2402.12354"
+        ),
+    )
+
     def to_config(self, task_type: str = None, **kwargs) -> "PeftConfig":
         from peft import LoraConfig as _LoraConfig
 
@@ -550,6 +561,152 @@ class IA3Config(BaseAdapterConfig):
     @classmethod
     def description(cls) -> str:
         return LLM_METADATA["adapter"]["ia3"]["type"].long_description
+
+
+@DeveloperAPI
+@register_adapter(name="vera")
+class VeraAdapterConfig(BaseAdapterConfig):
+    """VeRA: Vector-based Random Matrix Adaptation (ICLR 2024).
+
+    Uses shared frozen random matrices with trained scaling vectors. 10x fewer trainable
+    parameters than LoRA, useful for extreme parameter efficiency and multi-tenant serving.
+    """
+
+    type: str = schema_utils.ProtectedString("vera", description="VeRA adapter.")
+
+    r: int = schema_utils.PositiveInteger(default=256, description="VeRA rank dimension.")
+
+    target_modules: list[str] | None = schema_utils.List(
+        default=None, allow_none=True, description="List of module names to apply VeRA to."
+    )
+
+    projection_prng_key: int = schema_utils.NonNegativeInteger(
+        default=0, description="PRNG key for shared random projection matrices."
+    )
+
+    def to_config(self, task_type: str = None, **kwargs):
+        from peft import VeraConfig as _VeraConfig
+
+        return _VeraConfig(
+            r=self.r,
+            target_modules=self.target_modules,
+            projection_prng_key=self.projection_prng_key,
+            task_type=task_type,
+        )
+
+
+@DeveloperAPI
+@register_adapter(name="loha")
+class LoHaAdapterConfig(BaseAdapterConfig):
+    """LoHa: Low-Rank Hadamard Product Adaptation.
+
+    Uses Hadamard product of two low-rank matrices for parameter-efficient fine-tuning.
+    Can capture more complex weight updates than LoRA at the same rank.
+    """
+
+    type: str = schema_utils.ProtectedString("loha", description="LoHa adapter.")
+
+    r: int = schema_utils.PositiveInteger(default=8, description="LoHa rank dimension.")
+
+    alpha: float = schema_utils.Float(default=8, description="Scaling factor for LoHa.")
+
+    target_modules: list[str] | None = schema_utils.List(
+        default=None, allow_none=True, description="List of module names to apply LoHa to."
+    )
+
+    def to_config(self, task_type: str = None, **kwargs):
+        from peft import LoHaConfig as _LoHaConfig
+
+        return _LoHaConfig(r=self.r, alpha=self.alpha, target_modules=self.target_modules, task_type=task_type)
+
+
+@DeveloperAPI
+@register_adapter(name="lokr")
+class LoKrAdapterConfig(BaseAdapterConfig):
+    """LoKr: Low-Rank Kronecker Product Adaptation.
+
+    Uses Kronecker product decomposition for efficient weight updates.
+    """
+
+    type: str = schema_utils.ProtectedString("lokr", description="LoKr adapter.")
+
+    r: int = schema_utils.PositiveInteger(default=8, description="LoKr rank dimension.")
+
+    alpha: float = schema_utils.Float(default=8, description="Scaling factor for LoKr.")
+
+    target_modules: list[str] | None = schema_utils.List(
+        default=None, allow_none=True, description="List of module names to apply LoKr to."
+    )
+
+    def to_config(self, task_type: str = None, **kwargs):
+        from peft import LoKrConfig as _LoKrConfig
+
+        return _LoKrConfig(r=self.r, alpha=self.alpha, target_modules=self.target_modules, task_type=task_type)
+
+
+@DeveloperAPI
+@register_adapter(name="fourierft")
+class FourierFTAdapterConfig(BaseAdapterConfig):
+    """FourierFT: Frequency-domain fine-tuning.
+
+    Learns weight updates in the Fourier frequency domain, providing a different
+    inductive bias than spatial methods like LoRA.
+    """
+
+    type: str = schema_utils.ProtectedString("fourierft", description="FourierFT adapter.")
+
+    n_frequency: int = schema_utils.PositiveInteger(default=1000, description="Number of frequency components.")
+
+    scaling: float = schema_utils.Float(default=150.0, description="Scaling factor for FourierFT.")
+
+    target_modules: list[str] | None = schema_utils.List(
+        default=None, allow_none=True, description="List of module names to apply FourierFT to."
+    )
+
+    def to_config(self, task_type: str = None, **kwargs):
+        from peft import FourierFTConfig as _FourierFTConfig
+
+        return _FourierFTConfig(
+            n_frequency=self.n_frequency,
+            scaling=self.scaling,
+            target_modules=self.target_modules,
+            task_type=task_type,
+        )
+
+
+@DeveloperAPI
+@register_adapter(name="boft")
+class BOFTAdapterConfig(BaseAdapterConfig):
+    """BOFT: Butterfly Orthogonal Fine-Tuning.
+
+    Uses butterfly factorization to learn orthogonal transformations, preserving
+    the pre-trained model's hyperspherical energy while adapting to new tasks.
+    """
+
+    type: str = schema_utils.ProtectedString("boft", description="BOFT adapter.")
+
+    boft_block_size: int = schema_utils.PositiveInteger(
+        default=4, description="Block size for butterfly factorization."
+    )
+
+    boft_n_butterfly_factor: int = schema_utils.PositiveInteger(default=1, description="Number of butterfly factors.")
+
+    boft_dropout: float = schema_utils.NonNegativeFloat(default=0.05, description="Dropout for BOFT layers.")
+
+    target_modules: list[str] | None = schema_utils.List(
+        default=None, allow_none=True, description="List of module names to apply BOFT to."
+    )
+
+    def to_config(self, task_type: str = None, **kwargs):
+        from peft import BOFTConfig as _BOFTConfig
+
+        return _BOFTConfig(
+            boft_block_size=self.boft_block_size,
+            boft_n_butterfly_factor=self.boft_n_butterfly_factor,
+            boft_dropout=self.boft_dropout,
+            target_modules=self.target_modules,
+            task_type=task_type,
+        )
 
 
 @DeveloperAPI

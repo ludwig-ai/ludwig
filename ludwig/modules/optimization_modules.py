@@ -59,6 +59,64 @@ def get_optimizer_class_and_kwargs(
     return optimizer_cls, cls_kwargs
 
 
+def _get_loraplus_lr_ratio(model) -> float | None:
+    """Check if the model has a LoRA+ lr ratio configured."""
+    try:
+        config_obj = getattr(model, "config_obj", None)
+        if config_obj is None:
+            return None
+        adapter = getattr(config_obj, "adapter", None)
+        if adapter is None:
+            return None
+        return getattr(adapter, "loraplus_lr_ratio", None)
+    except Exception:
+        return None
+
+
+def _create_loraplus_param_groups(model, optimizer_kwargs, loraplus_lr_ratio):
+    """Create separate param groups for LoRA A and B matrices with different learning rates.
+
+    LoRA+ (Hayou et al., ICML 2024) uses a higher learning rate for B matrices and the base learning rate for A
+    matrices. This provides 1-2% accuracy gain and up to 2x speedup.
+    """
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    base_lr = optimizer_kwargs["lr"]
+    b_lr = base_lr * loraplus_lr_ratio
+
+    a_params = []
+    b_params = []
+    other_params = []
+
+    for name, param in model.named_parameters():
+        if not param.requires_grad:
+            continue
+        if "lora_A" in name:
+            a_params.append(param)
+        elif "lora_B" in name:
+            b_params.append(param)
+        else:
+            other_params.append(param)
+
+    logger.info(
+        f"LoRA+ enabled: A matrices ({len(a_params)} params) lr={base_lr}, "
+        f"B matrices ({len(b_params)} params) lr={b_lr}, "
+        f"other ({len(other_params)} params) lr={base_lr}"
+    )
+
+    param_groups = []
+    if a_params:
+        param_groups.append({"params": a_params, "lr": base_lr})
+    if b_params:
+        param_groups.append({"params": b_params, "lr": b_lr})
+    if other_params:
+        param_groups.append({"params": other_params, "lr": base_lr})
+
+    return param_groups
+
+
 def create_optimizer(
     model: LudwigModule,
     optimizer_config: "BaseOptimizerConfig",
@@ -81,4 +139,12 @@ def create_optimizer(
         )
 
     optimizer_cls, optimizer_kwargs = get_optimizer_class_and_kwargs(optimizer_config, learning_rate)
+
+    # LoRA+ support: use different learning rates for A and B matrices
+    # (Hayou et al., ICML 2024). B matrices get lr * loraplus_lr_ratio.
+    loraplus_lr_ratio = _get_loraplus_lr_ratio(model)
+    if loraplus_lr_ratio is not None and loraplus_lr_ratio > 0:
+        param_groups = _create_loraplus_param_groups(model, optimizer_kwargs, loraplus_lr_ratio)
+        return optimizer_cls(param_groups, **{k: v for k, v in optimizer_kwargs.items() if k != "lr"})
+
     return optimizer_cls(model.parameters(), **optimizer_kwargs)
