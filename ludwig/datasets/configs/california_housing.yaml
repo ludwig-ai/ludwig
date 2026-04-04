@@ -1,0 +1,32 @@
+version: 1.0
+name: california_housing
+loader: california_housing.CaliforniaHousingLoader
+description: |
+  California Housing dataset from the 1990 US Census. Predict median house value
+  for California districts from 8 numerical features (median income, house age,
+  average rooms, etc.). Standard ML regression benchmark used in the FT-Transformer
+  paper (Gorishniy et al., NeurIPS 2021).
+
+  Originally from StatLib, available via sklearn.datasets.fetch_california_housing.
+columns:
+  - name: MedInc
+    type: number
+  - name: HouseAge
+    type: number
+  - name: AveRooms
+    type: number
+  - name: AveBedrms
+    type: number
+  - name: Population
+    type: number
+  - name: AveOccup
+    type: number
+  - name: Latitude
+    type: number
+  - name: Longitude
+    type: number
+  - name: target
+    type: number
+output_features:
+  - name: target
+    type: number
