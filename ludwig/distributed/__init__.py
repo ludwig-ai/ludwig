@@ -25,10 +25,17 @@ def load_local():
     return LocalStrategy
 
 
+def load_accelerate():
+    from ludwig.distributed.accelerate import AccelerateStrategy
+
+    return AccelerateStrategy
+
+
 STRATEGIES = {
     "ddp": load_ddp,
     "fsdp": load_fsdp,
     "deepspeed": load_deepspeed,
+    "accelerate": load_accelerate,
     "local": load_local,
 }
 
