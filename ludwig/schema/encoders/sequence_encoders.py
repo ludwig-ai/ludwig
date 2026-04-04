@@ -799,6 +799,96 @@ class StackedCNNRNNConfig(SequenceEncoderConfig):
 
 
 @DeveloperAPI
+@register_encoder_config("mamba", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
+class MambaEncoderConfig(SequenceEncoderConfig):
+    @staticmethod
+    def module_name():
+        return "MambaEncoder"
+
+    type: str = schema_utils.ProtectedString(
+        "mamba",
+        description=ENCODER_METADATA["MambaEncoder"]["type"].long_description,
+    )
+
+    dropout: float = common_fields.DropoutField(default=0.1, description="Dropout rate.")
+
+    max_sequence_length: int = common_fields.MaxSequenceLengthField()
+
+    representation: str = common_fields.RepresentationField()
+
+    vocab: list = common_fields.VocabField()
+
+    d_model: int = schema_utils.PositiveInteger(
+        default=256,
+        description="Dimensionality of the model (hidden size for SSM layers).",
+        parameter_metadata=ENCODER_METADATA["MambaEncoder"]["d_model"],
+    )
+
+    n_layers: int = schema_utils.PositiveInteger(
+        default=4,
+        description="Number of stacked SSM layers.",
+        parameter_metadata=ENCODER_METADATA["MambaEncoder"]["n_layers"],
+    )
+
+    d_state: int = schema_utils.PositiveInteger(
+        default=16,
+        description="Dimensionality of the state space in each SSM layer.",
+        parameter_metadata=ENCODER_METADATA["MambaEncoder"]["d_state"],
+    )
+
+    d_conv: int = schema_utils.PositiveInteger(
+        default=4,
+        description="Width of the 1D convolution in each SSM layer.",
+        parameter_metadata=ENCODER_METADATA["MambaEncoder"]["d_conv"],
+    )
+
+    expand_factor: int = schema_utils.PositiveInteger(
+        default=2,
+        description="Expansion factor for the inner dimension of SSM layers.",
+        parameter_metadata=ENCODER_METADATA["MambaEncoder"]["expand_factor"],
+    )
+
+    use_bias: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether to use bias in linear projections.",
+    )
+
+    weights_initializer: str = common_fields.WeightsInitializerField()
+
+    should_embed: bool = schema_utils.Boolean(
+        default=True,
+        description="If True the input sequence is expected to be made of integers and will be mapped into embeddings.",
+    )
+
+    embedding_size: int = common_fields.EmbeddingSizeField()
+
+    embeddings_on_cpu: bool = common_fields.EmbeddingsOnCPUField()
+
+    embeddings_trainable: bool = common_fields.EmbeddingsTrainableField()
+
+    pretrained_embeddings: str = common_fields.PretrainedEmbeddingsField()
+
+    reduce_output: str = common_fields.ReduceOutputField(default="mean")
+
+    output_size: int = schema_utils.PositiveInteger(
+        default=256,
+        description="The default output_size that will be used for each FC layer.",
+    )
+
+    norm: str = common_fields.NormField(description="The default norm that will be used for each layer.")
+
+    norm_params: dict = common_fields.NormParamsField()
+
+    num_fc_layers: int = common_fields.NumFCLayersField(description="Number of fully connected layers to use.")
+
+    fc_activation: str = schema_utils.ActivationOptions()
+
+    fc_dropout: float = common_fields.DropoutField()
+
+    fc_layers: list[dict] = common_fields.FCLayersField()
+
+
+@DeveloperAPI
 @register_encoder_config("transformer", [SEQUENCE, TEXT, TIMESERIES])
 class StackedTransformerConfig(SequenceEncoderConfig):
     @staticmethod

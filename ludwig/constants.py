@@ -34,6 +34,13 @@ IMAGE = "image"
 AUDIO = "audio"
 DATE = "date"
 H3 = "h3"
+
+# Date feature vector: [year, month, day, weekday, yearday, hour, minute, second, second_of_day].
+DATE_VECTOR_LENGTH = 9
+
+# H3 geospatial index vector: [mode, edge, resolution, base_cell, cell_0, ..., cell_14].
+MAX_H3_RESOLUTION = 15
+H3_VECTOR_LENGTH = MAX_H3_RESOLUTION + 4
 VECTOR = "vector"
 HEIGHT = "height"
 WIDTH = "width"

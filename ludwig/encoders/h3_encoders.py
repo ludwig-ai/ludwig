@@ -18,7 +18,7 @@ import logging
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import ENCODER_OUTPUT, ENCODER_OUTPUT_STATE, H3
+from ludwig.constants import ENCODER_OUTPUT, ENCODER_OUTPUT_STATE, H3, H3_VECTOR_LENGTH, MAX_H3_RESOLUTION
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.encoders.types import EncoderOutputDict
@@ -33,13 +33,24 @@ from ludwig.utils import torch_utils
 
 logger = logging.getLogger(__name__)
 
-# TODO: Share this with h3_feature.H3_VECTOR_LENGTH
-H3_INPUT_SIZE = 19
-
 
 @DeveloperAPI
 @register_encoder("embed", H3)
 class H3Embed(Encoder):
+    """Encodes H3 geospatial indices using learned categorical embeddings.
+
+    H3 is a hierarchical hexagonal geospatial indexing system (Uber, 2018). Each H3
+    index is decomposed into components: mode, edge, resolution, base cell, and up to
+    15 resolution cells. Each component is embedded via a learned lookup table, the
+    resolution cells are masked to the actual resolution, and the sequence is reduced
+    (default: sum) and passed through an optional FC stack.
+
+    Use this encoder for geospatial features encoded as H3 indices. It captures the
+    hierarchical structure of H3 at multiple resolutions.
+
+    Reference: https://h3geo.org/
+    """
+
     def __init__(
         self,
         embedding_size: int = 10,
@@ -58,26 +69,6 @@ class H3Embed(Encoder):
         encoder_config=None,
         **kwargs,
     ):
-        """
-        :param embedding_size: it is the maximum embedding size, the actual
-               size will be `min(vocabulary_size, embedding_size)`
-               for `dense` representations and exactly `vocabulary_size`
-               for the `sparse` encoding, where `vocabulary_size` is
-               the number of different strings appearing in the training set
-               in the column the feature is named after (plus 1 for
-               `<UNK>`).
-        :type embedding_size: Integer
-        :param embeddings_on_cpu: by default embeddings matrices are stored
-               on GPU memory if a GPU is used, as it allows
-               for faster access, but in some cases the embedding matrix
-               may be really big and this parameter forces the placement
-               of the embedding matrix in regular memory and the CPU is used
-               to resolve them, slightly slowing down the process
-               as a result of data transfer between CPU and GPU memory.
-        :param dropout: determines if there should be a dropout layer before
-               returning the encoder output.
-        :type dropout: Boolean
-        """
         super().__init__()
         self.config = encoder_config
 
@@ -143,7 +134,7 @@ class H3Embed(Encoder):
         self.embed_cells = EmbedSequence(
             [str(i) for i in range(8)],
             embedding_size,
-            max_sequence_length=(H3_INPUT_SIZE - 4),
+            max_sequence_length=(H3_VECTOR_LENGTH - 4),
             representation="dense",
             embeddings_trainable=True,
             pretrained_embeddings=None,
@@ -169,10 +160,14 @@ class H3Embed(Encoder):
         )
 
     def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
-        """
-        :param inputs: The input vector fed into the encoder.
-               Shape: [batch x H3_INPUT_SIZE], type torch.int8
-        :type inputs: Tensor
+        """Encode an H3 feature vector.
+
+        Args:
+            inputs: Tensor of shape [batch, H3_VECTOR_LENGTH] with dtype int,
+                containing [mode, edge, resolution, base_cell, cell_0, ..., cell_14].
+
+        Returns:
+            Dictionary with ENCODER_OUTPUT key mapping to tensor of shape [batch, output_size].
         """
         input_vector = inputs.int()
 
@@ -186,12 +181,12 @@ class H3Embed(Encoder):
         # ================ Masking ================
         # Mask out cells beyond the resolution of interest.
         resolution = input_vector[:, 2]
-        mask = torch.unsqueeze(torch_utils.sequence_mask(resolution, 15), dim=-1).float()
+        mask = torch.unsqueeze(torch_utils.sequence_mask(resolution, MAX_H3_RESOLUTION), dim=-1).float()
         # Batch size X 15(max resolution) X embedding size
         masked_embedded_cells = embedded_cells * mask
 
         # ================ Reduce ================
-        # Batch size X H3_INPUT_SIZE X embedding size
+        # Batch size X H3_VECTOR_LENGTH X embedding size
         concatenated = torch.cat(
             [embedded_mode, embedded_edge, embedded_resolution, embedded_base_cell, masked_embedded_cells], dim=1
         )
@@ -199,7 +194,6 @@ class H3Embed(Encoder):
         hidden = self.reduce_sequence(concatenated)
 
         # ================ FC Stack ================
-        # logger.debug('  flatten hidden: {0}'.format(hidden))
         hidden = self.fc_stack(hidden)
 
         return {ENCODER_OUTPUT: hidden}
@@ -210,7 +204,7 @@ class H3Embed(Encoder):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([H3_INPUT_SIZE])
+        return torch.Size([H3_VECTOR_LENGTH])
 
     @property
     def output_shape(self) -> torch.Size:
@@ -220,6 +214,17 @@ class H3Embed(Encoder):
 @DeveloperAPI
 @register_encoder("weighted_sum", H3)
 class H3WeightedSum(Encoder):
+    """Encodes H3 indices using a learned weighted sum over component embeddings.
+
+    This encoder first embeds all H3 components using ``H3Embed`` (with no reduction),
+    then computes a weighted sum across the component dimension using learned (or
+    optionally softmax-normalized) weights. The result is passed through an FC stack.
+
+    Compared to ``H3Embed`` with sum reduction, this encoder learns per-component
+    importance weights, allowing the model to attend more to certain hierarchy levels
+    (e.g., base cell vs. fine-grained resolution cells).
+    """
+
     def __init__(
         self,
         embedding_size: int = 10,
@@ -238,26 +243,6 @@ class H3WeightedSum(Encoder):
         encoder_config=None,
         **kwargs,
     ):
-        """
-        :param embedding_size: it is the maximum embedding size, the actual
-               size will be `min(vocabulary_size, embedding_size)`
-               for `dense` representations and exactly `vocabulary_size`
-               for the `sparse` encoding, where `vocabulary_size` is
-               the number of different strings appearing in the training set
-               in the column the feature is named after (plus 1 for
-               `<UNK>`).
-        :type embedding_size: Integer
-        :param embeddings_on_cpu: by default embeddings matrices are stored
-               on GPU memory if a GPU is used, as it allows
-               for faster access, but in some cases the embedding matrix
-               may be really big and this parameter forces the placement
-               of the embedding matrix in regular memory and the CPU is used
-               to resolve them, slightly slowing down the process
-               as a result of data transfer between CPU and GPU memory.
-        :param dropout: determines if there should be a dropout layer before
-               returning the encoder output.
-        :type dropout: Boolean
-        """
         super().__init__()
         self.config = encoder_config
 
@@ -276,7 +261,7 @@ class H3WeightedSum(Encoder):
         )
 
         self.register_buffer(
-            "aggregation_weights", torch.Tensor(get_initializer(weights_initializer)([H3_INPUT_SIZE, 1]))
+            "aggregation_weights", torch.Tensor(get_initializer(weights_initializer)([H3_VECTOR_LENGTH, 1]))
         )
 
         logger.debug("  FCStack")
@@ -295,10 +280,13 @@ class H3WeightedSum(Encoder):
         )
 
     def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
-        """
-        :param inputs: The input vector fed into the encoder.
-               Shape: [batch x H3_INPUT_SIZE], type torch.int8
-        :type inputs: Tensor
+        """Encode an H3 feature vector using a learned weighted sum.
+
+        Args:
+            inputs: Tensor of shape [batch, H3_VECTOR_LENGTH] with dtype int.
+
+        Returns:
+            Dictionary with ENCODER_OUTPUT key mapping to tensor of shape [batch, output_size].
         """
         # ================ Embeddings ================
         input_vector = inputs
@@ -313,7 +301,6 @@ class H3WeightedSum(Encoder):
         hidden = self.sum_sequence_reducer(embedded_h3[ENCODER_OUTPUT] * weights)
 
         # ================ FC Stack ================
-        # logger.debug('  flatten hidden: {0}'.format(hidden))
         hidden = self.fc_stack(hidden)
 
         return {ENCODER_OUTPUT: hidden}
@@ -324,7 +311,7 @@ class H3WeightedSum(Encoder):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([H3_INPUT_SIZE])
+        return torch.Size([H3_VECTOR_LENGTH])
 
     @property
     def output_shape(self) -> torch.Size:
@@ -334,6 +321,18 @@ class H3WeightedSum(Encoder):
 @DeveloperAPI
 @register_encoder("rnn", H3)
 class H3RNN(Encoder):
+    """Encodes H3 indices by treating the component sequence as a time series for an RNN.
+
+    This encoder first embeds all H3 components using ``H3Embed`` (with no reduction),
+    then feeds the resulting sequence of embeddings through a recurrent neural network
+    (RNN, LSTM, or GRU). This allows the model to capture sequential dependencies
+    across the H3 hierarchy levels (mode -> edge -> resolution -> base cell -> cells).
+
+    Use this encoder when the sequential/hierarchical structure of H3 indices is
+    important for the task. For simpler pooling-based approaches, use ``H3Embed``
+    or ``H3WeightedSum``.
+    """
+
     def __init__(
         self,
         embedding_size: int = 10,
@@ -355,62 +354,6 @@ class H3RNN(Encoder):
         encoder_config=None,
         **kwargs,
     ):
-        """
-        :param embedding_size: it is the maximum embedding size, the actual
-               size will be `min(vocabulary_size, embedding_size)`
-               for `dense` representations and exactly `vocabulary_size`
-               for the `sparse` encoding, where `vocabulary_size` is
-               the number of different strings appearing in the training set
-               in the column the feature is named after (plus 1 for
-               `<UNK>`).
-        :type embedding_size: Integer
-        :param embeddings_on_cpu: by default embeddings matrices are stored
-               on GPU memory if a GPU is used, as it allows
-               for faster access, but in some cases the embedding matrix
-               may be really big and this parameter forces the placement
-               of the embedding matrix in regular memory and the CPU is used
-               to resolve them, slightly slowing down the process
-               as a result of data transfer between CPU and GPU memory.
-        :param num_layers: the number of stacked recurrent layers.
-        :type num_layers: Integer
-        :param cell_type: the type of recurrent cell to use.
-               Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`,
-               `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`.
-               For reference about the differences between the cells please
-               refer to PyTorch's documentation. We suggest to use the
-               `block` variants on CPU and the `cudnn` variants on GPU
-               because of their increased speed.
-        :type cell_type: str
-        :param hidden_size: the size of the state of the rnn.
-        :type hidden_size: Integer
-        :param bidirectional: if `True` two recurrent networks will perform
-               encoding in the forward and backward direction and
-               their outputs will be concatenated.
-        :type bidirectional: Boolean
-        :param activation: Activation function to use.
-        :type activation: string
-        :param recurrent_activation: Activation function to use for the
-                recurrent step.
-        :type recurrent_activation: string
-        :param use_bias: bool determines where to use a bias vector
-        :type use_bias: bool
-        :param unit_forget_bias: if True add 1 to the bias forget gate at
-               initialization.
-        :type unit_forget_bias: bool
-        :param weights_initializer: Initializer for the weights (aka kernel)
-               matrix
-        :type weights_initializer: string
-        :param recurrent_initializer: Initializer for the recurrent weights
-               matrix
-        :type recurrent_initializer: string
-        :param bias_initializer: Initializer for the bias vector
-        :type bias_initializer: string
-        :param dropout: determines if there should be a dropout layer before
-               returning the encoder output.
-        :type dropout: float
-        :param recurrent_dropout: Dropout rate for the RNN encoder of the H3 embeddings.
-        :type recurrent_dropout: float
-        """
         super().__init__()
         self.config = encoder_config
 
@@ -430,7 +373,7 @@ class H3RNN(Encoder):
         logger.debug("  RecurrentStack")
         self.recurrent_stack = RecurrentStack(
             input_size=self.h3_embed.output_shape[0],
-            max_sequence_length=H3_INPUT_SIZE,
+            max_sequence_length=H3_VECTOR_LENGTH,
             hidden_size=hidden_size,
             cell_type=cell_type,
             num_layers=num_layers,
@@ -440,12 +383,14 @@ class H3RNN(Encoder):
         )
 
     def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
-        """
-        :param inputs: The input vector fed into the encoder.
-               Shape: [batch x H3_INPUT_SIZE], type torch.int8
-        :type inputs: Tensor
-        """
+        """Encode an H3 feature vector through an RNN.
 
+        Args:
+            inputs: Tensor of shape [batch, H3_VECTOR_LENGTH] with dtype int.
+
+        Returns:
+            Dictionary with ENCODER_OUTPUT and ENCODER_OUTPUT_STATE keys.
+        """
         # ================ Embeddings ================
         embedded_h3 = self.h3_embed(inputs)
 
@@ -460,7 +405,7 @@ class H3RNN(Encoder):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([H3_INPUT_SIZE])
+        return torch.Size([H3_VECTOR_LENGTH])
 
     @property
     def output_shape(self) -> torch.Size:

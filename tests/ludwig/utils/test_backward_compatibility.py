@@ -786,10 +786,10 @@ def test_cache_credentials_backward_compatibility():
     [
         ({"type": "resnet"}, "resnet"),
         ({"type": "vit"}, "vit"),
-        ({"type": "resnet", "resnet_size": 50}, "_resnet_legacy"),
-        ({"type": "vit", "num_hidden_layers": 12}, "_vit_legacy"),
+        ({"type": "_resnet_legacy"}, "resnet"),
+        ({"type": "_vit_legacy"}, "vit"),
     ],
-    ids=["resnet", "vit", "resnet_legacy", "vit_legacy"],
+    ids=["resnet", "vit", "resnet_legacy_internal", "vit_legacy_internal"],
 )
 def test_legacy_image_encoders(encoder: dict[str, Any], upgraded_type: str):
     config = {

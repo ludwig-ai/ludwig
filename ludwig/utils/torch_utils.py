@@ -10,6 +10,7 @@ from torch.nn import Module, ModuleDict
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import ENCODER_OUTPUT
+from ludwig.utils.entmax.activations import Entmax15, Sparsemax
 from ludwig.utils.strings_utils import SpecialSymbol
 
 _TORCH_INIT_PARAMS: tuple | None = None
@@ -125,6 +126,42 @@ initializer_registry = {
     "identity": nn.init.eye_,
 }
 
+
+class SwiGLU(nn.Module):
+    """SiLU-Gated Linear Unit (Shazeer, 2020).
+
+    Used in LLaMA/PaLM.
+    Splits input in half along last dim, applies SiLU to gate half, multiplies.
+    Note: input_size must be 2x the desired output_size.
+    """
+
+    def forward(self, x):
+        x1, x2 = x.chunk(2, dim=-1)
+        return nn.functional.silu(x1) * x2
+
+
+class GeGLU(nn.Module):
+    """GELU-Gated Linear Unit (Shazeer, 2020).
+
+    Used in T5 v1.1. Splits input in half along last dim, applies GELU to gate half, multiplies.
+    """
+
+    def forward(self, x):
+        x1, x2 = x.chunk(2, dim=-1)
+        return nn.functional.gelu(x1) * x2
+
+
+class ReGLU(nn.Module):
+    """ReLU-Gated Linear Unit (Shazeer, 2020).
+
+    Splits input in half along last dim, applies ReLU to gate half, multiplies.
+    """
+
+    def forward(self, x):
+        x1, x2 = x.chunk(2, dim=-1)
+        return nn.functional.relu(x1) * x2
+
+
 activations = {
     "elu": nn.ELU,
     "leakyRelu": nn.LeakyReLU,
@@ -133,6 +170,22 @@ activations = {
     "sigmoid": nn.Sigmoid,
     "tanh": nn.Tanh,
     "softmax": nn.Softmax,
+    "gelu": nn.GELU,
+    "silu": nn.SiLU,
+    "swish": nn.SiLU,
+    "mish": nn.Mish,
+    "selu": nn.SELU,
+    "prelu": nn.PReLU,
+    "relu6": nn.ReLU6,
+    "hardswish": nn.Hardswish,
+    "hardsigmoid": nn.Hardsigmoid,
+    "softplus": nn.Softplus,
+    "celu": nn.CELU,
+    "swiglu": SwiGLU,
+    "geglu": GeGLU,
+    "reglu": ReGLU,
+    "sparsemax": Sparsemax,
+    "entmax15": Entmax15,
     None: nn.Identity,
 }
 

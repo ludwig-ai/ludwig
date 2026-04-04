@@ -17,7 +17,7 @@ import logging
 import numpy as np
 import torch
 
-from ludwig.constants import COLUMN, H3, PROC_COLUMN
+from ludwig.constants import COLUMN, H3, H3_VECTOR_LENGTH, MAX_H3_RESOLUTION, PROC_COLUMN
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.h3_feature import H3InputFeatureConfig
 from ludwig.types import FeatureMetadataDict, ModelConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
@@ -26,8 +26,6 @@ from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
 
-MAX_H3_RESOLUTION = 15
-H3_VECTOR_LENGTH = MAX_H3_RESOLUTION + 4
 H3_PADDING_VALUE = 7
 
 

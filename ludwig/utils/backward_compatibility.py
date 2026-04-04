@@ -41,7 +41,6 @@ from ludwig.constants import (
     INPUT_FEATURES,
     LOSS,
     MISSING_VALUE_STRATEGY,
-    MODEL_ECD,
     NAME,
     NUM_SAMPLES,
     NUMBER,
@@ -68,7 +67,6 @@ from ludwig.constants import (
 )
 from ludwig.features.feature_registries import get_base_type_registry, get_input_type_registry, get_output_type_registry
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.types import (
     FeatureConfigDict,
     FeatureTypeDefaultsDict,
@@ -757,52 +755,30 @@ def learning_rate_scheduler(trainer: TrainerConfigDict) -> TrainerConfigDict:
 
 @register_config_transformation("0.7", ["input_features"])
 def _upgrade_legacy_image_encoders(feature: FeatureConfigDict) -> FeatureConfigDict:
+    """Upgrade legacy image encoder references.
+
+    The old _resnet_legacy and _vit_legacy encoders have been removed. The "resnet" and "vit" encoder type names now map
+    directly to the TorchVision-based encoders, so no transformation is needed. Any legacy-specific parameters (e.g.
+    resnet_size, num_hidden_layers) that are not recognized by the new encoders will be caught by schema validation.
+    """
     if feature.get(TYPE) != IMAGE:
         return feature
 
-    encoder_mapping = {
-        "resnet": "_resnet_legacy",
-        "vit": "_vit_legacy",
-    }
-
     encoder = feature.get(ENCODER, {})
     encoder_type = encoder.get(TYPE)
-    if encoder_type not in encoder_mapping:
-        return feature
 
-    # For this version of Ludwig, only ECD supported these encoders.
-    new_encoder_cls = get_encoder_cls(MODEL_ECD, feature[TYPE], encoder_type)
-    new_encoder_fields = new_encoder_cls.get_valid_field_names()
-
-    legacy_encoder_cls = get_encoder_cls(MODEL_ECD, feature[TYPE], encoder_mapping[encoder_type])
-    legacy_encoder_fields = legacy_encoder_cls.get_valid_field_names()
-
-    user_fields = set(encoder.keys())
-    user_fields.remove(TYPE)
-
-    removed_fields = legacy_encoder_fields.difference(new_encoder_fields)
-    added_fields = new_encoder_fields.difference(legacy_encoder_fields)
-
-    user_legacy_fields = user_fields.intersection(removed_fields)
-    user_new_fields = user_fields.intersection(added_fields)
-    if len(user_legacy_fields) > 0:
-        if len(user_new_fields) > 0:
-            raise ValueError(
-                f"Intended encoder type is ambiguous. "
-                f"Provided encoder fields matching encoder '{encoder_type}' {user_new_fields} and "
-                f"legacy encoder '{encoder_mapping[encoder_type]}' {user_legacy_fields}. "
-                f"Please remove features unique to one of these encoder types from your configuration."
-            )
-
+    # Map old internal names to the current torchvision encoder names
+    legacy_internal_mapping = {
+        "_resnet_legacy": "resnet",
+        "_vit_legacy": "vit",
+    }
+    if encoder_type in legacy_internal_mapping:
         warnings.warn(
-            f"Encoder '{encoder_type}' with params '{user_legacy_fields}' has been renamed to "
-            f"'{encoder_mapping[encoder_type]}'. Please upgrade your config to use the new '{encoder_type}' as "
-            f"support for '{encoder_mapping[encoder_type]}' is not guaranteed in future versions.",
+            f"Encoder type '{encoder_type}' has been removed. "
+            f"Mapping to TorchVision encoder '{legacy_internal_mapping[encoder_type]}'.",
             DeprecationWarning,
         )
-
-        # User provided legacy fields and no new fields, so we assume they intended to use the legacy encoder
-        encoder[TYPE] = encoder_mapping[encoder_type]
+        encoder[TYPE] = legacy_internal_mapping[encoder_type]
 
     return feature
 

@@ -15,12 +15,42 @@
 import logging
 
 import torch
+from torch import nn
 
 from ludwig.modules.attention_modules import FeedForwardAttentionReducer
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D
 
 logger = logging.getLogger(__name__)
+
+
+class AttentionPooling(nn.Module):
+    """Learnable attention-weighted pooling over sequence positions.
+
+    Uses a learnable query vector that attends to all positions via scaled dot-product
+    attention. Better than mean/max pooling when different positions have different
+    importance, as the model learns which positions to attend to.
+
+    Unlike FeedForwardAttentionReducer (which uses a two-layer feedforward network to
+    compute attention scores), this module uses a single learnable query vector with
+    scaled dot-product attention, making it more parameter-efficient.
+
+    Input shape: [batch, seq_len, hidden_size]
+    Output shape: [batch, hidden_size]
+    """
+
+    def __init__(self, input_size: int, **kwargs):
+        super().__init__()
+        self.query = nn.Parameter(torch.randn(1, 1, input_size))
+        self.scale = input_size**-0.5
+
+    def forward(self, x: torch.Tensor, mask: torch.Tensor | None = None) -> torch.Tensor:
+        # x: [batch, seq_len, hidden]
+        attn = (self.query * self.scale) @ x.transpose(-2, -1)  # [batch, 1, seq_len]
+        if mask is not None:
+            attn = attn.masked_fill(~mask.unsqueeze(1).bool(), float("-inf"))
+        attn = torch.softmax(attn, dim=-1)
+        return (attn @ x).squeeze(1)  # [batch, hidden]
 
 
 class SequenceReducer(LudwigModule):
@@ -30,7 +60,8 @@ class SequenceReducer(LudwigModule):
 
     A sequence is a tensor of 2 or more dimensions, where the shape is [batch size x sequence length x ...].
 
-    :param reduce_mode: The reduction mode, one of {"last", "sum", "mean", "max", "concat", "attention", "none"}
+    :param reduce_mode: The reduction mode, one of {"last", "sum", "mean", "max", "concat", "attention",
+                        "attention_pooling", "none"}
     :param max_sequence_length The maximum sequence length.  Only used for computation of shapes - inputs passed
                                at runtime may have a smaller sequence length.
     :param encoding_size The size of each sequence element/embedding vector, or None if input is a sequence of scalars.
@@ -42,9 +73,9 @@ class SequenceReducer(LudwigModule):
         self._reduce_mode = reduce_mode
         self._max_sequence_length = max_sequence_length
         self._encoding_size = encoding_size
-        # If embedding size specified and mode is attention, use embedding size as attention module input size
-        # unless the input_size kwarg is provided.
-        if reduce_mode == "attention" and encoding_size and "input_size" not in kwargs:
+        # If embedding size specified and mode is attention/attention_pooling, use embedding size as
+        # attention module input size unless the input_size kwarg is provided.
+        if reduce_mode in ("attention", "attention_pooling") and encoding_size and "input_size" not in kwargs:
             kwargs["input_size"] = encoding_size
         # use registry to find required reduction function
         self._reduce_obj = get_from_registry(reduce_mode, reduce_mode_registry)(**kwargs)
@@ -128,6 +159,7 @@ reduce_mode_registry = {
     "max": ReduceMax,
     "concat": ReduceConcat,
     "attention": FeedForwardAttentionReducer,
+    "attention_pooling": AttentionPooling,
     # TODO: Simplify this.
     "none": ReduceNone,
     "None": ReduceNone,
