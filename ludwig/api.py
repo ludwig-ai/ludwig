@@ -778,6 +778,37 @@ class LudwigModel:
                 elif self.backend.is_coordinator() and not skip_save_model:
                     self.model.save(model_dir)
 
+                # Save model card alongside the model (always)
+                if self.backend.is_coordinator() and not skip_save_model:
+                    try:
+                        from ludwig.utils.model_card import save_model_card
+
+                        save_model_card(
+                            output_directory=output_directory,
+                            config=self.config_obj.to_dict(),
+                            training_set_metadata=training_set_metadata,
+                            train_stats=train_stats,
+                            model_dir=model_dir,
+                        )
+                    except Exception as e:
+                        logger.warning(f"Failed to generate model card: {e}")
+
+                # Save training report (always, alongside the model)
+                if self.backend.is_coordinator() and not skip_save_model:
+                    try:
+                        from ludwig.utils.training_report import save_training_report
+
+                        save_training_report(
+                            output_directory=output_directory,
+                            config=self.config_obj.to_dict(),
+                            training_set_metadata=training_set_metadata,
+                            train_stats=train_stats,
+                            model_dir=model_dir,
+                            random_seed=random_seed,
+                        )
+                    except Exception as e:
+                        logger.warning(f"Failed to generate training report: {e}")
+
                 # Synchronize model weights between workers
                 self.backend.sync_model(self.model)
 
