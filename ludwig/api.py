@@ -2100,6 +2100,27 @@ class LudwigModel:
             device=device,
         )
 
+    def export_model(self, save_path: str, format: str = "safetensors", sample_input: dict = None):
+        """Export the model in various formats.
+
+        Args:
+            save_path: Directory to save the exported model.
+            format: Export format. One of "safetensors", "torch_export", "onnx".
+            sample_input: Example input for tracing (required for torch_export and onnx).
+        """
+        from ludwig.utils.model_export import ModelExporter
+
+        exporter = ModelExporter(self.model)
+
+        if format == "safetensors":
+            return exporter.export_safetensors(save_path)
+        elif format == "torch_export":
+            return exporter.export_torch(save_path, sample_input)
+        elif format == "onnx":
+            return exporter.export_onnx(save_path, sample_input)
+        else:
+            raise ValueError(f"Unknown export format: {format}. Options: safetensors, torch_export, onnx")
+
     def _check_initialization(self):
         if self.model is None or self._user_config is None or self.training_set_metadata is None:
             raise ValueError("Model has not been trained or loaded")
