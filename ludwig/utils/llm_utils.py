@@ -666,3 +666,58 @@ def update_embedding_layer(model: AutoModelForCausalLM, config_obj: LLMTrainerCo
 def create_text_streamer(tokenizer: PreTrainedTokenizer) -> TextStreamer:
     """Creates a TextStreamer object for streaming text to stdout during generation."""
     return TextStreamer(tokenizer=tokenizer, skip_prompt=True)
+
+
+def generate_merged_ids_packed(
+    input_ids: torch.tensor,
+    target_ids: torch.tensor,
+    tokenizer,
+    max_sequence_length: int = None,
+    max_sequences_per_pack: int = 8,
+):
+    """Generate merged IDs with sequence packing for throughput improvement.
+
+    Instead of padding each sequence to the same length, packs multiple short
+    sequences into a single batch entry with block-diagonal attention masks
+    to prevent cross-sequence attention.
+
+    Args:
+        input_ids: [batch, input_len] token IDs for prompts
+        target_ids: [batch, target_len] token IDs for completions
+        tokenizer: HuggingFace tokenizer
+        max_sequence_length: Maximum pack length
+        max_sequences_per_pack: Maximum sequences per pack
+
+    Returns:
+        packed_ids: [num_packs, max_seq_len] packed token IDs
+        packed_attention_mask: [num_packs, max_seq_len, max_seq_len] block-diagonal attention
+    """
+    from ludwig.utils.sequence_packing import pack_sequences
+
+    # First, merge each input+target pair into a single sequence (without padding)
+    merged_sequences = []
+    eos_tensor = torch.tensor([tokenizer.eos_token_id]).to(target_ids[0].device)
+    pad_token_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
+
+    for input_id_sample, target_id_sample in zip(input_ids, target_ids):
+        input_no_pad = remove_left_padding(input_id_sample, tokenizer)[0]
+        target_no_pad = remove_left_padding(target_id_sample, tokenizer)[0]
+        target_no_pad = torch.cat((target_no_pad, eos_tensor), dim=-1)
+        merged = torch.cat((input_no_pad, target_no_pad), dim=-1)
+        if max_sequence_length and merged.shape[0] > max_sequence_length:
+            merged = merged[:max_sequence_length]
+        merged_sequences.append(merged)
+
+    # Create dummy attention masks (all ones, actual masking done by block-diagonal)
+    attention_masks = [torch.ones(seq.shape[0]) for seq in merged_sequences]
+
+    # Pack sequences using greedy bin packing
+    packed_ids, packed_attn, _, _ = pack_sequences(
+        merged_sequences,
+        attention_masks,
+        max_length=max_sequence_length or max(s.shape[0] for s in merged_sequences),
+        pad_token_id=pad_token_id,
+        max_sequences_per_pack=max_sequences_per_pack,
+    )
+
+    return packed_ids, packed_attn

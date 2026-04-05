@@ -153,3 +153,35 @@ class DPOTrainer(Trainer):
             profiler.step()
 
         return loss, {}, used_tokens
+
+
+@register_llm_trainer("kto")
+class KTOTrainer(DPOTrainer):
+    """Kahneman-Tversky Optimization trainer (Ethayarajh et al., 2024)."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.beta = getattr(self.config, "kto_beta", 0.1)
+        self.loss_type = "kto"
+
+
+@register_llm_trainer("orpo")
+class ORPOTrainer(DPOTrainer):
+    """Odds Ratio Preference Optimization trainer (Hong et al., 2024)."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.beta = getattr(self.config, "orpo_beta", 0.1)
+        self.loss_type = "orpo"
+
+
+@register_llm_trainer("grpo")
+class GRPOTrainer(DPOTrainer):
+    """Group Relative Policy Optimization trainer (Shao et al., 2024, DeepSeek-R1)."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.beta = getattr(self.config, "grpo_beta", 0.04)
+        self.epsilon = getattr(self.config, "grpo_epsilon", 0.2)
+        self.num_generations = getattr(self.config, "grpo_num_generations", 4)
+        self.loss_type = "grpo"

@@ -269,11 +269,27 @@ class LLM(BaseModel):
         """
         input_ids, target_ids = self._unpack_inputs(inputs)
 
-        # Generate merged input_id, target_id pairs for the model, and create corresponding attention masks
-        # We save them as class variables so that we can use them when realigning target and prediction tensors
-        self.model_inputs, self.attention_masks = generate_merged_ids(
-            input_ids, target_ids, self.tokenizer, self.global_max_sequence_length
+        # Generate merged input_id, target_id pairs for the model, and create corresponding attention masks.
+        # If packing is enabled, multiple sequences are packed into each batch entry with block-diagonal
+        # attention masks preventing cross-sequence attention (2-4x throughput improvement).
+        packing_enabled = (
+            hasattr(self.config_obj, "trainer")
+            and hasattr(self.config_obj.trainer, "packing")
+            and self.config_obj.trainer.packing
+            and self.training
+            and target_ids is not None
         )
+        if packing_enabled:
+            from ludwig.utils.llm_utils import generate_merged_ids_packed
+
+            max_per_pack = getattr(self.config_obj.trainer, "packing_max_sequences_per_pack", 8)
+            self.model_inputs, self.attention_masks = generate_merged_ids_packed(
+                input_ids, target_ids, self.tokenizer, self.global_max_sequence_length, max_per_pack
+            )
+        else:
+            self.model_inputs, self.attention_masks = generate_merged_ids(
+                input_ids, target_ids, self.tokenizer, self.global_max_sequence_length
+            )
 
         # TODO (jeffkinnison): Determine why the 8-bit `SCB` and `CB` matrices are deleted in the forward pass
         model_outputs = self.model(input_ids=self.model_inputs, attention_mask=self.attention_masks).get(LOGITS)

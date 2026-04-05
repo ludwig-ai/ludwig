@@ -715,6 +715,44 @@ class DPOTrainerConfig(FineTuneTrainerConfig):
         description="Label smoothing for DPO preference targets. 0 means no smoothing.",
     )
 
+    rejected_column: str = schema_utils.String(
+        default="rejected",
+        description="Name of the column containing rejected completions for preference training.",
+    )
+
+
+@DeveloperAPI
+@register_llm_trainer_schema("kto")
+class KTOTrainerConfig(FineTuneTrainerConfig):
+    """Kahneman-Tversky Optimization (Ethayarajh et al., 2024)."""
+
+    type: str = schema_utils.ProtectedString("kto")
+    kto_beta: float = schema_utils.Float(default=0.1, description="KTO temperature parameter.")
+    rejected_column: str = schema_utils.String(default="rejected", description="Column with rejected completions.")
+
+
+@DeveloperAPI
+@register_llm_trainer_schema("orpo")
+class ORPOTrainerConfig(FineTuneTrainerConfig):
+    """Odds Ratio Preference Optimization (Hong et al., 2024)."""
+
+    type: str = schema_utils.ProtectedString("orpo")
+    orpo_beta: float = schema_utils.Float(default=0.1, description="ORPO odds ratio weight.")
+    rejected_column: str = schema_utils.String(default="rejected", description="Column with rejected completions.")
+
+
+@DeveloperAPI
+@register_llm_trainer_schema("grpo")
+class GRPOTrainerConfig(FineTuneTrainerConfig):
+    """Group Relative Policy Optimization (Shao et al., 2024, DeepSeek-R1)."""
+
+    type: str = schema_utils.ProtectedString("grpo")
+    grpo_beta: float = schema_utils.Float(default=0.04, description="KL penalty coefficient.")
+    grpo_epsilon: float = schema_utils.FloatRange(default=0.2, min=0.0, max=1.0, description="PPO clipping parameter.")
+    grpo_num_generations: int = schema_utils.PositiveInteger(
+        default=4, description="Completions to generate per prompt."
+    )
+
 
 @DeveloperAPI
 def get_model_type_jsonschema(model_type: str = MODEL_ECD):
