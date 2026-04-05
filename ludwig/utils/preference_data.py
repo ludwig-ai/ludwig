@@ -76,7 +76,7 @@ def tokenize_preference_pair(
             # Labels: mask prompt tokens with -100, keep completion tokens
             prompt_len = min(p.shape[0], max_length)
             labels = padded_ids.clone()
-            labels[:pad_len + prompt_len] = -100  # mask padding + prompt
+            labels[: pad_len + prompt_len] = -100  # mask padding + prompt
 
             merged_ids.append(padded_ids)
             merged_masks.append(padded_mask)
