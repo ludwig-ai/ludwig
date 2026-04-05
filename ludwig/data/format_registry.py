@@ -1,7 +1,6 @@
 """Data format detection and registry for Ludwig.
 
-Provides automatic format detection from file extensions and a registry
-of format-specific preprocessor classes.
+Provides automatic format detection from file extensions and a registry of format-specific preprocessor classes.
 
 Extracted from the monolithic preprocessing.py for better modularity.
 """

@@ -168,8 +168,8 @@ FEATURE_METADATA_CLASSES: dict[str, type] = {
 class TrainingSetMetadata:
     """Typed container for training set metadata.
 
-    Replaces the untyped TrainingSetMetadataDict = dict with a structured
-    container. Provides both typed access and dict-like backward compatibility.
+    Replaces the untyped TrainingSetMetadataDict = dict with a structured container. Provides both typed access and
+    dict-like backward compatibility.
     """
 
     features: dict[str, Any] = field(default_factory=dict)
@@ -221,8 +221,14 @@ class TrainingSetMetadata:
     @classmethod
     def from_dict(cls, d: dict) -> "TrainingSetMetadata":
         """Construct from a plain dict (backward compatibility)."""
-        special_keys = {"data_train_parquet_fp", "data_validation_parquet_fp", "data_test_parquet_fp",
-                        "data_train_hdf5_fp", "data_validation_hdf5_fp", "data_test_hdf5_fp"}
+        special_keys = {
+            "data_train_parquet_fp",
+            "data_validation_parquet_fp",
+            "data_test_parquet_fp",
+            "data_train_hdf5_fp",
+            "data_validation_hdf5_fp",
+            "data_test_hdf5_fp",
+        }
         metadata = cls()
         for key, value in d.items():
             if key in special_keys:

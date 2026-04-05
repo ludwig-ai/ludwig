@@ -19,7 +19,8 @@ Usage:
 """
 
 import logging
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +28,7 @@ logger = logging.getLogger(__name__)
 class OptunaExecutor:
     """Native Optuna hyperparameter optimization executor.
 
-    Uses Optuna's define-by-run API for flexible search space definitions
-    and efficient optimization algorithms.
+    Uses Optuna's define-by-run API for flexible search space definitions and efficient optimization algorithms.
     """
 
     def __init__(
