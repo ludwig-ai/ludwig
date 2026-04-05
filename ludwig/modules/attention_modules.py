@@ -32,8 +32,8 @@ def _rotate_half(x):
 class RotaryEmbedding(nn.Module):
     """Rotary Position Embedding (Su et al., 2024).
 
-    Encodes position by rotating query and key vectors in 2D subspaces.
-    Used by LLaMA, Mistral, and other modern transformers.
+    Encodes position by rotating query and key vectors in 2D subspaces. Used by LLaMA, Mistral, and other modern
+    transformers.
     """
 
     def __init__(self, dim, max_seq_len=8192, base=10000.0):
