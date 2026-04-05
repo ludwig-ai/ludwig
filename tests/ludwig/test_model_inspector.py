@@ -1,6 +1,5 @@
 """Tests for ModelInspector."""
 
-import torch
 import torch.nn as nn
 
 from ludwig.model_inspector import ModelInspector
