@@ -1,4 +1,3 @@
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
