@@ -25,7 +25,7 @@ from ludwig.utils.print_utils import get_logging_level_registry, print_ludwig
 logger = logging.getLogger(__name__)
 
 
-def export_mlflow(model_path, output_path="mlflow", registered_model_name=None, **kwargs):
+def export_mlflow(model_path, output_path="mlflow", registered_model_name=None, callbacks=None, **kwargs):
     """Exports a trained Ludwig model as an MLflow model.
 
     # Inputs
@@ -34,13 +34,14 @@ def export_mlflow(model_path, output_path="mlflow", registered_model_name=None, 
     :param registered_model_name: (str, default: `None`) register model with this name.
     """
     logger.info(f"Loading Ludwig model from {model_path}")
-    model = LudwigModel.load(model_path)
-    kwargs = dict(model_path=model_path, output_path=output_path, registered_model_name=registered_model_name)
-    model.callback(lambda c: c.on_cmdline("export_mlflow", **kwargs))
 
-    from ludwig.contribs.mlflow.model import export_model
+    callbacks = callbacks or []
+    for callback in callbacks:
+        callback.on_cmdline("export_mlflow", model_path=model_path, output_path=output_path)
 
-    export_model(model_path, output_path, registered_model_name)
+    from ludwig.contribs.mlflow.model import export_model as mlflow_export
+
+    mlflow_export(model_path, output_path, registered_model_name)
 
 
 def export_model(model_path, output_path, format="safetensors", **kwargs):
