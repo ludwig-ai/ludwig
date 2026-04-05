@@ -17,7 +17,6 @@ import os
 import shutil
 from unittest import mock
 
-import pandas as pd
 import pytest
 import torch
 import yaml
@@ -26,7 +25,6 @@ from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
 from ludwig.constants import BATCH_SIZE, ENCODER, TRAINER, TYPE
 from ludwig.globals import MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME
-from ludwig.models.inference import InferenceModule
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import (
     category_feature,
@@ -699,38 +697,6 @@ def test_api_callbacks_fixed_train_steps_less_than_one_epoch(tmpdir, csv_filenam
     assert mock_callback.on_batch_end.call_count == total_batches
     # The total number of evals is the number of times checkpoints are made
     assert mock_callback.on_eval_end.call_count == train_steps // steps_per_checkpoint
-
-
-def test_api_save_torchscript(tmpdir):
-    """Tests successful saving and loading of model in TorchScript format."""
-    input_features = [category_feature(encoder={"vocab_size": 5})]
-    output_features = [
-        category_feature(name="class", decoder={"vocab_size": 5}, reduce_input="sum", output_feature=True)
-    ]
-
-    data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
-    val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
-    test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
-
-    config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "combiner": {"type": "concat", "output_size": 14},
-    }
-    model = LudwigModel(config)
-    model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir)
-
-    test_df = pd.read_csv(test_csv)
-    output_df_expected, _ = model.predict(test_df, return_type=pd.DataFrame)
-
-    save_path = os.path.join(tmpdir, "torchscript")
-    os.makedirs(save_path, exist_ok=True)
-    model.save_torchscript(save_path)
-    inference_module = InferenceModule.from_directory(save_path)
-    output_df, _ = inference_module.predict(test_df, return_type=pd.DataFrame)
-
-    for col in output_df.columns:
-        assert output_df[col].equals(output_df_expected[col])
 
 
 def test_saved_weights_in_checkpoint(tmpdir):

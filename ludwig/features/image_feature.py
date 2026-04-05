@@ -93,7 +93,7 @@ from ludwig.utils.image_utils import (
     torchvision_model_registry,
 )
 from ludwig.utils.misc_utils import set_default_value
-from ludwig.utils.types import Series, TorchscriptPreprocessingInput
+from ludwig.utils.types import PreprocessingInput, Series
 
 # constants used for Ludwig image preprocessing
 IMAGENET1K_MEAN = [0.485, 0.456, 0.406]
@@ -352,7 +352,7 @@ class _ImagePreprocessing(torch.nn.Module):
             self.num_channels = metadata["preprocessing"]["num_channels"]
             self.channel_class_map = torch.ByteTensor(metadata["preprocessing"]["channel_class_map"])
 
-    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
+    def forward(self, v: PreprocessingInput) -> torch.Tensor:
         """Takes a list of images and adjusts the size and number of channels as specified in the metadata.
 
         If `v` is already a torch.Tensor, we assume that the images are already preprocessed to be the same size.

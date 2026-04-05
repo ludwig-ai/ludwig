@@ -26,7 +26,7 @@ from ludwig.features.vector_feature import _VectorPostprocessing, _VectorPredict
 from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig, TimeseriesOutputFeatureConfig
 from ludwig.types import FeatureMetadataDict, ModelConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.tokenizers import get_tokenizer_from_registry, TORCHSCRIPT_COMPATIBLE_TOKENIZERS
-from ludwig.utils.types import Series, TorchscriptPreprocessingInput
+from ludwig.utils.types import PreprocessingInput, Series
 
 if TYPE_CHECKING:
     from ludwig.backend.base import Backend
@@ -126,7 +126,7 @@ class _TimeseriesPreprocessing(torch.nn.Module):
                 timeseries_matrix[sample_idx][self.max_timeseries_length - limit :] = float_sequence
         return timeseries_matrix
 
-    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
+    def forward(self, v: PreprocessingInput) -> torch.Tensor:
         """Takes a list of float values and creates a padded torch.Tensor."""
         if torch.jit.isinstance(v, list[torch.Tensor]):
             return self.forward_list_of_tensors(v)

@@ -38,7 +38,7 @@ from ludwig.utils.eval_utils import (
     roc_auc_score,
     roc_curve,
 )
-from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
+from ludwig.utils.types import DataFrame, PreprocessingInput
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ class _BinaryPreprocessing(torch.nn.Module):
         self.str2bool = str2bool or {v: True for v in strings_utils.BOOL_TRUE_STRS}
         self.should_lower = str2bool is None
 
-    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
+    def forward(self, v: PreprocessingInput) -> torch.Tensor:
         if torch.jit.isinstance(v, list[tuple[torch.Tensor, int]]):
             raise ValueError(f"Unsupported input: {v}")
 

@@ -49,7 +49,7 @@ from ludwig.types import (
 from ludwig.utils import output_feature_utils
 from ludwig.utils.calibration import CalibrationModule
 from ludwig.utils.torch_utils import LudwigModule
-from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
+from ludwig.utils.types import DataFrame, PreprocessingInput
 
 logger = logging.getLogger(__name__)
 
@@ -620,7 +620,7 @@ class PassthroughPreprocModule(torch.nn.Module):
         self.preproc = preproc
         self.encoder = encoder
 
-    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
+    def forward(self, v: PreprocessingInput) -> torch.Tensor:
         preproc_v = self.preproc(v)
         return self.encoder(preproc_v)
 

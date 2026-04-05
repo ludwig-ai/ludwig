@@ -30,7 +30,7 @@ from ludwig.types import (
     TrainingSetMetadataDict,
 )
 from ludwig.utils.date_utils import create_vector_from_datetime_obj, parse_datetime
-from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
+from ludwig.utils.types import DataFrame, PreprocessingInput
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ class _DatePreprocessing(torch.nn.Module):
     def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
 
-    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
+    def forward(self, v: PreprocessingInput) -> torch.Tensor:
         if torch.jit.isinstance(v, list[torch.Tensor]):
             v = torch.stack(v)
 

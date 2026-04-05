@@ -53,7 +53,7 @@ from ludwig.utils import calibration, output_feature_utils
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import int_type, softmax
 from ludwig.utils.strings_utils import create_vocabulary_single_token, UNKNOWN_SYMBOL
-from ludwig.utils.types import TorchscriptPreprocessingInput
+from ludwig.utils.types import PreprocessingInput
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ class _CategoryPreprocessing(torch.nn.Module):
             # likely not be used during training, but potentially during inference
             self.unk = 0
 
-    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
+    def forward(self, v: PreprocessingInput) -> torch.Tensor:
         if not torch.jit.isinstance(v, list[str]):
             raise ValueError(f"Unsupported input: {v}")
 
