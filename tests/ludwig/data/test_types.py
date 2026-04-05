@@ -1,7 +1,6 @@
 """Tests for typed metadata classes."""
 
 from ludwig.data.types import (
-    BinaryMetadata,
     CategoryMetadata,
     NumberMetadata,
     TextMetadata,
