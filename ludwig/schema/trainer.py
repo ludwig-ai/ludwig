@@ -603,6 +603,21 @@ class LLMTrainerConfig(BaseTrainerConfig):
         description="Whether to evaluate the training set in the LLM trainer. Note: this operation may be slow.",
     )
 
+    packing: bool = schema_utils.Boolean(
+        default=False,
+        description=(
+            "Enable sequence packing for LLM training. Packs multiple short sequences into "
+            "a single batch entry with block-diagonal attention masks to prevent cross-sequence "
+            "attention. Typically provides 2-4x training throughput improvement by eliminating "
+            "wasted computation on pad tokens."
+        ),
+    )
+
+    packing_max_sequences_per_pack: int = schema_utils.PositiveInteger(
+        default=8,
+        description="Maximum number of sequences to pack into a single batch entry.",
+    )
+
 
 @DeveloperAPI
 @register_llm_trainer_schema("none")
@@ -658,6 +673,84 @@ class FineTuneTrainerConfig(ECDTrainerConfig):
             schema_utils.PositiveInteger(default=2, description="", allow_none=False),
             schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
         ],
+    )
+
+
+@DeveloperAPI
+@register_llm_trainer_schema("dpo")
+class DPOTrainerConfig(FineTuneTrainerConfig):
+    """Configuration for Direct Preference Optimization (DPO) training.
+
+    DPO trains a model to prefer chosen completions over rejected ones without a separate reward model. Based on
+    Rafailov et al., NeurIPS 2023.
+
+    Requires data with 'chosen' and 'rejected' text columns alongside the prompt.
+    """
+
+    type: str = schema_utils.ProtectedString("dpo")
+
+    dpo_beta: float = schema_utils.Float(
+        default=0.1,
+        description=(
+            "Temperature parameter for DPO loss. Controls how much the policy "
+            "can deviate from the reference model. Lower values keep the policy "
+            "closer to the reference. Typical range: 0.05 to 0.5."
+        ),
+    )
+
+    dpo_loss_type: str = schema_utils.StringOptions(
+        options=["sigmoid", "ipo"],
+        default="sigmoid",
+        allow_none=False,
+        description=(
+            "DPO loss variant. 'sigmoid' is the standard DPO loss. "
+            "'ipo' is Identity Preference Optimization which uses a squared loss."
+        ),
+    )
+
+    dpo_label_smoothing: float = schema_utils.FloatRange(
+        default=0.0,
+        min=0.0,
+        max=0.5,
+        description="Label smoothing for DPO preference targets. 0 means no smoothing.",
+    )
+
+    rejected_column: str = schema_utils.String(
+        default="rejected",
+        description="Name of the column containing rejected completions for preference training.",
+    )
+
+
+@DeveloperAPI
+@register_llm_trainer_schema("kto")
+class KTOTrainerConfig(FineTuneTrainerConfig):
+    """Kahneman-Tversky Optimization (Ethayarajh et al., 2024)."""
+
+    type: str = schema_utils.ProtectedString("kto")
+    kto_beta: float = schema_utils.Float(default=0.1, description="KTO temperature parameter.")
+    rejected_column: str = schema_utils.String(default="rejected", description="Column with rejected completions.")
+
+
+@DeveloperAPI
+@register_llm_trainer_schema("orpo")
+class ORPOTrainerConfig(FineTuneTrainerConfig):
+    """Odds Ratio Preference Optimization (Hong et al., 2024)."""
+
+    type: str = schema_utils.ProtectedString("orpo")
+    orpo_beta: float = schema_utils.Float(default=0.1, description="ORPO odds ratio weight.")
+    rejected_column: str = schema_utils.String(default="rejected", description="Column with rejected completions.")
+
+
+@DeveloperAPI
+@register_llm_trainer_schema("grpo")
+class GRPOTrainerConfig(FineTuneTrainerConfig):
+    """Group Relative Policy Optimization (Shao et al., 2024, DeepSeek-R1)."""
+
+    type: str = schema_utils.ProtectedString("grpo")
+    grpo_beta: float = schema_utils.Float(default=0.04, description="KL penalty coefficient.")
+    grpo_epsilon: float = schema_utils.FloatRange(default=0.2, min=0.0, max=1.0, description="PPO clipping parameter.")
+    grpo_num_generations: int = schema_utils.PositiveInteger(
+        default=4, description="Completions to generate per prompt."
     )
 
 
