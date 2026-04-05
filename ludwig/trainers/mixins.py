@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 class CheckpointMixin(ABC):
     """Mixin for checkpoint save/restore functionality.
 
-    Provides methods for saving checkpoints at regular intervals, tracking
-    the best checkpoint, and resuming from saved state.
+    Provides methods for saving checkpoints at regular intervals, tracking the best checkpoint, and resuming from saved
+    state.
     """
 
     def should_checkpoint(self, steps: int, steps_per_checkpoint: int, epoch_end: bool = False) -> bool:
@@ -43,8 +43,7 @@ class CheckpointMixin(ABC):
 class EarlyStoppingMixin(ABC):
     """Mixin for early stopping based on validation metrics.
 
-    Tracks improvement in validation metrics and signals when training
-    should stop due to lack of improvement.
+    Tracks improvement in validation metrics and signals when training should stop due to lack of improvement.
     """
 
     def should_early_stop(
@@ -70,8 +69,8 @@ class EarlyStoppingMixin(ABC):
 class MetricsMixin(ABC):
     """Mixin for metric collection and logging.
 
-    Provides structured metric tracking across training, validation,
-    and test sets with support for multiple output features.
+    Provides structured metric tracking across training, validation, and test sets with support for multiple output
+    features.
     """
 
     def format_metrics(self, metrics: dict, prefix: str = "") -> str:
@@ -145,8 +144,7 @@ class BatchSizeTuningMixin(ABC):
 class ProfilingMixin(ABC):
     """Mixin for training profiling and timing.
 
-    Tracks wall clock time for training steps, evaluation, and
-    checkpoint operations.
+    Tracks wall clock time for training steps, evaluation, and checkpoint operations.
     """
 
     def __init_profiling__(self):

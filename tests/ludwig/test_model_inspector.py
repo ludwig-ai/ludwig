@@ -35,7 +35,12 @@ class TestModelInspector:
 
     def test_model_summary(self):
         model = SimpleModel()
-        config = {"model_type": "ecd", "combiner": {"type": "concat"}, "input_features": [{"name": "x"}], "output_features": [{"name": "y"}]}
+        config = {
+            "model_type": "ecd",
+            "combiner": {"type": "concat"},
+            "input_features": [{"name": "x"}],
+            "output_features": [{"name": "y"}],
+        }
         inspector = ModelInspector(model, config, {})
         summary = inspector.model_summary()
         assert summary["total_parameters"] > 0
