@@ -2667,8 +2667,8 @@ class TfIdfEncoderConfig(SequenceEncoderConfig):
 
     vocab_size: int = schema_utils.Integer(default=None, allow_none=True, parameter_metadata=INTERNAL_ONLY)
 
-    ngram_range: tuple = schema_utils.List(
-        default=(1, 1),
+    ngram_range: list = schema_utils.List(
+        default=[1, 1],
         description=(
             "The range of n-gram sizes to use for tokenization, as a (min_n, max_n) tuple. "
             "For example, (1, 1) means only unigrams, (1, 2) means unigrams and bigrams, "
