@@ -978,3 +978,10 @@ class StackedTransformerConfig(SequenceEncoderConfig):
     fc_dropout: float = common_fields.DropoutField()
 
     fc_layers: list[dict] = common_fields.FCLayersField()
+
+    use_rope: bool = schema_utils.Boolean(
+        default=False,
+        description="If True, use Rotary Position Embeddings (RoPE) instead of absolute positional embeddings. "
+        "RoPE encodes position by rotating query and key vectors, providing better length generalization "
+        "and relative position awareness. Used by modern LLMs like LLaMA and Mistral.",
+    )

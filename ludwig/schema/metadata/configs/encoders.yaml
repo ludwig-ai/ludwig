@@ -9198,6 +9198,9 @@ TimmConvFormerEncoder:
 TimmPoolFormerEncoder:
     model_name:
         ui_display_name: Model Name
+TimmConvNeXtV2Encoder:
+    model_name:
+        ui_display_name: Model Name
 MambaEncoder:
     type:
         short_description: State space model encoder for sequences.

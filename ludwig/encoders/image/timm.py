@@ -11,6 +11,7 @@ from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.image.timm import (
     TimmCAFormerEncoderConfig,
     TimmConvFormerEncoderConfig,
+    TimmConvNeXtV2EncoderConfig,
     TimmEncoderConfig,
     TimmPoolFormerEncoderConfig,
 )
@@ -136,3 +137,27 @@ class TimmPoolFormerEncoder(TimmEncoder):
     @staticmethod
     def get_schema_cls() -> type[BaseEncoderConfig]:
         return TimmPoolFormerEncoderConfig
+
+
+@DeveloperAPI
+@register_encoder("convnextv2", IMAGE)
+class TimmConvNeXtV2Encoder(TimmEncoder):
+    """ConvNeXt V2 image encoder (Woo et al., CVPR 2023).
+
+    Improved ConvNeXt with Global Response Normalization (GRN) layer and
+    fully convolutional masked autoencoder (FCMAE) pre-training. Matches
+    or exceeds Swin Transformer V2 on ImageNet.
+
+    Use when: image classification/feature extraction where you want a
+    pure-CNN architecture competitive with vision transformers. Better
+    than ConvNeXt V1 across all model sizes.
+
+    Default model: convnextv2_base (via TIMM).
+    """
+
+    def __init__(self, model_name: str = "convnextv2_base", **kwargs):
+        super().__init__(model_name=model_name, **kwargs)
+
+    @staticmethod
+    def get_schema_cls() -> type[BaseEncoderConfig]:
+        return TimmConvNeXtV2EncoderConfig
