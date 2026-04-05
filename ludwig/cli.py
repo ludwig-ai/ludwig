@@ -47,9 +47,8 @@ Available sub-commands:
    collect_weights       Collects tensors containing a pretrained model weights
    collect_activations   Collects tensors for each datapoint using a pretrained model
    datasets              Downloads and lists Ludwig-ready datasets
-   export_torchscript    Exports Ludwig models to Torchscript
-   export_triton         Exports Ludwig models to Triton
    export_mlflow         Exports Ludwig models to MLflow
+   export_model          Exports Ludwig models to safetensors, torch_export, or onnx
    export_schema         Exports the Ludwig config JSON schema
    preprocess            Preprocess data and saves it into HDF5 and JSON format
    synthesize_dataset    Creates synthetic data for testing purposes
@@ -130,20 +129,15 @@ Available sub-commands:
 
         collect.cli_collect_activations(sys.argv[2:])
 
-    def export_torchscript(self):
-        from ludwig import export
-
-        export.cli_export_torchscript(sys.argv[2:])
-
-    def export_triton(self):
-        from ludwig import export
-
-        export.cli_export_triton(sys.argv[2:])
-
     def export_mlflow(self):
         from ludwig import export
 
         export.cli_export_mlflow(sys.argv[2:])
+
+    def export_model(self):
+        from ludwig import export
+
+        export.cli_export_model(sys.argv[2:])
 
     def export_schema(self):
         from ludwig.schema.export_schema import main as export_schema_main

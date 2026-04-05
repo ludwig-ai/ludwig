@@ -35,7 +35,7 @@ from ludwig.types import (
 )
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.types import TorchscriptPreprocessingInput
+from ludwig.utils.types import PreprocessingInput
 
 logger = logging.getLogger(__name__)
 
@@ -263,7 +263,7 @@ class _NumberPreprocessing(torch.nn.Module):
         if metadata["preprocessing"].get("outlier_strategy") is not None:
             self.outlier_replacer = _OutlierReplacer(metadata)
 
-    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
+    def forward(self, v: PreprocessingInput) -> torch.Tensor:
         if not torch.jit.isinstance(v, torch.Tensor):
             raise ValueError(f"Unsupported input: {v}")
 

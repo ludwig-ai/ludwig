@@ -29,13 +29,13 @@ from ludwig.types import (
     TrainingSetMetadataDict,
 )
 from ludwig.utils import output_feature_utils
-from ludwig.utils.types import TorchscriptPreprocessingInput
+from ludwig.utils.types import PreprocessingInput
 
 logger = logging.getLogger(__name__)
 
 
 class _VectorPreprocessing(torch.nn.Module):
-    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
+    def forward(self, v: PreprocessingInput) -> torch.Tensor:
         if torch.jit.isinstance(v, torch.Tensor):
             out = v
         elif torch.jit.isinstance(v, list[torch.Tensor]):

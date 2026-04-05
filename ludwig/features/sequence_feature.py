@@ -52,7 +52,7 @@ from ludwig.utils.strings_utils import (
     UNKNOWN_SYMBOL,
 )
 from ludwig.utils.tokenizers import get_tokenizer_from_registry
-from ludwig.utils.types import TorchscriptPreprocessingInput
+from ludwig.utils.types import PreprocessingInput
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +79,7 @@ class _SequencePreprocessing(torch.nn.Module):
         self.unit_to_id = metadata["str2idx"]
         self.computed_fill_value = metadata["preprocessing"]["computed_fill_value"]
 
-    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
+    def forward(self, v: PreprocessingInput) -> torch.Tensor:
         """Takes a list of strings and returns a tensor of token ids."""
         if not torch.jit.isinstance(v, list[str]):
             raise ValueError(f"Unsupported input: {v}")

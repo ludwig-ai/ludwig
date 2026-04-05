@@ -22,7 +22,7 @@ from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.h3_feature import H3InputFeatureConfig
 from ludwig.types import FeatureMetadataDict, ModelConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.h3_util import h3_to_components
-from ludwig.utils.types import TorchscriptPreprocessingInput
+from ludwig.utils.types import PreprocessingInput
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class _H3Preprocessing(torch.nn.Module):
         self.h3_padding_value = H3_PADDING_VALUE
         self.computed_fill_value = float(metadata["preprocessing"]["computed_fill_value"])
 
-    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
+    def forward(self, v: PreprocessingInput) -> torch.Tensor:
         if torch.jit.isinstance(v, list[torch.Tensor]):
             v = torch.stack(v)
 

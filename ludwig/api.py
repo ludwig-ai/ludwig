@@ -75,7 +75,6 @@ from ludwig.globals import (
 )
 from ludwig.models.base import BaseModel
 from ludwig.models.calibrator import Calibrator
-from ludwig.models.inference import InferenceModule, save_ludwig_model_for_inference
 from ludwig.models.predictor import (
     calculate_overall_stats,
     print_evaluation_stats,
@@ -111,9 +110,8 @@ from ludwig.utils.misc_utils import (
 )
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.tokenizers import HFTokenizer
-from ludwig.utils.torch_utils import DEVICE
 from ludwig.utils.trainer_utils import get_training_report
-from ludwig.utils.types import DataFrame, TorchDevice
+from ludwig.utils.types import DataFrame
 from ludwig.utils.upload_utils import HuggingFaceHub
 
 logger = logging.getLogger(__name__)
@@ -2037,72 +2035,6 @@ class LudwigModel:
         os.makedirs(save_path, exist_ok=True)
         model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
         save_json(model_hyperparameters_path, self.config_obj.to_dict())
-
-    def to_torchscript(
-        self,
-        model_only: bool = False,
-        device: TorchDevice | None = None,
-    ):
-        """Converts the trained model to Torchscript.
-
-        # Inputs
-
-        :param  model_only (bool, optional): If True, only the ECD model will be converted to Torchscript. Else,
-        preprocessing and postprocessing steps will also be converted to Torchscript. :param device (TorchDevice,
-        optional): If None, the model will be converted to Torchscript on the same device to     ensure maximum model
-        parity.
-
-        # Returns
-
-        :return: A torch.jit.ScriptModule that can be used to predict on a dictionary of inputs.
-        """
-        if device is None:
-            device = DEVICE
-
-        self._check_initialization()
-        if model_only:
-            return self.model.to_torchscript(device)
-        else:
-            inference_module = InferenceModule.from_ludwig_model(
-                self.model, self.config_obj.to_dict(), self.training_set_metadata, device=device
-            )
-            return torch.jit.script(inference_module)
-
-    def save_torchscript(
-        self,
-        save_path: str,
-        model_only: bool = False,
-        device: TorchDevice | None = None,
-    ):
-        """Saves the Torchscript model to disk.
-
-        .. deprecated::
-            TorchScript is deprecated as of PyTorch 2.9. Use ``export_model(path, format='torch_export')``
-            or ``export_model(path, format='onnx')`` instead.
-
-        # Inputs
-
-        :param save_path (str): The path to the directory where the model will be saved.
-        :param model_only (bool, optional): If True, only the ECD model will be converted to Torchscript. Else, the
-            preprocessing and postprocessing steps will also be converted to Torchscript.
-        :param device (TorchDevice, optional): If None, the model will be converted to Torchscript on the same device to
-            ensure maximum model parity.
-
-        # Return
-
-        :return: `None`
-        """
-        if device is None:
-            device = DEVICE
-
-        save_ludwig_model_for_inference(
-            save_path,
-            self.model,
-            self.config_obj.to_dict(),
-            self.training_set_metadata,
-            model_only=model_only,
-            device=device,
-        )
 
     def export_model(self, save_path: str, format: str = "safetensors", sample_input: dict = None):
         """Export the model in various formats.

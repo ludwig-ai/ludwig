@@ -44,7 +44,7 @@ from ludwig.utils.audio_utils import (
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import set_default_value
-from ludwig.utils.types import TorchscriptPreprocessingInput
+from ludwig.utils.types import PreprocessingInput
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ class _AudioPreprocessing(torch.nn.Module):
         self.padding_value = metadata["preprocessing"]["padding_value"]
         self.normalization_type = metadata["preprocessing"]["norm"]
 
-    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
+    def forward(self, v: PreprocessingInput) -> torch.Tensor:
         if not torch.jit.isinstance(v, list[tuple[torch.Tensor, int]]):
             raise ValueError(f"Unsupported input: {v}")
 

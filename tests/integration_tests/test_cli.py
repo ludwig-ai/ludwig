@@ -154,18 +154,6 @@ def test_train_cli_training_set(tmpdir, csv_filename):
     )
 
 
-def test_export_torchscript_cli(tmpdir, csv_filename):
-    """Test exporting Ludwig model to torchscript format."""
-    config_filename = os.path.join(tmpdir, "config.yaml")
-    dataset_filename = _prepare_data(csv_filename, config_filename)
-    _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
-    _run_ludwig(
-        "export_torchscript",
-        model_path=os.path.join(tmpdir, "experiment_run", MODEL_FILE_NAME),
-        output_path=os.path.join(tmpdir, "torchscript"),
-    )
-
-
 def test_export_mlflow_cli(tmpdir, csv_filename):
     """Test export_mlflow cli."""
     config_filename = os.path.join(tmpdir, "config.yaml")
