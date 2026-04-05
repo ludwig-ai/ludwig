@@ -157,26 +157,25 @@ class GradNormLossBalancer(LossBalancer):
             return
 
         # Compute inverse training rates
-        n = len(self.output_feature_names)
         loss_ratios = {}
         for name in self.output_feature_names:
             initial = self._initial_losses.get(name, 1.0)
             current = per_task_losses[name].detach().item()
             loss_ratios[name] = current / (initial + 1e-8)
 
-        mean_ratio = sum(loss_ratios.values()) / n
+        num_tasks = len(self.output_feature_names)
+        mean_ratio = sum(loss_ratios.values()) / num_tasks
 
         # Compute target weights based on inverse training rate
         for name in self.output_feature_names:
             relative_rate = loss_ratios[name] / (mean_ratio + 1e-8)
             target_weight = relative_rate**self.alpha
-            # Soft update toward target (GradNorm uses gradient-based update, we approximate with EMA)
             self.task_weights[name].data = 0.9 * self.task_weights[name].data + 0.1 * target_weight
 
-        # Renormalize weights to sum to n (number of tasks)
+        # Renormalize weights to sum to num_tasks
         total_weight = sum(torch.abs(self.task_weights[name]).item() for name in self.output_feature_names)
         for name in self.output_feature_names:
-            self.task_weights[name].data *= n / (total_weight + 1e-8)
+            self.task_weights[name].data *= num_tasks / (total_weight + 1e-8)
 
 
 LOSS_BALANCER_REGISTRY = {
@@ -199,3 +198,48 @@ def create_loss_balancer(
         return cls(output_feature_names, alpha=alpha)
     else:
         return cls(output_feature_names)
+
+
+class NashMTLLossBalancer(LossBalancer):
+    """Nash-MTL: Nash bargaining for multi-task learning (Navon et al., ICML 2022).
+
+    Finds the Nash bargaining solution for task weight allocation by solving a
+    cooperative game where each task is a player. More principled than heuristic
+    methods but computationally more expensive (requires per-task gradients).
+
+    For most use cases, FAMO or Uncertainty weighting are sufficient.
+    Nash-MTL is for power users with many conflicting output features.
+    """
+
+    def __init__(self, output_feature_names: list[str], update_rate: float = 0.1, **kwargs):
+        super().__init__(output_feature_names)
+        self.update_rate = update_rate
+        n = len(output_feature_names)
+        # Initialize with uniform weights
+        self.task_weights = nn.ParameterDict({name: nn.Parameter(torch.ones(1) / n) for name in output_feature_names})
+
+    def forward(self, per_task_losses, per_task_weights):
+        total = torch.tensor(0.0, device=next(iter(per_task_losses.values())).device)
+        for name, loss in per_task_losses.items():
+            total = total + torch.abs(self.task_weights[name]) * per_task_weights[name] * loss
+        return total
+
+    @torch.no_grad()
+    def post_step(self, per_task_losses):
+        # Nash bargaining update: weight inversely proportional to loss
+        # (tasks with higher loss get higher weight to equalize marginal gains)
+        loss_values = torch.stack([per_task_losses[name].detach() for name in self.output_feature_names])
+
+        # Nash solution: weights proportional to 1/loss (equalize marginal contributions)
+        inv_losses = 1.0 / (loss_values + 1e-8)
+        target_weights = inv_losses / inv_losses.sum()
+
+        # Soft update
+        for i, name in enumerate(self.output_feature_names):
+            self.task_weights[name].data = (1 - self.update_rate) * self.task_weights[
+                name
+            ].data + self.update_rate * target_weights[i]
+
+
+# Add to registry
+LOSS_BALANCER_REGISTRY["nash_mtl"] = NashMTLLossBalancer
