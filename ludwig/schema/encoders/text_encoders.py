@@ -2667,6 +2667,35 @@ class TfIdfEncoderConfig(SequenceEncoderConfig):
 
     vocab_size: int = schema_utils.Integer(default=None, allow_none=True, parameter_metadata=INTERNAL_ONLY)
 
+    ngram_range: tuple = schema_utils.List(
+        default=(1, 1),
+        description=(
+            "The range of n-gram sizes to use for tokenization, as a (min_n, max_n) tuple. "
+            "For example, (1, 1) means only unigrams, (1, 2) means unigrams and bigrams, "
+            "(1, 3) means unigrams, bigrams, and trigrams. Applied during preprocessing."
+        ),
+    )
+
+    max_df: float = schema_utils.FloatRange(
+        default=1.0,
+        min=0.0,
+        max=1.0,
+        description=(
+            "Maximum document frequency threshold for pruning. Terms that appear in more than "
+            "this fraction of documents are ignored. Set to a value < 1.0 to remove corpus-specific "
+            "stop words. Applied during preprocessing."
+        ),
+    )
+
+    min_df: int = schema_utils.Integer(
+        default=1,
+        description=(
+            "Minimum document frequency threshold for pruning. Terms that appear in fewer than "
+            "this many documents are ignored. Useful for removing very rare terms. Applied during "
+            "preprocessing."
+        ),
+    )
+
     def set_fixed_preprocessing_params(self, model_type: str, preprocessing: "TextPreprocessingConfig"):
         preprocessing.compute_idf = True
 

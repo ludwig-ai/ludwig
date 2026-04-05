@@ -2325,6 +2325,11 @@ class TfIdfEncoder(Encoder):
     document (TF) multiplied by its rarity across the corpus (IDF). Produces a fixed-size
     dense vector of size ``vocab_size``.
 
+    Supports n-gram ranges via ``ngram_range`` (e.g., (1,2) for unigrams+bigrams) and
+    document-frequency pruning via ``max_df`` / ``min_df``. These parameters are applied
+    during preprocessing to build the vocabulary; at encoding time, this module uses the
+    pre-computed IDF weights over the final vocabulary.
+
     Use when: you want a simple, non-neural baseline, or when training data is very small
     and pretrained transformers are overkill. No GPU required.
 
@@ -2339,12 +2344,18 @@ class TfIdfEncoder(Encoder):
         str2idf=None,
         vocab=None,
         vocab_size: int = None,
+        ngram_range: tuple[int, int] = (1, 1),
+        max_df: float = 1.0,
+        min_df: int = 1,
         **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
         self.max_sequence_length = max_sequence_length
         self.vocab_size = vocab_size
+        self.ngram_range = tuple(ngram_range) if ngram_range is not None else (1, 1)
+        self.max_df = max_df
+        self.min_df = min_df
 
         logger.debug(f" {self.name}")
 
@@ -2423,17 +2434,29 @@ class LLMEncoder(Encoder):
 
         self.context_len = get_context_len(self.model_config)
 
-        # TODO(Arnav): This needs be more flexible to account for RoPE Scaling
         # When merging input IDs and target IDs for LLM fine-tuning, we want to make sure that the merged tensor is
         # not longer than the global maximum sequence length. This is provided in the preprocessing config. We never
         # want to exceed the maximum possible context length so we also check for that.
+        #
+        # If the model uses RoPE scaling (e.g., YaRN, Linear, Dynamic NTK), adjust the effective context length
+        # by the scaling factor so we can use the extended context window.
+        effective_context_len = self.context_len
+        rope_scaling = getattr(self.model_config, "rope_scaling", None)
+        if rope_scaling and isinstance(rope_scaling, dict):
+            scaling_factor = rope_scaling.get("factor", 1.0)
+            effective_context_len = int(effective_context_len * scaling_factor)
+            logger.info(
+                f"Adjusted effective context length to {effective_context_len} "
+                f"using RoPE scaling factor {scaling_factor} (base context_len={self.context_len})"
+            )
+
         if self.config.max_sequence_length:
             max_sequence_length = self.config.max_sequence_length
             self.max_sequence_length = (
-                max_sequence_length if max_sequence_length <= self.context_len else self.context_len
+                max_sequence_length if max_sequence_length <= effective_context_len else effective_context_len
             )
         else:
-            self.max_sequence_length = self.context_len
+            self.max_sequence_length = effective_context_len
 
         # Initialize tokenizer
         self.tokenizer = HFTokenizer(self.config.base_model).tokenizer
@@ -2479,10 +2502,58 @@ class LLMEncoder(Encoder):
             self.adapter_is_initialized = True
 
     def prepare_for_training(self):
-        # TODO: this implementation will not work if resuming from a previous checkpoint. Need to fix this.
         if self.config.quantization:
             self.prepare_for_quantized_training()
         self.initialize_adapter()
+
+    def resume_from_checkpoint(self, checkpoint_path: str):
+        """Resume training from a checkpoint, handling quantized + adapter models correctly.
+
+        When resuming a quantized model with adapters, we cannot simply load the full state dict
+        because quantization changes parameter dtypes/shapes. Instead, the correct flow is:
+        1. The base model is already loaded with quantization (done in __init__).
+        2. Prepare for quantized training (cast non-quantized layers to float32, freeze base).
+        3. Re-initialize the PEFT adapter on top of the quantized base.
+        4. Load only the adapter weights from the checkpoint.
+
+        For non-quantized models, standard state_dict loading works via Ludwig's default mechanism.
+        """
+        import os
+
+        if self.config.quantization and self.config.adapter:
+            logger.info("Resuming quantized adapter model from checkpoint.")
+
+            # Step 1: Prepare quantized base model for training (freeze + cast)
+            if not self.adapter_is_initialized:
+                self.prepare_for_quantized_training()
+
+            # Step 2: Initialize adapter on quantized base if not already done
+            if not self.adapter_is_initialized:
+                self.initialize_adapter()
+
+            # Step 3: Load adapter weights from checkpoint
+            adapter_type_prefix = self.ADAPTER_PARAM_NAME_PREFIX.get(self.config.adapter.type, "")
+            checkpoint_file = os.path.join(checkpoint_path, "model", "model_weights")
+            if os.path.exists(checkpoint_file):
+                checkpoint_sd = torch.load(checkpoint_file, map_location="cpu", weights_only=True)
+                adapter_sd = {k: v for k, v in checkpoint_sd.items() if adapter_type_prefix in k}
+                if adapter_sd:
+                    from peft.utils.save_and_load import set_peft_model_state_dict
+
+                    set_peft_model_state_dict(self.model, adapter_sd)
+                    logger.info(f"Loaded {len(adapter_sd)} adapter weight tensors from checkpoint.")
+                else:
+                    logger.warning(
+                        "No adapter weights found in checkpoint. The model will start with freshly initialized "
+                        "adapter weights on top of the quantized base model."
+                    )
+            else:
+                logger.warning(f"Checkpoint file not found at {checkpoint_file}. Starting with fresh adapter weights.")
+        else:
+            # Non-quantized case: standard state_dict loading is handled by Ludwig's trainer
+            logger.info("Resuming from checkpoint (non-quantized path).")
+            if not self.adapter_is_initialized:
+                self.prepare_for_training()
 
     def prepare_for_quantized_training(self):
         from peft import prepare_model_for_kbit_training

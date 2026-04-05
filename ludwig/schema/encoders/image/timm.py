@@ -140,3 +140,48 @@ class TimmPoolFormerEncoderConfig(TimmBaseConfig):
         ),
         parameter_metadata=ENCODER_METADATA["TimmPoolFormerEncoder"]["model_name"],
     )
+
+
+CONVNEXTV2_MODELS = [
+    "convnextv2_atto",
+    "convnextv2_femto",
+    "convnextv2_pico",
+    "convnextv2_nano",
+    "convnextv2_tiny",
+    "convnextv2_base",
+    "convnextv2_large",
+    "convnextv2_huge",
+    "convnextv2_atto.fcmae_ft_in1k",
+    "convnextv2_femto.fcmae_ft_in1k",
+    "convnextv2_pico.fcmae_ft_in1k",
+    "convnextv2_nano.fcmae_ft_in1k",
+    "convnextv2_tiny.fcmae_ft_in1k",
+    "convnextv2_base.fcmae_ft_in1k",
+    "convnextv2_large.fcmae_ft_in1k",
+    "convnextv2_huge.fcmae_ft_in1k",
+    "convnextv2_base.fcmae_ft_in22k_in1k",
+    "convnextv2_large.fcmae_ft_in22k_in1k",
+    "convnextv2_huge.fcmae_ft_in22k_in1k",
+    "convnextv2_base.fcmae_ft_in22k_in1k_384",
+    "convnextv2_large.fcmae_ft_in22k_in1k_384",
+    "convnextv2_huge.fcmae_ft_in22k_in1k_384",
+]
+
+
+@DeveloperAPI
+@register_encoder_config("convnextv2", IMAGE)
+class TimmConvNeXtV2EncoderConfig(TimmBaseConfig):
+    type: str = schema_utils.ProtectedString("convnextv2", description="Type of encoder.")
+
+    model_name: str = schema_utils.StringOptions(
+        CONVNEXTV2_MODELS,
+        default="convnextv2_base",
+        allow_none=False,
+        description=(
+            "ConvNeXt V2 model variant. Improved ConvNeXt with Global Response Normalization (GRN) "
+            "and FCMAE pre-training. Variants with '.fcmae_ft_in1k' are fine-tuned on ImageNet-1K. "
+            "Variants with '.fcmae_ft_in22k_in1k' are pre-trained on ImageNet-22K and fine-tuned on "
+            "ImageNet-1K. Variants with '_384' use 384x384 input resolution."
+        ),
+        parameter_metadata=ENCODER_METADATA["TimmConvNeXtV2Encoder"]["model_name"],
+    )

@@ -1963,6 +1963,7 @@ class StackedTransformer(SequenceEncoder):
         norm_params=None,
         fc_activation="relu",
         fc_dropout=0,
+        use_rope=False,
         reduce_output="last",
         encoder_config=None,
         **kwargs,
@@ -2095,20 +2096,35 @@ class StackedTransformer(SequenceEncoder):
         self.should_embed = should_embed
         self.should_project = False
         self.embed_sequence = None
+        self.use_rope = use_rope
 
         if self.should_embed:
-            logger.debug("  EmbedSequence")
-            self.embed_sequence = TokenAndPositionEmbedding(
-                max_sequence_length=max_sequence_length,
-                vocab=vocab,
-                embedding_size=embedding_size,
-                representation=representation,
-                embeddings_trainable=embeddings_trainable,
-                pretrained_embeddings=pretrained_embeddings,
-                embeddings_on_cpu=embeddings_on_cpu,
-                dropout=dropout,
-                embedding_initializer=weights_initializer,
-            )
+            if use_rope:
+                logger.debug("  EmbedSequence (token-only, RoPE handles positions)")
+                self.embed_sequence = EmbedSequence(
+                    vocab=vocab,
+                    embedding_size=embedding_size,
+                    max_sequence_length=max_sequence_length,
+                    representation=representation,
+                    embeddings_trainable=embeddings_trainable,
+                    pretrained_embeddings=pretrained_embeddings,
+                    embeddings_on_cpu=embeddings_on_cpu,
+                    dropout=dropout,
+                    embedding_initializer=weights_initializer,
+                )
+            else:
+                logger.debug("  EmbedSequence")
+                self.embed_sequence = TokenAndPositionEmbedding(
+                    max_sequence_length=max_sequence_length,
+                    vocab=vocab,
+                    embedding_size=embedding_size,
+                    representation=representation,
+                    embeddings_trainable=embeddings_trainable,
+                    pretrained_embeddings=pretrained_embeddings,
+                    embeddings_on_cpu=embeddings_on_cpu,
+                    dropout=dropout,
+                    embedding_initializer=weights_initializer,
+                )
             # If vocab size is smaller than embedding size, embedding layer will use len(vocab) as embedding_size.
             used_embedding_size = self.embed_sequence.output_shape[-1]
             if used_embedding_size != hidden_size:
@@ -2129,6 +2145,7 @@ class StackedTransformer(SequenceEncoder):
             output_size=transformer_output_size,
             num_layers=num_layers,
             dropout=dropout,
+            use_rope=use_rope,
         )
 
         self.reduce_output = reduce_output

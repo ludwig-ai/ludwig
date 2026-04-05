@@ -23,6 +23,46 @@ from ludwig.utils.torch_utils import get_activation, LudwigModule
 logger = logging.getLogger(__name__)
 
 
+def _rotate_half(x):
+    """Rotate half of the hidden dims of x."""
+    x1, x2 = x.chunk(2, dim=-1)
+    return torch.cat((-x2, x1), dim=-1)
+
+
+class RotaryEmbedding(nn.Module):
+    """Rotary Position Embedding (Su et al., 2024).
+
+    Encodes position by rotating query and key vectors in 2D subspaces.
+    Used by LLaMA, Mistral, and other modern transformers.
+    """
+
+    def __init__(self, dim, max_seq_len=8192, base=10000.0):
+        super().__init__()
+        inv_freq = 1.0 / (base ** (torch.arange(0, dim, 2, dtype=torch.float32) / dim))
+        self.register_buffer("inv_freq", inv_freq, persistent=False)
+        self._max_seq_len = max_seq_len
+        self._cos_cached = None
+        self._sin_cached = None
+
+    def _build_cache(self, seq_len, device):
+        if self._cos_cached is not None and seq_len <= self._cos_cached.shape[2]:
+            return
+        t = torch.arange(seq_len, device=device, dtype=torch.float32)
+        freqs = torch.outer(t, self.inv_freq.to(device))
+        emb = torch.cat([freqs, freqs], dim=-1)
+        self._cos_cached = emb.cos()[None, None, :, :]  # [1, 1, seq, dim]
+        self._sin_cached = emb.sin()[None, None, :, :]
+
+    def forward(self, q, k):
+        seq_len = q.shape[-2]
+        self._build_cache(seq_len, q.device)
+        cos = self._cos_cached[:, :, :seq_len, :].to(q.dtype)
+        sin = self._sin_cached[:, :, :seq_len, :].to(q.dtype)
+        q_rot = (q * cos) + (_rotate_half(q) * sin)
+        k_rot = (k * cos) + (_rotate_half(k) * sin)
+        return q_rot, k_rot
+
+
 class FeedForwardAttentionReducer(LudwigModule):
     def __init__(self, input_size, hidden_size=256, activation="tanh"):
         super().__init__()
@@ -53,7 +93,7 @@ class FeedForwardAttentionReducer(LudwigModule):
 
 
 class MultiHeadSelfAttention(LudwigModule):
-    def __init__(self, input_size, hidden_size, num_heads=8):
+    def __init__(self, input_size, hidden_size, num_heads=8, use_rope=False):
         super().__init__()
         self.embedding_size = hidden_size
         self.num_heads = num_heads
@@ -67,6 +107,9 @@ class MultiHeadSelfAttention(LudwigModule):
         self.key_dense = nn.Linear(input_size, hidden_size)
         self.value_dense = nn.Linear(input_size, hidden_size)
         self.combine_heads = nn.Linear(hidden_size, hidden_size)
+        self.use_rope = use_rope
+        if use_rope:
+            self.rotary_emb = RotaryEmbedding(self.projection_dim)
 
     def separate_heads(self, inputs, batch_size):
         inputs = torch.reshape(inputs, (batch_size, -1, self.num_heads, self.projection_dim))
@@ -81,6 +124,8 @@ class MultiHeadSelfAttention(LudwigModule):
         query = self.separate_heads(query, batch_size)  # (batch_size, num_heads, seq_len, projection_dim)
         key = self.separate_heads(key, batch_size)  # (batch_size, num_heads, seq_len, projection_dim)
         value = self.separate_heads(value, batch_size)  # (batch_size, num_heads, seq_len, projection_dim)
+        if self.use_rope:
+            query, key = self.rotary_emb(query, key)
         attn_mask = mask if mask is not None else None
         outputs = F.scaled_dot_product_attention(query, key, value, attn_mask=attn_mask)
         outputs = torch.permute(outputs, (0, 2, 1, 3))  # (batch_size, seq_len, num_heads, projection_dim)
@@ -102,13 +147,14 @@ class TransformerBlock(LudwigModule):
         num_heads: int,
         output_size: int,
         dropout: float = 0.1,
+        use_rope: bool = False,
     ):
         super().__init__()
         self.input_size = input_size
         self.max_sequence_length = max_sequence_length
         self.hidden_size = hidden_size
 
-        self.self_attention = MultiHeadSelfAttention(input_size, hidden_size, num_heads=num_heads)
+        self.self_attention = MultiHeadSelfAttention(input_size, hidden_size, num_heads=num_heads, use_rope=use_rope)
         self.dropout1 = nn.Dropout(dropout)
         self.layernorm1 = nn.LayerNorm(hidden_size, eps=1e-6)
         self.fully_connected = nn.Sequential(
@@ -145,6 +191,7 @@ class TransformerStack(LudwigModule):
         output_size: int = 256,
         num_layers: int = 1,
         dropout: float = 0.1,
+        use_rope: bool = False,
         **kwargs,
     ):
         super().__init__()
@@ -164,6 +211,7 @@ class TransformerStack(LudwigModule):
                 num_heads=num_heads,
                 output_size=output_size,
                 dropout=dropout,
+                use_rope=use_rope,
             )
             self.layers.append(layer)
             prior_input_size = self.layers[i].output_shape[-1]
