@@ -2076,6 +2076,10 @@ class LudwigModel:
     ):
         """Saves the Torchscript model to disk.
 
+        .. deprecated::
+            TorchScript is deprecated as of PyTorch 2.9. Use ``export_model(path, format='torch_export')``
+            or ``export_model(path, format='onnx')`` instead.
+
         # Inputs
 
         :param save_path (str): The path to the directory where the model will be saved.

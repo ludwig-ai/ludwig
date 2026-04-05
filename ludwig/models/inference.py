@@ -236,7 +236,21 @@ def save_ludwig_model_for_inference(
     device: TorchDevice | None = None,
     model_only: bool = False,
 ) -> None:
-    """Saves a LudwigModel (a BaseModel model, config, and training_set_metadata) for inference."""
+    """Saves a LudwigModel (a BaseModel model, config, and training_set_metadata) for inference.
+
+    .. deprecated::
+        TorchScript export is deprecated as of PyTorch 2.9. Use ``LudwigModel.export_model()``
+        with ``format="torch_export"`` or ``format="onnx"`` instead. See ``ludwig.utils.model_export.ModelExporter``.
+    """
+    import warnings
+
+    warnings.warn(
+        "TorchScript export via save_ludwig_model_for_inference is deprecated. "
+        "Use LudwigModel.export_model(path, format='torch_export') or format='onnx' instead. "
+        "TorchScript is deprecated as of PyTorch 2.9.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     if device is None:
         logger.info(f'No device specified. Saving using device "{DEVICE}".')
         device = DEVICE

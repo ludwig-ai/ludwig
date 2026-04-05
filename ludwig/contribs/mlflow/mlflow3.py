@@ -54,11 +54,29 @@ def log_training_run(model, train_stats=None, config=None, tags=None):
         if train_stats:
             _log_training_metrics(train_stats)
 
-        # Log model info
+        # Log model info and cost tracking
         import ludwig
 
         mlflow.set_tag("ludwig.version", ludwig.__version__)
         mlflow.set_tag("model.type", config.get("model_type", "ecd") if config else "unknown")
+
+        # Cost tracking: log model size and parameter counts for cost estimation
+        if model and hasattr(model, "model") and model.model is not None:
+            try:
+                total_params = sum(p.numel() for p in model.model.parameters())
+                trainable_params = sum(p.numel() for p in model.model.parameters() if p.requires_grad)
+                model_size_mb = sum(p.numel() * p.element_size() for p in model.model.parameters()) / (1024 * 1024)
+                mlflow.log_metric("model.total_params", total_params)
+                mlflow.log_metric("model.trainable_params", trainable_params)
+                mlflow.log_metric("model.size_mb", round(model_size_mb, 2))
+                mlflow.set_tag("model.param_efficiency", f"{trainable_params / max(total_params, 1) * 100:.1f}%")
+            except Exception:
+                pass
+
+            # Log base model name for LLMs (useful for cost estimation)
+            if config and config.get("model_type") == "llm":
+                base_model = config.get("base_model", "unknown")
+                mlflow.set_tag("model.base_model", base_model)
 
         if tags:
             for k, v in tags.items():

@@ -160,6 +160,24 @@ def create_app(
             ],
         }
 
+    @app.middleware("http")
+    async def log_requests(request: Request, call_next):
+        """Structured request/response logging middleware."""
+        start = time.time()
+        response = await call_next(request)
+        duration = time.time() - start
+        logger.info(
+            "request",
+            extra={
+                "method": request.method,
+                "path": request.url.path,
+                "status_code": response.status_code,
+                "duration_seconds": round(duration, 4),
+                "client": request.client.host if request.client else "unknown",
+            },
+        )
+        return response
+
     @app.post("/predict")
     async def predict(request: Request, model=Depends(get_model)):
         start = time.time()
