@@ -927,7 +927,7 @@ def GradientClippingDataclassField(description: str, default: dict = {}):
     """
     allow_none = True
 
-    class GradientClippingMarshmallowField(schema_utils.LudwigSchemaField):
+    class GradientClippingConfigField(schema_utils.SchemaField):
         """Custom field class for gradient clipping.
 
         Deserializes a dict to a valid instance of `ludwig.modules.optimization_modules.GradientClippingConfig` and
@@ -972,7 +972,7 @@ def GradientClippingDataclassField(description: str, default: dict = {}):
 
     return field(
         metadata={
-            "marshmallow_field": GradientClippingMarshmallowField(
+            "marshmallow_field": GradientClippingConfigField(
                 allow_none=allow_none,
                 load_default=load_default,
                 dump_default=dump_default,

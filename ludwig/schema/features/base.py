@@ -205,7 +205,7 @@ class FeatureCollection(Generic[T], schema_utils.ListSerializable):
             return self._features[i]
 
 
-class FeatureList(schema_utils.LudwigSchemaField):
+class FeatureList(schema_utils.SchemaField):
     """A schema field that deserializes a list of dicts into a FeatureCollection.
 
     Each item is resolved via the inner TypeSelection's resolve() method.

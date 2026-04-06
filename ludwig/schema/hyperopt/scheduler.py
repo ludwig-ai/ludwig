@@ -484,7 +484,7 @@ def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt sche
     :return: Initialized dataclass field that converts untyped dicts with params to scheduler dataclass instances.
     """
 
-    class SchedulerMarshmallowField(schema_utils.LudwigSchemaField):
+    class SchedulerConfigField(schema_utils.SchemaField):
         """Custom field that deserializes a dict to a valid scheduler from
         `ludwig.schema.hyperopt.scheduler_registry` and creates a corresponding `oneOf` JSON schema for external
         usage."""
@@ -540,7 +540,7 @@ def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt sche
 
         return field(
             metadata={
-                "marshmallow_field": SchedulerMarshmallowField(
+                "marshmallow_field": SchedulerConfigField(
                     allow_none=False,
                     dump_default=dump_default,
                     load_default=load_default,

@@ -15,7 +15,7 @@ def DefaultsDataclassField(feature_type: str, defaults_registry: Registry = ecd_
     Returns: Initialized dataclass field that converts an untyped dict with params to a defaults config.
     """
 
-    class DefaultMarshmallowField(schema_utils.LudwigSchemaField):
+    class DefaultConfigField(schema_utils.SchemaField):
         """Custom field that deserializes a dict for a valid defaults config from the feature_registry and creates
         a corresponding JSON schema for external usage."""
 
@@ -50,7 +50,7 @@ def DefaultsDataclassField(feature_type: str, defaults_registry: Registry = ecd_
 
         return field(
             metadata={
-                "marshmallow_field": DefaultMarshmallowField(
+                "marshmallow_field": DefaultConfigField(
                     allow_none=False,
                     dump_default=dump_default,
                     load_default=load_default,

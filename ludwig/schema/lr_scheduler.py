@@ -135,7 +135,7 @@ def LRSchedulerDataclassField(description: str, default: dict = None):
     allow_none = True
     default = default or {}
 
-    class LRSchedulerMarshmallowField(schema_utils.LudwigSchemaField):
+    class LRSchedulerConfigField(schema_utils.SchemaField):
         """Custom field class for learning rate scheduler.
 
         Deserializes a dict to a valid instance of `LRSchedulerConfig` and creates a corresponding JSON schema for
@@ -172,7 +172,7 @@ def LRSchedulerDataclassField(description: str, default: dict = None):
 
     return field(
         metadata={
-            "marshmallow_field": LRSchedulerMarshmallowField(
+            "marshmallow_field": LRSchedulerConfigField(
                 allow_none=allow_none,
                 load_default=load_default,
                 dump_default=dump_default,

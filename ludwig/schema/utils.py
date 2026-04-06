@@ -30,15 +30,20 @@ from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import activations, initializer_registry
 
 # ============================================================================
-# LudwigSchemaField - base class replacing marshmallow fields.Field
+# SchemaField - base class for config field dispatch (TypeSelection, NestedConfigField, etc.)
 # ============================================================================
 
 
-class LudwigSchemaField:
-    """Plain Python base class for Ludwig schema fields.
+class SchemaField:
+    """Base class for Ludwig config field dispatch.
 
-    Replaces marshmallow fields.Field as the base for TypeSelection, NestedConfigField (NestedConfigField), and all
-    custom field classes. The contract (get_default_field, _jsonschema_type_mapping, _deserialize) stays identical.
+    Provides the interface for TypeSelection, NestedConfigField, and other config field
+    classes that handle polymorphic config resolution.
+
+    Methods:
+        get_default_field(): Create a pydantic FieldInfo for this field
+        _jsonschema_type_mapping(): Return JSON schema for this field
+        _deserialize(value): Deserialize raw value to config object
     """
 
     def __init__(self, **kwargs):
@@ -66,6 +71,34 @@ class LudwigSchemaField:
         Override in subclasses.
         """
         return value
+
+    def deserialize_config(self, value, config_class, attr="config"):
+        """Deserialize a value into a config instance.
+
+        Handles the common pattern of checking if a value is a raw dict
+        (from YAML) that needs validation, or already a config object.
+
+        Args:
+            value: Raw value from config (dict, config instance, or None).
+            config_class: The LudwigBaseConfig subclass to validate against.
+            attr: Attribute name for error messages.
+
+        Returns:
+            Validated config instance.
+
+        Raises:
+            ConfigValidationError if validation fails.
+        """
+        if value is None:
+            return None
+        if isinstance(value, LudwigBaseConfig):
+            return value
+        if isinstance(value, dict):
+            try:
+                return config_class.model_validate(value)
+            except (TypeError, ConfigValidationError) as error:
+                raise ConfigValidationError(f"Invalid params: {value}, see `{attr}` definition. Error: {error}")
+        raise ConfigValidationError(f"Invalid params for {attr}: expected dict, got {type(value)}")
 
 
 logger = logging.getLogger(__name__)
@@ -183,7 +216,7 @@ class _LudwigModelMeta(type(BaseModel)):
                 value = namespace[attr_name]
                 if isinstance(value, _dc.Field):
                     namespace[attr_name] = _convert_dataclass_field_to_pydantic(value)
-                elif isinstance(value, LudwigSchemaField) and hasattr(value, "get_default_field"):
+                elif isinstance(value, SchemaField) and hasattr(value, "get_default_field"):
                     # TypeSelection and NestedConfigField instances need conversion
                     namespace[attr_name] = value.get_default_field()
 
@@ -1320,7 +1353,7 @@ def OneOfOptionsField(
 # ============================================================================
 
 
-class TypeSelection(LudwigSchemaField):
+class TypeSelection(SchemaField):
     """Resolves polymorphic config types from a registry based on a key field.
 
     Used for fields like encoder, decoder, optimizer where the config class depends on a "type" key in the dict value.
@@ -1414,7 +1447,7 @@ class TypeSelection(LudwigSchemaField):
 
 
 @DeveloperAPI
-class NestedConfigField(LudwigSchemaField):
+class NestedConfigField(SchemaField):
     """Validates a dict as a specific config class (non-polymorphic).
 
     Used for fields where a dict should be deserialized into a fixed config class.
@@ -1478,5 +1511,6 @@ ValidationError = ConfigValidationError
 BaseMarshmallowConfig = LudwigBaseConfig
 DictMarshmallowField = NestedConfigField
 LudwigConfig = LudwigBaseConfig
+LudwigSchemaField = SchemaField
 unload_jsonschema_from_marshmallow_class = unload_jsonschema_from_config_class
 assert_is_a_marshmallow_class = assert_is_a_config_class

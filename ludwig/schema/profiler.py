@@ -57,7 +57,7 @@ def ProfilerDataclassField(description: str, default: dict = {}):
     """
     allow_none = True
 
-    class ProfilingMarshmallowField(schema_utils.LudwigSchemaField):
+    class ProfilingConfigField(schema_utils.SchemaField):
         """Custom field class for the torch profiler.
 
         Deserializes a dict to a valid instance of `ludwig.modules.optimization_modules.ProfilerConfig` and
@@ -96,7 +96,7 @@ def ProfilerDataclassField(description: str, default: dict = {}):
 
     return field(
         metadata={
-            "marshmallow_field": ProfilingMarshmallowField(
+            "marshmallow_field": ProfilingConfigField(
                 allow_none=allow_none,
                 load_default=load_default,
                 dump_default=dump_default,

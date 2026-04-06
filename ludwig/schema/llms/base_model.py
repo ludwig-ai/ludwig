@@ -98,7 +98,7 @@ def BaseModelDataclassField():
             "CausalLM on huggingface. See: https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads"
         )
 
-    class BaseModelField(schema_utils.LudwigSchemaField):
+    class BaseModelField(schema_utils.SchemaField):
         def _serialize(self, value, attr, obj, **kwargs):
             if isinstance(value, str):
                 return value
