@@ -21,9 +21,8 @@ import torch.nn as nn
 class BatchEnsembleLinear(nn.Module):
     """Linear layer with BatchEnsemble for parameter-efficient ensembling.
 
-    Shares the main weight matrix across ensemble members, but each member has
-    its own rank-1 scaling factors (r_i and s_i):
-        output_i = (s_i * (W @ (r_i * x))) + b
+    Shares the main weight matrix across ensemble members, but each member has its own rank-1 scaling factors (r_i and
+    s_i):     output_i = (s_i * (W @ (r_i * x))) + b
 
     This adds only O(in + out) parameters per member instead of O(in * out).
     """

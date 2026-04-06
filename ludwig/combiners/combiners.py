@@ -157,6 +157,20 @@ class ConcatCombiner(Combiner):
             residual=config.residual,
         )
 
+        # Optional BatchEnsemble layer after FC stack
+        self.batch_ensemble_layer = None
+        if getattr(config, "batch_ensemble", False):
+            from ludwig.modules.batch_ensemble import BatchEnsembleLinear
+
+            fc_output_size = config.output_size
+            num_members = getattr(config, "num_ensemble_members", 4)
+            self.batch_ensemble_layer = BatchEnsembleLinear(
+                in_features=fc_output_size,
+                out_features=fc_output_size,
+                num_members=num_members,
+            )
+            logger.debug(f"  BatchEnsemble: {num_members} members")
+
         if input_features and len(input_features) == 1 and self.fc_layers is None:
             self.supports_masking = True
 
@@ -176,6 +190,10 @@ class ConcatCombiner(Combiner):
 
         # ================ Fully Connected ================
         hidden = self.fc_stack(hidden)
+
+        # ================ BatchEnsemble ================
+        if self.batch_ensemble_layer is not None:
+            hidden = self.batch_ensemble_layer(hidden)
 
         return_data = {"combiner_output": hidden}
 

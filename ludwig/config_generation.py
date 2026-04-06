@@ -182,3 +182,69 @@ Choose appropriate feature types, encoders, and combiner based on the task."""
             raise ValueError(f"Generated config failed validation: {e}") from e
 
     return config
+
+
+def cli_generate_config(sys_argv):
+    """CLI entry point for config generation."""
+    import argparse
+
+    import yaml
+
+    parser = argparse.ArgumentParser(
+        description="Generate a Ludwig config from a natural language task description",
+        prog="ludwig generate_config",
+    )
+    parser.add_argument(
+        "description",
+        nargs="?",
+        help="Natural language description of the ML task",
+    )
+    parser.add_argument(
+        "--model",
+        default="claude-sonnet-4-20250514",
+        help="LLM model to use (default: claude-sonnet-4-20250514)",
+    )
+    parser.add_argument(
+        "--api_key",
+        default=None,
+        help="API key for the LLM provider (default: reads from ANTHROPIC_API_KEY or OPENAI_API_KEY env)",
+    )
+    parser.add_argument(
+        "--output",
+        "-o",
+        default=None,
+        help="Output file path. Prints to stdout if not specified.",
+    )
+    parser.add_argument(
+        "--no-validate",
+        action="store_true",
+        help="Skip config validation",
+    )
+
+    args = parser.parse_args(sys_argv)
+
+    if not args.description:
+        # Read from stdin if no description provided
+        import sys
+
+        print("Enter your ML task description (Ctrl+D when done):", file=sys.stderr)
+        args.description = sys.stdin.read().strip()
+
+    if not args.description:
+        parser.error("A task description is required")
+
+    config = generate_config(
+        task_description=args.description,
+        model=args.model,
+        api_key=args.api_key,
+        validate=not args.no_validate,
+    )
+
+    output = yaml.dump(config, default_flow_style=False, sort_keys=False)
+
+    if args.output:
+        with open(args.output, "w") as f:
+            f.write(output)
+        print(f"Config saved to {args.output}")
+    else:
+        print(output)
