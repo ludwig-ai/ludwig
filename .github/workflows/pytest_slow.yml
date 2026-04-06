@@ -49,7 +49,7 @@ jobs:
           pip --version
           pip install uv
           uv pip install --system torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1
-          uv pip install --system '.[test]'
+          pip install '.[test]'
           pip list
         shell: bash
 
