@@ -1080,7 +1080,32 @@ def get_build_hyperopt_executor(executor_type):
     return get_from_registry(executor_type, executor_registry)
 
 
-executor_registry = {"ray": RayTuneExecutor}
+def _get_optuna_executor():
+    from ludwig.hyperopt.optuna_executor import OptunaExecutor
+
+    return OptunaExecutor
+
+
+class _LazyRegistry(dict):
+    """Registry that lazily imports executor classes to avoid import errors when optional deps are missing."""
+
+    def __init__(self, eager, lazy):
+        super().__init__(eager)
+        self._lazy = lazy
+
+    def __getitem__(self, key):
+        if key in self._lazy:
+            cls = self._lazy[key]()
+            self[key] = cls
+            del self._lazy[key]
+            return cls
+        return super().__getitem__(key)
+
+    def __contains__(self, key):
+        return key in self._lazy or super().__contains__(key)
+
+
+executor_registry = _LazyRegistry({"ray": RayTuneExecutor}, {"optuna": _get_optuna_executor})
 
 
 def set_values(params: dict[str, Any], model_dict: dict[str, Any]):
