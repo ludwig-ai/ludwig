@@ -55,7 +55,6 @@ def generate_search_space(
         metadata = field_info.metadata or []
         min_val = None
         max_val = None
-        options = None
 
         for meta in metadata:
             if hasattr(meta, "ge"):
