@@ -235,11 +235,35 @@ def train_fn(
 
     # Save results to a checkpoint so the driver can retrieve them.
     # In Ray Train 2.x, result.metrics is only populated when a checkpoint is provided.
+    #
+    # We split the save into:
+    # - SafeTensors for model weights (secure, no pickle)
+    # - JSON for metadata (validation_field, validation_metric, non-tensor results)
     train_results = results, trainer.validation_field, trainer.validation_metric
-    # Convert defaultdicts to regular dicts so they can be pickled by torch.save.
     train_results = _make_picklable(train_results)
     with tempfile.TemporaryDirectory() as tmpdir:
-        torch.save(train_results, os.path.join(tmpdir, "train_results.pt"))
+        results_tuple, val_field, val_metric = train_results
+        state_dict, *other_results = results_tuple
+
+        # Save model weights via SafeTensors
+        from safetensors.torch import save_file as st_save
+
+        weights = {k: v.clone().contiguous() for k, v in state_dict.items()}
+        st_save(weights, os.path.join(tmpdir, "model_weights.safetensors"))
+
+        # Save metadata + non-tensor results via JSON-safe torch.save
+        import json
+
+        meta = {
+            "validation_field": val_field,
+            "validation_metric": val_metric,
+        }
+        with open(os.path.join(tmpdir, "train_meta.json"), "w") as f:
+            json.dump(meta, f)
+
+        # Save remaining results (metrics dicts) that may contain non-serializable objects
+        torch.save(other_results, os.path.join(tmpdir, "train_other.pt"))
+
         rt.report(metrics={}, checkpoint=Checkpoint.from_directory(tmpdir))
 
 
@@ -448,13 +472,32 @@ class RayTrainerV2(BaseTrainer):
 
         # Load training results from the checkpoint saved by train_fn
         with result.checkpoint.as_directory() as tmpdir:
-            train_results = torch.load(os.path.join(tmpdir, "train_results.pt"), weights_only=False)
-        results, self._validation_field, self._validation_metric = train_results
+            safetensors_path = os.path.join(tmpdir, "model_weights.safetensors")
+            meta_path = os.path.join(tmpdir, "train_meta.json")
 
-        # load state dict back into the model
-        state_dict, *args = results
+            if os.path.exists(safetensors_path):
+                # New format: SafeTensors weights + JSON metadata
+                from safetensors.torch import load_file as st_load
+
+                state_dict = st_load(safetensors_path, device="cpu")
+
+                import json
+
+                with open(meta_path) as f:
+                    meta = json.load(f)
+                self._validation_field = meta["validation_field"]
+                self._validation_metric = meta["validation_metric"]
+
+                other_results = torch.load(os.path.join(tmpdir, "train_other.pt"), weights_only=False)
+            else:
+                # Legacy format: single torch.save file
+                train_results = torch.load(os.path.join(tmpdir, "train_results.pt"), weights_only=False)
+                results_tuple, self._validation_field, self._validation_metric = train_results
+                state_dict, *other_results = results_tuple
+
+        # Load state dict back into the model
         self.model.load_state_dict(state_dict)
-        results = (self.model, *args)
+        results = (self.model, *other_results)
 
         return results
 
@@ -583,10 +626,19 @@ def eval_fn(
         eval_results = predictor.batch_evaluation(eval_shard, **kwargs)
 
         # Save results to a checkpoint so the driver can retrieve them.
-        # In Ray Train 2.x, result.metrics is only populated when a checkpoint is provided.
+        # Eval results are metrics dicts (no tensors), so we save as JSON where possible
+        # and fall back to torch.save for objects JSON can't handle.
         eval_results = _make_picklable(eval_results)
         with tempfile.TemporaryDirectory() as tmpdir:
-            torch.save(eval_results, os.path.join(tmpdir, "eval_results.pt"))
+            try:
+                import json
+
+                # Try JSON first (no pickle, secure)
+                with open(os.path.join(tmpdir, "eval_results.json"), "w") as f:
+                    json.dump(eval_results, f, default=str)
+            except (TypeError, ValueError):
+                # Fall back to torch.save for complex objects
+                torch.save(eval_results, os.path.join(tmpdir, "eval_results.pt"))
             rt.report(metrics={}, checkpoint=Checkpoint.from_directory(tmpdir))
     finally:
         torch.cuda.empty_cache()
@@ -694,7 +746,16 @@ class RayPredictor(BasePredictor):
 
         # Load eval results from the checkpoint saved by eval_fn
         with result.checkpoint.as_directory() as tmpdir:
-            eval_stats, _ = torch.load(os.path.join(tmpdir, "eval_results.pt"), weights_only=False)
+            json_path = os.path.join(tmpdir, "eval_results.json")
+            pt_path = os.path.join(tmpdir, "eval_results.pt")
+            if os.path.exists(json_path):
+                import json
+
+                with open(json_path) as f:
+                    eval_results = json.load(f)
+                eval_stats = eval_results[0] if isinstance(eval_results, (list, tuple)) else eval_results
+            else:
+                eval_stats, _ = torch.load(pt_path, weights_only=False)
 
         predictions = None
         if collect_predictions:
