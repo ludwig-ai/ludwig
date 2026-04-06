@@ -162,20 +162,47 @@ def create_app(
 
     @app.middleware("http")
     async def log_requests(request: Request, call_next):
-        """Structured request/response logging middleware."""
+        """Structured request/response logging middleware.
+
+        Logs method, path, status, duration, and client for every request. Set LUDWIG_LOG_REQUEST_BODY=1 to also log
+        request bodies (for debugging).
+        """
+        import os
+
         start = time.time()
+        log_body = os.environ.get("LUDWIG_LOG_REQUEST_BODY", "")
+
+        # Optionally log request body (must read and reconstruct)
+        request_body_summary = None
+        if log_body and request.method == "POST":
+            body_bytes = await request.body()
+            try:
+                body_str = body_bytes.decode("utf-8")
+                # Truncate for logging (avoid huge payloads in logs)
+                request_body_summary = body_str[:500] + ("..." if len(body_str) > 500 else "")
+            except Exception:
+                request_body_summary = f"<binary {len(body_bytes)} bytes>"
+
+            # Reconstruct request body for downstream handlers
+            async def receive():
+                return {"type": "http.request", "body": body_bytes}
+
+            request = Request(scope=request.scope, receive=receive)
+
         response = await call_next(request)
         duration = time.time() - start
-        logger.info(
-            "request",
-            extra={
-                "method": request.method,
-                "path": request.url.path,
-                "status_code": response.status_code,
-                "duration_seconds": round(duration, 4),
-                "client": request.client.host if request.client else "unknown",
-            },
-        )
+
+        log_extra = {
+            "method": request.method,
+            "path": request.url.path,
+            "status_code": response.status_code,
+            "duration_seconds": round(duration, 4),
+            "client": request.client.host if request.client else "unknown",
+        }
+        if request_body_summary:
+            log_extra["request_body"] = request_body_summary
+
+        logger.info("request", extra=log_extra)
         return response
 
     @app.post("/predict")
