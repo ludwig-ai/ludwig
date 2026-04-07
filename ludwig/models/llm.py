@@ -388,7 +388,7 @@ class LLM(BaseModel):
         else:
             targets = None
 
-        assert list(inputs.keys()) == self.input_features.keys()
+        assert list(inputs.keys()) == list(self.input_features.keys())
 
         input_ids = self.get_input_ids(inputs)
         target_ids = self.get_target_ids(targets) if targets else None
