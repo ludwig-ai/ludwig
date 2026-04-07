@@ -49,16 +49,63 @@ DATA_TRAIN_PARQUET_FP = "data_train_parquet_fp"
 DATA_TRAIN_HDF5_FP = "data_train_hdf5_fp"
 
 
+def _shapes_path(data_fp):
+    """Return the path to the column-shapes sidecar JSON file for a given Parquet cache file."""
+    return os.path.splitext(data_fp)[0] + ".shapes.json"
+
+
 def _save_parquet(data_fp, data):
-    """Save a preprocessed dataset (dict of numpy arrays) to Parquet."""
-    df = from_numpy_dataset(data) if isinstance(data, dict) else data
+    """Save a preprocessed dataset (dict of numpy arrays) to Parquet.
+
+    Multi-dimensional columns (e.g. images with shape [H, W, C]) are flattened to 1-D
+    before writing because Parquet cannot natively represent N-D arrays inside cells.
+    The original shapes are persisted in a sidecar JSON file so that ``_load_parquet``
+    can restore them.
+    """
+    from ludwig.utils.data_utils import save_json
+
+    dataset = data if isinstance(data, dict) else to_numpy_dataset(data)
+
+    column_shapes: dict[str, list[int]] = {}
+    flat_dataset: dict[str, np.ndarray] = {}
+    for col, arr in dataset.items():
+        arr = np.asarray(arr)
+        if arr.ndim > 2:
+            # Record the per-sample shape (everything after the batch dimension)
+            column_shapes[col] = list(arr.shape[1:])
+            # Flatten each sample to 1-D so Parquet can store it
+            flat_dataset[col] = arr.reshape(arr.shape[0], -1)
+        else:
+            flat_dataset[col] = arr
+
+    df = from_numpy_dataset(flat_dataset)
     df.to_parquet(data_fp, engine="pyarrow", index=False)
+
+    # Persist shapes sidecar (even if empty, so _load_parquet can always read it)
+    save_json(_shapes_path(data_fp), column_shapes)
 
 
 def _load_parquet(data_fp):
-    """Load a preprocessed dataset from Parquet, returning a dict of numpy arrays."""
+    """Load a preprocessed dataset from Parquet, returning a dict of numpy arrays.
+
+    If a sidecar ``*.shapes.json`` file exists alongside the Parquet file the
+    recorded shapes are used to restore multi-dimensional columns.
+    """
+    from ludwig.utils.data_utils import load_json
+
     df = pd.read_parquet(data_fp, engine="pyarrow")
-    return to_numpy_dataset(df)
+    dataset = to_numpy_dataset(df)
+
+    # Restore N-D shapes if available
+    shapes_fp = _shapes_path(data_fp)
+    if os.path.exists(shapes_fp):
+        column_shapes = load_json(shapes_fp)
+        for col, shape in column_shapes.items():
+            if col in dataset:
+                arr = dataset[col]
+                dataset[col] = arr.reshape(arr.shape[0], *shape)
+
+    return dataset
 
 
 def _load_dataset(dataset):

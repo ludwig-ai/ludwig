@@ -1963,7 +1963,7 @@ def preprocess_for_training(
                     if valid:
                         logger.info(_get_cache_hit_message(cache))
                         training_set_metadata, training_set, test_set, validation_set = cache_values
-                        config["data_hdf5_fp"] = training_set
+                        config["data_cache_fp"] = training_set
                         data_format = backend.cache.data_format
                         cached = True
                         dataset = None
@@ -2319,7 +2319,7 @@ def preprocess_for_prediction(
                 if valid:
                     logger.info(_get_cache_hit_message(cache))
                     training_set_metadata, training_set, test_set, validation_set = cache_values
-                    config["data_hdf5_fp"] = training_set
+                    config["data_cache_fp"] = training_set
                     data_format = backend.cache.data_format
                     cached = True
 

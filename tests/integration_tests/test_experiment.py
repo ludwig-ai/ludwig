@@ -413,7 +413,7 @@ def test_experiment_image_dataset(train_format, train_in_memory, test_format, te
             dataset=train_data,
             backend=backend,
         )
-        train_dataset_to_use = train_set.data_hdf5_fp
+        train_dataset_to_use = train_set.data_cache_fp
     else:
         train_dataset_to_use = create_data_set_to_use(train_format, train_data)
 
@@ -432,7 +432,7 @@ def test_experiment_image_dataset(train_format, train_in_memory, test_format, te
             dataset=test_data,
             backend=backend,
         )
-        test_dataset_to_use = test_set.data_hdf5_fp
+        test_dataset_to_use = test_set.data_cache_fp
     else:
         test_dataset_to_use = create_data_set_to_use(test_format, test_data)
 
@@ -486,7 +486,7 @@ def test_experiment_dataset_formats(data_format, csv_filename):
     if data_format == "hdf5":
         # hdf5 format
         training_set, _, _, training_set_metadata = preprocess_for_training(model.config, dataset=raw_data)
-        dataset_to_use = training_set.data_hdf5_fp
+        dataset_to_use = training_set.data_cache_fp
     else:
         dataset_to_use = create_data_set_to_use(data_format, raw_data)
 
