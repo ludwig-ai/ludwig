@@ -68,11 +68,11 @@ from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.types import FeatureConfigDict, ModelConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils import data_utils, strings_utils
 from ludwig.utils.backward_compatibility import upgrade_metadata
+from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP  # legacy, kept for backward compat
 from ludwig.utils.data_utils import (
     CACHEABLE_FORMATS,
     CSV_FORMATS,
     DATA_TEST_PARQUET_FP,
-    DATA_TRAIN_HDF5_FP,
     DATA_TRAIN_PARQUET_FP,
     DATA_VALIDATION_PARQUET_FP,
     DATAFRAME_FORMATS,
@@ -2341,11 +2341,11 @@ def preprocess_for_prediction(
         processed = data_format_processor.preprocess_for_prediction(
             config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
         )
-        dataset, training_set_metadata, new_hdf5_fp = processed
+        dataset, training_set_metadata, new_cache_fp = processed
         training_set_metadata = training_set_metadata.copy()
 
-        if new_hdf5_fp:
-            training_set_metadata[DATA_TRAIN_HDF5_FP] = new_hdf5_fp
+        if new_cache_fp:
+            training_set_metadata[DATA_TRAIN_PARQUET_FP] = new_cache_fp
 
         if split != FULL:
             logger.debug("split train-val-test")

@@ -17,36 +17,72 @@
 from __future__ import annotations
 
 import contextlib
+import logging
+import os
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
 import numpy as np
+import pandas as pd
 from pandas import DataFrame
 
-from ludwig.constants import PREPROCESSING, TRAINING
+from ludwig.constants import TRAINING
 from ludwig.data.batcher.base import Batcher
 from ludwig.data.batcher.random_access import RandomAccessBatcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.data.sampler import DistributedSampler
 from ludwig.distributed import DistributedStrategy
 from ludwig.features.base_feature import BaseFeature
-from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, load_hdf5, save_hdf5
 from ludwig.utils.dataframe_utils import from_numpy_dataset, to_numpy_dataset, to_scalar_df
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.fs_utils import download_h5
 from ludwig.utils.misc_utils import get_proc_features
 
 if TYPE_CHECKING:
     from ludwig.backend.base import Backend
 
+logger = logging.getLogger(__name__)
+
+# Key for storing the path to the training Parquet cache in metadata
+DATA_TRAIN_PARQUET_FP = "data_train_parquet_fp"
+
+# Legacy key -- kept for backward-compat loading of old caches
+DATA_TRAIN_HDF5_FP = "data_train_hdf5_fp"
+
+
+def _save_parquet(data_fp, data):
+    """Save a preprocessed dataset (dict of numpy arrays) to Parquet."""
+    df = from_numpy_dataset(data) if isinstance(data, dict) else data
+    df.to_parquet(data_fp, engine="pyarrow", index=False)
+
+
+def _load_parquet(data_fp):
+    """Load a preprocessed dataset from Parquet, returning a dict of numpy arrays."""
+    df = pd.read_parquet(data_fp, engine="pyarrow")
+    return to_numpy_dataset(df)
+
+
+def _load_dataset(dataset):
+    """Load a dataset from a file path (Parquet or legacy HDF5) or return as-is if already in-memory."""
+    if isinstance(dataset, str):
+        if dataset.endswith(".parquet"):
+            return _load_parquet(dataset)
+        elif dataset.endswith(".hdf5") or dataset.endswith(".h5"):
+            # Legacy HDF5 loading for backward compatibility
+            from ludwig.utils.data_utils import load_hdf5
+
+            logger.info(f"Loading legacy HDF5 cache: {dataset}. Consider re-preprocessing to use Parquet.")
+            return to_numpy_dataset(load_hdf5(dataset))
+        else:
+            raise ValueError(f"Unsupported cache format: {dataset}. Expected .parquet or .hdf5")
+    return dataset
+
 
 class PandasDataset(Dataset):
-    def __init__(self, dataset, features, data_hdf5_fp):
+    def __init__(self, dataset, features, data_cache_fp):
         self.features = features
-        self.data_hdf5_fp = data_hdf5_fp
+        self.data_cache_fp = data_cache_fp
 
-        if isinstance(dataset, str):
-            dataset = load_hdf5(dataset)
+        dataset = _load_dataset(dataset)
         self.dataset = to_numpy_dataset(dataset)
         self.size = len(list(self.dataset.values())[0])
 
@@ -62,27 +98,7 @@ class PandasDataset(Dataset):
     def get(self, proc_column, idx=None):
         if idx is None:
             idx = range(self.size)
-        if (
-            self.data_hdf5_fp is None
-            or PREPROCESSING not in self.features[proc_column]
-            or "in_memory" not in self.features[proc_column]["preprocessing"]
-        ):
-            return self.dataset[proc_column][idx]
-        if self.features[proc_column][PREPROCESSING]["in_memory"]:
-            return self.dataset[proc_column][idx]
-
-        sub_batch = self.dataset[proc_column][idx]
-
-        indices = np.empty((3, len(sub_batch)), dtype=np.int64)
-        indices[0, :] = sub_batch
-        indices[1, :] = np.arange(len(sub_batch))
-        indices = indices[:, np.argsort(indices[0])]
-
-        with download_h5(self.data_hdf5_fp) as h5_file:
-            im_data = h5_file[proc_column + "_data"][indices[0, :], :, :]
-        indices[2, :] = np.arange(len(sub_batch))
-        indices = indices[:, np.argsort(indices[1])]
-        return im_data[indices[2, :]]
+        return self.dataset[proc_column][idx]
 
     def get_dataset(self) -> dict[str, np.ndarray]:
         return self.dataset
@@ -92,7 +108,7 @@ class PandasDataset(Dataset):
 
     @property
     def processed_data_fp(self) -> str | None:
-        return self.data_hdf5_fp
+        return self.data_cache_fp
 
     @property
     def in_memory_size_bytes(self) -> int:
@@ -127,12 +143,16 @@ class PandasDatasetManager(DatasetManager):
         self.backend: Backend = backend
 
     def create(self, dataset, config, training_set_metadata) -> Dataset:
-        return PandasDataset(dataset, get_proc_features(config), training_set_metadata.get(DATA_TRAIN_HDF5_FP))
+        cache_fp = training_set_metadata.get(DATA_TRAIN_PARQUET_FP) or training_set_metadata.get(DATA_TRAIN_HDF5_FP)
+        return PandasDataset(dataset, get_proc_features(config), cache_fp)
 
     def save(self, cache_path, dataset, config, training_set_metadata, tag) -> Dataset:
-        save_hdf5(cache_path, dataset)
+        # Ensure path ends with .parquet
+        if not cache_path.endswith(".parquet"):
+            cache_path = os.path.splitext(cache_path)[0] + ".parquet"
+        _save_parquet(cache_path, dataset)
         if tag == TRAINING:
-            training_set_metadata[DATA_TRAIN_HDF5_FP] = cache_path
+            training_set_metadata[DATA_TRAIN_PARQUET_FP] = cache_path
         return dataset
 
     def can_cache(self, skip_save_processed_input) -> bool:
@@ -140,4 +160,4 @@ class PandasDatasetManager(DatasetManager):
 
     @property
     def data_format(self) -> str:
-        return "hdf5"
+        return "parquet"
