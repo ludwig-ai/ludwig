@@ -9,7 +9,7 @@
 #   model serving
 #
 
-FROM rayproject/ray:2.44.1-py312-cu124
+FROM rayproject/ray:2.54.0-py312-cu124
 
 RUN sudo apt-get update && \
     DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y \

@@ -9,7 +9,7 @@
 #   model serving
 #
 
-FROM rayproject/ray:2.44.1-py312
+FROM rayproject/ray:2.54.0-py312
 
 RUN sudo apt-get update && DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y \
 	build-essential \
