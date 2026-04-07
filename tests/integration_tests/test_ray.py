@@ -394,7 +394,7 @@ def test_ray_read_binary_files(tmpdir, df_engine, ray_cluster_2cpu):
 @pytest.mark.parametrize(
     "trainer_strategy",
     [
-        pytest.param("ddp", id="ddp", marks=pytest.mark.distributed),
+        pytest.param("accelerate", id="accelerate", marks=pytest.mark.distributed),
     ],
 )
 def test_ray_outputs(trainer_strategy, ray_cluster_2cpu):

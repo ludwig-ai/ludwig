@@ -27,12 +27,12 @@ def _update_transformers_to_freeze_module(state_dict):
 
 
 def _update_combiner_no_input_features(state_dict):
-    """Removed combiner.input_features from state_dict following DeepSpeed integration."""
+    """Removed combiner.input_features from state_dict."""
     return {k: v for k, v in state_dict.items() if not k.startswith("combiner.input_features.")}
 
 
 def _update_combiner_no_device_tensor(state_dict):
-    """Removed device_tensor from state_dict following DeepSpeed integration."""
+    """Removed device_tensor from state_dict."""
     return {k: v for k, v in state_dict.items() if not k.endswith("device_tensor")}
 
 

@@ -119,10 +119,10 @@ class BaseFeatureMixin(ABC):
 
 @dataclass
 class ModuleWrapper:
-    """Used to prevent the PredictModule from showing up an attribute on the feature module.
+    """Used to prevent the PredictModule from showing up as an attribute on the feature module.
 
-    This is necessary to avoid inflight errors from DeepSpeed. These errors occur when DeepSpeed believes that a param
-    is still in the process of being processed asynchronously (allgathered, etc.).
+    This is necessary to avoid inflight errors from some distributed strategies that may believe a param is still in the
+    process of being processed asynchronously (allgathered, etc.).
     """
 
     module: torch.nn.Module

@@ -30,10 +30,9 @@ LOCAL_BACKEND = LocalBackend.shared_instance()
 
 LOCAL = "local"
 DASK = "dask"
-DEEPSPEED = "deepspeed"
 RAY = "ray"
 
-ALL_BACKENDS = [LOCAL, DASK, DEEPSPEED, RAY]
+ALL_BACKENDS = [LOCAL, DASK, RAY]
 
 
 def _has_ray():
@@ -61,20 +60,6 @@ def get_local_backend(**kwargs):
     return LocalBackend(**kwargs)
 
 
-def create_deepspeed_backend(**kwargs):
-    # DeepSpeed backend removed. Use Accelerate strategy with deepspeed_config instead.
-    # Kept as stub for backward compatibility with configs that reference deepspeed backend.
-    import warnings
-
-    warnings.warn(
-        "DeepSpeed backend is deprecated. Use backend: {type: ray} with "
-        "strategy: {type: accelerate, deepspeed_config: ...} instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return get_local_backend(**kwargs)
-
-
 def create_ray_backend(**kwargs):
     from ludwig.backend.ray import RayBackend
 
@@ -83,7 +68,6 @@ def create_ray_backend(**kwargs):
 
 backend_registry = {
     LOCAL: get_local_backend,
-    DEEPSPEED: create_deepspeed_backend,
     RAY: create_ray_backend,
     None: get_local_backend,
 }
