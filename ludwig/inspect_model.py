@@ -3,7 +3,6 @@
 import argparse
 import json
 import logging
-import sys
 
 from ludwig.api import LudwigModel
 
@@ -55,8 +54,8 @@ def cli(sys_argv):
             output["feature_importance"] = inspector.feature_importance_proxy()
         print(json.dumps(output, indent=2))
     else:
-        print(f"\nModel Summary")
-        print(f"{'=' * 50}")
+        print("\nModel Summary")
+        print("=" * 50)
         print(f"  Model type:           {summary['model_type']}")
         print(f"  Combiner:             {summary['combiner_type']}")
         print(f"  Input features:       {summary['num_input_features']}")
@@ -70,7 +69,7 @@ def cli(sys_argv):
         if args.weights:
             weights = inspector.collect_weights()
             print(f"Weights ({len(weights)} tensors)")
-            print(f"{'=' * 50}")
+            print("=" * 50)
             for w in weights:
                 grad = "trainable" if w["requires_grad"] else "frozen"
                 print(f"  {w['name']}: {w['shape']} ({w['num_elements']:,} params, {grad})")
@@ -79,8 +78,8 @@ def cli(sys_argv):
         if args.importance:
             importance = inspector.feature_importance_proxy()
             if importance:
-                print(f"Feature Importance (approximate)")
-                print(f"{'=' * 50}")
+                print("Feature Importance (approximate)")
+                print("=" * 50)
                 sorted_imp = sorted(importance.items(), key=lambda x: x[1], reverse=True)
                 for name, score in sorted_imp:
                     bar = "#" * int(score * 30)
