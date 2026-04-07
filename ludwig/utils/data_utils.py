@@ -886,6 +886,8 @@ def clear_data_cache():
 
 @DeveloperAPI
 def figure_data_format_dataset(dataset):
+    from ludwig.data.format_registry import detect_format
+
     if isinstance(dataset, CacheableDataset):
         return figure_data_format_dataset(dataset.unwrap())
     elif isinstance(dataset, pd.DataFrame):
@@ -895,51 +897,29 @@ def figure_data_format_dataset(dataset):
     elif isinstance(dataset, dict):
         return dict
     elif isinstance(dataset, str):
-        dataset = dataset.strip()
-        if dataset.startswith("ludwig://"):
+        dataset_str = dataset.strip()
+        if dataset_str.startswith("ludwig://"):
             return "ludwig"
-        if dataset.startswith("hf://"):
+        if dataset_str.startswith("hf://"):
             return "hf"
 
-        dataset = dataset.lower()
-        if dataset.endswith(".csv"):
-            return "csv"
-        elif dataset.endswith(".tsv"):
-            return "tsv"
-        elif dataset.endswith(".json"):
-            return "json"
-        elif dataset.endswith(".jsonl"):
-            return "jsonl"
-        elif (
-            dataset.endswith(".xls")
-            or dataset.endswith(".xlsx")
-            or dataset.endswith(".xlsm")
-            or dataset.endswith(".xlsb")
-            or dataset.endswith(".odf")
-            or dataset.endswith(".ods")
-            or dataset.endswith(".odt")
-        ):
+        # Delegate to format registry for extension-based detection
+        fmt = detect_format(dataset_str)
+        if fmt is not None:
+            return fmt
+
+        # Legacy fallback for extensions not in registry
+        lower = dataset_str.lower()
+        if lower.endswith((".xlsm", ".xlsb", ".odf", ".ods", ".odt")):
             return "excel"
-        elif dataset.endswith(".parquet"):
-            return "parquet"
-        elif dataset.endswith(".pickle") or dataset.endswith(".p"):
+        elif lower.endswith(".p"):
             return "pickle"
-        elif dataset.endswith(".feather"):
-            return "feather"
-        elif dataset.endswith(".fwf"):
-            return "fwf"
-        elif dataset.endswith(".html"):
-            return "html"
-        elif dataset.endswith(".orc"):
-            return "orc"
-        elif dataset.endswith(".sas"):
+        elif lower.endswith(".sas"):
             return "sas"
-        elif dataset.endswith(".spss"):
+        elif lower.endswith(".spss"):
             return "spss"
-        elif dataset.endswith(".dta") or dataset.endswith(".stata"):
+        elif lower.endswith(".stata"):
             return "stata"
-        elif dataset.endswith(".h5") or dataset.endswith(".hdf5"):
-            return "hdf5"
         else:
             raise ValueError(f"Dataset path string {dataset} does not contain a valid extension")
     else:
