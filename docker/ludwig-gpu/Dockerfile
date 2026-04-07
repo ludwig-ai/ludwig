@@ -29,14 +29,14 @@ RUN apt-get -y update && DEBIAN_FRONTEND="noninteractive" apt-get -y install \
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1 && \
     update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1 && \
     python3.12 -m ensurepip && \
-    pip install -U pip
+    python3.12 -m pip install -U pip
 
 WORKDIR /ludwig
 
-RUN pip install --no-cache-dir torch==2.6.0 torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu124
+RUN python3.12 -m pip install --no-cache-dir torch==2.6.0 torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu124
 
 COPY . .
-RUN pip install --no-cache-dir '.[full]'
+RUN python3.12 -m pip install --no-cache-dir '.[full]'
 
 WORKDIR /data
 
