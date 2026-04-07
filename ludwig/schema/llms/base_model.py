@@ -85,6 +85,15 @@ def BaseModelDataclassField():
             try:
                 AutoConfig.from_pretrained(model_name, trust_remote_code=False)
                 return model_name
+            except ValueError:
+                # Model requires custom code (trust_remote_code). Allow it through validation
+                # since the user must explicitly set trust_remote_code: true in their config
+                # for it to actually load at training time.
+                logger.warning(
+                    f"Model `{model_name}` uses custom code on HuggingFace. Make sure to set "
+                    f"`trust_remote_code: true` in your config to use this model."
+                )
+                return model_name
             except OSError:
                 raise ConfigValidationError(
                     f"Specified base model `{model_name}` could not be loaded. If this is a private repository, make "
