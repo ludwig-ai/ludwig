@@ -26,17 +26,16 @@ RUN apt-get -y update && DEBIAN_FRONTEND="noninteractive" apt-get -y install \
     sox \
     libsox-dev
 
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1 && \
-    update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1 && \
-    python3.12 -m ensurepip && \
-    python3.12 -m pip install -U pip
+RUN python3.12 -m venv /opt/ludwig-venv
+ENV PATH="/opt/ludwig-venv/bin:$PATH"
+RUN pip install -U pip
 
 WORKDIR /ludwig
 
-RUN python3.12 -m pip install --no-cache-dir torch==2.6.0 torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu124
+RUN pip install --no-cache-dir torch==2.6.0 torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu124
 
 COPY . .
-RUN python3.12 -m pip install --no-cache-dir '.[full]'
+RUN pip install --no-cache-dir '.[full]'
 
 WORKDIR /data
 
