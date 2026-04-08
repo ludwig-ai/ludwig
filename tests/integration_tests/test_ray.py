@@ -734,19 +734,19 @@ def test_ray_split(ray_cluster_2cpu):
 
 @pytest.mark.distributed
 def test_ray_lazy_load_audio_error(tmpdir, ray_cluster_2cpu):
+    # in_memory=False lazy loading was removed (everything is in-memory now,
+    # Parquet caching handles persistence). This test now verifies audio
+    # works normally with Ray.
     audio_dest_folder = os.path.join(tmpdir, "generated_audio")
     input_features = [
         audio_feature(
             folder=audio_dest_folder,
-            preprocessing={
-                "in_memory": False,
-            },
         )
     ]
     output_features = [
         binary_feature(),
     ]
-    run_test_with_features(input_features, output_features, expect_error=True)
+    run_test_with_features(input_features, output_features, expect_error=False)
 
 
 @pytest.mark.slow

@@ -125,12 +125,32 @@ def _load_dataset(dataset):
 
 
 class PandasDataset(Dataset):
-    def __init__(self, dataset, features, data_cache_fp):
+    def __init__(self, dataset, features, data_cache_fp, training_set_metadata=None):
         self.features = features
         self.data_cache_fp = data_cache_fp
 
         dataset = _load_dataset(dataset)
         self.dataset = to_numpy_dataset(dataset)
+
+        # Restore N-D shapes for columns that were flattened for Parquet compatibility
+        # (e.g. images [H,W,C] stored as flat 1-D arrays).
+        if training_set_metadata is not None:
+            for feature_name, feature_meta in training_set_metadata.items():
+                if not isinstance(feature_meta, dict):
+                    continue
+                reshape = feature_meta.get("reshape")
+                if reshape is None:
+                    continue
+                # Find the proc_column for this feature
+                for proc_col, feat_cfg in features.items():
+                    if feat_cfg.get("name") == feature_name or feat_cfg.get("column") == feature_name:
+                        if proc_col in self.dataset:
+                            arr = self.dataset[proc_col]
+                            expected_shape = (arr.shape[0], *reshape)
+                            if arr.shape != expected_shape and np.prod(arr.shape[1:]) == np.prod(reshape):
+                                self.dataset[proc_col] = arr.reshape(expected_shape)
+                        break
+
         self.size = len(list(self.dataset.values())[0])
 
     def to_df(self, features: Iterable[BaseFeature] | None = None) -> DataFrame:
@@ -191,7 +211,7 @@ class PandasDatasetManager(DatasetManager):
 
     def create(self, dataset, config, training_set_metadata) -> Dataset:
         cache_fp = training_set_metadata.get(DATA_TRAIN_PARQUET_FP) or training_set_metadata.get(DATA_TRAIN_HDF5_FP)
-        return PandasDataset(dataset, get_proc_features(config), cache_fp)
+        return PandasDataset(dataset, get_proc_features(config), cache_fp, training_set_metadata)
 
     def save(self, cache_path, dataset, config, training_set_metadata, tag) -> Dataset:
         # Ensure path ends with .parquet
