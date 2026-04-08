@@ -753,6 +753,8 @@ def test_ray_audio_basic(tmpdir, ray_cluster_2cpu):
 def _run_no_evaluate(config, dataset, backend_config, **kwargs):
     """Run training without the Ray-vs-local determinism check."""
     kwargs.pop("required_metrics", None)
+    kwargs.pop("predict", None)
+    kwargs.pop("evaluate", None)
     return train_with_backend(backend_config, config, dataset=dataset, evaluate=False, predict=False, **kwargs)
 
 
