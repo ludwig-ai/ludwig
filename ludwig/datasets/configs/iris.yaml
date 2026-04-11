@@ -1,8 +1,8 @@
 version: 1.0
 name: iris
-download_urls: https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data
+download_urls: https://raw.githubusercontent.com/mwaskom/seaborn-data/master/iris.csv
 sha256:
-  iris.data: 6f608b71a7317216319b4d27b4d9bc84e6abd734eda7872b71a458569e2656c0
+  iris.csv: 9cc1c345c71bcc9b486b74cbf6063fa66f4bb5e0f603a4b3c3471ec2e5e8e355
 description: |
   Iris Dataset
   https://archive.ics.uci.edu/ml/datasets/Iris
