@@ -40,10 +40,10 @@ logger = logging.getLogger(__name__)
 
 
 class DictWrapper:
-    """Wrapper for a LudwigFeatureDict module that allows for iteration over keys.
+    """Thin wrapper around LudwigFeatureDict.
 
-    The purpose of this class is to avoid exposing input and output features as modules of the LLM. This is because we
-    only wish to train the underlying model, and having these additional modules can confuse systems like DeepSpeed.
+    Previously hid features from DeepSpeed's module scanning. Now that DeepSpeed strategy is replaced by Accelerate,
+    this wrapper just delegates to LudwigFeatureDict and exists for backward compatibility.
     """
 
     def __init__(self, obj: LudwigFeatureDict):

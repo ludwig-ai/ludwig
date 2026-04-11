@@ -17,6 +17,10 @@ TEST_SCRIPT = os.path.join(os.path.dirname(__file__), "scripts", "run_train_come
     not importlib.util.find_spec("pkg_resources"),
     reason="comet_ml requires pkg_resources (removed in setuptools 82+)",
 )
+@pytest.mark.skipif(
+    not importlib.util.find_spec("imp"),
+    reason="comet_ml requires imp module (removed in Python 3.12)",
+)
 def test_contrib_experiment(csv_filename):
     cmdline = [sys.executable, TEST_SCRIPT, "--csv-filename", csv_filename]
     exit_code = subprocess.call(" ".join(cmdline), shell=True, env=os.environ.copy())

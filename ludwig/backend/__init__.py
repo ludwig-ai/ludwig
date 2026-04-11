@@ -62,9 +62,17 @@ def get_local_backend(**kwargs):
 
 
 def create_deepspeed_backend(**kwargs):
-    from ludwig.backend.deepspeed import DeepSpeedBackend
+    # DeepSpeed backend removed. Use Accelerate strategy with deepspeed_config instead.
+    # Kept as stub for backward compatibility with configs that reference deepspeed backend.
+    import warnings
 
-    return DeepSpeedBackend(**kwargs)
+    warnings.warn(
+        "DeepSpeed backend is deprecated. Use backend: {type: ray} with "
+        "strategy: {type: accelerate, deepspeed_config: ...} instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return get_local_backend(**kwargs)
 
 
 def create_ray_backend(**kwargs):

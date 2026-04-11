@@ -144,6 +144,10 @@ test = [
     "s3fs>=2022.8.2",
 ]
 
+[dependency-groups]
+dev = ["pre-commit", "ruff>=0.8"]
+docs = ["mkdocs", "mkdocs-material", "mkdocstrings[python]", "mike"]
+
 [project.scripts]
 ludwig = "ludwig.cli:main"
 

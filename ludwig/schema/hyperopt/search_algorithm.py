@@ -69,7 +69,7 @@ class BaseSearchAlgorithmConfig(schema_utils.LudwigBaseConfig):
 
 @DeveloperAPI
 def SearchAlgorithmDataclassField(description: str = "", default: dict = {"type": "variant_generator"}):
-    class SearchAlgorithmMarshmallowField(schema_utils.LudwigSchemaField):
+    class SearchAlgorithmConfigField(schema_utils.SchemaField):
         def _deserialize(self, value, attr, data, **kwargs):
             if isinstance(value, dict):
                 try:
@@ -108,7 +108,7 @@ def SearchAlgorithmDataclassField(description: str = "", default: dict = {"type"
 
     return field(
         metadata={
-            "marshmallow_field": SearchAlgorithmMarshmallowField(
+            "marshmallow_field": SearchAlgorithmConfigField(
                 allow_none=False,
                 load_default=load_default,
                 dump_default=dump_default,

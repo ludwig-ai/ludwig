@@ -39,10 +39,12 @@ jobs:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-unit-${{ hashFiles('pyproject.toml', '.github/workflows/pytest.yml') }}
 
+      - name: Install uv
+        run: pip install uv
+
       - name: Install dependencies
         run: |
-          python -m pip install -U pip setuptools
-          pip install torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
+          uv pip install --system torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
           pip install '.[test]'
           pip list
 
@@ -112,8 +114,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install -U pip setuptools
-          pip install torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
+          pip install uv
+          uv pip install --system torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
           pip install '.[test]'
           pip list
 
@@ -178,8 +180,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install -U pip setuptools
-          pip install torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
+          pip install uv
+          uv pip install --system torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
           pip install '.[test]'
           pip list
 
@@ -226,8 +228,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install -U pip setuptools
-          pip install torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
+          pip install uv
+          uv pip install --system torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
           pip install '.'
           pip list
 
