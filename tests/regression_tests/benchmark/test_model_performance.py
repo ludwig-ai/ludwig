@@ -11,6 +11,7 @@ SKIPPED_CONFIG_ISSUES = {
     "mercedes_benz_greener.ecd.yaml": "https://github.com/ludwig-ai/ludwig/issues/2978",
     "sarcos.ecd.yaml": "Takes more than 300s",
     "ames_housing.ecd.yaml": "https://github.com/ludwig-ai/ludwig/issues/3344",
+    "adult_census_income.ecd.yaml": "UCI ML repo (archive.ics.uci.edu) is unavailable, dataset cannot be downloaded",
 }
 CONFIGS_REQUIRING_DATASET_CREDENTIALS = {
     "mercedes_benz_greener.ecd.yaml",
