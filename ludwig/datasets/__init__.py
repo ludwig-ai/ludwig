@@ -313,7 +313,7 @@ def get_buffer(dataset_name: str, kaggle_username: str = None, kaggle_key: str =
         buffer = BytesIO(dataset.to_parquet())
         return buffer
     except Exception as e:
-        logging.error(logging.ERROR, f"Failed to upload dataset {dataset_name}: {e}")
+        logging.error(f"Failed to upload dataset {dataset_name}: {e}")
 
 
 def _get_hf_dataset_and_subsample(dataset_name: str) -> tuple[str, str | None]:
