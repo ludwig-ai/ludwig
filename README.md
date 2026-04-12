@@ -24,10 +24,10 @@ Ludwig is a **low-code** framework for building **custom** AI models like **LLMs
 Key features:
 
 - 🛠 **Build custom models with ease:** a declarative YAML configuration file is all you need to train a state-of-the-art LLM on your data. Support for multi-task and multi-modality learning. Comprehensive config validation detects invalid parameter combinations and prevents runtime failures.
-- ⚡ **Optimized for scale and efficiency:** automatic batch size selection, distributed training ([DDP](https://pytorch.org/tutorials/beginner/ddp_series_theory.html), [DeepSpeed](https://github.com/microsoft/DeepSpeed)), parameter efficient fine-tuning ([PEFT](https://github.com/huggingface/peft)), 4-bit quantization (QLoRA), paged and 8-bit optimizers, and larger-than-memory datasets.
+- ⚡ **Optimized for scale and efficiency:** automatic batch size selection, distributed training via [HuggingFace Accelerate](https://github.com/huggingface/accelerate), parameter efficient fine-tuning ([PEFT](https://github.com/huggingface/peft)) including LoRA, DoRA, and VeRA, 4-bit quantization (QLoRA, [torchao](https://github.com/pytorch/ao)), paged and 8-bit optimizers, sequence packing, and larger-than-memory datasets.
 - 📐 **Expert level control:** retain full control of your models down to the activation functions. Support for hyperparameter optimization, explainability, and rich metric visualizations.
 - 🧱 **Modular and extensible:** experiment with different model architectures, tasks, features, and modalities with just a few parameter changes in the config. Think building blocks for deep learning.
-- 🚢 **Engineered for production:** prebuilt [Docker](https://hub.docker.com/u/ludwigai) containers, native support for running with [Ray](https://www.ray.io/) on [Kubernetes](https://github.com/ray-project/kuberay), export models to [Torchscript](https://pytorch.org/docs/stable/jit.html) and [Triton](https://developer.nvidia.com/triton-inference-server), upload to [HuggingFace](https://huggingface.co/models) with one command.
+- 🚢 **Engineered for production:** prebuilt [Docker](https://hub.docker.com/u/ludwigai) containers, native support for running with [Ray](https://www.ray.io/) on [Kubernetes](https://github.com/ray-project/kuberay), [vLLM](https://github.com/vllm-project/vllm) serving for LLMs, export models to [Torchscript](https://pytorch.org/docs/stable/jit.html) and [Triton](https://developer.nvidia.com/triton-inference-server), upload to [HuggingFace](https://huggingface.co/models) with one command, and auto-generated model cards and training reports.
 
 Ludwig is hosted by the
 [Linux Foundation AI & Data](https://lfaidata.foundation/).
@@ -67,6 +67,13 @@ For a full tutorial, check out the official [getting started guide](https://ludw
 ## Large Language Model Fine-Tuning
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1c3AO8l_H6V_x37RwQ8V7M6A-RmcBf2tG?usp=sharing)
+
+Ludwig supports the full spectrum of LLM fine-tuning techniques:
+
+- **Supervised fine-tuning (SFT):** standard instruction tuning on input/output pairs
+- **Preference learning / alignment:** DPO, KTO, ORPO, and GRPO trainers for RLHF-style alignment
+- **Parameter-efficient fine-tuning:** LoRA, DoRA, VeRA, LoRA+, and adapter layers via [PEFT](https://github.com/huggingface/peft)
+- **Quantized training:** 4-bit QLoRA (bitsandbytes) and [torchao](https://github.com/pytorch/ao) quantization
 
 Let's fine-tune a pretrained LLM to follow instructions like a chatbot ("instruction tuning").
 
@@ -242,7 +249,9 @@ if you have any questions.
 
 - **Automatically scale training to multi-GPU, multi-node clusters**
 
-  Go from training on your local machine to the cloud without code changes.
+  Go from training on your local machine to the cloud without code changes. Ludwig uses
+  [HuggingFace Accelerate](https://github.com/huggingface/accelerate) under the hood for
+  transparent distributed training across DDP, FSDP, and DeepSpeed configurations.
 
 - **Low-code interface for state-of-the-art models, including pre-trained Huggingface Transformers**
 
