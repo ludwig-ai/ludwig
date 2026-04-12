@@ -685,3 +685,19 @@ FPNDecoder:
             Computed internally, automatically, based on image data preprocessing.
         internal_only: true
         ui_display_name: NOT DISPLAYED
+AnomalyDecoder:
+    type:
+        short_description:
+            Computes squared distance to hypersphere center as anomaly score.
+        long_description:
+            The AnomalyDecoder computes ||z - c||^2 as the anomaly score, where z is the
+            encoder/combiner output and c is the hypersphere center initialized after the
+            first epoch as the mean of all encoder outputs. Implements the geometric core
+            of Deep SVDD (Ruff et al., ICML 2018).
+        expected_impact: 0
+    input_size:
+        other_information: Internal Only
+        internal_only: true
+        related_parameters:
+            - "No"
+        ui_display_name: Not Displayed
