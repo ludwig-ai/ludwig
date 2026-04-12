@@ -33,6 +33,7 @@ from ludwig.schema.features.loss.loss import (
     DiceLossConfig,
     DROCCLossConfig,
     Entmax15LossConfig,
+    EntropicOpenSetLossConfig,
     FocalLossConfig,
     HuberLossConfig,
     LovaszSoftmaxLossConfig,
@@ -41,6 +42,7 @@ from ludwig.schema.features.loss.loss import (
     MSELossConfig,
     NextTokenSoftmaxCrossEntropyLossConfig,
     NTXentLossConfig,
+    ObjectosphereLossConfig,
     PolyLossConfig,
     RMSELossConfig,
     RMSPELossConfig,
@@ -360,6 +362,105 @@ class DROCCLoss(nn.Module, AnomalyScoreInputsMixin):
             perturbed = dist_sq.detach() + noise_scale * torch.randn_like(dist_sq)
         hinge = torch.mean(torch.clamp(dist_sq - perturbed, min=0.0))
         return svdd_loss + self.perturbation_strength * hinge
+
+
+@register_loss(EntropicOpenSetLossConfig)
+class EntropicOpenSetLoss(nn.Module, LogitsInputsMixin):
+    """Entropic Open-Set Loss from Dhamija et al., NeurIPS 2018.
+
+    For known-class samples (target != background_class):
+        L = CrossEntropy(logits, target)
+
+    For unknown/background samples (target == background_class):
+        L = sum_i( p_i * log(p_i) )   # negative entropy → maximise entropy
+
+    Without a background_class this reduces to standard cross-entropy.
+
+    Reference: https://arxiv.org/abs/1811.04110
+    """
+
+    def __init__(self, config: EntropicOpenSetLossConfig):
+        super().__init__()
+        self.background_class = config.background_class
+
+    def forward(self, preds: Tensor, target: Tensor) -> Tensor:
+        logits = preds[LOGITS] if isinstance(preds, dict) else preds
+
+        if self.background_class is None:
+            return F.cross_entropy(logits, target)
+
+        known_mask = target != self.background_class
+        unknown_mask = ~known_mask
+
+        loss = logits.new_tensor(0.0)
+
+        if known_mask.any():
+            loss = loss + F.cross_entropy(logits[known_mask], target[known_mask])
+
+        if unknown_mask.any():
+            probs = torch.softmax(logits[unknown_mask], dim=-1)
+            # Negative entropy: p * log(p). Minimising this maximises H(p).
+            loss = loss + (probs * torch.log(probs + EPSILON)).sum(dim=-1).mean()
+
+        return loss
+
+
+@register_loss(ObjectosphereLossConfig)
+class ObjectosphereLoss(nn.Module, LogitsInputsMixin):
+    """Objectosphere Loss from Dhamija et al., NeurIPS 2018.
+
+    For known-class samples:
+        L = CrossEntropy(logits, target) + hinge(||logits|| - xi)
+
+    For unknown/background samples:
+        L = NegEntropy(logits) + zeta * ||logits||^2
+
+    The hinge term for known samples is max(0, xi - ||z||)^2, pushing logit
+    norms above xi. The magnitude term for unknowns pulls norms toward zero,
+    so out-of-distribution inputs produce near-uniform, low-magnitude outputs
+    that are easy to detect with a simple norm threshold at inference time.
+
+    Without a background_class this reduces to CE + known-class hinge only.
+
+    Reference: https://arxiv.org/abs/1811.04110
+    """
+
+    def __init__(self, config: ObjectosphereLossConfig):
+        super().__init__()
+        self.background_class = config.background_class
+        self.xi = config.xi
+        self.zeta = config.zeta
+
+    def forward(self, preds: Tensor, target: Tensor) -> Tensor:
+        logits = preds[LOGITS] if isinstance(preds, dict) else preds
+
+        if self.background_class is None:
+            # No unknowns: CE + magnitude push for all samples.
+            ce = F.cross_entropy(logits, target)
+            mag = logits.norm(dim=-1)
+            hinge = torch.clamp(self.xi - mag, min=0.0).pow(2).mean()
+            return ce + hinge
+
+        known_mask = target != self.background_class
+        unknown_mask = ~known_mask
+
+        loss = logits.new_tensor(0.0)
+
+        if known_mask.any():
+            known_logits = logits[known_mask]
+            ce = F.cross_entropy(known_logits, target[known_mask])
+            mag = known_logits.norm(dim=-1)
+            hinge = torch.clamp(self.xi - mag, min=0.0).pow(2).mean()
+            loss = loss + ce + hinge
+
+        if unknown_mask.any():
+            unknown_logits = logits[unknown_mask]
+            probs = torch.softmax(unknown_logits, dim=-1)
+            neg_entropy = (probs * torch.log(probs + EPSILON)).sum(dim=-1).mean()
+            mag_penalty = unknown_logits.norm(dim=-1).pow(2).mean()
+            loss = loss + neg_entropy + self.zeta * mag_penalty
+
+        return loss
 
 
 @register_loss(FocalLossConfig)

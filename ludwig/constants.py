@@ -334,6 +334,10 @@ SPARSEMAX_LOSS = "sparsemax"
 ENTMAX15_LOSS = "entmax15"
 
 
+# Open-set recognition constants
+ENTROPIC_OPEN_SET = "entropic_open_set"
+OBJECTOSPHERE = "objectosphere"
+
 # Anomaly detection constants
 ANOMALY = "anomaly"
 ANOMALY_SCORE = "anomaly_score"
