@@ -52,3 +52,34 @@ SigmoidCrossEntropyLoss:
     expected_impact: 3
   weight:
     expected_impact: 2
+FocalLoss:
+  alpha:
+    expected_impact: 3
+  gamma:
+    expected_impact: 3
+  weight:
+    expected_impact: 2
+DiceLoss:
+  smooth:
+    expected_impact: 2
+  weight:
+    expected_impact: 2
+LovaszSoftmaxLoss:
+  weight:
+    expected_impact: 2
+NTXentLoss:
+  temperature:
+    expected_impact: 3
+  weight:
+    expected_impact: 2
+PolyLoss:
+  epsilon:
+    expected_impact: 3
+  weight:
+    expected_impact: 2
+SparsemaxLoss:
+  weight:
+    expected_impact: 2
+Entmax15Loss:
+  weight:
+    expected_impact: 2

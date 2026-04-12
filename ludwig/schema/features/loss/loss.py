@@ -1,9 +1,13 @@
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
+    ANOMALY,
     BINARY,
     BINARY_WEIGHTED_CROSS_ENTROPY,
     CATEGORY,
     CORN,
+    DEEP_SAD,
+    DEEP_SVDD,
+    DROCC,
     HUBER,
     IMAGE,
     MEAN_ABSOLUTE_ERROR,
@@ -460,3 +464,111 @@ class CORNLossConfig(BaseLossConfig):
     @property
     def class_similarities_temperature(self) -> int:
         return 0
+
+
+@DeveloperAPI
+@register_loss([ANOMALY])
+class DeepSVDDLossConfig(BaseLossConfig):
+    """Deep Support Vector Data Description (Deep SVDD) loss for anomaly detection.
+
+    Trains the encoder to map normal data into a compact hypersphere centred at c.
+    Hard-boundary objective: L = mean(||z - c||^2) for all training points.
+    Soft-boundary (nu > 0): L = R + (1/nu) * mean(max(0, ||z - c||^2 - R)) where
+    R is the nu-th quantile of distances (no gradient through R).
+
+    Reference: Ruff et al., "Deep One-Class Classification", ICML 2018.
+    """
+
+    type: str = schema_utils.ProtectedString(
+        DEEP_SVDD,
+        description="Deep SVDD loss — pulls encoder outputs toward hypersphere center c.",
+    )
+
+    nu: float = schema_utils.FloatRange(
+        default=0.1,
+        min=0.0,
+        max=1.0,
+        min_inclusive=False,
+        description=(
+            "Fraction of training examples allowed outside the hypersphere (soft-boundary mode). "
+            "Set nu=0 for hard-boundary SVDD where all points are pulled toward c."
+        ),
+    )
+
+    weight: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="Weight of the loss.",
+    )
+
+    @classmethod
+    def name(cls) -> str:
+        return "Deep SVDD"
+
+
+@DeveloperAPI
+@register_loss([ANOMALY])
+class DeepSADLossConfig(BaseLossConfig):
+    """Deep Semi-supervised Anomaly Detection (Deep SAD) loss.
+
+    Extends Deep SVDD with labeled anomaly examples. Normal/unlabeled samples
+    (target != 1) are pulled toward center c; labeled anomalies (target == 1)
+    are pushed away via an inverted distance term weighted by eta.
+
+    Reference: Ruff et al., "Deep Semi-Supervised Anomaly Detection", ICLR 2020.
+    """
+
+    type: str = schema_utils.ProtectedString(
+        DEEP_SAD,
+        description="Deep SAD loss — semi-supervised, labeled anomalies pushed away from center c.",
+    )
+
+    eta: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="Weight for the labeled anomaly repulsion term.",
+    )
+
+    weight: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="Weight of the loss.",
+    )
+
+    @classmethod
+    def name(cls) -> str:
+        return "Deep SAD"
+
+
+@DeveloperAPI
+@register_loss([ANOMALY])
+class DROCCLossConfig(BaseLossConfig):
+    """Deeply Robust One-Class Classification (DROCC) loss.
+
+    Prevents hypersphere collapse (all representations converge to c) via
+    an adversarial perturbation regulariser. Recommended for expressive encoders
+    (e.g. transformers) that are prone to degenerate solutions.
+
+    Reference: Goyal et al., "DROCC: Deep Robust One-Class Classification", ICML 2020.
+    """
+
+    type: str = schema_utils.ProtectedString(
+        DROCC,
+        description="DROCC loss — prevents collapse via adversarial score perturbations.",
+    )
+
+    perturbation_strength: float = schema_utils.NonNegativeFloat(
+        default=0.1,
+        description="Magnitude of adversarial perturbations. Typical range: 0.01–0.5.",
+    )
+
+    num_perturbation_steps: int = schema_utils.PositiveInteger(
+        default=5,
+        description="Gradient ascent steps for adversarial perturbation generation.",
+    )
+
+    weight: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="Weight of the loss.",
+    )
+
+    @classmethod
+    def name(cls) -> str:
+        return "DROCC"
