@@ -10,6 +10,7 @@ from ludwig.constants import (
     DICE_LOSS,
     DROCC,
     ENTMAX15_LOSS,
+    ENTROPIC_OPEN_SET,
     FOCAL_LOSS,
     HUBER,
     IMAGE,
@@ -20,6 +21,7 @@ from ludwig.constants import (
     NEXT_TOKEN_SOFTMAX_CROSS_ENTROPY,
     NT_XENT_LOSS,
     NUMBER,
+    OBJECTOSPHERE,
     POLY_LOSS,
     ROOT_MEAN_SQUARED_ERROR,
     ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
@@ -579,6 +581,123 @@ class DROCCLossConfig(BaseLossConfig):
     @classmethod
     def name(cls) -> str:
         return "DROCC"
+
+
+@DeveloperAPI
+@register_loss([BINARY, CATEGORY])
+class EntropicOpenSetLossConfig(BaseLossConfig):
+    """Entropic Open-Set Loss for open-set recognition.
+
+    Combines standard cross-entropy for known-class samples with an entropy
+    maximisation term for background/unknown samples. This discourages the
+    network from making confident predictions on out-of-distribution inputs,
+    "curing" network agnostophobia.
+
+    The background class (identified by ``background_class``) is treated as the
+    catch-all unknown category. Samples with that label contribute only the
+    entropic term; all other samples contribute cross-entropy as normal.
+    If ``background_class`` is None the loss reduces to standard cross-entropy.
+
+    Reference:
+        Dhamija et al., "Reducing Network Agnostophobia", NeurIPS 2018.
+        https://arxiv.org/abs/1811.04110
+    """
+
+    type: str = schema_utils.ProtectedString(
+        ENTROPIC_OPEN_SET,
+        description=(
+            "Entropic open-set loss — cross-entropy for known classes + entropy "
+            "maximisation for the background/unknown class."
+        ),
+    )
+
+    background_class: int = schema_utils.Integer(
+        default=None,
+        allow_none=True,
+        description=(
+            "Class index that represents 'unknown' or background samples. "
+            "Samples with this label receive the entropic penalty instead of "
+            "cross-entropy. Set to None to disable open-set behaviour and fall "
+            "back to standard cross-entropy."
+        ),
+    )
+
+    weight: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="Weight of the loss.",
+    )
+
+    @classmethod
+    def name(cls) -> str:
+        return "Entropic Open-Set"
+
+
+@DeveloperAPI
+@register_loss([BINARY, CATEGORY])
+class ObjectosphereLossConfig(BaseLossConfig):
+    """Objectosphere Loss for open-set recognition.
+
+    Extends the Entropic Open-Set Loss with a feature-magnitude constraint:
+
+    * **Known samples**: standard cross-entropy + hinge term that pushes the
+      logit L2 norm above ``xi`` (large magnitude → confident, well-separated
+      representations).
+    * **Unknown/background samples**: entropy maximisation + magnitude
+      minimisation weighted by ``zeta`` (small magnitude → low-confidence,
+      "don't know" responses).
+
+    The combined objective makes it easy to threshold on logit magnitude at
+    inference time: known-class inputs will have large norms; truly unknown
+    inputs will have small norms regardless of the argmax prediction.
+
+    Reference:
+        Dhamija et al., "Reducing Network Agnostophobia", NeurIPS 2018.
+        https://arxiv.org/abs/1811.04110
+    """
+
+    type: str = schema_utils.ProtectedString(
+        OBJECTOSPHERE,
+        description=(
+            "Objectosphere loss — cross-entropy + magnitude push for known classes, "
+            "entropy maximisation + magnitude suppression for unknowns."
+        ),
+    )
+
+    background_class: int = schema_utils.Integer(
+        default=None,
+        allow_none=True,
+        description=(
+            "Class index that represents 'unknown' or background samples. "
+            "Samples with this label receive the entropic + magnitude-suppression "
+            "penalty. Set to None to fall back to standard cross-entropy."
+        ),
+    )
+
+    xi: float = schema_utils.NonNegativeFloat(
+        default=10.0,
+        description=(
+            "Minimum desired logit L2 norm for known-class samples. "
+            "A hinge term max(0, xi - ||z||)² is added to push representations "
+            "of known inputs above this threshold. Typical values: 1–50."
+        ),
+    )
+
+    zeta: float = schema_utils.NonNegativeFloat(
+        default=0.1,
+        description=(
+            "Weight applied to the magnitude-suppression term for unknown samples. "
+            "Higher values more aggressively shrink logit norms for background inputs."
+        ),
+    )
+
+    weight: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="Weight of the loss.",
+    )
+
+    @classmethod
+    def name(cls) -> str:
+        return "Objectosphere"
 
 
 @DeveloperAPI
