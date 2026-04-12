@@ -1607,7 +1607,7 @@ def compare_classifiers_performance_from_prob(
 
         hits_at_k = 0
         for j in range(len(ground_truth)):
-            hits_at_k += np.in1d(ground_truth[j], topk[j])
+            hits_at_k += np.isin(ground_truth[j], topk[j])
         hits_at_ks.append(hits_at_k.item() / len(ground_truth))
 
         mrr = 0
@@ -1815,7 +1815,7 @@ def compare_classifiers_performance_subset(
 
         hits_at_k = 0
         for j in range(len(gt_subset)):
-            hits_at_k += np.in1d(gt_subset[j], top3_subset[i, :])
+            hits_at_k += np.isin(gt_subset[j], top3_subset[i, :])
         hits_at_ks.append(hits_at_k.item() / len(gt_subset))
 
     title = None
@@ -1904,7 +1904,7 @@ def compare_classifiers_performance_changing_k(
         hits_at_k = [0.0] * k
         for g in range(len(ground_truth)):
             for j in range(k):
-                hits_at_k[j] += np.in1d(ground_truth[g], prob[g, -j - 1 :])
+                hits_at_k[j] += np.isin(ground_truth[g], prob[g, -j - 1 :])
         hits_at_ks.append(np.array(hits_at_k) / len(ground_truth))
 
     filename = None

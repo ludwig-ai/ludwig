@@ -135,7 +135,6 @@ test = [
     "sqlalchemy",
     "bayesian-optimization",
     "flaml[blendsearch]",
-    "HEBO",
     "nevergrad",
     "optuna",
     "scikit-optimize",

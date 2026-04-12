@@ -19,6 +19,7 @@ jobs:
       KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
       KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
       IS_NOT_FORK: ${{ !(github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && github.event.pull_request.head.repo.fork) }}
+      UV_SYSTEM_PYTHON: "1"
 
     name: Unit Tests
     timeout-minutes: 60
@@ -33,20 +34,20 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y cmake libsndfile1 libsox-dev
 
-      - name: pip cache
+      - name: uv cache
         uses: actions/cache@v4
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-unit-${{ hashFiles('pyproject.toml', '.github/workflows/pytest.yml') }}
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-unit-${{ hashFiles('pyproject.toml', '.github/workflows/pytest.yml') }}
 
       - name: Install uv
         run: pip install uv
 
       - name: Install dependencies
         run: |
-          uv pip install --system torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
-          pip install '.[test]'
-          pip list
+          uv pip install torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
+          uv pip install '.[test]'
+          uv pip list
 
       - name: Unit Tests
         run: |
@@ -83,6 +84,7 @@ jobs:
       KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
       IS_NOT_FORK: ${{ !(github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && github.event.pull_request.head.repo.fork) }}
       MARKERS: ${{ matrix.test-markers }}
+      UV_SYSTEM_PYTHON: "1"
 
     name: Integration (${{ matrix.test-markers }})
     services:
@@ -106,18 +108,18 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y cmake libsndfile1 libsox-dev
 
-      - name: pip cache
+      - name: uv cache
         uses: actions/cache@v4
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-integration-${{ hashFiles('pyproject.toml', '.github/workflows/pytest.yml') }}
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-integration-${{ hashFiles('pyproject.toml', '.github/workflows/pytest.yml') }}
 
       - name: Install dependencies
         run: |
           pip install uv
-          uv pip install --system torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
-          pip install '.[test]'
-          pip list
+          uv pip install torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
+          uv pip install '.[test]'
+          uv pip list
 
       - name: Free Disk Space
         uses: jlumbroso/free-disk-space@main
@@ -149,6 +151,7 @@ jobs:
       KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
       KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
       IS_NOT_FORK: ${{ !(github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && github.event.pull_request.head.repo.fork) }}
+      UV_SYSTEM_PYTHON: "1"
 
     name: Distributed Tests
     services:
@@ -172,18 +175,18 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y cmake libsndfile1 libsox-dev
 
-      - name: pip cache
+      - name: uv cache
         uses: actions/cache@v4
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-distributed-${{ hashFiles('pyproject.toml', '.github/workflows/pytest.yml') }}
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-distributed-${{ hashFiles('pyproject.toml', '.github/workflows/pytest.yml') }}
 
       - name: Install dependencies
         run: |
           pip install uv
-          uv pip install --system torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
-          pip install '.[test]'
-          pip list
+          uv pip install torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
+          uv pip install '.[test]'
+          uv pip list
 
       - name: Free Disk Space
         uses: jlumbroso/free-disk-space@main
@@ -215,6 +218,8 @@ jobs:
     name: Minimal Install
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      UV_SYSTEM_PYTHON: "1"
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python 3.12
@@ -229,9 +234,9 @@ jobs:
       - name: Install dependencies
         run: |
           pip install uv
-          uv pip install --system torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
-          pip install '.'
-          pip list
+          uv pip install torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
+          uv pip install .
+          uv pip list
 
       - name: Check Install
         run: |
