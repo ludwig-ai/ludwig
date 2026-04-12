@@ -32,6 +32,7 @@ from ludwig.constants import (
     PROBABILITY,
     PROC_COLUMN,
     PROJECTION_INPUT,
+    UNCERTAINTY,
 )
 from ludwig.error import InputDataError
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
@@ -106,6 +107,7 @@ class _CategoryPredict(PredictModule):
         # Taken from CORN loss implementation:
         # https://github.com/Raschka-research-group/coral-pytorch/blob/main/coral_pytorch/dataset.py#L123
         self.use_cumulative_probs = use_cumulative_probs
+        self.uncertainty_key = UNCERTAINTY
 
     def forward(self, inputs: dict[str, torch.Tensor], feature_name: str) -> dict[str, torch.Tensor]:
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
@@ -132,7 +134,13 @@ class _CategoryPredict(PredictModule):
         # predictions: [batch_size]
         # probabilities: [batch_size, num_classes]
         # logits: [batch_size, num_classes]
-        return {self.predictions_key: predictions, self.probabilities_key: probabilities, self.logits_key: logits}
+        # uncertainty (optional): [batch_size, num_classes] when mc_dropout_samples > 0
+        result = {self.predictions_key: predictions, self.probabilities_key: probabilities, self.logits_key: logits}
+        uncertainty_tensor_key = f"{feature_name}::{self.uncertainty_key}"
+        mc_uncertainty = inputs.get(uncertainty_tensor_key, None)
+        if mc_uncertainty is not None:
+            result[self.uncertainty_key] = mc_uncertainty
+        return result
 
 
 class CategoryFeatureMixin(BaseFeatureMixin):
@@ -347,6 +355,13 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         # EXPECTED SHAPES FOR RETURNED TENSORS
         # logits: shape [batch_size, num_classes]
         # hidden: shape [batch_size, size of final fully connected layer]
+        mc_samples = getattr(self.decoder_obj, "mc_dropout_samples", 0)
+        if mc_samples > 0 and hasattr(self.decoder_obj, "mc_forward"):
+            # MC Dropout: run mc_samples stochastic forward passes, average probabilities, report variance.
+            # See: Gal & Ghahramani, "Dropout as a Bayesian Approximation", ICML 2016.
+            mean_probs, uncertainty = self.decoder_obj.mc_forward(hidden)
+            pseudo_logits = torch.log(mean_probs.clamp(min=1e-10))
+            return {LOGITS: pseudo_logits, PROJECTION_INPUT: hidden, UNCERTAINTY: uncertainty}
         return {LOGITS: self.decoder_obj(hidden), PROJECTION_INPUT: hidden}
 
     def create_calibration_module(self, feature: CategoryOutputFeatureConfig) -> torch.nn.Module:
@@ -358,6 +373,11 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         if feature.calibration:
             calibration_cls = calibration.get_calibration_cls(CATEGORY, "temperature_scaling")
             return calibration_cls(num_classes=self.num_classes)
+        # Decoder-level calibration field (MLPClassifierConfig / ClassifierConfig)
+        decoder_calibration = getattr(feature.decoder, "calibration", None)
+        if decoder_calibration:
+            calibration_cls = calibration.get_calibration_cls(CATEGORY, decoder_calibration)
+            return calibration_cls(num_classes=self.num_classes)
         return None
 
     def create_predict_module(self) -> PredictModule:
@@ -366,7 +386,10 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         )
 
     def get_prediction_set(self):
-        return {PREDICTIONS, PROBABILITIES, LOGITS}
+        prediction_set = {PREDICTIONS, PROBABILITIES, LOGITS}
+        if getattr(self.decoder_obj, "mc_dropout_samples", 0) > 0:
+            prediction_set = prediction_set | {UNCERTAINTY}
+        return prediction_set
 
     @property
     def input_shape(self) -> torch.Size:

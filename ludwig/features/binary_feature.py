@@ -18,7 +18,18 @@ import logging
 import numpy as np
 import torch
 
-from ludwig.constants import BINARY, COLUMN, HIDDEN, LOGITS, NAME, PREDICTIONS, PROBABILITIES, PROBABILITY, PROC_COLUMN
+from ludwig.constants import (
+    BINARY,
+    COLUMN,
+    HIDDEN,
+    LOGITS,
+    NAME,
+    PREDICTIONS,
+    PROBABILITIES,
+    PROBABILITY,
+    PROC_COLUMN,
+    UNCERTAINTY,
+)
 from ludwig.error import InputDataError
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.binary_feature import BinaryInputFeatureConfig, BinaryOutputFeatureConfig
@@ -96,9 +107,13 @@ class _BinaryPredict(PredictModule):
         super().__init__()
         self.threshold = threshold
         self.calibration_module = calibration_module
+        self.uncertainty_key = UNCERTAINTY
 
     def forward(self, inputs: dict[str, torch.Tensor], feature_name: str) -> dict[str, torch.Tensor]:
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
+
+        uncertainty_tensor_key = f"{feature_name}::{self.uncertainty_key}"
+        mc_uncertainty = inputs.get(uncertainty_tensor_key, None)
 
         if self.calibration_module is not None:
             probabilities = self.calibration_module(logits)
@@ -106,11 +121,14 @@ class _BinaryPredict(PredictModule):
             probabilities = torch.sigmoid(logits)
 
         predictions = probabilities >= self.threshold
-        return {
+        result = {
             self.probabilities_key: probabilities,
             self.predictions_key: predictions,
             self.logits_key: logits,
         }
+        if mc_uncertainty is not None:
+            result[self.uncertainty_key] = mc_uncertainty
+        return result
 
 
 class BinaryFeatureMixin(BaseFeatureMixin):
@@ -275,6 +293,15 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
     def logits(self, inputs, **kwargs):
         hidden = inputs[HIDDEN]
+        mc_samples = getattr(self.decoder_obj, "mc_dropout_samples", 0)
+        if mc_samples > 0 and hasattr(self.decoder_obj, "mc_forward"):
+            # MC Dropout inference for binary features.
+            # See: Gal & Ghahramani, "Dropout as a Bayesian Approximation", ICML 2016.
+            mean_probs, uncertainty = self.decoder_obj.mc_forward(hidden)
+            pos_prob = mean_probs[:, 1].clamp(min=1e-10, max=1 - 1e-10)
+            pseudo_logit = torch.log(pos_prob / (1 - pos_prob))
+            scalar_uncertainty = uncertainty.sum(dim=-1)
+            return {LOGITS: pseudo_logit, UNCERTAINTY: scalar_uncertainty}
         return self.decoder_obj(hidden)
 
     def create_calibration_module(self, feature: BinaryOutputFeatureConfig) -> torch.nn.Module:
@@ -286,6 +313,10 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         if feature.calibration:
             calibration_cls = calibration.get_calibration_cls(BINARY, "temperature_scaling")
             return calibration_cls(binary=True)
+        decoder_calibration = getattr(feature.decoder, "calibration", None)
+        if decoder_calibration:
+            calibration_cls = calibration.get_calibration_cls(BINARY, decoder_calibration)
+            return calibration_cls(binary=True)
         return None
 
     def create_predict_module(self) -> PredictModule:
@@ -295,7 +326,10 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         return _BinaryPredict(threshold, calibration_module=self.calibration_module)
 
     def get_prediction_set(self):
-        return {PREDICTIONS, PROBABILITIES, LOGITS}
+        prediction_set = {PREDICTIONS, PROBABILITIES, LOGITS}
+        if getattr(self.decoder_obj, "mc_dropout_samples", 0) > 0:
+            prediction_set = prediction_set | {UNCERTAINTY}
+        return prediction_set
 
     @classmethod
     def get_output_dtype(cls):
