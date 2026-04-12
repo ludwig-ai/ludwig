@@ -459,6 +459,18 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             metric_fn.update(predictions[prediction_key].detach(), targets)
 
     def get_metrics(self):
+        # NOTE: do NOT wrap metric_fn.compute() in an explicit sync_context() call here.
+        #
+        # torchmetrics wraps every compute() internally in sync_context().  Ludwig overrides
+        # LudwigMetric.sync_context() to fall back to torch.distributed.gather_all_tensors
+        # when the registered Ludwig strategy provides no gather function but
+        # torch.distributed is already initialised (the Ray TorchTrainer / eval_fn case).
+        #
+        # Adding a manual outer sync_context() would cause torchmetrics to see
+        # _is_synced=True when its own inner sync_context() runs, raising:
+        #   TorchMetricsUserError: The Metric has already been synced.
+        #
+        # See LudwigMetric.sync_context() in metric_modules.py for the full explanation.
         metric_vals = {}
         for metric_name, metric_fn in self._metric_functions.items():
             try:
