@@ -2466,8 +2466,8 @@ class LLMEncoder(Encoder):
         clear_data_cache()
 
         # Because we use the last hidden state as encoder output rather than the logits, the final module of the model
-        # has input pass through but no gradient update in the backward pass. This can lead to a DDP error. Freezing
-        # the module prevents this from happening. This is done at initialization to prevent "unused parameters" errors
+        # has input pass through but no gradient update in the backward pass. This can lead to a distributed training
+        # error. Freezing the module prevents this. This is done at initialization to prevent "unused parameters" errors
         # from happening when the encoder is used before `prepare_for_training` is called, for example during batch
         # size tuning.
         out_module = list(self.model.modules())[-1]

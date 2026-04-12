@@ -609,8 +609,7 @@ class Trainer(BaseTrainer):
                 best_batch_size = self.distributed.broadcast_object(best_batch_size)
 
                 if tune_for_training:
-                    # Update batch size / gradient accumulation before preparing the trainer. This is needed primarily
-                    # for DeepSpeed, which needs to know the batch size and gradient accumulation steps before init
+                    # Update batch size / gradient accumulation before preparing the trainer.
                     self.config.batch_size = best_batch_size
                     self.config.update_batch_size_grad_accum(self.distributed.size())
                     self.batch_size = self.config.batch_size
@@ -626,7 +625,7 @@ class Trainer(BaseTrainer):
                 if snapshot_weights:
                     # Restore the model weights prior to batch size tuning to undo any updates made to the weights
                     if self.distributed.prepare_before_load():
-                        # Some distributed strategies, like DeepSpeed, need to re-init before loading the model
+                        # Some distributed strategies may need to re-init before loading the model
                         self.prepare()
                     self.resume_weights_and_optimizer(str(tmpdir), checkpoint)
 
@@ -953,7 +952,7 @@ class Trainer(BaseTrainer):
         self.distributed.sync_optimizer(self.optimizer)
         self.scheduler.load_state_dict(self.distributed.broadcast_object(self.scheduler.state_dict()))
 
-        # For DeepSpeed, we need to set the batch size here in case it was modfied during auto-tuning
+        # Set the batch size in case it was modified during auto-tuning
         self.distributed.set_batch_size(self.dist_model, self.batch_size)
 
         set_random_seed(self.random_seed)
@@ -1346,11 +1345,7 @@ class Trainer(BaseTrainer):
                 else:
                     should_break = False
 
-                # Checkpoint the model.
-                # NOTE: Ideally we would do this before evaluation, but for some reason DeepSpeed will complain
-                # about inflight params if we do that, which is why we checkpoint after eval instead. In practice,
-                # this should not make a difference, except in the unlikely event an error occurs during eval and we
-                # want to resume from the last checkpoint, in which case we will lose slightly more progress this way.
+                # Checkpoint the model after evaluation.
                 if not self.skip_save_progress:
                     self.save_checkpoint(progress_tracker, save_path, checkpoint_manager)
 
