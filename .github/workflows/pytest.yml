@@ -46,7 +46,7 @@ jobs:
       - name: Install dependencies
         run: |
           uv pip install torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
-          uv sync --extra test
+          uv pip install '.[test]'
           uv pip list
 
       - name: Unit Tests
@@ -118,7 +118,7 @@ jobs:
         run: |
           pip install uv
           uv pip install torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
-          uv sync --extra test
+          uv pip install '.[test]'
           uv pip list
 
       - name: Free Disk Space
@@ -185,7 +185,7 @@ jobs:
         run: |
           pip install uv
           uv pip install torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
-          uv sync --extra test
+          uv pip install '.[test]'
           uv pip list
 
       - name: Free Disk Space
@@ -235,7 +235,7 @@ jobs:
         run: |
           pip install uv
           uv pip install torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
-          uv sync
+          uv pip install .
           uv pip list
 
       - name: Check Install
