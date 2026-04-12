@@ -54,6 +54,7 @@ class LLM(BaseModel):
 
         self.config_obj = config_obj
         self._random_seed = random_seed
+        self._adapter_initialized = False
 
         self.model_name = self.config_obj.base_model
         self.model_config = AutoConfig.from_pretrained(
@@ -161,8 +162,12 @@ class LLM(BaseModel):
         return self._output_feature_decoder.module
 
     def initialize_adapter(self):
-        """If an adapter config is provided, we want to wrap the model with a PEFT model for fine-tuning."""
-        if self.config_obj.adapter:
+        """If an adapter config is provided, wrap the model with a PEFT model for fine-tuning.
+
+        Guarded by _adapter_initialized to prevent double-wrapping when called multiple times (e.g. prepare_for_training
+        is called on every Trainer construction, including on resume).
+        """
+        if self.config_obj.adapter and not self._adapter_initialized:
             if self.config_obj.trainer.type != "finetune" and not self.config_obj.adapter.pretrained_adapter_weights:
                 raise ValueError(
                     "Adapter config was provided, but trainer type is not set to `finetune`. Either set the trainer to "
@@ -177,8 +182,17 @@ class LLM(BaseModel):
             self.model.print_trainable_parameters()
             logger.info("==================================================")
 
+            self._adapter_initialized = True
+
     def prepare_for_training(self):
-        # TODO: this implementation will not work if resuming from a previous checkpoint. Need to fix this.
+        """Prepare the model for training by setting up quantization and adapters.
+
+        Safe to call multiple times (e.g. when resuming from a checkpoint). Quantization is applied at model-load time
+        in __init__ via load_pretrained_from_config, so prepare_model_for_kbit_training only needs to cast non-quantized
+        layers to float32 and freeze the quantized base — both operations are idempotent. Adapter initialization is
+        guarded by _adapter_initialized so the PEFT wrapper is only created once; on resume the saved adapter weights
+        are subsequently loaded by the trainer via load_state_dict.
+        """
         if self.config_obj.quantization:
             self.prepare_for_quantized_training()
         self.initialize_adapter()
