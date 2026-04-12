@@ -1,0 +1,20 @@
+# Baseline: standard softmax cross-entropy classifier.
+# Trained only on known classes; will assign high confidence to unknown inputs.
+
+model_type: ecd
+
+input_features:
+  - name: feature_1
+    type: number
+  - name: feature_2
+    type: number
+
+output_features:
+  - name: label
+    type: category
+    loss:
+      type: softmax_cross_entropy
+
+trainer:
+  epochs: 50
+  learning_rate: 0.001
