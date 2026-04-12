@@ -311,13 +311,31 @@ class LLM(BaseModel):
         ),
         mask=None,
     ) -> dict[str, torch.Tensor]:
-        """Generates tokens using the model."""
+        """Generate tokens using the model and extract structured predictions.
+
+        For each sample the method strips left-padding from the prompt, calls
+        ``model.generate`` with ``output_scores=True`` to obtain per-step
+        vocabulary logits, and passes both generated sequences and scores to
+        the decoder so real logits/probs can be computed.  An optional
+        constrained-decoding ``LogitsProcessorList`` is retrieved from the
+        decoder (used when ``constrain_to_vocabulary=True``).
+        """
         log_once(f"For generating text, using: {self.generation}")
         input_ids, _ = self._unpack_inputs(inputs)
+
+        # Retrieve an optional logits processor from the decoder (e.g. for
+        # constrained category generation). Returns None for text decoders.
+        decoder_obj = self.output_feature_decoder.decoder_obj
+        logits_processor = None
+        if hasattr(decoder_obj, "get_logits_processor"):
+            logits_processor = decoder_obj.get_logits_processor()
 
         with torch.no_grad():
             input_lengths = []
             sequences_list = []
+            # Per-sample generation scores: list of tuples of (vocab_size,) tensors.
+            generation_scores_list: list[tuple[torch.Tensor, ...]] = []
+
             for input_ids_sample in input_ids:
                 input_ids_sample_no_padding = remove_left_padding(input_ids_sample, self.tokenizer)
 
@@ -334,23 +352,36 @@ class LLM(BaseModel):
                 model_device = next(self.model.parameters()).device
                 input_ids_sample_no_padding = input_ids_sample_no_padding.to(model_device)
 
-                # Generate text using the model
-                model_outputs = self.model.generate(
+                generate_kwargs = dict(
                     input_ids=input_ids_sample_no_padding,
                     attention_mask=mask,
                     generation_config=self.generation,
                     return_dict_in_generate=True,
                     output_scores=True,
                 )
+                if logits_processor is not None:
+                    generate_kwargs["logits_processor"] = logits_processor
+
+                # Generate text using the model
+                model_outputs = self.model.generate(**generate_kwargs)
 
                 sequences_list.append(model_outputs.sequences[0])
 
-            # Extract the predictions, probabilities and logits from the model outputs
-            # through the forward pass of the output feature
+                # model_outputs.scores is a tuple of (1, vocab_size) tensors.
+                # Squeeze out the batch dim so each entry is (vocab_size,).
+                if model_outputs.scores is not None:
+                    sample_scores = tuple(s.squeeze(0) for s in model_outputs.scores)
+                else:
+                    sample_scores = ()
+                generation_scores_list.append(sample_scores)
+
+            # Extract predictions, probabilities and logits through the decoder.
+            # Pass generation scores so real logits/probs can be computed.
             outputs = self.output_feature_decoder.decoder_obj.forward(
                 sequences_list,
                 input_lengths,
                 self.max_new_tokens,
+                generation_scores=generation_scores_list,
             )
 
         return outputs
@@ -371,7 +402,7 @@ class LLM(BaseModel):
 
     def merge_and_unload(self, progressbar: bool = False) -> None:
         """This method merges the LoRa layers into the base model.  This is needed if someone wants to use the base
-        model as a standalone model.  The implementation calls merge_and_unload() of the underlying LoraModel class
+        model as a standalone model. The implementation calls merge_and_unload() of the underlying LoraModel class
         (in peft).
 
         Args:
@@ -423,7 +454,7 @@ class LLM(BaseModel):
         return outputs[self.config_obj.output_features[0].name].type(torch.int32)
 
     def update_metrics(self, targets, predictions):
-        """Updates the model's metrics given targets and predictions for zero-shot/few-shot."""
+        """Updates the model's metrics given targets and predictions for zero- shot/few-shot."""
         for of_name, of_obj in self.output_features.items():
             if isinstance(of_obj, TextOutputFeature):
                 # Align the target length with the predictions length to enable text metric evaluation.
@@ -443,7 +474,7 @@ class LLM(BaseModel):
         self.eval_additional_losses_metrics.update(additional_losses)
 
     def update_metrics_finetune_llm(self, targets, predictions):
-        """Updates the model's metrics given targets and predictions for fine-tuning."""
+        """Updates the model's metrics given targets and predictions for fine- tuning."""
         _targets, _predictions = targets, predictions
         for of_name, of_obj in self.output_features.items():
             if isinstance(of_obj, TextOutputFeature):
