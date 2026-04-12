@@ -2516,6 +2516,12 @@ class LLMEncoder(Encoder):
         3. Re-initialize the PEFT adapter on top of the quantized base.
         4. Load only the adapter weights from the checkpoint.
 
+        When resuming a quantized model without an adapter, the quantized base weights cannot be
+        restored from a standard state dict (bitsandbytes quantization is applied at load time).
+        The model is already correctly quantized from __init__; we only need to prepare it for
+        training. No weights need loading from the checkpoint because the base model weights are
+        always re-quantized from the pretrained HuggingFace checkpoint.
+
         For non-quantized models, standard state_dict loading works via Ludwig's default mechanism.
         """
         import os
@@ -2523,7 +2529,8 @@ class LLMEncoder(Encoder):
         if self.config.quantization and self.config.adapter:
             logger.info("Resuming quantized adapter model from checkpoint.")
 
-            # Step 1: Prepare quantized base model for training (freeze + cast)
+            # Step 1: Prepare quantized base model for training (freeze + cast).
+            # prepare_for_quantized_training is idempotent, so safe to call on every resume.
             if not self.adapter_is_initialized:
                 self.prepare_for_quantized_training()
 
@@ -2549,6 +2556,16 @@ class LLMEncoder(Encoder):
                     )
             else:
                 logger.warning(f"Checkpoint file not found at {checkpoint_file}. Starting with fresh adapter weights.")
+        elif self.config.quantization and not self.config.adapter:
+            # Quantized model without adapter: bitsandbytes quantization is applied at load time
+            # in __init__, so the base weights cannot be restored from a standard state dict.
+            # The model is already correctly quantized; we only need to prepare it for training.
+            logger.info(
+                "Resuming quantized model (no adapter) from checkpoint. "
+                "Base model weights are always loaded fresh from the pretrained HuggingFace checkpoint; "
+                "no weight restoration from Ludwig checkpoint is needed."
+            )
+            self.prepare_for_quantized_training()
         else:
             # Non-quantized case: standard state_dict loading is handled by Ludwig's trainer
             logger.info("Resuming from checkpoint (non-quantized path).")
