@@ -78,6 +78,7 @@ serve = [
     "httpx",
     "fastapi",
     "python-multipart",
+    "prometheus_client",
 ]
 viz = [
     "matplotlib>=3.4",
