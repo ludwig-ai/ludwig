@@ -1,0 +1,31 @@
+# Objectosphere classifier (Dhamija et al., NeurIPS 2018).
+#
+# Extends the Entropic Open-Set loss with a logit-norm objective:
+#   - Known samples: CE + hinge pushing ||logits|| >= xi
+#   - Background samples: entropy maximisation + magnitude suppression (zeta * ||logits||^2)
+#
+# At inference time, flag unknown inputs with a norm threshold:
+#   is_unknown = logit_norm < threshold
+# Choose the threshold from the validation set (e.g. 5th percentile of
+# known-class norms).
+
+model_type: ecd
+
+input_features:
+  - name: feature_1
+    type: number
+  - name: feature_2
+    type: number
+
+output_features:
+  - name: label
+    type: category
+    loss:
+      type: objectosphere
+      background_class: 4   # adjust to match your vocabulary index
+      xi: 10.0              # minimum logit norm for known-class samples
+      zeta: 0.1             # weight for unknown-class magnitude suppression
+
+trainer:
+  epochs: 50
+  learning_rate: 0.001
