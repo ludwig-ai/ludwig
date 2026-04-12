@@ -54,7 +54,15 @@ def get_optimizer_class_and_kwargs(
     else:
         config_dict = vars(optimizer_config)
     cls_kwargs = {field: value for field, value in config_dict.items() if field != "type"}
-    cls_kwargs["lr"] = learning_rate
+
+    # Most optimizers accept lr from Ludwig's trainer config. However, some optimizers
+    # manage their own LR schedule and expect lr=None (e.g. Adafactor with relative_step=True).
+    # Only override lr if the config does not already set it to None explicitly.
+    if cls_kwargs.get("lr") is None and "lr" in cls_kwargs:
+        # Config explicitly set lr=None (e.g. Adafactor relative_step mode) -- respect it.
+        pass
+    else:
+        cls_kwargs["lr"] = learning_rate
 
     return optimizer_cls, cls_kwargs
 
