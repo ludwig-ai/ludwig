@@ -628,18 +628,27 @@ def eval_fn(
         # Save results to a checkpoint so the driver can retrieve them.
         # Eval results are metrics dicts (no tensors), so we save as JSON where possible
         # and fall back to torch.save for objects JSON can't handle.
+        # Only rank-0 writes and reports the checkpoint.  If every worker calls
+        # rt.report(checkpoint=...) with a file of the same name, Ray Train
+        # merges the checkpoint directories and concatenates the files, producing
+        # invalid JSON.  Non-zero workers still call rt.report() (without a
+        # checkpoint) so that Ray Train does not block waiting for all workers.
+        world_rank = rt.get_context().get_world_rank()
         eval_results = _make_picklable(eval_results)
-        with tempfile.TemporaryDirectory() as tmpdir:
-            try:
-                import json
+        if world_rank == 0:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                try:
+                    import json
 
-                # Try JSON first (no pickle, secure)
-                with open(os.path.join(tmpdir, "eval_results.json"), "w") as f:
-                    json.dump(eval_results, f, default=str)
-            except (TypeError, ValueError):
-                # Fall back to torch.save for complex objects
-                torch.save(eval_results, os.path.join(tmpdir, "eval_results.pt"))
-            rt.report(metrics={}, checkpoint=Checkpoint.from_directory(tmpdir))
+                    # Try JSON first (no pickle, secure)
+                    with open(os.path.join(tmpdir, "eval_results.json"), "w") as f:
+                        json.dump(eval_results, f, default=str)
+                except (TypeError, ValueError):
+                    # Fall back to torch.save for complex objects
+                    torch.save(eval_results, os.path.join(tmpdir, "eval_results.pt"))
+                rt.report(metrics={}, checkpoint=Checkpoint.from_directory(tmpdir))
+        else:
+            rt.report(metrics={})
     finally:
         torch.cuda.empty_cache()
 

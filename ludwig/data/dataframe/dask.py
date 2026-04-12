@@ -251,7 +251,13 @@ class DaskEngine(DataFrameEngine):
     def from_ray_dataset(self, dataset) -> dd.DataFrame:
         # NOTE: When the dataset is an empty MapBatches(BatchInferModel), Ray's native to_dask() raises an IndexError.
         try:
-            return dataset.to_dask()
+            # verify_meta=False: Ray's to_dask() intentionally sets TensorDtype columns to `object` in the Dask
+            # metadata (since Dask does not natively support TensorDtype), but the actual Arrow blocks returned by
+            # block_to_df may have TensorDtype columns when tensor extension casting is enabled.  With verify_meta=True
+            # (the default) Dask eagerly computes the first partition to check types, finds TensorDtype != object, and
+            # raises a ValueError.  Passing verify_meta=False skips that check and lets downstream code handle any
+            # type coercions (e.g. write_predictions already disables tensor casting before writing to Parquet).
+            return dataset.to_dask(verify_meta=False)
         except IndexError as e:
             logging.warning(
                 f"Encountered an empty Dataset, {dataset.show()} with error {e}. Manually returning an empty dask "
