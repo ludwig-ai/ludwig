@@ -324,6 +324,15 @@ AUGMENTATION = "augmentation"
 
 LUDWIG_SCHEMA_VALIDATION_POLICY = "LUDWIG_SCHEMA_VALIDATION_POLICY"
 
+# New loss function constants
+FOCAL_LOSS = "focal"
+DICE_LOSS = "dice"
+LOVASZ_SOFTMAX_LOSS = "lovasz_softmax"
+NT_XENT_LOSS = "nt_xent"
+POLY_LOSS = "poly"
+SPARSEMAX_LOSS = "sparsemax"
+ENTMAX15_LOSS = "entmax15"
+
 # Anomaly detection constants
 ANOMALY = "anomaly"
 ANOMALY_SCORE = "anomaly_score"

@@ -7,14 +7,20 @@ from ludwig.constants import (
     CORN,
     DEEP_SAD,
     DEEP_SVDD,
+    DICE_LOSS,
     DROCC,
+    ENTMAX15_LOSS,
+    FOCAL_LOSS,
     HUBER,
     IMAGE,
+    LOVASZ_SOFTMAX_LOSS,
     MEAN_ABSOLUTE_ERROR,
     MEAN_ABSOLUTE_PERCENTAGE_ERROR,
     MEAN_SQUARED_ERROR,
     NEXT_TOKEN_SOFTMAX_CROSS_ENTROPY,
+    NT_XENT_LOSS,
     NUMBER,
+    POLY_LOSS,
     ROOT_MEAN_SQUARED_ERROR,
     ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
     SEQUENCE,
@@ -22,6 +28,7 @@ from ludwig.constants import (
     SET,
     SIGMOID_CROSS_ENTROPY,
     SOFTMAX_CROSS_ENTROPY,
+    SPARSEMAX_LOSS,
     TEXT,
     TIMESERIES,
     VECTOR,
@@ -572,3 +579,230 @@ class DROCCLossConfig(BaseLossConfig):
     @classmethod
     def name(cls) -> str:
         return "DROCC"
+
+
+@DeveloperAPI
+@register_loss([BINARY, CATEGORY, IMAGE])
+class FocalLossConfig(BaseLossConfig):
+    """Focal Loss for classification with class imbalance.
+
+    Applies a modulating factor (1 - p_t)^gamma to the standard cross-entropy loss
+    so that easy examples contribute less to the gradient.
+
+    Reference: Lin et al., "Focal Loss for Dense Object Detection", ICCV 2017.
+    """
+
+    type: str = schema_utils.ProtectedString(
+        FOCAL_LOSS,
+        description="Type of loss.",
+    )
+
+    alpha: float = schema_utils.FloatRange(
+        default=0.25,
+        min=0.0,
+        max=1.0,
+        description=(
+            "Weighting factor for the positive class in binary classification. "
+            "Balances the importance of positive/negative examples."
+        ),
+    )
+
+    gamma: float = schema_utils.NonNegativeFloat(
+        default=2.0,
+        description=(
+            "Focusing parameter that reduces the loss contribution from easy examples "
+            "and extends the range in which an example receives low loss. "
+            "gamma=0 reduces focal loss to standard cross-entropy."
+        ),
+    )
+
+    weight: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="Weight of the loss.",
+    )
+
+    @classmethod
+    def name(cls) -> str:
+        return "Focal Loss"
+
+
+@DeveloperAPI
+@register_loss([IMAGE])
+class DiceLossConfig(BaseLossConfig):
+    """Dice Loss for image segmentation.
+
+    Computes 1 minus the Dice coefficient between predicted soft masks and
+    one-hot ground-truth masks.
+
+    Reference: Milletari et al., "V-Net", 3DV 2016.
+    """
+
+    type: str = schema_utils.ProtectedString(
+        DICE_LOSS,
+        description="Type of loss.",
+    )
+
+    smooth: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description=(
+            "Laplace smoothing term added to numerator and denominator to prevent "
+            "division by zero when both prediction and target are empty."
+        ),
+    )
+
+    weight: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="Weight of the loss.",
+    )
+
+    @classmethod
+    def name(cls) -> str:
+        return "Dice Loss"
+
+
+@DeveloperAPI
+@register_loss([IMAGE])
+class LovaszSoftmaxLossConfig(BaseLossConfig):
+    """Lovasz-Softmax Loss for multi-class semantic segmentation.
+
+    Uses the Lovasz extension of submodular functions to construct a convex
+    surrogate for the per-class IoU loss.
+
+    Reference: Berman et al., "The Lovasz-Softmax Loss", CVPR 2018.
+    """
+
+    type: str = schema_utils.ProtectedString(
+        LOVASZ_SOFTMAX_LOSS,
+        description="Type of loss.",
+    )
+
+    weight: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="Weight of the loss.",
+    )
+
+    @classmethod
+    def name(cls) -> str:
+        return "Lovász-Softmax Loss"
+
+
+@DeveloperAPI
+@register_loss([VECTOR])
+class NTXentLossConfig(BaseLossConfig):
+    """NT-Xent (Normalized Temperature-scaled Cross Entropy) contrastive loss (SimCLR).
+
+    Given a batch of N vector representations, computes contrastive loss
+    assuming consecutive pairs (2i, 2i+1) are positive pairs.
+
+    Reference: Chen et al., "A Simple Framework for Contrastive Learning", ICML 2020.
+    """
+
+    type: str = schema_utils.ProtectedString(
+        NT_XENT_LOSS,
+        description="Type of loss.",
+    )
+
+    temperature: float = schema_utils.FloatRange(
+        default=0.07,
+        min=0.0,
+        min_inclusive=False,
+        description=(
+            "Temperature parameter for scaling the cosine similarity scores. "
+            "Lower values make the distribution sharper, higher values softer."
+        ),
+    )
+
+    weight: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="Weight of the loss.",
+    )
+
+    @classmethod
+    def name(cls) -> str:
+        return "NT-Xent Loss"
+
+
+@DeveloperAPI
+@register_loss([CATEGORY])
+class PolyLossConfig(BaseLossConfig):
+    """PolyLoss for multi-class classification.
+
+    Extends cross-entropy with a first-order polynomial correction term
+    epsilon * (1 - p_t) that upweights hard examples.
+
+    Reference: Leng et al., "PolyLoss", ICLR 2022.
+    """
+
+    type: str = schema_utils.ProtectedString(
+        POLY_LOSS,
+        description="Type of loss.",
+    )
+
+    epsilon: float = schema_utils.FloatRange(
+        default=1.0,
+        min=0.0,
+        description=(
+            "Coefficient for the polynomial correction term. " "epsilon=0 reduces PolyLoss to standard cross-entropy."
+        ),
+    )
+
+    weight: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="Weight of the loss.",
+    )
+
+    @classmethod
+    def name(cls) -> str:
+        return "Poly Loss"
+
+
+@DeveloperAPI
+@register_loss([CATEGORY, TEXT, SEQUENCE])
+class SparsemaxLossConfig(BaseLossConfig):
+    """Sparsemax Loss: a sparse alternative to softmax cross-entropy.
+
+    The natural loss companion to the sparsemax activation. Assigns zero
+    gradient to classes outside the sparsemax support.
+
+    Reference: Martins & Astudillo, "From Softmax to Sparsemax", ICML 2016.
+    """
+
+    type: str = schema_utils.ProtectedString(
+        SPARSEMAX_LOSS,
+        description="Type of loss.",
+    )
+
+    weight: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="Weight of the loss.",
+    )
+
+    @classmethod
+    def name(cls) -> str:
+        return "Sparsemax Loss"
+
+
+@DeveloperAPI
+@register_loss([CATEGORY, TEXT, SEQUENCE])
+class Entmax15LossConfig(BaseLossConfig):
+    """Entmax-1.5 Loss: a semi-sparse alternative to softmax cross-entropy.
+
+    The Fenchel-conjugate loss of the alpha=1.5 entmax activation. Produces
+    moderately sparse probability distributions between softmax and sparsemax.
+
+    Reference: Peters et al., "Sparse Sequence-to-Sequence Models", ACL 2019.
+    """
+
+    type: str = schema_utils.ProtectedString(
+        ENTMAX15_LOSS,
+        description="Type of loss.",
+    )
+
+    weight: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="Weight of the loss.",
+    )
+
+    @classmethod
+    def name(cls) -> str:
+        return "Entmax-1.5 Loss"
