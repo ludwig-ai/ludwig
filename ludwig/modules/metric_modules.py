@@ -123,13 +123,33 @@ class LudwigMetric(Metric, ABC):
         should_unsync: bool = True,
         distributed_available: Callable | None = jit_distributed_available,
     ) -> Generator:
-        """Override the behavior of this in the base class to support custom distributed strategies."""
+        """Override the behavior of this in the base class to support custom distributed strategies.
+
+        When the registered distributed strategy provides no gather function (e.g. LocalStrategy inside a Ray
+        TorchTrainer worker), fall back to torchmetrics' default gather_all_tensors so that metric state is properly
+        all-gathered across workers whenever torch.distributed is initialized.
+        """
         dist_strategy = get_current_dist_strategy()
+        gather_fn = dist_strategy.gather_all_tensors_fn()
+        dist_available = dist_strategy.is_available
+
+        if gather_fn is None:
+            # LocalStrategy (and similar no-op strategies) return None for gather_all_tensors_fn.
+            # When torch.distributed is initialized (e.g. inside a Ray TorchTrainer worker), we
+            # can use torchmetrics' built-in all-gather so metrics are aggregated over all shards.
+            import torch.distributed as _dist
+
+            if _dist.is_available() and _dist.is_initialized():
+                from torchmetrics.utilities.distributed import gather_all_tensors
+
+                gather_fn = gather_all_tensors
+                dist_available = _dist.is_initialized  # callable returning bool
+
         self.sync(
-            dist_sync_fn=dist_strategy.gather_all_tensors_fn(),
+            dist_sync_fn=gather_fn,
             process_group=process_group,
             should_sync=should_sync,
-            distributed_available=dist_strategy.is_available,
+            distributed_available=dist_available,
         )
 
         yield
