@@ -323,3 +323,13 @@ IMAGENET1K = "imagenet1k"
 AUGMENTATION = "augmentation"
 
 LUDWIG_SCHEMA_VALIDATION_POLICY = "LUDWIG_SCHEMA_VALIDATION_POLICY"
+
+# Anomaly detection constants
+ANOMALY = "anomaly"
+ANOMALY_SCORE = "anomaly_score"
+DEEP_SVDD = "deep_svdd"
+DEEP_SAD = "deep_sad"
+DROCC = "drocc"
+F1_MAX = "f1_max"
+ANOMALY_AUROC = "anomaly_auroc"
+UNCERTAINTY = "uncertainty"  # MC Dropout uncertainty output key

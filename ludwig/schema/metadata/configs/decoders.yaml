@@ -118,6 +118,56 @@ Classifier:
             The default choice (`xavier_uniform`) is a suitable starting point for
             most tasks.
         ui_display_name: Layer Weights Initializer
+MLPClassifier:
+    type:
+        short_description:
+            Multi-layer perceptron classifier decoder.
+        long_description:
+            The MLPClassifier decoder stacks one or more fully-connected hidden layers
+            (each of configurable size, activation, and dropout) before a final linear
+            projection to class logits. Use this when the combiner output benefits from
+            additional non-linear transformation before the classification head. When
+            num_fc_layers=0 it is equivalent to the standard Classifier decoder. Supports
+            optional temperature-scaling calibration (Guo et al., ICML 2017) and MC Dropout
+            uncertainty estimation (Gal & Ghahramani, ICML 2016).
+        expected_impact: 2
+    num_fc_layers:
+        expected_impact: 3
+        ui_display_name: Number of Hidden Layers
+    output_size:
+        expected_impact: 3
+        ui_display_name: Hidden Layer Size
+    activation:
+        expected_impact: 2
+        ui_display_name: Activation
+    dropout:
+        expected_impact: 3
+        ui_display_name: Dropout
+    input_size:
+        other_information: Internal Only
+        internal_only: true
+        related_parameters:
+            - "No"
+        ui_display_name: Not Displayed
+    num_classes:
+        other_information: Internal Only
+        internal_only: true
+        ui_display_name: Not Displayed
+    use_bias:
+        expected_impact: 1
+        ui_display_name: Use Bias
+    weights_initializer:
+        expected_impact: 1
+        ui_display_name: Layer Weights Initializer
+    bias_initializer:
+        expected_impact: 1
+        ui_display_name: Bias Initializer
+    calibration:
+        expected_impact: 2
+        ui_display_name: Calibration Method
+    mc_dropout_samples:
+        expected_impact: 2
+        ui_display_name: MC Dropout Samples
 Projector:
     type:
         short_description:
