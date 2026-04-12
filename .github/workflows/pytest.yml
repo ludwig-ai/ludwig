@@ -51,11 +51,11 @@ jobs:
 
       - name: Unit Tests
         run: |
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 uv run pytest -v --timeout 300 --durations 100 -m "not distributed and not slow and not combinatorial and not llm" --junitxml pytest.xml tests/ludwig
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "not distributed and not slow and not combinatorial and not llm" --junitxml pytest.xml tests/ludwig
 
       - name: Regression Tests
         run: |
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 uv run pytest -v --timeout 300 --durations 100 -m "not distributed and not slow and not combinatorial and not llm" --junitxml pytest-regression.xml tests/regression_tests
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "not distributed and not slow and not combinatorial and not llm" --junitxml pytest-regression.xml tests/regression_tests
 
       - name: Upload Test Results
         if: always()
@@ -134,7 +134,7 @@ jobs:
 
       - name: Integration Tests
         run: |
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 uv run pytest -v --timeout 300 --durations 100 -m "not slow and not combinatorial and not llm and $MARKERS" --junitxml pytest.xml tests/integration_tests
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m "not slow and not combinatorial and not llm and $MARKERS" --junitxml pytest.xml tests/integration_tests
 
       - name: Upload Test Results
         if: always()
@@ -201,11 +201,11 @@ jobs:
 
       - name: Distributed Unit Tests
         run: |
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 uv run pytest -v --timeout 300 --durations 100 -m "distributed and not slow and not combinatorial and not llm" --junitxml pytest-unit.xml tests/ludwig
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "distributed and not slow and not combinatorial and not llm" --junitxml pytest-unit.xml tests/ludwig
 
       - name: Distributed Integration Tests
         run: |
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 uv run pytest -v --timeout 300 --durations 100 -m "distributed and not slow and not combinatorial and not llm" --junitxml pytest-integration.xml tests/integration_tests
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m "distributed and not slow and not combinatorial and not llm" --junitxml pytest-integration.xml tests/integration_tests
 
       - name: Upload Test Results
         if: always()
@@ -240,7 +240,7 @@ jobs:
 
       - name: Check Install
         run: |
-          uv run ludwig check_install
+          ludwig check_install
 
   event_file:
     name: "Event File"
