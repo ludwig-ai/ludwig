@@ -333,6 +333,7 @@ POLY_LOSS = "poly"
 SPARSEMAX_LOSS = "sparsemax"
 ENTMAX15_LOSS = "entmax15"
 
+
 # Anomaly detection constants
 ANOMALY = "anomaly"
 ANOMALY_SCORE = "anomaly_score"

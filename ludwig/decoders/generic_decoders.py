@@ -214,12 +214,18 @@ class Classifier(Decoder):
 class AnomalyDecoder(Decoder):
     """AnomalyDecoder: computes ||z - c||^2 as the anomaly score.
 
-    The center c is initialized after the first training epoch by calling
-    initialize_center(center_tensor), where center = mean(encoder_outputs).
-    Until initialization, the center is zeros.
+    The center ``c`` is the mean of all encoder outputs from the first training epoch,
+    computed by ``AnomalyOutputFeature.initialize_center()`` and stored as a non-trainable
+    ``register_buffer``.  Until that call the center is the zero vector, so anomaly scores
+    are raw squared norms which is still a valid (if uncentered) distance metric.
+
+    This implements the hard-boundary Deep SVDD objective from Ruff et al. (ICML 2018).
+    With the ECD combiner you get *free* multimodal anomaly detection: feed tabular,
+    image, text or any mix of input features and the combiner fuses them into a single
+    latent vector that the decoder compares against the center.
 
     Args:
-        input_size: Latent space dimensionality.
+        input_size: Latent space dimensionality (set automatically from the FC stack).
         decoder_config: AnomalyDecoderConfig instance.
     """
 
@@ -260,7 +266,6 @@ class AnomalyDecoder(Decoder):
 
         return AnomalyDecoderConfig
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.input_size])
 

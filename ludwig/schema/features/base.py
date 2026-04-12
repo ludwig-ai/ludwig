@@ -7,6 +7,7 @@ from rich.console import Console
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
+    ANOMALY,
     AUDIO,
     BAG,
     BINARY,
@@ -63,7 +64,22 @@ class BaseFeatureConfig(schema_utils.LudwigBaseConfig):
     type: str = schema_utils.StringOptions(
         default=None,
         allow_none=True,
-        options=[AUDIO, BAG, BINARY, CATEGORY, DATE, H3, IMAGE, NUMBER, SEQUENCE, SET, TEXT, TIMESERIES, VECTOR],
+        options=[
+            ANOMALY,
+            AUDIO,
+            BAG,
+            BINARY,
+            CATEGORY,
+            DATE,
+            H3,
+            IMAGE,
+            NUMBER,
+            SEQUENCE,
+            SET,
+            TEXT,
+            TIMESERIES,
+            VECTOR,
+        ],
         description="Type of the feature.",
     )
 

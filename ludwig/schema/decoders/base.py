@@ -404,8 +404,13 @@ class MLPClassifierConfig(BaseDecoderConfig):
 class AnomalyDecoderConfig(BaseDecoderConfig):
     """AnomalyDecoderConfig configures the anomaly decoder.
 
-    The anomaly decoder computes ||z - c||^2 as the anomaly score, where z is the
-    encoder output and c is the hypersphere center initialized after the first epoch.
+    The anomaly decoder computes ``||z - c||^2`` as the anomaly score, where ``z`` is
+    the encoder/combiner output and ``c`` is the hypersphere center, which is initialized
+    after the first epoch by computing the mean of all encoder outputs.
+
+    This implements the geometric core of Deep SVDD (Ruff et al., ICML 2018).
+    With Ludwig's ECD combiner you get free multimodal anomaly detection: any combination
+    of tabular, image, text, or audio inputs is fused and mapped to the hypersphere.
     """
 
     @classmethod
@@ -420,5 +425,5 @@ class AnomalyDecoderConfig(BaseDecoderConfig):
     input_size: int = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
-        description="Size of the encoder output. Set automatically.",
+        description="Size of the encoder output. Set automatically from the FC stack output shape.",
     )

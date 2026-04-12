@@ -42,11 +42,15 @@ from torchmetrics.text.rouge import ROUGEScore
 from ludwig.constants import (  # RESPONSE,
     ACCURACY,
     ACCURACY_MICRO,
+    ANOMALY,
+    ANOMALY_AUROC,
+    ANOMALY_SCORE,
     BINARY,
     BINARY_WEIGHTED_CROSS_ENTROPY,
     CATEGORY,
     CATEGORY_DISTRIBUTION,
     CORN,
+    F1_MAX,
     HITS_AT_K,
     HUBER,
     IGNORE_INDEX_TOKEN_ID,
@@ -567,3 +571,87 @@ def get_best_function(metric: str) -> Callable:
         return min
     else:
         return max
+
+
+@register_metric(ANOMALY_AUROC, [ANOMALY], MAXIMIZE, ANOMALY_SCORE)
+class AnomalyAUROCMetric(LudwigMetric):
+    """AUROC for anomaly detection scores.
+
+    Computes area under the ROC curve between anomaly scores (higher = more anomalous) and binary ground-truth labels
+    (1=anomaly, 0=normal). The primary threshold-independent metric for anomaly detection quality. Requires labeled
+    validation/test data.
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.add_state("scores", default=[], dist_reduce_fx="cat")
+        self.add_state("labels", default=[], dist_reduce_fx="cat")
+
+    def update(self, preds: Tensor, target: Tensor) -> None:
+        self.scores.append(preds.detach().cpu().float())
+        self.labels.append(target.detach().cpu().float())
+
+    def compute(self) -> Tensor:
+        if not self.scores:
+            return torch.tensor(float("nan"))
+        scores = torch.cat(self.scores)
+        labels = torch.cat(self.labels)
+        if labels.unique().numel() < 2:
+            return torch.tensor(float("nan"))
+        try:
+            from torchmetrics.functional.classification import binary_auroc
+
+            return binary_auroc(scores, labels.long())
+        except Exception:
+            return torch.tensor(float("nan"))
+
+    def reset(self):
+        super().reset()
+        self.scores = []
+        self.labels = []
+
+
+@register_metric(F1_MAX, [ANOMALY], MAXIMIZE, ANOMALY_SCORE)
+class F1MaxMetric(LudwigMetric):
+    """Maximum F1 score over all anomaly score thresholds.
+
+    Sweeps all unique threshold values and returns the best achievable F1, providing a threshold-independent estimate of
+    classification performance.
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.add_state("scores", default=[], dist_reduce_fx="cat")
+        self.add_state("labels", default=[], dist_reduce_fx="cat")
+
+    def update(self, preds: Tensor, target: Tensor) -> None:
+        self.scores.append(preds.detach().cpu().float())
+        self.labels.append(target.detach().cpu().float())
+
+    def compute(self) -> Tensor:
+        if not self.scores:
+            return torch.tensor(float("nan"))
+        scores = torch.cat(self.scores)
+        labels = torch.cat(self.labels)
+        if labels.unique().numel() < 2:
+            return torch.tensor(float("nan"))
+        try:
+            best_f1 = torch.tensor(0.0)
+            labels_bool = labels.bool()
+            for t in torch.unique(scores):
+                preds_bin = scores >= t
+                tp = (preds_bin & labels_bool).float().sum()
+                fp = (preds_bin & ~labels_bool).float().sum()
+                fn = (~preds_bin & labels_bool).float().sum()
+                if tp + fp + fn > 0:
+                    f1 = 2 * tp / (2 * tp + fp + fn)
+                    if f1 > best_f1:
+                        best_f1 = f1
+            return best_f1
+        except Exception:
+            return torch.tensor(float("nan"))
+
+    def reset(self):
+        super().reset()
+        self.scores = []
+        self.labels = []
