@@ -1,0 +1,28 @@
+model_type: llm
+base_model: meta-llama/Llama-3.1-8B
+
+adapter:
+  type: lora
+  r: 16
+  alpha: 32
+  dropout: 0.05
+
+trainer:
+  type: orpo
+  epochs: 1
+  learning_rate: 5.0e-7
+  batch_size: 2
+  gradient_accumulation_steps: 8
+  # ORPO combines SFT and alignment in a single objective so no reference model
+  # forward passes are required and there is no beta KL penalty.
+
+input_features:
+  - name: prompt
+    type: text
+
+output_features:
+  - name: chosen
+    type: text
+
+backend:
+  type: local

@@ -1,0 +1,38 @@
+model_type: ecd
+
+input_features:
+  - name: sensor_a
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: sensor_b
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: sensor_c
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: timestamp_hour
+    type: number
+    preprocessing:
+      normalization: zscore
+
+output_features:
+  - name: anomaly
+    type: anomaly
+    loss:
+      type: deep_svdd
+      # nu: fraction of training samples allowed outside the hypersphere (soft-boundary).
+      # Set to 0 for hard-boundary SVDD where all points are pulled toward centre c.
+      nu: 0.1
+
+trainer:
+  epochs: 20
+  learning_rate: 0.001
+
+combiner:
+  type: concat
+  fc_layers:
+    - output_size: 64
+    - output_size: 32

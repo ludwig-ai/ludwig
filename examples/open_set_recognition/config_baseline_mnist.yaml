@@ -1,0 +1,39 @@
+# Baseline: standard softmax cross-entropy classifier on MNIST digits 0-7.
+# Trained only on known classes; will assign high confidence to unknown inputs
+# (digits 8 and 9) at test time.
+
+model_type: ecd
+
+input_features:
+  - name: image_path
+    type: image
+    encoder:
+      type: stacked_cnn
+      conv_layers:
+        - num_filters: 32
+          filter_size: 3
+          pool_size: 2
+          pool_stride: 2
+        - num_filters: 64
+          filter_size: 3
+          pool_size: 2
+          pool_stride: 2
+      fc_layers:
+        - output_size: 128
+          dropout: 0.3
+
+output_features:
+  - name: label
+    type: category
+    loss:
+      type: softmax_cross_entropy
+
+trainer:
+  epochs: 10
+  learning_rate: 0.001
+  batch_size: 128
+
+preprocessing:
+  split:
+    type: random
+    probabilities: [0.8, 0.1, 0.1]

@@ -1,0 +1,49 @@
+# Entropic Open-Set classifier (Dhamija et al., NeurIPS 2018) on MNIST.
+#
+# Training set includes digits 0-7 (known) and digits 8-9 labelled as
+# "background" (unknown).  For known samples the loss is standard cross-entropy;
+# for background samples the loss maximises output entropy, driving the softmax
+# probabilities toward uniform.
+#
+# background_class: integer index of the "background" label in Ludwig's
+# vocabulary for this feature.  Run the baseline config first, then inspect
+# results/<experiment>/model/training_set_metadata.json and look for
+# output_features -> label -> str2idx -> "background".
+# See the notebook (open_set_mnist.ipynb) for a step-by-step walkthrough.
+
+model_type: ecd
+
+input_features:
+  - name: image_path
+    type: image
+    encoder:
+      type: stacked_cnn
+      conv_layers:
+        - num_filters: 32
+          filter_size: 3
+          pool_size: 2
+          pool_stride: 2
+        - num_filters: 64
+          filter_size: 3
+          pool_size: 2
+          pool_stride: 2
+      fc_layers:
+        - output_size: 128
+          dropout: 0.3
+
+output_features:
+  - name: label
+    type: category
+    loss:
+      type: entropic_open_set
+      background_class: 1   # see notebook for how to determine this value
+
+trainer:
+  epochs: 10
+  learning_rate: 0.001
+  batch_size: 128
+
+preprocessing:
+  split:
+    type: random
+    probabilities: [0.8, 0.1, 0.1]

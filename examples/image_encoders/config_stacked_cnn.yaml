@@ -1,0 +1,13 @@
+model_type: ecd
+input_features:
+  - name: image_path
+    type: image
+    encoder:
+      type: stacked_cnn
+      use_pretrained: false
+output_features:
+  - name: label
+    type: category
+trainer:
+  epochs: 20
+  learning_rate: 0.001

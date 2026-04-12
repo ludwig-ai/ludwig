@@ -1,5 +1,32 @@
 # Open-Set Recognition with Agnostophobia Losses
 
+## MNIST Tutorial
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ludwig-ai/ludwig/blob/main/examples/open_set_recognition/open_set_mnist.ipynb)
+
+The notebook `open_set_mnist.ipynb` walks through the full open-set recognition workflow on a
+real image dataset:
+
+- **Dataset**: MNIST digits — classes 0–7 are *known*, classes 8–9 act as *unknown/background*
+- **Models**: three Ludwig image classifiers using `stacked_cnn` encoder and `category` output
+  - CE Baseline (`softmax_cross_entropy`) — trained on known classes only
+  - Entropic Open-Set (`entropic_open_set`) — entropy maximisation on background samples
+  - Objectosphere (`objectosphere`) — norm push on known + norm suppression on background
+- **Evaluation**: confidence histograms and ROC curves for unknown detection
+
+The notebook is Colab-compatible — it installs Ludwig and torchvision, downloads MNIST, saves
+images to disk, builds `train.csv`/`test.csv`, trains all three models, and plots results.
+
+YAML configs for standalone use:
+
+- `config_baseline_mnist.yaml`
+- `config_entropic_mnist.yaml`
+- `config_objectosphere_mnist.yaml`
+
+______________________________________________________________________
+
+## Quick Validation Script
+
 This example reproduces the key findings from:
 
 > Dhamija, A. R., Günther, M., & Boult, T. (2018).
@@ -19,7 +46,7 @@ The paper proposes two loss functions that address this:
 
 Both are available in Ludwig's category and binary output features.
 
-## Quick start
+### Quick start
 
 ```bash
 pip install ludwig
@@ -40,9 +67,9 @@ Entropic Open-Set      |           0.974  |              0.273 |      6.254 |   
 Objectosphere          |           0.874  |              0.363 |     13.843 |        2.361
 ```
 
-## Ludwig configuration
+### Ludwig configuration
 
-### Entropic Open-Set Loss
+#### Entropic Open-Set Loss
 
 ```yaml
 output_features:
@@ -53,7 +80,7 @@ output_features:
       background_class: 4   # integer index of the background/unknown class
 ```
 
-### Objectosphere Loss
+#### Objectosphere Loss
 
 ```yaml
 output_features:
@@ -71,7 +98,7 @@ vocabulary for that feature. You can discover it by inspecting the saved model's
 `training_set_metadata.json` file after a training run — look for the `str2idx` field of the
 relevant output feature.
 
-## Inference-time unknown detection
+### Inference-time unknown detection
 
 For **Objectosphere** models, unknown inputs can be detected using a simple threshold on the logit
 L2 norm:
