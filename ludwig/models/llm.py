@@ -10,7 +10,6 @@ from transformers import AutoConfig, GenerationConfig
 from ludwig.accounting.used_tokens import get_used_tokens_for_llm
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, MODEL_LLM, PREDICTIONS, TEXT, USED_TOKENS
 from ludwig.features.base_feature import ModuleWrapper, OutputFeature
-from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.features.text_feature import TextOutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
@@ -37,44 +36,6 @@ from ludwig.utils.tokenizers import HFTokenizer
 from ludwig.utils.torch_utils import reg_loss
 
 logger = logging.getLogger(__name__)
-
-
-class DictWrapper:
-    """Thin wrapper around LudwigFeatureDict.
-
-    Previously hid features from DeepSpeed's module scanning. Now that DeepSpeed strategy is replaced by Accelerate,
-    this wrapper just delegates to LudwigFeatureDict and exists for backward compatibility.
-    """
-
-    def __init__(self, obj: LudwigFeatureDict):
-        self.obj = obj
-
-    def get(self, key) -> torch.nn.Module:
-        return self.obj.get(key)
-
-    def set(self, key: str, module: torch.nn.Module) -> None:
-        self.obj.set(key, module)
-
-    def __len__(self) -> int:
-        return len(self.obj)
-
-    def __next__(self) -> None:
-        return next(iter(self.obj))
-
-    def __iter__(self) -> None:
-        return iter(self.obj.keys())
-
-    def keys(self) -> list[str]:
-        return self.obj.keys()
-
-    def values(self) -> list[torch.nn.Module]:
-        return self.obj.values()
-
-    def items(self) -> list[tuple[str, torch.nn.Module]]:
-        return self.obj.items()
-
-    def update(self, modules: dict[str, torch.nn.Module]) -> None:
-        self.obj.update(modules)
 
 
 class LLM(BaseModel):
@@ -154,14 +115,19 @@ class LLM(BaseModel):
         )
 
         # Extract the decoder object for the forward pass
-        self._output_feature_decoder = ModuleWrapper(self.output_features.items()[0][1])
+        self._output_feature_decoder = ModuleWrapper(next(iter(self.output_features.values())))
 
         self.attention_masks = None
 
         clear_data_cache()
 
-    def create_feature_dict(self) -> DictWrapper:
-        return DictWrapper(LudwigFeatureDict())
+    def create_feature_dict(self) -> dict:
+        """Returns a plain dict instead of LudwigFeatureDict to avoid exposing input/output features as nn.Module
+        submodules of the LLM.
+
+        This prevents systems like DeepSpeed from picking them up as trainable modules.
+        """
+        return {}
 
     @contextlib.contextmanager
     def use_generation_config(self, generation_config_dict: dict[str, Any] | None = None):
@@ -422,7 +388,7 @@ class LLM(BaseModel):
         else:
             targets = None
 
-        assert list(inputs.keys()) == self.input_features.keys()
+        assert list(inputs.keys()) == list(self.input_features.keys())
 
         input_ids = self.get_input_ids(inputs)
         target_ids = self.get_target_ids(targets) if targets else None
