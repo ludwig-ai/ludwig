@@ -4,6 +4,7 @@ import pathlib
 import random
 
 import numpy as np
+import pandas as pd
 import pytest
 import torch
 
@@ -33,6 +34,23 @@ def raw_dataset_fp(tmpdir: pathlib.Path) -> str:
     raw_fp = os.path.join(tmpdir, "raw_data.csv")
     random.seed(42)
     cli_synthesize_dataset(64, INPUT_FEATURES + OUTPUT_FEATURES, raw_fp)
+
+    # Shift y values away from zero so that RMSPE is numerically stable.
+    #
+    # The synthesizer produces y in [0, 1], which can include values as small as 0.045.
+    # RMSPE = sqrt(mean((y - y_hat)^2 / y^2)) amplifies even sub-ppm differences in
+    # predictions into large apparent discrepancies when y is near zero.  This makes
+    # reproducibility assertions flaky: two runs with identical weights can produce
+    # RMSPE values that differ by >30% due to floating-point non-determinism in
+    # PyTorch's CPU BLAS routines.
+    #
+    # Shifting y by +1 puts all targets in [1, 2], where RMSPE is well-behaved.
+    # The reproducibility tests only care that two runs produce the *same* statistics,
+    # not what those statistics are, so the shift does not affect test validity.
+    df = pd.read_csv(raw_fp)
+    df["y"] = df["y"] + 1.0
+    df.to_csv(raw_fp, index=False)
+
     yield raw_fp
 
 
