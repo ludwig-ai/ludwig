@@ -59,7 +59,7 @@ jobs:
             # versioned dispatch: use explicit PyPI version tags
             type=raw,value=${{ inputs.ludwig_version }},enable=${{ inputs.ludwig_version != '' }}
             type=raw,value=${{ steps.version.outputs.minor }},enable=${{ inputs.ludwig_version != '' }}
-            type=raw,value=latest,enable=${{ inputs.ludwig_version != '' && inputs.latest == 'true' }}
+            type=raw,value=latest,enable=${{ inputs.ludwig_version != '' && inputs.latest }}
             # normal triggers: derive tags from git ref
             type=schedule,enable=${{ inputs.ludwig_version == '' }}
             type=semver,pattern={{version}},enable=${{ inputs.ludwig_version == '' }}
