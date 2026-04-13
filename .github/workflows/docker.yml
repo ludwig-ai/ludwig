@@ -7,6 +7,16 @@ on:
     branches: ["main", "release-*"]
     tags: ["v*.*.*"]
   workflow_dispatch:
+    inputs:
+      ludwig_version:
+        description: "PyPI version to install, e.g. 0.13.0 (leave empty to build from source)"
+        required: false
+        default: ""
+      latest:
+        description: "Also tag as :latest"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   docker:
@@ -32,6 +42,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Derive minor version tag
+        id: version
+        if: inputs.ludwig_version != ''
+        run: |
+          minor=$(echo "${{ inputs.ludwig_version }}" | cut -d. -f1-2)
+          echo "minor=${minor}" >> "$GITHUB_OUTPUT"
+
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v6
@@ -39,13 +56,18 @@ jobs:
           images: |
             ludwigai/${{ matrix.docker-image }}
           tags: |
-            type=schedule
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=sha
+            # versioned dispatch: use explicit PyPI version tags
+            type=raw,value=${{ inputs.ludwig_version }},enable=${{ inputs.ludwig_version != '' }}
+            type=raw,value=${{ steps.version.outputs.minor }},enable=${{ inputs.ludwig_version != '' }}
+            type=raw,value=latest,enable=${{ inputs.ludwig_version != '' && inputs.latest == 'true' }}
+            # normal triggers: derive tags from git ref
+            type=schedule,enable=${{ inputs.ludwig_version == '' }}
+            type=ref,event=branch,enable=${{ inputs.ludwig_version == '' }}
+            type=ref,event=pr,enable=${{ inputs.ludwig_version == '' }}
+            type=semver,pattern={{version}},enable=${{ inputs.ludwig_version == '' }}
+            type=semver,pattern={{major}}.{{minor}},enable=${{ inputs.ludwig_version == '' }}
+            type=semver,pattern={{major}},enable=${{ inputs.ludwig_version == '' }}
+            type=sha,enable=${{ inputs.ludwig_version == '' }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -68,3 +90,5 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            LUDWIG_VERSION=${{ inputs.ludwig_version }}
