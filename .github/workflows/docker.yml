@@ -62,12 +62,8 @@ jobs:
             type=raw,value=latest,enable=${{ inputs.ludwig_version != '' && inputs.latest == 'true' }}
             # normal triggers: derive tags from git ref
             type=schedule,enable=${{ inputs.ludwig_version == '' }}
-            type=ref,event=branch,enable=${{ inputs.ludwig_version == '' }}
-            type=ref,event=pr,enable=${{ inputs.ludwig_version == '' }}
             type=semver,pattern={{version}},enable=${{ inputs.ludwig_version == '' }}
             type=semver,pattern={{major}}.{{minor}},enable=${{ inputs.ludwig_version == '' }}
-            type=semver,pattern={{major}},enable=${{ inputs.ludwig_version == '' }}
-            type=sha,enable=${{ inputs.ludwig_version == '' }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
