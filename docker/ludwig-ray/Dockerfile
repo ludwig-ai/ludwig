@@ -26,9 +26,15 @@ RUN sudo apt-get update && DEBIAN_FRONTEND="noninteractive" sudo apt-get install
 	libsox-dev
 RUN pip install -U pip
 
+ARG LUDWIG_VERSION
+
 WORKDIR /ludwig
 
 RUN pip install --no-cache-dir torch==2.6.0 torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
 
 COPY . .
-RUN pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cpu
+RUN if [ -n "${LUDWIG_VERSION}" ]; then \
+      pip install --no-cache-dir "ludwig[full]==${LUDWIG_VERSION}" --extra-index-url https://download.pytorch.org/whl/cpu; \
+    else \
+      pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cpu; \
+    fi

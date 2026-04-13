@@ -6,53 +6,15 @@ on:
   push:
     branches: ["main", "release-*"]
     tags: ["v*.*.*"]
+  workflow_dispatch:
 
 jobs:
-  start-runner:
-    name: Start self-hosted EC2 runner
-    if: >
-      github.event_name == 'schedule' && github.repository == 'ludwig-ai/ludwig' ||
-      github.event_name == 'push' && github.repository == 'ludwig-ai/ludwig' ||
-      github.event_name == 'pull_request' && github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && !github.event.pull_request.head.repo.fork
-    runs-on: ubuntu-latest
-    outputs:
-      label: ${{ steps.start-ec2-runner.outputs.label }}
-      ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
-
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Start EC2 runner
-        id: start-ec2-runner
-        uses: machulav/ec2-github-runner@v2.3.2
-        with:
-          mode: start
-          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          ec2-image-id: ami-0759580dedc953d1f
-          ec2-instance-type: r5.large
-          subnet-id: subnet-0983be43
-          security-group-id: sg-4cba0d08
-          aws-resource-tags: >
-            [
-              {"Key": "Name", "Value": "ludwig-github-${{ github.head_ref || github.sha }}"},
-              {"Key": "GitHubRepository", "Value": "${{ github.repository }}"},
-              {"Key": "GitHubHeadRef", "Value": "${{ github.head_ref }}"},
-              {"Key": "GitHubSHA", "Value": "${{ github.sha }}"}
-            ]
-
   docker:
-    name: Build docker image ${{ matrix.docker-image }} (push=${{ github.event_name != 'pull_request' }})
-    if: needs.start-runner.result != 'skipped'
-    needs: start-runner # required to start the main job when the runner is ready
-    runs-on: ${{ needs.start-runner.outputs.label }} # run the job on the newly created runners
+    name: Build docker image ${{ matrix.docker-image }}
+    if: github.repository == 'ludwig-ai/ludwig'
+    runs-on: ubuntu-latest
 
-    # we want an ongoing run of this workflow to be canceled by a later commit
-    # so that there is only one concurrent run of this workflow for each branch
+    # cancel in-progress runs for the same branch/tag
     concurrency:
       group: docker-${{ matrix.docker-image }}-${{ github.head_ref || github.sha }}
       cancel-in-progress: true
@@ -74,10 +36,8 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          # list of Docker images to use as base name for tags
           images: |
             ludwigai/${{ matrix.docker-image }}
-          # generate Docker tags based on the following events/attributes
           tags: |
             type=schedule
             type=ref,event=branch
@@ -108,29 +68,3 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-  stop-runner:
-    name: Stop self-hosted EC2 runner
-
-    # required to stop the runner even if the error happened in the previous job
-    if: always() && needs.start-runner.result != 'skipped'
-    needs:
-      - start-runner # required to get output from the start-runner job
-      - docker # required to wait when the main job is done
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Stop EC2 runner
-        uses: machulav/ec2-github-runner@v2.3.2
-        with:
-          mode: stop
-          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          label: ${{ needs.start-runner.outputs.label }}
-          ec2-instance-id: ${{ needs.start-runner.outputs.ec2-instance-id }}
