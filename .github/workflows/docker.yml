@@ -1,10 +1,7 @@
 name: docker
 
 on:
-  schedule:
-    - cron: "0 10 * * *" # everyday at 10am
   push:
-    branches: ["main", "release-*"]
     tags: ["v*.*.*"]
   workflow_dispatch:
     inputs:
@@ -60,8 +57,7 @@ jobs:
             type=raw,value=${{ inputs.ludwig_version }},enable=${{ inputs.ludwig_version != '' }}
             type=raw,value=${{ steps.version.outputs.minor }},enable=${{ inputs.ludwig_version != '' }}
             type=raw,value=latest,enable=${{ inputs.ludwig_version != '' && inputs.latest }}
-            # normal triggers: derive tags from git ref
-            type=schedule,enable=${{ inputs.ludwig_version == '' }}
+            # tag push: derive tags from git ref
             type=semver,pattern={{version}},enable=${{ inputs.ludwig_version == '' }}
             type=semver,pattern={{major}}.{{minor}},enable=${{ inputs.ludwig_version == '' }}
 
