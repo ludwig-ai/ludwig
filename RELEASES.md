@@ -24,19 +24,23 @@ images from the tagged source. If CI is healthy this runs automatically after st
 
 ### Manual fallback
 
-If CI does not run or images need to be backfilled, use the script at `docker/build_and_push.sh`.
-You must be logged in to Docker Hub as a member of the `ludwigai` organisation first.
+If CI does not run or images need to be backfilled, trigger a versioned build via the workflow
+dispatch input — no local Docker setup required:
 
 ```bash
-# Check login (docker login if needed)
-docker login
+# Trigger all 4 image variants for a specific PyPI release
+gh workflow run docker.yml --repo ludwig-ai/ludwig --ref main \
+  -f ludwig_version=0.14.0 -f latest=true
+```
 
-# Build and push all 4 image variants for a release.
-# Add --latest for the newest release.
+Or build and push locally using the script at `docker/build_and_push.sh`
+(requires `docker login` to a `ludwigai` Docker Hub account):
+
+```bash
 ./docker/build_and_push.sh 0.14.0 --latest
 ```
 
-This installs `ludwig[full]==<version>` from PyPI into the images and pushes two tags per image:
+Both approaches install `ludwig[full]==<version>` from PyPI and produce two tags per image:
 the full version (`0.14.0`) and the major.minor shorthand (`0.14`), plus `latest` when requested.
 
 ## Release policy
