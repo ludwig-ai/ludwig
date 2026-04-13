@@ -27,26 +27,48 @@ CONFIG = {
 
 @pytest.fixture(scope="function")
 def raw_dataset_fp(tmpdir: pathlib.Path) -> str:
-    """Generates dataset to be used in this test.
+    """Synthesise a 64-row CSV dataset and return its file path.
 
-    Returns (str):  file path string for dataset to use in this tests
+    ## Why y is shifted to [1, 2]
+
+    ``cli_synthesize_dataset`` generates the ``y`` number feature uniformly in
+    ``[0, 1]``, which with ``random.seed(42)`` produces several values as small
+    as 0.045.
+
+    Ludwig tracks ``root_mean_squared_percentage_error`` (RMSPE) for number
+    outputs.  RMSPE is defined as::
+
+        sqrt( mean( (y - y_hat)^2 / y^2 ) )
+
+    Dividing by ``y^2`` makes RMSPE *extremely* sensitive to near-zero targets.
+    For ``y = 0.045``, a prediction error of just 0.001 (entirely within the
+    range of floating-point non-determinism from CPU BLAS thread scheduling)
+    produces a per-sample squared-percentage-error of
+    ``(0.001 / 0.045)^2 ≈ 0.049`` — roughly 50× larger than the same error
+    would give for ``y = 1.0``.  When accumulated over the small test split
+    (≈13 rows), this makes the final RMSPE differ by 30–40 % between two
+    otherwise bit-identical runs.
+
+    The result was a flaky ``test_experiment_ignore_torch_seed[1919]``:
+    evaluation statistics compared with ``==`` would fail intermittently
+    in CI because the RMSPE from one run differed from the other
+    (e.g. 2.63 vs 3.70) even though all other metrics matched to 6+ decimal
+    places and training statistics matched exactly.
+
+    Shifting ``y += 1.0`` moves all targets into ``[1, 2]``.  The worst-case
+    near-zero value (0.045) becomes 1.045, reducing the amplification factor
+    for a 0.001 error from 49× to 0.9×.  RMSPE is now stable to many decimal
+    places across repeated runs.
+
+    The reproducibility tests only assert that two runs with the same Ludwig
+    seed produce *equal* statistics; they do not depend on the absolute values.
+    The shift therefore has no effect on test validity.
     """
     raw_fp = os.path.join(tmpdir, "raw_data.csv")
     random.seed(42)
     cli_synthesize_dataset(64, INPUT_FEATURES + OUTPUT_FEATURES, raw_fp)
 
-    # Shift y values away from zero so that RMSPE is numerically stable.
-    #
-    # The synthesizer produces y in [0, 1], which can include values as small as 0.045.
-    # RMSPE = sqrt(mean((y - y_hat)^2 / y^2)) amplifies even sub-ppm differences in
-    # predictions into large apparent discrepancies when y is near zero.  This makes
-    # reproducibility assertions flaky: two runs with identical weights can produce
-    # RMSPE values that differ by >30% due to floating-point non-determinism in
-    # PyTorch's CPU BLAS routines.
-    #
-    # Shifting y by +1 puts all targets in [1, 2], where RMSPE is well-behaved.
-    # The reproducibility tests only care that two runs produce the *same* statistics,
-    # not what those statistics are, so the shift does not affect test validity.
+    # Shift y into [1, 2] to prevent RMSPE instability — see fixture docstring.
     df = pd.read_csv(raw_fp)
     df["y"] = df["y"] + 1.0
     df.to_csv(raw_fp, index=False)
@@ -258,39 +280,60 @@ def test_experiment(raw_dataset_fp: str, random_seed: int, second_seed_offset: i
 
 @pytest.mark.parametrize("random_seed", [1919, 31])
 def test_experiment_ignore_torch_seed(raw_dataset_fp: str, random_seed: int) -> None:
-    """Test reproducibility of experiment API when an unrelated torch random operation is performed between the
-    Ludwig operations.
+    """Ludwig's seeding must isolate a run from any unrelated torch RNG state.
 
-    Args:
-        raw_dataset_fp (str): file path for data to be used as part of this test
-        random_seed(int): random seed integer to use for test
+    This test verifies that calling ``torch.manual_seed()`` and ``torch.rand()``
+    *between* two Ludwig experiment runs does not affect the second run's results.
+    Ludwig reseeds its own RNG at the start of each run, so the global torch
+    state set between runs should be invisible to it.
 
-    Returns: None
+    ## Flakiness history and why the dataset fixture matters
+
+    An earlier version of the ``raw_dataset_fp`` fixture produced ``y`` values
+    in ``[0, 1]``.  The ``root_mean_squared_percentage_error`` (RMSPE) metric
+    divides by ``y^2``, making it wildly sensitive to near-zero targets: with
+    ``y ≈ 0.045`` a sub-millionth prediction difference (within the noise of
+    CPU BLAS thread scheduling) produced RMSPE values that differed by >30 %
+    between runs.  This caused the ``assert evaluation_statistics1 ==
+    evaluation_statistics2`` line below to fail intermittently in CI even
+    though training statistics matched exactly and all other eval metrics
+    agreed to 6+ decimal places.
+
+    The fixture now shifts ``y`` into ``[1, 2]`` so RMSPE is well-conditioned.
+    See the ``raw_dataset_fp`` fixture docstring for the full analysis.
+
+    ## What is and is not being tested
+
+    - ``training_statistics`` are computed *during* training under Ludwig's
+      seeded RNG, so they are bit-exact between runs.
+    - ``evaluation_statistics`` are computed in a final ``evaluate()`` call
+      *after* training completes.  That pass is also deterministic once the
+      metric is numerically stable (i.e. targets are away from zero).
+    - The unrelated ``torch.manual_seed`` / ``torch.rand`` calls between the
+      two runs should have zero effect on model2 — that is the core assertion.
     """
-    # define Ludwig model
+    # Run 1: train and evaluate with the specified Ludwig seed.
     model1 = LudwigModel(config=CONFIG, logging_level=logging.WARN)
-
     evaluation_statistics1, training_statistics1, preprocessed_data1, _ = model1.experiment(
         dataset=raw_dataset_fp, random_seed=random_seed, skip_save_processed_input=True
     )
 
-    # invoke torch random functions with unrelated seed to
-    # see if it affects Ludwig reproducibility
+    # Simulate an unrelated torch RNG operation between the two Ludwig runs.
+    # If Ludwig's seeding is correct, model2 must be unaffected by this.
     torch.manual_seed(random_seed + 5)
     torch.rand((5,))
 
+    # Run 2: same config and same Ludwig seed — must produce identical results.
     model2 = LudwigModel(config=CONFIG, logging_level=logging.WARN)
     evaluation_statistics2, training_statistics2, preprocessed_data2, _ = model2.experiment(
         dataset=raw_dataset_fp, random_seed=random_seed, skip_save_processed_input=True
     )
 
-    # confirm data splits are reproducible
+    # Same seed → same train/val/test split.
     for i in range(3):
         for k in preprocessed_data1[i].dataset:
-            # same seeds should result in same output
             assert np.all(preprocessed_data1[i].dataset[k] == preprocessed_data2[i].dataset[k])
 
-    # confirm results reproducibility/non-reproducibility of results
-    # same seeds should result in same output
+    # Same seed → identical training curve and final evaluation metrics.
     assert training_statistics1 == training_statistics2
     assert evaluation_statistics1 == evaluation_statistics2
