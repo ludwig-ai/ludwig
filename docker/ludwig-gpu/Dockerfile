@@ -9,7 +9,7 @@
 #   model serving
 #
 
-FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu24.04
+FROM nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04
 
 RUN apt-get -y update && DEBIAN_FRONTEND="noninteractive" apt-get -y install \
     python3.12 \

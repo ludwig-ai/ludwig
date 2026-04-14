@@ -23,7 +23,7 @@ jobs:
 
     # cancel in-progress runs for the same branch/tag
     concurrency:
-      group: docker-${{ matrix.docker-image }}-${{ github.head_ref || github.sha }}
+      group: docker-${{ matrix.docker-image }}-${{ inputs.ludwig_version || github.head_ref || github.sha }}
       cancel-in-progress: true
 
     strategy:
