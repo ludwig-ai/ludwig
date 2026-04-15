@@ -649,6 +649,36 @@ ecd:
         eta_min:
             expected_impact: 1
             ui_display_name: Eta Min
+        max_lr:
+            expected_impact: 2
+            ui_display_name: Max LR (OneCycleLR)
+        pct_start:
+            expected_impact: 2
+            ui_display_name: Pct Start (OneCycleLR)
+        div_factor:
+            expected_impact: 1
+            ui_display_name: Div Factor (OneCycleLR)
+        final_div_factor:
+            expected_impact: 1
+            ui_display_name: Final Div Factor (OneCycleLR)
+        inverse_sqrt_warmup_steps:
+            expected_impact: 2
+            ui_display_name: Inverse Sqrt Warmup Steps
+        polynomial_power:
+            expected_impact: 2
+            ui_display_name: Polynomial Power
+        polynomial_end_lr:
+            expected_impact: 1
+            ui_display_name: Polynomial End LR
+        wsd_warmup_fraction:
+            expected_impact: 2
+            ui_display_name: WSD Warmup Fraction
+        wsd_stable_fraction:
+            expected_impact: 2
+            ui_display_name: WSD Stable Fraction
+        wsd_decay_fraction:
+            expected_impact: 2
+            ui_display_name: WSD Decay Fraction
 gbm:
     learning_rate:
         commonly_used: true

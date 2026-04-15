@@ -66,7 +66,7 @@ def AugmentationDataclassField(
     if isinstance(default, bool):
         default = default_augmentations if default else []
 
-    class AugmentationContainerMarshmallowField(schema_utils.LudwigSchemaField):
+    class AugmentationContainerConfigField(schema_utils.SchemaField):
         """Custom field that deserializes a list for a valid augmentation config from the augmentation_registry and
         creates a corresponding JSON schema for external usage."""
 
@@ -124,7 +124,7 @@ def AugmentationDataclassField(
 
         return field(
             metadata={
-                "marshmallow_field": AugmentationContainerMarshmallowField(
+                "marshmallow_field": AugmentationContainerConfigField(
                     allow_none=False,
                     dump_default=dump_default,
                     load_default=load_default,

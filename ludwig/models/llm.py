@@ -10,7 +10,6 @@ from transformers import AutoConfig, GenerationConfig
 from ludwig.accounting.used_tokens import get_used_tokens_for_llm
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, MODEL_LLM, PREDICTIONS, TEXT, USED_TOKENS
 from ludwig.features.base_feature import ModuleWrapper, OutputFeature
-from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.features.text_feature import TextOutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
@@ -39,44 +38,6 @@ from ludwig.utils.torch_utils import reg_loss
 logger = logging.getLogger(__name__)
 
 
-class DictWrapper:
-    """Wrapper for a LudwigFeatureDict module that allows for iteration over keys.
-
-    The purpose of this class is to avoid exposing input and output features as modules of the LLM. This is because we
-    only wish to train the underlying model, and having these additional modules can confuse systems like DeepSpeed.
-    """
-
-    def __init__(self, obj: LudwigFeatureDict):
-        self.obj = obj
-
-    def get(self, key) -> torch.nn.Module:
-        return self.obj.get(key)
-
-    def set(self, key: str, module: torch.nn.Module) -> None:
-        self.obj.set(key, module)
-
-    def __len__(self) -> int:
-        return len(self.obj)
-
-    def __next__(self) -> None:
-        return next(iter(self.obj))
-
-    def __iter__(self) -> None:
-        return iter(self.obj.keys())
-
-    def keys(self) -> list[str]:
-        return self.obj.keys()
-
-    def values(self) -> list[torch.nn.Module]:
-        return self.obj.values()
-
-    def items(self) -> list[tuple[str, torch.nn.Module]]:
-        return self.obj.items()
-
-    def update(self, modules: dict[str, torch.nn.Module]) -> None:
-        self.obj.update(modules)
-
-
 class LLM(BaseModel):
     @staticmethod
     def type() -> str:
@@ -93,6 +54,7 @@ class LLM(BaseModel):
 
         self.config_obj = config_obj
         self._random_seed = random_seed
+        self._adapter_initialized = False
 
         self.model_name = self.config_obj.base_model
         self.model_config = AutoConfig.from_pretrained(
@@ -154,14 +116,19 @@ class LLM(BaseModel):
         )
 
         # Extract the decoder object for the forward pass
-        self._output_feature_decoder = ModuleWrapper(self.output_features.items()[0][1])
+        self._output_feature_decoder = ModuleWrapper(next(iter(self.output_features.values())))
 
         self.attention_masks = None
 
         clear_data_cache()
 
-    def create_feature_dict(self) -> DictWrapper:
-        return DictWrapper(LudwigFeatureDict())
+    def create_feature_dict(self) -> dict:
+        """Returns a plain dict instead of LudwigFeatureDict to avoid exposing input/output features as nn.Module
+        submodules of the LLM.
+
+        This prevents systems like DeepSpeed from picking them up as trainable modules.
+        """
+        return {}
 
     @contextlib.contextmanager
     def use_generation_config(self, generation_config_dict: dict[str, Any] | None = None):
@@ -195,8 +162,12 @@ class LLM(BaseModel):
         return self._output_feature_decoder.module
 
     def initialize_adapter(self):
-        """If an adapter config is provided, we want to wrap the model with a PEFT model for fine-tuning."""
-        if self.config_obj.adapter:
+        """If an adapter config is provided, wrap the model with a PEFT model for fine-tuning.
+
+        Guarded by _adapter_initialized to prevent double-wrapping when called multiple times (e.g. prepare_for_training
+        is called on every Trainer construction, including on resume).
+        """
+        if self.config_obj.adapter and not self._adapter_initialized:
             if self.config_obj.trainer.type != "finetune" and not self.config_obj.adapter.pretrained_adapter_weights:
                 raise ValueError(
                     "Adapter config was provided, but trainer type is not set to `finetune`. Either set the trainer to "
@@ -211,8 +182,17 @@ class LLM(BaseModel):
             self.model.print_trainable_parameters()
             logger.info("==================================================")
 
+            self._adapter_initialized = True
+
     def prepare_for_training(self):
-        # TODO: this implementation will not work if resuming from a previous checkpoint. Need to fix this.
+        """Prepare the model for training by setting up quantization and adapters.
+
+        Safe to call multiple times (e.g. when resuming from a checkpoint). Quantization is applied at model-load time
+        in __init__ via load_pretrained_from_config, so prepare_model_for_kbit_training only needs to cast non-quantized
+        layers to float32 and freeze the quantized base — both operations are idempotent. Adapter initialization is
+        guarded by _adapter_initialized so the PEFT wrapper is only created once; on resume the saved adapter weights
+        are subsequently loaded by the trainer via load_state_dict.
+        """
         if self.config_obj.quantization:
             self.prepare_for_quantized_training()
         self.initialize_adapter()
@@ -331,13 +311,31 @@ class LLM(BaseModel):
         ),
         mask=None,
     ) -> dict[str, torch.Tensor]:
-        """Generates tokens using the model."""
+        """Generate tokens using the model and extract structured predictions.
+
+        For each sample the method strips left-padding from the prompt, calls
+        ``model.generate`` with ``output_scores=True`` to obtain per-step
+        vocabulary logits, and passes both generated sequences and scores to
+        the decoder so real logits/probs can be computed.  An optional
+        constrained-decoding ``LogitsProcessorList`` is retrieved from the
+        decoder (used when ``constrain_to_vocabulary=True``).
+        """
         log_once(f"For generating text, using: {self.generation}")
         input_ids, _ = self._unpack_inputs(inputs)
+
+        # Retrieve an optional logits processor from the decoder (e.g. for
+        # constrained category generation). Returns None for text decoders.
+        decoder_obj = self.output_feature_decoder.decoder_obj
+        logits_processor = None
+        if hasattr(decoder_obj, "get_logits_processor"):
+            logits_processor = decoder_obj.get_logits_processor()
 
         with torch.no_grad():
             input_lengths = []
             sequences_list = []
+            # Per-sample generation scores: list of tuples of (vocab_size,) tensors.
+            generation_scores_list: list[tuple[torch.Tensor, ...]] = []
+
             for input_ids_sample in input_ids:
                 input_ids_sample_no_padding = remove_left_padding(input_ids_sample, self.tokenizer)
 
@@ -354,23 +352,36 @@ class LLM(BaseModel):
                 model_device = next(self.model.parameters()).device
                 input_ids_sample_no_padding = input_ids_sample_no_padding.to(model_device)
 
-                # Generate text using the model
-                model_outputs = self.model.generate(
+                generate_kwargs = dict(
                     input_ids=input_ids_sample_no_padding,
                     attention_mask=mask,
                     generation_config=self.generation,
                     return_dict_in_generate=True,
                     output_scores=True,
                 )
+                if logits_processor is not None:
+                    generate_kwargs["logits_processor"] = logits_processor
+
+                # Generate text using the model
+                model_outputs = self.model.generate(**generate_kwargs)
 
                 sequences_list.append(model_outputs.sequences[0])
 
-            # Extract the predictions, probabilities and logits from the model outputs
-            # through the forward pass of the output feature
+                # model_outputs.scores is a tuple of (1, vocab_size) tensors.
+                # Squeeze out the batch dim so each entry is (vocab_size,).
+                if model_outputs.scores is not None:
+                    sample_scores = tuple(s.squeeze(0) for s in model_outputs.scores)
+                else:
+                    sample_scores = ()
+                generation_scores_list.append(sample_scores)
+
+            # Extract predictions, probabilities and logits through the decoder.
+            # Pass generation scores so real logits/probs can be computed.
             outputs = self.output_feature_decoder.decoder_obj.forward(
                 sequences_list,
                 input_lengths,
                 self.max_new_tokens,
+                generation_scores=generation_scores_list,
             )
 
         return outputs
@@ -391,7 +402,7 @@ class LLM(BaseModel):
 
     def merge_and_unload(self, progressbar: bool = False) -> None:
         """This method merges the LoRa layers into the base model.  This is needed if someone wants to use the base
-        model as a standalone model.  The implementation calls merge_and_unload() of the underlying LoraModel class
+        model as a standalone model. The implementation calls merge_and_unload() of the underlying LoraModel class
         (in peft).
 
         Args:
@@ -422,7 +433,7 @@ class LLM(BaseModel):
         else:
             targets = None
 
-        assert list(inputs.keys()) == self.input_features.keys()
+        assert list(inputs.keys()) == list(self.input_features.keys())
 
         input_ids = self.get_input_ids(inputs)
         target_ids = self.get_target_ids(targets) if targets else None
@@ -443,7 +454,7 @@ class LLM(BaseModel):
         return outputs[self.config_obj.output_features[0].name].type(torch.int32)
 
     def update_metrics(self, targets, predictions):
-        """Updates the model's metrics given targets and predictions for zero-shot/few-shot."""
+        """Updates the model's metrics given targets and predictions for zero- shot/few-shot."""
         for of_name, of_obj in self.output_features.items():
             if isinstance(of_obj, TextOutputFeature):
                 # Align the target length with the predictions length to enable text metric evaluation.
@@ -463,7 +474,7 @@ class LLM(BaseModel):
         self.eval_additional_losses_metrics.update(additional_losses)
 
     def update_metrics_finetune_llm(self, targets, predictions):
-        """Updates the model's metrics given targets and predictions for fine-tuning."""
+        """Updates the model's metrics given targets and predictions for fine- tuning."""
         _targets, _predictions = targets, predictions
         for of_name, of_obj in self.output_features.items():
             if isinstance(of_obj, TextOutputFeature):

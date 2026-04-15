@@ -1,0 +1,77 @@
+model_type: ecd
+
+input_features:
+  - name: fixed_acidity
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: volatile_acidity
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: citric_acid
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: residual_sugar
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: chlorides
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: free_sulfur_dioxide
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: total_sulfur_dioxide
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: density
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: pH
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: sulphates
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: alcohol
+    type: number
+    preprocessing:
+      normalization: zscore
+
+output_features:
+  - name: quality
+    type: binary
+    decoder:
+      type: mlp_classifier
+      num_fc_layers: 1
+      output_size: 64
+      # Dropout must be > 0 for MC Dropout to produce meaningful variance.
+      dropout: 0.3
+      # mc_dropout_samples > 0 enables MC Dropout at inference time.
+      # Ludwig runs mc_dropout_samples stochastic forward passes (dropout enabled),
+      # returns the mean probability as the prediction, and adds an 'uncertainty'
+      # column to the output — the variance of the probability across passes.
+      # Reference: Gal & Ghahramani, "Dropout as a Bayesian Approximation", ICML 2016.
+      mc_dropout_samples: 20
+    loss:
+      type: binary_weighted_cross_entropy
+
+combiner:
+  type: concat
+  num_fc_layers: 2
+  output_size: 128
+  # Dropout in the combiner also contributes to stochastic variation in MC Dropout.
+  dropout: 0.2
+
+trainer:
+  epochs: 30
+  learning_rate: 0.001
+  batch_size: 128

@@ -1,0 +1,14 @@
+model_type: ecd
+input_features:
+  - name: image_path
+    type: image
+    encoder:
+      type: dinov2
+      use_pretrained: true
+      trainable: true
+output_features:
+  - name: label
+    type: category
+trainer:
+  epochs: 5
+  learning_rate: 0.0001

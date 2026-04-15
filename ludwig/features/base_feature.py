@@ -119,10 +119,10 @@ class BaseFeatureMixin(ABC):
 
 @dataclass
 class ModuleWrapper:
-    """Used to prevent the PredictModule from showing up an attribute on the feature module.
+    """Used to prevent the PredictModule from showing up as an attribute on the feature module.
 
-    This is necessary to avoid inflight errors from DeepSpeed. These errors occur when DeepSpeed believes that a param
-    is still in the process of being processed asynchronously (allgathered, etc.).
+    This is necessary to avoid inflight errors from some distributed strategies that may believe a param is still in the
+    process of being processed asynchronously (allgathered, etc.).
     """
 
     module: torch.nn.Module
@@ -459,6 +459,18 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             metric_fn.update(predictions[prediction_key].detach(), targets)
 
     def get_metrics(self):
+        # NOTE: do NOT wrap metric_fn.compute() in an explicit sync_context() call here.
+        #
+        # torchmetrics wraps every compute() internally in sync_context().  Ludwig overrides
+        # LudwigMetric.sync_context() to fall back to torch.distributed.gather_all_tensors
+        # when the registered Ludwig strategy provides no gather function but
+        # torch.distributed is already initialised (the Ray TorchTrainer / eval_fn case).
+        #
+        # Adding a manual outer sync_context() would cause torchmetrics to see
+        # _is_synced=True when its own inner sync_context() runs, raising:
+        #   TorchMetricsUserError: The Metric has already been synced.
+        #
+        # See LudwigMetric.sync_context() in metric_modules.py for the full explanation.
         metric_vals = {}
         for metric_name, metric_fn in self._metric_functions.items():
             try:

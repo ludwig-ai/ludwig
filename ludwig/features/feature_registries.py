@@ -16,6 +16,7 @@ from typing import Any, TYPE_CHECKING
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
+    ANOMALY,
     AUDIO,
     BAG,
     BINARY,
@@ -31,6 +32,7 @@ from ludwig.constants import (
     TIMESERIES,
     VECTOR,
 )
+from ludwig.features.anomaly_feature import AnomalyFeatureMixin, AnomalyOutputFeature
 from ludwig.features.audio_feature import AudioFeatureMixin, AudioInputFeature
 from ludwig.features.bag_feature import BagFeatureMixin, BagInputFeature
 from ludwig.features.binary_feature import BinaryFeatureMixin, BinaryInputFeature, BinaryOutputFeature
@@ -74,6 +76,7 @@ def get_base_type_registry() -> dict:
         DATE: DateFeatureMixin,
         VECTOR: VectorFeatureMixin,
         CATEGORY_DISTRIBUTION: CategoryDistributionFeatureMixin,
+        ANOMALY: AnomalyFeatureMixin,
     }
 
 
@@ -109,6 +112,7 @@ def get_output_type_registry() -> dict:
         VECTOR: VectorOutputFeature,
         CATEGORY_DISTRIBUTION: CategoryDistributionOutputFeature,
         IMAGE: ImageOutputFeature,
+        ANOMALY: AnomalyOutputFeature,
     }
 
 

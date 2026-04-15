@@ -83,7 +83,16 @@ def BaseModelDataclassField():
             if os.path.isdir(model_name):
                 return model_name
             try:
-                AutoConfig.from_pretrained(model_name, trust_remote_code=True)
+                AutoConfig.from_pretrained(model_name, trust_remote_code=False)
+                return model_name
+            except ValueError:
+                # Model requires custom code (trust_remote_code). Allow it through validation
+                # since the user must explicitly set trust_remote_code: true in their config
+                # for it to actually load at training time.
+                logger.warning(
+                    f"Model `{model_name}` uses custom code on HuggingFace. Make sure to set "
+                    f"`trust_remote_code: true` in your config to use this model."
+                )
                 return model_name
             except OSError:
                 raise ConfigValidationError(
@@ -98,7 +107,7 @@ def BaseModelDataclassField():
             "CausalLM on huggingface. See: https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads"
         )
 
-    class BaseModelField(schema_utils.LudwigSchemaField):
+    class BaseModelField(schema_utils.SchemaField):
         def _serialize(self, value, attr, obj, **kwargs):
             if isinstance(value, str):
                 return value

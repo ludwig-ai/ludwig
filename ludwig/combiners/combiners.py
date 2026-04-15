@@ -57,8 +57,8 @@ class Handle:
     """This class provides an opaque handle to the input features, preventing them from being registered as state.
 
     This is important because we already reference the `input_features` as an attribute of ECD, so we don't need it to
-    appear twice in the state_dict. Furthermore, DeepSpeed will get terribly confused if have the input features set as
-    an attribute of the combiner, and lead to shape mismatch errors when we go to load a saved checkpoint.
+    appear twice in the state_dict. Some distributed strategies may get confused if the input features are set as an
+    attribute of the combiner, leading to shape mismatch errors when loading a saved checkpoint.
     """
 
     input_features: dict[str, "InputFeature"]

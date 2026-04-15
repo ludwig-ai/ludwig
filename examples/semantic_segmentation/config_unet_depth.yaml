@@ -1,0 +1,36 @@
+input_features:
+  - name: image_path
+    type: image
+    preprocessing:
+      num_processes: 4
+      height: 512
+      width: 512
+    encoder:
+      type: unet
+
+output_features:
+  - name: mask_path
+    type: image
+    preprocessing:
+      num_processes: 4
+      height: 512
+      width: 512
+      num_classes: 32
+    decoder:
+      type: unet
+      num_stages: 4  # was hardcoded before, now configurable (try 2, 3, 4, 5)
+      num_fc_layers: 0
+      conv_norm: batch
+    loss:
+      type: softmax_cross_entropy
+
+combiner:
+  type: concat
+  num_fc_layers: 0
+
+trainer:
+  epochs: 100
+  early_stop: 10
+  batch_size: 4
+  max_batch_size: 4
+  learning_rate: 0.0001

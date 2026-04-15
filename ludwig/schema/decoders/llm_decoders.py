@@ -36,6 +36,18 @@ class BaseExtractorDecoderConfig(LudwigBaseConfig):
         description="Maximum number of new tokens that will be generated.",
     )
 
+    match_strategy: str = schema_utils.StringOptions(
+        options=["contains", "regex", "json_schema"],
+        default="contains",
+        allow_none=False,
+        description=(
+            "Strategy used to parse and validate the LLM's generated text. "
+            "'contains': substring matching (default). "
+            "'regex': match via a regular expression. "
+            "'json_schema': parse the output as JSON and validate the value."
+        ),
+    )
+
 
 @DeveloperAPI
 @register_decoder_config("text_extractor", [TEXT], model_types=[MODEL_LLM])
@@ -76,4 +88,12 @@ class CategoryExtractorDecoderConfig(BaseExtractorDecoderConfig, BaseDecoderConf
         default="",
         allow_none=True,
         description="The label to use if the parser fails to parse the input.",
+    )
+
+    constrain_to_vocabulary: bool = schema_utils.Boolean(
+        default=False,
+        description=(
+            "When True, restrict generation to tokens that are valid prefixes of the category labels. "
+            "Implemented via a HuggingFace LogitsProcessor. Requires tokenizer='hf_tokenizer'."
+        ),
     )

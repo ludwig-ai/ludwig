@@ -1,0 +1,38 @@
+input_features:
+  - name: image_path
+    type: image
+    preprocessing:
+      num_processes: 4
+      height: 512
+      width: 512
+    encoder:
+      type: dinov2
+      pretrained_model_name_or_path: facebook/dinov2-base
+      use_pretrained: true
+      trainable: true
+
+output_features:
+  - name: mask_path
+    type: image
+    preprocessing:
+      num_processes: 4
+      height: 512
+      width: 512
+      num_classes: 32
+    decoder:
+      type: segformer
+      hidden_size: 256
+      dropout: 0.1
+    loss:
+      type: softmax_cross_entropy
+
+combiner:
+  type: concat
+  num_fc_layers: 0
+
+trainer:
+  epochs: 50
+  early_stop: 10
+  batch_size: 4
+  max_batch_size: 4
+  learning_rate: 0.0001

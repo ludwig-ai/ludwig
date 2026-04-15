@@ -323,3 +323,27 @@ IMAGENET1K = "imagenet1k"
 AUGMENTATION = "augmentation"
 
 LUDWIG_SCHEMA_VALIDATION_POLICY = "LUDWIG_SCHEMA_VALIDATION_POLICY"
+
+# New loss function constants
+FOCAL_LOSS = "focal"
+DICE_LOSS = "dice"
+LOVASZ_SOFTMAX_LOSS = "lovasz_softmax"
+NT_XENT_LOSS = "nt_xent"
+POLY_LOSS = "poly"
+SPARSEMAX_LOSS = "sparsemax"
+ENTMAX15_LOSS = "entmax15"
+
+
+# Open-set recognition constants
+ENTROPIC_OPEN_SET = "entropic_open_set"
+OBJECTOSPHERE = "objectosphere"
+
+# Anomaly detection constants
+ANOMALY = "anomaly"
+ANOMALY_SCORE = "anomaly_score"
+DEEP_SVDD = "deep_svdd"
+DEEP_SAD = "deep_sad"
+DROCC = "drocc"
+F1_MAX = "f1_max"
+ANOMALY_AUROC = "anomaly_auroc"
+UNCERTAINTY = "uncertainty"  # MC Dropout uncertainty output key

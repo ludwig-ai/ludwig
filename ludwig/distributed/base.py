@@ -23,11 +23,11 @@ if TYPE_CHECKING:
 
 
 class DistributedStrategy(ABC):
-    """Interface that wraps a distributed training framework (DDP, FSDP, DeepSpeed).
+    """Interface that wraps a distributed training framework.
 
     Distributed strategies modify the model and/or optimizer to coordinate gradient updates among multiple workers
-    running in parallel. In most cases, these are using collective communication libraries pass messages between
-    processes.
+    running in parallel. The primary implementation is AccelerateStrategy, which uses HuggingFace Accelerate to provide
+    a unified abstraction for DDP, FSDP, and DeepSpeed.
     """
 
     @abstractmethod

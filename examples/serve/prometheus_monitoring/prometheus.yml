@@ -1,0 +1,8 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'ludwig'
+    static_configs:
+      - targets: ['ludwig-serve:8000']
+    metrics_path: '/metrics'
