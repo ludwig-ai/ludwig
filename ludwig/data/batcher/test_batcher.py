@@ -40,8 +40,8 @@ def test_pandas_size():
     assert training_set.size == len(df)
 
     # Check if string loading works as well
-    # data[0].data_hdf5_fp is the string filepath to the cached data from preprocessing
-    data_from_str = PandasDataset(data[0].data_hdf5_fp, data[0].features, None)
+    # data[0].data_cache_fp is the string filepath to the cached data from preprocessing
+    data_from_str = PandasDataset(data[0].data_cache_fp, data[0].features, None)
     assert data_from_str.size == len(df)
 
 
@@ -92,8 +92,8 @@ def test_pandas_batcher_use_all_samples():
 
     # Check if string loading works as well
     batches = []
-    # data[0].data_hdf5_fp is the string filepath to the cached data from preprocessing
-    data_from_str = PandasDataset(data[0].data_hdf5_fp, data[0].features, None)
+    # data[0].data_cache_fp is the string filepath to the cached data from preprocessing
+    data_from_str = PandasDataset(data[0].data_cache_fp, data[0].features, None)
     features = data_from_str.dataset.keys()
 
     with data_from_str.initialize_batcher(batch_size=1) as batcher:
