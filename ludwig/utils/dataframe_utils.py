@@ -62,7 +62,19 @@ def unflatten_df(df: DataFrame, column_shapes: dict[str, tuple], df_engine: Data
 
 @DeveloperAPI
 def to_numpy_dataset(df: DataFrame, backend: Optional["Backend"] = None) -> dict[str, np.ndarray]:  # noqa: F821
-    """Returns a dictionary of numpy arrays, keyed by the columns of the given dataframe."""
+    """Returns a dictionary of numpy arrays, keyed by the columns of the given dataframe.
+
+    Also accepts a dict of numpy arrays (returned as-is after ensuring values are numpy arrays).
+    """
+    # If already a dict (e.g., from _load_parquet), ensure values are numpy arrays and return
+    if isinstance(df, dict):
+        dataset = {}
+        for k, v in df.items():
+            if not isinstance(v, np.ndarray):
+                v = np.array(v)
+            dataset[k] = v
+        return dataset
+
     # Compute Dask DataFrames to pandas first to avoid issues with extension dtypes
     # (e.g. TensorDtype) that Dask-expr's metadata system cannot handle.
     if backend and is_dask_backend(backend):

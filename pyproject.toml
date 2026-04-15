@@ -46,6 +46,7 @@ dependencies = [
     "absl-py",
     "kaggle",
     "requests>=2.28",
+    "py-cpuinfo",
     "fsspec[http]",
     "dataclasses-json",
     "jsonschema>=4.17",

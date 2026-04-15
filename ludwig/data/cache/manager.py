@@ -83,8 +83,15 @@ class DatasetCache:
     def delete(self):
         for fname in self.cache_map.values():
             if path_exists(fname):
-                # Parquet entries in the cache_ma can be pointers to directories.
+                # Parquet entries in the cache_map can be pointers to directories.
                 delete(fname, recursive=True)
+                # Also clean up shapes sidecar files (*.shapes.json) written alongside Parquet caches
+                if fname.endswith(".parquet"):
+                    import os
+
+                    shapes_fp = os.path.splitext(fname)[0] + ".shapes.json"
+                    if path_exists(shapes_fp):
+                        delete(shapes_fp)
 
     def get_cached_obj_path(self, cached_obj_name: str) -> str:
         return self.cache_map.get(cached_obj_name)

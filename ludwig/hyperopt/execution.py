@@ -1104,6 +1104,9 @@ class _LazyRegistry(dict):
     def __contains__(self, key):
         return key in self._lazy or super().__contains__(key)
 
+    def keys(self):
+        return list(super().keys()) + list(self._lazy.keys())
+
 
 executor_registry = _LazyRegistry({"ray": RayTuneExecutor}, {"optuna": _get_optuna_executor})
 
