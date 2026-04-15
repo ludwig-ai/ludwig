@@ -9,21 +9,35 @@
 #   model serving
 #
 
-FROM pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel
+FROM nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04
 
 RUN apt-get -y update && DEBIAN_FRONTEND="noninteractive" apt-get -y install \
+    python3.12 \
+    python3.12-venv \
+    python3.12-dev \
     git \
     libsndfile1 \
     cmake \
     ffmpeg \
     sox \
     libsox-dev
+
+RUN python3.12 -m venv /opt/ludwig-venv
+ENV PATH="/opt/ludwig-venv/bin:$PATH"
 RUN pip install -U pip
+
+ARG LUDWIG_VERSION
 
 WORKDIR /ludwig
 
+RUN pip install --no-cache-dir torch==2.6.0 torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu124
+
 COPY . .
-RUN pip install --no-cache-dir '.[full]'
+RUN if [ -n "${LUDWIG_VERSION}" ]; then \
+      pip install --no-cache-dir "ludwig[full]==${LUDWIG_VERSION}"; \
+    else \
+      pip install --no-cache-dir '.[full]'; \
+    fi
 
 WORKDIR /data
 

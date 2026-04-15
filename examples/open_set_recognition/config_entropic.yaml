@@ -1,0 +1,28 @@
+# Entropic Open-Set classifier (Dhamija et al., NeurIPS 2018).
+#
+# Training set must include background/unknown samples labelled with the
+# background class.  For known samples the loss is standard cross-entropy;
+# for background samples the loss maximises output entropy (reduces max-prob).
+#
+# background_class: integer index of the background class in Ludwig's
+# vocabulary for this feature.  Inspect training_set_metadata.json after
+# a first training run to find the correct index for your dataset.
+
+model_type: ecd
+
+input_features:
+  - name: feature_1
+    type: number
+  - name: feature_2
+    type: number
+
+output_features:
+  - name: label
+    type: category
+    loss:
+      type: entropic_open_set
+      background_class: 4   # adjust to match your vocabulary index
+
+trainer:
+  epochs: 50
+  learning_rate: 0.001

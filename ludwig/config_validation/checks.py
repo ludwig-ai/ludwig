@@ -482,11 +482,7 @@ def check_llm_finetuning_trainer_config(config: "ModelConfig"):  # noqa: F821
 
 @register_config_check
 def check_llm_finetuning_backend_config(config: "ModelConfig"):  # noqa: F821
-    """Checks that the LLM finetuning using Ray is configured correctly.
-
-    DDP strategy is not supported for LLM finetuning because it leads to OOMs since the model is large and DDP strategy
-    requires a copy of the model on each GPU.
-    """
+    """Checks that the LLM finetuning using Ray is configured correctly."""
     if config.model_type != MODEL_LLM:
         return
 
@@ -503,12 +499,12 @@ def check_llm_finetuning_backend_config(config: "ModelConfig"):  # noqa: F821
         return
 
     backend = config.backend
-    if not hasattr(backend.trainer, "strategy") or backend.trainer.strategy != "deepspeed":
-        raise ConfigValidationError("LLM finetuning with Ray requires the DeepSpeed strategy.")
+    if not hasattr(backend.trainer, "strategy") or backend.trainer.strategy != "accelerate":
+        raise ConfigValidationError("LLM finetuning with Ray requires the Accelerate strategy.")
 
-    # Deepspeed requires GPU
+    # Distributed LLM finetuning requires GPU
     if not backend.trainer.use_gpu or backend.trainer.resources_per_worker.GPU < 1:
-        raise ConfigValidationError("LLM finetuning with DeepSpeed requires GPU.")
+        raise ConfigValidationError("LLM finetuning with distributed training requires GPU.")
 
 
 @register_config_check

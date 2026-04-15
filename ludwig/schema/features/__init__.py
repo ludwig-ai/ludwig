@@ -1,3 +1,4 @@
+import ludwig.schema.features.anomaly_feature
 import ludwig.schema.features.audio_feature
 import ludwig.schema.features.bag_feature
 import ludwig.schema.features.binary_feature

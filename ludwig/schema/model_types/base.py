@@ -91,6 +91,14 @@ class ModelConfig(schema_utils.LudwigBaseConfig, ABC):
 
         config = upgrade_config_dict_to_latest_version(config)
 
+        # Default combiner to ft_transformer for 3+ input features (better accuracy)
+        if (
+            "combiner" not in config
+            and config.get("model_type", "ecd") == "ecd"
+            and len(config.get(INPUT_FEATURES, [])) >= 3
+        ):
+            config["combiner"] = {"type": "ft_transformer"}
+
         # Use sanitized feature names.
         # NOTE: This must be kept consistent with build_dataset()
         for input_feature in config[INPUT_FEATURES]:

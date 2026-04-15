@@ -861,3 +861,40 @@ def _update_old_image_preprocessing(feature_config: FeatureConfigDict):
     if not preprocessing:
         return
     preprocessing["standardize_image"] = preprocessing.get("standardize_image")
+
+
+@register_config_transformation("0.11", ["input_features"])
+def _upgrade_removed_text_encoders(feature: FeatureConfigDict) -> FeatureConfigDict:
+    """Upgrade configs that reference removed text encoder types.
+
+    TransformerXL, CTRL, and FlauBERT encoders have been removed from Ludwig because they are
+    discontinued or superseded by other models (HuggingFace deprecated TransformerXL; CTRL has
+    no active community use; FlauBERT is superseded by CamemBERT and multilingual models like
+    XLM-RoBERTa). Configs using these types are automatically remapped to `auto_transformer`.
+
+    Note: the `pretrained_model_name_or_path` field must be set explicitly since `auto_transformer`
+    has no built-in default model name.
+    """
+    if feature.get(TYPE) != TEXT:
+        return feature
+
+    encoder = feature.get(ENCODER, {})
+    encoder_type = encoder.get(TYPE)
+
+    removed_encoder_mapping = {
+        "transformer_xl": "auto_transformer",
+        "ctrl": "auto_transformer",
+        "flaubert": "auto_transformer",
+    }
+
+    if encoder_type in removed_encoder_mapping:
+        replacement = removed_encoder_mapping[encoder_type]
+        warnings.warn(
+            f"Text encoder type '{encoder_type}' has been removed and is no longer supported. "
+            f"Remapping to '{replacement}'. You may need to set `pretrained_model_name_or_path` "
+            f"explicitly in the encoder config to specify the model to use.",
+            DeprecationWarning,
+        )
+        encoder[TYPE] = replacement
+
+    return feature

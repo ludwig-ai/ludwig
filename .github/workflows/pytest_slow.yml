@@ -47,8 +47,8 @@ jobs:
         run: |
           python --version
           pip --version
-          python -m pip install -U pip
-          pip install torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1
+          pip install uv
+          uv pip install --system torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1
           pip install '.[test]'
           pip list
         shell: bash

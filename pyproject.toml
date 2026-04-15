@@ -77,6 +77,7 @@ serve = [
     "httpx",
     "fastapi",
     "python-multipart",
+    "prometheus_client",
 ]
 viz = [
     "matplotlib>=3.4",
@@ -134,7 +135,6 @@ test = [
     "sqlalchemy",
     "bayesian-optimization",
     "flaml[blendsearch]",
-    "HEBO",
     "nevergrad",
     "optuna",
     "scikit-optimize",
@@ -142,6 +142,10 @@ test = [
     "hyperopt",
     "s3fs>=2022.8.2",
 ]
+
+[dependency-groups]
+dev = ["pre-commit", "ruff>=0.8"]
+docs = ["mkdocs", "mkdocs-material", "mkdocstrings[python]", "mike"]
 
 [project.scripts]
 ludwig = "ludwig.cli:main"

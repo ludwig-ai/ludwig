@@ -1,0 +1,29 @@
+model_type: llm
+base_model: meta-llama/Llama-3.1-8B
+
+adapter:
+  type: lora
+  r: 16
+  alpha: 32
+  dropout: 0.05
+
+trainer:
+  type: kto
+  epochs: 1
+  learning_rate: 5.0e-7
+  batch_size: 2
+  gradient_accumulation_steps: 8
+  beta: 0.1
+  desirable_weight: 1.0    # weight for chosen (positive) samples
+  undesirable_weight: 1.0  # weight for rejected (negative) samples
+
+input_features:
+  - name: prompt
+    type: text
+
+output_features:
+  - name: response
+    type: text
+
+backend:
+  type: local

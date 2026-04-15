@@ -26,7 +26,7 @@ def PreprocessingDataclassField(feature_type: str):
     Returns: Initialized dataclass field that converts an untyped dict with params to a preprocessing config.
     """
 
-    class PreprocessingMarshmallowField(schema_utils.LudwigSchemaField):
+    class PreprocessingConfigField(schema_utils.SchemaField):
         """Custom field that deserializes a dict for a valid preprocessing config from the preprocessing_registry
         and creates a corresponding JSON schema for external usage."""
 
@@ -67,7 +67,7 @@ def PreprocessingDataclassField(feature_type: str):
 
         return field(
             metadata={
-                "marshmallow_field": PreprocessingMarshmallowField(
+                "marshmallow_field": PreprocessingConfigField(
                     allow_none=False,
                     dump_default=dump_default,
                     load_default=load_default,

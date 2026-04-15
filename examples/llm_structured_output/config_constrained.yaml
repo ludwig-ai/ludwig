@@ -1,0 +1,29 @@
+model_type: llm
+base_model: Qwen/Qwen2-0.5B-Instruct
+
+prompt:
+  task: >
+    Classify the sentiment of the following text.
+    Respond with exactly one word: positive, negative, or neutral.
+
+input_features:
+  - name: text
+    type: text
+
+output_features:
+  - name: sentiment
+    type: text
+    decoder:
+      type: text_parser
+      # Regex constraint: only allow the three valid sentiment labels.
+      # The LLM's token sampling is restricted so it can only produce one
+      # of these strings, eliminating hallucinated or malformed outputs.
+      regex: "(positive|negative|neutral)"
+
+generation:
+  max_new_tokens: 10
+  temperature: 0.0
+  do_sample: false
+
+backend:
+  type: local

@@ -253,7 +253,7 @@ class BasePromptLearningConfig(BaseAdapterConfig):
 #         )
 
 
-# TODO(travis): fix prefix tuning and p-tuning to work with DDP
+# TODO(travis): fix prefix tuning and p-tuning to work with distributed training
 # @DeveloperAPI
 # @register_adapter("prefix_tuning")
 # class PrefixTuningConfig(BasePromptLearningConfig):

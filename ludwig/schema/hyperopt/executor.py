@@ -74,7 +74,7 @@ class ExecutorConfig(schema_utils.LudwigBaseConfig):
 
 @DeveloperAPI
 def ExecutorDataclassField(description: str, default: dict = {}):
-    class ExecutorMarshmallowField(schema_utils.LudwigSchemaField):
+    class ExecutorConfigField(schema_utils.SchemaField):
         def _deserialize(self, value, attr, data, **kwargs):
             if isinstance(value, dict):
                 try:
@@ -101,7 +101,7 @@ def ExecutorDataclassField(description: str, default: dict = {}):
 
     return field(
         metadata={
-            "marshmallow_field": ExecutorMarshmallowField(
+            "marshmallow_field": ExecutorConfigField(
                 allow_none=False,
                 load_default=load_default,
                 dump_default=dump_default,

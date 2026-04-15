@@ -1,0 +1,44 @@
+model_type: ecd
+
+input_features:
+  - name: sensor_a
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: sensor_b
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: sensor_c
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: timestamp_hour
+    type: number
+    preprocessing:
+      normalization: zscore
+
+output_features:
+  - name: anomaly
+    type: anomaly
+    loss:
+      type: deep_sad
+      # eta: weight for the labeled anomaly repulsion term.
+      # Labeled anomalies (target=1 in the dataset) are pushed away from the hypersphere
+      # centre while normal/unlabeled samples are pulled toward it.
+      eta: 1.0
+
+trainer:
+  epochs: 20
+  learning_rate: 0.001
+
+combiner:
+  type: concat
+  fc_layers:
+    - output_size: 64
+    - output_size: 32
+
+# Deep SAD is semi-supervised: include a small fraction of labeled anomaly rows
+# in the training set with the anomaly column set to 1. All other training rows
+# should have anomaly=0 (normal) or anomaly=-1 (unlabeled/ignored).
+# labeled_anomalies_ratio: 0.1  # approximately 10% of training rows are labeled anomalies

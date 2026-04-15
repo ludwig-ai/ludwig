@@ -118,6 +118,56 @@ Classifier:
             The default choice (`xavier_uniform`) is a suitable starting point for
             most tasks.
         ui_display_name: Layer Weights Initializer
+MLPClassifier:
+    type:
+        short_description:
+            Multi-layer perceptron classifier decoder.
+        long_description:
+            The MLPClassifier decoder stacks one or more fully-connected hidden layers
+            (each of configurable size, activation, and dropout) before a final linear
+            projection to class logits. Use this when the combiner output benefits from
+            additional non-linear transformation before the classification head. When
+            num_fc_layers=0 it is equivalent to the standard Classifier decoder. Supports
+            optional temperature-scaling calibration (Guo et al., ICML 2017) and MC Dropout
+            uncertainty estimation (Gal & Ghahramani, ICML 2016).
+        expected_impact: 2
+    num_fc_layers:
+        expected_impact: 3
+        ui_display_name: Number of Hidden Layers
+    output_size:
+        expected_impact: 3
+        ui_display_name: Hidden Layer Size
+    activation:
+        expected_impact: 2
+        ui_display_name: Activation
+    dropout:
+        expected_impact: 3
+        ui_display_name: Dropout
+    input_size:
+        other_information: Internal Only
+        internal_only: true
+        related_parameters:
+            - "No"
+        ui_display_name: Not Displayed
+    num_classes:
+        other_information: Internal Only
+        internal_only: true
+        ui_display_name: Not Displayed
+    use_bias:
+        expected_impact: 1
+        ui_display_name: Use Bias
+    weights_initializer:
+        expected_impact: 1
+        ui_display_name: Layer Weights Initializer
+    bias_initializer:
+        expected_impact: 1
+        ui_display_name: Bias Initializer
+    calibration:
+        expected_impact: 2
+        ui_display_name: Calibration Method
+    mc_dropout_samples:
+        expected_impact: 2
+        ui_display_name: MC Dropout Samples
 Projector:
     type:
         short_description:
@@ -538,3 +588,116 @@ UNetDecoder:
             data preprocessing.
         internal_only: true
         ui_display_name: NOT DISPLAYED
+    num_stages:
+        short_description: Number of up-sampling stages in the UNet decoder.
+        long_description:
+            Controls how many encoder/decoder stage pairs are built. The input
+            image dimensions must be divisible by 2^num_stages. Larger values
+            allow the network to capture features at more spatial scales but
+            require more memory and compute.
+        expected_impact: 2
+        ui_display_name: Number of Stages
+SegFormerDecoder:
+    type:
+        short_description: Lightweight MLP decoder head for semantic segmentation.
+        long_description:
+            A simple all-MLP decoder head inspired by the SegFormer architecture
+            (Xie et al., NeurIPS 2021). Takes a single feature map from the combiner,
+            projects it through MLP layers, and bilinearly upsamples to the target
+            output resolution. Efficient and well-suited for transformer encoder
+            backbones.
+        compute_tier: 1
+    hidden_size:
+        expected_impact: 2
+        ui_display_name: MLP Hidden Size
+    dropout:
+        expected_impact: 1
+        ui_display_name: Dropout
+    height:
+        default_value_reasoning:
+            Computed internally, automatically, based on image data preprocessing.
+        internal_only: true
+        ui_display_name: NOT DISPLAYED
+    width:
+        default_value_reasoning:
+            Computed internally, automatically, based on image data preprocessing.
+        internal_only: true
+        ui_display_name: NOT DISPLAYED
+    input_size:
+        other_information: Internal Only
+        internal_only: true
+        related_parameters:
+            - "No"
+        ui_display_name: Not Displayed
+    num_classes:
+        default_value_reasoning:
+            Computed internally, automatically, based on image data preprocessing.
+        internal_only: true
+        ui_display_name: NOT DISPLAYED
+    num_channels:
+        default_value_reasoning:
+            Computed internally, automatically, based on image data preprocessing.
+        internal_only: true
+        ui_display_name: NOT DISPLAYED
+FPNDecoder:
+    type:
+        short_description: Feature Pyramid Network decoder for multi-scale segmentation.
+        long_description:
+            A Feature Pyramid Network (FPN) decoder (Lin et al., CVPR 2017) that builds
+            a multi-scale feature pyramid using lateral connections and a top-down pathway.
+            All pyramid levels are upsampled to the finest scale and merged, then a 1x1
+            convolution produces the final segmentation logits. Well-suited for detecting
+            and segmenting objects at multiple scales.
+        compute_tier: 2
+    num_channels:
+        short_description: Number of channels in each FPN level.
+        long_description:
+            All feature maps in the pyramid are projected to this many channels via 1x1
+            convolutions before the top-down merging pass. Larger values increase model
+            capacity but also memory and compute cost.
+        expected_impact: 2
+        ui_display_name: FPN Channels
+    num_levels:
+        short_description: Number of pyramid levels to build.
+        long_description:
+            Controls how many lateral plus top-down stages are applied. More levels capture
+            coarser-scale context but require more parameters. Typical range is 2-5.
+        expected_impact: 2
+        ui_display_name: Number of FPN Levels
+    height:
+        default_value_reasoning:
+            Computed internally, automatically, based on image data preprocessing.
+        internal_only: true
+        ui_display_name: NOT DISPLAYED
+    width:
+        default_value_reasoning:
+            Computed internally, automatically, based on image data preprocessing.
+        internal_only: true
+        ui_display_name: NOT DISPLAYED
+    input_size:
+        other_information: Internal Only
+        internal_only: true
+        related_parameters:
+            - "No"
+        ui_display_name: Not Displayed
+    num_classes:
+        default_value_reasoning:
+            Computed internally, automatically, based on image data preprocessing.
+        internal_only: true
+        ui_display_name: NOT DISPLAYED
+AnomalyDecoder:
+    type:
+        short_description:
+            Computes squared distance to hypersphere center as anomaly score.
+        long_description:
+            The AnomalyDecoder computes ||z - c||^2 as the anomaly score, where z is the
+            encoder/combiner output and c is the hypersphere center initialized after the
+            first epoch as the mean of all encoder outputs. Implements the geometric core
+            of Deep SVDD (Ruff et al., ICML 2018).
+        expected_impact: 0
+    input_size:
+        other_information: Internal Only
+        internal_only: true
+        related_parameters:
+            - "No"
+        ui_display_name: Not Displayed

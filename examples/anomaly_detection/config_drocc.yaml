@@ -1,0 +1,41 @@
+model_type: ecd
+
+input_features:
+  - name: sensor_a
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: sensor_b
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: sensor_c
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: timestamp_hour
+    type: number
+    preprocessing:
+      normalization: zscore
+
+output_features:
+  - name: anomaly
+    type: anomaly
+    loss:
+      type: drocc
+      # perturbation_strength: magnitude of adversarial perturbations applied to prevent
+      # hypersphere collapse (all representations converging to center c).
+      # Typical range: 0.01–0.5. Increase if the model collapses early.
+      perturbation_strength: 0.1
+      # num_perturbation_steps: gradient ascent steps for generating each perturbation.
+      num_perturbation_steps: 5
+
+trainer:
+  epochs: 20
+  learning_rate: 0.001
+
+combiner:
+  type: concat
+  fc_layers:
+    - output_size: 64
+    - output_size: 32
