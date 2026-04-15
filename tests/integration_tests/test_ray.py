@@ -232,6 +232,25 @@ def run_preprocessing(
 
 
 def check_preprocessed_df_equal(df1, df2):
+    # Ray's Dask-backed compute() path (Ray dataset -> to_dask) does not preserve the
+    # source row index, so the ray-produced and local-produced frames may list the same
+    # rows in a different order. Re-align them by sorting on every scalar column before
+    # comparing row-wise. Scalar columns are sufficient to uniquely order the random test
+    # data; object columns containing ndarrays (vector / audio / image) are not sortable
+    # and are excluded from the sort key.
+    def _sortable_columns(df):
+        cols = []
+        for c in df.columns:
+            sample = df[c].iloc[0] if len(df[c]) else None
+            if isinstance(sample, np.ndarray):
+                continue
+            cols.append(c)
+        return cols
+
+    sort_cols = _sortable_columns(df1)
+    if sort_cols:
+        df1 = df1.sort_values(sort_cols, kind="stable").reset_index(drop=True)
+        df2 = df2.sort_values(sort_cols, kind="stable").reset_index(drop=True)
     for column in df1.columns:
         vals1 = df1[column].values
         vals2 = df2[column].values
