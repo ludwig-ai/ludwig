@@ -27,7 +27,7 @@ Key features:
 - ⚡ **Optimized for scale and efficiency:** automatic batch size selection, distributed training via [HuggingFace Accelerate](https://github.com/huggingface/accelerate), parameter efficient fine-tuning ([PEFT](https://github.com/huggingface/peft)) including LoRA, DoRA, and VeRA, 4-bit quantization (QLoRA, [torchao](https://github.com/pytorch/ao)), paged and 8-bit optimizers, sequence packing, and larger-than-memory datasets.
 - 📐 **Expert level control:** retain full control of your models down to the activation functions. Support for hyperparameter optimization, explainability, and rich metric visualizations.
 - 🧱 **Modular and extensible:** experiment with different model architectures, tasks, features, and modalities with just a few parameter changes in the config. Think building blocks for deep learning.
-- 🚢 **Engineered for production:** prebuilt [Docker](https://hub.docker.com/u/ludwigai) containers, native support for running with [Ray](https://www.ray.io/) on [Kubernetes](https://github.com/ray-project/kuberay), [vLLM](https://github.com/vllm-project/vllm) serving for LLMs, export models to [Torchscript](https://pytorch.org/docs/stable/jit.html) and [Triton](https://developer.nvidia.com/triton-inference-server), upload to [HuggingFace](https://huggingface.co/models) with one command, and auto-generated model cards and training reports.
+- 🚢 **Engineered for production:** prebuilt [Docker](https://hub.docker.com/u/ludwigai) containers, native support for running with [Ray](https://www.ray.io/) on [Kubernetes](https://github.com/ray-project/kuberay), [vLLM](https://github.com/vllm-project/vllm) serving for LLMs, export models to [SafeTensors](https://github.com/huggingface/safetensors), [`torch.export`](https://pytorch.org/docs/stable/export.html), or [ONNX](https://onnx.ai/), upload to [HuggingFace](https://huggingface.co/models) with one command, and auto-generated model cards and training reports.
 
 Ludwig is hosted by the
 [Linux Foundation AI & Data](https://lfaidata.foundation/).
@@ -284,10 +284,10 @@ if you have any questions.
   ludwig serve --model_path=/path/to/model
   ```
 
-  Ludwig supports exporting models to efficient Torchscript bundles.
+  Ludwig supports exporting trained models to [SafeTensors](https://github.com/huggingface/safetensors) (default), [`torch.export`](https://pytorch.org/docs/stable/export.html) `.pt2` bundles, or [ONNX](https://onnx.ai/) via the dynamo-based exporter.
 
   ```shell
-  ludwig export_torchscript -–model_path=/path/to/model
+  ludwig export_model --model_path=/path/to/model --output_path=exported/ --format=torch_export
   ```
 
 # 📚 Tutorials
