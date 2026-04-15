@@ -464,7 +464,7 @@ def _verify_lm_lora_finetuning_layers(
                 ) == expected_lora_num_features
 
 
-# TODO(arnav): p-tuning and prefix tuning have errors when enabled that seem to stem from DDP:
+# TODO(arnav): p-tuning and prefix tuning have errors when enabled that seem to stem from distributed training:
 #
 # prefix tuning:
 # Sizes of tensors must match except in dimension 1. Expected size 320 but got size 32 for tensor number 1 in the list.
@@ -477,8 +477,8 @@ def _verify_lm_lora_finetuning_layers(
     [
         pytest.param(LOCAL_BACKEND, id="local"),
         # TODO(Arnav): Re-enable once we can run tests on GPUs
-        # This is because fine-tuning requires Ray with the deepspeed strategy, and deepspeed
-        # only works with GPUs
+        # This is because fine-tuning requires Ray with a distributed strategy, and distributed
+        # training requires GPUs
         # pytest.param(RAY_BACKEND, id="ray"),
     ],
 )
@@ -793,8 +793,8 @@ quantization section from your Ludwig configuration."""
     [
         pytest.param(LOCAL_BACKEND, id="local"),
         # TODO: Re-enable once we can run tests on GPUs
-        # This is because fine-tuning requires Ray with the deepspeed strategy, and deepspeed
-        # only works with GPUs
+        # This is because fine-tuning requires Ray with a distributed strategy, and distributed
+        # training requires GPUs
         # pytest.param(RAY_BACKEND, id="ray"),
     ],
 )

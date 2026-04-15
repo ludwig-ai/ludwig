@@ -1,3 +1,4 @@
+import math
 from abc import ABC
 from dataclasses import field
 from typing import ClassVar
@@ -8,6 +9,24 @@ try:
     import bitsandbytes as bnb
 except Exception:
     bnb = None
+
+try:
+    from transformers.optimization import Adafactor as _TransformersAdafactor
+except Exception:
+    _TransformersAdafactor = None
+
+try:
+    from schedulefree import AdamWScheduleFree as _AdamWScheduleFree
+except Exception:
+    _AdamWScheduleFree = None
+
+try:
+    import soap as _soap_module
+
+    _SOAPOptimizer = getattr(_soap_module, "SOAP", None)
+except Exception:
+    _SOAPOptimizer = None
+
 import ludwig.schema.utils as schema_utils
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
@@ -479,30 +498,6 @@ class AdamaxOptimizerConfig(BaseOptimizerConfig):
     )
 
 
-# NOTE: keep ftrl and nadam optimizers out of registry:
-# @register_optimizer(name="ftrl")
-@DeveloperAPI
-class FtrlOptimizerConfig(BaseOptimizerConfig):
-    # optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Ftrl
-    type: str = schema_utils.ProtectedString("ftrl")
-
-    learning_rate_power: float = schema_utils.FloatRange(
-        default=-0.5, max=0, parameter_metadata=OPTIMIZER_METADATA["learning_rate_power"]
-    )
-
-    initial_accumulator_value: float = schema_utils.NonNegativeFloat(
-        default=0.1, parameter_metadata=OPTIMIZER_METADATA["initial_accumulator_value"]
-    )
-
-    l1_regularization_strength: float = schema_utils.NonNegativeFloat(
-        default=0.0, parameter_metadata=OPTIMIZER_METADATA["l1_regularization_strength"]
-    )
-
-    l2_regularization_strength: float = schema_utils.NonNegativeFloat(
-        default=0.0, parameter_metadata=OPTIMIZER_METADATA["l2_regularization_strength"]
-    )
-
-
 @DeveloperAPI
 @register_optimizer(name="nadam")
 class NadamOptimizerConfig(BaseOptimizerConfig):
@@ -824,6 +819,372 @@ if bnb is not None:
             return True
 
 
+# ---------------------------------------------------------------------------
+# Modern optimizers
+# ---------------------------------------------------------------------------
+
+
+@DeveloperAPI
+@register_optimizer(name="radam")
+class RAdamOptimizerConfig(BaseOptimizerConfig):
+    """Rectified Adam (RAdam) optimizer config (Liu et al., 2020).
+
+    Paper: https://arxiv.org/abs/1908.03265
+
+    Convergence: Warms up the adaptive learning rate by computing an analytical
+    approximation to the variance of the second moment estimate. This eliminates the
+    need for an explicit warmup schedule: training is stable from step 1 even with a
+    large learning rate. Converges to the same quality as Adam but with a wider range
+    of valid learning rates.
+
+    Memory footprint: Same as Adam -- two moment buffers per parameter (~2x model size
+    in optimizer state).
+
+    When to use: Any setting where Adam is unstable early in training without warmup.
+    Especially useful for experimentation where you do not want to tune the warmup
+    duration. Drop-in replacement for Adam/AdamW with no warmup scheduler needed.
+
+    Common pitfalls: RAdam provides no benefit over well-warmed-up Adam in late training.
+    The rectification term switches off after the variance stabilises (around step ~5-6
+    at default beta2=0.999), so expect identical behaviour to Adam from that point on.
+    """
+
+    optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.RAdam
+    """Points to `torch.optim.RAdam`."""
+
+    type: str = schema_utils.ProtectedString("radam")
+    """Must be 'radam' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`."""
+
+    # Defaults from https://pytorch.org/docs/stable/generated/torch.optim.RAdam.html
+    betas: tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
+        default=(0.9, 0.999),
+        description="Coefficients used for computing running averages of gradient and its square.",
+        parameter_metadata=OPTIMIZER_METADATA["betas"],
+    )
+
+    eps: float = schema_utils.NonNegativeFloat(
+        default=1e-08,
+        description="Term added to the denominator to improve numerical stability.",
+        parameter_metadata=OPTIMIZER_METADATA["eps"],
+    )
+
+    weight_decay: float = schema_utils.NonNegativeFloat(
+        default=0.0,
+        description="Weight decay (L2 penalty).",
+        parameter_metadata=OPTIMIZER_METADATA["weight_decay"],
+    )
+
+
+@DeveloperAPI
+@register_optimizer(name="adafactor")
+class AdafactorOptimizerConfig(BaseOptimizerConfig):
+    """Adafactor optimizer config (Shazeer & Stern, 2018).
+
+    Paper: https://arxiv.org/abs/1805.09843
+    Implementation: `transformers.optimization.Adafactor`
+
+    Convergence: Factorizes the second moment matrix into row and column factors instead
+    of storing a full per-parameter tensor, dramatically reducing memory. Convergence is
+    comparable to Adam on large Transformer models but can be slightly slower to converge
+    on smaller tasks.
+
+    Memory footprint: Very low -- O(n+m) per parameter matrix (row + column factors)
+    instead of O(n*m). For a 1B parameter model this can save ~8 GB of optimizer state
+    versus Adam, making it the go-to optimizer when GPU memory is the bottleneck.
+
+    When to use: Training or fine-tuning very large language models (T5, LLaMA, GPT)
+    where Adam's two-moment buffers exceed available GPU memory. Enabled by default in
+    many Hugging Face T5 training recipes.
+
+    Common pitfalls: When `relative_step=True` (default) Adafactor computes its own
+    learning rate schedule -- do NOT combine with an external LR scheduler (set
+    `lr=None`). When `relative_step=False` you must pass an explicit `lr`. Setting
+    `scale_parameter=False` and `relative_step=False` with a manual `lr` is the
+    standard recipe for fine-tuning.
+    """
+
+    optimizer_class: ClassVar[torch.optim.Optimizer | None] = _TransformersAdafactor
+    """Points to `transformers.optimization.Adafactor` (None if transformers not installed)."""
+
+    type: str = schema_utils.ProtectedString("adafactor")
+    """Must be 'adafactor' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`."""
+
+    # Adafactor manages its own LR schedule when relative_step=True, so lr defaults to None.
+    lr: float | None = schema_utils.FloatRange(
+        default=None,
+        allow_none=True,
+        min=0.0,
+        description=(
+            "Learning rate. Set to None (default) when `relative_step=True` so that Adafactor manages "
+            "its own schedule. Must be provided when `relative_step=False`."
+        ),
+    )
+
+    scale_parameter: bool = schema_utils.Boolean(
+        default=True,
+        description=(
+            "If True, the learning rate is scaled by the root mean square of the parameters. "
+            "Should be True when `relative_step=True`."
+        ),
+    )
+
+    relative_step: bool = schema_utils.Boolean(
+        default=True,
+        description=(
+            "If True, a time-dependent learning rate is computed instead of using the external `lr`. "
+            "Do not combine with an external LR scheduler."
+        ),
+    )
+
+    warmup_init: bool = schema_utils.Boolean(
+        default=False,
+        description=(
+            "If True, the time-dependent learning rate is linearly increased at initialization. "
+            "Only effective when `relative_step=True`."
+        ),
+    )
+
+    def __post_init__(self):
+        if self.optimizer_class is None:
+            raise ImportError(
+                "The 'adafactor' optimizer requires the `transformers` package. "
+                "Install it with: pip install transformers"
+            )
+
+
+@DeveloperAPI
+@register_optimizer(name="schedule_free_adamw")
+class ScheduleFreeAdamWOptimizerConfig(BaseOptimizerConfig):
+    """Schedule-Free AdamW optimizer config (Defazio & Mishchenko, 2024).
+
+    Paper: https://arxiv.org/abs/2405.15682
+    Package: `schedulefree` (install with: pip install schedulefree)
+
+    Convergence: Eliminates the need for a learning rate scheduler by maintaining a
+    Polyak-Ruppert averaged iterate in addition to the standard momentum buffer. The
+    averaged iterate is used for evaluation while the momentum buffer drives the
+    optimization. Achieves performance comparable to or better than well-tuned
+    cosine/linear decay schedules on a wide range of tasks.
+
+    Memory footprint: Slightly higher than AdamW -- stores an extra averaged parameter
+    buffer (z), so ~3x model size in optimizer state (vs 2x for AdamW).
+
+    When to use: When you want to skip learning rate scheduler tuning entirely: no
+    cosine decay, no linear warmup schedule (beyond the built-in `warmup_steps`). Ideal
+    for rapid prototyping and hyperparameter sweeps where schedule tuning is expensive.
+    Also useful for online/continual learning without a fixed horizon.
+
+    Common pitfalls: Must call `optimizer.train()` before the training loop and
+    `optimizer.eval()` before evaluation/inference -- the model is in a different state
+    depending on which iterate (momentum vs averaged) is active. Forgetting these calls
+    leads to degraded evaluation metrics. The `warmup_steps` parameter is built into
+    the optimizer and replaces the external warmup scheduler.
+    """
+
+    optimizer_class: ClassVar[torch.optim.Optimizer | None] = _AdamWScheduleFree
+    """Points to `schedulefree.AdamWScheduleFree` (None if schedulefree not installed)."""
+
+    type: str = schema_utils.ProtectedString("schedule_free_adamw")
+    """Must be 'schedule_free_adamw' - corresponds to name in optimizer_registry."""
+
+    betas: tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
+        default=(0.9, 0.999),
+        description="Coefficients used for computing running averages of gradient and its square.",
+        parameter_metadata=OPTIMIZER_METADATA["betas"],
+    )
+
+    weight_decay: float = schema_utils.NonNegativeFloat(
+        default=0.0,
+        description="Weight decay (decoupled L2 penalty).",
+        parameter_metadata=OPTIMIZER_METADATA["weight_decay"],
+    )
+
+    warmup_steps: int = schema_utils.Integer(
+        default=0,
+        description=(
+            "Number of linear warmup steps built into the optimizer. "
+            "Replaces an external warmup scheduler -- do not combine with one."
+        ),
+    )
+
+    def __post_init__(self):
+        if self.optimizer_class is None:
+            raise ImportError(
+                "The 'schedule_free_adamw' optimizer requires the `schedulefree` package. "
+                "Install it with: pip install schedulefree"
+            )
+
+
+# ---------------------------------------------------------------------------
+# Muon: pure-Python Newton-Schulz implementation so no extra package required
+# ---------------------------------------------------------------------------
+
+
+class _MuonOptimizer(torch.optim.Optimizer):
+    """Muon -- Momentum + Orthogonalization via Newton-Schulz (Jordan et al., 2024).
+
+    Paper: https://arxiv.org/abs/2409.20325
+    """
+
+    _NS_COEFFS = (3.4445, -4.7750, 2.0315)
+
+    def __init__(self, params, lr=0.02, momentum=0.95, nesterov=True):
+        defaults = {"lr": lr, "momentum": momentum, "nesterov": nesterov}
+        super().__init__(params, defaults)
+
+    @torch.no_grad()
+    def _zeropower_via_newtonschulz5(self, G: torch.Tensor, steps: int = 5) -> torch.Tensor:
+        """Newton-Schulz iteration to approximate the orthogonal factor of G."""
+        assert G.ndim >= 2
+        a, b, c = self._NS_COEFFS
+        X = G.bfloat16() if G.dtype not in (torch.float16, torch.bfloat16) else G
+        X = X / (X.norm() + 1e-7)
+        transposed = X.shape[-2] < X.shape[-1]
+        if transposed:
+            X = X.mT
+        for _ in range(steps):
+            A = X @ X.mT
+            X = a * X + b * (A @ X) + c * (A @ A @ X)
+        if transposed:
+            X = X.mT
+        return X.to(G.dtype)
+
+    @torch.no_grad()
+    def step(self, closure=None):
+        loss = None
+        if closure is not None:
+            with torch.enable_grad():
+                loss = closure()
+
+        for group in self.param_groups:
+            lr = group["lr"]
+            momentum = group["momentum"]
+            nesterov = group["nesterov"]
+
+            for p in group["params"]:
+                if p.grad is None:
+                    continue
+                g = p.grad
+                state = self.state[p]
+                if len(state) == 0:
+                    state["momentum_buffer"] = torch.zeros_like(g)
+
+                buf = state["momentum_buffer"]
+                buf.mul_(momentum).add_(g)
+
+                if nesterov:
+                    update = g + momentum * buf
+                else:
+                    update = buf
+
+                if update.ndim >= 2:
+                    orig_shape = update.shape
+                    mat = update.view(orig_shape[0], -1)
+                    mat = self._zeropower_via_newtonschulz5(mat)
+                    scale = math.sqrt(max(mat.shape[-2], mat.shape[-1]))
+                    update = mat.view(orig_shape) * scale
+
+                p.add_(update, alpha=-lr)
+
+        return loss
+
+
+@DeveloperAPI
+@register_optimizer(name="muon")
+class MuonOptimizerConfig(BaseOptimizerConfig):
+    """Muon optimizer config -- Momentum + Orthogonalization via Newton-Schulz (Jordan et al., 2024).
+
+    Paper: https://arxiv.org/abs/2409.20325
+
+    Convergence: Applies Nesterov SGD momentum then orthogonalizes each parameter update
+    matrix via a fast Newton-Schulz iteration (5 steps). Keeps updates approximately
+    orthogonal for more isotropic parameter changes. Empirically outperforms AdamW on
+    large language model pre-training at equivalent compute.
+
+    Memory footprint: Low -- stores only one momentum buffer per parameter (~1x model
+    size), same as SGD with momentum. Significantly cheaper than Adam's two buffers.
+
+    When to use: Pre-training large Transformer language models where you want faster
+    convergence than AdamW at the same memory cost as SGD. Implemented in pure PyTorch
+    (no extra package required).
+
+    Common pitfalls: The NS iteration operates in bfloat16 by default for speed. The
+    default lr (0.02) is much higher than typical Adam lr (1e-3); always re-tune lr
+    when switching from Adam.
+    """
+
+    optimizer_class: ClassVar[torch.optim.Optimizer] = _MuonOptimizer
+    """Points to the built-in `_MuonOptimizer` implementation."""
+
+    type: str = schema_utils.ProtectedString("muon")
+    """Must be 'muon' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`."""
+
+    momentum: float = schema_utils.FloatRange(
+        default=0.95,
+        min=0.0,
+        max=1.0,
+        description="Momentum factor for Nesterov SGD applied before orthogonalization.",
+        parameter_metadata=OPTIMIZER_METADATA["momentum"],
+    )
+
+    nesterov: bool = schema_utils.Boolean(
+        default=True,
+        description=(
+            "If True, use Nesterov momentum (look-ahead gradient) before orthogonalization. "
+            "The original Muon paper uses Nesterov."
+        ),
+        parameter_metadata=OPTIMIZER_METADATA["nesterov"],
+    )
+
+
+if _SOAPOptimizer is not None:
+
+    @DeveloperAPI
+    @register_optimizer(name="soap")
+    class SOAPOptimizerConfig(BaseOptimizerConfig):
+        """SOAP optimizer config -- Shampoo as Adam's Preconditioner (Vyas et al., 2024).
+
+        Paper: https://arxiv.org/abs/2409.11321
+        Package: `soap-pytorch` (install with: pip install soap-pytorch)
+
+        Convergence: Maintains a Kronecker-factored (Shampoo-style) preconditioner for
+        each weight matrix and runs Adam in its eigenbasis. Converges faster than AdamW
+        in terms of iterations/tokens on large Transformer pre-training.
+
+        Memory footprint: High -- stores Kronecker factors (m x m) and (n x n) per weight
+        matrix (m, n) in addition to Adam's two moment buffers. 2-3x Adam's memory for
+        typical Transformer shapes.
+
+        When to use: Large-scale pre-training where compute is plentiful but wall-clock
+        time is at a premium.
+
+        Common pitfalls: The preconditioner update frequency trades off overhead vs
+        freshness; a frequency of 10-100 steps is typical. Not recommended for small
+        models where preconditioner overhead outweighs convergence gain.
+        """
+
+        optimizer_class: ClassVar[torch.optim.Optimizer] = _SOAPOptimizer
+        """Points to `soap.SOAP` from the `soap-pytorch` package."""
+
+        type: str = schema_utils.ProtectedString("soap")
+        """Must be 'soap' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`."""
+
+        betas: tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
+            default=(0.95, 0.95),
+            description=(
+                "Coefficients for the first and second Adam moment estimates run in the "
+                "Shampoo eigenbasis. Note: SOAP typically uses higher beta1 (0.95) than standard Adam."
+            ),
+            parameter_metadata=OPTIMIZER_METADATA["betas"],
+        )
+
+        weight_decay: float = schema_utils.NonNegativeFloat(
+            default=0.01,
+            description="Weight decay (decoupled L2 penalty, as in AdamW).",
+            parameter_metadata=OPTIMIZER_METADATA["weight_decay"],
+        )
+
+
 @DeveloperAPI
 def get_optimizer_conds():
     """Returns a JSON schema of conditionals to validate against optimizer types defined in
@@ -927,7 +1288,7 @@ def GradientClippingDataclassField(description: str, default: dict = {}):
     """
     allow_none = True
 
-    class GradientClippingMarshmallowField(schema_utils.LudwigSchemaField):
+    class GradientClippingConfigField(schema_utils.SchemaField):
         """Custom field class for gradient clipping.
 
         Deserializes a dict to a valid instance of `ludwig.modules.optimization_modules.GradientClippingConfig` and
@@ -972,7 +1333,7 @@ def GradientClippingDataclassField(description: str, default: dict = {}):
 
     return field(
         metadata={
-            "marshmallow_field": GradientClippingMarshmallowField(
+            "marshmallow_field": GradientClippingConfigField(
                 allow_none=allow_none,
                 load_default=load_default,
                 dump_default=dump_default,

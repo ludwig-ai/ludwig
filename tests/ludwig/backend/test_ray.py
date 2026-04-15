@@ -33,7 +33,7 @@ pytestmark = pytest.mark.distributed
                     "GPU": 1,
                 },
             ),
-            id="ddp",
+            id="accelerate",
             marks=pytest.mark.distributed,
         ),
     ],

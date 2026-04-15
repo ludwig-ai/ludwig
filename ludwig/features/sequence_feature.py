@@ -469,7 +469,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             if "idx2str" in metadata:
 
                 def idx2str(row):
-                    pred = row[predictions_col]
+                    pred = np.asarray(row[predictions_col])
                     length = metadata["max_sequence_length"]
                     return [
                         metadata["idx2str"][token] if token < len(metadata["idx2str"]) else UNKNOWN_SYMBOL

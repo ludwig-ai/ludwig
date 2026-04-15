@@ -42,11 +42,15 @@ from torchmetrics.text.rouge import ROUGEScore
 from ludwig.constants import (  # RESPONSE,
     ACCURACY,
     ACCURACY_MICRO,
+    ANOMALY,
+    ANOMALY_AUROC,
+    ANOMALY_SCORE,
     BINARY,
     BINARY_WEIGHTED_CROSS_ENTROPY,
     CATEGORY,
     CATEGORY_DISTRIBUTION,
     CORN,
+    F1_MAX,
     HITS_AT_K,
     HUBER,
     IGNORE_INDEX_TOKEN_ID,
@@ -119,13 +123,91 @@ class LudwigMetric(Metric, ABC):
         should_unsync: bool = True,
         distributed_available: Callable | None = jit_distributed_available,
     ) -> Generator:
-        """Override the behavior of this in the base class to support custom distributed strategies."""
+        """Cross-process metric-state synchronisation, hooked into torchmetrics' compute() flow.
+
+        ## How torchmetrics calls this
+
+        torchmetrics wraps every ``Metric.compute()`` call in a ``sync_context()`` (see
+        ``torchmetrics/metric.py::wrapped_func``).  That means **this method is invoked
+        automatically whenever ``compute()`` is called** — you do NOT need to call it
+        explicitly from ``get_metrics()`` or any other site.
+
+        ⚠️  Do NOT wrap ``compute()`` in a manual ``sync_context()`` call from the outside.
+        If the distributed fallback is active (see below), ``_is_synced`` will be set to
+        ``True`` by the first (inner) call and torchmetrics will raise::
+
+            TorchMetricsUserError: The Metric has already been synced.
+
+        when ``compute()`` then tries to call ``sync_context()`` again.  This was the exact
+        bug encountered when ``base_feature.get_metrics()`` was briefly changed to wrap
+        ``metric_fn.compute()`` in ``with metric_fn.sync_context()``.
+
+        ## Why we override the base-class implementation
+
+        Ludwig registers a *distributed strategy* (``LocalStrategy`` or
+        ``AccelerateStrategy``) via ``init_dist_strategy()``.  The base-class
+        ``sync_context()`` is unaware of Ludwig's strategy abstraction, so we override it
+        to ask the active strategy for a gather function.
+
+        * **AccelerateStrategy** — ``gather_all_tensors_fn()`` returns
+          ``torchmetrics.utilities.distributed.gather_all_tensors``, enabling proper
+          all-gather across ranks.
+        * **LocalStrategy** — ``gather_all_tensors_fn()`` returns ``None`` and
+          ``is_available`` returns ``False``.  This disables sync, which is correct for
+          single-process training.
+
+        ## The Ray TorchTrainer special case (the hard part)
+
+        ``eval_fn`` (``ludwig/backend/ray.py``) runs *inside a Ray TorchTrainer worker*.
+        TorchTrainer always calls ``torch.distributed.init_process_group()`` before
+        entering the worker function, so ``torch.distributed.is_initialized()`` is
+        ``True`` inside every ``eval_fn`` invocation, even though Ludwig has registered
+        ``LocalStrategy`` (not ``AccelerateStrategy``) for that function.
+
+        If we blindly used ``LocalStrategy.gather_all_tensors_fn() == None``, every worker
+        would compute metrics **only on its own data shard** and report independent (wrong)
+        values.  Only rank-0's results are written to the checkpoint, so with N workers
+        you'd get metrics computed on ~1/N of the dataset.
+
+        The fallback below detects this situation: when the registered strategy provides no
+        gather function **but** ``torch.distributed`` is already initialised, we fall back
+        to torchmetrics' native ``gather_all_tensors``.  This all-gathers the accumulator
+        state tensors across all workers before ``compute()`` runs, so the final metric
+        value reflects the **full** dataset.
+
+        ## Summary of the selection logic
+
+        1. Ask the registered Ludwig strategy for a gather function.
+        2. If the strategy provides one → use it.  (AccelerateStrategy path.)
+        3. If the strategy provides ``None`` **and** ``torch.distributed`` is initialised
+           → fall back to ``gather_all_tensors``.  (Ray TorchTrainer / eval_fn path.)
+        4. If the strategy provides ``None`` **and** ``torch.distributed`` is NOT
+           initialised → sync is a no-op.  (Single-process local training path.)
+        """
         dist_strategy = get_current_dist_strategy()
+        gather_fn = dist_strategy.gather_all_tensors_fn()
+        dist_available = dist_strategy.is_available
+
+        if gather_fn is None:
+            # LocalStrategy (and similar no-op strategies) return None for
+            # gather_all_tensors_fn.  When torch.distributed is initialized (e.g. inside a
+            # Ray TorchTrainer worker) we can use torchmetrics' built-in all-gather so that
+            # metric accumulator state is aggregated across all shards before compute().
+            import torch.distributed as _dist
+
+            if _dist.is_available() and _dist.is_initialized():
+                from torchmetrics.utilities.distributed import gather_all_tensors
+
+                gather_fn = gather_all_tensors
+                # Pass a callable (not a bool) so torchmetrics evaluates liveness at call
+                # time rather than capturing the value at context-manager entry.
+                dist_available = _dist.is_initialized
+
         self.sync(
-            dist_sync_fn=dist_strategy.gather_all_tensors_fn(),
+            dist_sync_fn=gather_fn,
             process_group=process_group,
             should_sync=should_sync,
-            distributed_available=dist_strategy.is_available,
+            distributed_available=dist_available,
         )
 
         yield
@@ -567,3 +649,87 @@ def get_best_function(metric: str) -> Callable:
         return min
     else:
         return max
+
+
+@register_metric(ANOMALY_AUROC, [ANOMALY], MAXIMIZE, ANOMALY_SCORE)
+class AnomalyAUROCMetric(LudwigMetric):
+    """AUROC for anomaly detection scores.
+
+    Computes area under the ROC curve between anomaly scores (higher = more anomalous) and binary ground-truth labels
+    (1=anomaly, 0=normal). The primary threshold-independent metric for anomaly detection quality. Requires labeled
+    validation/test data.
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.add_state("scores", default=[], dist_reduce_fx="cat")
+        self.add_state("labels", default=[], dist_reduce_fx="cat")
+
+    def update(self, preds: Tensor, target: Tensor) -> None:
+        self.scores.append(preds.detach().cpu().float())
+        self.labels.append(target.detach().cpu().float())
+
+    def compute(self) -> Tensor:
+        if not self.scores:
+            return torch.tensor(float("nan"))
+        scores = torch.cat(self.scores)
+        labels = torch.cat(self.labels)
+        if labels.unique().numel() < 2:
+            return torch.tensor(float("nan"))
+        try:
+            from torchmetrics.functional.classification import binary_auroc
+
+            return binary_auroc(scores, labels.long())
+        except Exception:
+            return torch.tensor(float("nan"))
+
+    def reset(self):
+        super().reset()
+        self.scores = []
+        self.labels = []
+
+
+@register_metric(F1_MAX, [ANOMALY], MAXIMIZE, ANOMALY_SCORE)
+class F1MaxMetric(LudwigMetric):
+    """Maximum F1 score over all anomaly score thresholds.
+
+    Sweeps all unique threshold values and returns the best achievable F1, providing a threshold-independent estimate of
+    classification performance.
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.add_state("scores", default=[], dist_reduce_fx="cat")
+        self.add_state("labels", default=[], dist_reduce_fx="cat")
+
+    def update(self, preds: Tensor, target: Tensor) -> None:
+        self.scores.append(preds.detach().cpu().float())
+        self.labels.append(target.detach().cpu().float())
+
+    def compute(self) -> Tensor:
+        if not self.scores:
+            return torch.tensor(float("nan"))
+        scores = torch.cat(self.scores)
+        labels = torch.cat(self.labels)
+        if labels.unique().numel() < 2:
+            return torch.tensor(float("nan"))
+        try:
+            best_f1 = torch.tensor(0.0)
+            labels_bool = labels.bool()
+            for t in torch.unique(scores):
+                preds_bin = scores >= t
+                tp = (preds_bin & labels_bool).float().sum()
+                fp = (preds_bin & ~labels_bool).float().sum()
+                fn = (~preds_bin & labels_bool).float().sum()
+                if tp + fp + fn > 0:
+                    f1 = 2 * tp / (2 * tp + fp + fn)
+                    if f1 > best_f1:
+                        best_f1 = f1
+            return best_f1
+        except Exception:
+            return torch.tensor(float("nan"))
+
+    def reset(self):
+        super().reset()
+        self.scores = []
+        self.labels = []

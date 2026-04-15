@@ -21,7 +21,6 @@ from collections import namedtuple
 
 import pandas as pd
 import pytest
-import torch
 import torchvision
 import yaml
 
@@ -735,22 +734,10 @@ def test_experiment_model_resume(tmpdir):
 @pytest.mark.parametrize(
     "dist_strategy",
     [
-        pytest.param("ddp", id="ddp", marks=pytest.mark.distributed),
+        pytest.param("accelerate", id="accelerate", marks=pytest.mark.distributed),
     ],
 )
 def test_experiment_model_resume_distributed(tmpdir, dist_strategy, ray_cluster_4cpu):
-    _run_experiment_model_resume_distributed(tmpdir, dist_strategy)
-
-
-@pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
-@pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
-@pytest.mark.parametrize(
-    "dist_strategy",
-    [
-        pytest.param("deepspeed", id="deepspeed", marks=pytest.mark.distributed),
-    ],
-)
-def test_experiment_model_resume_distributed_gpu(tmpdir, dist_strategy, ray_cluster_4cpu):
     _run_experiment_model_resume_distributed(tmpdir, dist_strategy)
 
 
@@ -835,7 +822,7 @@ def test_experiment_model_resume_before_1st_epoch_distributed(tmpdir, ray_cluste
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 8},
         TRAINER: {"train_steps": 1, BATCH_SIZE: 128},
-        "backend": {"type": "ray", "trainer": {"strategy": "ddp", "num_workers": 2}},
+        "backend": {"type": "ray", "trainer": {"strategy": "accelerate", "num_workers": 2}},
     }
 
     class InducedFailureCallback(Callback):
@@ -882,7 +869,7 @@ def test_tabnet_with_batch_size_1(tmpdir, ray_cluster_4cpu):
         "output_features": output_features,
         "combiner": {"type": "tabnet"},
         TRAINER: {"train_steps": 1, BATCH_SIZE: 1},
-        "backend": {"type": "ray", "trainer": {"strategy": "ddp", "num_workers": 2}},
+        "backend": {"type": "ray", "trainer": {"strategy": "accelerate", "num_workers": 2}},
     }
     model = LudwigModel(config=config, logging_level=logging.INFO)
     model.train(

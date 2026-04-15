@@ -1,0 +1,315 @@
+# Ludwig Examples & Tutorials Expansion Plan
+
+## Context
+
+Two releases (0.12 → 0.13) added substantial new surface area.  The table below maps every
+significant new feature to its current documentation coverage and the example gap that needs
+filling.  The final section covers features in open PRs that are not yet merged.
+
+### Merged — what's in main right now
+
+| Feature | PR | Example gap |
+|---------|----|-------------|
+| Anomaly detection (Deep SVDD, SAD, DROCC) | #4109 | No runnable example, doc page only |
+| Image decoders: SegFormer, FPN, configurable UNet | #4100 | `semantic_segmentation/` is stale |
+| Focal, Dice, Lovász, NT-Xent, PolyLoss, Entmax losses | #4107 | Nothing |
+| LLM logits extraction, structured output, constrained decoding | #4103 | Nothing |
+| FastAPI: auto-schemas, Prometheus metrics, structured logging | #4101 | Nothing |
+| New LR schedulers: OneCycleLR, inverse_sqrt, WSD, polynomial | #4106 | Nothing |
+| New optimizers: RAdam, Adafactor, Schedule-Free AdamW, Muon, SOAP | #4105 | Nothing |
+| MLPClassifier decoder, temperature calibration, MC Dropout | #4108 | Nothing |
+| TransformerDecoder, scheduled sampling, beam search | #4102 | Nothing |
+| CLIP, DINOv2, SigLIP pretrained image encoders | standalone | Nothing |
+| RLHF alignment trainers: DPO, KTO, ORPO, GRPO | earlier | Config snippets only |
+| vLLM serving backend | #4089 | Doc section only |
+| Entropic Open-Set & Objectosphere losses | standalone | Standalone script, no doc tutorial |
+
+### Open PRs — not yet merged
+
+| Feature | PR | Branch |
+|---------|----|----|
+| LLM-driven config generation (`generate_config`) | #4092 | `future-capabilities` |
+| HyperNetworkCombiner | #4092 | `future-capabilities` |
+| Nash-MTL loss balancer | #4092 | `future-capabilities` |
+| ModelInspector, trainer mixins, registry modernization | #4091 | `api-code-quality` |
+| Native Optuna HPO executor | #4090 | `data-pipeline-hyperopt-modernization` |
+| Typed feature metadata classes | #4090 | `data-pipeline-hyperopt-modernization` |
+
+---
+
+## Tier 1 — High impact, completely uncharted (start here)
+
+### 1. Anomaly Detection Tutorial
+**Source:** PR #4109
+**Files:**
+- `examples/anomaly_detection/train_deep_svdd.py`
+- `examples/anomaly_detection/train_deep_sad.py`
+- `examples/anomaly_detection/train_drocc.py`
+- `examples/anomaly_detection/config_deep_svdd.yaml`
+- `examples/anomaly_detection/config_deep_sad.yaml`
+- `examples/anomaly_detection/config_drocc.yaml`
+- `examples/anomaly_detection/README.md`
+- `ludwig-docs/docs/examples/anomaly_detection.md`
+
+**Content:**
+- Synthetic sensor dataset (no download required), all three loss variants
+- Score histogram plots showing separation between normal and anomalous samples
+- Colab notebook: multimodal anomaly detection (tabular + text log messages)
+- Guidance on choosing the threshold (95th percentile of training scores)
+
+---
+
+### 2. Alignment / RLHF Tutorial
+**Source:** alignment trainers (DPO, KTO, ORPO, GRPO)
+**Files:**
+- `examples/alignment/train_dpo.py` — Llama-3.1-8B, public preference dataset, 4-bit QLoRA
+- `examples/alignment/train_kto.py`
+- `examples/alignment/train_orpo.py`
+- `examples/alignment/config_dpo.yaml`
+- `examples/alignment/config_kto.yaml`
+- `examples/alignment/config_orpo.yaml`
+- `examples/alignment/README.md`
+- `ludwig-docs/docs/examples/llm/alignment.md` (new)
+- `ludwig-docs/docs/user_guide/llms/finetuning.md` (expand with end-to-end walkthrough)
+
+**Content:**
+- DPO walkthrough from dataset prep to serving
+- DPO vs KTO comparison on the same preference dataset
+- When to use each method (table: data requirements, training cost, use case)
+- GRPO section with a custom reward function example (separate entry below)
+
+---
+
+### 3. vLLM Serving Tutorial
+**Source:** PR #4089 / `--backend vllm`
+**Files:**
+- `examples/serve/vllm_serving.py`
+- `examples/serve/vllm_client.py`
+- `examples/serve/prometheus_monitoring/docker-compose.yml`
+- `examples/serve/prometheus_monitoring/grafana_dashboard.json`
+- `ludwig-docs/docs/user_guide/serving.md` (expand existing)
+
+**Content:**
+- Model prep → launch → benchmark vs. default backend
+- Latency/throughput comparison chart
+- Multi-GPU launch with `--num_gpus N`
+- OpenAI-compatible endpoint usage
+- Prometheus scrape config + sample Grafana dashboard
+
+---
+
+### 4. Structured / Constrained LLM Decoding
+**Source:** PR #4103
+**Files:**
+- `examples/llm_structured_output/entity_extraction.py`
+- `examples/llm_structured_output/constrained_classification.py`
+- `examples/llm_structured_output/config_json_schema.yaml`
+- `examples/llm_structured_output/README.md`
+- `ludwig-docs/docs/user_guide/llms/structured_output.md` (new)
+
+**Content:**
+- Schema-constrained JSON generation (entity extraction → validated output)
+- Regex-constrained token generation (forced classification labels)
+- Logits extraction and custom post-processing
+- Comparison: unconstrained vs. constrained output quality
+
+---
+
+## Tier 2 — High impact, extends existing areas
+
+### 5. Open-Set Recognition — Full Tutorial
+**Source:** Entropic Open-Set & Objectosphere losses (already in `examples/open_set_recognition/`)
+**Files:**
+- `examples/open_set_recognition/train_open_set_mnist.py` (add MNIST-based Colab notebook)
+- `examples/open_set_recognition/open_set_recognition.ipynb` (Colab)
+- `ludwig-docs/docs/examples/open_set_recognition.md` (new, add to examples index)
+
+**Content:**
+- MNIST: known classes 0–7, unknown classes 8–9
+- Confidence histogram: CE vs. Entropic vs. Objectosphere
+- Full Ludwig YAML + CLI walkthrough (not just raw PyTorch)
+- Inference-time threshold selection from validation set
+- Links to the standalone PyTorch script as a "how it works" explainer
+
+---
+
+### 6. Uncertainty Quantification
+**Source:** PR #4108 (MC Dropout + temperature scaling calibration)
+**Files:**
+- `examples/uncertainty/mc_dropout.py`
+- `examples/uncertainty/temperature_calibration.py`
+- `examples/uncertainty/config_mc_dropout.yaml`
+- `examples/uncertainty/README.md`
+- `ludwig-docs/docs/user_guide/uncertainty.md` (new)
+
+**Content:**
+- Wine quality dataset (already in examples, no download)
+- Calibration curves and reliability diagrams before/after temperature scaling
+- MC Dropout: how many forward passes, variance as uncertainty proxy
+- OOD detection: uncertainty on held-out distribution shift samples
+- When to use each method
+
+---
+
+### 7. Pretrained Image Encoders — CLIP / DINOv2 / SigLIP
+**Source:** CLIP, DINOv2, SigLIP encoder integration
+**Files:**
+- `examples/image_encoders/compare_encoders.py`
+- `examples/image_encoders/few_shot_dinov2.py`
+- `examples/image_encoders/config_dinov2_linear_probe.yaml`
+- `examples/image_encoders/config_clip.yaml`
+- `examples/image_encoders/README.md`
+- `ludwig-docs/docs/configuration/features/pretrained_image_encoders.md` (new)
+
+**Content:**
+- Side-by-side: `stacked_cnn` vs. `dinov2` vs. `clip` on a small image classification task
+- Linear probing pattern: `use_pretrained: true`, `trainable: false`
+- Colab notebook: 5-shot image classification with DINOv2 (no fine-tuning)
+- Performance vs. training time trade-off table
+
+---
+
+### 8. Semantic Segmentation Refresh
+**Source:** PR #4100 (SegFormer, FPN, configurable UNet depth)
+**Files:**
+- `examples/semantic_segmentation/config_segformer.yaml` (replace stale config)
+- `examples/semantic_segmentation/config_fpn.yaml`
+- `examples/semantic_segmentation/unet_depth_sweep.py`
+- `examples/semantic_segmentation/README.md` (update)
+
+**Content:**
+- SegFormer as the new recommended default
+- FPN as the lightweight alternative
+- UNet depth sweep showing mIoU vs. parameter count
+- Update `docs/configuration/features/image_features.md` decoder section
+
+---
+
+## Tier 3 — Narrower audience, pending PR features
+
+### 9. LLM-Driven Config Generation
+**Source:** PR #4092 (`generate_config`)
+*Wait for #4092 to merge before building.*
+**Files:**
+- `examples/llm_config_generation/generate_and_train.py`
+- `ludwig-docs/docs/user_guide/llm_config_generation.md` (new)
+
+**Content:**
+- Natural language task description → validated Ludwig config → train
+- Show the validation step catching bad LLM suggestions
+- Cover both Anthropic and OpenAI backends
+- Tips for writing good task descriptions
+
+---
+
+### 10. HyperNetworkCombiner Tutorial
+**Source:** PR #4092
+*Wait for #4092 to merge before building.*
+**Files:**
+- `examples/hypernetwork/train_conditioned_model.py`
+- `examples/hypernetwork/config_hypernetwork.yaml`
+- `ludwig-docs/docs/configuration/combiners/hypernetwork.md` (new)
+
+**Content:**
+- Multimodal dataset where one modality (e.g. sensor type) should *condition* processing of others
+- Comparison: concat combiner vs. hypernetwork combiner on the same task
+- Reference to HyperFusion paper (arXiv 2403.13319)
+
+---
+
+### 11. Native Optuna HPO
+**Source:** PR #4090 (`OptunaExecutor`)
+*Wait for #4090 to merge before building.*
+**Files:**
+- `examples/hyperopt/optuna_executor.py`
+- `examples/hyperopt/config_optuna.yaml`
+- `ludwig-docs/docs/user_guide/hyperopt.md` (expand with Optuna section)
+
+**Content:**
+- Drop-in replacement for Ray Tune executor
+- Sampler comparison: TPE vs. CMA-ES vs. GPSampler
+- Persistence with SQLite for resumable HPO runs
+- Pruner (Hyperband) for early stopping of bad trials
+
+---
+
+### 12. GRPO — Reward-Based Alignment
+**Source:** GRPO trainer
+**Files:**
+- `examples/alignment/train_grpo.py`
+- `examples/alignment/config_grpo.yaml`
+- `ludwig-docs/docs/user_guide/llms/grpo.md` (new)
+
+**Content:**
+- Custom reward function (response length + factuality check)
+- When to use GRPO vs. DPO (no preference pairs needed)
+- Group normalisation: why it stabilises training vs. vanilla RL
+
+---
+
+### 13. Optimizer Guide
+**Source:** PR #4105 (Schedule-Free AdamW, Muon, Adafactor)
+**Files:**
+- `examples/optimizers/optimizer_comparison.py`
+- `ludwig-docs/docs/configuration/trainer.md` (add "Choosing an optimizer" section)
+
+**Content:**
+- Training curve comparison on a standard benchmark (MNIST or wine quality)
+- Schedule-Free AdamW: why no LR scheduler is needed
+- Muon: weight-matrix-only updates, when beneficial
+- Decision tree: Adam → AdamW → Schedule-Free → Muon/SOAP
+
+---
+
+### 14. Nash-MTL Multi-Task Loss Balancing
+**Source:** PR #4092 (Nash-MTL loss balancer)
+*Wait for #4092 to merge before building.*
+**Files:**
+- `examples/multi_task/nash_mtl.py`
+- `ludwig-docs/docs/user_guide/multi_task.md` (expand)
+
+**Content:**
+- Multi-output model (classification + regression simultaneously)
+- Comparison: fixed weights vs. FAMO vs. Nash-MTL loss balancing
+- When Nash-MTL is worth the overhead vs. simpler methods
+
+---
+
+## Execution order
+
+```
+Phase A (no GPU needed, self-contained):
+  1. Anomaly detection tutorial
+  5. Open-set recognition → full tutorial
+  6. Uncertainty quantification
+  13. Optimizer guide
+
+Phase B (needs GPU, builds on existing LLM work):
+  2. Alignment / RLHF tutorial (DPO + KTO)
+  3. vLLM serving tutorial
+  4. Structured / constrained LLM decoding
+  12. GRPO
+
+Phase C (vision, needs pretrained model weights):
+  7. CLIP / DINOv2 / SigLIP encoders
+  8. Semantic segmentation refresh
+
+Phase D (blocked on open PRs merging):
+  9.  LLM-driven config generation   [blocked on #4092]
+  10. HyperNetworkCombiner            [blocked on #4092]
+  14. Nash-MTL multi-task             [blocked on #4092]
+  11. Native Optuna HPO               [blocked on #4090]
+```
+
+---
+
+## Deliverable locations
+
+| Type | Repo | Path |
+|------|------|------|
+| Runnable scripts | `ludwig` | `examples/<topic>/` |
+| YAML configs | `ludwig` | `examples/<topic>/config*.yaml` |
+| Colab notebooks | `ludwig` | `examples/<topic>/*.ipynb` |
+| Doc tutorials | `ludwig-docs` | `docs/examples/<topic>.md` |
+| User guide pages | `ludwig-docs` | `docs/user_guide/<topic>.md` |
+| Config reference pages | `ludwig-docs` | `docs/configuration/**/<topic>.md` |

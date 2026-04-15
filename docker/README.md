@@ -12,6 +12,22 @@ packages to support these capabilities
 - distributed training
 - model serving
 
+## Publishing images
+
+Images are normally published automatically by CI (`.github/workflows/docker.yml`) when a release
+tag is pushed. To publish manually or backfill a release, use the script in this directory:
+
+```bash
+# Requires: docker login to a ludwigai Docker Hub account
+./docker/build_and_push.sh <version> [--latest]
+
+# Examples
+./docker/build_and_push.sh 0.14.0 --latest   # new latest release
+./docker/build_and_push.sh 0.13.0            # backfill without updating :latest
+```
+
+See `RELEASES.md` for the full release procedure.
+
 ## Repositories
 
 These four repositories contain a version of Ludwig with full features built

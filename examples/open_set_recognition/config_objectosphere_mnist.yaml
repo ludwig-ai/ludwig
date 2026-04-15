@@ -1,0 +1,53 @@
+# Objectosphere classifier (Dhamija et al., NeurIPS 2018) on MNIST.
+#
+# Extends the Entropic Open-Set loss with a logit-norm objective:
+#   - Known samples: CE + hinge pushing ||logits|| >= xi
+#   - Background samples: entropy maximisation + magnitude suppression (zeta * ||logits||^2)
+#
+# At inference time, flag unknown inputs with a norm threshold:
+#   is_unknown = logit_norm < threshold
+# Choose the threshold from the validation set (e.g. 5th percentile of
+# known-class norms).
+#
+# background_class: integer index of the "background" label in Ludwig's
+# vocabulary for this feature.  See open_set_mnist.ipynb for how to
+# discover this value from training_set_metadata.json.
+
+model_type: ecd
+
+input_features:
+  - name: image_path
+    type: image
+    encoder:
+      type: stacked_cnn
+      conv_layers:
+        - num_filters: 32
+          filter_size: 3
+          pool_size: 2
+          pool_stride: 2
+        - num_filters: 64
+          filter_size: 3
+          pool_size: 2
+          pool_stride: 2
+      fc_layers:
+        - output_size: 128
+          dropout: 0.3
+
+output_features:
+  - name: label
+    type: category
+    loss:
+      type: objectosphere
+      background_class: 1   # see notebook for how to determine this value
+      xi: 10.0              # minimum logit norm for known-class samples
+      zeta: 0.1             # weight for unknown-class magnitude suppression
+
+trainer:
+  epochs: 10
+  learning_rate: 0.001
+  batch_size: 128
+
+preprocessing:
+  split:
+    type: random
+    probabilities: [0.8, 0.1, 0.1]

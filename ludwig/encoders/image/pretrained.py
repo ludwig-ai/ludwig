@@ -41,7 +41,7 @@ class CLIPImageEncoder(ImageEncoder):
         super().__init__()
         self.config = encoder_config
 
-        from transformers import CLIPImageProcessor, CLIPVisionConfig, CLIPVisionModel
+        from transformers import CLIPVisionConfig, CLIPVisionModel
 
         if use_pretrained and not saved_weights_in_checkpoint:
             logger.info(f"Loading pretrained CLIP vision model: {pretrained_model_name_or_path}")
@@ -50,7 +50,6 @@ class CLIPImageEncoder(ImageEncoder):
             logger.info("Instantiating CLIP vision model without pretrained weights.")
             self.model = CLIPVisionModel(CLIPVisionConfig())
 
-        self.processor = CLIPImageProcessor.from_pretrained(pretrained_model_name_or_path)
         self._output_dim = self.model.config.hidden_size
 
         for p in self.model.parameters():

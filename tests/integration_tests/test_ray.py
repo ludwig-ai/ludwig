@@ -232,6 +232,38 @@ def run_preprocessing(
 
 
 def check_preprocessed_df_equal(df1, df2):
+    # Ray's Dask-backed compute() path (Ray dataset -> to_dask) does not preserve the
+    # source row index, so the ray-produced and local-produced frames may list the same
+    # rows in a different order. Re-align them by sorting both sides by a row hash.
+    #
+    # The hash is computed over every column whose content is *deterministic* across
+    # backends, which excludes binary / image / audio features: for those, NaN fill
+    # strategies (bfill / ffill) can legitimately produce different values at partition
+    # boundaries in the distributed backend vs. the sequential local backend. Including
+    # them in the sort key would mispair rows for the deterministic columns we check
+    # strictly below.
+    #
+    # ndarray-valued columns (vector / audio / image) are hashed via their bytes so
+    # that tests like test_ray_vector — which contain only a single scalar binary output
+    # besides the vector input — still have a unique per-row sort key.
+    nan_sensitive_types = (BINARY, IMAGE, AUDIO)
+
+    def _row_sort_key(df, cols):
+        def _to_hashable(v):
+            if isinstance(v, np.ndarray):
+                return v.tobytes()
+            if isinstance(v, float) and np.isnan(v):
+                return "__nan__"
+            return repr(v)
+
+        return df[cols].apply(lambda row: hash(tuple(_to_hashable(v) for v in row)), axis=1)
+
+    det_cols = [c for c in df1.columns if not any(t in c for t in nan_sensitive_types)]
+    if det_cols:
+        key1 = _row_sort_key(df1, det_cols)
+        key2 = _row_sort_key(df2, det_cols)
+        df1 = df1.iloc[key1.argsort(kind="stable").values].reset_index(drop=True)
+        df2 = df2.iloc[key2.argsort(kind="stable").values].reset_index(drop=True)
     for column in df1.columns:
         vals1 = df1[column].values
         vals2 = df2[column].values
@@ -394,7 +426,7 @@ def test_ray_read_binary_files(tmpdir, df_engine, ray_cluster_2cpu):
 @pytest.mark.parametrize(
     "trainer_strategy",
     [
-        pytest.param("ddp", id="ddp", marks=pytest.mark.distributed),
+        pytest.param("accelerate", id="accelerate", marks=pytest.mark.distributed),
     ],
 )
 def test_ray_outputs(trainer_strategy, ray_cluster_2cpu):

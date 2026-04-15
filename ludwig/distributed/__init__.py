@@ -3,24 +3,6 @@ from typing import Any
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 
 
-def load_ddp():
-    from ludwig.distributed.ddp import DDPStrategy
-
-    return DDPStrategy
-
-
-def load_fsdp():
-    from ludwig.distributed.fsdp import FSDPStrategy
-
-    return FSDPStrategy
-
-
-def load_deepspeed():
-    from ludwig.distributed.deepspeed import DeepSpeedStrategy
-
-    return DeepSpeedStrategy
-
-
 def load_local():
     return LocalStrategy
 
@@ -32,11 +14,12 @@ def load_accelerate():
 
 
 STRATEGIES = {
-    "ddp": load_ddp,
-    "fsdp": load_fsdp,
-    "deepspeed": load_deepspeed,
     "accelerate": load_accelerate,
     "local": load_local,
+    # Legacy aliases for backward compatibility
+    "ddp": load_accelerate,
+    "fsdp": load_accelerate,
+    "deepspeed": load_accelerate,
 }
 
 
@@ -68,4 +51,4 @@ def get_dist_strategy(strategy: str | dict[str, Any]) -> type[DistributedStrateg
 
 
 def get_default_strategy_name() -> str:
-    return "ddp"
+    return "accelerate"

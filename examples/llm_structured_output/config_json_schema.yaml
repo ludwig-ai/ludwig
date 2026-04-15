@@ -1,0 +1,49 @@
+model_type: llm
+base_model: microsoft/phi-2
+
+prompt:
+  task: >
+    Extract the named entities from the input text and return them as a JSON object
+    with the following structure: {"entities": [{"text": "...", "type": "PERSON|ORG|LOC|DATE"}]}.
+    Return only valid JSON, nothing else.
+
+input_features:
+  - name: text
+    type: text
+
+output_features:
+  - name: output
+    type: text
+    decoder:
+      type: text_parser
+      json_schema:
+        type: object
+        properties:
+          entities:
+            type: array
+            items:
+              type: object
+              properties:
+                text:
+                  type: string
+                type:
+                  type: string
+                  enum:
+                    - PERSON
+                    - ORG
+                    - LOC
+                    - DATE
+              required:
+                - text
+                - type
+        required:
+          - entities
+        additionalProperties: false
+
+generation:
+  max_new_tokens: 200
+  temperature: 0.1
+  do_sample: false
+
+backend:
+  type: local

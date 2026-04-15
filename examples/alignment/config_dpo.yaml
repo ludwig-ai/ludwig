@@ -1,0 +1,27 @@
+model_type: llm
+base_model: meta-llama/Llama-3.1-8B
+
+adapter:
+  type: lora
+  r: 16
+  alpha: 32
+  dropout: 0.05
+
+trainer:
+  type: dpo
+  epochs: 1
+  learning_rate: 5.0e-7
+  batch_size: 2
+  gradient_accumulation_steps: 8
+  beta: 0.1  # KL penalty coefficient — higher values keep the policy closer to the reference
+
+input_features:
+  - name: prompt
+    type: text
+
+output_features:
+  - name: chosen
+    type: text
+
+backend:
+  type: local
