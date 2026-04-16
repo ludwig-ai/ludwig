@@ -1,0 +1,71 @@
+input_features:
+  - name: fixed_acidity
+    type: number
+  - name: volatile_acidity
+    type: number
+  - name: citric_acid
+    type: number
+  - name: residual_sugar
+    type: number
+  - name: chlorides
+    type: number
+  - name: free_sulfur_dioxide
+    type: number
+  - name: total_sulfur_dioxide
+    type: number
+  - name: density
+    type: number
+  - name: pH
+    type: number
+  - name: sulphates
+    type: number
+  - name: alcohol
+    type: number
+
+output_features:
+  - name: quality
+    type: number
+
+combiner:
+  type: concat
+  num_fc_layers: 2
+  output_size: 64
+  dropout: 0.1
+
+trainer:
+  epochs: 15
+  batch_size: 128
+  learning_rate: 0.001
+  early_stop: 5
+
+hyperopt:
+  executor:
+    type: optuna
+    num_samples: 20
+    sampler: auto          # auto | gp | tpe | cmaes | random
+    pruner: null           # or "median" / "hyperband"
+    study_name: ludwig_wine_rmse
+    storage: null          # or "sqlite:///wine_hpo.db" to persist trials
+    time_budget_s: 1800
+
+  parameters:
+    trainer.learning_rate:
+      space: loguniform
+      lower: 0.00001
+      upper: 0.1
+    trainer.batch_size:
+      space: int
+      lower: 32
+      upper: 256
+    combiner.num_fc_layers:
+      space: int
+      lower: 1
+      upper: 4
+    combiner.output_size:
+      space: choice
+      categories: [32, 64, 128, 256]
+
+  output_feature: quality
+  metric: root_mean_squared_error
+  goal: minimize
+  split: validation

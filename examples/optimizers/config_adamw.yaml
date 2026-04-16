@@ -1,0 +1,43 @@
+input_features:
+  - name: fixed_acidity
+    type: number
+  - name: volatile_acidity
+    type: number
+  - name: citric_acid
+    type: number
+  - name: residual_sugar
+    type: number
+  - name: chlorides
+    type: number
+  - name: free_sulfur_dioxide
+    type: number
+  - name: total_sulfur_dioxide
+    type: number
+  - name: density
+    type: number
+  - name: pH
+    type: number
+  - name: sulphates
+    type: number
+  - name: alcohol
+    type: number
+
+output_features:
+  - name: quality
+    type: number
+
+combiner:
+  type: concat
+  num_fc_layers: 2
+  output_size: 64
+  dropout: 0.1
+
+trainer:
+  epochs: 30
+  batch_size: 128
+  learning_rate: 0.001
+  optimizer:
+    type: adamw
+    betas: [0.9, 0.999]
+    weight_decay: 0.01
+  early_stop: 10

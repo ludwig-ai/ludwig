@@ -1,0 +1,49 @@
+# Multi-task Ludwig config: joint classification + regression on Wine Quality red.
+#
+# The `recommended` output is a synthetic binary feature derived during preprocessing
+# (see compare_balancers.py); the `quality` output is the usual 0–10 quality score.
+# The two tasks fight each other because the classification boundary doesn't align
+# perfectly with quality variance, so loss balancing matters.
+
+input_features:
+  - name: fixed_acidity
+    type: number
+  - name: volatile_acidity
+    type: number
+  - name: citric_acid
+    type: number
+  - name: residual_sugar
+    type: number
+  - name: chlorides
+    type: number
+  - name: free_sulfur_dioxide
+    type: number
+  - name: total_sulfur_dioxide
+    type: number
+  - name: density
+    type: number
+  - name: pH
+    type: number
+  - name: sulphates
+    type: number
+  - name: alcohol
+    type: number
+
+output_features:
+  - name: quality
+    type: number
+  - name: recommended
+    type: binary
+
+combiner:
+  type: concat
+  num_fc_layers: 2
+  output_size: 64
+  dropout: 0.1
+
+trainer:
+  epochs: 40
+  batch_size: 128
+  learning_rate: 0.001
+  loss_balancing: nash_mtl   # swap to log_transform / uncertainty / famo / gradnorm to compare
+  early_stop: 10

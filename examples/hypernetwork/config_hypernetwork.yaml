@@ -1,0 +1,29 @@
+input_features:
+  # The HyperNetworkCombiner uses the first input feature as the conditioning signal.
+  - name: sensor_type
+    type: category
+  - name: reading_1
+    type: number
+  - name: reading_2
+    type: number
+  - name: reading_3
+    type: number
+
+output_features:
+  - name: anomaly
+    type: binary
+
+combiner:
+  type: hypernetwork
+  hidden_size: 128
+  hyper_hidden_size: 64
+  output_size: 128
+  num_fc_layers: 2
+  dropout: 0.1
+  activation: relu
+
+trainer:
+  epochs: 30
+  batch_size: 128
+  learning_rate: 0.001
+  early_stop: 10

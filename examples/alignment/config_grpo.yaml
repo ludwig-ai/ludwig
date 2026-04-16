@@ -1,0 +1,54 @@
+model_type: llm
+base_model: HuggingFaceTB/SmolLM2-360M-Instruct
+
+quantization:
+  bits: 4
+
+adapter:
+  type: lora
+  r: 16
+  alpha: 32
+  dropout: 0.05
+
+prompt:
+  template: |
+    You are a helpful assistant. Answer the question concisely.
+
+    ### Question:
+    {prompt}
+
+    ### Answer:
+
+input_features:
+  - name: prompt
+    type: text
+
+output_features:
+  - name: output
+    type: text
+
+preprocessing:
+  sample_ratio: 1.0
+
+trainer:
+  type: grpo
+  epochs: 1
+  batch_size: 1
+  gradient_accumulation_steps: 8
+  learning_rate: 0.00005
+
+  # GRPO-specific hyperparameters
+  grpo_beta: 0.04          # KL penalty toward the reference (pre-training) policy
+  grpo_epsilon: 0.2        # PPO clipping parameter (ratio clamped to [1 - eps, 1 + eps])
+  grpo_num_generations: 4  # completions sampled per prompt to form each group
+
+  # GRPO reuses the chosen/rejected DPO data format.
+  # "chosen" receives a higher implicit reward than "rejected" within each group.
+  rejected_column: rejected
+
+  optimizer:
+    type: adamw
+    weight_decay: 0.01
+
+backend:
+  type: local
