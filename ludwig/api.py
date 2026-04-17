@@ -823,6 +823,14 @@ class LudwigModel:
                 self.backend.sync_model(self.model)
 
                 print_boxed("FINISHED")
+                # `preprocessed_data` is a 4-tuple from the two construction sites above
+                # (either built from pre-provided datasets or from self.preprocess()).
+                # TrainingResults declares `preprocessed_data: PreprocessedDataset`, so
+                # wrap the tuple before returning — downstream callers like
+                # `experiment()` access attributes (.validation_set etc.) rather than
+                # unpacking positionally.
+                if isinstance(preprocessed_data, tuple):
+                    preprocessed_data = PreprocessedDataset(*preprocessed_data)
                 return TrainingResults(train_stats, preprocessed_data, output_url)
 
     def train_online(
