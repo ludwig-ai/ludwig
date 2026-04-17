@@ -22,7 +22,12 @@ def _dict_like(x):
     """Returns true if an object is a dict or convertible to one, false if not."""
     try:
         _ = dict(x)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, KeyError):
+        # Objects that implement ``__getitem__`` without ``__iter__`` / ``keys()`` (e.g.
+        # dataclasses with a string-keyed accessor like ``TrainingStats``) make
+        # ``dict(x)`` fall back to integer-index iteration, which raises ``KeyError`` —
+        # not ``IndexError`` — when the ``__getitem__`` only accepts string keys.  Treat
+        # those as not-dict-like rather than letting the KeyError bubble up.
         return False
     return True
 
