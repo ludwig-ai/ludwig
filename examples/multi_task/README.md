@@ -1,9 +1,6 @@
 # Multi-Task Loss Balancing with Nash-MTL
 
-> **Requires Ludwig 0.15 / PR #4092 (future-capabilities branch)** — the Nash-MTL balancer
-> is registered in `ludwig/modules/loss_balancing.py` under the key `nash_mtl`. If the
-> `trainer.loss_balancing` schema `StringOptions` list on your Ludwig install does not
-> include `"nash_mtl"` yet, add it there before running this tutorial.
+> **Requires Ludwig 0.15 / PR #4092 (future-capabilities branch).**
 
 When you train one model that predicts several output features at once, the per-task losses
 usually have very different magnitudes. A simple summed loss lets the loudest task dominate
