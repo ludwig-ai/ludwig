@@ -486,6 +486,37 @@ class ECDTrainerConfig(BaseTrainerConfig):
         description="Learning rate for famo loss balancing weight updates.",
     )
 
+    # ================ Contrastive Pre-alignment ================
+
+    contrastive_pretrain_epochs: int = schema_utils.NonNegativeInteger(
+        default=0,
+        description=(
+            "Number of epochs of contrastive pre-alignment between per-feature encoders to "
+            "run before the main training loop. 0 disables pre-alignment (default). A brief "
+            "warmup (1-3 epochs) is usually enough to pull encoder output spaces into "
+            "alignment so the downstream combiner sees already-comparable representations. "
+            "Inspired by CLIP-style alignment (Radford et al., ICML 2021) adapted to Ludwig's "
+            "multi-encoder ECD architecture."
+        ),
+    )
+
+    contrastive_pretrain_temperature: float = schema_utils.NonNegativeFloat(
+        default=0.07,
+        description=(
+            "Initial InfoNCE temperature for contrastive pre-alignment. Lower values sharpen "
+            "the softmax. 0.07 matches CLIP's initial value."
+        ),
+    )
+
+    contrastive_pretrain_projection_dim: int = schema_utils.PositiveInteger(
+        default=128,
+        description=(
+            "Width of the shared projection space used during contrastive pre-alignment. "
+            "The per-feature projection heads are discarded after pre-alignment — only the "
+            "updated encoder weights carry forward into the main training loop."
+        ),
+    )
+
     # ================ Modality Dropout ================
 
     modality_dropout: float = schema_utils.FloatRange(
