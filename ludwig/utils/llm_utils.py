@@ -41,17 +41,20 @@ def load_pretrained_from_config(
     weights_save_path: str | None = None,
 ) -> PreTrainedModel:
     load_kwargs = {}
-    if config_obj.quantization:
-        # Apply quantization configuration at model load time
-        load_kwargs["dtype"] = getattr(torch, config_obj.quantization.bnb_4bit_compute_dtype)
-        load_kwargs["quantization_config"] = config_obj.quantization.to_bitsandbytes()
+    quantization = config_obj.quantization
+    if quantization and getattr(quantization, "backend", "bitsandbytes") == "bitsandbytes":
+        # Apply bitsandbytes quantization configuration at model load time.
+        load_kwargs["dtype"] = getattr(torch, quantization.bnb_4bit_compute_dtype)
+        load_kwargs["quantization_config"] = quantization.to_bitsandbytes()
         load_kwargs["device_map"] = "auto"
 
         if transformers_436:
             load_kwargs["attn_implementation"] = "eager"
     else:
-        # Load in float32 by default to avoid CUBLAS errors with small hidden sizes
-        # and to ensure numerical stability during training without mixed-precision.
+        # Either no quantization, or torchao — which quantizes the model *after* load, not
+        # via transformers' BitsAndBytesConfig. Load in float32 by default to avoid CUBLAS
+        # errors with small hidden sizes and to ensure numerical stability during training
+        # without mixed-precision.
         load_kwargs["dtype"] = torch.float32
 
     config_modified = False

@@ -57,3 +57,11 @@ class LLMModelConfig(ModelConfig):
             "Only enable this for models you trust."
         ),
     )
+
+    def __post_init__(self):
+        super().__post_init__()
+        # Cross-validate the quantization backend/mode/qat combination here (rather than in
+        # QuantizationConfig.__post_init__) so the user sees the real reason in the error
+        # message — see QuantizationConfig.validate_backend for why.
+        if self.quantization is not None:
+            self.quantization.validate_backend()

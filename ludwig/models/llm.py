@@ -187,20 +187,48 @@ class LLM(BaseModel):
     def prepare_for_training(self):
         """Prepare the model for training by setting up quantization and adapters.
 
-        Safe to call multiple times (e.g. when resuming from a checkpoint). Quantization is applied at model-load time
-        in __init__ via load_pretrained_from_config, so prepare_model_for_kbit_training only needs to cast non-quantized
-        layers to float32 and freeze the quantized base — both operations are idempotent. Adapter initialization is
-        guarded by _adapter_initialized so the PEFT wrapper is only created once; on resume the saved adapter weights
-        are subsequently loaded by the trainer via load_state_dict.
+        Safe to call multiple times (e.g. when resuming from a checkpoint). For the bitsandbytes backend, quantization
+        is applied at model-load time in __init__ via load_pretrained_from_config, so prepare_model_for_kbit_training
+        only needs to cast non-quantized layers to float32 and freeze the quantized base — both operations are
+        idempotent. For the torchao backend, quantization / QAT preparation happens here after load. Adapter
+        initialization is guarded by _adapter_initialized so the PEFT wrapper is only created once; on resume the saved
+        adapter weights are subsequently loaded by the trainer via load_state_dict.
         """
-        if self.config_obj.quantization:
-            self.prepare_for_quantized_training()
+        quantization = self.config_obj.quantization
+        backend = getattr(quantization, "backend", "bitsandbytes") if quantization else None
+        if quantization:
+            if backend == "bitsandbytes":
+                self.prepare_for_quantized_training()
+            elif backend == "torchao":
+                self._prepare_for_torchao_training()
         self.initialize_adapter()
 
     def prepare_for_quantized_training(self):
         from peft import prepare_model_for_kbit_training
 
         self.model = prepare_model_for_kbit_training(self.model, use_gradient_checkpointing=False)
+
+    def _prepare_for_torchao_training(self):
+        """Insert torchao fake-quant observers for QAT, or defer PTQ until save for non-QAT.
+
+        * QAT (``quantization.qat: true``): insert fake-quant observers *before* training so
+          the model is trained in the target low-precision regime. Guarded by
+          ``_torchao_qat_prepared`` so repeated prepare_for_training calls do not re-wrap.
+        * PTQ (``quantization.qat: false``): do nothing here — we quantize at save time so
+          gradients flow through the trainable fp32 weights during fine-tuning. For inference-only
+          LLM configs this still gives quantized weights at export via ``save``.
+        """
+        quantization = self.config_obj.quantization
+        if not quantization.qat:
+            return
+        if getattr(self, "_torchao_qat_prepared", False):
+            return
+
+        from ludwig.utils.quantization import prepare_qat_model
+
+        logger.info("Preparing LLM for torchao QAT (mode=%s)", quantization.mode)
+        self.model = prepare_qat_model(self.model, quantization.mode)
+        self._torchao_qat_prepared = True
 
     def to_device(self, device):
         # Always refresh curr_device from actual parameter location, since
@@ -591,11 +619,38 @@ class LLM(BaseModel):
         # avoid this hack
         if self.config_obj.trainer.type != "none":
             weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
+            self._apply_torchao_save_time_quantization()
             # We initialize the model's generation configuration; otherwise, we get a validation error.
             self.model.generation_config = self.generation
             self.model.save_pretrained(weights_save_path)
         else:
             logger.info("Skipped saving LLM without weight adjustments.")
+
+    def _apply_torchao_save_time_quantization(self):
+        """For the torchao backend, quantize (or convert QAT -> quantized) at save time.
+
+        * PTQ (``qat: false``): apply torchao PTQ now so the saved weights are quantized.
+        * QAT (``qat: true``): convert the QAT-prepared model (fake-quant observers) to real
+          quantized weights via ``convert_qat_model``.
+
+        Idempotent via ``_torchao_quantized``: if training checkpoints call save() multiple
+        times we don't double-quantize.
+        """
+        quantization = self.config_obj.quantization
+        if not quantization or getattr(quantization, "backend", "bitsandbytes") != "torchao":
+            return
+        if getattr(self, "_torchao_quantized", False):
+            return
+
+        from ludwig.utils.quantization import convert_qat_model, quantize_model
+
+        if quantization.qat:
+            logger.info("Converting QAT-prepared LLM to %s quantized weights for save", quantization.mode)
+            self.model = convert_qat_model(self.model, quantization.mode)
+        else:
+            logger.info("Applying torchao PTQ (%s) before saving LLM", quantization.mode)
+            self.model = quantize_model(self.model, quantization.mode)
+        self._torchao_quantized = True
 
     def save_base_model(self, save_path):
         """Saves the base LLM model to the given path."""

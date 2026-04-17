@@ -464,6 +464,65 @@ def _verify_lm_lora_finetuning_layers(
                 ) == expected_lora_num_features
 
 
+@pytest.mark.llm
+def test_llm_qat_torchao_end_to_end(tmpdir, csv_filename):
+    """End-to-end smoke test for torchao quantization-aware training (QAT) on an LLM.
+
+    Fine-tunes ``hf-internal-testing/tiny-random-GPTJForCausalLM`` for a single epoch with
+    ``quantization.backend: torchao``, ``mode: int8_weight_only``, ``qat: true`` and verifies:
+
+    * QAT observers are inserted before training (``_torchao_qat_prepared`` is set after
+      ``prepare_for_training``).
+    * Training completes without errors.
+    * Save applies the conversion — after ``model.save_pretrained`` runs, the saved
+      checkpoint reflects the quantized weights, the ``_torchao_quantized`` flag is set,
+      and the model is reloadable for inference.
+
+    Paired with ``adapter: lora`` because Ludwig requires an adapter whenever quantization
+    is active on a finetune trainer (matches the existing QLoRA integration test pattern).
+    """
+    pytest.importorskip("torchao", reason="torchao required for QAT tests")
+
+    input_features = [text_feature(name="input", encoder={"type": "passthrough"})]
+    output_features = [text_feature(name="output")]
+    train_df = generate_data(input_features, output_features, filename=csv_filename, num_examples=12)
+
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: TEST_MODEL_NAME,
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        GENERATION: {"max_new_tokens": 16},
+        TRAINER: {
+            TYPE: "finetune",
+            BATCH_SIZE: 2,
+            EVAL_BATCH_SIZE: 2,
+            EPOCHS: 1,
+        },
+        ADAPTER: {TYPE: "lora", "r": 4, "alpha": 8},
+        QUANTIZATION: {"backend": "torchao", "mode": "int8_weight_only", "qat": True},
+        BACKEND: LOCAL_BACKEND,
+    }
+
+    output_directory: str = str(tmpdir)
+    model_directory: pathlib.Path = pathlib.Path(output_directory) / "api_experiment_run" / MODEL_FILE_NAME
+
+    model = LudwigModel(config)
+    model.train(dataset=train_df, output_directory=output_directory, skip_save_processed_input=False)
+
+    # QAT observers should have been inserted before training.
+    assert getattr(model.model, "_torchao_qat_prepared", False), "QAT preparation did not run"
+    # Save-time conversion should have fired.
+    assert getattr(model.model, "_torchao_quantized", False), "save-time quantization conversion did not run"
+
+    # Reload and verify inference runs through the QAT-converted model.
+    reloaded = LudwigModel.load(str(model_directory), backend=LOCAL_BACKEND)
+    prediction_df = pd.DataFrame([{"input": "Hello world", "output": ""}])
+    preds, _ = reloaded.predict(dataset=prediction_df, output_directory=output_directory)
+    preds = convert_preds(preds)
+    assert preds
+
+
 # TODO(arnav): p-tuning and prefix tuning have errors when enabled that seem to stem from distributed training:
 #
 # prefix tuning:
