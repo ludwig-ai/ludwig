@@ -462,7 +462,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
     # ================ Loss Balancing ================
 
     loss_balancing: str = schema_utils.StringOptions(
-        options=["none", "log_transform", "uncertainty", "famo", "gradnorm"],
+        options=["none", "log_transform", "uncertainty", "famo", "gradnorm", "nash_mtl"],
         default="none",
         allow_none=False,
         description=(
@@ -471,7 +471,8 @@ class ECDTrainerConfig(BaseTrainerConfig):
             "'log_transform': log(1+loss) compression (DB-MTL). "
             "'uncertainty': learnable homoscedastic uncertainty weighting (Kendall et al., CVPR 2018). "
             "'famo': fast adaptive multitask optimization (Liu et al., NeurIPS 2023). "
-            "'gradnorm': gradient normalization (Chen et al., ICML 2018)."
+            "'gradnorm': gradient normalization (Chen et al., ICML 2018). "
+            "'nash_mtl': Nash bargaining solution for multi-task weighting (Navon et al., ICML 2022)."
         ),
     )
 
