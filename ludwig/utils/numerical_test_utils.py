@@ -36,7 +36,10 @@ def _enumerable(x):
     """Returns true if an object is enumerable, false if not."""
     try:
         _ = enumerate(x)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, KeyError):
+        # Same rationale as _dict_like: an object exposing only ``__getitem__`` falls
+        # back to integer-index iteration, which raises KeyError against a string-keyed
+        # accessor.  Treat those as not-enumerable here.
         return False
     return True
 
