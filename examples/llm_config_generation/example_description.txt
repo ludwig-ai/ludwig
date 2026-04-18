@@ -1,0 +1,21 @@
+I have a tabular dataset from UCI Adult Census Income with the following columns:
+
+  - age (number)
+  - workclass (category)
+  - education (category, ordered from preschool through doctorate)
+  - education-num (number, 1-16)
+  - marital-status (category)
+  - occupation (category, 14 unique values)
+  - relationship (category)
+  - race (category)
+  - sex (binary: Male / Female)
+  - capital-gain (number, heavily skewed, mostly zero)
+  - capital-loss (number, similar to capital-gain)
+  - hours-per-week (number, 1-99)
+  - native-country (category, high cardinality ~40 classes)
+
+The target column is "income" (binary: >50K or <=50K).
+
+The dataset has about 48k rows. Training should be reasonably fast — prefer the
+medium_quality preset. Use the concat combiner with two FC layers. Use AdamW with a
+learning-rate scheduler.
