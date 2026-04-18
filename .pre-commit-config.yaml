@@ -12,6 +12,14 @@ ci:
   autoupdate_commit_msg: "[pre-commit.ci] pre-commit suggestions"
   autoupdate_schedule: weekly
 
+# Pin every hook's Python interpreter to 3.12. pre-commit.ci's hosted runners otherwise
+# default to Python 3.14, which fails to build the older `untokenize` dependency pulled
+# in by docformatter (AttributeError: 'Constant' object has no attribute 's' — the `.s`
+# alias on ast.Constant was removed in 3.14). 3.12 matches Ludwig's own supported runtime
+# and keeps hook installs reproducible with local `pre-commit run`.
+default_language_version:
+  python: python3.12
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
