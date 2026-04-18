@@ -1,10 +1,27 @@
 name: test results
 
+# Post a clean check-run summary per test suite after the pytest workflow finishes.
+#
+# Replaces the older EnricoMi/publish-unit-test-result-action bot that posted busy
+# emoji-table PR comments accumulating across runs. dorny/test-reporter@v2 instead
+# posts a single well-formatted check run per suite with a table of passed / failed
+# tests, collapsible stack traces for failures, and source-line annotations. No
+# PR-comment spam; the result lives in the checks UI and on the "Details" page.
+#
+# Runs inside a workflow_run triggered by pytest so the downloaded JUnit XML
+# artifacts come with the write permissions needed to post check runs from
+# forked PRs (where the triggering workflow itself is read-only).
+
 on:
   workflow_run:
     workflows: ["pytest"]
     types:
       - completed
+
+permissions:
+  contents: read
+  checks: write
+  actions: read
 
 jobs:
   test-results:
@@ -13,25 +30,41 @@ jobs:
     if: github.event.workflow_run.conclusion != 'skipped'
 
     steps:
-      - name: Download and Extract Artifacts
-        env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-        run: |
-           mkdir -p artifacts && cd artifacts
-
-           artifacts_url=${{ github.event.workflow_run.artifacts_url }}
-
-           gh api "$artifacts_url" -q '.artifacts[] | [.name, .archive_download_url] | @tsv' | while read artifact
-           do
-             IFS=$'\t' read name url <<< "$artifact"
-             gh api $url > "$name.zip"
-             unzip -d "$name" "$name.zip"
-           done
-
-      - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2
+      - name: Unit Tests report
+        uses: dorny/test-reporter@v2
         with:
-          commit: ${{ github.event.workflow_run.head_sha }}
-          event_file: artifacts/Event File/event.json
-          event_name: ${{ github.event.workflow_run.event }}
-          files: "artifacts/**/*.xml"
+          artifact: Unit Test Results
+          name: Unit Tests
+          path: "*.xml"
+          reporter: java-junit
+          fail-on-error: false
+          list-suites: failed
+          list-tests: failed
+          max-annotations: 50
+
+      - name: Integration Tests report
+        uses: dorny/test-reporter@v2
+        with:
+          # Six matrix jobs upload artifacts named
+          # "Integration Test Results (integration_tests_a)" .. _f. Match them all with
+          # a regex and aggregate into a single report.
+          artifact: /Integration Test Results .*/
+          name: Integration Tests
+          path: "*.xml"
+          reporter: java-junit
+          fail-on-error: false
+          list-suites: failed
+          list-tests: failed
+          max-annotations: 50
+
+      - name: Distributed Tests report
+        uses: dorny/test-reporter@v2
+        with:
+          artifact: Distributed Test Results
+          name: Distributed Tests
+          path: "*.xml"
+          reporter: java-junit
+          fail-on-error: false
+          list-suites: failed
+          list-tests: failed
+          max-annotations: 50
