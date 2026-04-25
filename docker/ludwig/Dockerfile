@@ -26,14 +26,13 @@ ARG LUDWIG_VERSION
 
 WORKDIR /ludwig
 
-RUN pip install --no-cache-dir torch==2.6.0 torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
-
 COPY . .
 RUN if [ -n "${LUDWIG_VERSION}" ]; then \
-      pip install --no-cache-dir "ludwig[full]==${LUDWIG_VERSION}"; \
+      pip install --no-cache-dir "ludwig[full]==${LUDWIG_VERSION}" --extra-index-url https://download.pytorch.org/whl/cpu; \
     else \
-      pip install --no-cache-dir '.[full]'; \
+      pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cpu; \
     fi
+RUN pip install --no-cache-dir --force-reinstall torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 --extra-index-url https://download.pytorch.org/whl/cpu
 
 WORKDIR /data
 
