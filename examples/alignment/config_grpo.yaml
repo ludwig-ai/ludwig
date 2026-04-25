@@ -1,0 +1,28 @@
+model_type: llm
+base_model: meta-llama/Llama-3.1-8B
+
+adapter:
+  type: lora
+  r: 16
+  alpha: 32
+
+trainer:
+  type: grpo
+  epochs: 1
+  learning_rate: 5.0e-7
+  batch_size: 1
+  gradient_accumulation_steps: 16
+  grpo_beta: 0.04        # KL penalty — keep the policy close to the reference model
+  grpo_epsilon: 0.2      # PPO clipping — bounds how much the policy can shift per step
+  grpo_num_generations: 4  # completions sampled per prompt; higher = better reward estimates
+
+input_features:
+  - name: prompt
+    type: text
+
+output_features:
+  - name: response
+    type: text
+
+backend:
+  type: local
