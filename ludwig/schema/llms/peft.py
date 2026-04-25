@@ -774,3 +774,121 @@ def AdapterDataclassField(default: str | None = None):
             }
 
     return AdapterSelection().get_default_field()
+
+
+# ================================================================================================
+# Multi-adapter support
+# ================================================================================================
+#
+# The singular `adapter:` field above supports the common case: one adapter attached to one
+# base model. The `adapters:` field below supports the multi-adapter case: several named
+# adapters attached to the same base model, switchable at runtime via PEFT's `set_adapter()`
+# and optionally merged via `add_weighted_adapter()` using combination types like TIES and
+# DARE (Yadav et al., NeurIPS 2023 / Yu et al., ICML 2024).
+#
+# `adapter:` and `adapters:` are mutually exclusive — a config must use one form or the other.
+# Back-compat: existing configs that set `adapter:` continue to work unchanged.
+
+
+@DeveloperAPI
+class MergeAdaptersConfig(schema_utils.LudwigBaseConfig):
+    """Optional weighted merge over a subset of the named adapters.
+
+    Produces a new adapter registered under ``name`` by combining ``sources`` with the
+    matching ``weights`` under ``combination_type``. The merged adapter is added to the
+    model alongside the sources; pick it as ``active`` to make it the default at
+    inference time.
+    """
+
+    name: str = schema_utils.String(
+        default="merged",
+        description="Name to register the merged adapter under.",
+    )
+
+    sources: list | None = schema_utils.List(
+        default=None,
+        allow_none=True,
+        description="Names of the adapters to merge. Each name must appear in the `adapters` map.",
+    )
+
+    weights: list | None = schema_utils.List(
+        default=None,
+        allow_none=True,
+        description=(
+            "Per-source weights; must have the same length as `sources`. " "If null, all weights default to 1.0."
+        ),
+    )
+
+    combination_type: str = schema_utils.StringOptions(
+        options=["linear", "svd", "ties", "dare_linear", "dare_ties", "magnitude_prune"],
+        default="linear",
+        allow_none=False,
+        description=(
+            "PEFT weighted-merge combination type. 'linear' is a plain weighted sum. "
+            "'ties' (Yadav et al., NeurIPS 2023) resolves sign conflicts across source "
+            "deltas before merging. 'dare_linear' / 'dare_ties' (Yu et al., ICML 2024) "
+            "prune a fraction `density` of deltas before merging for smaller footprints."
+        ),
+    )
+
+    density: float = schema_utils.FloatRange(
+        default=0.5,
+        min=0.0,
+        max=1.0,
+        description=(
+            "Fraction of weight deltas kept when `combination_type` is 'ties', "
+            "'dare_linear', 'dare_ties', or 'magnitude_prune'. Ignored for 'linear' / 'svd'."
+        ),
+    )
+
+
+@DeveloperAPI
+class MergeAdaptersConfigField(schema_utils.NestedConfigField):
+    def __init__(self):
+        super().__init__(MergeAdaptersConfig, allow_none=True, default_missing=True)
+
+    def _jsonschema_type_mapping(self):
+        return schema_utils.unload_jsonschema_from_config_class(MergeAdaptersConfig, title="MergeAdapters")
+
+
+@DeveloperAPI
+class NamedAdaptersConfig(schema_utils.LudwigBaseConfig):
+    """Configuration for multiple named PEFT adapters on the same base model."""
+
+    adapters: dict | None = schema_utils.Dict(
+        default=None,
+        allow_none=False,
+        description=(
+            "Mapping of adapter name -> adapter config. Each value is a regular adapter "
+            "config (e.g. ``{type: lora, r: 8}``) identical to what the singular "
+            "`adapter:` field accepts. Adapter names must be unique; PEFT will register "
+            "each one on the model and the first-listed adapter becomes the active one "
+            "unless `active` is set."
+        ),
+    )
+
+    active: str | None = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description=(
+            "Name of the adapter to activate after all adapters are registered. "
+            "If null, the first entry in `adapters` is used. Set this to a merged adapter "
+            "name from `merge:` to activate the merged adapter at inference time."
+        ),
+    )
+
+    merge: MergeAdaptersConfig | None = MergeAdaptersConfigField().get_default_field()
+
+
+@DeveloperAPI
+class NamedAdaptersConfigField(schema_utils.NestedConfigField):
+    def __init__(self):
+        super().__init__(NamedAdaptersConfig, allow_none=True, default_missing=True)
+
+    def _jsonschema_type_mapping(self):
+        return schema_utils.unload_jsonschema_from_config_class(NamedAdaptersConfig, title="NamedAdapters")
+
+
+@DeveloperAPI
+def NamedAdaptersDataclassField():
+    return NamedAdaptersConfigField().get_default_field()
