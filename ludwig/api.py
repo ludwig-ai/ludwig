@@ -146,17 +146,17 @@ class TrainingStats:
     test: dict[str, Any]
     evaluation_frequency: EvaluationFrequency = dataclasses.field(default_factory=EvaluationFrequency)
 
-    def keys(self):
+    def keys(self) -> list[str]:
         return [TRAINING, VALIDATION, TEST]
 
-    def __contains__(self, key):
+    def __contains__(self, key: object) -> bool:
         return (
             (key == TRAINING and self.training)
             or (key == VALIDATION and self.validation)
             or (key == TEST and self.test)
         )
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> dict[str, Any]:
         return {TRAINING: self.training, VALIDATION: self.validation, TEST: self.test}[key]
 
 
@@ -808,6 +808,7 @@ class LudwigModel:
                         )
                     except Exception as e:
                         logger.warning(f"Failed to generate model card: {e}")
+                        logger.debug(traceback.format_exc())
 
                 # Save training report (always, alongside the model)
                 if self.backend.is_coordinator() and not skip_save_model:
@@ -824,6 +825,7 @@ class LudwigModel:
                         )
                     except Exception as e:
                         logger.warning(f"Failed to generate training report: {e}")
+                        logger.debug(traceback.format_exc())
 
                 # Synchronize model weights between workers
                 self.backend.sync_model(self.model)
@@ -871,7 +873,6 @@ class LudwigModel:
         preprocessing_params = get_preprocessing_params(self.config_obj)
 
         with provision_preprocessing_workers(self.backend):
-            # TODO (Connor): Refactor to use self.config_obj
             training_dataset, _, _, training_set_metadata = preprocess_for_training(
                 self.config_obj.to_dict(),
                 training_set=dataset,
@@ -925,8 +926,6 @@ class LudwigModel:
         num_workers = self.backend.num_training_workers
         self.config_obj.trainer.update_batch_size_grad_accum(num_workers)
 
-        # TODO (ASN): add support for substitute_with_max parameter
-        # TODO(travis): detect train and eval batch sizes separately (enable / disable gradients)
         if self.config_obj.trainer.batch_size == AUTO:
             if self.backend.supports_batch_size_tuning():
                 tuned_batch_size = trainer.tune_batch_size(
@@ -939,8 +938,6 @@ class LudwigModel:
                 )
                 tuned_batch_size = FALLBACK_BATCH_SIZE
 
-            # TODO(travis): pass these in as args to trainer when we call train,
-            #  to avoid setting state on possibly remote trainer
             self.config_obj.trainer.batch_size = tuned_batch_size
 
             # Re-render the gradient_accumulation_steps to account for the explicit batch size.
@@ -1039,12 +1036,8 @@ class LudwigModel:
             # https://github.com/ludwig-ai/ludwig/issues/3695.
             raise ValueError("GPU is not available.")
 
-        # TODO(Justin): Decide if it's worth folding padding_side handling into llm.py's tokenizer initialization.
-        # For batch inference with models like facebook/opt-350m, if the tokenizer padding side is off, HF prints a
-        # warning, e.g.:
-        # "A decoder-only architecture is being used, but right-padding was detected! For correct generation results, "
-        # "please set `padding_side='left'` when initializing the tokenizer.
-        padding_side = "left" if not self.model.model.config.is_encoder_decoder else "right"
+        # Decoder-only models require left-padding for correct generation results (right-padding causes HF warnings).
+        padding_side = "left" if not getattr(self.model.model.config, "is_encoder_decoder", False) else "right"
         tokenizer = HFTokenizer(self.config_obj.base_model, padding_side=padding_side)
 
         with self.model.use_generation_config(generation_config):
@@ -1137,7 +1130,7 @@ class LudwigModel:
         skip_save_unprocessed_output: bool = True,
         skip_save_predictions: bool = True,
         output_directory: str = "results",
-        return_type: str | dict | pd.DataFrame = pd.DataFrame,
+        return_type: type = pd.DataFrame,
         callbacks: list[Callback] | None = None,
         **kwargs,
     ) -> tuple[dict | pd.DataFrame, str]:
@@ -1183,19 +1176,16 @@ class LudwigModel:
 
         # preprocessing
         start_time = time.time()
-        logger.debug("Preprocessing")
-        dataset, _ = preprocess_for_prediction(  # TODO (Connor): Refactor to use self.config_obj
-            self.config_obj.to_dict(),
-            dataset=dataset,
-            training_set_metadata=self.training_set_metadata,
+        logger.debug(f"Preprocessing dataset for prediction (batch_size={batch_size})")
+        dataset, _ = self._preprocess_for_prediction(
+            dataset,
             data_format=data_format,
             split=split,
             include_outputs=False,
-            backend=self.backend,
-            callbacks=self.callbacks + (callbacks or []),
+            callbacks=callbacks,
         )
 
-        logger.debug("Predicting")
+        logger.debug(f"Running batch prediction (batch_size={batch_size})")
         with self.backend.create_predictor(self.model, batch_size=batch_size) as predictor:
             with self.model.use_generation_config(generation_config):
                 predictions = predictor.batch_predict(
@@ -1209,7 +1199,7 @@ class LudwigModel:
                 if should_create_exp_dir:
                     makedirs(output_directory, exist_ok=True)
 
-            logger.debug("Postprocessing")
+            logger.debug("Postprocessing predictions")
             postproc_predictions = postprocess(
                 predictions,
                 self.model.output_features,
@@ -1244,7 +1234,7 @@ class LudwigModel:
         collect_predictions: bool = False,
         collect_overall_stats: bool = False,
         output_directory: str = "results",
-        return_type: str | dict | pd.DataFrame = pd.DataFrame,
+        return_type: type = pd.DataFrame,
         **kwargs,
     ) -> tuple[dict, dict | pd.DataFrame, str]:
         """This function is used to predict the output variables given the input variables using the trained model
@@ -1298,26 +1288,26 @@ class LudwigModel:
             callback.on_evaluation_start()
 
         # preprocessing
-        logger.debug("Preprocessing")
-        dataset, training_set_metadata = preprocess_for_prediction(  # TODO (Connor): Refactor to use self.config_obj
-            self.config_obj.to_dict(),
-            dataset=dataset,
-            training_set_metadata=self.training_set_metadata,
+        logger.debug("Preprocessing dataset for evaluation")
+        dataset, training_set_metadata = self._preprocess_for_prediction(
+            dataset,
             data_format=data_format,
             split=split,
             include_outputs=True,
-            backend=self.backend,
-            callbacks=self.callbacks,
         )
 
         # Fallback to use eval_batch_size or batch_size if not provided
         if batch_size is None:
             # Requires dictionary getter since some trainer configs may not have a batch_size param
-            batch_size = self.config_obj.trainer.to_dict().get(
-                EVAL_BATCH_SIZE, None
-            ) or self.config_obj.trainer.to_dict().get(BATCH_SIZE, None)
+            trainer_dict = self.config_obj.trainer.to_dict()
+            batch_size = trainer_dict.get(EVAL_BATCH_SIZE) or trainer_dict.get(BATCH_SIZE)
+        if batch_size is None:
+            raise ValueError(
+                "batch_size not specified and no default found in trainer config. "
+                "Set batch_size or eval_batch_size in your trainer config."
+            )
 
-        logger.debug("Predicting")
+        logger.debug(f"Running batch evaluation (batch_size={batch_size})")
         with self.backend.create_predictor(self.model, batch_size=batch_size) as predictor:
             eval_stats, predictions = predictor.batch_evaluation(
                 dataset,
@@ -1351,7 +1341,7 @@ class LudwigModel:
                     makedirs(output_directory, exist_ok=True)
 
             if collect_predictions:
-                logger.debug("Postprocessing")
+                logger.debug("Postprocessing predictions")
                 postproc_predictions = postprocess(
                     predictions,
                     self.model.output_features,
@@ -1396,6 +1386,7 @@ class LudwigModel:
         horizon: int = 1,
         output_directory: str | None = None,
         output_format: str = "parquet",
+        callbacks: list[Callback] | None = None,
     ) -> DataFrame:
         # TODO(travis): WIP
         dataset, _, _, _ = load_dataset_uris(dataset, None, None, None, self.backend)
@@ -1700,17 +1691,15 @@ class LudwigModel:
         self._check_initialization()
 
         # preprocessing
-        logger.debug("Preprocessing")
-        dataset, training_set_metadata = preprocess_for_prediction(  # TODO (Connor): Refactor to use self.config_obj
-            self.config_obj.to_dict(),
-            dataset=dataset,
-            training_set_metadata=self.training_set_metadata,
+        logger.debug("Preprocessing dataset for activation collection")
+        dataset, training_set_metadata = self._preprocess_for_prediction(
+            dataset,
             data_format=data_format,
             split=split,
             include_outputs=False,
         )
 
-        logger.debug("Predicting")
+        logger.debug(f"Collecting activations for layers: {layer_names} (batch_size={batch_size})")
         with self.backend.create_predictor(self.model, batch_size=batch_size) as predictor:
             activations = predictor.batch_collect_activations(
                 layer_names,
@@ -2075,6 +2064,26 @@ class LudwigModel:
             return exporter.export_onnx(save_path, sample_input)
         else:
             raise ValueError(f"Unknown export format: {format}. Options: safetensors, torch_export, onnx")
+
+    def _preprocess_for_prediction(
+        self,
+        dataset,
+        data_format=None,
+        split=None,
+        include_outputs=False,
+        callbacks=None,
+    ):
+        """Shared preprocessing wrapper for predict, evaluate, and collect_activations."""
+        return preprocess_for_prediction(
+            self.config_obj.to_dict(),
+            dataset=dataset,
+            training_set_metadata=self.training_set_metadata,
+            data_format=data_format,
+            split=split,
+            include_outputs=include_outputs,
+            backend=self.backend,
+            callbacks=self.callbacks + (callbacks or []),
+        )
 
     def _check_initialization(self):
         if self.model is None or self._user_config is None or self.training_set_metadata is None:
