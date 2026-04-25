@@ -868,6 +868,106 @@ def test_llm_finetuning_output_feature_config():
     ModelConfig.from_dict(config)
 
 
+class TestTorchaoQuantization:
+    """Schema tests for the torchao quantization backend (PTQ and QAT)."""
+
+    def _llm_base(self) -> dict:
+        # Use default (non-finetune) trainer so the adapter-required-with-quantization check
+        # doesn't fire — we're testing the quantization schema surface, not the finetune path.
+        return {
+            MODEL_TYPE: MODEL_LLM,
+            BASE_MODEL: "HuggingFaceH4/tiny-random-LlamaForCausalLM",
+            INPUT_FEATURES: [{NAME: "text_input", TYPE: "text"}],
+            OUTPUT_FEATURES: [{NAME: "text_output", TYPE: "text"}],
+            "adapter": {"type": "lora", "r": 4},
+            "trainer": {"type": "finetune"},
+        }
+
+    def test_bnb_backend_backcompat(self):
+        cfg = ModelConfig.from_dict({**self._llm_base(), "quantization": {"bits": 4}})
+        assert cfg.quantization.backend == "bitsandbytes"
+        assert cfg.quantization.bits == 4
+        assert cfg.quantization.mode is None
+        assert cfg.quantization.qat is False
+
+    def test_torchao_ptq(self):
+        cfg = ModelConfig.from_dict(
+            {**self._llm_base(), "quantization": {"backend": "torchao", "mode": "int4_weight_only"}}
+        )
+        assert cfg.quantization.backend == "torchao"
+        assert cfg.quantization.mode == "int4_weight_only"
+        assert cfg.quantization.qat is False
+
+    def test_torchao_qat(self):
+        cfg = ModelConfig.from_dict(
+            {
+                **self._llm_base(),
+                "quantization": {"backend": "torchao", "mode": "int8_weight_only", "qat": True},
+            }
+        )
+        assert cfg.quantization.qat is True
+        assert cfg.quantization.mode == "int8_weight_only"
+
+    def test_torchao_requires_mode(self):
+        with pytest.raises(ConfigValidationError, match="`quantization.mode` is required"):
+            ModelConfig.from_dict({**self._llm_base(), "quantization": {"backend": "torchao"}})
+
+    def test_bnb_rejects_mode(self):
+        with pytest.raises(ConfigValidationError, match="only supported for `backend: torchao`"):
+            ModelConfig.from_dict(
+                {**self._llm_base(), "quantization": {"backend": "bitsandbytes", "mode": "int4_weight_only"}}
+            )
+
+    def test_bnb_rejects_qat(self):
+        with pytest.raises(ConfigValidationError, match="`quantization.qat: true`"):
+            ModelConfig.from_dict({**self._llm_base(), "quantization": {"backend": "bitsandbytes", "qat": True}})
+
+    @pytest.mark.parametrize("mode", ["int4_weight_only", "int8_weight_only", "int8_dynamic", "float8"])
+    def test_all_torchao_modes_parse(self, mode):
+        cfg = ModelConfig.from_dict({**self._llm_base(), "quantization": {"backend": "torchao", "mode": mode}})
+        assert cfg.quantization.mode == mode
+
+
+class TestTorchaoQuantizationUtil:
+    """Unit tests for ludwig.utils.quantization helpers (no torchao install required)."""
+
+    def test_validate_mode_accepts_known(self):
+        from ludwig.utils.quantization import _VALID_MODES, _validate_mode
+
+        for mode in _VALID_MODES:
+            _validate_mode(mode)  # should not raise
+
+    def test_validate_mode_rejects_unknown(self):
+        from ludwig.utils.quantization import _validate_mode
+
+        with pytest.raises(ValueError, match="Unknown quantization mode"):
+            _validate_mode("bogus")
+
+    def test_qat_bit_width_int4(self):
+        from ludwig.utils.quantization import _qat_bit_width
+
+        assert _qat_bit_width("int4_weight_only") == 4
+
+    def test_qat_bit_width_int8(self):
+        from ludwig.utils.quantization import _qat_bit_width
+
+        assert _qat_bit_width("int8_weight_only") == 8
+        assert _qat_bit_width("int8_dynamic") == 8
+
+    def test_qat_rejects_float8(self):
+        from ludwig.utils.quantization import _qat_bit_width
+
+        with pytest.raises(ValueError, match="QAT is not supported"):
+            _qat_bit_width("float8")
+
+    def test_quantize_model_rejects_unknown_mode(self):
+        # Don't need torchao installed — _validate_mode fires before the import.
+        from ludwig.utils.quantization import quantize_model
+
+        with pytest.raises(ValueError, match="Unknown quantization mode"):
+            quantize_model(object(), "bogus")
+
+
 @pytest.mark.skip(
     reason="TODO(geoffrey, arnav): re-enable this when we have reconciled the config with the backend kwarg in api.py"
 )
