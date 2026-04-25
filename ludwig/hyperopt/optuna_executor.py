@@ -193,7 +193,7 @@ class OptunaExecutor:
                     callbacks=callbacks,
                 )
 
-                train_stats, preprocessed_data, output_directory_trial = model.train(
+                train_result = model.train(
                     dataset=dataset,
                     training_set=training_set,
                     validation_set=validation_set,
@@ -211,16 +211,18 @@ class OptunaExecutor:
                     output_directory=trial_dir,
                     random_seed=random_seed + trial.number,
                 )
+                train_stats = train_result.train_stats
+                preprocessed_data = train_result.preprocessed_data
 
                 # Evaluate on the target split
                 eval_split = self.split
                 eval_dataset = None
                 if eval_split == TRAINING:
-                    eval_dataset = preprocessed_data[0]
+                    eval_dataset = preprocessed_data.training_set
                 elif eval_split == VALIDATION:
-                    eval_dataset = preprocessed_data[1]
+                    eval_dataset = preprocessed_data.validation_set
                 elif eval_split == TEST:
-                    eval_dataset = preprocessed_data[2]
+                    eval_dataset = preprocessed_data.test_set
 
                 eval_stats = {}
                 if eval_dataset is not None:

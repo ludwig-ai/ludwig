@@ -330,7 +330,7 @@ def hyperopt(
             callbacks=callbacks,
         )
 
-        training_set, validation_set, test_set, training_set_metadata = model.preprocess(
+        preprocessed = model.preprocess(
             dataset=dataset,
             training_set=training_set,
             validation_set=validation_set,
@@ -340,6 +340,10 @@ def hyperopt(
             skip_save_processed_input=skip_save_processed_input,
             random_seed=random_seed,
         )
+        training_set = preprocessed.training_set
+        validation_set = preprocessed.validation_set
+        test_set = preprocessed.test_set
+        training_set_metadata = preprocessed.training_set_metadata
         dataset = None
 
         dataset_statistics = generate_dataset_statistics(training_set, validation_set, test_set)

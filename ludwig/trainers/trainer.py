@@ -66,6 +66,7 @@ from ludwig.modules.optimization_modules import create_clipper
 from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.base import BaseTrainer
+from ludwig.trainers.mixins import CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin
 from ludwig.trainers.registry import register_trainer
 from ludwig.types import ModelConfigDict
 from ludwig.utils import time_utils
@@ -99,7 +100,7 @@ _TORCH210 = packaging.version.parse(torch.__version__) >= packaging.version.pars
 
 
 @register_trainer(MODEL_ECD, default=True)
-class Trainer(BaseTrainer):
+class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin, BaseTrainer):
     """Trainer is a class that trains a model."""
 
     @staticmethod
