@@ -146,6 +146,9 @@ class TrainingStats:
     test: dict[str, Any]
     evaluation_frequency: EvaluationFrequency = dataclasses.field(default_factory=EvaluationFrequency)
 
+    def keys(self):
+        return [TRAINING, VALIDATION, TEST]
+
     def __contains__(self, key):
         return (
             (key == TRAINING and self.training)
@@ -550,7 +553,7 @@ class LudwigModel:
                 description_fn, training_stats_fn, model_dir = get_file_names(output_directory)
 
             if isinstance(training_set, Dataset) and training_set_metadata is not None:
-                preprocessed_data = (training_set, validation_set, test_set, training_set_metadata)
+                preprocessed_data = PreprocessedDataset(training_set, validation_set, test_set, training_set_metadata)
             else:
                 # save description
                 if self.backend.is_coordinator():
@@ -611,7 +614,10 @@ class LudwigModel:
                     random_seed=random_seed,
                     **kwargs,
                 )
-                training_set, validation_set, test_set, training_set_metadata = preprocessed_data
+                training_set = preprocessed_data.training_set
+                validation_set = preprocessed_data.validation_set
+                test_set = preprocessed_data.test_set
+                training_set_metadata = preprocessed_data.training_set_metadata
 
             self.training_set_metadata = training_set_metadata
 
