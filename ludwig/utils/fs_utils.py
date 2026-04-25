@@ -27,8 +27,12 @@ from urllib.parse import unquote, urlparse
 
 import certifi
 import fsspec
-import h5py
 import pyarrow.fs
+
+try:
+    import h5py
+except ImportError:
+    h5py = None
 import urllib3
 from filelock import FileLock
 from fsspec.core import split_protocol
@@ -329,6 +333,12 @@ def open_file(url, *args, **kwargs):
 @DeveloperAPI
 @contextlib.contextmanager
 def download_h5(url):
+    """Legacy HDF5 download.
+
+    Requires h5py (pip install h5py).
+    """
+    if h5py is None:
+        raise ImportError("h5py is required to read legacy HDF5 files. Install with: pip install h5py")
     with tempfile.TemporaryDirectory() as tmpdir:
         local_path = os.path.join(tmpdir, os.path.basename(url))
         fs, path = get_fs_and_path(url)
@@ -340,6 +350,12 @@ def download_h5(url):
 @DeveloperAPI
 @contextlib.contextmanager
 def upload_h5(url):
+    """Legacy HDF5 upload.
+
+    Requires h5py (pip install h5py).
+    """
+    if h5py is None:
+        raise ImportError("h5py is required to write legacy HDF5 files. Install with: pip install h5py")
     with upload_output_file(url) as local_fname:
         mode = "w"
         if url == local_fname and path_exists(url):

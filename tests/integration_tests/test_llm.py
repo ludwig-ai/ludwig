@@ -523,6 +523,83 @@ def test_llm_qat_torchao_end_to_end(tmpdir, csv_filename):
     assert preds
 
 
+@pytest.mark.llm
+def test_llm_multi_adapter_registration_and_merge(tmpdir, csv_filename):
+    """End-to-end smoke test for the ``adapters:`` multi-adapter config.
+
+    Registers two named LoRA adapters on a tiny GPTJ, runs a single fine-tune epoch,
+    attaches a TIES-merged adapter built from both sources, and verifies that:
+
+    * all three adapters (``a``, ``b``, ``merged``) exist on the loaded model,
+    * the active adapter after init matches ``adapters.active`` (``merged``), and
+    * predictions can be generated through the merged adapter.
+
+    Uses ``hf-internal-testing/tiny-random-GPTJForCausalLM`` — the smallest practical
+    causal LM in the Ludwig test suite — to keep wall-time low even on CPU runners.
+    """
+    import peft as _peft  # noqa: F401  (fail the test early on minimal installs)
+
+    input_features = [text_feature(name="input", encoder={"type": "passthrough"})]
+    output_features = [text_feature(name="output")]
+    train_df = generate_data(input_features, output_features, filename=csv_filename, num_examples=12)
+
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: TEST_MODEL_NAME,
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        GENERATION: {"max_new_tokens": 16},
+        TRAINER: {
+            TYPE: "finetune",
+            BATCH_SIZE: 2,
+            EVAL_BATCH_SIZE: 2,
+            EPOCHS: 1,
+        },
+        "adapters": {
+            "adapters": {
+                "adapter_a": {"type": "lora", "r": 4, "alpha": 8},
+                "adapter_b": {"type": "lora", "r": 4, "alpha": 8},
+            },
+            "merge": {
+                "name": "merged",
+                "sources": ["adapter_a", "adapter_b"],
+                "weights": [0.5, 0.5],
+                "combination_type": "ties",
+                "density": 0.5,
+            },
+            "active": "merged",
+        },
+        BACKEND: LOCAL_BACKEND,
+    }
+
+    output_directory: str = str(tmpdir)
+    model_directory: pathlib.Path = pathlib.Path(output_directory) / "api_experiment_run" / MODEL_FILE_NAME
+
+    model = LudwigModel(config)
+    model.train(dataset=train_df, output_directory=output_directory, skip_save_processed_input=False)
+
+    # All three named adapters must be present on the PEFT-wrapped model.
+    peft_adapters = set(model.model.model.peft_config.keys())
+    assert {"adapter_a", "adapter_b", "merged"}.issubset(peft_adapters), f"missing adapters: {peft_adapters}"
+
+    # The active adapter after initialization should be the merged one we requested.
+    active = model.model.model.active_adapter
+    if isinstance(active, (list, tuple, set)):
+        active = next(iter(active))
+    assert active == "merged", f"expected active=merged, got {active!r}"
+
+    # Reload round-trip: the saved model's PEFT dir should carry all three adapters.
+    reloaded = LudwigModel.load(str(model_directory), backend=LOCAL_BACKEND)
+    reloaded_peft_adapters = set(reloaded.model.model.peft_config.keys())
+    assert {"adapter_a", "adapter_b", "merged"}.issubset(reloaded_peft_adapters)
+
+    # Generation through the merged adapter should run to completion.
+    prediction_df = pd.DataFrame([{"input": "The food was amazing!", "output": ""}])
+    preds, _ = reloaded.predict(dataset=prediction_df, output_directory=output_directory)
+    preds = convert_preds(preds)
+    assert preds
+
+
 # TODO(arnav): p-tuning and prefix tuning have errors when enabled that seem to stem from distributed training:
 #
 # prefix tuning:

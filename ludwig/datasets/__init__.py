@@ -38,9 +38,10 @@ def _load_dataset_config(config_filename: str):
 @lru_cache(maxsize=1)
 def _get_dataset_configs() -> dict[str, DatasetConfig]:
     """Returns all dataset configs indexed by name."""
-    import importlib.resources
-
-    config_files = [f.name for f in importlib.resources.files(configs).iterdir() if f.name.endswith(".yaml")]
+    # Use os.listdir as the primary method - it's simple and works reliably
+    # with both editable and regular installs.
+    configs_dir = os.path.dirname(configs.__file__)
+    config_files = [f for f in os.listdir(configs_dir) if f.endswith(".yaml")]
     config_objects = [_load_dataset_config(f) for f in config_files]
     return {c.name: c for c in config_objects}
 

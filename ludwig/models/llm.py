@@ -164,21 +164,43 @@ class LLM(BaseModel):
     def initialize_adapter(self):
         """If an adapter config is provided, wrap the model with a PEFT model for fine-tuning.
 
-        Guarded by _adapter_initialized to prevent double-wrapping when called multiple times (e.g. prepare_for_training
-        is called on every Trainer construction, including on resume).
+        Handles both the singular ``config_obj.adapter`` and the multi-adapter
+        ``config_obj.adapters`` forms — the two fields are schema-level mutually exclusive.
+        Guarded by _adapter_initialized to prevent double-wrapping when called multiple
+        times (e.g. prepare_for_training is called on every Trainer construction,
+        including on resume).
         """
-        if self.config_obj.adapter and not self._adapter_initialized:
-            if self.config_obj.trainer.type != "finetune" and not self.config_obj.adapter.pretrained_adapter_weights:
-                raise ValueError(
-                    "Adapter config was provided, but trainer type is not set to `finetune`. Either set the trainer to "
-                    "`finetune` or remove the adapter config."
-                )
+        has_adapter = bool(self.config_obj.adapter)
+        has_adapters = getattr(self.config_obj, "adapters", None) is not None
+
+        if (has_adapter or has_adapters) and not self._adapter_initialized:
+            # Finetune is required for any adapter path unless we're loading pretrained
+            # adapter weights on the single-adapter fast path.
+            if self.config_obj.trainer.type != "finetune":
+                if has_adapter and self.config_obj.adapter.pretrained_adapter_weights:
+                    pass  # allowed: pretrained adapter inference
+                else:
+                    raise ValueError(
+                        "Adapter config was provided, but trainer type is not set to `finetune`. "
+                        "Either set the trainer to `finetune` or remove the adapter config."
+                    )
 
             self.model = initialize_adapter(self.model, self.config_obj)
 
             logger.info("==================================================")
             logger.info("Trainable Parameter Summary For Fine-Tuning")
-            logger.info(f"Fine-tuning with adapter: {self.config_obj.adapter.type}")
+            if has_adapter:
+                logger.info(f"Fine-tuning with adapter: {self.config_obj.adapter.type}")
+            else:
+                adapter_types = [
+                    cfg.get("type") if isinstance(cfg, dict) else cfg.type
+                    for cfg in self.config_obj.adapters.adapters.values()
+                ]
+                logger.info(
+                    "Fine-tuning with %d named adapters: %s",
+                    len(adapter_types),
+                    list(zip(self.config_obj.adapters.adapters.keys(), adapter_types)),
+                )
             self.model.print_trainable_parameters()
             logger.info("==================================================")
 
@@ -717,7 +739,9 @@ class LLM(BaseModel):
     def load(self, save_path):
         """Loads the model from the given path."""
         weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-        if self.config_obj.adapter:
+        if getattr(self.config_obj, "adapters", None) is not None:
+            self._load_multi_adapters(weights_save_path)
+        elif self.config_obj.adapter:
             # Check if the saved weights are merged (no adapter_config.json) or adapter-only
             adapter_config_path = os.path.join(weights_save_path, "adapter_config.json")
             if os.path.exists(adapter_config_path):
@@ -741,6 +765,44 @@ class LLM(BaseModel):
             )
         else:
             logger.info("Skipped loading LLM without weight adjustments.")
+
+    def _load_multi_adapters(self, weights_save_path: str) -> None:
+        """Reload a multi-adapter PeftModel saved via `save_pretrained`.
+
+        PEFT stores each named adapter under a subdirectory at `weights_save_path/<name>/`. We load the first adapter
+        via `PeftModel.from_pretrained(base, path, adapter_name=name)` and every additional adapter via
+        `peft_model.load_adapter(path, adapter_name=name)`. The merged adapter (if configured) was saved just like any
+        other named adapter — it is loaded the same way, no special case needed. Finally we activate whichever adapter
+        the config declares via `set_adapter(active)`.
+        """
+        from peft import PeftModel  # noqa
+
+        adapters_cfg = self.config_obj.adapters
+        names = list(adapters_cfg.adapters.keys())
+        if adapters_cfg.merge is not None:
+            names = names + [adapters_cfg.merge.name]
+
+        if isinstance(self.model, PeftModel):
+            # Already wrapped (e.g. resuming from an in-memory init); peel back to the base.
+            self.model = self.model.base_model
+
+        first_name = names[0]
+        first_adapter_dir = os.path.join(weights_save_path, first_name)
+        if os.path.exists(first_adapter_dir):
+            self.model = PeftModel.from_pretrained(self.model, first_adapter_dir, adapter_name=first_name)
+        else:
+            # Fallback: PEFT may have saved adapters directly at `weights_save_path` rather
+            # than in per-name subdirectories (old save layout). Use the original path.
+            self.model = PeftModel.from_pretrained(self.model, weights_save_path, adapter_name=first_name)
+
+        for name in names[1:]:
+            adapter_dir = os.path.join(weights_save_path, name)
+            load_path = adapter_dir if os.path.exists(adapter_dir) else weights_save_path
+            self.model.load_adapter(load_path, adapter_name=name)
+
+        active = adapters_cfg.active or names[0]
+        self.model.set_adapter(active)
+        logger.info("Reloaded adapters: %s (active=%s)", names, active)
 
     def get_args(self):
         """Returns init arguments for constructing this model."""

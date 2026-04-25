@@ -138,20 +138,16 @@ class EvaluationFrequency:  # noqa F821
 
 @PublicAPI
 @dataclass
-class TrainingStats:  # noqa F821
-    """Training stats were previously represented as a tuple or a dict.
-
-    This class replaces those while preserving dict and tuple-like behavior (unpacking, [] access).
-    """
+class TrainingStats:
+    """Training statistics for all splits (training, validation, test)."""
 
     training: dict[str, Any]
     validation: dict[str, Any]
     test: dict[str, Any]
     evaluation_frequency: EvaluationFrequency = dataclasses.field(default_factory=EvaluationFrequency)
 
-    # TODO(daniel): deprecate multiple return value unpacking and dictionary-style element access
-    def __iter__(self):
-        return iter((self.training, self.test, self.validation))
+    def keys(self):
+        return [TRAINING, VALIDATION, TEST]
 
     def __contains__(self, key):
         return (
@@ -161,45 +157,64 @@ class TrainingStats:  # noqa F821
         )
 
     def __getitem__(self, key):
-        # Supports dict-style [] element access for compatibility.
         return {TRAINING: self.training, VALIDATION: self.validation, TEST: self.test}[key]
 
 
 @PublicAPI
 @dataclass
-class PreprocessedDataset:  # noqa F821
+class PreprocessedDataset:
     training_set: Dataset
     validation_set: Dataset
     test_set: Dataset
     training_set_metadata: TrainingSetMetadataDict
 
-    # TODO(daniel): deprecate multiple return value unpacking and indexed access
     def __iter__(self):
+        import warnings
+
+        warnings.warn(
+            "Tuple unpacking of PreprocessedDataset is deprecated. Use attribute access instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return iter((self.training_set, self.validation_set, self.test_set, self.training_set_metadata))
 
     def __getitem__(self, index):
+        import warnings
+
+        warnings.warn(
+            "Indexed access of PreprocessedDataset is deprecated. Use attribute access instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return (self.training_set, self.validation_set, self.test_set, self.training_set_metadata)[index]
 
 
 @PublicAPI
 @dataclass
-class TrainingResults:  # noqa F821
+class TrainingResults:
     train_stats: TrainingStats
     preprocessed_data: PreprocessedDataset
     output_directory: str
 
     def __iter__(self):
-        """Supports tuple-style return value unpacking ex.
+        import warnings
 
-        train_stats, training_set, output_dir = model.train(...)
-        """
+        warnings.warn(
+            "Tuple unpacking of TrainingResults is deprecated. "
+            "Use attribute access instead: result.train_stats, result.preprocessed_data, result.output_directory",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return iter((self.train_stats, self.preprocessed_data, self.output_directory))
 
     def __getitem__(self, index):
-        """Provides indexed getter ex.
+        import warnings
 
-        train_stats = model.train(...)[0]
-        """
+        warnings.warn(
+            "Indexed access of TrainingResults is deprecated. Use attribute access instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return (self.train_stats, self.preprocessed_data, self.output_directory)[index]
 
 
@@ -538,7 +553,7 @@ class LudwigModel:
                 description_fn, training_stats_fn, model_dir = get_file_names(output_directory)
 
             if isinstance(training_set, Dataset) and training_set_metadata is not None:
-                preprocessed_data = (training_set, validation_set, test_set, training_set_metadata)
+                preprocessed_data = PreprocessedDataset(training_set, validation_set, test_set, training_set_metadata)
             else:
                 # save description
                 if self.backend.is_coordinator():
@@ -599,7 +614,10 @@ class LudwigModel:
                     random_seed=random_seed,
                     **kwargs,
                 )
-                training_set, validation_set, test_set, training_set_metadata = preprocessed_data
+                training_set = preprocessed_data.training_set
+                validation_set = preprocessed_data.validation_set
+                test_set = preprocessed_data.test_set
+                training_set_metadata = preprocessed_data.training_set_metadata
 
             self.training_set_metadata = training_set_metadata
 
@@ -1567,7 +1585,7 @@ class LudwigModel:
             print_boxed("WARNING")
             logger.warning(HYPEROPT_WARNING)
 
-        train_stats, preprocessed_data, output_directory = self.train(
+        train_result = self.train(
             dataset=dataset,
             training_set=training_set,
             validation_set=validation_set,
@@ -1587,16 +1605,17 @@ class LudwigModel:
             output_directory=output_directory,
             random_seed=random_seed,
         )
+        train_stats = train_result.train_stats
+        preprocessed_data = train_result.preprocessed_data
+        output_directory = train_result.output_directory
 
-        training_set, validation_set, test_set, training_set_metadata = preprocessed_data
-
-        eval_set = validation_set
+        eval_set = preprocessed_data.validation_set
         if eval_split == TRAINING:
-            eval_set = training_set
+            eval_set = preprocessed_data.training_set
         elif eval_split == VALIDATION:
-            eval_set = validation_set
+            eval_set = preprocessed_data.validation_set
         elif eval_split == TEST:
-            eval_set = test_set
+            eval_set = preprocessed_data.test_set
         else:
             logger.warning(f"Eval split {eval_split} not supported. " f"Using validation set instead")
 
