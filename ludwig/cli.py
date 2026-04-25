@@ -49,8 +49,9 @@ Available sub-commands:
    datasets              Downloads and lists Ludwig-ready datasets
    export_mlflow         Exports Ludwig models to MLflow
    export_model          Exports Ludwig models to safetensors, torch_export, or onnx
+   inspect               Inspect a trained model (summary, weights, feature importance)
    export_schema         Exports the Ludwig config JSON schema
-   preprocess            Preprocess data and saves it into HDF5 and JSON format
+   preprocess            Preprocess data and saves it into Parquet and JSON format
    synthesize_dataset    Creates synthetic data for testing purposes
    init_config           Initialize a user config from a dataset and targets
    render_config         Renders the fully populated config with all defaults set
@@ -138,6 +139,11 @@ Available sub-commands:
         from ludwig import export
 
         export.cli_export_model(sys.argv[2:])
+
+    def inspect(self):
+        from ludwig import inspect_model
+
+        inspect_model.cli(sys.argv[2:])
 
     def export_schema(self):
         from ludwig.schema.export_schema import main as export_schema_main

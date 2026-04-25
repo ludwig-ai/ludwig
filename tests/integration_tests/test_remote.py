@@ -15,10 +15,10 @@ from ludwig.globals import (
 from ludwig.utils import fs_utils
 from ludwig.utils.data_utils import use_credentials
 from tests.integration_tests.utils import (
+    _run_private_tests,
     category_feature,
     generate_data,
     minio_test_creds,
-    private_param,
     remote_tmpdir,
     sequence_feature,
 )
@@ -36,7 +36,25 @@ pytestmark = pytest.mark.integration_tests_b
 )
 @pytest.mark.parametrize(
     "fs_protocol,bucket,creds",
-    [("file", None, None), private_param(("s3", "ludwig-tests", minio_test_creds()))],
+    [
+        ("file", None, None),
+        pytest.param(
+            "s3",
+            "ludwig-tests",
+            minio_test_creds(),
+            marks=[
+                pytest.mark.skipif(
+                    not _run_private_tests,
+                    reason="Skipping: this test is marked private, set RUN_PRIVATE=1 in your environment to run",
+                ),
+                pytest.mark.xfail(
+                    reason="PyArrow S3 C++ client uses chunked transfer encoding for multipart uploads, "
+                    "which MinIO rejects with HTTP 411 MissingContentLength. Requires real AWS S3.",
+                    strict=False,
+                ),
+            ],
+        ),
+    ],
     ids=["file", "s3"],
 )
 def test_remote_training_set(csv_filename, fs_protocol, bucket, creds, backend, ray_cluster_2cpu):

@@ -41,17 +41,20 @@ def load_pretrained_from_config(
     weights_save_path: str | None = None,
 ) -> PreTrainedModel:
     load_kwargs = {}
-    if config_obj.quantization:
-        # Apply quantization configuration at model load time
-        load_kwargs["dtype"] = getattr(torch, config_obj.quantization.bnb_4bit_compute_dtype)
-        load_kwargs["quantization_config"] = config_obj.quantization.to_bitsandbytes()
+    quantization = config_obj.quantization
+    if quantization and getattr(quantization, "backend", "bitsandbytes") == "bitsandbytes":
+        # Apply bitsandbytes quantization configuration at model load time.
+        load_kwargs["dtype"] = getattr(torch, quantization.bnb_4bit_compute_dtype)
+        load_kwargs["quantization_config"] = quantization.to_bitsandbytes()
         load_kwargs["device_map"] = "auto"
 
         if transformers_436:
             load_kwargs["attn_implementation"] = "eager"
     else:
-        # Load in float32 by default to avoid CUBLAS errors with small hidden sizes
-        # and to ensure numerical stability during training without mixed-precision.
+        # Either no quantization, or torchao — which quantizes the model *after* load, not
+        # via transformers' BitsAndBytesConfig. Load in float32 by default to avoid CUBLAS
+        # errors with small hidden sizes and to ensure numerical stability during training
+        # without mixed-precision.
         load_kwargs["dtype"] = torch.float32
 
     config_modified = False
@@ -189,14 +192,22 @@ def initialize_adapter(
 ) -> Union["PeftModel", PreTrainedModel]:  # noqa F821
     """Wrap a pretrained model with a PEFT model for fine-tuning.
 
+    Dispatches to the multi-adapter path when ``config_obj.adapters`` is set (several
+    named adapters registered on the same base, optional weighted merge, runtime
+    switching via ``set_adapter``) and to the single-adapter path for ``config_obj.adapter``.
+    The two fields are mutually exclusive at the schema layer.
+
     Args:
          model: Pretrained model to fine-tune with an adapter.
          config_obj: LLM config
 
     Returns:
-        `model` wrapped in a PEFT model if an adapter config was provided, otherwise `model`.
+        ``model`` wrapped in a PEFT model if an adapter config was provided, otherwise
+        ``model`` unaltered.
     """
-    # Only load a PEFT model if the config specifies an adapter, otherwise return the model unaltered.
+    if getattr(config_obj, "adapters", None) is not None:
+        return _initialize_multi_adapters(model, config_obj)
+
     if config_obj.adapter:
         if config_obj.adapter.pretrained_adapter_weights:
             # Load pretrained adapter weights if specified.
@@ -222,6 +233,85 @@ def initialize_adapter(
             model = get_peft_model(model, peft_config)
 
     return model
+
+
+def _initialize_multi_adapters(
+    model: PreTrainedModel, config_obj: "LLMModelConfig"  # noqa F821
+) -> "PeftModel":  # noqa F821
+    """Attach several named PEFT adapters to ``model`` and (optionally) a merged one.
+
+    PEFT's public multi-adapter surface:
+      * ``get_peft_model(base, cfg, adapter_name=...)`` creates a PeftModel with one named
+        adapter. We use the first configured adapter here as the anchor.
+      * ``peft_model.add_adapter(adapter_name, cfg)`` registers additional adapters on the
+        same PeftModel.
+      * ``peft_model.add_weighted_adapter(source_names, weights, name, combination_type,
+        density)`` produces a new adapter by combining existing ones. Used when
+        ``adapters.merge`` is set.
+      * ``peft_model.set_adapter(name)`` designates the default adapter. Only one adapter
+        is active at a time — users switch explicitly at inference, or ask for the merged
+        adapter as the default.
+    """
+    from peft import get_peft_model, TaskType  # imported inline for minimal installs
+
+    adapters_cfg = config_obj.adapters
+    items = list(adapters_cfg.adapters.items())  # insertion order, validated non-empty by schema
+    first_name, first_cfg = items[0]
+
+    if not hasattr(first_cfg, "to_config"):
+        # The schema stores entries as raw dicts; re-materialize them into adapter configs via
+        # the adapter registry so each has a working `to_config()` method.
+        items = [(name, _materialize_adapter_config(cfg)) for name, cfg in items]
+        first_name, first_cfg = items[0]
+
+    first_peft_config = first_cfg.to_config(task_type=TaskType.CAUSAL_LM, tokenizer_name_or_path=config_obj.base_model)
+    model = get_peft_model(model, first_peft_config, adapter_name=first_name)
+
+    for name, adapter_cfg in items[1:]:
+        peft_config = adapter_cfg.to_config(task_type=TaskType.CAUSAL_LM, tokenizer_name_or_path=config_obj.base_model)
+        model.add_adapter(name, peft_config)
+
+    if adapters_cfg.merge is not None:
+        merge = adapters_cfg.merge
+        weights = merge.weights if merge.weights is not None else [1.0] * len(merge.sources)
+        kwargs = {
+            "adapters": merge.sources,
+            "weights": weights,
+            "adapter_name": merge.name,
+            "combination_type": merge.combination_type,
+        }
+        if merge.combination_type in ("ties", "dare_linear", "dare_ties", "magnitude_prune"):
+            kwargs["density"] = merge.density
+        model.add_weighted_adapter(**kwargs)
+        logger.info(
+            "Merged adapters %s (weights=%s) via %s into %r",
+            merge.sources,
+            weights,
+            merge.combination_type,
+            merge.name,
+        )
+
+    active = adapters_cfg.active or first_name
+    model.set_adapter(active)
+    logger.info("Registered adapters: %s (active=%s)", [n for n, _ in items], active)
+
+    return model
+
+
+def _materialize_adapter_config(raw):
+    """Turn a raw dict from ``adapters.adapters`` into a BaseAdapterConfig instance."""
+    from ludwig.schema.llms.peft import adapter_registry
+
+    if hasattr(raw, "to_config"):
+        return raw
+    if not isinstance(raw, dict):
+        raise TypeError(f"Expected dict adapter config, got {type(raw).__name__}")
+    adapter_type = raw.get("type")
+    if adapter_type is None:
+        raise ValueError("Adapter config is missing required `type` field.")
+    if adapter_type not in adapter_registry:
+        raise ValueError(f"Unknown adapter type {adapter_type!r}. Known: {list(adapter_registry.keys())}")
+    return adapter_registry[adapter_type].model_validate(raw)
 
 
 def get_context_len(model_config: AutoConfig):

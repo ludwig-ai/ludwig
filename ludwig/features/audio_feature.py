@@ -21,7 +21,7 @@ import torch
 import torchaudio
 from packaging import version
 
-from ludwig.constants import AUDIO, AUDIO_FEATURE_KEYS, COLUMN, NAME, PREPROCESSING, PROC_COLUMN, SRC, TYPE
+from ludwig.constants import AUDIO, AUDIO_FEATURE_KEYS, COLUMN, NAME, PROC_COLUMN, SRC, TYPE
 from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.schema.features.audio_feature import AudioInputFeatureConfig
@@ -394,18 +394,19 @@ class AudioFeatureMixin(BaseFeatureMixin):
         if num_audio_utterances == 0:
             raise ValueError("There are no audio files in the dataset provided.")
 
-        if feature_config[PREPROCESSING]["in_memory"]:
-            audio_features = AudioFeatureMixin._process_in_memory(
-                abs_path_column,
-                audio_feature_dict,
-                feature_dim,
-                max_length,
-                padding_value,
-                normalization_type,
-                audio_file_length_limit_in_s,
-                backend,
-            )
-            proc_df[feature_config[PROC_COLUMN]] = audio_features
+        # Always process audio in-memory. The legacy out-of-memory HDF5 path has been removed;
+        # the Parquet cache handles persistence.
+        audio_features = AudioFeatureMixin._process_in_memory(
+            abs_path_column,
+            audio_feature_dict,
+            feature_dim,
+            max_length,
+            padding_value,
+            normalization_type,
+            audio_file_length_limit_in_s,
+            backend,
+        )
+        proc_df[feature_config[PROC_COLUMN]] = audio_features
 
         return proc_df
 

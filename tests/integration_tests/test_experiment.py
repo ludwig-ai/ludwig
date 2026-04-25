@@ -30,7 +30,6 @@ from ludwig.callbacks import Callback
 from ludwig.constants import BATCH_SIZE, COLUMN, ENCODER, H3, NAME, PREPROCESSING, TRAINER, TYPE
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset_df
-from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.encoders.registry import get_encoder_classes
 from ludwig.error import ConfigValidationError
 from ludwig.experiment import experiment_cli
@@ -361,10 +360,9 @@ def test_experiment_image_inputs(image_params: ImageParams, tmpdir):
     [
         ("csv", True, "csv", True),
         ("df", False, "df", False),
-        ("hdf5", True, "hdf5", True),
         ("csv", False, "df", True),
     ],
-    ids=["csv_inmem", "df_ondisk", "hdf5_inmem", "csv_to_df_mixed"],
+    ids=["csv_inmem", "df_ondisk", "csv_to_df_mixed"],
 )
 def test_experiment_image_dataset(train_format, train_in_memory, test_format, test_in_memory, tmpdir):
     # Image Inputs
@@ -405,16 +403,7 @@ def test_experiment_image_dataset(train_format, train_in_memory, test_format, te
         backend=backend,
     )
 
-    if train_format == "hdf5":
-        # hdf5 format
-        train_set, _, _, training_set_metadata = preprocess_for_training(
-            model.config,
-            dataset=train_data,
-            backend=backend,
-        )
-        train_dataset_to_use = train_set.data_hdf5_fp
-    else:
-        train_dataset_to_use = create_data_set_to_use(train_format, train_data)
+    train_dataset_to_use = create_data_set_to_use(train_format, train_data)
 
     model.train(dataset=train_dataset_to_use, training_set_metadata=training_set_metadata)
 
@@ -423,17 +412,7 @@ def test_experiment_image_dataset(train_format, train_in_memory, test_format, te
     # setup test data format to test
     test_data = generate_data(input_features, output_features, test_csv_filename)
 
-    if test_format == "hdf5":
-        # hdf5 format
-        # create hdf5 data set
-        _, test_set, _, training_set_metadata_for_test = preprocess_for_training(
-            model.config,
-            dataset=test_data,
-            backend=backend,
-        )
-        test_dataset_to_use = test_set.data_hdf5_fp
-    else:
-        test_dataset_to_use = create_data_set_to_use(test_format, test_data)
+    test_dataset_to_use = create_data_set_to_use(test_format, test_data)
 
     # run functions with the specified data format
     model.evaluate(dataset=test_dataset_to_use)
@@ -447,7 +426,6 @@ DATA_FORMATS_TO_TEST = [
     "excel",
     "feather",
     "fwf",
-    "hdf5",
     "html",
     "json",
     "jsonl",
@@ -477,19 +455,12 @@ def test_experiment_dataset_formats(data_format, csv_filename):
     # setup training data format to test
     raw_data = generate_data(input_features, output_features, csv_filename)
 
-    training_set_metadata = None
-
     # define Ludwig model
     model = LudwigModel(config=config)
 
-    if data_format == "hdf5":
-        # hdf5 format
-        training_set, _, _, training_set_metadata = preprocess_for_training(model.config, dataset=raw_data)
-        dataset_to_use = training_set.data_hdf5_fp
-    else:
-        dataset_to_use = create_data_set_to_use(data_format, raw_data)
+    dataset_to_use = create_data_set_to_use(data_format, raw_data)
 
-    model.train(dataset=dataset_to_use, training_set_metadata=training_set_metadata, random_seed=default_random_seed)
+    model.train(dataset=dataset_to_use, random_seed=default_random_seed)
 
     # # run functions with the specified data format
     model.evaluate(dataset=dataset_to_use)

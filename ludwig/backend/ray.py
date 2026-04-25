@@ -596,13 +596,51 @@ def eval_fn(
 ):
     """Ray Train worker function for distributed evaluation.
 
-    Runs inside each Ray worker process. Loads the model from an object ref, wraps the eval dataset shard, runs
-    prediction and evaluation, and saves results to a Ray checkpoint for driver retrieval.
+    Runs inside each Ray worker process (one per GPU/CPU resource slot).  Each worker
+    receives a disjoint shard of the eval dataset from Ray Train's data-parallel split.
+
+    ## Execution model
+
+    This function is called by ``RayPredictor.batch_evaluation()`` via
+    ``run_train_remote()`` / ``TorchTrainer``.  Before entering this function, Ray Train
+    has already called ``torch.distributed.init_process_group()``, so
+    ``torch.distributed.is_initialized()`` is ``True`` for the entire duration.
+
+    ## Metric aggregation across workers
+
+    Each worker calls ``predictor.batch_evaluation(eval_shard)``, which accumulates
+    torchmetrics state for that worker's shard and then calls ``model.get_metrics()``
+    → ``metric_fn.compute()``.
+
+    torchmetrics wraps ``compute()`` in its own ``sync_context()`` call.  Ludwig
+    overrides ``LudwigMetric.sync_context()`` (``ludwig/modules/metric_modules.py``) so
+    that, when the registered Ludwig strategy provides no gather function *but*
+    ``torch.distributed`` is already initialized, it falls back to
+    ``torchmetrics.utilities.distributed.gather_all_tensors``.  This all-gathers the
+    accumulator state across every worker before ``compute()`` runs, so the final metric
+    value reflects the **full** dataset rather than just one shard.
+
+    We register ``LocalStrategy`` (not ``AccelerateStrategy``) here because we only
+    need metric sync — we do NOT want Accelerate to wrap the model or optimizer for a
+    pure-inference pass.
+
+    ## Checkpoint / result handoff
+
+    Only rank-0 writes the checkpoint that the driver reads back.  If every worker called
+    ``rt.report(checkpoint=...)`` with the same filename, Ray Train (≥ 2.3) would merge
+    the checkpoint directories by *concatenating* files of the same name, producing
+    corrupted JSON (``json.decoder.JSONDecodeError: Extra data``).  Non-zero workers still
+    call ``rt.report()`` (without a checkpoint) so Ray Train does not block waiting for
+    all workers to report.
     """
-    # Pin GPU before loading the model to prevent memory leaking onto other devices
+    # Pin GPU before loading the model to prevent memory leaking onto other devices.
     initialize_pytorch()
 
-    # Initialize a local distributed strategy so metric modules can sync.
+    # Register LocalStrategy so that get_current_dist_strategy() doesn't raise inside
+    # metric_modules.  We use LocalStrategy rather than AccelerateStrategy because we
+    # don't want Accelerate to rewrap the model for this inference-only pass.
+    # Metric sync across workers is handled via the torch.distributed fallback in
+    # LudwigMetric.sync_context() — see the docstring there for details.
     from ludwig.distributed import init_dist_strategy
 
     init_dist_strategy("local")
@@ -628,18 +666,27 @@ def eval_fn(
         # Save results to a checkpoint so the driver can retrieve them.
         # Eval results are metrics dicts (no tensors), so we save as JSON where possible
         # and fall back to torch.save for objects JSON can't handle.
+        # Only rank-0 writes and reports the checkpoint.  If every worker calls
+        # rt.report(checkpoint=...) with a file of the same name, Ray Train
+        # merges the checkpoint directories and concatenates the files, producing
+        # invalid JSON.  Non-zero workers still call rt.report() (without a
+        # checkpoint) so that Ray Train does not block waiting for all workers.
+        world_rank = rt.get_context().get_world_rank()
         eval_results = _make_picklable(eval_results)
-        with tempfile.TemporaryDirectory() as tmpdir:
-            try:
-                import json
+        if world_rank == 0:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                try:
+                    import json
 
-                # Try JSON first (no pickle, secure)
-                with open(os.path.join(tmpdir, "eval_results.json"), "w") as f:
-                    json.dump(eval_results, f, default=str)
-            except (TypeError, ValueError):
-                # Fall back to torch.save for complex objects
-                torch.save(eval_results, os.path.join(tmpdir, "eval_results.pt"))
-            rt.report(metrics={}, checkpoint=Checkpoint.from_directory(tmpdir))
+                    # Try JSON first (no pickle, secure)
+                    with open(os.path.join(tmpdir, "eval_results.json"), "w") as f:
+                        json.dump(eval_results, f, default=str)
+                except (TypeError, ValueError):
+                    # Fall back to torch.save for complex objects
+                    torch.save(eval_results, os.path.join(tmpdir, "eval_results.pt"))
+                rt.report(metrics={}, checkpoint=Checkpoint.from_directory(tmpdir))
+        else:
+            rt.report(metrics={})
     finally:
         torch.cuda.empty_cache()
 
