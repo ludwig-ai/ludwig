@@ -69,39 +69,15 @@ Run KTO training:
 ludwig train --config config_kto.yaml --dataset train_kto.csv
 ```
 
-Run GRPO training (reuses the DPO preference-pair format):
-
-```bash
-python train_grpo.py
-# or with the CLI:
-ludwig train --config config_grpo.yaml --dataset preference_data.parquet
-```
-
-## GRPO specifics
-
-GRPO (Group Relative Policy Optimization, Shao et al. 2024) is the alignment method used by
-DeepSeek-R1. For each prompt it samples a group of `grpo_num_generations` completions, scores
-them, normalises rewards within the group, and applies a PPO-style clipped objective —
-without a separate critic model.
-
-Ludwig's GRPO trainer consumes the same `prompt` / `chosen` / `rejected` columns as DPO, so
-a programmatic reward function is implemented as a pre-processing step: score each candidate
-completion in your dataset preparation pipeline, then emit the top-scoring completion as
-`chosen` and the lowest as `rejected`. See `config_grpo.yaml` for the full list of knobs
-(`grpo_beta` for the KL penalty, `grpo_epsilon` for PPO clipping,
-`grpo_num_generations` for the group size).
-
 ## Files
 
 | File                  | Description                                                        |
 | --------------------- | ------------------------------------------------------------------ |
 | `prepare_dataset.py`  | Downloads Anthropic/hh-rlhf and converts it to Ludwig format       |
 | `train_dpo.py`        | DPO training script using the Python API                           |
-| `train_grpo.py`       | GRPO training script using the Python API                          |
 | `config_dpo.yaml`     | Ludwig config for DPO                                              |
 | `config_kto.yaml`     | Ludwig config for KTO                                              |
 | `config_orpo.yaml`    | Ludwig config for ORPO                                             |
-| `config_grpo.yaml`    | Ludwig config for GRPO                                             |
 | `alignment_dpo.ipynb` | Colab-compatible notebook covering DPO, KTO evaluation, and upload |
 
 ## Upload to HuggingFace
