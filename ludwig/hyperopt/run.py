@@ -301,12 +301,16 @@ def hyperopt(
     # backend from the environment.
     backend = backend or config_dict.get("backend") or "local"
     backend = initialize_backend(backend)
+    from ludwig.hyperopt.optuna_executor import OptunaExecutor
+
     if not (
         isinstance(backend, LocalBackend)
+        or isinstance(hyperopt_executor, OptunaExecutor)
         or (isinstance(hyperopt_executor, RayTuneExecutor) and isinstance(backend, RayBackend))
     ):
         raise ValueError(
-            "Hyperopt requires using a `local` backend at this time, or " "`ray` backend with `ray` executor."
+            "Hyperopt requires using a `local` backend at this time, or "
+            "`ray` backend with `ray` executor, or `optuna` executor."
         )
 
     for callback in callbacks or []:

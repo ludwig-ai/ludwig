@@ -69,10 +69,11 @@ def test_cache_dataset(use_cache_dir, use_split, use_df, tmpdir, change_test_dir
         test_path = os.path.join(tmpdir, "test")
         val_path = os.path.join(tmpdir, "validation")
 
+    data_ext = dataset_manager.data_format  # "parquet"
     assert cache_map[META] == f"{train_path}.meta.json"
     assert cache_map[TRAINING] == f"{train_path}.{TRAINING_PREPROC_FILE_NAME}"
-    assert cache_map[TEST] == f"{test_path}.test.hdf5"
-    assert cache_map[VALIDATION] == f"{val_path}.validation.hdf5"
+    assert cache_map[TEST] == f"{test_path}.test.{data_ext}"
+    assert cache_map[VALIDATION] == f"{val_path}.validation.{data_ext}"
 
     for cache_path in cache_map.values():
         assert not os.path.exists(cache_path)
