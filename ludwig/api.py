@@ -340,6 +340,7 @@ class LudwigModel:
 
         # setup Backend
         self.backend = initialize_backend(backend or self._user_config.get("backend"))
+        logger.info(f"Using backend: {self.backend.BACKEND_TYPE}")
         self.callbacks = callbacks if callbacks is not None else []
 
         # setup PyTorch env (GPU allocation, etc.)
@@ -362,13 +363,10 @@ class LudwigModel:
             # model.train(dataset).
             and self.config_obj.output_features[0].type == "text"
         ):
-            self._initialize_llm()
+            self._initialize_llm_for_zero_shot()
 
-    def _initialize_llm(self, random_seed: int = default_random_seed):
-        """Initialize the LLM model.
-
-        Should only be used in a zero-shot (NoneTrainer) setting.
-        """
+    def _initialize_llm_for_zero_shot(self, random_seed: int = default_random_seed):
+        """Initialize the LLM for zero-shot (NoneTrainer) inference only."""
         self.model = LudwigModel.create_model(self.config_obj, random_seed=random_seed)
 
         if self.model.model.device.type == "cpu" and torch.cuda.is_available():
@@ -1015,13 +1013,15 @@ class LudwigModel:
         input_strings: str | list[str],
         generation_config: dict | None = None,
         streaming: bool | None = False,
+        callbacks: list[Callback] | None = None,
     ) -> str | list[str]:
         """A simple generate() method that directly uses the underlying transformers library to generate text.
 
         Args:
-            input_strings (Union[str, List[str]]): Input text or list of texts to generate from.
-            generation_config (Optional[dict]): Configuration for text generation.
-            streaming (Optional[bool]): If True, enable streaming output.
+            input_strings: Input text or list of texts to generate from.
+            generation_config: Configuration for text generation.
+            streaming: If True, enable streaming output.
+            callbacks: Optional callbacks for this generate call.
 
         Returns:
             Union[str, List[str]]: Generated text or list of generated texts.
@@ -1163,7 +1163,7 @@ class LudwigModel:
             statistics, TensorBoard logs, the saved model and the training progress files.
         :param return_type: (Union[str, dict, pandas.DataFrame], default: pd.DataFrame) indicates the format of the
             returned predictions.
-        :param callbacks: (Optional[List[Callback]], default: None) optional list of callbacks to use during this
+        :param callbacks: (list[Callback] | None, default: None) optional list of callbacks to use during this
             predict operation. Any callbacks already registered to the model will be preserved.
 
         # Return
@@ -1793,8 +1793,9 @@ class LudwigModel:
             proc_training_set, proc_validation_set, proc_test_set, training_set_metadata = preprocessed_data
 
             return PreprocessedDataset(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)
-        except Exception as e:
-            raise RuntimeError(f"Caught exception during model preprocessing: {str(e)}") from e
+        except Exception:
+            logger.debug(traceback.format_exc())
+            raise
         finally:
             for callback in self.callbacks:
                 callback.on_preprocess_end(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)
@@ -1807,7 +1808,7 @@ class LudwigModel:
         gpus: str | int | list[int] | None = None,
         gpu_memory_limit: float | None = None,
         allow_parallel_threads: bool = True,
-        callbacks: list[Callback] = None,
+        callbacks: list[Callback] | None = None,
         from_checkpoint: bool = False,
     ) -> "LudwigModel":  # return is an instance of ludwig.api.LudwigModel class
         """This function allows for loading pretrained models.
@@ -1855,6 +1856,7 @@ class LudwigModel:
             gpus=gpus, gpu_memory_limit=gpu_memory_limit, allow_parallel_threads=allow_parallel_threads
         )
 
+        logger.info(f"Loading model from {model_dir}")
         config = backend.broadcast_return(lambda: load_json(os.path.join(model_dir, MODEL_HYPERPARAMETERS_FILE_NAME)))
 
         # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
@@ -1878,9 +1880,11 @@ class LudwigModel:
 
         # generate model from config
         set_saved_weights_in_checkpoint_flag(config_obj)
+        logger.info(f"Creating {config_obj.model_type} model from config")
         ludwig_model.model = LudwigModel.create_model(config_obj)
 
         # load model weights
+        logger.info(f"Loading model weights from {model_dir}")
         ludwig_model.load_weights(model_dir, from_checkpoint)
 
         # If merge_and_unload was NOT performed before saving (i.e., adapter weights exist),
@@ -2086,8 +2090,18 @@ class LudwigModel:
         )
 
     def _check_initialization(self):
-        if self.model is None or self._user_config is None or self.training_set_metadata is None:
-            raise ValueError("Model has not been trained or loaded")
+        missing = []
+        if self.model is None:
+            missing.append("model")
+        if self._user_config is None:
+            missing.append("config")
+        if self.training_set_metadata is None:
+            missing.append("training_set_metadata")
+        if missing:
+            raise ValueError(
+                f"Model is not initialized (missing: {', '.join(missing)}). "
+                "Call train() or load() before predict/evaluate."
+            )
 
     def free_gpu_memory(self):
         """Manually moves the model to CPU to force GPU memory to be freed.

@@ -7,7 +7,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import INPUT_FEATURES, OUTPUT_FEATURES, TRAINER
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset_df
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.utils.print_utils import get_logging_level_registry, print_ludwig
+from ludwig.utils.print_utils import get_logging_level_registry, print_boxed, print_ludwig
 
 NUM_EXAMPLES = 100
 
@@ -30,10 +30,10 @@ def check_install(logging_level: int = logging.INFO, **kwargs):
         with tempfile.TemporaryDirectory() as tmpdir:
             model.train(dataset=df, output_directory=tmpdir)
     except Exception:
-        print("=== CHECK INSTALL COMPLETE... FAILURE ===")
+        print_boxed("CHECK INSTALL COMPLETE... FAILURE")
         raise
 
-    print("=== CHECK INSTALL COMPLETE... SUCCESS ===")
+    print_boxed("CHECK INSTALL COMPLETE... SUCCESS")
 
 
 @DeveloperAPI
@@ -56,8 +56,6 @@ def cli(sys_argv):
 
     args.logging_level = get_logging_level_registry()[args.logging_level]
     logging.getLogger("ludwig").setLevel(args.logging_level)
-    global logger
-    logger = logging.getLogger("ludwig.check")
 
     print_ludwig("Check Install", LUDWIG_VERSION)
     check_install(**vars(args))
