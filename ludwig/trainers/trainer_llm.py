@@ -14,6 +14,7 @@ from ludwig.globals import MODEL_FILE_NAME
 from ludwig.models.llm import LLM
 from ludwig.models.predictor import LlmFineTunePredictor, LlmPredictor
 from ludwig.modules.metric_modules import get_initial_validation_value
+from ludwig.schema.model_types.base import ModelConfig
 from ludwig.schema.trainer import BaseTrainerConfig, FineTuneTrainerConfig, NoneTrainerConfig
 from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_llm_ray_trainer, register_llm_trainer
@@ -234,7 +235,7 @@ class NoneTrainer(BaseTrainer):
 
     def tune_batch_size(
         self,
-        config: ModelConfigDict,
+        config: ModelConfig | ModelConfigDict,
         training_set: Dataset,
         random_seed: int = default_random_seed,
         max_trials: int = 20,
@@ -488,7 +489,7 @@ class FineTuneTrainer(Trainer):
 
     def tune_batch_size(
         self,
-        config: ModelConfigDict,
+        config: ModelConfig | ModelConfigDict,
         training_set: Dataset,
         random_seed: int = default_random_seed,
         max_trials: int = 20,

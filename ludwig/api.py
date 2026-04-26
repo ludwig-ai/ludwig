@@ -63,6 +63,7 @@ from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import load_metadata, preprocess_for_prediction, preprocess_for_training
 from ludwig.datasets import load_dataset_uris
 from ludwig.features.feature_registries import update_config_with_metadata, update_config_with_model
+from ludwig.features.timeseries_feature import incremental_time_delay_embedding
 from ludwig.globals import (
     LUDWIG_VERSION,
     MODEL_FILE_NAME,
@@ -884,7 +885,7 @@ class LudwigModel:
 
         with provision_preprocessing_workers(self.backend):
             training_dataset, _, _, training_set_metadata = preprocess_for_training(
-                self.config_obj.to_dict(),
+                self.config_obj,
                 training_set=dataset,
                 training_set_metadata=training_set_metadata,
                 data_format=data_format,
@@ -939,7 +940,7 @@ class LudwigModel:
         if self.config_obj.trainer.batch_size == AUTO:
             if self.backend.supports_batch_size_tuning():
                 tuned_batch_size = trainer.tune_batch_size(
-                    self.config_obj.to_dict(), dataset, random_seed=random_seed, tune_for_training=True
+                    self.config_obj, dataset, random_seed=random_seed, tune_for_training=True
                 )
             else:
                 logger.warning(
@@ -956,7 +957,7 @@ class LudwigModel:
         if self.config_obj.trainer.eval_batch_size in {AUTO, None}:
             if self.backend.supports_batch_size_tuning():
                 tuned_batch_size = trainer.tune_batch_size(
-                    self.config_obj.to_dict(), dataset, random_seed=random_seed, tune_for_training=False
+                    self.config_obj, dataset, random_seed=random_seed, tune_for_training=False
                 )
             else:
                 logger.warning(
@@ -1400,53 +1401,111 @@ class LudwigModel:
         output_format: str = "parquet",
         callbacks: list[Callback] | None = None,
     ) -> DataFrame:
-        # TODO(travis): WIP
+        """Forecast `horizon` steps ahead using an iterative single-pass strategy.
+
+        Preprocessing is performed once for the initial lookback window. Each subsequent horizon step slides the window
+        by one position using incremental_time_delay_embedding, reducing preprocessing complexity from O(horizon ×
+        window_size) to O(window_size + horizon).
+        """
+        self._check_initialization()
+
+        # Load raw DataFrame once
         dataset, _, _, _ = load_dataset_uris(dataset, None, None, None, self.backend)
         if isinstance(dataset, CacheableDataset):
             dataset = dataset.unwrap()
-        dataset = load_dataset(dataset, data_format=data_format, df_lib=self.backend.df_engine.df_lib)
+        df = load_dataset(dataset, data_format=data_format, df_lib=self.backend.df_engine.df_lib)
 
-        window_sizes = [
-            feature.preprocessing.window_size
-            for feature in self.config_obj.input_features
-            if feature.type == TIMESERIES
-        ]
-        if not window_sizes:
+        ts_input_features = [f for f in self.config_obj.input_features if f.type == TIMESERIES]
+        ts_output_features = [f for f in self.config_obj.output_features if f.type == TIMESERIES]
+
+        if not ts_input_features:
             raise ValueError("Forecasting requires at least one input feature of type `timeseries`.")
 
-        # TODO(perf): The preprocessing here is O(horizon × window_size) — the full DataFrame is
-        # re-preprocessed from scratch for each horizon step (item 8.2 in the 0.15 review plan).
-        # Optimal approach: preprocess the initial window once, then for each step only preprocess
-        # the single new row using the cached training_set_metadata and merge it into the running
-        # tensor. Requires understanding timeseries windowing in preprocessing.py.
-        max_lookback_window_size = max(window_sizes)
+        if horizon <= 0:
+            return_cols = [f.column for f in ts_output_features]
+            return pd.DataFrame({col: pd.Series(dtype=float) for col in return_cols})
+
+        max_window_size = max(f.preprocessing.window_size for f in ts_input_features)
+
+        # Build a mapping from ts output column name → ts output feature config
+        ts_output_by_col = {f.column: f for f in ts_output_features}
+
+        # Step 1: Preprocess the initial lookback window once
+        initial_df = df.tail(max_window_size)
+        preprocessed, _ = self._preprocess_for_prediction(
+            initial_df,
+            include_outputs=False,
+            callbacks=callbacks,
+        )
+
+        # Collect the last preprocessed embedding for each input feature.
+        # Non-timeseries features stay constant; timeseries features are slid per step.
+        # Keyed by proc_column of the model's input features.
+        last_embeddings: dict[str, np.ndarray] = {}
+        for i_feat in self.model.input_features.values():
+            pc = i_feat.proc_column
+            if pc in preprocessed.dataset:
+                last_embeddings[pc] = preprocessed.dataset[pc][-1].copy()
+
+        # Build a mapping: ts_input_feature.column → (proc_column, window_size, padding_value)
+        ts_input_info: list[tuple[str, str, int, float]] = []
+        for ts_feat in ts_input_features:
+            i_feat = self.model.input_features.get(ts_feat.name)
+            if i_feat is not None and i_feat.proc_column in last_embeddings:
+                ts_input_info.append(
+                    (
+                        ts_feat.column,
+                        i_feat.proc_column,
+                        ts_feat.preprocessing.window_size,
+                        ts_feat.preprocessing.padding_value,
+                    )
+                )
+
+        # Step 2: Incremental prediction loop — O(horizon) steps, each O(1) preprocessing
+        predicted_rows: list[pd.DataFrame] = []
         total_forecasted = 0
-        while total_forecasted < horizon:
-            # We only need the last `window_size` worth of rows to forecast the next value
-            dataset = dataset.tail(max_lookback_window_size)
 
-            # Run through preprocessing and prediction to obtain row-wise next values
-            # TODO(travis): can optimize the preprocessing part here, since we only need to preprocess / predict
-            # the last row, not the last `window_size` rows.
-            preds, _ = self.predict(dataset, skip_save_predictions=True, skip_save_unprocessed_output=True)
+        with self.backend.create_predictor(self.model, batch_size=1) as predictor:
+            while total_forecasted < horizon:
+                # Build a single-sample batch from the last embeddings
+                batch = {pc: emb[np.newaxis] for pc, emb in last_embeddings.items()}
 
-            next_series = {}
-            for feature in self.config_obj.output_features:
-                if feature.type == TIMESERIES:
-                    key = f"{feature.name}_predictions"
-                    next_series[feature.column] = pd.Series(preds[key].iloc[-1])
+                # Run model forward pass on one sample, then postprocess
+                raw_preds = predictor.predict_single(batch)
+                postproc_preds = postprocess(
+                    raw_preds,
+                    self.model.output_features,
+                    self.training_set_metadata,
+                    backend=self.backend,
+                    skip_save_unprocessed_output=True,
+                )
 
-            next_preds = pd.DataFrame(next_series)
-            dataset = pd.concat([dataset, next_preds], axis=0).reset_index(drop=True)
-            total_forecasted += len(next_preds)
+                # Extract predicted values for each timeseries output feature
+                next_series: dict[str, pd.Series] = {}
+                for feat in ts_output_features:
+                    key = f"{feat.name}_predictions"
+                    next_series[feat.column] = pd.Series(postproc_preds[key].iloc[0])
 
-        horizon_df = dataset.tail(total_forecasted).head(horizon)
-        return_cols = [feature.column for feature in self.config_obj.output_features if feature.type == TIMESERIES]
-        results_df = horizon_df[return_cols]
+                next_preds = pd.DataFrame(next_series)
+                predicted_rows.append(next_preds)
+                total_forecasted += len(next_preds)
+
+                # Step 3: Update embeddings incrementally for the next step.
+                # For each timeseries input feature, slide the window by one position.
+                for ts_col, proc_col, window_size, padding_value in ts_input_info:
+                    # Use the predicted value if this ts input is also an output, else padding_value
+                    # (matches the NaN-fill behavior of the original full-reprocessing path).
+                    new_val = float(next_preds[ts_col].iloc[-1]) if ts_col in ts_output_by_col else padding_value
+                    last_embeddings[proc_col] = incremental_time_delay_embedding(
+                        new_val, last_embeddings[proc_col], window_size, padding_value
+                    )
+
+        results_df = pd.concat(predicted_rows, ignore_index=True).head(horizon)
+        return_cols = [f.column for f in ts_output_features]
+        results_df = results_df[return_cols]
 
         if output_directory is not None:
             if self.backend.is_coordinator():
-                # TODO(travis): generalize this to support any pandas output format
                 if output_format == "parquet":
                     output_path = os.path.join(output_directory, "forecast.parquet")
                     results_df.to_parquet(output_path)
@@ -1786,11 +1845,8 @@ class LudwigModel:
         proc_training_set = proc_validation_set = proc_test_set = None
         try:
             with provision_preprocessing_workers(self.backend):
-                # TODO: Thread ModelConfig through preprocess_for_training and its entire call stack
-                # (preprocess.py::build_dataset and helpers) so to_dict() is only called at the
-                # final serialisation boundary. Tracked as item 2.3/6.1 in the 0.15 review plan.
                 preprocessed_data = preprocess_for_training(
-                    self.config_obj.to_dict(),
+                    self.config_obj,
                     dataset=dataset,
                     training_set=training_set,
                     validation_set=validation_set,
@@ -2092,7 +2148,7 @@ class LudwigModel:
     ):
         """Shared preprocessing wrapper for predict, evaluate, and collect_activations."""
         return preprocess_for_prediction(
-            self.config_obj.to_dict(),
+            self.config_obj,
             dataset=dataset,
             training_set_metadata=self.training_set_metadata,
             data_format=data_format,

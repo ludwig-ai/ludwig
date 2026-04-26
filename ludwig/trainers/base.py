@@ -3,6 +3,7 @@ from typing import Any
 
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import MODEL_FILE_NAME
+from ludwig.schema.model_types.base import ModelConfig
 from ludwig.schema.trainer import BaseTrainerConfig
 from ludwig.types import ModelConfigDict
 from ludwig.utils.defaults import default_random_seed
@@ -40,7 +41,7 @@ class BaseTrainer(ABC):
     @abstractmethod
     def tune_batch_size(
         self,
-        config: ModelConfigDict,
+        config: ModelConfig | ModelConfigDict,
         training_set: Dataset,
         random_seed: int = default_random_seed,
         max_trials: int = 10,
