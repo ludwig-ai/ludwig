@@ -725,42 +725,6 @@ def check_sample_ratio_and_size_compatible(config: "ModelConfig") -> None:
 
 
 @register_config_check
-def check_quantization_requires_llm(config: "ModelConfig") -> None:
-    """Quantization is only supported for LLM models."""
-    if config.model_type == MODEL_LLM:
-        return
-    if config.quantization is not None:
-        raise ConfigValidationError(
-            f"quantization is only supported for model_type 'llm', found '{config.model_type}'. "
-            "Remove the quantization section or switch to model_type: llm."
-        )
-
-
-@register_config_check
-def check_llm_single_output_feature(config: "ModelConfig") -> None:
-    """LLM models support exactly one output feature."""
-    if config.model_type != MODEL_LLM:
-        return
-    if len(config.output_features) > 1:
-        raise ConfigValidationError(
-            f"LLM models support exactly one output feature, found {len(config.output_features)}. "
-            "Remove extra output features or switch to model_type: ecd for multi-output tasks."
-        )
-
-
-@register_config_check
-def check_adapter_requires_llm(config: "ModelConfig") -> None:
-    """PEFT adapter config is only supported for LLM models."""
-    if config.model_type == MODEL_LLM:
-        return
-    if config.adapter is not None:
-        raise ConfigValidationError(
-            f"adapter (PEFT) is only supported for model_type 'llm', found '{config.model_type}'. "
-            "Remove the adapter section or switch to model_type: llm."
-        )
-
-
-@register_config_check
 def check_grpo_requires_text_output(config: "ModelConfig") -> None:
     """GRPO trainer requires a text output feature."""
     if config.model_type != MODEL_LLM:

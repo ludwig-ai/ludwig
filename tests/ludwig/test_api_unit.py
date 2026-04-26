@@ -1,15 +1,9 @@
-"""Unit tests for LudwigModel API edge cases.
-
-These tests focus on the specific code paths added/changed in PR #4132:
-- Model card / training report exception handling
-- evaluate() batch size fallback logic
-- Callback lifecycle ordering
-- _check_initialization error messages
-"""
+"""Unit tests for LudwigModel API edge cases."""
 
 import logging
 from unittest.mock import MagicMock, patch
 
+import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
@@ -67,12 +61,12 @@ def test_model_card_failure_does_not_abort_training(tmpdir, caplog):
 
     with patch("ludwig.utils.model_card.save_model_card", side_effect=RuntimeError("card boom")):
         with caplog.at_level(logging.WARNING, logger="ludwig"):
-            model = LudwigModel(config)
+            # logging_level=WARNING so LudwigModel.__init__ doesn't override caplog to ERROR
+            model = LudwigModel(config, logging_level=logging.WARNING)
             result = model.train(dataset=df, output_directory=str(tmpdir))
 
     assert result is not None, "training should complete despite model card failure"
-    warning_messages = [r.message for r in caplog.records if r.levelno == logging.WARNING]
-    assert any("Failed to generate model card" in str(m) for m in warning_messages)
+    assert any("Failed to generate model card" in m for m in caplog.messages)
 
 
 def test_training_report_failure_does_not_abort_training(tmpdir, caplog):
@@ -89,16 +83,163 @@ def test_training_report_failure_does_not_abort_training(tmpdir, caplog):
 
     with patch("ludwig.utils.training_report.save_training_report", side_effect=RuntimeError("report boom")):
         with caplog.at_level(logging.WARNING, logger="ludwig"):
-            model = LudwigModel(config)
+            model = LudwigModel(config, logging_level=logging.WARNING)
             result = model.train(dataset=df, output_directory=str(tmpdir))
 
     assert result is not None
-    warning_messages = [r.message for r in caplog.records if r.levelno == logging.WARNING]
-    assert any("Failed to generate training report" in str(m) for m in warning_messages)
+    assert any("Failed to generate training report" in m for m in caplog.messages)
 
 
 # ---------------------------------------------------------------------------
 # 1b. evaluate() batch size fallback
+# ---------------------------------------------------------------------------
+
+
+def _make_evaluate_mock(trainer_dict: dict):
+    """Return a MagicMock LudwigModel wired for evaluate() batch size tests."""
+    # Don't pass spec= here — config_obj is an instance attribute set in __init__,
+    # not a class-level attribute, so spec=LudwigModel would block access to it.
+    model = MagicMock()
+    model.callbacks = []
+    model.config_obj.trainer.to_dict.return_value = trainer_dict
+
+    dataset_mock = MagicMock()
+    metadata_mock = MagicMock()
+    model._preprocess_for_prediction.return_value = (dataset_mock, metadata_mock)
+
+    predictor = MagicMock()
+    predictor.batch_evaluation.return_value = ({}, MagicMock())
+
+    ctx = MagicMock()
+    ctx.__enter__ = MagicMock(return_value=predictor)
+    ctx.__exit__ = MagicMock(return_value=False)
+    model.backend.create_predictor.return_value = ctx
+
+    model.backend.df_engine.df_lib = pd
+    model.model.output_features = {}
+    return model, predictor
+
+
+def _run_evaluate(model):
+    """Call LudwigModel.evaluate() with all saving and collection disabled."""
+    return LudwigModel.evaluate(
+        model,
+        dataset=MagicMock(),
+        collect_predictions=False,
+        collect_overall_stats=False,
+        skip_save_unprocessed_output=True,
+        skip_save_predictions=True,
+        skip_save_eval_stats=True,
+    )
+
+
+def test_evaluate_uses_eval_batch_size_from_config():
+    """Evaluate() should use eval_batch_size from trainer config when batch_size arg is None."""
+    model, predictor = _make_evaluate_mock({"eval_batch_size": 64, "batch_size": 32})
+    model.backend.is_coordinator.return_value = False
+    predictor.batch_evaluation.return_value = ({}, {})
+
+    _run_evaluate(model)
+
+    model.backend.create_predictor.assert_called_once_with(model.model, batch_size=64)
+
+
+def test_evaluate_falls_back_to_batch_size_when_eval_batch_size_absent():
+    """Evaluate() should fall back to batch_size when eval_batch_size is not in trainer config."""
+    model, predictor = _make_evaluate_mock({"batch_size": 16})
+    model.backend.is_coordinator.return_value = False
+    predictor.batch_evaluation.return_value = ({}, {})
+
+    _run_evaluate(model)
+
+    model.backend.create_predictor.assert_called_once_with(model.model, batch_size=16)
+
+
+def test_evaluate_raises_when_no_batch_size_in_config():
+    """Evaluate() must raise ValueError when neither batch_size nor eval_batch_size are set."""
+    model, _ = _make_evaluate_mock({})  # empty trainer dict — no batch sizes
+
+    with pytest.raises(ValueError, match="batch_size not specified"):
+        _run_evaluate(model)
+
+
+# ---------------------------------------------------------------------------
+# 1c. forecast() boundary conditions
+# ---------------------------------------------------------------------------
+
+
+def _make_forecast_mock(output_features, input_features=None):
+    """Return a MagicMock LudwigModel wired for forecast() boundary tests."""
+    model = MagicMock(spec=LudwigModel)
+    model.callbacks = []
+    model.config_obj.output_features = output_features
+    model.config_obj.input_features = input_features or []
+
+    dataset_mock = MagicMock()
+    model.backend.df_engine.df_lib = pd
+    return model, dataset_mock
+
+
+def test_forecast_raises_when_no_timeseries_input_feature():
+    """Forecast() should raise ValueError when no timeseries input feature is present."""
+    from unittest.mock import patch as _patch
+
+    # No timeseries input features
+    input_features = [MagicMock(type="number", preprocessing=MagicMock(window_size=5))]
+    input_features[0].type = "number"  # not TIMESERIES
+
+    model = MagicMock()
+    model.callbacks = []
+    model.config_obj.input_features = input_features
+
+    df = pd.DataFrame({"x": range(5)})
+
+    with _patch("ludwig.api.load_dataset_uris", return_value=(df, None, None, None)):
+        with _patch("ludwig.api.load_dataset", return_value=df):
+            with pytest.raises(ValueError, match="timeseries"):
+                LudwigModel.forecast(model, dataset=df, horizon=3)
+
+
+def test_forecast_returns_dataframe_for_valid_config():
+    """Forecast() should return a DataFrame with the output feature column for a valid config."""
+    from ludwig.constants import TIMESERIES
+
+    window_size = 3
+    df = pd.DataFrame({"x": range(window_size + 2), "y": [float(i) for i in range(window_size + 2)]})
+
+    in_feat = MagicMock()
+    in_feat.type = TIMESERIES
+    in_feat.preprocessing.window_size = window_size
+
+    out_feat = MagicMock()
+    out_feat.type = TIMESERIES
+    out_feat.column = "y"
+    out_feat.name = "y"
+
+    model = MagicMock()
+    model.callbacks = []
+    model.config_obj.input_features = [in_feat]
+    model.config_obj.output_features = [out_feat]
+    model.backend.is_coordinator.return_value = False
+
+    def fake_predict(dataset, **kwargs):
+        preds = pd.DataFrame({"y_predictions": [pd.Series([float(len(dataset))])]})
+        return preds, None
+
+    model.predict.side_effect = fake_predict
+
+    horizon = 3
+    with patch("ludwig.api.load_dataset_uris", return_value=(df, None, None, None)):
+        with patch("ludwig.api.load_dataset", return_value=df):
+            result = LudwigModel.forecast(model, dataset=df, horizon=horizon)
+
+    assert isinstance(result, pd.DataFrame)
+    assert "y" in result.columns
+    assert len(result) <= horizon
+
+
+# ---------------------------------------------------------------------------
+# _check_initialization
 # ---------------------------------------------------------------------------
 
 
