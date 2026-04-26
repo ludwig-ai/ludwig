@@ -884,7 +884,7 @@ class LudwigModel:
 
         with provision_preprocessing_workers(self.backend):
             training_dataset, _, _, training_set_metadata = preprocess_for_training(
-                self.config_obj.to_dict(),
+                self.config_obj,
                 training_set=dataset,
                 training_set_metadata=training_set_metadata,
                 data_format=data_format,
@@ -939,7 +939,7 @@ class LudwigModel:
         if self.config_obj.trainer.batch_size == AUTO:
             if self.backend.supports_batch_size_tuning():
                 tuned_batch_size = trainer.tune_batch_size(
-                    self.config_obj.to_dict(), dataset, random_seed=random_seed, tune_for_training=True
+                    self.config_obj, dataset, random_seed=random_seed, tune_for_training=True
                 )
             else:
                 logger.warning(
@@ -956,7 +956,7 @@ class LudwigModel:
         if self.config_obj.trainer.eval_batch_size in {AUTO, None}:
             if self.backend.supports_batch_size_tuning():
                 tuned_batch_size = trainer.tune_batch_size(
-                    self.config_obj.to_dict(), dataset, random_seed=random_seed, tune_for_training=False
+                    self.config_obj, dataset, random_seed=random_seed, tune_for_training=False
                 )
             else:
                 logger.warning(
@@ -1786,11 +1786,8 @@ class LudwigModel:
         proc_training_set = proc_validation_set = proc_test_set = None
         try:
             with provision_preprocessing_workers(self.backend):
-                # TODO: Thread ModelConfig through preprocess_for_training and its entire call stack
-                # (preprocess.py::build_dataset and helpers) so to_dict() is only called at the
-                # final serialisation boundary. Tracked as item 2.3/6.1 in the 0.15 review plan.
                 preprocessed_data = preprocess_for_training(
-                    self.config_obj.to_dict(),
+                    self.config_obj,
                     dataset=dataset,
                     training_set=training_set,
                     validation_set=validation_set,
@@ -2092,7 +2089,7 @@ class LudwigModel:
     ):
         """Shared preprocessing wrapper for predict, evaluate, and collect_activations."""
         return preprocess_for_prediction(
-            self.config_obj.to_dict(),
+            self.config_obj,
             dataset=dataset,
             training_set_metadata=self.training_set_metadata,
             data_format=data_format,

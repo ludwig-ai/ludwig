@@ -65,6 +65,7 @@ from ludwig.datasets import load_dataset_uris
 from ludwig.features.feature_registries import get_base_type_registry
 from ludwig.models.embedder import create_embed_batch_size_evaluator, create_embed_transform_fn
 from ludwig.schema.encoders.utils import get_encoder_cls
+from ludwig.schema.model_types.base import ModelConfig
 from ludwig.types import FeatureConfigDict, ModelConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils import data_utils, strings_utils
 from ludwig.utils.backward_compatibility import upgrade_metadata
@@ -126,6 +127,16 @@ pd.set_option("future.no_silent_downcasting", True)
 REPARTITIONING_FEATURE_TYPES = {"image", "audio"}
 
 logger = logging.getLogger(__name__)
+
+
+def _coerce_config(config: ModelConfig | ModelConfigDict) -> ModelConfig:
+    """Coerce a plain config dict to a ModelConfig object for attribute-level access.
+
+    Accepts either a ModelConfig (pass-through) or a legacy dict (converted via ModelConfig.from_dict).
+    """
+    if isinstance(config, ModelConfig):
+        return config
+    return ModelConfig.from_dict(config)
 
 
 class DataFormatPreprocessor(ABC):
@@ -1893,7 +1904,7 @@ def drop_extra_cols(features, dfs):
 
 
 def preprocess_for_training(
-    config,
+    config: ModelConfig | ModelConfigDict,
     dataset=None,
     training_set=None,
     validation_set=None,
@@ -1907,6 +1918,7 @@ def preprocess_for_training(
     callbacks=None,
 ) -> tuple[Dataset, Dataset, Dataset, TrainingSetMetadataDict]:
     """Returns training, val and test datasets with training set metadata."""
+    config = _coerce_config(config)
 
     # sanity check to make sure some data source is provided
     if dataset is None and training_set is None:
@@ -1927,6 +1939,9 @@ def preprocess_for_training(
     validation_set = wrap(validation_set)
     test_set = wrap(test_set)
 
+    # Compute dict form once — used for cache checksum and dataset_manager boundaries.
+    config_dict = config.to_dict()
+
     try:
         lock_path = backend.cache.get_cache_directory(dataset)
     except (TypeError, ValueError):
@@ -1937,14 +1952,14 @@ def preprocess_for_training(
         if training_set_metadata and isinstance(training_set_metadata, str):
             training_set_metadata = load_metadata(training_set_metadata)
 
-        # setup
-        features = config["input_features"] + config["output_features"]
+        # setup — extract feature dicts from ModelConfig attributes once
+        features = [f.to_dict() for f in config.input_features] + [f.to_dict() for f in config.output_features]
 
         # in case data_format is one of the cacheable formats,
         # check if there's a cached hdf5 file with the same name,
         # and in case move on with the hdf5 branch.
         cached = False
-        cache = backend.cache.get_dataset_cache(config, dataset, training_set, test_set, validation_set)
+        cache = backend.cache.get_dataset_cache(config_dict, dataset, training_set, test_set, validation_set)
 
         # Unwrap dataset into the form used for preprocessing
         dataset = dataset.unwrap() if dataset is not None else None
@@ -1963,7 +1978,7 @@ def preprocess_for_training(
                     if valid:
                         logger.info(_get_cache_hit_message(cache))
                         training_set_metadata, training_set, test_set, validation_set = cache_values
-                        config["data_cache_fp"] = training_set
+                        config_dict["data_cache_fp"] = training_set
                         data_format = backend.cache.data_format
                         cached = True
                         dataset = None
@@ -2002,7 +2017,7 @@ def preprocess_for_training(
                 training_set, test_set, validation_set, training_set_metadata = processed
         else:
             processed = data_format_processor.preprocess_for_training(
-                config,
+                config_dict,
                 features,
                 dataset=dataset,
                 training_set=training_set,
@@ -2029,7 +2044,7 @@ def preprocess_for_training(
 
         with backend.storage.cache.use_credentials() if cached else contextlib.nullcontext():
             logger.debug("create training dataset")
-            training_dataset = backend.dataset_manager.create(training_set, config, training_set_metadata)
+            training_dataset = backend.dataset_manager.create(training_set, config_dict, training_set_metadata)
             training_set_size = len(training_dataset)
             if training_set_size == 0:
                 raise ValueError("Training data is empty following preprocessing.")
@@ -2042,7 +2057,7 @@ def preprocess_for_training(
             validation_dataset = None
             if validation_set is not None:
                 logger.debug("create validation dataset")
-                validation_dataset = backend.dataset_manager.create(validation_set, config, training_set_metadata)
+                validation_dataset = backend.dataset_manager.create(validation_set, config_dict, training_set_metadata)
                 validation_set_size = len(validation_dataset)
                 if validation_set_size == 0:
                     logger.warning(
@@ -2058,7 +2073,7 @@ def preprocess_for_training(
             test_dataset = None
             if test_set is not None:
                 logger.debug("create test dataset")
-                test_dataset = backend.dataset_manager.create(test_set, config, training_set_metadata)
+                test_dataset = backend.dataset_manager.create(test_set, config_dict, training_set_metadata)
                 test_set_size = len(test_dataset)
                 if test_set_size == 0:
                     logger.warning(
@@ -2235,7 +2250,7 @@ def _preprocess_df_for_training(
 
 
 def preprocess_for_prediction(
-    config,
+    config: ModelConfig | ModelConfigDict,
     dataset,
     training_set_metadata=None,
     data_format=None,
@@ -2247,7 +2262,7 @@ def preprocess_for_prediction(
     """Preprocesses the dataset to parse it into a format that is usable by the Ludwig core.
 
     Args:
-        config: Config dictionary corresponding to Ludwig Model
+        config: Ludwig ModelConfig (or legacy dict) corresponding to Ludwig Model
         dataset: Dataset to be processed
         training_set_metadata: Train set metadata for the input features
         data_format: Format of the data
@@ -2259,6 +2274,8 @@ def preprocess_for_prediction(
     Returns:
         Processed dataset along with updated training set metadata
     """
+    config = _coerce_config(config)
+
     # Sanity Check to make sure some data source is provided
     if dataset is None:
         raise ValueError("No training data is provided!")
@@ -2273,17 +2290,20 @@ def preprocess_for_prediction(
     if not data_format or data_format == "auto":
         data_format = figure_data_format(dataset)
 
+    # Compute dict form once — used for cache checksum, dataset_manager boundaries, and param extraction.
+    config_dict = config.to_dict()
+
     # manage the in_memory parameter
     if data_format not in HDF5_FORMATS:
-        num_overrides = override_in_memory_flag(config["input_features"], True)
+        num_overrides = override_in_memory_flag(config_dict["input_features"], True)
         if num_overrides > 0:
             logger.warning("Using in_memory = False is not supported " "with {} data format.".format(data_format))
 
     preprocessing_params = {}
-    config_defaults = config.get(DEFAULTS, {})
+    config_defaults = config_dict.get(DEFAULTS, {})
     for feature_type in config_defaults:
         preprocessing_params[feature_type] = config_defaults[feature_type].get(PREPROCESSING, {})
-    preprocessing_params[SPLIT] = config.get(PREPROCESSING, {}).get(SPLIT, {})
+    preprocessing_params[SPLIT] = config_dict.get(PREPROCESSING, {}).get(SPLIT, {})
 
     preprocessing_params = merge_dict(default_prediction_preprocessing_parameters, preprocessing_params)
 
@@ -2291,11 +2311,11 @@ def preprocess_for_prediction(
     if training_set_metadata and isinstance(training_set_metadata, str):
         training_set_metadata = load_metadata(training_set_metadata)
 
-    # setup
+    # setup — feature lists extracted from the already-computed config_dict
     output_features = []
     if include_outputs:
-        output_features += config["output_features"]
-    features = config["input_features"] + output_features
+        output_features += config_dict["output_features"]
+    features = config_dict["input_features"] + output_features
 
     # Check the cache for an already preprocessed dataset. This only
     # applies to scenarios where the user wishes to predict on a split
@@ -2307,7 +2327,7 @@ def preprocess_for_prediction(
     cached = False
 
     dataset = wrap(dataset)
-    cache = backend.cache.get_dataset_cache(config, dataset)
+    cache = backend.cache.get_dataset_cache(config_dict, dataset)
     dataset = dataset.unwrap()
 
     training_set = test_set = validation_set = None
@@ -2319,7 +2339,7 @@ def preprocess_for_prediction(
                 if valid:
                     logger.info(_get_cache_hit_message(cache))
                     training_set_metadata, training_set, test_set, validation_set = cache_values
-                    config["data_cache_fp"] = training_set
+                    config_dict["data_cache_fp"] = training_set
                     data_format = backend.cache.data_format
                     cached = True
 
@@ -2339,7 +2359,7 @@ def preprocess_for_prediction(
             training_set, test_set, validation_set, training_set_metadata = processed
     else:
         processed = data_format_processor.preprocess_for_prediction(
-            config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+            config_dict, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
         )
         dataset, training_set_metadata, new_cache_fp = processed
         training_set_metadata = training_set_metadata.copy()
@@ -2360,15 +2380,16 @@ def preprocess_for_prediction(
     elif split == TEST:
         dataset = test_set
 
-    config = {
-        **config,
+    # Build a config dict with only the output features included in this prediction
+    prediction_config_dict = {
+        **config_dict,
         "output_features": output_features,
     }
 
     with backend.storage.cache.use_credentials() if cached else contextlib.nullcontext():
         dataset = backend.dataset_manager.create(
             dataset,
-            config,
+            prediction_config_dict,
             training_set_metadata,
         )
 
