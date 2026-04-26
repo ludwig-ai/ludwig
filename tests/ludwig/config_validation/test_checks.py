@@ -508,3 +508,55 @@ def test_check_llm_text_encoder_is_not_used_with_ecd():
         ModelConfig.from_dict(config)
 
     assert "Please use the `model_type: llm` for text-to-text models." in str(excinfo.value)
+
+
+def test_check_quantization_requires_llm():
+    """Quantization block on a non-LLM model should raise."""
+    config = {
+        "model_type": "ecd",
+        "input_features": [{"name": "x", "type": "number"}],
+        "output_features": [{"name": "y", "type": "binary"}],
+        "quantization": {"bits": 4},
+    }
+    with pytest.raises(ConfigValidationError, match="quantization is only supported for model_type 'llm'"):
+        ModelConfig.from_dict(config)
+
+
+def test_check_llm_single_output_feature():
+    """LLM with more than one output feature should raise."""
+    config = {
+        "model_type": "llm",
+        "base_model": "facebook/opt-350m",
+        "input_features": [{"name": "prompt", "type": "text"}],
+        "output_features": [
+            {"name": "out1", "type": "text"},
+            {"name": "out2", "type": "text"},
+        ],
+    }
+    with pytest.raises(ConfigValidationError, match="LLM models support exactly one output feature"):
+        ModelConfig.from_dict(config)
+
+
+def test_check_adapter_requires_llm():
+    """Adapter block on a non-LLM model should raise."""
+    config = {
+        "model_type": "ecd",
+        "input_features": [{"name": "x", "type": "number"}],
+        "output_features": [{"name": "y", "type": "binary"}],
+        "adapter": {"type": "lora"},
+    }
+    with pytest.raises(ConfigValidationError, match="adapter.*only supported for model_type 'llm'"):
+        ModelConfig.from_dict(config)
+
+
+def test_check_grpo_requires_text_output():
+    """GRPO trainer with a non-text output feature should raise."""
+    config = {
+        "model_type": "llm",
+        "base_model": "facebook/opt-350m",
+        "input_features": [{"name": "prompt", "type": "text"}],
+        "output_features": [{"name": "label", "type": "category"}],
+        "trainer": {"type": "grpo"},
+    }
+    with pytest.raises(ConfigValidationError, match="GRPO trainer requires a text output feature"):
+        ModelConfig.from_dict(config)

@@ -365,9 +365,21 @@ class LudwigModel:
         ):
             self._initialize_llm_for_zero_shot()
 
+    def _get_or_create_model(self, config_obj=None, random_seed: int = default_random_seed):
+        """Single entry point for model instantiation.
+
+        Creates self.model from config_obj (or self.config_obj) if it hasn't been created yet. Safe to call multiple
+        times — no-ops if model exists.
+        """
+        if self.model is not None:
+            return
+        cfg = config_obj or self.config_obj
+        logger.info(f"Creating {cfg.model_type} model")
+        self.model = LudwigModel.create_model(cfg, random_seed=random_seed)
+
     def _initialize_llm_for_zero_shot(self, random_seed: int = default_random_seed):
         """Initialize the LLM for zero-shot (NoneTrainer) inference only."""
-        self.model = LudwigModel.create_model(self.config_obj, random_seed=random_seed)
+        self._get_or_create_model(random_seed=random_seed)
 
         if self.model.model.device.type == "cpu" and torch.cuda.is_available():
             logger.warning(f"LLM was initialized on {self.model.model.device}. Moving to GPU for inference.")
@@ -1880,8 +1892,7 @@ class LudwigModel:
 
         # generate model from config
         set_saved_weights_in_checkpoint_flag(config_obj)
-        logger.info(f"Creating {config_obj.model_type} model from config")
-        ludwig_model.model = LudwigModel.create_model(config_obj)
+        ludwig_model._get_or_create_model(config_obj)
 
         # load model weights
         logger.info(f"Loading model weights from {model_dir}")
