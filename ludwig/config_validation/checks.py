@@ -722,3 +722,17 @@ def check_sample_ratio_and_size_compatible(config: "ModelConfig") -> None:
     sample_size = config.preprocessing.sample_size
     if sample_size is not None and sample_ratio < 1.0:
         raise ConfigValidationError("sample_size cannot be used when sample_ratio < 1.0")
+
+
+@register_config_check
+def check_grpo_requires_text_output(config: "ModelConfig") -> None:
+    """GRPO trainer requires a text output feature."""
+    if config.model_type != MODEL_LLM:
+        return
+    if config.trainer.type != "grpo":
+        return
+    if not config.output_features or config.output_features[0].type != TEXT:
+        raise ConfigValidationError(
+            "The GRPO trainer requires a text output feature. "
+            "Set your output feature type to 'text' or use a different trainer type."
+        )

@@ -365,9 +365,21 @@ class LudwigModel:
         ):
             self._initialize_llm_for_zero_shot()
 
+    def _get_or_create_model(self, config_obj=None, random_seed: int = default_random_seed):
+        """Single entry point for model instantiation.
+
+        Creates self.model from config_obj (or self.config_obj) if it hasn't been created yet. Safe to call multiple
+        times — no-ops if model exists.
+        """
+        if self.model is not None:
+            return
+        cfg = config_obj or self.config_obj
+        logger.info(f"Creating {cfg.model_type} model")
+        self.model = LudwigModel.create_model(cfg, random_seed=random_seed)
+
     def _initialize_llm_for_zero_shot(self, random_seed: int = default_random_seed):
         """Initialize the LLM for zero-shot (NoneTrainer) inference only."""
-        self.model = LudwigModel.create_model(self.config_obj, random_seed=random_seed)
+        self._get_or_create_model(random_seed=random_seed)
 
         if self.model.model.device.type == "cpu" and torch.cuda.is_available():
             logger.warning(f"LLM was initialized on {self.model.model.device}. Moving to GPU for inference.")
@@ -671,7 +683,7 @@ class LudwigModel:
                 random_seed=random_seed,
             ) as trainer:
                 # auto tune batch size
-                self._tune_batch_size(trainer, training_set, random_seed=random_seed)
+                self._tune_batch_size_and_grad_accum(trainer, training_set, random_seed=random_seed)
 
                 if (
                     self.config_obj.model_type == "LLM"
@@ -898,11 +910,11 @@ class LudwigModel:
                 config=self.config_obj.trainer, model=self.model, random_seed=random_seed
             )
 
-            self._tune_batch_size(self._online_trainer, dataset, random_seed=random_seed)
+            self._tune_batch_size_and_grad_accum(self._online_trainer, dataset, random_seed=random_seed)
 
         self.model = self._online_trainer.train_online(training_dataset)
 
-    def _tune_batch_size(self, trainer, dataset, random_seed: int = default_random_seed):
+    def _tune_batch_size_and_grad_accum(self, trainer, dataset, random_seed: int = default_random_seed):
         """Sets AUTO batch-size-related parameters based on the trainer, backend type, and number of workers.
 
         Batch-size related parameters that are set:
@@ -1079,7 +1091,7 @@ class LudwigModel:
         input_strings = input_strings if isinstance(input_strings, list) else [input_strings]
         for i in range(len(input_ids)):
             with torch.no_grad():
-                logger.info(f"Input: {input_strings[i]}\n")
+                logger.debug(f"Input: {input_strings[i]}\n")
                 # NOTE: self.model.model.generation_config is not used here because it is the default
                 # generation config that the CausalLM was initialized with, rather than the one set within the
                 # context manager.
@@ -1089,7 +1101,7 @@ class LudwigModel:
                     generation_config=self.model.generation,
                     streamer=streamer,
                 )
-                logger.info("----------------------")
+                logger.debug("----------------------")
                 outputs.append(generated_output)
         return torch.cat(outputs, dim=0)
 
@@ -1402,11 +1414,11 @@ class LudwigModel:
         if not window_sizes:
             raise ValueError("Forecasting requires at least one input feature of type `timeseries`.")
 
-        # TODO(travis): there's a lot of redundancy in this approach, since we are preprocessing the same DataFrame
-        # multiple times with only a small number of features (the horizon) being appended each time.
-        # A much better approach would be to only preprocess a single row, but incorporating the row-level embedding
-        # over the window_size of rows precending it, then performing the model forward pass on only that row of
-        # data.
+        # TODO(perf): The preprocessing here is O(horizon × window_size) — the full DataFrame is
+        # re-preprocessed from scratch for each horizon step (item 8.2 in the 0.15 review plan).
+        # Optimal approach: preprocess the initial window once, then for each step only preprocess
+        # the single new row using the cached training_set_metadata and merge it into the running
+        # tensor. Requires understanding timeseries windowing in preprocessing.py.
         max_lookback_window_size = max(window_sizes)
         total_forecasted = 0
         while total_forecasted < horizon:
@@ -1774,7 +1786,9 @@ class LudwigModel:
         proc_training_set = proc_validation_set = proc_test_set = None
         try:
             with provision_preprocessing_workers(self.backend):
-                # TODO (Connor): Refactor to use self.config_obj
+                # TODO: Thread ModelConfig through preprocess_for_training and its entire call stack
+                # (preprocess.py::build_dataset and helpers) so to_dict() is only called at the
+                # final serialisation boundary. Tracked as item 2.3/6.1 in the 0.15 review plan.
                 preprocessed_data = preprocess_for_training(
                     self.config_obj.to_dict(),
                     dataset=dataset,
@@ -1880,8 +1894,7 @@ class LudwigModel:
 
         # generate model from config
         set_saved_weights_in_checkpoint_flag(config_obj)
-        logger.info(f"Creating {config_obj.model_type} model from config")
-        ludwig_model.model = LudwigModel.create_model(config_obj)
+        ludwig_model._get_or_create_model(config_obj)
 
         # load model weights
         logger.info(f"Loading model weights from {model_dir}")

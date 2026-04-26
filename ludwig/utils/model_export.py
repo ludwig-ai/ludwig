@@ -5,8 +5,10 @@ Replaces the deprecated TorchScript export pipeline with:
 - ONNX: via torch.onnx.export(dynamo=True) for cross-platform deployment
 - SafeTensors: secure, zero-copy weight serialization (already default for ECD)
 
-TorchScript is fully deprecated as of PyTorch 2.9. torch.export is the official
-replacement that captures the full computation graph as an ExportedProgram.
+TorchScript is fully deprecated as of PyTorch 2.9 and was removed from Ludwig in
+v0.15. torch.export is the official replacement that captures the full computation
+graph as an ExportedProgram. Migration guide:
+https://pytorch.org/docs/stable/export.html
 
 Usage:
     from ludwig.utils.model_export import ModelExporter
