@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from abc import ABC, abstractmethod, abstractstaticmethod
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -60,12 +60,14 @@ class BaseFeatureMixin(ABC):
     Feature mixins support preprocessing functionality shared across input and output features.
     """
 
-    @abstractstaticmethod
+    @staticmethod
+    @abstractmethod
     def type() -> str:
         """Returns the type of feature this mixin supports."""
         raise NotImplementedError
 
-    @abstractstaticmethod
+    @staticmethod
+    @abstractmethod
     def cast_column(column: DataFrame, backend) -> DataFrame:
         """Returns a copy of the dataset column for the given feature, potentially after a type cast.
 
@@ -75,7 +77,8 @@ class BaseFeatureMixin(ABC):
         """
         raise NotImplementedError
 
-    @abstractstaticmethod
+    @staticmethod
+    @abstractmethod
     def get_feature_meta(
         config: ModelConfigDict,
         column: DataFrame,
@@ -93,7 +96,8 @@ class BaseFeatureMixin(ABC):
         """
         raise NotImplementedError
 
-    @abstractstaticmethod
+    @staticmethod
+    @abstractmethod
     def add_feature_data(
         feature_config: FeatureConfigDict,
         input_df: DataFrame,

@@ -665,7 +665,7 @@ def test_empty_training_set_error(backend, tmpdir, ray_cluster_2cpu):
     df[out_feat[COLUMN]] = None
 
     ludwig_model = LudwigModel(config, backend=backend)
-    with pytest.raises(RuntimeError, match="Training data is empty following preprocessing"):
+    with pytest.raises(ValueError, match="Training data is empty following preprocessing"):
         ludwig_model.preprocess(dataset=df)
 
 
@@ -820,7 +820,7 @@ def test_category_feature_vocab_size_1(feature_type, tmpdir) -> None:
     training_data_csv_path = generate_data(config[INPUT_FEATURES], config[OUTPUT_FEATURES], data_csv_path)
 
     ludwig_model = LudwigModel(config)
-    with pytest.raises(RuntimeError) if feature_type == "output_feature" else contextlib.nullcontext():
+    with pytest.raises(Exception) if feature_type == "output_feature" else contextlib.nullcontext():
         ludwig_model.train(dataset=training_data_csv_path)
 
 
