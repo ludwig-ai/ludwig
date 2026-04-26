@@ -3,6 +3,7 @@
 import logging
 from unittest.mock import MagicMock, patch
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -209,7 +210,9 @@ def test_forecast_returns_dataframe_for_valid_config():
 
     in_feat = MagicMock()
     in_feat.type = TIMESERIES
+    in_feat.name = "x"
     in_feat.preprocessing.window_size = window_size
+    in_feat.preprocessing.padding_value = 0.0
 
     out_feat = MagicMock()
     out_feat.type = TIMESERIES
@@ -222,16 +225,36 @@ def test_forecast_returns_dataframe_for_valid_config():
     model.config_obj.output_features = [out_feat]
     model.backend.is_coordinator.return_value = False
 
-    def fake_predict(dataset, **kwargs):
-        preds = pd.DataFrame({"y_predictions": [pd.Series([float(len(dataset))])]})
-        return preds, None
+    # Set up _check_initialization to be a no-op
+    model._check_initialization = MagicMock()
 
-    model.predict.side_effect = fake_predict
+    # Set up preprocessed dataset mock — one row with window_size embedding
+    proc_dataset = MagicMock()
+    proc_dataset.dataset = {"x__proc": np.array([[1.0, 2.0, 3.0]])}
+    model._preprocess_for_prediction.return_value = (proc_dataset, {})
+
+    # Set up model.input_features for the embedding extraction loop
+    i_feat_mock = MagicMock()
+    i_feat_mock.proc_column = "x__proc"
+    model.model.input_features.values.return_value = [i_feat_mock]
+    model.model.output_features = {out_feat.name: MagicMock()}
+
+    # Set up predictor as context manager returning predict_single results
+    raw_pred = pd.DataFrame({"y_predictions": [np.array([42.0])]})
+    predictor = MagicMock()
+    predictor.predict_single.return_value = raw_pred
+    ctx = MagicMock()
+    ctx.__enter__ = MagicMock(return_value=predictor)
+    ctx.__exit__ = MagicMock(return_value=False)
+    model.backend.create_predictor.return_value = ctx
+
+    postproc_pred = pd.DataFrame({"y_predictions": [np.array([42.0])]})
 
     horizon = 3
     with patch("ludwig.api.load_dataset_uris", return_value=(df, None, None, None)):
         with patch("ludwig.api.load_dataset", return_value=df):
-            result = LudwigModel.forecast(model, dataset=df, horizon=horizon)
+            with patch("ludwig.api.postprocess", return_value=postproc_pred):
+                result = LudwigModel.forecast(model, dataset=df, horizon=horizon)
 
     assert isinstance(result, pd.DataFrame)
     assert "y" in result.columns

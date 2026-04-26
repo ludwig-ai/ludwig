@@ -34,6 +34,34 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def incremental_time_delay_embedding(
+    new_value: float,
+    previous_embedding: np.ndarray,
+    window_size: int,
+    padding_value: float,
+) -> np.ndarray:
+    """Compute the next time-delay embedding incrementally given the previous one.
+
+    The new embedding is: previous_embedding[1:] concatenated with [new_value], padded if needed.
+    This avoids re-running create_time_delay_embedding over the full window for a single new observation.
+
+    Args:
+        new_value: The new scalar observation to append.
+        previous_embedding: The embedding from the previous step, shape [window_size].
+        window_size: Expected length of the output embedding.
+        padding_value: Fill value used when previous_embedding is shorter than window_size - 1.
+
+    Returns:
+        New embedding of shape [window_size] as float32.
+    """
+    if len(previous_embedding) >= window_size - 1:
+        window = np.concatenate([previous_embedding[-(window_size - 1) :], [new_value]])
+    else:
+        pad = np.full(window_size - 1 - len(previous_embedding), padding_value)
+        window = np.concatenate([pad, previous_embedding, [new_value]])
+    return window.astype(np.float32)
+
+
 def create_time_delay_embedding(
     series: Series, window_size: int, horizon: int, padding_value: int, backend: "Backend"
 ) -> Series:
