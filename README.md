@@ -24,8 +24,8 @@ Ludwig is a **low-code** framework for building **custom** AI models like **LLMs
 Key features:
 
 - 🛠 **Build custom models with ease:** a declarative YAML configuration file is all you need to train a state-of-the-art LLM on your data. Support for multi-task and multi-modality learning. Comprehensive config validation detects invalid parameter combinations and prevents runtime failures.
-- ⚡ **Optimized for scale and efficiency:** automatic batch size selection, distributed training via [HuggingFace Accelerate](https://github.com/huggingface/accelerate), parameter efficient fine-tuning ([PEFT](https://github.com/huggingface/peft)) including LoRA, DoRA, and VeRA, 4-bit quantization (QLoRA, [torchao](https://github.com/pytorch/ao)), paged and 8-bit optimizers, sequence packing, and larger-than-memory datasets.
-- 📐 **Expert level control:** retain full control of your models down to the activation functions. Support for hyperparameter optimization, explainability, and rich metric visualizations.
+- ⚡ **Optimized for scale and efficiency:** automatic batch size selection, distributed training via [HuggingFace Accelerate](https://github.com/huggingface/accelerate), parameter efficient fine-tuning ([PEFT](https://github.com/huggingface/peft)) including LoRA, DoRA, and VeRA, 4-bit quantization (QLoRA, [torchao](https://github.com/pytorch/ao) with QAT), multi-adapter PEFT with weighted merging, paged and 8-bit optimizers, sequence packing, and larger-than-memory datasets.
+- 📐 **Expert level control:** retain full control of your models down to the activation functions. Support for hyperparameter optimization (Ray Tune, Optuna), explainability, and rich metric visualizations.
 - 🧱 **Modular and extensible:** experiment with different model architectures, tasks, features, and modalities with just a few parameter changes in the config. Think building blocks for deep learning.
 - 🚢 **Engineered for production:** prebuilt [Docker](https://hub.docker.com/u/ludwigai) containers, native support for running with [Ray](https://www.ray.io/) on [Kubernetes](https://github.com/ray-project/kuberay), [vLLM](https://github.com/vllm-project/vllm) serving for LLMs, export models to [SafeTensors](https://github.com/huggingface/safetensors), [`torch.export`](https://pytorch.org/docs/stable/export.html), or [ONNX](https://onnx.ai/), upload to [HuggingFace](https://huggingface.co/models) with one command, and auto-generated model cards and training reports.
 
@@ -33,6 +33,17 @@ Ludwig is hosted by the
 [Linux Foundation AI & Data](https://lfaidata.foundation/).
 
 **Tech stack:** Python 3.12 | PyTorch 2.7+ | Pydantic 2 | Transformers 5 | Ray 2.54
+
+## 🆕 What's New in Ludwig 0.15
+
+- **GRPO alignment** — reward-model-free reinforcement learning from human feedback using Group Relative Policy Optimization, configurable with a single `trainer.type: grpo` flag
+- **torchao quantization + QAT** — PyTorch-native quantization backend (`int4_weight_only`, `int8_weight_only`, `int8_dynamic`, `float8`) with optional Quantization-Aware Training for 1–2 perplexity point recovery versus PTQ
+- **Multi-adapter PEFT** — train and deploy multiple named LoRA adapters on the same base model, with support for all PEFT weighted merge strategies (TIES, DARE, SVD, magnitude pruning)
+- **Native Optuna hyperopt executor** — `type: optuna` executor with auto/GP/TPE/CMA-ES samplers, pruning, and SQLite/PostgreSQL persistence for resumable runs, no Ray Tune required
+- **Timeseries forecasting** — first-class `TimeseriesOutputFeature` with `model.forecast(dataset, horizon=N)` API and efficient O(window_size + horizon) incremental preprocessing
+- **Muon and ScheduleFreeAdamW optimizers** — two new optimizers targeting large-scale pretraining and fine-tuning workloads
+- **Image segmentation decoders** — UNet, SegFormer, and FPN decoders for semantic segmentation output features
+- **Python 3.12, PyTorch 2.7, Transformers 5, Ray 2.54** — full upgrade of the entire dependency stack
 
 ![img](https://raw.githubusercontent.com/ludwig-ai/ludwig-docs/main/docs/images/ludwig_legos_unanimated.gif)
 
