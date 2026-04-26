@@ -129,14 +129,15 @@ REPARTITIONING_FEATURE_TYPES = {"image", "audio"}
 logger = logging.getLogger(__name__)
 
 
-def _coerce_config(config: ModelConfig | ModelConfigDict) -> ModelConfig:
-    """Coerce a plain config dict to a ModelConfig object for attribute-level access.
+def _get_config_dict(config: ModelConfig | ModelConfigDict) -> ModelConfigDict:
+    """Return a plain config dict from either a ModelConfig or an existing dict.
 
-    Accepts either a ModelConfig (pass-through) or a legacy dict (converted via ModelConfig.from_dict).
+    When a ModelConfig is provided, serializes it once via to_dict(). When a plain dict is provided, returns it as-is —
+    avoids round-tripping through from_dict(), which would re-run JSON schema validation and reject numpy scalar types.
     """
     if isinstance(config, ModelConfig):
-        return config
-    return ModelConfig.from_dict(config)
+        return config.to_dict()
+    return config
 
 
 class DataFormatPreprocessor(ABC):
@@ -1918,7 +1919,7 @@ def preprocess_for_training(
     callbacks=None,
 ) -> tuple[Dataset, Dataset, Dataset, TrainingSetMetadataDict]:
     """Returns training, val and test datasets with training set metadata."""
-    config = _coerce_config(config)
+    config_dict = _get_config_dict(config)
 
     # sanity check to make sure some data source is provided
     if dataset is None and training_set is None:
@@ -1939,9 +1940,6 @@ def preprocess_for_training(
     validation_set = wrap(validation_set)
     test_set = wrap(test_set)
 
-    # Compute dict form once — used for cache checksum and dataset_manager boundaries.
-    config_dict = config.to_dict()
-
     try:
         lock_path = backend.cache.get_cache_directory(dataset)
     except (TypeError, ValueError):
@@ -1952,8 +1950,8 @@ def preprocess_for_training(
         if training_set_metadata and isinstance(training_set_metadata, str):
             training_set_metadata = load_metadata(training_set_metadata)
 
-        # setup — extract feature dicts from ModelConfig attributes once
-        features = [f.to_dict() for f in config.input_features] + [f.to_dict() for f in config.output_features]
+        # setup — feature lists extracted from the config dict
+        features = config_dict["input_features"] + config_dict["output_features"]
 
         # in case data_format is one of the cacheable formats,
         # check if there's a cached hdf5 file with the same name,
@@ -2274,7 +2272,7 @@ def preprocess_for_prediction(
     Returns:
         Processed dataset along with updated training set metadata
     """
-    config = _coerce_config(config)
+    config_dict = _get_config_dict(config)
 
     # Sanity Check to make sure some data source is provided
     if dataset is None:
@@ -2289,9 +2287,6 @@ def preprocess_for_prediction(
     # determine data format if not provided or auto
     if not data_format or data_format == "auto":
         data_format = figure_data_format(dataset)
-
-    # Compute dict form once — used for cache checksum, dataset_manager boundaries, and param extraction.
-    config_dict = config.to_dict()
 
     # manage the in_memory parameter
     if data_format not in HDF5_FORMATS:
