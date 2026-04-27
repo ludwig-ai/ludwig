@@ -1807,7 +1807,7 @@ class LudwigModel:
                 source containing test data.
             :param training_set_metadata: (Union[str, dict], default: `None`)
                 metadata JSON file or loaded metadata. Intermediate preprocessed
-            structure containing the mappings of the input
+                structure containing the mappings of the input
                 dataset created the first time an input file is used in the same
                 directory with the same name and a '.meta.json' extension.
             :param data_format: (str, default: `None`) format to interpret data
