@@ -433,8 +433,8 @@ class TestSyncContextDispatch:
     def test_distributed_fallback_compute_produces_correct_result(self):
         """End-to-end: with the fallback active, compute() returns the correct value.
 
-        We mock gather_all_tensors to be a single-process passthrough so we can exercise
-        the full sync → compute path without a real distributed environment.
+        We mock gather_all_tensors to be a single-process passthrough so we can exercise the full sync → compute path
+        without a real distributed environment.
         """
         metric = self._make_metric()
         preds = torch.arange(6).reshape(3, 2).float()

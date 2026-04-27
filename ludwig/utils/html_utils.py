@@ -53,8 +53,7 @@ res_post = [
     (re.compile(r"[–_]"), r"-"),
     (
         re.compile(r"[\’\‘]"),
-        r"""),
-    (re.compile(r'[”“]]'), r""",
+        r"""), (re.compile(r'[”“]]'), r.""",
     ),
     (re.compile(r"℅"), r"%"),
     (re.compile(r"([^.>])(<br/?>)"), r"\1.\2"),

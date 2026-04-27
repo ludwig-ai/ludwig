@@ -277,7 +277,6 @@ def set_preprocessing_parameters(config: "ModelConfig") -> None:  # noqa: F821
 
 def _set_max_sequence_length(config: "ModelConfig") -> None:  # noqa: F821
     """Ensures that `max_sequence_length` is never less than `sequence_length`."""
-
     types_with_sequence_length = [SEQUENCE, TEXT]
     for input_feature in config.input_features:
         if input_feature.type in types_with_sequence_length:
@@ -338,8 +337,9 @@ def set_llm_parameters(config: "ModelConfig") -> None:
 
 
 def _set_llm_tokenizers(config: "ModelConfig") -> None:
-    """Sets the tokenizers for the LLM model to the pretrained model name or path. This ensures that they use the
-    correct shared vocabulary from the tokenizer.
+    """Sets the tokenizers for the LLM model to the pretrained model name or path.
+
+    This ensures that they use the correct shared vocabulary from the tokenizer.
 
     This also ensures padding is correctly set to left padding to prevent the LLM from trying to continue to sequence
     based on the right padding tokens, which might exist based on sequence length.

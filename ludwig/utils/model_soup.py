@@ -1,7 +1,7 @@
 """Model soup: average multiple checkpoint weights for better generalization.
 
-Based on Wortsman et al., "Model soups: averaging weights of multiple fine-tuned models
-improves accuracy without increasing inference time", ICML 2022.
+Based on Wortsman et al., "Model soups: averaging weights of multiple fine-tuned models improves accuracy without
+increasing inference time", ICML 2022.
 """
 
 import logging

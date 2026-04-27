@@ -92,6 +92,7 @@ class Callback(ABC):
 
         Use on_hyperopt_end instead.
         """
+
         # TODO(travis): remove in favor of on_hyperopt_end for naming consistency
 
     def on_hyperopt_trial_start(self, parameters: HyperoptConfigDict, **kwargs):

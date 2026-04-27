@@ -54,11 +54,11 @@ def get_optimizer_cls(name: str):
 
 @DeveloperAPI
 class BaseOptimizerConfig(schema_utils.LudwigBaseConfig, ABC):
-    """Base class for optimizers. Not meant to be used directly.
+    """Base class for optimizers.
 
-    The dataclass format prevents arbitrary properties from being set. Consequently, in child classes, all properties
-    from the corresponding `torch.optim.Optimizer` class are copied over: check each class to check which attributes are
-    different from the torch-specified defaults.
+    Not meant to be used directly.     The dataclass format prevents arbitrary properties from being set. Consequently,
+    in child classes, all properties     from the corresponding `torch.optim.Optimizer` class are copied over: check
+    each class to check which attributes are     different from the torch-specified defaults.
     """
 
     optimizer_class: ClassVar[torch.optim.Optimizer | None] = None
@@ -1280,8 +1280,9 @@ class GradientClippingConfig(schema_utils.LudwigBaseConfig):
 
 @DeveloperAPI
 def GradientClippingDataclassField(description: str, default: dict = {}):
-    """Returns custom dataclass field for `ludwig.modules.optimization_modules.GradientClippingConfig`. Allows
-    `None` by default.
+    """Returns custom dataclass field for `ludwig.modules.optimization_modules.GradientClippingConfig`.
+
+    Allows `None` by default.
 
     :param description: Description of the gradient dataclass field
     :param default: dict that specifies clipping param values that will be loaded by its schema class (default: {}).

@@ -29,7 +29,6 @@ def extract_tensors(model: torch.nn.Module) -> tuple[torch.nn.Module, list[dict]
     Reference implementation: https://medium.com/ibm-data-ai/how-to-load-pytorch-models-340-times-faster-with-
     ray-8be751a6944c  # noqa
     """
-
     tensors = []
     for _, module in model.named_modules():
         # Store the tensors as numpy arrays in Python dictionaries
@@ -56,8 +55,9 @@ def extract_tensors(model: torch.nn.Module) -> tuple[torch.nn.Module, list[dict]
 
 
 def replace_tensors(m: torch.nn.Module, tensors: list[dict], device: torch.device):
-    """Restore the tensors that extract_tensors() stripped out of a PyTorch model. This operation is performed in
-    place.
+    """Restore the tensors that extract_tensors() stripped out of a PyTorch model.
+
+    This operation is performed in place.
 
     Reference implementation: https://medium.com/ibm-data-ai/how-to-load-pytorch-models-340-times-faster-with-
     ray-8be751a6944c  # noqa
@@ -96,8 +96,9 @@ def find_embedding_layer_with_path(module, module_names=[]):
 
 
 def contains_nan_or_inf_tensors(module: torch.nn.Module) -> bool:
-    """Check for NaN or infinity (inf) values in the tensors (parameters and buffers) of a PyTorch module. This
-    function recursively inspects the module's parameters and buffers to identify NaN or inf values. It is designed
+    """Check for NaN or infinity (inf) values in the tensors (parameters and buffers) of a PyTorch module.
+
+    This function recursively inspects the module's parameters and buffers to identify NaN or inf values. It is designed
     to ensure the numerical stability of the model by detecting any irregularities in the tensor values.
 
     Parameters:

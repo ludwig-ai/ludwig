@@ -36,8 +36,9 @@ logger = logging.getLogger()
 def load_from_module(
     dataset_module: DatasetLoader | ModuleType, output_feature: dict[str, str], subsample_frac: float = 1
 ) -> pd.DataFrame:
-    """Load the ludwig dataset, optionally subsamples it, and returns a repeatable split. A stratified split is
-    used for classification datasets.
+    """Load the ludwig dataset, optionally subsamples it, and returns a repeatable split.
+
+    A stratified split is used for classification datasets.
 
     Args:
         dataset_module: ludwig datasets module (e.g. ludwig.datasets.sst2, ludwig.datasets.ames_housing, etc.)
@@ -173,11 +174,12 @@ def validate_benchmarking_config(benchmarking_config: dict[str, Any]) -> None:
     ):
         raise ValueError("You must either specify a global experiment name or an experiment name for each experiment.")
     if "export" not in benchmarking_config:
-        raise ValueError("""You must specify export parameters. Example:
-            export:
-              export_artifacts: true
-              export_base_path: s3://benchmarking.us-west-2.ludwig.com/bench/    # include the slash at the end.
-        """)
+        raise ValueError("""You must specify export parameters.
+
+                         Example: export:
+                           export_artifacts: true
+                           export_base_path: s3://benchmarking.us-west-2.ludwig.com/bench/    # include the slash at the end.
+                         """)
     if "experiments" not in benchmarking_config:
         raise ValueError("You must specify a list of experiments.")
     for experiment in benchmarking_config["experiments"]:

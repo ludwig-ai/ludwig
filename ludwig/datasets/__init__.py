@@ -84,7 +84,6 @@ def load_dataset_uris(
 
     Returns the input unmodified for any non-Ludwig datasets.
     """
-
     dataset_out, training_set_out, validation_set_out, test_set_out = dataset, training_set, validation_set, test_set
     # Check that any of the datasets begin with the `hf://` prefix denoting a Hugging Face dataset URI
     # Hugging Face datasets should follow the naming convention `hf://<hf_id>--<hf_subsample>`
@@ -233,8 +232,10 @@ def list_datasets() -> list[str]:
 def get_datasets_output_features(
     dataset: str = None, include_competitions: bool = True, include_data_modalities: bool = False
 ) -> dict:
-    """Returns a dictionary with the output features for each dataset. Optionally, you can pass a dataset name
-    which will then cause the function to return a dictionary with the output features for that dataset.
+    """Returns a dictionary with the output features for each dataset.
+
+    Optionally, you can pass a dataset name which will then cause the function to return a dictionary with the output
+    features for that dataset.
 
     Because Hugging Face Datasets are loaded dynamically through a shared connector, they don't have fixed output
     features. As such, we exclude Hugging Face datasets here.
@@ -372,15 +373,16 @@ def cli(sys_argv):
 
 
 def __getattr__(name: str) -> Any:
-    """Module-level __getattr__ allows us to return an instance of a class.  For example:
+    """Module-level __getattr__ allows us to return an instance of a class.
 
-         from ludwig.datasets import titanic
+    For example:
+             from ludwig.datasets import titanic
 
-    returns an instance of DatasetLoader configured to load titanic.
+        returns an instance of DatasetLoader configured to load titanic.
 
-    If you want to download a dataset in a non-default ludwig cache directory, there are two options:
-        1. set the LUDWIG_CACHE environment variable to your desired path before importing the dataset
-        2. Use ludwig.datasets.get_dataset(dataset_name, cache_dir=<CACHE_DIR>)
+        If you want to download a dataset in a non-default ludwig cache directory, there are two options:
+            1. set the LUDWIG_CACHE environment variable to your desired path before importing the dataset
+            2. Use ludwig.datasets.get_dataset(dataset_name, cache_dir=<CACHE_DIR>)
     """
     public_methods = {
         "list_datasets",

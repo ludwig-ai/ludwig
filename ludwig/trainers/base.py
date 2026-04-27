@@ -12,16 +12,13 @@ from ludwig.utils.defaults import default_random_seed
 class BaseTrainer(ABC):
     """Abstract base class for all Ludwig trainers.
 
-    Required methods (must be implemented by every subclass):
-        train(), train_online(), tune_batch_size(), validation_field,
-        validation_metric, get_schema_cls()
+    Required methods (must be implemented by every subclass):     train(), train_online(), tune_batch_size(),
+    validation_field,     validation_metric, get_schema_cls()
 
-    Optional methods (have sensible no-op defaults; override as needed):
-        shutdown(), barrier(), local_rank
+    Optional methods (have sensible no-op defaults; override as needed):     shutdown(), barrier(), local_rank
 
-    Use the `capabilities` class property to advertise non-standard features
-    (e.g. {"distributed": True, "batch_size_tuning": False}) so callers can
-    check support without catching NotImplementedError.
+    Use the `capabilities` class property to advertise non-standard features (e.g. {"distributed": True,
+    "batch_size_tuning": False}) so callers can check support without catching NotImplementedError.
     """
 
     # Subclasses may override this dict to advertise capabilities.

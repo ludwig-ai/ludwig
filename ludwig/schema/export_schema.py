@@ -20,10 +20,9 @@ SCHEMA_BASE_URL = "https://ludwig-ai.github.io/schema"
 def _strip_parameter_metadata(obj):
     """Recursively remove ``parameter_metadata`` keys from a schema dict.
 
-    The Ludwig schema generator attaches ``parameter_metadata`` objects to
-    every field (UI display hints, suggested values, etc.).  These are useful
-    internally but add significant bloat to the published JSON Schema and are
-    not relevant for validation or IDE auto-complete.
+    The Ludwig schema generator attaches ``parameter_metadata`` objects to every field (UI display hints, suggested
+    values, etc.).  These are useful internally but add significant bloat to the published JSON Schema and are not
+    relevant for validation or IDE auto-complete.
     """
     if isinstance(obj, dict):
         return {k: _strip_parameter_metadata(v) for k, v in obj.items() if k != "parameter_metadata"}

@@ -1,23 +1,24 @@
 def PublicAPI(*args, **kwargs):
-    """Annotation for documenting public APIs. Public APIs are classes and methods exposed to end users of Ludwig.
+    """Annotation for documenting public APIs.
 
-    If stability="stable", the APIs will remain backwards compatible across minor Ludwig releases
-    (e.g., Ludwig 0.6 -> Ludwig 0.7).
+    Public APIs are classes and methods exposed to end users of Ludwig.
+        If stability="stable", the APIs will remain backwards compatible across minor Ludwig releases
+        (e.g., Ludwig 0.6 -> Ludwig 0.7).
 
-    If stability="experimental", the APIs can be used by advanced users who are tolerant to and expect
-    breaking changes. This will likely be seen in the case of incremental new feature development.
+        If stability="experimental", the APIs can be used by advanced users who are tolerant to and expect
+        breaking changes. This will likely be seen in the case of incremental new feature development.
 
-    Args:
-        stability: One of {"stable", "experimental"}
+        Args:
+            stability: One of {"stable", "experimental"}
 
-    Examples:
-        >>> from api_annotations import PublicAPI
-        >>> @PublicAPI
-        ... def func1(x):
-        ...     return x
-        >>> @PublicAPI(stability="experimental")
-        ... def func2(y):
-        ...     return y
+        Examples:
+            >>> from api_annotations import PublicAPI
+            >>> @PublicAPI
+            ... def func1(x):
+            ...     return x
+            >>> @PublicAPI(stability="experimental")
+            ... def func2(y):
+            ...     return y
     """
     if len(args) == 1 and len(kwargs) == 0 and callable(args[0]):
         return PublicAPI(stability="stable")(args[0])
@@ -44,8 +45,9 @@ def PublicAPI(*args, **kwargs):
 
 
 def DeveloperAPI(*args, **kwargs):
-    """Annotation for documenting developer APIs. Developer APIs are lower-level methods explicitly exposed to
-    advanced Ludwig users and library developers. Their interfaces may change across minor Ludwig releases (for
+    """Annotation for documenting developer APIs.
+
+    Developer APIs are lower-level methods explicitly exposed to advanced Ludwig users and library developers. Their interfaces may change across minor Ludwig releases (for
     e.g., Ludwig 0.6.1 and Ludwig 0.6.2).
 
     Examples:
@@ -66,8 +68,9 @@ def DeveloperAPI(*args, **kwargs):
 
 
 def Deprecated(*args, **kwargs):
-    """Annotation for documenting a deprecated API. Deprecated APIs may be removed in future releases of Ludwig
-    (e.g., Ludwig 0.7 to Ludwig 0.8).
+    """Annotation for documenting a deprecated API.
+
+    Deprecated APIs may be removed in future releases of Ludwig (e.g., Ludwig 0.7 to Ludwig 0.8).
 
     Args:
         message: A message to help users understand the reason for the deprecation, and provide a migration path.

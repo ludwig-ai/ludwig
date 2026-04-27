@@ -123,7 +123,7 @@ class EntmaxBisectLossFunction(_GenericLossFunction):
 
 
 def sparsemax_loss(X, target, k=None):
-    """sparsemax loss: sparse alternative to cross-entropy.
+    """Sparsemax loss: sparse alternative to cross-entropy.
 
     Computed using a partial sorting strategy.
 
@@ -151,7 +151,7 @@ def sparsemax_loss(X, target, k=None):
 
 
 def sparsemax_bisect_loss(X, target, n_iter=50):
-    """sparsemax loss: sparse alternative to cross-entropy.
+    """Sparsemax loss: sparse alternative to cross-entropy.
 
     Computed using bisection.
 
@@ -204,7 +204,7 @@ def entmax15_loss(X, target, k=None):
 
 
 def entmax_bisect_loss(X, target, alpha=1.5, n_iter=50):
-    """alpha-entmax loss: sparse alternative to cross-entropy.
+    """Alpha-entmax loss: sparse alternative to cross-entropy.
 
     Computed using bisection, supporting arbitrary alpha > 1.
 

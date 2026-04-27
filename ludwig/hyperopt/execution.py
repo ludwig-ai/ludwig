@@ -48,8 +48,8 @@ logger = logging.getLogger(__name__)
 def _patch_bohb_configspace_conversion():
     """Monkey-patch TuneBOHB.convert_search_space for ConfigSpace 1.x compatibility.
 
-    ConfigSpace 1.x removed the `q` (quantization) parameter from hyperparameter classes.
-    Ray Tune's BOHB integration still passes `q=...`, so we patch the converter to drop it.
+    ConfigSpace 1.x removed the `q` (quantization) parameter from hyperparameter classes. Ray Tune's BOHB integration
+    still passes `q=...`, so we patch the converter to drop it.
     """
     try:
         # Check if ConfigSpace 1.x (no 'q' parameter)

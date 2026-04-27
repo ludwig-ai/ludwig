@@ -1,8 +1,7 @@
 """Modality dropout: randomly drop encoder outputs during training for robustness.
 
-During training, each input feature's encoder output is randomly replaced with a learnable
-"missing modality" embedding with probability `dropout_prob`. This improves robustness to
-missing inputs at inference time.
+During training, each input feature's encoder output is randomly replaced with a learnable "missing modality" embedding
+with probability `dropout_prob`. This improves robustness to missing inputs at inference time.
 
 Based on: "Bag of Tricks for Multimodal AutoML" (arXiv 2412.16243, Dec 2024).
 """

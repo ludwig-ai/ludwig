@@ -158,17 +158,12 @@ class IntegratedGradientsExplainer(Explainer):
 
         # Return
 
-        :return: ExplanationsResult containing the explanations.
-            `global_explanations`: (Explanation) Aggregate explanation for the entire input data.
-
-            `row_explanations`: (List[Explanation]) A list of explanations, one for each row in the input data. Each
-            explanation contains the integrated gradients for each label in the target feature's vocab with respect to
-            each input feature.
-
-            `expected_values`: (List[float]) of length [output feature cardinality] Average convergence delta for each
-            label in the target feature's vocab.
+        :return: ExplanationsResult containing the explanations. `global_explanations`: (Explanation) Aggregate
+            explanation for the entire input data. `row_explanations`: (List[Explanation]) A list of explanations, one
+            for each row in the input data. Each explanation contains the integrated gradients for each label in the
+            target feature's vocab with respect to each input feature. `expected_values`: (List[float]) of length
+            [output feature cardinality] Average convergence delta for each label in the target feature's vocab.
         """
-
         # TODO(travis): add back skip encoders at the end in finally. Shouldn't be an issue in most cases as we
         # typically perform explanations on a loaded model and don't use it to predict afterwards.
         self.model.model.unskip()

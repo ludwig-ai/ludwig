@@ -13,12 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""
-File name: LudwigModel.py
-Author: Piero Molino
-Date created: 5/21/2019
-Python Version: 3+
-"""
+"""File name: LudwigModel.py Author: Piero Molino Date created: 5/21/2019 Python Version: 3+"""
 
 import copy
 import dataclasses
@@ -121,13 +116,14 @@ logger = logging.getLogger(__name__)
 @PublicAPI
 @dataclass
 class EvaluationFrequency:  # noqa F821
-    """Represents the frequency of periodic evaluation of a metric during training. For example:
+    """Represents the frequency of periodic evaluation of a metric during training.
 
-    "every epoch"
-    frequency: 1, period: EPOCH
+    For example:
+        "every epoch"
+        frequency: 1, period: EPOCH
 
-    "every 50 steps".
-    frequency: 50, period: STEP
+        "every 50 steps".
+        frequency: 50, period: STEP
     """
 
     frequency: float = 1.0
@@ -303,24 +299,18 @@ class LudwigModel:
 
         # Inputs
 
-        :param config: (Union[str, dict]) in-memory representation of
-            config or string path to a YAML config file.
+        :param config: (Union[str, dict]) in-memory representation of config or string path to a YAML config file.
         :param logging_level: (int) Log level that will be sent to stderr.
-        :param backend: (Union[Backend, str]) `Backend` or string name
-            of backend to use to execute preprocessing / training steps.
-        :param gpus: (Union[str, int, List[int]], default: `None`) GPUs
-            to use (it uses the same syntax of CUDA_VISIBLE_DEVICES)
-        :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
-            [0, 1] allowed to allocate per GPU device.
-        :param allow_parallel_threads: (bool, default: `True`) allow Torch
-            to use multithreading parallelism to improve performance at the
-            cost of determinism.
-        :param callbacks: (list, default: `None`) a list of
-              `ludwig.callbacks.Callback` objects that provide hooks into the
-               Ludwig pipeline.
-
-        # Return
-
+        :param backend: (Union[Backend, str]) `Backend` or string name of backend to use to execute preprocessing /
+            training steps.
+        :param gpus: (Union[str, int, List[int]], default: `None`) GPUs to use (it uses the same syntax of
+            CUDA_VISIBLE_DEVICES)
+        :param gpu_memory_limit: (float: default: `None`) maximum memory fraction [0, 1] allowed to allocate per GPU
+            device.
+        :param allow_parallel_threads: (bool, default: `True`) allow Torch to use multithreading parallelism to improve
+            performance at the cost of determinism.
+        :param callbacks: (list, default: `None`) a list of `ludwig.callbacks.Callback` objects that provide hooks into
+            the Ludwig pipeline. # Return
         :return: (None) `None`
         """
         # check if config is a path or a dict
@@ -1716,10 +1706,7 @@ class LudwigModel:
         """Load a pre-trained model and collect the tensors with a specific name.
 
         # Inputs
-        :param tensor_names: (list, default: `None`) List of tensor names to collect
-            weights
-
-        # Return
+        :param tensor_names: (list, default: `None`) List of tensor names to collect weights  # Return
         :return: (list) List of tensors
         """
         self._check_initialization()
@@ -1739,24 +1726,16 @@ class LudwigModel:
         tensors.
 
         # Inputs
-        :param layer_names: (list) list of strings for layer names in the model
-            to collect activations.
-        :param dataset: (Union[str, Dict[str, list], pandas.DataFrame]) source
-            containing the data to make predictions.
-        :param data_format: (str, default: `None`) format to interpret data
-            sources. Will be inferred automatically if not specified.  Valid
-            formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`, `'feather'`,
-            `'fwf'`, `'hdf5'` (cache file produced during previous training),
-            `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
-            `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
-            `'stata'`, `'tsv'`.
-        :param split: (str, default= `'full'`): if the input dataset contains
-            a split column, this parameter indicates which split of the data
-            to use. Possible values are `'full'`, `'training'`, `'validation'`, `'test'`.
-        :param batch_size: (int, default: 128) size of batch to use when making
-            predictions.
-
-        # Return
+        :param layer_names: (list) list of strings for layer names in the model to collect activations.
+        :param dataset: (Union[str, Dict[str, list], pandas.DataFrame]) source containing the data to make predictions.
+        :param data_format: (str, default: `None`) format to interpret data sources. Will be inferred automatically if
+            not specified. Valid formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`, `'feather'`, `'fwf'`,
+            `'hdf5'` (cache file produced during previous training), `'html'` (file containing a single HTML `<table>`),
+            `'json'`, `'jsonl'`, `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`, `'stata'`,
+            `'tsv'`.
+        :param split: (str, default= `'full'`): if the input dataset contains a split column, this parameter indicates
+            which split of the data to use. Possible values are `'full'`, `'training'`, `'validation'`, `'test'`.
+        :param batch_size: (int, default: 128) size of batch to use when making predictions.  # Return
         :return: (list) list of collected tensors.
         """
         self._check_initialization()
@@ -2016,20 +1995,10 @@ class LudwigModel:
 
         # Inputs
 
-        :param  save_path: (str) path to the directory where the model is
-                going to be saved. Both a JSON file containing the model
-                architecture hyperparameters and checkpoints files containing
-                model weights will be saved.
-
-        # Return
-
-        :return: (None) `None`
-
-        # Example usage
-
-        ```python
-        ludwig_model.save(save_path)
-        ```
+        :param save_path: (str) path to the directory where the model is going to be saved. Both a JSON file containing
+            the model architecture hyperparameters and checkpoints files containing model weights will be saved. #
+            Return
+        :return: (None) `None`  # Example usage  ```python ludwig_model.save(save_path) ```
         """
         self._check_initialization()
 
@@ -2056,27 +2025,15 @@ class LudwigModel:
 
         # Inputs
 
-        :param repo_id: (`str`)
-            A namespace (user or an organization) and a repo name separated
-            by a `/`.
-        :param model_path: (`str`)
-            The path of the saved model. This is either (a) the folder where
-            the 'model_weights' folder and the 'model_hyperparameters.json' file
-            are stored, or (b) the parent of that folder.
-        :param private: (`bool`, *optional*, defaults to `False`)
-            Whether the model repo should be private.
-        :param repo_type: (`str`, *optional*)
-            Set to `"dataset"` or `"space"` if uploading to a dataset or
-            space, `None` or `"model"` if uploading to a model. Default is
-            `None`.
-        :param commit_message: (`str`, *optional*)
-            The summary / title / first line of the generated commit. Defaults to:
-            `f"Upload {path_in_repo} with huggingface_hub"`
-        :param commit_description: (`str` *optional*)
-            The description of the generated commit
-
-        # Returns
-
+        :param repo_id: (`str`) A namespace (user or an organization) and a repo name separated by a `/`.
+        :param model_path: (`str`) The path of the saved model. This is either (a) the folder where the 'model_weights'
+            folder and the 'model_hyperparameters.json' file are stored, or (b) the parent of that folder.
+        :param private: (`bool`, *optional*, defaults to `False`) Whether the model repo should be private.
+        :param repo_type: (`str`, *optional*) Set to `"dataset"` or `"space"` if uploading to a dataset or space, `None`
+            or `"model"` if uploading to a model. Default is `None`.
+        :param commit_message: (`str`, *optional*) The summary / title / first line of the generated commit. Defaults
+            to: `f"Upload {path_in_repo} with huggingface_hub"`
+        :param commit_description: (`str` *optional*) The description of the generated commit  # Returns
         :return: (bool) True for success, False for failure.
         """
         if model_weights_exist(os.path.join(model_path, MODEL_FILE_NAME)) and os.path.exists(
@@ -2110,11 +2067,8 @@ class LudwigModel:
 
         # Inputs
 
-        :param save_path: (str) filepath string to save config as a
-            JSON file.
-
-        # Return
-        :return: `None`
+        :param save_path: (str) filepath string to save config as a JSON file.  # Return
+        :return:`None`
         """
         os.makedirs(save_path, exist_ok=True)
         model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
@@ -2205,12 +2159,9 @@ class LudwigModel:
 
         # Inputs
 
-        :param logging_level: (int) Set/Update the logging level. Use logging
-        constants like `logging.DEBUG` , `logging.INFO` and `logging.ERROR`.
-
-        # Return
-
-        :return: `None`
+        :param logging_level: (int) Set/Update the logging level. Use logging constants like `logging.DEBUG` ,
+            `logging.INFO` and `logging.ERROR`. # Return
+        :return:`None`
         """
         logging.getLogger("ludwig").setLevel(logging_level)
         if logging_level in {logging.WARNING, logging.ERROR, logging.CRITICAL}:

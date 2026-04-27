@@ -67,8 +67,9 @@ def experiment_cli(
     logging_level: int = logging.INFO,
     **kwargs,
 ):
-    """Trains a model on a dataset's training and validation splits and uses it to predict on the test split. It
-    saves the trained model and the statistics of training and testing.
+    """Trains a model on a dataset's training and validation splits and uses it to predict on the test split.
+
+    It saves the trained model and the statistics of training and testing.
 
      # Inputs
 
@@ -264,7 +265,6 @@ def kfold_cross_validate_cli(
     :param skip_save_k_fold_split_indices: (boolean, default: False) Disables saving k-fold split indices
     :return: None
     """
-
     kfold_cv_stats, kfold_split_indices = kfold_cross_validate(
         k_fold,
         config=config,

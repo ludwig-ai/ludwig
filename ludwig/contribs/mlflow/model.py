@@ -188,8 +188,9 @@ def _load_model(path):
 
 
 def _load_pyfunc(path):
-    """Load PyFunc implementation. Called by ``pyfunc.load_pyfunc``.
+    """Load PyFunc implementation.
 
+    Called by ``pyfunc.load_pyfunc``.
     :param path: Local filesystem path to the MLflow Model with the ``ludwig`` flavor.
     """
     return _LudwigModelWrapper(_load_model(path))

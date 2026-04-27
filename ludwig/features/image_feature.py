@@ -477,7 +477,6 @@ class ImageFeatureMixin(BaseFeatureMixin):
         If the user specifies a number of channels, we try to convert all the images to the specifications by dropping
         channels/padding 0 channels
         """
-
         if isinstance(img_entry, bytes):
             img = read_image_from_bytes_obj(img_entry, num_channels)
         elif isinstance(img_entry, str):
@@ -593,7 +592,6 @@ class ImageFeatureMixin(BaseFeatureMixin):
         Return:
             (width, height) Updated width and height so that they are equal
         """
-
         if preprocessing_parameters[REQUIRES_EQUAL_DIMENSIONS] and height != width:
             width = height = min(width, height)
             # Update preprocessing parameters dictionary to reflect new height and width values
@@ -612,8 +610,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
         preprocessing_parameters: dict,
         encoder_type: str,
     ) -> tuple[int, int]:
-        """Infers the size to use from a group of images. The returned height will be the average height of images
-        in image_sample rounded to the nearest integer, or max_height. Likewise for width.
+        """Infers the size to use from a group of images.
+
+        The returned height will be the average height of images in image_sample rounded to the nearest integer, or max_height. Likewise for width.
 
         Args:
             image_sample: Sample of images to use to infer image size. Must be formatted as [channels, height, width].
@@ -625,7 +624,6 @@ class ImageFeatureMixin(BaseFeatureMixin):
         Return:
             (height, width) The inferred height and width.
         """
-
         height_avg = sum(x.shape[1] for x in image_sample) / len(image_sample)
         width_avg = sum(x.shape[2] for x in image_sample) / len(image_sample)
         height = min(int(round(height_avg)), max_height)
@@ -683,8 +681,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
         num_channels: int,
         num_classes: int,
     ) -> torch.Tensor:
-        """Infers the number of channel classes from a group of images (for image segmentation). The returned
-        tensor contains the channel value for each class, where dim=0 is the class.
+        """Infers the number of channel classes from a group of images (for image segmentation).
+
+        The returned tensor contains the channel value for each class, where dim=0 is the class.
 
         Args:
             image_sample: Sample of images to use to infer image size. Must be formatted as [channels, height, width].
@@ -729,7 +728,6 @@ class ImageFeatureMixin(BaseFeatureMixin):
             encoder_type: The name of the encoder
             column: The data itself. Can be a Pandas, Modin or Dask series.
         """
-
         explicit_height_width = preprocessing_parameters[HEIGHT] or preprocessing_parameters[WIDTH]
         explicit_num_channels = NUM_CHANNELS in preprocessing_parameters and preprocessing_parameters[NUM_CHANNELS]
 

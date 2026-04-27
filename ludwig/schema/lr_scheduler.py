@@ -237,11 +237,12 @@ class LRSchedulerConfig(schema_utils.LudwigBaseConfig, ABC):
 # minimal amount needed for the new config object.
 @DeveloperAPI
 def LRSchedulerDataclassField(description: str, default: dict = None):
-    """Returns custom dataclass field for `LRSchedulerConfig`. Allows `None` by default.
+    """Returns custom dataclass field for `LRSchedulerConfig`.
 
-    Args:
-        description: Description of the dataclass field
-        default: dict that specifies param values that will be loaded by its schema class (default: None).
+    Allows `None` by default.
+        Args:
+            description: Description of the dataclass field
+            default: dict that specifies param values that will be loaded by its schema class (default: None).
     """
     allow_none = True
     default = default or {}

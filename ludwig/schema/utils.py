@@ -132,9 +132,9 @@ ConfigT = Any  # TypeVar("ConfigT", bound="LudwigBaseConfig")
 def _convert_dataclass_field_to_pydantic(dc_field) -> FieldInfo:
     """Convert a dataclasses.Field to a pydantic FieldInfo.
 
-    This is the bridge that allows old marshmallow-style field definitions
-    (using dataclasses.field(metadata={"marshmallow_field": ...})) to work
-    with pydantic BaseModel classes during the migration period.
+    This is the bridge that allows old marshmallow-style field definitions (using
+    dataclasses.field(metadata={"marshmallow_field": ...})) to work with pydantic BaseModel classes during the migration
+    period.
     """
     import dataclasses as _dc
 

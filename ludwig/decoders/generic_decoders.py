@@ -390,9 +390,8 @@ class MLPClassifier(Decoder):
     def forward(self, inputs: torch.Tensor, **kwargs) -> torch.Tensor:
         """Run the forward pass and return raw logits.
 
-        Returns logits of shape ``[batch, num_classes]`` for category features,
-        or ``[batch]`` for binary features.
-        MC Dropout inference is available via :meth:`mc_forward`.
+        Returns logits of shape ``[batch, num_classes]`` for category features, or ``[batch]`` for binary features. MC
+        Dropout inference is available via :meth:`mc_forward`.
         """
         return self._single_forward(inputs)
 

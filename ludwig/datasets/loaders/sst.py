@@ -53,7 +53,6 @@ class SSTLoader(DatasetLoader):
 
     def transform_files(self, file_paths: list[str]) -> list[str]:
         # maybe this should be
-
         """Load dataset files into a dataframe."""
         sentences_df = pd.read_csv(
             os.path.join(self.raw_dataset_dir, "stanfordSentimentTreebank/datasetSentences.txt"),

@@ -125,8 +125,9 @@ def auto_train(
     use_reference_config: bool = False,
     **kwargs,
 ) -> AutoTrainResults:
-    """Main auto train API that first builds configs for each model type (e.g. concat, tabnet, transformer). Then
-    selects model based on dataset attributes. And finally runs a hyperparameter optimization experiment.
+    """Main auto train API that first builds configs for each model type (e.g. concat, tabnet, transformer).
+
+    Then selects model based on dataset attributes. And finally runs a hyperparameter optimization experiment.
 
     All batch and learning rate tuning is done @ training time.
 

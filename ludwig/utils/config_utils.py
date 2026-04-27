@@ -46,7 +46,6 @@ def get_defaults_section_for_feature_type(
 ) -> FeatureConfigDict:
     """Returns a dictionary of all default parameter values specified in the global defaults section for the
     config_defaults_section of the feature_type."""
-
     if feature_type not in config_defaults:
         return {}
 

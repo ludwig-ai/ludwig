@@ -392,24 +392,17 @@ def compare_classifiers_performance_from_prob_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names to extract probabilities from.
     :param ground_truth: (str) path to ground truth file
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
+    :param ground_truth_split: (str) type of ground truth split - `0` for training split, `1` for validation split or 2
+        for `'test'` split.
     :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
+    :param ground_truth_metadata: (str) file path to feature metadata json file created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-        results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
+    :param output_directory: (str) name of output directory containing training results.
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
-
     # retrieve feature metadata to convert raw predictions to encoded value
     metadata = load_json(ground_truth_metadata)
 
@@ -447,23 +440,16 @@ def compare_classifiers_performance_from_pred_cli(
 
     # Inputs
 
-    :param predictions: (List[str]) list of prediction results file names
-        to extract predictions from.
+    :param predictions: (List[str]) list of prediction results file names to extract predictions from.
     :param ground_truth: (str) path to ground truth file.
     :param ground_truth_metadata: (str) path to ground truth metadata file.
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
+    :param ground_truth_split: (str) type of ground truth split - `0` for training split, `1` for validation split or 2
+        for `'test'` split.
     :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
+    :param ground_truth_metadata: (str) file path to feature metadata json file created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-        results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param output_directory: (str) name of output directory containing training results.
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
     # retrieve feature metadata to convert raw predictions to encoded value
@@ -495,22 +481,15 @@ def compare_classifiers_performance_subset_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names to extract probabilities from.
     :param ground_truth: (str) path to ground truth file
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
+    :param ground_truth_split: (str) type of ground truth split - `0` for training split, `1` for validation split or 2
+        for `'test'` split.
     :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
+    :param ground_truth_metadata: (str) file path to feature metadata json file created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param output_directory: (str) name of output directory containing training results.
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
     # retrieve feature metadata to convert raw predictions to encoded value
@@ -547,23 +526,16 @@ def compare_classifiers_performance_changing_k_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names to extract probabilities from.
     :param ground_truth: (str) path to ground truth file
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
+    :param ground_truth_split: (str) type of ground truth split - `0` for training split, `1` for validation split or 2
+        for `'test'` split.
     :param split_file: (str, None) file path to csv file containing split values
     :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
+    :param ground_truth_metadata: (str) file path to feature metadata json file created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param output_directory: (str) name of output directory containing training results.
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
     # retrieve feature metadata to convert raw predictions to encoded value
@@ -617,22 +589,15 @@ def compare_classifiers_predictions_cli(
 
     # Inputs
 
-    :param predictions: (List[str]) list of prediction results file names
-        to extract predictions from.
+    :param predictions: (List[str]) list of prediction results file names to extract predictions from.
     :param ground_truth: (str) path to ground truth file.
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
+    :param ground_truth_split: (str) type of ground truth split - `0` for training split, `1` for validation split or 2
+        for `'test'` split.
     :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
+    :param ground_truth_metadata: (str) file path to feature metadata json file created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param output_directory: (str) name of output directory containing training results.
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
     # retrieve feature metadata to convert raw predictions to encoded value
@@ -664,22 +629,15 @@ def compare_classifiers_predictions_distribution_cli(
 
     # Inputs
 
-    :param predictions: (List[str]) list of prediction results file names
-        to extract predictions from.
+    :param predictions: (List[str]) list of prediction results file names to extract predictions from.
     :param ground_truth: (str) path to ground truth file.
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
+    :param ground_truth_split: (str) type of ground truth split - `0` for training split, `1` for validation split or 2
+        for `'test'` split.
     :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
+    :param ground_truth_metadata: (str) file path to feature metadata json file created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param output_directory: (str) name of output directory containing training results.
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
     # retrieve feature metadata to convert raw predictions to encoded value
@@ -710,22 +668,15 @@ def confidence_thresholding_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
+    :param ground_truth_split: (str) type of ground truth split - `0` for training split, `1` for validation split or 2
+        for `'test'` split.
     :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
+    :param ground_truth_metadata: (str) file path to feature metadata json file created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param output_directory: (str) name of output directory containing training results.
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
     # retrieve feature metadata to convert raw predictions to encoded value
@@ -761,22 +712,15 @@ def confidence_thresholding_data_vs_acc_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
+    :param ground_truth_split: (str) type of ground truth split - `0` for training split, `1` for validation split or 2
+        for `'test'` split.
     :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
+    :param ground_truth_metadata: (str) file path to feature metadata json file created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param output_directory: (str) name of output directory containing training results.
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
     # retrieve feature metadata to convert raw predictions to encoded value
@@ -812,22 +756,15 @@ def confidence_thresholding_data_vs_acc_subset_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
+    :param ground_truth_split: (str) type of ground truth split - `0` for training split, `1` for validation split or 2
+        for `'test'` split.
     :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
+    :param ground_truth_metadata: (str) file path to feature metadata json file created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param output_directory: (str) name of output directory containing training results.
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
     # retrieve feature metadata to convert raw predictions to encoded value
@@ -863,21 +800,15 @@ def confidence_thresholding_data_vs_acc_subset_per_class_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
     :param ground_truth_metadata: (str) path to ground truth metadata file.
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
+    :param ground_truth_split: (str) type of ground truth split - `0` for training split, `1` for validation split or 2
+        for `'test'` split.
     :param split_file: (str, None) file path to csv file containing split values
     :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param output_directory: (str) name of output directory containing training results.
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
     # retrieve feature metadata to convert raw predictions to encoded value
@@ -913,23 +844,15 @@ def confidence_thresholding_2thresholds_2d_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
+    :param ground_truth_split: (str) type of ground truth split - `0` for training split, `1` for validation split or 2
+        for `'test'` split.
     :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
-    :param threshold_output_feature_names: (List[str]) name of the output
-        feature to visualizes.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param ground_truth_metadata: (str) file path to feature metadata json file created during training.
+    :param threshold_output_feature_names: (List[str]) name of the output feature to visualizes.
+    :param output_directory: (str) name of output directory containing training results.
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
     # retrieve feature metadata to convert raw predictions to encoded value
@@ -972,23 +895,15 @@ def confidence_thresholding_2thresholds_3d_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
+    :param ground_truth_split: (str) type of ground truth split - `0` for training split, `1` for validation split or 2
+        for `'test'` split.
     :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
-    :param threshold_output_feature_names: (List[str]) name of the output
-        feature to visualizes.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param ground_truth_metadata: (str) file path to feature metadata json file created during training.
+    :param threshold_output_feature_names: (List[str]) name of the output feature to visualizes.
+    :param output_directory: (str) name of output directory containing training results.
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
     # retrieve feature metadata to convert raw predictions to encoded value
@@ -1030,25 +945,17 @@ def binary_threshold_vs_metric_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
+    :param ground_truth_split: (str) type of ground truth split - `0` for training split, `1` for validation split or 2
+        for `'test'` split.
     :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
+    :param ground_truth_metadata: (str) file path to feature metadata json file created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param output_directory: (str) name of output directory containing training results.
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
-
     # retrieve feature metadata to convert raw predictions to encoded value
     metadata = load_json(ground_truth_metadata)
 
@@ -1082,22 +989,15 @@ def precision_recall_curves_cli(
 
     Args
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
+    :param ground_truth_split: (str) type of ground truth split - `0` for training split, `1` for validation split or 2
+        for `'test'` split.
     :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
+    :param ground_truth_metadata: (str) file path to feature metadata json file created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    Return
-
+    :param output_directory: (str) name of output directory containing training results.
+    :param kwargs: (dict) parameters for the requested visualizations.  Return
     :return None:
     """
     # retrieve feature metadata to convert raw predictions to encoded value
@@ -1133,25 +1033,17 @@ def roc_curves_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
+    :param ground_truth_split: (str) type of ground truth split - `0` for training split, `1` for validation split or 2
+        for `'test'` split.
     :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
+    :param ground_truth_metadata: (str) file path to feature metadata json file created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param output_directory: (str) name of output directory containing training results.
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
-
     # retrieve feature metadata to convert raw predictions to encoded value
     metadata = load_json(ground_truth_metadata)
 
@@ -1218,29 +1110,20 @@ def calibration_1_vs_all_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names to extract probabilities from.
     :param ground_truth: (str) path to ground truth file
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
+    :param ground_truth_split: (str) type of ground truth split - `0` for training split, `1` for validation split or 2
+        for `'test'` split.
     :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
+    :param ground_truth_metadata: (str) file path to feature metadata json file created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
+    :param output_directory: (str) name of output directory containing training results.
     :param output_feature_proc_name: (str) name of the output feature column in ground_truth. If ground_truth is a
         preprocessed parquet or hdf5 file, the column name will be <output_feature>_<hash>
-    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
-        metadata['str2idx'] in np.vectorize
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param ground_truth_apply_idx: (bool, default: `True`) whether to use metadata['str2idx'] in np.vectorize
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
-
     # retrieve feature metadata to convert raw predictions to encoded value
     metadata = load_json(ground_truth_metadata)
 
@@ -1278,25 +1161,17 @@ def calibration_multiclass_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names to extract probabilities from.
     :param ground_truth: (str) path to ground truth file
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
+    :param ground_truth_split: (str) type of ground truth split - `0` for training split, `1` for validation split or 2
+        for `'test'` split.
     :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
+    :param ground_truth_metadata: (str) file path to feature metadata json file created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
+    :param output_directory: (str) name of output directory containing training results.
+    :param kwargs: (dict) parameters for the requested visualizations.  # Return
     :return None:
     """
-
     # retrieve feature metadata to convert raw predictions to encoded value
     metadata = load_json(ground_truth_metadata)
 
@@ -1359,27 +1234,20 @@ def learning_curves(
 ) -> None:
     """Show how model metrics change over training and validation data epochs.
 
-    For each model and for each output feature and metric of the model,
-    it produces a line plot showing how that metric changed over the course
-    of the epochs of training on the training and validation sets.
+    For each model and for each output feature and metric of the model, it produces a line plot showing how that metric
+    changed over the course of the epochs of training on the training and validation sets.
 
     # Inputs
 
-    :param train_stats_per_model: (List[dict]) list containing dictionary of
-        training statistics per model.
-    :param output_feature_name: (Union[str, `None`], default: `None`) name of the output feature
-        to use for the visualization.  If `None`, use all output features.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
-        list of the model names to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-    :param callbacks: (list, default: `None`) a list of
-        `ludwig.callbacks.Callback` objects that provide hooks into the
-        Ludwig pipeline.
-
-    # Return
+    :param train_stats_per_model: (List[dict]) list containing dictionary of training statistics per model.
+    :param output_feature_name: (Union[str, `None`], default: `None`) name of the output feature to use for the
+        visualization. If `None`, use all output features.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save plots. If not specified, plots will be
+        displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots - `'pdf'` or `'png'`.
+    :param callbacks: (list, default: `None`) a list of `ludwig.callbacks.Callback` objects that provide hooks into the
+        Ludwig pipeline. # Return
     :return: (None)
     """
     filename_template = "learning_curves_{}_{}." + file_format
@@ -1576,7 +1444,6 @@ def compare_classifiers_performance_from_prob(
 
     :return: (None)
     """
-
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
         feature_metadata = metadata[output_feature_name]
@@ -1668,7 +1535,6 @@ def compare_classifiers_performance_from_pred(
 
     :return: (None)
     """
-
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
         feature_metadata = metadata[output_feature_name]
@@ -3127,7 +2993,6 @@ def binary_threshold_vs_metric(
 
     :return: (`None`)
     """
-
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
         feature_metadata = metadata[output_feature_name]
@@ -3206,34 +3071,24 @@ def precision_recall_curves(
 ) -> None:
     """Show the precision recall curves for output features in the specified models.
 
-    This visualization produces a line chart plotting a precision recall curve for the
-    specified output feature name. If output feature name is a category feature,
-    `positive_label` indicates which is the class to be considered positive
-    class and all the others will be considered negative. `positive_label` is
-    the encoded numeric value for category classes. The numeric value can be
-    determined by association between classes and integers captured in the
-    training metadata JSON file.
+    This visualization produces a line chart plotting a precision recall curve for the specified output feature name. If
+    output feature name is a category feature, `positive_label` indicates which is the class to be considered positive
+    class and all the others will be considered negative. `positive_label` is the encoded numeric value for category
+    classes. The numeric value can be determined by association between classes and integers captured in the training
+    metadata JSON file.
 
     # Inputs
 
-    :param probabilities_per_model: (List[numpy.array]) list of model
-        probabilities.
+    :param probabilities_per_model: (List[numpy.array]) list of model probabilities.
     :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
     :param metadata: (dict) feature metadata dictionary
     :param output_feature_name: (str) output feature name
-    :param positive_label: (int, default: `1`) numeric encoded value for the
-        positive class.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
-        list of the model names to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
-        metadata['str2idx'] in np.vectorize
-
-    # Return
-
+    :param positive_label: (int, default: `1`) numeric encoded value for the positive class.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save plots. If not specified, plots will be
+        displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots - `'pdf'` or `'png'`.
+    :param ground_truth_apply_idx: (bool, default: `True`) whether to use metadata['str2idx'] in np.vectorize  # Return
     :return: (None)
     """
     if not isinstance(ground_truth, np.ndarray):
@@ -3325,34 +3180,24 @@ def roc_curves(
 ) -> None:
     """Show the roc curves for output features in the specified models.
 
-    This visualization produces a line chart plotting the roc curves for the
-    specified output feature name. If output feature name is a category feature,
-    `positive_label` indicates which is the class to be considered positive
-    class and all the others will be considered negative. `positive_label` is
-    the encoded numeric value for category classes. The numeric value can be
-    determined by association between classes and integers captured in the
-    training metadata JSON file.
+    This visualization produces a line chart plotting the roc curves for the specified output feature name. If output
+    feature name is a category feature, `positive_label` indicates which is the class to be considered positive class
+    and all the others will be considered negative. `positive_label` is the encoded numeric value for category classes.
+    The numeric value can be determined by association between classes and integers captured in the training metadata
+    JSON file.
 
     # Inputs
 
-    :param probabilities_per_model: (List[numpy.array]) list of model
-        probabilities.
+    :param probabilities_per_model: (List[numpy.array]) list of model probabilities.
     :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
     :param metadata: (dict) feature metadata dictionary
     :param output_feature_name: (str) output feature name
-    :param positive_label: (int, default: `1`) numeric encoded value for the
-        positive class.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
-        list of the model names to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
-        metadata['str2idx'] in np.vectorize
-
-    # Return
-
+    :param positive_label: (int, default: `1`) numeric encoded value for the positive class.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save plots. If not specified, plots will be
+        displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots - `'pdf'` or `'png'`.
+    :param ground_truth_apply_idx: (bool, default: `True`) whether to use metadata['str2idx'] in np.vectorize  # Return
     :return: (None)
     """
     if not isinstance(ground_truth, np.ndarray):
@@ -3391,26 +3236,18 @@ def roc_curves_from_test_statistics(
 ) -> None:
     """Show the roc curves for the specified models output binary `output_feature_name`.
 
-    This visualization uses `output_feature_name`, `test_stats_per_model` and
-    `model_names` parameters. `output_feature_name` needs to be binary feature.
-    This visualization produces a line chart plotting the roc curves for the
-    specified `output_feature_name`.
+    This visualization uses `output_feature_name`, `test_stats_per_model` and `model_names` parameters.
+    `output_feature_name` needs to be binary feature. This visualization produces a line chart plotting the roc curves
+    for the specified `output_feature_name`.
 
     # Inputs
 
-    :param test_stats_per_model: (List[dict]) dictionary containing evaluation
-        performance statistics.
-    :param output_feature_name: (str) name of the output feature to use
-        for the visualization.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
-        list of the model names to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-
-    # Return
-
+    :param test_stats_per_model: (List[dict]) dictionary containing evaluation performance statistics.
+    :param output_feature_name: (str) name of the output feature to use for the visualization.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save plots. If not specified, plots will be
+        displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots - `'pdf'` or `'png'`.  # Return
     :return: (None)
     """
     model_names_list = convert_to_list(model_names)
@@ -3683,32 +3520,23 @@ def confusion_matrix(
 ) -> None:
     """Show confusion matrix in the models predictions for each `output_feature_name`.
 
-    For each model (in the aligned lists of test_statistics and model_names)
-    it  produces a heatmap of the confusion matrix in the predictions for
-    each  output_feature_name that has a confusion matrix in test_statistics.
-    The value of `top_n_classes` limits the heatmap to the n most frequent
-    classes.
+    For each model (in the aligned lists of test_statistics and model_names) it  produces a heatmap of the confusion
+    matrix in the predictions for each  output_feature_name that has a confusion matrix in test_statistics. The value of
+    `top_n_classes` limits the heatmap to the n most frequent classes.
 
     # Inputs
 
-    :param test_stats_per_model: (List[dict]) dictionary containing evaluation
-      performance statistics.
-    :param metadata: (dict) intermediate preprocess structure created during
-        training containing the mappings of the input dataset.
-    :param output_feature_name: (Union[str, `None`]) name of the output feature
-        to use for the visualization.  If `None`, use all output features.
-    :param top_n_classes: (List[int]) number of top classes or list
-        containing the number of top classes to plot.
+    :param test_stats_per_model: (List[dict]) dictionary containing evaluation performance statistics.
+    :param metadata: (dict) intermediate preprocess structure created during training containing the mappings of the
+        input dataset.
+    :param output_feature_name: (Union[str, `None`]) name of the output feature to use for the visualization. If
+        `None`, use all output features.
+    :param top_n_classes: (List[int]) number of top classes or list containing the number of top classes to plot.
     :param normalize: (bool) flag to normalize rows in confusion matrix.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
-        list of the model names to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-
-    # Return
-
+    :param model_names: (Union[str, List[str]], default: `None`) model name or list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save plots. If not specified, plots will be
+        displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots - `'pdf'` or `'png'`.  # Return
     :return: (None)
     """
     test_stats_per_model_list = test_stats_per_model
@@ -3930,7 +3758,6 @@ def hyperopt_report_cli(hyperopt_stats_path, output_directory=None, file_format=
     :param file_format: format of the output plot, pdf or png
     :return:
     """
-
     hyperopt_report(hyperopt_stats_path, output_directory=output_directory, file_format=file_format)
 
 
@@ -3942,13 +3769,9 @@ def hyperopt_report(hyperopt_stats_path: str, output_directory: str = None, file
     # Inputs
 
     :param hyperopt_stats_path: (str) path to the hyperopt results JSON file.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window.
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-
-    # Return
-
+    :param output_directory: (str, default: `None`) directory where to save plots. If not specified, plots will be
+        displayed in a window.
+    :param file_format: (str, default: `'pdf'`) file format of output plots - `'pdf'` or `'png'`.  # Return
     :return: (None)
     """
     filename_template = "hyperopt_{}." + file_format
@@ -3977,7 +3800,6 @@ def hyperopt_hiplot_cli(hyperopt_stats_path, output_directory=None, **kwargs):
     :param output_directory: path where to save the output plots
     :return:
     """
-
     hyperopt_hiplot(hyperopt_stats_path, output_directory=output_directory)
 
 
@@ -3989,11 +3811,8 @@ def hyperopt_hiplot(hyperopt_stats_path, output_directory=None, **kwargs):
     # Inputs
 
     :param hyperopt_stats_path: (str) path to the hyperopt results JSON file.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window.
-
-    # Return
-
+    :param output_directory: (str, default: `None`) directory where to save plots. If not specified, plots will be
+        displayed in a window. # Return
     :return: (None)
     """
     filename = "hyperopt_hiplot.html"

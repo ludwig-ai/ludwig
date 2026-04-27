@@ -539,8 +539,9 @@ def category_distribution_feature(**kwargs):
 def run_experiment(
     input_features=None, output_features=None, config=None, skip_save_processed_input=True, backend=None, **kwargs
 ):
-    """Helper method to avoid code repetition in running an experiment. Deletes the data saved to disk related to
-    running an experiment.
+    """Helper method to avoid code repetition in running an experiment.
+
+    Deletes the data saved to disk related to running an experiment.
 
     :param input_features: list of input feature dictionaries
     :param output_features: list of output feature dictionaries
@@ -597,7 +598,6 @@ def generate_output_features_with_dependencies(main_feature, dependencies):
         main_feature: feature identifier, valid values 'category_feature', 'sequence_feature', 'number_feature'
         dependencies: list of dependencies for 'main_feature', do not li
     """
-
     output_features = [
         category_feature(decoder={"type": "classifier", "vocab_size": 2}, reduce_input="sum", output_feature=True),
         sequence_feature(decoder={"type": "generator", "vocab_size": 10, "max_len": 5}, output_feature=True),
@@ -624,7 +624,6 @@ def generate_output_features_with_dependencies(main_feature, dependencies):
 
 def generate_output_features_with_dependencies_complex():
     """Generates multiple output features specifications with dependencies."""
-
     tf = text_feature(decoder={"vocab_size": 4, "max_len": 5, "type": "generator"})
     sf = sequence_feature(decoder={"vocab_size": 4, "max_len": 5, "type": "generator"}, dependencies=[tf["name"]])
     nf = number_feature(dependencies=[tf["name"]])

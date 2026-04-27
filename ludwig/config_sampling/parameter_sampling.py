@@ -51,7 +51,6 @@ def explore_array(item: dict[str, Any]) -> list[list[ParameterBaseTypes]]:
     Args:
         item: dictionary containing details on the parameter such as default, min and max values.
     """
-
     candidates = []
     if "default" in item and item["default"]:
         candidates.append(item["default"])
@@ -129,7 +128,6 @@ def explore_string(item: dict[str, Any]) -> list[ParameterBaseTypes]:
     Args:
         item: dictionary containing details on the parameter such as default, min and max values.
     """
-
     if "enum" in item:
         return item["enum"]
     return [item["default"]]

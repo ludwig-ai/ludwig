@@ -21,7 +21,6 @@ class ConsumerComplaintsLoader(DatasetLoader):
 
     def load_file_to_dataframe(self, file_path: str) -> pd.DataFrame:
         """Loads a file into a dataframe."""
-
         consumer_complaints_df = pd.read_csv(file_path)
         consumer_complaints_df = preprocess_df(consumer_complaints_df)
 

@@ -8,7 +8,6 @@ def log_once(key: str) -> bool:
         if log_once("some_key"):
             logger.info("Some verbose logging statement") # noqa
     """
-
     if key not in _logged:
         _logged.add(key)
         return True

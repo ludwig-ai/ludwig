@@ -1291,7 +1291,6 @@ def test_global_max_sequence_length_for_llms():
 
 def test_local_path_loading(tmpdir):
     """Tests that local paths can be used to load models."""
-
     from huggingface_hub import snapshot_download
 
     # Download the model to a local directory

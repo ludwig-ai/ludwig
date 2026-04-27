@@ -22,8 +22,9 @@ class TrainingHook(ABC):
 
     @abstractmethod
     def hook_fn(self, module: torch.nn.Module, inputs: torch.tensor, outputs: torch.Tensor) -> torch.Tensor:
-        """Abstract method to be implemented by subclasses. This is the method that defines the custom behavior of
-        the training hook during a forward pass for the specified module.
+        """Abstract method to be implemented by subclasses.
+
+        This is the method that defines the custom behavior of the training hook during a forward pass for the specified module.
 
         Args:
             module (nn.Module): The PyTorch module for which the hook is activated.
@@ -62,8 +63,9 @@ class NEFTuneHook(TrainingHook):
         self.neftune_noise_alpha = kwargs.get("neftune_noise_alpha")
 
     def hook_fn(self, module: torch.nn.Module, input: torch.Tensor, output: torch.Tensor) -> torch.Tensor:
-        """Implements the NEFTune forward pass for the model using forward hooks. Note this works only for
-        torch.nn. Embedding layers. This method is slightly adapted from the original source code that can be found
+        """Implements the NEFTune forward pass for the model using forward hooks.
+
+        Note this works only for torch.nn. Embedding layers. This method is slightly adapted from the original source code that can be found
         here: https://github.com/neelsjain/NEFTune.
 
         The input tensor is ignored since the noise is added to the output of the embedding layer.

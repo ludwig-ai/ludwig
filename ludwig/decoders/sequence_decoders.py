@@ -438,10 +438,11 @@ class SequenceGeneratorDecoder(Decoder):
         return self.rnn_decoder(combiner_outputs, target)
 
     def _beam_decode(self, combiner_outputs: dict[str, torch.Tensor]) -> torch.Tensor:
-        """Beam search decoding. Returns logits [batch_size, max_sequence_length, vocab_size].
+        """Beam search decoding.
 
-        Since beam search selects hard token indices, the returned tensor has 1.0 at the chosen token and 0.0 elsewhere
-        so downstream argmax produces correct predictions.
+        Returns logits [batch_size, max_sequence_length, vocab_size].         Since beam search selects hard token
+        indices, the returned tensor has 1.0 at the chosen token and 0.0 elsewhere         so downstream argmax produces
+        correct predictions.
         """
         inner = self.rnn_decoder
         is_lstm = isinstance(inner, SequenceLSTMDecoder)

@@ -92,13 +92,14 @@ class Registry(UserDict, Generic[T]):
         return wrap
 
     def unregister(self, name: str):
-        """Remove a registered item. Useful for testing.
+        """Remove a registered item.
 
-        Args:
-            name: Key to remove.
+        Useful for testing.
+                Args:
+                    name: Key to remove.
 
-        Raises:
-            KeyError if name is not registered.
+                Raises:
+                    KeyError if name is not registered.
         """
         if name in self.data:
             del self.data[name]

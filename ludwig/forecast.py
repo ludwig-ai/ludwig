@@ -31,23 +31,18 @@ def forecast_cli(
     # Inputs
 
     :param model_path: (str) filepath to pre-trained model.
-    :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
-        source containing the entire dataset to be used in the prediction.
-    :param data_format: (str, default: `None`) format to interpret data
-        sources. Will be inferred automatically if not specified.
+    :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`) source containing the entire dataset to be
+        used in the prediction.
+    :param data_format: (str, default: `None`) format to interpret data sources. Will be inferred automatically if not
+        specified.
     :param horizon: How many samples into the future to forecast.
-    :param output_directory: (str, default: `'results'`) the directory that
-        will contain the forecasted values.
+    :param output_directory: (str, default: `'results'`) the directory that will contain the forecasted values.
     :param output_format: (str) format of the output dataset.
-    :param callbacks: (list, default: `None`) a list of
-        `ludwig.callbacks.Callback` objects that provide hooks into the
+    :param callbacks: (list, default: `None`) a list of `ludwig.callbacks.Callback` objects that provide hooks into the
         Ludwig pipeline.
-    :param backend: (Union[Backend, str]) `Backend` or string name
-        of backend to use to execute preprocessing / training steps.
-    :param logging_level: (int) Log level that will be sent to stderr.
-
-    # Returns
-
+    :param backend: (Union[Backend, str]) `Backend` or string name of backend to use to execute preprocessing / training
+        steps.
+    :param logging_level: (int) Log level that will be sent to stderr.  # Returns
     :return: ('None')
     """
     model = LudwigModel.load(

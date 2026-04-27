@@ -104,10 +104,7 @@ class LudwigProgressBar:
 
         # Inputs
 
-        :param steps: (int) number of steps to update the progress bar by
-
-        # Return
-
+        :param steps: (int) number of steps to update the progress bar by  # Return
         :return: (None) `None`
         """
         self.total_steps += steps

@@ -91,7 +91,6 @@ class NoneTrainer(BaseTrainer):
         :param device: Device to load the model on from a saved checkpoint (default: None).
         :type device: str
         """
-
         super().__init__()
 
         # Ensure distributed strategy is initialized for metric sync_context.

@@ -57,14 +57,15 @@ def _deep_merge(base: dict, override: dict) -> dict:
 
 
 def apply_preset(config_dict: dict, preset_name: str) -> dict:
-    """Apply a quality preset to a config dict. User config takes precedence over preset defaults.
+    """Apply a quality preset to a config dict.
 
-    Args:
-        config_dict: The user's config dict.
-        preset_name: Name of the preset to apply.
+    User config takes precedence over preset defaults.
+        Args:
+            config_dict: The user's config dict.
+            preset_name: Name of the preset to apply.
 
-    Returns:
-        Config dict with preset defaults applied (user overrides win).
+        Returns:
+            Config dict with preset defaults applied (user overrides win).
     """
     if preset_name not in QUALITY_PRESETS:
         raise ValueError(f"Unknown preset '{preset_name}'. Available: {list(QUALITY_PRESETS.keys())}")

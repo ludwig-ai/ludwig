@@ -214,7 +214,8 @@ class TestBinsEncoder:
 class TestDateEncoderCleanup:
     @staticmethod
     def _make_date_vector(batch_size, device):
-        """Create a realistic date input vector: [year, month, day, weekday, yearday, hour, min, sec, sec_of_day]."""
+        """Create a realistic date input vector: [year, month, day, weekday, yearday, hour, min, sec,
+        sec_of_day]."""
         return torch.tensor(
             [
                 [2024, 3, 15, 4, 75, 10, 30, 45, 37845],

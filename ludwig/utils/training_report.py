@@ -1,8 +1,7 @@
 """Generate a structured training report JSON.
 
-Captures the full provenance of a training run: config, data schema,
-metrics, hardware, timing, and Ludwig version. Useful for audit trails,
-compliance documentation, and reproducibility.
+Captures the full provenance of a training run: config, data schema, metrics, hardware, timing, and Ludwig version.
+Useful for audit trails, compliance documentation, and reproducibility.
 """
 
 import logging

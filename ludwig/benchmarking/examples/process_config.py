@@ -14,7 +14,6 @@ def process_config(ludwig_config: dict, experiment_dict: dict) -> dict:
 
     Returns: a modified Ludwig config.
     """
-
     # only keep input_features and output_features
     main_config_keys = list(ludwig_config.keys())
     for key in main_config_keys:

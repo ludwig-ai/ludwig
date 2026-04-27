@@ -150,8 +150,9 @@ def ecd_config_dict_no_text_features() -> dict[str, Any]:
 )
 @pytest.mark.parametrize("config_type", ["dict", "object"])
 def test_is_or_uses_llm(config: dict[str, Any], expectation: bool, config_type, request):
-    """Test LLM detection on a variety of configs. Configs that use an LLM anywhere should return True, otherwise
-    False.
+    """Test LLM detection on a variety of configs.
+
+    Configs that use an LLM anywhere should return True, otherwise False.
 
     Args:
         config: The name of the config fixture to test
@@ -325,10 +326,11 @@ def test_get_quantization_multiple_features(
 
 @pytest.mark.parametrize("invalid_config", [1, 1.0, "foo", True, False, None, [], {}, {"foo": "bar"}])
 def test_get_quantization_invalid_input(invalid_config):
-    """Test get_quantization with invalid configs. These should always raise a ValueError.
+    """Test get_quantization with invalid configs.
 
-    Args:
-        invalid_config: The invalid config to test
+    These should always raise a ValueError.
+        Args:
+            invalid_config: The invalid config to test
     """
     with pytest.raises(ValueError):
         get_quantization(invalid_config)

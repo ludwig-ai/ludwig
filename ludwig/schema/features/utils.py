@@ -21,6 +21,7 @@ registered into it.
 
 See `BinaryDefaultsConfig` for an example.
 """
+
 ecd_defaults_config_registry = Registry()
 
 llm_defaults_config_registry = Registry()

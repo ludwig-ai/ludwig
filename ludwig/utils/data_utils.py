@@ -172,8 +172,9 @@ def read_nrows_via_chunksize(fp, read_fn, **kwargs):
 @DeveloperAPI
 @spread
 def read_xsv(data_fp, df_lib=PANDAS_DF, separator=",", header=0, nrows=None, skiprows=None, dtype=object, **kwargs):
-    """Helper method to read a csv file. Wraps around pd.read_csv to handle some exceptions. Can extend to cover
-    cases as necessary.
+    """Helper method to read a csv file.
+
+    Wraps around pd.read_csv to handle some exceptions. Can extend to cover cases as necessary.
 
     :param data_fp: path to the xsv file
     :param df_lib: DataFrame library used to read in the CSV
@@ -729,8 +730,9 @@ def load_from_file(file_name, field=None, dtype=int, ground_truth_split=2):
 
 @DeveloperAPI
 def replace_file_extension(file_path, extension):
-    """Return a file path for a file with same name but different format. a.csv, json -> a.json a.csv, hdf5 ->
-    a.hdf5.
+    """Return a file path for a file with same name but different format.
+
+    a.csv, json -> a.json a.csv, hdf5 -> a.hdf5.
 
     :param file_path: original file path
     :param extension: file extension
@@ -753,9 +755,11 @@ def file_exists_with_diff_extension(file_path, extension):
 
 @DeveloperAPI
 def add_sequence_feature_column(df, col_name, seq_length):
-    """Adds a new column to the dataframe computed from an existing column. Values in the new column are space-
-    delimited strings composed of preceding values of the same column up to seq_length. For example values of the
-    i-th row of the new column will be a space-delimited string of df[col_name][i-seq_length].
+    """Adds a new column to the dataframe computed from an existing column.
+
+    Values in the new column are space- delimited strings composed of preceding values of the same column up to
+    seq_length. For example values of the i-th row of the new column will be a space-delimited string of
+    df[col_name][i-seq_length].
 
     :param df: input dataframe
     :param col_name: column name containing sequential data

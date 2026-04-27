@@ -51,13 +51,15 @@ def test_performance(config_filename, tmpdir):
 
     if not os.path.exists(expected_test_statistics_fp):
         raise FileNotFoundError("""No corresponding expected metrics found for benchmarking config '{config_path}'.
-            Please add a new metrics YAML file '{expected_test_statistics_fp}'. Suggested content:
+                                Please add a new metrics YAML file '{expected_test_statistics_fp}'. Suggested
+                                content:
 
-            metrics:
-              - output_feature_name: <YOUR_OUTPUT_FEATURE e.g. SalePrice>
-                metric_name: <YOUR METRIC NAME e.g. accuracy>
-                expected_value: <A FLOAT VALUE>
-                tolerance_percent: 0.15""")
+                                metrics:
+                                  - output_feature_name: <YOUR_OUTPUT_FEATURE e.g. SalePrice>
+                                    metric_name: <YOUR METRIC NAME e.g. accuracy>
+                                    expected_value: <A FLOAT VALUE>
+                                    tolerance_percent: 0.15
+                                """)
     expected_metrics_dict = load_yaml(expected_test_statistics_fp)
 
     benchmarking_config = {

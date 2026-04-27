@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-"""
-Uncertainty Quantification with Ludwig: MC Dropout and Temperature Scaling.
+"""Uncertainty Quantification with Ludwig: MC Dropout and Temperature Scaling.
 
 Trains three models on the UCI Wine Quality dataset and compares:
   1. Baseline — no calibration

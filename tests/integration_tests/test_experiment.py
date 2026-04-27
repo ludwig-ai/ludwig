@@ -892,8 +892,10 @@ def test_visual_question_answering(tmpdir):
 
 
 def test_image_resizing_num_channel_handling(tmpdir):
-    """This test creates two image datasets with 3 channels and 1 channel. The combination of this data is used to
-    train a model. This checks the cases where the user may or may not specify a number of channels in the config.
+    """This test creates two image datasets with 3 channels and 1 channel.
+
+    The combination of this data is used to train a model. This checks the cases where the user may or may not specify a
+    number of channels in the config.
 
     :param csv_filename:
     :return:

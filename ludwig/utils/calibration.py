@@ -133,8 +133,9 @@ class CalibrationModule(nn.Module, ABC):
 @DeveloperAPI
 @register_calibration("temperature_scaling", [BINARY, CATEGORY], default=True)
 class TemperatureScaling(CalibrationModule):
-    """Implements temperature scaling of logits. Based on results from "On Calibration of Modern Neural Networks":
-    https://arxiv.org/abs/1706.04599. Temperature scaling scales all logits by the same constant factor. Though it
+    """Implements temperature scaling of logits.
+
+    Based on results from "On Calibration of Modern Neural Networks": https://arxiv.org/abs/1706.04599. Temperature scaling scales all logits by the same constant factor. Though it
     may modify output probabilities it will never change argmax or categorical top-n predictions. In the case of
     binary classification with a threshold, however, calibration may change predictions.
 

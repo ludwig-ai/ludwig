@@ -142,7 +142,6 @@ def substitute_parameters(
     parameters: dict[str, Any],
 ):
     """Update Ludwig config with parameters sampled from the Hyperopt sampler."""
-
     # Collect the sets of names for each feature grouping so we can map feature names to
     # groups
     input_feature_names = {feature[NAME] for feature in config[INPUT_FEATURES]}

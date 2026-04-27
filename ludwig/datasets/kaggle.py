@@ -29,10 +29,10 @@ def download_kaggle_dataset(
     kaggle_username: str | None = None,
     kaggle_key: str | None = None,
 ):
-    """Download all files in a kaggle dataset. One of kaggle_dataset_id,
+    """Download all files in a kaggle dataset.
 
-    If the user has not specified creds in the kaggle.json file we lookup the passed in username and the api key and
-    perform authentication.
+    One of kaggle_dataset_id,     If the user has not specified creds in the kaggle.json file we lookup the passed in
+    username and the api key and     perform authentication.
     """
     with update_env(KAGGLE_USERNAME=kaggle_username, KAGGLE_KEY=kaggle_key):
         # Call authenticate explicitly to pick up new credentials if necessary

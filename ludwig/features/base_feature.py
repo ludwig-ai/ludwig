@@ -434,15 +434,16 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     @abstractmethod
     def logits(self, combiner_outputs: dict[str, torch.Tensor], target=None, **kwargs) -> dict[str, torch.Tensor]:
-        """Unpacks and feeds combiner_outputs to the decoder. Invoked as part of the output feature's forward pass.
+        """Unpacks and feeds combiner_outputs to the decoder.
 
-        If target is not None, then we are in training.
+        Invoked as part of the output feature's forward pass.
+                If target is not None, then we are in training.
 
-        Args:
-            combiner_outputs: Dictionary of tensors from the combiner's forward pass.
-        Returns:
-            Dictionary of decoder's output tensors (non-normalized), as well as any additional
-            tensors that may be necessary for computing predictions or evaluation metrics.
+                Args:
+                    combiner_outputs: Dictionary of tensors from the combiner's forward pass.
+                Returns:
+                    Dictionary of decoder's output tensors (non-normalized), as well as any additional
+                    tensors that may be necessary for computing predictions or evaluation metrics.
         """
         raise NotImplementedError("OutputFeature is missing logits() implementation.")
 

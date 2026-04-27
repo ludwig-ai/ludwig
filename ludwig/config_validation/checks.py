@@ -223,7 +223,6 @@ def check_splitter(config: "ModelConfig") -> None:  # noqa: F821
 @register_config_check
 def check_hf_tokenizer_requirements(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that the HuggingFace tokenizer has a pretrained_model_name_or_path specified."""
-
     for input_feature in config.input_features:
         if input_feature.type == TEXT:
             if input_feature.preprocessing.tokenizer == "hf_tokenizer":
@@ -236,7 +235,6 @@ def check_hf_tokenizer_requirements(config: "ModelConfig") -> None:  # noqa: F82
 @register_config_check
 def check_hf_encoder_requirements(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that a HuggingFace encoder has a pretrained_model_name_or_path specified."""
-
     for input_feature in config.input_features:
         if input_feature.type == TEXT:
             if hasattr(input_feature.encoder, "use_pretrained"):

@@ -50,8 +50,9 @@ class ProfilerConfig(schema_utils.LudwigBaseConfig):
 
 @DeveloperAPI
 def ProfilerDataclassField(description: str, default: dict = {}):
-    """Returns custom dataclass field for `ludwig.modules.profiler.ProfilerConfig`. Allows `None` by default.
+    """Returns custom dataclass field for `ludwig.modules.profiler.ProfilerConfig`.
 
+    Allows `None` by default.
     :param description: Description of the torch profiler field
     :param default: dict that specifies clipping param values that will be loaded by its schema class (default: {}).
     """

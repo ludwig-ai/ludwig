@@ -94,10 +94,7 @@ class FCStack(LudwigModule):
     The specification of each FCLayer is specified by the `layers` dictionary parameter, whose keys correspond with an
     FCLayer's constructor arguments, i.e.
 
-    [
-        {"input_size": 2, "output_size": 4},
-        {"output_size": 4, "use_bias": False},
-    ]
+    [     {"input_size": 2, "output_size": 4},     {"output_size": 4, "use_bias": False}, ]
 
     `default_*` parameters dictate default values to use for each FCLayer, if not specified by `layers`. If `layers` is
     `None`, then a stack of size `num_layers` of `FCLayer`s configured with all of the `default_*` parameters is used.

@@ -1185,7 +1185,6 @@ def build_dataset(
     Returns:
         A tuple of (dataset, metadata)
     """
-
     df_engine = backend.df_engine
 
     if df_engine.partitioned:

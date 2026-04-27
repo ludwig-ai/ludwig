@@ -164,11 +164,9 @@ class LLM(BaseModel):
     def initialize_adapter(self):
         """If an adapter config is provided, wrap the model with a PEFT model for fine-tuning.
 
-        Handles both the singular ``config_obj.adapter`` and the multi-adapter
-        ``config_obj.adapters`` forms — the two fields are schema-level mutually exclusive.
-        Guarded by _adapter_initialized to prevent double-wrapping when called multiple
-        times (e.g. prepare_for_training is called on every Trainer construction,
-        including on resume).
+        Handles both the singular ``config_obj.adapter`` and the multi-adapter ``config_obj.adapters`` forms — the two
+        fields are schema-level mutually exclusive. Guarded by _adapter_initialized to prevent double-wrapping when
+        called multiple times (e.g. prepare_for_training is called on every Trainer construction, including on resume).
         """
         has_adapter = bool(self.config_obj.adapter)
         has_adapters = getattr(self.config_obj, "adapters", None) is not None
@@ -363,12 +361,10 @@ class LLM(BaseModel):
     ) -> dict[str, torch.Tensor]:
         """Generate tokens using the model and extract structured predictions.
 
-        For each sample the method strips left-padding from the prompt, calls
-        ``model.generate`` with ``output_scores=True`` to obtain per-step
-        vocabulary logits, and passes both generated sequences and scores to
-        the decoder so real logits/probs can be computed.  An optional
-        constrained-decoding ``LogitsProcessorList`` is retrieved from the
-        decoder (used when ``constrain_to_vocabulary=True``).
+        For each sample the method strips left-padding from the prompt, calls ``model.generate`` with
+        ``output_scores=True`` to obtain per-step vocabulary logits, and passes both generated sequences and scores to
+        the decoder so real logits/probs can be computed.  An optional constrained-decoding ``LogitsProcessorList`` is
+        retrieved from the decoder (used when ``constrain_to_vocabulary=True``).
         """
         log_once(f"For generating text, using: {self.generation}")
         input_ids, _ = self._unpack_inputs(inputs)
@@ -451,8 +447,9 @@ class LLM(BaseModel):
         )
 
     def merge_and_unload(self, progressbar: bool = False) -> None:
-        """This method merges the LoRa layers into the base model.  This is needed if someone wants to use the base
-        model as a standalone model. The implementation calls merge_and_unload() of the underlying LoraModel class
+        """This method merges the LoRa layers into the base model.
+
+        This is needed if someone wants to use the base model as a standalone model. The implementation calls merge_and_unload() of the underlying LoraModel class
         (in peft).
 
         Args:

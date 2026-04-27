@@ -216,13 +216,12 @@ class H3Embed(Encoder):
 class H3WeightedSum(Encoder):
     """Encodes H3 indices using a learned weighted sum over component embeddings.
 
-    This encoder first embeds all H3 components using ``H3Embed`` (with no reduction),
-    then computes a weighted sum across the component dimension using learned (or
-    optionally softmax-normalized) weights. The result is passed through an FC stack.
+    This encoder first embeds all H3 components using ``H3Embed`` (with no reduction), then computes a weighted sum
+    across the component dimension using learned (or optionally softmax-normalized) weights. The result is passed
+    through an FC stack.
 
-    Compared to ``H3Embed`` with sum reduction, this encoder learns per-component
-    importance weights, allowing the model to attend more to certain hierarchy levels
-    (e.g., base cell vs. fine-grained resolution cells).
+    Compared to ``H3Embed`` with sum reduction, this encoder learns per-component importance weights, allowing the model
+    to attend more to certain hierarchy levels (e.g., base cell vs. fine-grained resolution cells).
     """
 
     def __init__(
@@ -323,14 +322,12 @@ class H3WeightedSum(Encoder):
 class H3RNN(Encoder):
     """Encodes H3 indices by treating the component sequence as a time series for an RNN.
 
-    This encoder first embeds all H3 components using ``H3Embed`` (with no reduction),
-    then feeds the resulting sequence of embeddings through a recurrent neural network
-    (RNN, LSTM, or GRU). This allows the model to capture sequential dependencies
-    across the H3 hierarchy levels (mode -> edge -> resolution -> base cell -> cells).
+    This encoder first embeds all H3 components using ``H3Embed`` (with no reduction), then feeds the resulting sequence
+    of embeddings through a recurrent neural network (RNN, LSTM, or GRU). This allows the model to capture sequential
+    dependencies across the H3 hierarchy levels (mode -> edge -> resolution -> base cell -> cells).
 
-    Use this encoder when the sequential/hierarchical structure of H3 indices is
-    important for the task. For simpler pooling-based approaches, use ``H3Embed``
-    or ``H3WeightedSum``.
+    Use this encoder when the sequential/hierarchical structure of H3 indices is important for the task. For simpler
+    pooling-based approaches, use ``H3Embed`` or ``H3WeightedSum``.
     """
 
     def __init__(

@@ -297,8 +297,8 @@ class MeanMetric(LudwigMetric):
 class RMSPEMetric(MeanMetric):
     def __init__(self, **kwargs):
         super().__init__()
-
-    """ Root mean squared percentage error metric. """
+    \
+    """Root mean squared percentage error metric."""
 
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         return rmspe_loss(target, preds)
@@ -352,11 +352,13 @@ class R2Score(LudwigMetric):
 
     def compute(self) -> Tensor:
         """Computes r2 score over the metric states."""
-
         # self.total maps to the number of observations in preds/target computed during update()
         if self.total <= 1:
             logger.warning(
-                """R-squared (r2) is not defined for one sample. It needs at least two samples. Returning NaN."""
+                """R-squared (r2) is not defined for one sample.
+
+                It needs at least two samples. Returning NaN.
+                """
             )
             return torch.tensor(float("nan"))
 

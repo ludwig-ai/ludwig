@@ -1,7 +1,9 @@
-"""An implementation of entmax (Peters et al., 2019). See https://arxiv.org/pdf/1905.05702 for detailed
-description.
+"""An implementation of entmax (Peters et al., 2019).
 
-This builds on previous work with sparsemax (Martins & Astudillo, 2016). See https://arxiv.org/pdf/1602.02068.
+See https://arxiv.org/pdf/1905.05702 for detailed description.
+
+This builds on previous work with sparsemax (Martins & Astudillo, 2016). See
+https://arxiv.org/pdf/1602.02068.
 """
 
 # Author: Ben Peters
@@ -56,7 +58,6 @@ def _sparsemax_threshold_and_support(X, dim=-1, k=None):
     support_size : torch LongTensor, shape like `tau`
         the number of nonzeros in each vector.
     """
-
     if k is None or k >= X.shape[dim]:  # do full sort
         topk, _ = torch.sort(X, dim=dim, descending=True)
     else:
@@ -107,7 +108,6 @@ def _entmax_threshold_and_support(X, dim=-1, k=None):
     support_size : torch LongTensor, shape like `tau`
         the number of nonzeros in each vector.
     """
-
     if k is None or k >= X.shape[dim]:  # do full sort
         Xsrt, _ = torch.sort(X, dim=dim, descending=True)
     else:
@@ -200,7 +200,7 @@ def _entmax15_forward(X, dim, k):
 
 
 def sparsemax(X, dim=-1, k=None, training=True):
-    """sparsemax: normalizing sparse transform (a la softmax).
+    """Sparsemax: normalizing sparse transform (a la softmax).
 
     Solves the projection:
 
@@ -273,7 +273,7 @@ def entmax15(X, dim=-1, k=None, training=True):
 
 class Sparsemax(nn.Module):
     def __init__(self, dim=-1, k=None):
-        """sparsemax: normalizing sparse transform (a la softmax).
+        """Sparsemax: normalizing sparse transform (a la softmax).
 
         Solves the projection:
 

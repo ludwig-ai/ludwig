@@ -142,7 +142,7 @@ def _sparsemax_bisect_forward(X, dim, n_iter, ensure_sum_one):
 
 
 def entmax_bisect(X, alpha=1.5, dim=-1, n_iter=50, ensure_sum_one=True, training=True):
-    """alpha-entmax: normalizing sparse transform (a la softmax).
+    """Alpha-entmax: normalizing sparse transform (a la softmax).
 
     Solves the optimization problem:
 
@@ -192,7 +192,7 @@ def entmax_bisect(X, alpha=1.5, dim=-1, n_iter=50, ensure_sum_one=True, training
 
 
 def sparsemax_bisect(X, dim=-1, n_iter=50, ensure_sum_one=True, training=True):
-    """sparsemax: normalizing sparse transform (a la softmax), via bisection.
+    """Sparsemax: normalizing sparse transform (a la softmax), via bisection.
 
     Solves the projection:
 
@@ -233,7 +233,7 @@ def sparsemax_bisect(X, dim=-1, n_iter=50, ensure_sum_one=True, training=True):
 
 class SparsemaxBisect(nn.Module):
     def __init__(self, dim=-1, n_iter=None):
-        """sparsemax: normalizing sparse transform (a la softmax) via bisection
+        """Sparsemax: normalizing sparse transform (a la softmax) via bisection.
 
         Solves the projection:
 
@@ -258,7 +258,7 @@ class SparsemaxBisect(nn.Module):
 
 class EntmaxBisect(nn.Module):
     def __init__(self, alpha=1.5, dim=-1, n_iter=50):
-        """alpha-entmax: normalizing sparse map (a la softmax) via bisection.
+        """Alpha-entmax: normalizing sparse map (a la softmax) via bisection.
 
         Solves the optimization problem:
 
@@ -284,7 +284,6 @@ class EntmaxBisect(nn.Module):
         n_iter : int
             Number of bisection iterations. For float32, 24 iterations should
             suffice for machine precision.
-
         """
         super().__init__()
         self.dim = dim

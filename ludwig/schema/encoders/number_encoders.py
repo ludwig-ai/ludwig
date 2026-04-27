@@ -82,8 +82,7 @@ class PeriodicEncoderConfig(BaseEncoderConfig):
 class BinsEncoderConfig(BaseEncoderConfig):
     """Binning encoder: discretize numbers into equal-width or equal-frequency bins.
 
-    Simpler alternative to PLE. Good for small/medium datasets where PLE may overfit.
-    Each bin gets a learned embedding.
+    Simpler alternative to PLE. Good for small/medium datasets where PLE may overfit. Each bin gets a learned embedding.
     """
 
     @staticmethod

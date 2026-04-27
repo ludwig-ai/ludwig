@@ -59,7 +59,6 @@ def AugmentationDataclassField(
 
     Returns: Initialized dataclass field that converts a list with params to an augmentation config.
     """
-
     default_augmentations = default_augmentations or []
     default_augmentations = [a.to_dict() for a in default_augmentations]
 

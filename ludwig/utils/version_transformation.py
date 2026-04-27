@@ -55,8 +55,9 @@ class VersionTransformation:
         return config
 
     def transform_config_with_prefix(self, config: dict, prefix: str | None = None) -> dict:
-        """Applied this version transformation to a specified prefix of the config, returns the updated config. If
-        prefix names a list, i.e. "input_features", applies the transformation to each list element (input
+        """Applied this version transformation to a specified prefix of the config, returns the updated config.
+
+        If prefix names a list, i.e. "input_features", applies the transformation to each list element (input
         feature).
 
         Args:
@@ -102,11 +103,12 @@ class VersionTransformation:
         return prefixes[max_index]
 
     def __lt__(self, other):
-        """Defines sort order of version transformations. Sorted by:
+        """Defines sort order of version transformations.
 
-        - version (ascending)
-        - max_prefix_length (ascending) Process outer config transformations before inner.
-        - longest_prefix (ascending) Order alphabetically by prefix if max_prefix_length equal.
+        Sorted by:
+                - version (ascending)
+                - max_prefix_length (ascending) Process outer config transformations before inner.
+                - longest_prefix (ascending) Order alphabetically by prefix if max_prefix_length equal.
         """
         return (self.pkg_version, self.max_prefix_length, self.longest_prefix) < (
             other.pkg_version,

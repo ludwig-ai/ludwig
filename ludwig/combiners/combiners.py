@@ -1006,8 +1006,8 @@ class ProjectAggregateCombiner(Combiner):
 class FTTransformerCombiner(Combiner):
     """FT-Transformer: project each encoder output to a token, prepend [CLS], apply Transformer self-attention.
 
-    Output is the [CLS] token embedding followed by optional FC layers.
-    Based on Gorishniy et al., "Revisiting Deep Learning Models for Tabular Data", NeurIPS 2021.
+    Output is the [CLS] token embedding followed by optional FC layers. Based on Gorishniy et al., "Revisiting Deep
+    Learning Models for Tabular Data", NeurIPS 2021.
     """
 
     def __init__(

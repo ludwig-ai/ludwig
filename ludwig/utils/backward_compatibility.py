@@ -85,8 +85,9 @@ config_transformation_registry = VersionTransformationRegistry()
 
 @DeveloperAPI
 def register_config_transformation(version: str, prefixes: str | list[str] = []) -> Callable:
-    """This decorator registers a transformation function for a config version. Version is the first version which
-    requires the transform. For example, since "training" is renamed to "trainer" in 0.5, this change should be
+    """This decorator registers a transformation function for a config version.
+
+    Version is the first version which requires the transform. For example, since "training" is renamed to "trainer" in 0.5, this change should be
     registered with 0.5.  from_version < version <= to_version.
 
     Args:
@@ -108,8 +109,9 @@ def register_config_transformation(version: str, prefixes: str | list[str] = [])
 
 @DeveloperAPI
 def upgrade_config_dict_to_latest_version(config: ModelConfigDict) -> ModelConfigDict:
-    """Updates config from an older version of Ludwig to the current version. If config does not have a
-    "ludwig_version" key, all updates are applied.
+    """Updates config from an older version of Ludwig to the current version.
+
+    If config does not have a "ludwig_version" key, all updates are applied.
 
     Args:
         config: A config saved by an older version of Ludwig.
@@ -804,7 +806,8 @@ def remove_extra_type_param_in_defaults_config(defaults: FeatureTypeDefaultsDict
     defaults config. It was removed by [2], but made it into one of the patch releases. This transformation removes that
     `type` param from each section of the defaults config if it exists.
 
-    [1]: https://github.com/ludwig-ai/ludwig/pull/3223
+    [1]:
+    https://github.com/ludwig-ai/ludwig/pull/3223
     [2]: https://github.com/ludwig-ai/ludwig/pull/3258
     """
     defaults_copy = copy.deepcopy(defaults)

@@ -45,7 +45,6 @@ def get_repeatable_train_val_test_split(
     df_split :
         Dataframe containing the three splits.
     """
-
     if frac_train + frac_val + frac_test != 1.0:
         raise ValueError(f"fractions {frac_train:f}, {frac_val:f}, {frac_test:f} do not add up to 1.0")
     if stratify_colname:

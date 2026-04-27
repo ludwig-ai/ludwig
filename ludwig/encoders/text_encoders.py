@@ -99,16 +99,17 @@ class HFTextEncoder(Encoder):
     def _init_transformer_from_scratch(
         self, hf_model_cls: type, hf_config_cls: type, hf_config_params: dict[str, Any], vocab_size: int
     ):
-        """Initializes the transformer model from scratch. This is in contrast to loading a pre-trained model.
+        """Initializes the transformer model from scratch.
 
-        Args:
-            hf_model_cls: The HuggingFace model class.
-            hf_config_cls: The HuggingFace config class.
-            hf_config_params: The HuggingFace config parameters exposed through the Ludwig schema.
-            vocab_size: The vocab size of the dataset. Because we are training from scratch, we can resize the
-                token embeddings table freely.
-        Returns:
-            The transformer model.
+        This is in contrast to loading a pre-trained model.
+                Args:
+                    hf_model_cls: The HuggingFace model class.
+                    hf_config_cls: The HuggingFace config class.
+                    hf_config_params: The HuggingFace config parameters exposed through the Ludwig schema.
+                    vocab_size: The vocab size of the dataset. Because we are training from scratch, we can resize the
+                        token embeddings table freely.
+                Returns:
+                    The transformer model.
         """
         config = hf_config_cls(**hf_config_params)
         transformer = hf_model_cls(config)

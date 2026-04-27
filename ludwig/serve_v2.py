@@ -116,9 +116,8 @@ def build_request_schema(config: dict) -> type[PydanticBaseModel]:
 def build_response_schema(config: dict) -> type[PydanticBaseModel]:
     """Dynamically create a Pydantic response model from Ludwig output feature configs.
 
-    The exact column names produced by Ludwig's post-processor (e.g. ``age_predictions``,
-    ``churn_probabilities``) are declared as optional fields so extra columns don't break
-    validation.
+    The exact column names produced by Ludwig's post-processor (e.g. ``age_predictions``, ``churn_probabilities``) are
+    declared as optional fields so extra columns don't break validation.
     """
     fields: dict[str, Any] = {}
     for feat in config.get("output_features", []):

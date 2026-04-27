@@ -57,10 +57,9 @@ def _shapes_path(data_fp):
 def _save_parquet(data_fp, data):
     """Save a preprocessed dataset (dict of numpy arrays) to Parquet.
 
-    Multi-dimensional columns (e.g. images with shape [H, W, C]) are flattened to 1-D
-    before writing because Parquet cannot natively represent N-D arrays inside cells.
-    The original shapes are persisted in a sidecar JSON file so that ``_load_parquet``
-    can restore them.
+    Multi-dimensional columns (e.g. images with shape [H, W, C]) are flattened to 1-D before writing because Parquet
+    cannot natively represent N-D arrays inside cells. The original shapes are persisted in a sidecar JSON file so that
+    ``_load_parquet`` can restore them.
     """
     from ludwig.utils.data_utils import save_json
 
@@ -88,8 +87,8 @@ def _save_parquet(data_fp, data):
 def _load_parquet(data_fp):
     """Load a preprocessed dataset from Parquet, returning a dict of numpy arrays.
 
-    If a sidecar ``*.shapes.json`` file exists alongside the Parquet file the
-    recorded shapes are used to restore multi-dimensional columns.
+    If a sidecar ``*.shapes.json`` file exists alongside the Parquet file the recorded shapes are used to restore multi-
+    dimensional columns.
     """
     from ludwig.utils.data_utils import load_json
 

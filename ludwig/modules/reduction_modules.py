@@ -54,8 +54,9 @@ class AttentionPooling(nn.Module):
 
 
 class SequenceReducer(LudwigModule):
-    """Reduces the sequence dimension of an input tensor according to the specified reduce_mode.  Any additional
-    kwargs are passed on to the reduce mode's constructor.  If using reduce_mode=="attention", the input_size kwarg
+    """Reduces the sequence dimension of an input tensor according to the specified reduce_mode.
+
+    Any additional kwargs are passed on to the reduce mode's constructor.  If using reduce_mode=="attention", the input_size kwarg
     must also be specified.
 
     A sequence is a tensor of 2 or more dimensions, where the shape is [batch size x sequence length x ...].
@@ -85,7 +86,6 @@ class SequenceReducer(LudwigModule):
 
         :param inputs: A tensor of 2 or more dimensions, where the shape is [batch size x sequence length x ...].
         :param mask: A mask tensor of 2 dimensions [batch size x sequence length].  Not yet implemented.
-
         :return: The input after applying the reduction operation to sequence dimension.
         """
         return self._reduce_obj(inputs, mask=mask)

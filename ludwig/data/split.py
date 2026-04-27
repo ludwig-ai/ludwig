@@ -162,7 +162,6 @@ def stratify_split_dataframe(
     The column must be categorical (including binary). The split is stratified, meaning that the proportion of each
     category in each split is the same as in the original dataset.
     """
-
     frac_train, frac_val, frac_test = probabilities
 
     def _safe_stratify(df, column, test_size):

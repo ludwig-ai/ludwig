@@ -37,7 +37,6 @@ def embedding_matrix(
     embedding_initializer: str | dict | None = None,
 ) -> tuple[nn.Module, int]:
     """Returns initialized torch.nn.Embedding module and embedding size."""
-
     vocab_size = len(vocab)
     if representation == "dense":
         if pretrained_embeddings:

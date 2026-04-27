@@ -165,32 +165,33 @@ def create_default_config(
     imbalance_threshold: float = 0.9,
     backend: Backend = None,
 ) -> dict:
-    """Returns auto_train configs for three available combiner models. Coordinates the following tasks:
+    """Returns auto_train configs for three available combiner models.
 
-    - extracts fields and generates list of FieldInfo objects
-    - gets field metadata (i.e avg. words, total non-null entries)
-    - builds input_features and output_features section of config
-    - for imbalanced datasets, a preprocessing section is added to perform stratified sampling if the imbalance ratio
-      is smaller than imbalance_threshold
-    - for each combiner, adds default training, hyperopt
-    - infers resource constraints and adds gpu and cpu resource allocation per
-      trial
+    Coordinates the following tasks:
+        - extracts fields and generates list of FieldInfo objects
+        - gets field metadata (i.e avg. words, total non-null entries)
+        - builds input_features and output_features section of config
+        - for imbalanced datasets, a preprocessing section is added to perform stratified sampling if the imbalance ratio
+          is smaller than imbalance_threshold
+        - for each combiner, adds default training, hyperopt
+        - infers resource constraints and adds gpu and cpu resource allocation per
+          trial
 
-    # Inputs
-    :param dataset_info: (str) filepath Dataset Info object.
-    :param target_name: (str, List[str]) name of target feature
-    :param time_limit_s: (int, float) total time allocated to auto_train. acts
-                                    as the stopping parameter
-    :param random_seed: (int, default: `42`) a random seed that will be used anywhere
-                        there is a call to a random number generator, including
-                        hyperparameter search sampling, as well as data splitting,
-                        parameter initialization and training set shuffling
-    :param imbalance_threshold: (float) maximum imbalance ratio (minority / majority) to perform stratified sampling
-    :param backend: (Backend) backend to use for training.
+        # Inputs
+        :param dataset_info: (str) filepath Dataset Info object.
+        :param target_name: (str, List[str]) name of target feature
+        :param time_limit_s: (int, float) total time allocated to auto_train. acts
+                                        as the stopping parameter
+        :param random_seed: (int, default: `42`) a random seed that will be used anywhere
+                            there is a call to a random number generator, including
+                            hyperparameter search sampling, as well as data splitting,
+                            parameter initialization and training set shuffling
+        :param imbalance_threshold: (float) maximum imbalance ratio (minority / majority) to perform stratified sampling
+        :param backend: (Backend) backend to use for training.
 
-    # Return
-    :return: (dict) dictionaries contain auto train config files for all available
-    combiner types
+        # Return
+        :return: (dict) dictionaries contain auto train config files for all available
+        combiner types
     """
     base_automl_config = load_yaml(BASE_AUTOML_CONFIG)
     base_automl_config.update(features_config)
@@ -253,8 +254,9 @@ def get_reference_configs() -> dict:
 
 
 def get_dataset_info(df: pd.DataFrame | dd.DataFrame) -> DatasetInfo:
-    """Constructs FieldInfo objects for each feature in dataset. These objects are used for downstream type
-    inference.
+    """Constructs FieldInfo objects for each feature in dataset.
+
+    These objects are used for downstream type inference.
 
     # Inputs
     :param df: (Union[pd.DataFrame, dd.DataFrame]) Pandas or Dask dataframe.  # Return
@@ -288,8 +290,9 @@ def is_field_boolean(source: DataSource, field: str) -> bool:
 
 @DeveloperAPI
 def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
-    """Constructs FieldInfo objects for each feature in dataset. These objects are used for downstream type
-    inference.
+    """Constructs FieldInfo objects for each feature in dataset.
+
+    These objects are used for downstream type inference.
 
     # Inputs
     :param source: (DataSource) A wrapper around a data source, which may represent a pandas or Dask dataframe. # Return
@@ -343,8 +346,9 @@ def get_features_config(
     row_count: int,
     target_name: str | list[str] = None,
 ) -> dict:
-    """Constructs FieldInfo objects for each feature in dataset. These objects are used for downstream type
-    inference.
+    """Constructs FieldInfo objects for each feature in dataset.
+
+    These objects are used for downstream type inference.
 
     # Inputs
     :param fields: (List[FieldInfo]) FieldInfo objects for all fields in dataset
@@ -398,7 +402,6 @@ def get_field_metadata(fields: list[FieldInfo], row_count: int, targets: set[str
         features # Return
     :return: (List[FieldMetadata]) list of objects containing metadata for each field
     """
-
     metadata = []
     column_count = len(fields)
     for idx, field in enumerate(fields):

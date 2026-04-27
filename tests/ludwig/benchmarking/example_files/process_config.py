@@ -6,7 +6,6 @@ def process_config(ludwig_config: dict, experiment_dict: dict) -> dict:
 
     returns: a modified Ludwig config.
     """
-
     # Only keep input_features and output_features for the ames_housing dataset.
     if experiment_dict["dataset_name"] == "ames_housing":
         main_config_keys = list(ludwig_config.keys())

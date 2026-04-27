@@ -1,10 +1,10 @@
 """Dataset splitting utilities.
 
-Provides functions for splitting datasets into train/validation/test sets
-using various strategies: random, stratified, fixed column, datetime, hash.
+Provides functions for splitting datasets into train/validation/test sets using various strategies: random, stratified,
+fixed column, datetime, hash.
 
-Extracted from preprocessing.py for modularity. The main split logic remains
-in ludwig/data/split.py; this module provides additional utilities.
+Extracted from preprocessing.py for modularity. The main split logic remains in ludwig/data/split.py; this module
+provides additional utilities.
 """
 
 import logging

@@ -48,9 +48,10 @@ def set_random_seed(random_seed):
 
 @DeveloperAPI
 def merge_dict(dct, merge_dct):
-    """Recursive dict merge. Inspired by :meth:``dict.update()``, instead of updating only top-level keys,
-    dict_merge recurses down into dicts nested to an arbitrary depth, updating keys. The ``merge_dct`` is merged
-    into ``dct``.
+    """Recursive dict merge.
+
+    Inspired by :meth:``dict.update()``, instead of updating only top-level keys, dict_merge recurses down into dicts
+    nested to an arbitrary depth, updating keys. The ``merge_dct`` is merged into ``dct``.
 
     :param dct: dict onto which the merge is executed
     :param merge_dct: dct merged into dct
@@ -101,8 +102,9 @@ def set_default_value(dictionary, key, value):
 
 @DeveloperAPI
 def set_default_values(dictionary: dict, default_value_dictionary: dict):
-    """This function sets multiple default values recursively for various areas of the config. By using the helper
-    function set_default_value, It parses input values that contain nested dictionaries, only setting values for
+    """This function sets multiple default values recursively for various areas of the config.
+
+    By using the helper function set_default_value, It parses input values that contain nested dictionaries, only setting values for
     parameters that have not already been defined by the user.
 
     Args:

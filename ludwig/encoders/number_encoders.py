@@ -134,8 +134,7 @@ class PeriodicEncoder(Encoder):
 class BinsEncoder(Encoder):
     """Binning encoder: discretize numbers into equal-width or equal-frequency bins.
 
-    Simpler alternative to PLE. Good for small/medium datasets where PLE may overfit.
-    Each bin gets a learned embedding.
+    Simpler alternative to PLE. Good for small/medium datasets where PLE may overfit. Each bin gets a learned embedding.
     """
 
     def __init__(self, input_size: int = 1, num_bins: int = 32, output_size: int = 256, encoder_config=None, **kwargs):

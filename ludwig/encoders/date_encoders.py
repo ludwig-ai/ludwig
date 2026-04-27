@@ -193,16 +193,14 @@ class DateEncoderBase(Encoder):
 class DateEmbed(DateEncoderBase):
     """Encodes date components using learned categorical embeddings.
 
-    Each cyclic date component (month, day, weekday, yearday, hour, minute, second)
-    is mapped to a dense embedding vector via a lookup table, similar to how categorical
-    features are encoded. The year is projected through a linear layer, and second_of_day
-    uses a periodic (cosine) encoding. All representations are concatenated and passed
-    through an optional FC stack.
+    Each cyclic date component (month, day, weekday, yearday, hour, minute, second) is mapped to a dense embedding
+    vector via a lookup table, similar to how categorical features are encoded. The year is projected through a linear
+    layer, and second_of_day uses a periodic (cosine) encoding. All representations are concatenated and passed through
+    an optional FC stack.
 
-    Use this encoder when you want the model to learn arbitrary (non-sinusoidal)
-    representations for each date component. This is the default date encoder and works
-    well in most scenarios. For datasets where the cyclic nature of time components is
-    important (e.g., hourly patterns wrapping around midnight), consider ``DateWave``.
+    Use this encoder when you want the model to learn arbitrary (non-sinusoidal) representations for each date
+    component. This is the default date encoder and works well in most scenarios. For datasets where the cyclic nature
+    of time components is important (e.g., hourly patterns wrapping around midnight), consider ``DateWave``.
     """
 
     def __init__(
@@ -279,17 +277,16 @@ class DateEmbed(DateEncoderBase):
 class DateWave(DateEncoderBase):
     """Encodes date components using periodic sinusoidal (cosine) functions.
 
-    Each cyclic date component is encoded as cos(2*pi*x/period), which naturally
-    captures the cyclic nature of time -- e.g., hour 23 is close to hour 0, and
-    December is close to January. The year is projected through a linear layer.
+    Each cyclic date component is encoded as cos(2*pi*x/period), which naturally captures the cyclic nature of time --
+    e.g., hour 23 is close to hour 0, and December is close to January. The year is projected through a linear layer.
     All representations are concatenated and passed through an FC stack.
 
-    This encoding is parameter-free for the components (no learned embeddings),
-    making it more compact than ``DateEmbed``. It is inspired by the positional
-    encoding approach from Vaswani et al., "Attention Is All You Need" (2017).
+    This encoding is parameter-free for the components (no learned embeddings), making it more compact than
+    ``DateEmbed``. It is inspired by the positional encoding approach from Vaswani et al., "Attention Is All You Need"
+    (2017).
 
-    Use this encoder when cyclic continuity matters and you want a lightweight
-    encoding. For richer learned representations, use ``DateEmbed``.
+    Use this encoder when cyclic continuity matters and you want a lightweight encoding. For richer learned
+    representations, use ``DateEmbed``.
     """
 
     def __init__(

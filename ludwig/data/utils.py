@@ -39,7 +39,6 @@ def set_fixed_split(preprocessing_params: PreprocessingConfigDict) -> Preprocess
 
     This potentially overrides the split configuration that the user set or what came from schema defaults.
     """
-
     return {
         **preprocessing_params,
         "split": {

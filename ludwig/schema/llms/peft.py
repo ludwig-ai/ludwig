@@ -173,9 +173,11 @@ class LoraConfig(BaseAdapterConfig):
 
 @DeveloperAPI
 class BasePromptLearningConfig(BaseAdapterConfig):
-    """Config for prompt learning adapters. Not meant to be used directly.
+    """Config for prompt learning adapters.
 
-    Adapted from https://github.com/huggingface/peft/blob/main/src/peft/utils/config.py (PromptLearningConfig)
+    Not meant to be used directly.     Adapted from
+    https://github.com/huggingface/peft/blob/main/src/peft/utils/config.py
+    (PromptLearningConfig)
     """
 
     num_virtual_tokens: int = schema_utils.PositiveInteger(
@@ -568,8 +570,8 @@ class IA3Config(BaseAdapterConfig):
 class VeraAdapterConfig(BaseAdapterConfig):
     """VeRA: Vector-based Random Matrix Adaptation (ICLR 2024).
 
-    Uses shared frozen random matrices with trained scaling vectors. 10x fewer trainable
-    parameters than LoRA, useful for extreme parameter efficiency and multi-tenant serving.
+    Uses shared frozen random matrices with trained scaling vectors. 10x fewer trainable parameters than LoRA, useful
+    for extreme parameter efficiency and multi-tenant serving.
     """
 
     type: str = schema_utils.ProtectedString("vera", description="VeRA adapter.")
@@ -600,8 +602,8 @@ class VeraAdapterConfig(BaseAdapterConfig):
 class LoHaAdapterConfig(BaseAdapterConfig):
     """LoHa: Low-Rank Hadamard Product Adaptation.
 
-    Uses Hadamard product of two low-rank matrices for parameter-efficient fine-tuning.
-    Can capture more complex weight updates than LoRA at the same rank.
+    Uses Hadamard product of two low-rank matrices for parameter-efficient fine-tuning. Can capture more complex weight
+    updates than LoRA at the same rank.
     """
 
     type: str = schema_utils.ProtectedString("loha", description="LoHa adapter.")
@@ -649,8 +651,8 @@ class LoKrAdapterConfig(BaseAdapterConfig):
 class FourierFTAdapterConfig(BaseAdapterConfig):
     """FourierFT: Frequency-domain fine-tuning.
 
-    Learns weight updates in the Fourier frequency domain, providing a different
-    inductive bias than spatial methods like LoRA.
+    Learns weight updates in the Fourier frequency domain, providing a different inductive bias than spatial methods
+    like LoRA.
     """
 
     type: str = schema_utils.ProtectedString("fourierft", description="FourierFT adapter.")
@@ -679,8 +681,8 @@ class FourierFTAdapterConfig(BaseAdapterConfig):
 class BOFTAdapterConfig(BaseAdapterConfig):
     """BOFT: Butterfly Orthogonal Fine-Tuning.
 
-    Uses butterfly factorization to learn orthogonal transformations, preserving
-    the pre-trained model's hyperspherical energy while adapting to new tasks.
+    Uses butterfly factorization to learn orthogonal transformations, preserving the pre-trained model's hyperspherical
+    energy while adapting to new tasks.
     """
 
     type: str = schema_utils.ProtectedString("boft", description="BOFT adapter.")
@@ -794,10 +796,9 @@ def AdapterDataclassField(default: str | None = None):
 class MergeAdaptersConfig(schema_utils.LudwigBaseConfig):
     """Optional weighted merge over a subset of the named adapters.
 
-    Produces a new adapter registered under ``name`` by combining ``sources`` with the
-    matching ``weights`` under ``combination_type``. The merged adapter is added to the
-    model alongside the sources; pick it as ``active`` to make it the default at
-    inference time.
+    Produces a new adapter registered under ``name`` by combining ``sources`` with the matching ``weights`` under
+    ``combination_type``. The merged adapter is added to the model alongside the sources; pick it as ``active`` to make
+    it the default at inference time.
     """
 
     name: str = schema_utils.String(

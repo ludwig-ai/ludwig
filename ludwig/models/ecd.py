@@ -152,7 +152,6 @@ class ECD(BaseModel):
         Returns:
             A dictionary of output {feature name}::{tensor_name} -> output tensor.
         """
-
         if isinstance(inputs, tuple):
             inputs, targets = inputs
             # Convert targets to tensors.

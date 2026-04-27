@@ -50,8 +50,9 @@ def collect_activations(
     backend: Backend | str = None,
     **kwargs,
 ) -> list[str]:
-    """Uses the pretrained model to collect the tensors corresponding to a datapoint in the dataset. Saves the
-    tensors to the experiment directory.
+    """Uses the pretrained model to collect the tensors corresponding to a datapoint in the dataset.
+
+    Saves the tensors to the experiment directory.
 
     # Inputs
 
@@ -168,9 +169,7 @@ def print_model_summary(model_path: str, **kwargs) -> None:
     """Loads a pretrained model and prints names of weights and layers activations.
 
     # Inputs
-    :param model_path: (str) filepath to pre-trained model.
-
-    # Return
+    :param model_path: (str) filepath to pre-trained model.  # Return
     :return: (`None`)
     """
     model = LudwigModel.load(model_path)
@@ -191,9 +190,7 @@ def pretrained_summary(pretrained_model: str, **kwargs) -> None:
     """Loads a pretrained model from Huggingface or Torchvision models and prints names of layers.
 
     # Inputs
-    :param pretrained_model: (str) name of model to load (case sensitive).
-
-    # Return
+    :param pretrained_model: (str) name of model to load (case sensitive).  # Return
     :return: (`None`)
     """
     from transformers import AutoConfig, AutoModel
