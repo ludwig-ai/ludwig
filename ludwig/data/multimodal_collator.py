@@ -60,7 +60,15 @@ class MultimodalCollator:
         batch = self.processor(**kwargs)
 
         # Fine-tuning path: turn the label strings into token ids with -100 masking on prompt tokens.
-        if all(label is not None for label in labels):
+        n_labels = sum(1 for label in labels if label is not None)
+        if n_labels > 0:
+            if n_labels != len(labels):
+                missing = [i for i, label in enumerate(labels) if label is None]
+                raise ValueError(
+                    f"MultimodalCollator: {len(missing)} of {len(labels)} examples are missing "
+                    f"'{self.label_key}' (indices {missing}). Provide labels for all examples "
+                    "in the batch or none at all."
+                )
             tokenizer = getattr(self.processor, "tokenizer", None)
             if tokenizer is None:
                 raise ValueError("MultimodalCollator: processor has no .tokenizer; cannot produce labels")
@@ -75,6 +83,6 @@ class MultimodalCollator:
             pad_id = tokenizer.pad_token_id
             if pad_id is not None:
                 label_ids = label_ids.masked_fill(label_ids == pad_id, -100)
-            batch["labels"] = label_ids
+            batch["labels"] = label_ids.to(batch["input_ids"].device)
 
         return batch
