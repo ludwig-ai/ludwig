@@ -156,6 +156,7 @@ class Mamba2Encoder(Encoder):
         self.config = encoder_config
         self.should_embed = should_embed
         self.reduce_output = reduce_output
+        self.max_sequence_length = max_sequence_length
 
         if should_embed:
             vocab_size = len(vocab) if vocab is not None else 1
@@ -182,7 +183,7 @@ class Mamba2Encoder(Encoder):
     @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output in (None, "none"):
-            return torch.Size([-1, self._output_size])
+            return torch.Size([self.max_sequence_length, self._output_size])
         return torch.Size([self._output_size])
 
     def forward(self, inputs: torch.Tensor, mask=None) -> dict[str, torch.Tensor]:
@@ -195,6 +196,10 @@ class Mamba2Encoder(Encoder):
         x = self.final_norm(x)
         if self.reduce_output == "mean":
             x = x.mean(dim=1)
+        elif self.reduce_output == "sum":
+            x = x.sum(dim=1)
+        elif self.reduce_output == "max":
+            x = x.max(dim=1).values
         elif self.reduce_output == "last":
             x = x[:, -1]
         x = self.output_proj(x)
@@ -243,6 +248,7 @@ class JambaEncoder(Encoder):
         self.config = encoder_config
         self.should_embed = should_embed
         self.reduce_output = reduce_output
+        self.max_sequence_length = max_sequence_length
 
         if should_embed:
             vocab_size = len(vocab) if vocab is not None else 1
@@ -287,7 +293,7 @@ class JambaEncoder(Encoder):
     @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output in (None, "none"):
-            return torch.Size([-1, self._output_size])
+            return torch.Size([self.max_sequence_length, self._output_size])
         return torch.Size([self._output_size])
 
     def forward(self, inputs: torch.Tensor, mask=None) -> dict[str, torch.Tensor]:
@@ -301,6 +307,10 @@ class JambaEncoder(Encoder):
         x = self.final_norm(x)
         if self.reduce_output == "mean":
             x = x.mean(dim=1)
+        elif self.reduce_output == "sum":
+            x = x.sum(dim=1)
+        elif self.reduce_output == "max":
+            x = x.max(dim=1).values
         elif self.reduce_output == "last":
             x = x[:, -1]
         x = self.output_proj(x)
