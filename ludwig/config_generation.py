@@ -73,7 +73,15 @@ def get_ludwig_schema_context() -> str:
                     "cnnrnn",
                     "transformer",
                 ],
-                "loss_balancing": ["none", "log_transform", "uncertainty", "famo", "gradnorm"],
+                "loss_balancing": [
+                    "none",
+                    "log_transform",
+                    "uncertainty",
+                    "famo",
+                    "gradnorm",
+                    "nash_mtl",
+                    "pareto_mtl",
+                ],
                 "trainer_type_ecd": "trainer (epochs, batch_size, "
                 "learning_rate, optimizer, early_stop, loss_balancing)",
                 "trainer_type_llm": "finetune, dpo, kto, orpo, grpo, none",
