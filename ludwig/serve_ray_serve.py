@@ -65,7 +65,7 @@ def make_ludwig_deployment_class(num_replicas: int = 1, ray_actor_options: dict 
             self._model = LudwigModel.load(model_path)
             logger.info("Ray Serve replica loaded Ludwig model from %s", model_path)
 
-        async def __call__(self, request: Any) -> dict:
+        async def __call__(self, request: Any) -> dict | list:
             # Accept either a single dict record or a list of dict records.
             payload = await request.json() if hasattr(request, "json") else request
             if isinstance(payload, list):
@@ -77,7 +77,10 @@ def make_ludwig_deployment_class(num_replicas: int = 1, ray_actor_options: dict 
                 import pandas as pd
 
                 preds, _ = self._model.predict(dataset=pd.DataFrame([payload]))
-                return preds.to_dict(orient="records")[0]
+                records = preds.to_dict(orient="records")
+                if not records:
+                    return {}
+                return records[0]
 
         async def predict(self, payload: dict | list[dict]) -> dict | list[dict]:
             """Programmatic entry point for Ray Serve ``handle.predict.remote(...)`` calls."""

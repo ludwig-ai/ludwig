@@ -73,6 +73,9 @@ def _build_model_class():
                         {
                             "name": col,
                             "shape": [len(pred_records)],
+                            # All outputs serialised as BYTES (string) for simplicity.
+                            # A future improvement could infer FP32/INT64 etc. from the
+                            # Ludwig output feature type to comply more strictly with v2.
                             "datatype": "BYTES",
                             "data": [str(rec.get(col)) for rec in pred_records],
                         }
