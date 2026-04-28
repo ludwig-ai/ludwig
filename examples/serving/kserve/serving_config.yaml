@@ -1,0 +1,44 @@
+# KServe InferenceService manifest for a Ludwig model.
+#
+# Deploys a Ludwig model on Kubernetes using KServe's custom predictor shim
+# (ludwig.serve_kserve).  The model binary is loaded from a persistent volume
+# or from a cloud storage URI (S3 / GCS / AzureBlob) via KServe's model agent.
+#
+# Apply with:
+#   kubectl apply -f serving_config.yaml
+
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: ludwig-titanic
+  namespace: default
+spec:
+  predictor:
+    # Use Ludwig's KServe v2 shim as the custom runtime.
+    containers:
+      - name: ludwig-predictor
+        # Replace with your Ludwig image (must have ludwig + kserve installed).
+        image: ghcr.io/ludwig-ai/ludwig:latest
+        command: ["python", "-m", "ludwig.serve_kserve"]
+        args:
+          - "--model_name=titanic"
+          # Model path inside the container — mount via PVC or initContainer.
+          - "--model_path=/mnt/models/titanic"
+          - "--http_port=8080"
+        ports:
+          - containerPort: 8080
+            protocol: TCP
+        resources:
+          requests:
+            cpu: "1"
+            memory: "2Gi"
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+        volumeMounts:
+          - mountPath: /mnt/models
+            name: model-volume
+    volumes:
+      - name: model-volume
+        persistentVolumeClaim:
+          claimName: ludwig-models-pvc

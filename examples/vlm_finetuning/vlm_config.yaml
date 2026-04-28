@@ -1,0 +1,49 @@
+model_type: llm
+
+# Qwen2-VL-7B-Instruct — swap to any HuggingFace Vision2Seq model
+base_model: Qwen/Qwen2-VL-7B-Instruct
+
+# Enable multimodal (VLM) mode.
+# Ludwig loads the model with AutoModelForVision2Seq and uses AutoProcessor
+# for joint tokenisation of text + image patches.
+is_multimodal: true
+
+# Trust the custom code shipped alongside Qwen2-VL on HuggingFace.
+trust_remote_code: true
+
+input_features:
+  - name: image_path
+    type: image
+  - name: question
+    type: text
+
+output_features:
+  - name: answer
+    type: text
+
+# LoRA adapter for parameter-efficient fine-tuning
+adapter:
+  type: lora
+  r: 16
+  alpha: 32
+  target_modules: ["q_proj", "v_proj"]
+
+trainer:
+  type: finetune
+  epochs: 3
+  batch_size: 4
+  gradient_accumulation_steps: 8
+  learning_rate: 2.0e-5
+  learning_rate_scheduler:
+    decay: cosine
+    warmup_fraction: 0.03
+
+# 4-bit NF4 quantisation to fit the 7B model on a single 24 GB GPU
+quantization:
+  bits: 4
+  quantization_type: nf4
+  compute_dtype: bfloat16
+
+generation:
+  max_new_tokens: 256
+  temperature: 0.0

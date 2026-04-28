@@ -1,0 +1,54 @@
+# Jamba-style hybrid encoder for sequence classification.
+#
+# JambaEncoder interleaves Mamba-2 SSM blocks with Transformer attention blocks
+# following Lieber et al. (2024).  With the default attention_every_k=4 and
+# n_layers=8 the pattern is [S S S A S S S A] — a 1:3 attention:SSM ratio.
+#
+# The hybrid offers a middle ground between pure-attention Transformers
+# (quadratic complexity, strong global context) and pure-SSM Mamba models
+# (linear complexity, weaker position-insensitive global context).
+# Attention layers handle cross-sentence dependencies; SSM layers handle the
+# bulk of cheap sequential processing.
+
+model_type: ecd
+
+input_features:
+  - name: review_text
+    type: text
+    encoder:
+      type: jamba
+      d_model: 256
+      # Total number of layers (SSM + attention combined).
+      n_layers: 8
+      # Insert one attention block every k layers.
+      attention_every_k: 4
+      # Attention heads — used by both the TransformerEncoderLayer and _Mamba2Block.
+      num_heads: 8
+      # Feed-forward size inside the attention blocks.
+      ffn_size: 1024
+      d_conv: 4
+      expand_factor: 2
+      dropout: 0.1
+      reduce_output: mean
+      output_size: 256
+
+output_features:
+  - name: sentiment
+    type: category
+
+combiner:
+  type: concat
+  num_fc_layers: 1
+  output_size: 128
+
+trainer:
+  epochs: 15
+  batch_size: 32
+  learning_rate: 2.0e-4
+  optimizer:
+    type: adamw
+    weight_decay: 0.01
+  learning_rate_scheduler:
+    decay: cosine
+    warmup_fraction: 0.05
+  early_stop: 5

@@ -1,0 +1,51 @@
+# Mamba-2 encoder for text classification.
+#
+# Mamba-2 is a multi-head selective SSM with per-head scalar decay (Dao & Gu, 2024).
+# It processes sequences in linear time (O(L) vs O(L²) for attention), making it
+# attractive for long documents where standard Transformers are prohibitively expensive.
+#
+# This config classifies news articles into categories using the Mamba-2 encoder.
+# Swap the dataset path for any text classification task.
+
+model_type: ecd
+
+input_features:
+  - name: article
+    type: text
+    encoder:
+      type: mamba2
+      # Model dimension — must be divisible by num_heads.
+      d_model: 256
+      # Number of stacked Mamba-2 blocks.
+      n_layers: 4
+      # Multi-head SSD: number of decay scalars.
+      num_heads: 8
+      # Depthwise convolution kernel size (local context mixing).
+      d_conv: 4
+      # Inner expansion factor (inner dim = d_model * expand_factor).
+      expand_factor: 2
+      dropout: 0.1
+      # Aggregate the final hidden state by mean-pooling over sequence.
+      reduce_output: mean
+      output_size: 256
+
+output_features:
+  - name: category
+    type: category
+
+combiner:
+  type: concat
+  num_fc_layers: 2
+  output_size: 128
+
+trainer:
+  epochs: 20
+  batch_size: 64
+  learning_rate: 3.0e-4
+  optimizer:
+    type: adamw
+    weight_decay: 0.01
+  learning_rate_scheduler:
+    decay: cosine
+    warmup_fraction: 0.05
+  early_stop: 5
