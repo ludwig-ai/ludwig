@@ -207,7 +207,7 @@ def get_commit_hash():
         if is_a_git_repo:
             commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("utf-8")
             return commit_hash
-    except:  # noqa: E722
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError):
         pass
     return None
 

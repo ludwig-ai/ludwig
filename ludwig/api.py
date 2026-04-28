@@ -63,6 +63,7 @@ from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import load_metadata, preprocess_for_prediction, preprocess_for_training
 from ludwig.datasets import load_dataset_uris
 from ludwig.features.feature_registries import update_config_with_metadata, update_config_with_model
+from ludwig.features.timeseries_feature import incremental_time_delay_embedding
 from ludwig.globals import (
     LUDWIG_VERSION,
     MODEL_FILE_NAME,
@@ -146,17 +147,17 @@ class TrainingStats:
     test: dict[str, Any]
     evaluation_frequency: EvaluationFrequency = dataclasses.field(default_factory=EvaluationFrequency)
 
-    def keys(self):
+    def keys(self) -> list[str]:
         return [TRAINING, VALIDATION, TEST]
 
-    def __contains__(self, key):
+    def __contains__(self, key: object) -> bool:
         return (
             (key == TRAINING and self.training)
             or (key == VALIDATION and self.validation)
             or (key == TEST and self.test)
         )
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> dict[str, Any]:
         return {TRAINING: self.training, VALIDATION: self.validation, TEST: self.test}[key]
 
 
@@ -340,6 +341,7 @@ class LudwigModel:
 
         # setup Backend
         self.backend = initialize_backend(backend or self._user_config.get("backend"))
+        logger.info(f"Using backend: {self.backend.BACKEND_TYPE}")
         self.callbacks = callbacks if callbacks is not None else []
 
         # setup PyTorch env (GPU allocation, etc.)
@@ -362,14 +364,23 @@ class LudwigModel:
             # model.train(dataset).
             and self.config_obj.output_features[0].type == "text"
         ):
-            self._initialize_llm()
+            self._initialize_llm_for_zero_shot()
 
-    def _initialize_llm(self, random_seed: int = default_random_seed):
-        """Initialize the LLM model.
+    def _get_or_create_model(self, config_obj=None, random_seed: int = default_random_seed):
+        """Single entry point for model instantiation.
 
-        Should only be used in a zero-shot (NoneTrainer) setting.
+        Creates self.model from config_obj (or self.config_obj) if it hasn't been created yet. Safe to call multiple
+        times — no-ops if model exists.
         """
-        self.model = LudwigModel.create_model(self.config_obj, random_seed=random_seed)
+        if self.model is not None:
+            return
+        cfg = config_obj or self.config_obj
+        logger.info(f"Creating {cfg.model_type} model")
+        self.model = LudwigModel.create_model(cfg, random_seed=random_seed)
+
+    def _initialize_llm_for_zero_shot(self, random_seed: int = default_random_seed):
+        """Initialize the LLM for zero-shot (NoneTrainer) inference only."""
+        self._get_or_create_model(random_seed=random_seed)
 
         if self.model.model.device.type == "cpu" and torch.cuda.is_available():
             logger.warning(f"LLM was initialized on {self.model.model.device}. Moving to GPU for inference.")
@@ -673,7 +684,7 @@ class LudwigModel:
                 random_seed=random_seed,
             ) as trainer:
                 # auto tune batch size
-                self._tune_batch_size(trainer, training_set, random_seed=random_seed)
+                self._tune_batch_size_and_grad_accum(trainer, training_set, random_seed=random_seed)
 
                 if (
                     self.config_obj.model_type == "LLM"
@@ -808,6 +819,7 @@ class LudwigModel:
                         )
                     except Exception as e:
                         logger.warning(f"Failed to generate model card: {e}")
+                        logger.debug(traceback.format_exc())
 
                 # Save training report (always, alongside the model)
                 if self.backend.is_coordinator() and not skip_save_model:
@@ -824,6 +836,7 @@ class LudwigModel:
                         )
                     except Exception as e:
                         logger.warning(f"Failed to generate training report: {e}")
+                        logger.debug(traceback.format_exc())
 
                 # Synchronize model weights between workers
                 self.backend.sync_model(self.model)
@@ -871,9 +884,8 @@ class LudwigModel:
         preprocessing_params = get_preprocessing_params(self.config_obj)
 
         with provision_preprocessing_workers(self.backend):
-            # TODO (Connor): Refactor to use self.config_obj
             training_dataset, _, _, training_set_metadata = preprocess_for_training(
-                self.config_obj.to_dict(),
+                self.config_obj,
                 training_set=dataset,
                 training_set_metadata=training_set_metadata,
                 data_format=data_format,
@@ -899,11 +911,11 @@ class LudwigModel:
                 config=self.config_obj.trainer, model=self.model, random_seed=random_seed
             )
 
-            self._tune_batch_size(self._online_trainer, dataset, random_seed=random_seed)
+            self._tune_batch_size_and_grad_accum(self._online_trainer, dataset, random_seed=random_seed)
 
         self.model = self._online_trainer.train_online(training_dataset)
 
-    def _tune_batch_size(self, trainer, dataset, random_seed: int = default_random_seed):
+    def _tune_batch_size_and_grad_accum(self, trainer, dataset, random_seed: int = default_random_seed):
         """Sets AUTO batch-size-related parameters based on the trainer, backend type, and number of workers.
 
         Batch-size related parameters that are set:
@@ -925,12 +937,10 @@ class LudwigModel:
         num_workers = self.backend.num_training_workers
         self.config_obj.trainer.update_batch_size_grad_accum(num_workers)
 
-        # TODO (ASN): add support for substitute_with_max parameter
-        # TODO(travis): detect train and eval batch sizes separately (enable / disable gradients)
         if self.config_obj.trainer.batch_size == AUTO:
             if self.backend.supports_batch_size_tuning():
                 tuned_batch_size = trainer.tune_batch_size(
-                    self.config_obj.to_dict(), dataset, random_seed=random_seed, tune_for_training=True
+                    self.config_obj, dataset, random_seed=random_seed, tune_for_training=True
                 )
             else:
                 logger.warning(
@@ -939,8 +949,6 @@ class LudwigModel:
                 )
                 tuned_batch_size = FALLBACK_BATCH_SIZE
 
-            # TODO(travis): pass these in as args to trainer when we call train,
-            #  to avoid setting state on possibly remote trainer
             self.config_obj.trainer.batch_size = tuned_batch_size
 
             # Re-render the gradient_accumulation_steps to account for the explicit batch size.
@@ -949,7 +957,7 @@ class LudwigModel:
         if self.config_obj.trainer.eval_batch_size in {AUTO, None}:
             if self.backend.supports_batch_size_tuning():
                 tuned_batch_size = trainer.tune_batch_size(
-                    self.config_obj.to_dict(), dataset, random_seed=random_seed, tune_for_training=False
+                    self.config_obj, dataset, random_seed=random_seed, tune_for_training=False
                 )
             else:
                 logger.warning(
@@ -1018,13 +1026,15 @@ class LudwigModel:
         input_strings: str | list[str],
         generation_config: dict | None = None,
         streaming: bool | None = False,
+        callbacks: list[Callback] | None = None,
     ) -> str | list[str]:
         """A simple generate() method that directly uses the underlying transformers library to generate text.
 
         Args:
-            input_strings (Union[str, List[str]]): Input text or list of texts to generate from.
-            generation_config (Optional[dict]): Configuration for text generation.
-            streaming (Optional[bool]): If True, enable streaming output.
+            input_strings: Input text or list of texts to generate from.
+            generation_config: Configuration for text generation.
+            streaming: If True, enable streaming output.
+            callbacks: Optional callbacks for this generate call.
 
         Returns:
             Union[str, List[str]]: Generated text or list of generated texts.
@@ -1039,12 +1049,8 @@ class LudwigModel:
             # https://github.com/ludwig-ai/ludwig/issues/3695.
             raise ValueError("GPU is not available.")
 
-        # TODO(Justin): Decide if it's worth folding padding_side handling into llm.py's tokenizer initialization.
-        # For batch inference with models like facebook/opt-350m, if the tokenizer padding side is off, HF prints a
-        # warning, e.g.:
-        # "A decoder-only architecture is being used, but right-padding was detected! For correct generation results, "
-        # "please set `padding_side='left'` when initializing the tokenizer.
-        padding_side = "left" if not self.model.model.config.is_encoder_decoder else "right"
+        # Decoder-only models require left-padding for correct generation results (right-padding causes HF warnings).
+        padding_side = "left" if not getattr(self.model.model.config, "is_encoder_decoder", False) else "right"
         tokenizer = HFTokenizer(self.config_obj.base_model, padding_side=padding_side)
 
         with self.model.use_generation_config(generation_config):
@@ -1086,7 +1092,7 @@ class LudwigModel:
         input_strings = input_strings if isinstance(input_strings, list) else [input_strings]
         for i in range(len(input_ids)):
             with torch.no_grad():
-                logger.info(f"Input: {input_strings[i]}\n")
+                logger.debug(f"Input: {input_strings[i]}\n")
                 # NOTE: self.model.model.generation_config is not used here because it is the default
                 # generation config that the CausalLM was initialized with, rather than the one set within the
                 # context manager.
@@ -1096,7 +1102,7 @@ class LudwigModel:
                     generation_config=self.model.generation,
                     streamer=streamer,
                 )
-                logger.info("----------------------")
+                logger.debug("----------------------")
                 outputs.append(generated_output)
         return torch.cat(outputs, dim=0)
 
@@ -1137,7 +1143,7 @@ class LudwigModel:
         skip_save_unprocessed_output: bool = True,
         skip_save_predictions: bool = True,
         output_directory: str = "results",
-        return_type: str | dict | pd.DataFrame = pd.DataFrame,
+        return_type: type = pd.DataFrame,
         callbacks: list[Callback] | None = None,
         **kwargs,
     ) -> tuple[dict | pd.DataFrame, str]:
@@ -1170,7 +1176,7 @@ class LudwigModel:
             statistics, TensorBoard logs, the saved model and the training progress files.
         :param return_type: (Union[str, dict, pandas.DataFrame], default: pd.DataFrame) indicates the format of the
             returned predictions.
-        :param callbacks: (Optional[List[Callback]], default: None) optional list of callbacks to use during this
+        :param callbacks: (list[Callback] | None, default: None) optional list of callbacks to use during this
             predict operation. Any callbacks already registered to the model will be preserved.
 
         # Return
@@ -1183,19 +1189,16 @@ class LudwigModel:
 
         # preprocessing
         start_time = time.time()
-        logger.debug("Preprocessing")
-        dataset, _ = preprocess_for_prediction(  # TODO (Connor): Refactor to use self.config_obj
-            self.config_obj.to_dict(),
-            dataset=dataset,
-            training_set_metadata=self.training_set_metadata,
+        logger.debug(f"Preprocessing dataset for prediction (batch_size={batch_size})")
+        dataset, _ = self._preprocess_for_prediction(
+            dataset,
             data_format=data_format,
             split=split,
             include_outputs=False,
-            backend=self.backend,
-            callbacks=self.callbacks + (callbacks or []),
+            callbacks=callbacks,
         )
 
-        logger.debug("Predicting")
+        logger.debug(f"Running batch prediction (batch_size={batch_size})")
         with self.backend.create_predictor(self.model, batch_size=batch_size) as predictor:
             with self.model.use_generation_config(generation_config):
                 predictions = predictor.batch_predict(
@@ -1209,7 +1212,7 @@ class LudwigModel:
                 if should_create_exp_dir:
                     makedirs(output_directory, exist_ok=True)
 
-            logger.debug("Postprocessing")
+            logger.debug("Postprocessing predictions")
             postproc_predictions = postprocess(
                 predictions,
                 self.model.output_features,
@@ -1244,7 +1247,7 @@ class LudwigModel:
         collect_predictions: bool = False,
         collect_overall_stats: bool = False,
         output_directory: str = "results",
-        return_type: str | dict | pd.DataFrame = pd.DataFrame,
+        return_type: type = pd.DataFrame,
         **kwargs,
     ) -> tuple[dict, dict | pd.DataFrame, str]:
         """This function is used to predict the output variables given the input variables using the trained model
@@ -1298,26 +1301,26 @@ class LudwigModel:
             callback.on_evaluation_start()
 
         # preprocessing
-        logger.debug("Preprocessing")
-        dataset, training_set_metadata = preprocess_for_prediction(  # TODO (Connor): Refactor to use self.config_obj
-            self.config_obj.to_dict(),
-            dataset=dataset,
-            training_set_metadata=self.training_set_metadata,
+        logger.debug("Preprocessing dataset for evaluation")
+        dataset, training_set_metadata = self._preprocess_for_prediction(
+            dataset,
             data_format=data_format,
             split=split,
             include_outputs=True,
-            backend=self.backend,
-            callbacks=self.callbacks,
         )
 
         # Fallback to use eval_batch_size or batch_size if not provided
         if batch_size is None:
             # Requires dictionary getter since some trainer configs may not have a batch_size param
-            batch_size = self.config_obj.trainer.to_dict().get(
-                EVAL_BATCH_SIZE, None
-            ) or self.config_obj.trainer.to_dict().get(BATCH_SIZE, None)
+            trainer_dict = self.config_obj.trainer.to_dict()
+            batch_size = trainer_dict.get(EVAL_BATCH_SIZE) or trainer_dict.get(BATCH_SIZE)
+        if batch_size is None:
+            raise ValueError(
+                "batch_size not specified and no default found in trainer config. "
+                "Set batch_size or eval_batch_size in your trainer config."
+            )
 
-        logger.debug("Predicting")
+        logger.debug(f"Running batch evaluation (batch_size={batch_size})")
         with self.backend.create_predictor(self.model, batch_size=batch_size) as predictor:
             eval_stats, predictions = predictor.batch_evaluation(
                 dataset,
@@ -1351,7 +1354,7 @@ class LudwigModel:
                     makedirs(output_directory, exist_ok=True)
 
             if collect_predictions:
-                logger.debug("Postprocessing")
+                logger.debug("Postprocessing predictions")
                 postproc_predictions = postprocess(
                     predictions,
                     self.model.output_features,
@@ -1396,54 +1399,113 @@ class LudwigModel:
         horizon: int = 1,
         output_directory: str | None = None,
         output_format: str = "parquet",
+        callbacks: list[Callback] | None = None,
     ) -> DataFrame:
-        # TODO(travis): WIP
+        """Forecast `horizon` steps ahead using an iterative single-pass strategy.
+
+        Preprocessing is performed once for the initial lookback window. Each subsequent horizon step slides the window
+        by one position using incremental_time_delay_embedding, reducing preprocessing complexity from O(horizon ×
+        window_size) to O(window_size + horizon).
+        """
+        self._check_initialization()
+
+        # Load raw DataFrame once
         dataset, _, _, _ = load_dataset_uris(dataset, None, None, None, self.backend)
         if isinstance(dataset, CacheableDataset):
             dataset = dataset.unwrap()
-        dataset = load_dataset(dataset, data_format=data_format, df_lib=self.backend.df_engine.df_lib)
+        df = load_dataset(dataset, data_format=data_format, df_lib=self.backend.df_engine.df_lib)
 
-        window_sizes = [
-            feature.preprocessing.window_size
-            for feature in self.config_obj.input_features
-            if feature.type == TIMESERIES
-        ]
-        if not window_sizes:
+        ts_input_features = [f for f in self.config_obj.input_features if f.type == TIMESERIES]
+        ts_output_features = [f for f in self.config_obj.output_features if f.type == TIMESERIES]
+
+        if not ts_input_features:
             raise ValueError("Forecasting requires at least one input feature of type `timeseries`.")
 
-        # TODO(travis): there's a lot of redundancy in this approach, since we are preprocessing the same DataFrame
-        # multiple times with only a small number of features (the horizon) being appended each time.
-        # A much better approach would be to only preprocess a single row, but incorporating the row-level embedding
-        # over the window_size of rows precending it, then performing the model forward pass on only that row of
-        # data.
-        max_lookback_window_size = max(window_sizes)
+        if horizon <= 0:
+            return_cols = [f.column for f in ts_output_features]
+            return pd.DataFrame({col: pd.Series(dtype=float) for col in return_cols})
+
+        max_window_size = max(f.preprocessing.window_size for f in ts_input_features)
+
+        # Build a mapping from ts output column name → ts output feature config
+        ts_output_by_col = {f.column: f for f in ts_output_features}
+
+        # Step 1: Preprocess the initial lookback window once
+        initial_df = df.tail(max_window_size)
+        preprocessed, _ = self._preprocess_for_prediction(
+            initial_df,
+            include_outputs=False,
+            callbacks=callbacks,
+        )
+
+        # Collect the last preprocessed embedding for each input feature.
+        # Non-timeseries features stay constant; timeseries features are slid per step.
+        # Keyed by proc_column of the model's input features.
+        last_embeddings: dict[str, np.ndarray] = {}
+        for i_feat in self.model.input_features.values():
+            pc = i_feat.proc_column
+            if pc in preprocessed.dataset:
+                last_embeddings[pc] = preprocessed.dataset[pc][-1].copy()
+
+        # Build a mapping: ts_input_feature.column → (proc_column, window_size, padding_value)
+        ts_input_info: list[tuple[str, str, int, float]] = []
+        for ts_feat in ts_input_features:
+            i_feat = self.model.input_features.get(ts_feat.name)
+            if i_feat is not None and i_feat.proc_column in last_embeddings:
+                ts_input_info.append(
+                    (
+                        ts_feat.column,
+                        i_feat.proc_column,
+                        ts_feat.preprocessing.window_size,
+                        ts_feat.preprocessing.padding_value,
+                    )
+                )
+
+        # Step 2: Incremental prediction loop — O(horizon) steps, each O(1) preprocessing
+        predicted_rows: list[pd.DataFrame] = []
         total_forecasted = 0
-        while total_forecasted < horizon:
-            # We only need the last `window_size` worth of rows to forecast the next value
-            dataset = dataset.tail(max_lookback_window_size)
 
-            # Run through preprocessing and prediction to obtain row-wise next values
-            # TODO(travis): can optimize the preprocessing part here, since we only need to preprocess / predict
-            # the last row, not the last `window_size` rows.
-            preds, _ = self.predict(dataset, skip_save_predictions=True, skip_save_unprocessed_output=True)
+        with self.backend.create_predictor(self.model, batch_size=1) as predictor:
+            while total_forecasted < horizon:
+                # Build a single-sample batch from the last embeddings
+                batch = {pc: emb[np.newaxis] for pc, emb in last_embeddings.items()}
 
-            next_series = {}
-            for feature in self.config_obj.output_features:
-                if feature.type == TIMESERIES:
-                    key = f"{feature.name}_predictions"
-                    next_series[feature.column] = pd.Series(preds[key].iloc[-1])
+                # Run model forward pass on one sample, then postprocess
+                raw_preds = predictor.predict_single(batch)
+                postproc_preds = postprocess(
+                    raw_preds,
+                    self.model.output_features,
+                    self.training_set_metadata,
+                    backend=self.backend,
+                    skip_save_unprocessed_output=True,
+                )
 
-            next_preds = pd.DataFrame(next_series)
-            dataset = pd.concat([dataset, next_preds], axis=0).reset_index(drop=True)
-            total_forecasted += len(next_preds)
+                # Extract predicted values for each timeseries output feature
+                next_series: dict[str, pd.Series] = {}
+                for feat in ts_output_features:
+                    key = f"{feat.name}_predictions"
+                    next_series[feat.column] = pd.Series(postproc_preds[key].iloc[0])
 
-        horizon_df = dataset.tail(total_forecasted).head(horizon)
-        return_cols = [feature.column for feature in self.config_obj.output_features if feature.type == TIMESERIES]
-        results_df = horizon_df[return_cols]
+                next_preds = pd.DataFrame(next_series)
+                predicted_rows.append(next_preds)
+                total_forecasted += len(next_preds)
+
+                # Step 3: Update embeddings incrementally for the next step.
+                # For each timeseries input feature, slide the window by one position.
+                for ts_col, proc_col, window_size, padding_value in ts_input_info:
+                    # Use the predicted value if this ts input is also an output, else padding_value
+                    # (matches the NaN-fill behavior of the original full-reprocessing path).
+                    new_val = float(next_preds[ts_col].iloc[-1]) if ts_col in ts_output_by_col else padding_value
+                    last_embeddings[proc_col] = incremental_time_delay_embedding(
+                        new_val, last_embeddings[proc_col], window_size, padding_value
+                    )
+
+        results_df = pd.concat(predicted_rows, ignore_index=True).head(horizon)
+        return_cols = [f.column for f in ts_output_features]
+        results_df = results_df[return_cols]
 
         if output_directory is not None:
             if self.backend.is_coordinator():
-                # TODO(travis): generalize this to support any pandas output format
                 if output_format == "parquet":
                     output_path = os.path.join(output_directory, "forecast.parquet")
                     results_df.to_parquet(output_path)
@@ -1700,17 +1762,15 @@ class LudwigModel:
         self._check_initialization()
 
         # preprocessing
-        logger.debug("Preprocessing")
-        dataset, training_set_metadata = preprocess_for_prediction(  # TODO (Connor): Refactor to use self.config_obj
-            self.config_obj.to_dict(),
-            dataset=dataset,
-            training_set_metadata=self.training_set_metadata,
+        logger.debug("Preprocessing dataset for activation collection")
+        dataset, training_set_metadata = self._preprocess_for_prediction(
+            dataset,
             data_format=data_format,
             split=split,
             include_outputs=False,
         )
 
-        logger.debug("Predicting")
+        logger.debug(f"Collecting activations for layers: {layer_names} (batch_size={batch_size})")
         with self.backend.create_predictor(self.model, batch_size=batch_size) as predictor:
             activations = predictor.batch_collect_activations(
                 layer_names,
@@ -1733,47 +1793,50 @@ class LudwigModel:
     ) -> PreprocessedDataset:
         """This function is used to preprocess data.
 
-        # Args:
-            :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
-                source containing the entire dataset to be used in the experiment.
-                If it has a split column, it will be used for splitting
-                (0 for train, 1 for validation, 2 for test),
-                otherwise the dataset will be randomly split.
-            :param training_set: (Union[str, dict, pandas.DataFrame], default: `None`)
-                source containing training data.
-            :param validation_set: (Union[str, dict, pandas.DataFrame], default: `None`)
-                source containing validation data.
-            :param test_set: (Union[str, dict, pandas.DataFrame], default: `None`)
-                source containing test data.
-            :param training_set_metadata: (Union[str, dict], default: `None`)
-                metadata JSON file or loaded metadata. Intermediate preprocessed
-            structure containing the mappings of the input
-                dataset created the first time an input file is used in the same
-                directory with the same name and a '.meta.json' extension.
-            :param data_format: (str, default: `None`) format to interpret data
-                sources. Will be inferred automatically if not specified.  Valid
-                formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`,
-                `'feather'`, `'fwf'`,
-                `'hdf5'` (cache file produced during previous training),
-                `'html'` (file containing a single HTML `<table>`),
-                `'json'`, `'jsonl'`, `'parquet'`,
-                `'pickle'` (pickled Pandas DataFrame),
-                `'sas'`, `'spss'`, `'stata'`, `'tsv'`.
-            :param skip_save_processed_input: (bool, default: `False`) if input
-                dataset is provided it is preprocessed and cached by saving an HDF5
-                and JSON files to avoid running the preprocessing again. If this
-                parameter is `False`, the HDF5 and JSON file are not saved.
-            :param random_seed: (int, default: `42`) a random seed that will be
-                used anywhere there is a call to a random number generator: data
-                splitting, parameter initialization and training set shuffling
+        # Inputs
 
-        # Returns:
-            :return: (PreprocessedDataset) data structure containing
-                `(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)`.
+        :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
+            source containing the entire dataset to be used in the experiment.
+            If it has a split column, it will be used for splitting
+            (0 for train, 1 for validation, 2 for test),
+            otherwise the dataset will be randomly split.
+        :param training_set: (Union[str, dict, pandas.DataFrame], default: `None`)
+            source containing training data.
+        :param validation_set: (Union[str, dict, pandas.DataFrame], default: `None`)
+            source containing validation data.
+        :param test_set: (Union[str, dict, pandas.DataFrame], default: `None`)
+            source containing test data.
+        :param training_set_metadata: (Union[str, dict], default: `None`)
+            metadata JSON file or loaded metadata. Intermediate preprocessed
+            structure containing the mappings of the input dataset created the
+            first time an input file is used in the same directory with the
+            same name and a '.meta.json' extension.
+        :param data_format: (str, default: `None`) format to interpret data
+            sources. Will be inferred automatically if not specified.  Valid
+            formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`,
+            `'feather'`, `'fwf'`,
+            `'hdf5'` (cache file produced during previous training),
+            `'html'` (file containing a single HTML `<table>`),
+            `'json'`, `'jsonl'`, `'parquet'`,
+            `'pickle'` (pickled Pandas DataFrame),
+            `'sas'`, `'spss'`, `'stata'`, `'tsv'`.
+        :param skip_save_processed_input: (bool, default: `False`) if input
+            dataset is provided it is preprocessed and cached by saving an HDF5
+            and JSON files to avoid running the preprocessing again. If this
+            parameter is `False`, the HDF5 and JSON file are not saved.
+        :param random_seed: (int, default: `42`) a random seed that will be
+            used anywhere there is a call to a random number generator: data
+            splitting, parameter initialization and training set shuffling
 
-        # Raises:
-            RuntimeError: An error occurred while preprocessing the data. Examples include training dataset
-                being empty after preprocessing, lazy loading not being supported with RayBackend, etc.
+        # Return
+
+        :return: (PreprocessedDataset) data structure containing
+            `(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)`.
+
+        # Raises
+
+        RuntimeError: An error occurred while preprocessing the data. Examples include training dataset
+            being empty after preprocessing, lazy loading not being supported with RayBackend, etc.
         """
         print_boxed("PREPROCESSING")
 
@@ -1785,9 +1848,8 @@ class LudwigModel:
         proc_training_set = proc_validation_set = proc_test_set = None
         try:
             with provision_preprocessing_workers(self.backend):
-                # TODO (Connor): Refactor to use self.config_obj
                 preprocessed_data = preprocess_for_training(
-                    self.config_obj.to_dict(),
+                    self.config_obj,
                     dataset=dataset,
                     training_set=training_set,
                     validation_set=validation_set,
@@ -1804,8 +1866,9 @@ class LudwigModel:
             proc_training_set, proc_validation_set, proc_test_set, training_set_metadata = preprocessed_data
 
             return PreprocessedDataset(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)
-        except Exception as e:
-            raise RuntimeError(f"Caught exception during model preprocessing: {str(e)}") from e
+        except Exception:
+            logger.debug(traceback.format_exc())
+            raise
         finally:
             for callback in self.callbacks:
                 callback.on_preprocess_end(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)
@@ -1818,7 +1881,7 @@ class LudwigModel:
         gpus: str | int | list[int] | None = None,
         gpu_memory_limit: float | None = None,
         allow_parallel_threads: bool = True,
-        callbacks: list[Callback] = None,
+        callbacks: list[Callback] | None = None,
         from_checkpoint: bool = False,
     ) -> "LudwigModel":  # return is an instance of ludwig.api.LudwigModel class
         """This function allows for loading pretrained models.
@@ -1866,6 +1929,7 @@ class LudwigModel:
             gpus=gpus, gpu_memory_limit=gpu_memory_limit, allow_parallel_threads=allow_parallel_threads
         )
 
+        logger.info(f"Loading model from {model_dir}")
         config = backend.broadcast_return(lambda: load_json(os.path.join(model_dir, MODEL_HYPERPARAMETERS_FILE_NAME)))
 
         # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
@@ -1889,9 +1953,10 @@ class LudwigModel:
 
         # generate model from config
         set_saved_weights_in_checkpoint_flag(config_obj)
-        ludwig_model.model = LudwigModel.create_model(config_obj)
+        ludwig_model._get_or_create_model(config_obj)
 
         # load model weights
+        logger.info(f"Loading model weights from {model_dir}")
         ludwig_model.load_weights(model_dir, from_checkpoint)
 
         # If merge_and_unload was NOT performed before saving (i.e., adapter weights exist),
@@ -2076,9 +2141,39 @@ class LudwigModel:
         else:
             raise ValueError(f"Unknown export format: {format}. Options: safetensors, torch_export, onnx")
 
+    def _preprocess_for_prediction(
+        self,
+        dataset,
+        data_format=None,
+        split=None,
+        include_outputs=False,
+        callbacks=None,
+    ):
+        """Shared preprocessing wrapper for predict, evaluate, and collect_activations."""
+        return preprocess_for_prediction(
+            self.config_obj,
+            dataset=dataset,
+            training_set_metadata=self.training_set_metadata,
+            data_format=data_format,
+            split=split,
+            include_outputs=include_outputs,
+            backend=self.backend,
+            callbacks=self.callbacks + (callbacks or []),
+        )
+
     def _check_initialization(self):
-        if self.model is None or self._user_config is None or self.training_set_metadata is None:
-            raise ValueError("Model has not been trained or loaded")
+        missing = []
+        if self.model is None:
+            missing.append("model")
+        if self._user_config is None:
+            missing.append("config")
+        if self.training_set_metadata is None:
+            missing.append("training_set_metadata")
+        if missing:
+            raise ValueError(
+                f"Model is not initialized (missing: {', '.join(missing)}). "
+                "Call train() or load() before predict/evaluate."
+            )
 
     def free_gpu_memory(self):
         """Manually moves the model to CPU to force GPU memory to be freed.

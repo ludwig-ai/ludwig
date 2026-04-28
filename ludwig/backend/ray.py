@@ -60,6 +60,7 @@ except (ImportError, AttributeError):
 from ludwig.models.base import BaseModel
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, get_predictor_cls
+from ludwig.schema.model_types.base import ModelConfig
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.registry import get_ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
@@ -273,7 +274,7 @@ def tune_batch_size_fn(
     data_loader_kwargs: dict[str, Any] = None,
     executable_kwargs: dict[str, Any] = None,
     model: ECD = None,  # noqa: F821
-    ludwig_config: dict[str, Any] = None,
+    ludwig_config: ModelConfig | dict[str, Any] = None,
     training_set_metadata: dict[str, Any] = None,
     features: dict[str, dict] = None,
     **kwargs,
@@ -508,7 +509,7 @@ class RayTrainerV2(BaseTrainer):
 
     def tune_batch_size(
         self,
-        config: dict[str, Any],
+        config: ModelConfig | dict[str, Any],
         training_set: RayDataset,
         **kwargs,
     ) -> int:

@@ -55,6 +55,29 @@ if TYPE_CHECKING:
 
 @DeveloperAPI
 class Backend(ABC):
+    """Abstract base class for Ludwig execution backends.
+
+    Required abstract methods (must be implemented by every subclass):
+        initialize(), initialize_pytorch(), create_trainer(), sync_model(),
+        broadcast_return(), is_coordinator(), df_engine,
+        supports_multiprocessing, read_binary_files(), num_nodes,
+        num_training_workers, get_available_resources(),
+        max_concurrent_trials(), tune_batch_size(), batch_transform()
+
+    Optional methods (have sensible defaults; override to add capability):
+        supports_batch_size_tuning() — returns True; set to False for
+        backends that cannot tune batch sizes (e.g. remote inference only).
+
+    Use the ``capabilities`` class attribute to expose named feature flags so
+    callers can check support without catching NotImplementedError::
+
+        class MyBackend(Backend):
+            capabilities = {"distributed": False, "hyperopt": False}
+    """
+
+    # Subclasses may override this dict to advertise capabilities.
+    capabilities: dict[str, Any] = {}
+
     def __init__(
         self,
         dataset_manager: DatasetManager,
