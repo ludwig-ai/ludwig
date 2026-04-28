@@ -156,6 +156,16 @@ class TrainingStats:
     def __getitem__(self, key):
         return {TRAINING: self.training, VALIDATION: self.validation, TEST: self.test}[key]
 
+    # Make TrainingStats a proper Mapping: keys() + __iter__ so that dict(ts) and
+    # generic helpers like ludwig.utils.numerical_test_utils.assert_all_finite treat
+    # it as a dict rather than falling back to integer-index iteration (which raises
+    # KeyError(0) against our string-keyed __getitem__).
+    def keys(self):
+        return (TRAINING, VALIDATION, TEST)
+
+    def __iter__(self):
+        return iter(self.keys())
+
 
 @PublicAPI
 @dataclass
@@ -823,6 +833,14 @@ class LudwigModel:
                 self.backend.sync_model(self.model)
 
                 print_boxed("FINISHED")
+                # `preprocessed_data` is a 4-tuple from the two construction sites above
+                # (either built from pre-provided datasets or from self.preprocess()).
+                # TrainingResults declares `preprocessed_data: PreprocessedDataset`, so
+                # wrap the tuple before returning — downstream callers like
+                # `experiment()` access attributes (.validation_set etc.) rather than
+                # unpacking positionally.
+                if isinstance(preprocessed_data, tuple):
+                    preprocessed_data = PreprocessedDataset(*preprocessed_data)
                 return TrainingResults(train_stats, preprocessed_data, output_url)
 
     def train_online(
