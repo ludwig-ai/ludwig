@@ -61,7 +61,16 @@ class ECD(BaseModel):
             output_feature_names = [f.name for f in config_obj.output_features]
             alpha = getattr(config_obj.trainer, "loss_balancing_alpha", 1.5)
             lr = getattr(config_obj.trainer, "loss_balancing_lr", 0.01)
-            self.loss_balancer = create_loss_balancer(loss_balancing, output_feature_names, alpha=alpha, lr=lr)
+            preference_vector = getattr(config_obj.trainer, "loss_balancing_preference_vector", None)
+            tchebycheff_weight = getattr(config_obj.trainer, "loss_balancing_tchebycheff_weight", 0.5)
+            self.loss_balancer = create_loss_balancer(
+                loss_balancing,
+                output_feature_names,
+                alpha=alpha,
+                lr=lr,
+                preference_vector=preference_vector,
+                tchebycheff_weight=tchebycheff_weight,
+            )
         else:
             self.loss_balancer = None
 

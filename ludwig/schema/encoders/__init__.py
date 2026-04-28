@@ -5,6 +5,7 @@ import ludwig.schema.encoders.category_encoders
 import ludwig.schema.encoders.date_encoders
 import ludwig.schema.encoders.h3_encoders
 import ludwig.schema.encoders.image
+import ludwig.schema.encoders.mamba_hybrid
 import ludwig.schema.encoders.number_encoders
 import ludwig.schema.encoders.sequence_encoders
 import ludwig.schema.encoders.set_encoders

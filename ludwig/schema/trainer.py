@@ -462,7 +462,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
     # ================ Loss Balancing ================
 
     loss_balancing: str = schema_utils.StringOptions(
-        options=["none", "log_transform", "uncertainty", "famo", "gradnorm"],
+        options=["none", "log_transform", "uncertainty", "famo", "gradnorm", "nash_mtl", "pareto_mtl"],
         default="none",
         allow_none=False,
         description=(
@@ -471,7 +471,10 @@ class ECDTrainerConfig(BaseTrainerConfig):
             "'log_transform': log(1+loss) compression (DB-MTL). "
             "'uncertainty': learnable homoscedastic uncertainty weighting (Kendall et al., CVPR 2018). "
             "'famo': fast adaptive multitask optimization (Liu et al., NeurIPS 2023). "
-            "'gradnorm': gradient normalization (Chen et al., ICML 2018)."
+            "'gradnorm': gradient normalization (Chen et al., ICML 2018). "
+            "'nash_mtl': Nash bargaining solution for multi-task weighting (Navon et al., ICML 2022). "
+            "'pareto_mtl': Pareto-optimal multi-task learning with preference vectors "
+            "(Lin et al., NeurIPS 2019)."
         ),
     )
 
@@ -483,6 +486,70 @@ class ECDTrainerConfig(BaseTrainerConfig):
     loss_balancing_lr: float = schema_utils.Float(
         default=0.01,
         description="Learning rate for famo loss balancing weight updates.",
+    )
+
+    loss_balancing_preference_vector: list | None = schema_utils.List(
+        default=None,
+        allow_none=True,
+        description=(
+            "Preference vector used by `loss_balancing: pareto_mtl`. One entry per output feature "
+            "(in the order they appear in `output_features`), non-negative, normalised internally "
+            "to sum to 1. Training is steered toward the Pareto-optimal point where the task losses "
+            "are inversely proportional to this vector. When null, a uniform preference is used."
+        ),
+    )
+
+    loss_balancing_tchebycheff_weight: float = schema_utils.FloatRange(
+        default=0.5,
+        min=0.0,
+        max=1.0,
+        description=(
+            "Mixing weight for `pareto_mtl` between the linear-scalarised term (weight = "
+            "1 - tchebycheff_weight) and the Tchebycheff max term (weight = tchebycheff_weight). "
+            "Pure Tchebycheff (1.0) enforces exact preference adherence but is rough to train; "
+            "pure linear (0.0) trains smoothly but diverges from the exact preference. "
+            "Default 0.5 matches Mahapatra & Rajan's 'mixed-exact' scalarisation (ICML 2020)."
+        ),
+    )
+
+    # ================ Contrastive Pre-alignment ================
+
+    contrastive_pretrain_epochs: int = schema_utils.NonNegativeInteger(
+        default=0,
+        description=(
+            "Number of epochs of contrastive pre-alignment between per-feature encoders to "
+            "run before the main training loop. 0 disables pre-alignment (default). A brief "
+            "warmup (1-3 epochs) is usually enough to pull encoder output spaces into "
+            "alignment so the downstream combiner sees already-comparable representations. "
+            "Inspired by CLIP-style alignment (Radford et al., ICML 2021) adapted to Ludwig's "
+            "multi-encoder ECD architecture."
+        ),
+    )
+
+    contrastive_pretrain_temperature: float = schema_utils.NonNegativeFloat(
+        default=0.07,
+        description=(
+            "Initial InfoNCE temperature for contrastive pre-alignment. Lower values sharpen "
+            "the softmax. 0.07 matches CLIP's initial value."
+        ),
+    )
+
+    contrastive_pretrain_projection_dim: int = schema_utils.PositiveInteger(
+        default=128,
+        description=(
+            "Width of the shared projection space used during contrastive pre-alignment. "
+            "The per-feature projection heads are discarded after pre-alignment — only the "
+            "updated encoder weights carry forward into the main training loop."
+        ),
+    )
+
+    contrastive_pretrain_learnable_temperature: bool = schema_utils.Boolean(
+        default=True,
+        description=(
+            "When True (default), the InfoNCE log-temperature is a trainable parameter "
+            "following the CLIP convention. Set to False to fix the temperature at "
+            "contrastive_pretrain_temperature throughout pre-alignment."
+        ),
     )
 
     # ================ Modality Dropout ================

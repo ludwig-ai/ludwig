@@ -53,6 +53,7 @@ Available sub-commands:
    export_schema         Exports the Ludwig config JSON schema
    preprocess            Preprocess data and saves it into Parquet and JSON format
    synthesize_dataset    Creates synthetic data for testing purposes
+   generate_config       Generate a Ludwig config from a natural language task description using an LLM
    init_config           Initialize a user config from a dataset and targets
    render_config         Renders the fully populated config with all defaults set
    check_install         Runs a quick training run on synthetic data to verify installation status
@@ -159,6 +160,11 @@ Available sub-commands:
         from ludwig.data import dataset_synthesizer
 
         dataset_synthesizer.cli(sys.argv[2:])
+
+    def generate_config(self):
+        from ludwig.config_generation import cli_generate_config
+
+        cli_generate_config(sys.argv[2:])
 
     def init_config(self):
         from ludwig import automl

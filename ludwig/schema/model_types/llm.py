@@ -65,6 +65,17 @@ class LLMModelConfig(ModelConfig):
         ),
     )
 
+    is_multimodal: bool = schema_utils.Boolean(
+        default=False,
+        description=(
+            "When true, treat ``base_model`` as a vision-language model (VLM) — Qwen2-VL, "
+            "LLaVA, InternVL, and similar. Ludwig then loads the base via "
+            "``AutoModelForVision2Seq`` instead of ``AutoModelForCausalLM`` and uses the "
+            "multimodal ``AutoProcessor`` for tokenisation / image preprocessing. Fine-tuning "
+            "input features can then include images alongside text."
+        ),
+    )
+
     def __post_init__(self):
         super().__post_init__()
         # Cross-validate the quantization backend/mode/qat combination here (rather than in

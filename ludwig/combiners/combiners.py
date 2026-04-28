@@ -36,6 +36,7 @@ from ludwig.schema.combiners.concat import ConcatCombinerConfig
 from ludwig.schema.combiners.cross_attention import CrossAttentionCombinerConfig
 from ludwig.schema.combiners.ft_transformer import FTTransformerCombinerConfig
 from ludwig.schema.combiners.gated_fusion import GatedFusionCombinerConfig
+from ludwig.schema.combiners.hypernetwork import HyperNetworkCombinerConfig
 from ludwig.schema.combiners.perceiver import PerceiverCombinerConfig
 from ludwig.schema.combiners.project_aggregate import ProjectAggregateCombinerConfig
 from ludwig.schema.combiners.sequence import SequenceCombinerConfig
@@ -156,6 +157,20 @@ class ConcatCombiner(Combiner):
             residual=config.residual,
         )
 
+        # Optional BatchEnsemble layer after FC stack
+        self.batch_ensemble_layer = None
+        if getattr(config, "batch_ensemble", False):
+            from ludwig.modules.batch_ensemble import BatchEnsembleLinear
+
+            fc_output_size = config.output_size
+            num_members = getattr(config, "num_ensemble_members", 4)
+            self.batch_ensemble_layer = BatchEnsembleLinear(
+                in_features=fc_output_size,
+                out_features=fc_output_size,
+                num_members=num_members,
+            )
+            logger.debug(f"  BatchEnsemble: {num_members} members")
+
         if input_features and len(input_features) == 1 and self.fc_layers is None:
             self.supports_masking = True
 
@@ -175,6 +190,10 @@ class ConcatCombiner(Combiner):
 
         # ================ Fully Connected ================
         hidden = self.fc_stack(hidden)
+
+        # ================ BatchEnsemble ================
+        if self.batch_ensemble_layer is not None:
+            hidden = self.batch_ensemble_layer(hidden)
 
         return_data = {"combiner_output": hidden}
 
@@ -1323,5 +1342,77 @@ class GatedFusionCombiner(Combiner):
             fused.append(fused_i)
 
         hidden = torch.cat(fused, dim=-1)
+        hidden = self.fc_stack(hidden)
+        return {"combiner_output": hidden}
+
+
+@register_combiner(HyperNetworkCombinerConfig)
+class HyperNetworkCombiner(Combiner):
+    """HyperNetwork combiner: one modality generates weights for processing another.
+
+    Instead of combining features additively, a hypernetwork generates the weights
+    of processing layers based on conditioning features. This means metadata
+    fundamentally changes how other features are processed.
+
+    Unique Ludwig differentiator. Based on HyperFusion (arXiv 2403.13319, 2024).
+    """
+
+    def __init__(self, input_features: dict[str, "InputFeature"] = None, config=None, **kwargs):
+        super().__init__(input_features)
+        self.name = "HyperNetworkCombiner"
+        logger.debug(f" {self.name}")
+        self.num_features = len(input_features)
+        hidden_size = config.hidden_size
+        hyper_hidden = config.hyper_hidden_size
+
+        # Project each feature to hidden_size
+        self.projectors = ModuleList(
+            [
+                Linear(
+                    int(torch.prod(torch.Tensor([*input_features.get(inp).output_shape]))),
+                    hidden_size,
+                )
+                for inp in input_features
+            ]
+        )
+
+        # Hypernetwork: first feature generates weights for processing others
+        # Weight generation: hidden_size -> (hidden_size * hidden_size) for a linear layer
+        self.hyper_net = torch.nn.Sequential(
+            Linear(hidden_size, hyper_hidden),
+            torch.nn.ReLU(),
+            Linear(hyper_hidden, hidden_size * hidden_size),
+        )
+
+        # FC stack on output
+        self.fc_stack = FCStack(
+            hidden_size * self.num_features,
+            num_layers=config.num_fc_layers,
+            default_output_size=config.output_size,
+            default_activation=config.activation,
+            default_dropout=config.dropout,
+        )
+
+    def forward(self, inputs) -> dict:
+        encoder_outputs = [inputs[k][ENCODER_OUTPUT] for k in inputs]
+        batch_size = encoder_outputs[0].shape[0]
+        encoder_outputs = [torch.reshape(eo, [batch_size, -1]) for eo in encoder_outputs]
+        projected = [self.projectors[i](eo) for i, eo in enumerate(encoder_outputs)]
+
+        hidden_size = projected[0].shape[-1]
+
+        # Use first feature as conditioning signal for the hypernetwork
+        conditioning = projected[0]
+        generated_weights = self.hyper_net(conditioning)  # [batch, hidden*hidden]
+        generated_weights = generated_weights.view(batch_size, hidden_size, hidden_size)
+
+        # Apply generated weights to all other features
+        transformed = [projected[0]]  # conditioning feature passes through
+        for i in range(1, self.num_features):
+            # Batch matrix multiply: [batch, hidden, hidden] x [batch, hidden, 1] -> [batch, hidden, 1]
+            t = torch.bmm(generated_weights, projected[i].unsqueeze(-1)).squeeze(-1)
+            transformed.append(t)
+
+        hidden = torch.cat(transformed, dim=-1)
         hidden = self.fc_stack(hidden)
         return {"combiner_output": hidden}
