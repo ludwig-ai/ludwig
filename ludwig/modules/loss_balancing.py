@@ -188,7 +188,12 @@ LOSS_BALANCER_REGISTRY = {
 
 
 def create_loss_balancer(
-    strategy: str, output_feature_names: list[str], alpha: float = 1.5, lr: float = 0.01
+    strategy: str,
+    output_feature_names: list[str],
+    alpha: float = 1.5,
+    lr: float = 0.01,
+    preference_vector: list[float] | None = None,
+    tchebycheff_weight: float = 0.5,
 ) -> LossBalancer:
     """Create a loss balancer from strategy name."""
     cls = LOSS_BALANCER_REGISTRY[strategy]
@@ -196,6 +201,12 @@ def create_loss_balancer(
         return cls(output_feature_names, alpha=alpha, lr=lr)
     elif strategy == "gradnorm":
         return cls(output_feature_names, alpha=alpha)
+    elif strategy == "pareto_mtl":
+        return cls(
+            output_feature_names,
+            preference_vector=preference_vector,
+            tchebycheff_weight=tchebycheff_weight,
+        )
     else:
         return cls(output_feature_names)
 
@@ -243,3 +254,75 @@ class NashMTLLossBalancer(LossBalancer):
 
 # Add to registry
 LOSS_BALANCER_REGISTRY["nash_mtl"] = NashMTLLossBalancer
+
+
+class ParetoMTLLossBalancer(LossBalancer):
+    """Preference-vector-conditioned multi-task loss balancer.
+
+    Implements exact-Pareto-optimal (EPO / PE-LGD style) scalarisation:
+    given a user preference vector ``lambda = (lambda_1, ..., lambda_T)`` with
+    ``sum(lambda) == 1``, training steers the loss tuple along the Pareto front
+    toward the point where losses are inversely proportional to ``lambda``.
+
+    Concretely, this balancer combines two scalarisation schemes:
+
+    * a *linear* component ``sum(lambda_i * L_i)`` — keeps training grounded in a
+      reasonable direction from step 0;
+    * a *Tchebycheff* component ``max_i (lambda_i * L_i)`` — drives convergence
+      toward the Pareto-optimal solution that matches the preference vector.
+
+    The two are blended via ``tchebycheff_weight`` in ``[0, 1]``.  A pure
+    Tchebycheff balancer (``tchebycheff_weight=1``) gives exact preference
+    adherence but is rough to train; a pure linear mix (``0``) trains smoothly but
+    doesn't match the preference as exactly.  The default of ``0.5`` is the
+    "mixed-exact" scalarisation from Mahapatra & Rajan, ICML 2020.
+
+    References:
+        * Mahapatra & Rajan, "Multi-Task Learning with User Preferences: Gradient
+          Descent with Controlled Ascent in Pareto Optimization", ICML 2020.
+        * Lin et al., "Pareto Multi-Task Learning", NeurIPS 2019.
+    """
+
+    def __init__(
+        self,
+        output_feature_names: list[str],
+        preference_vector: list[float] | None = None,
+        tchebycheff_weight: float = 0.5,
+        **kwargs,
+    ) -> None:
+        super().__init__(output_feature_names)
+        n = len(output_feature_names)
+        if preference_vector is None:
+            preference_vector = [1.0 / n] * n
+        if len(preference_vector) != n:
+            raise ValueError(
+                f"preference_vector has {len(preference_vector)} entries, expected one per output feature ({n})"
+            )
+        if any(p < 0 for p in preference_vector):
+            raise ValueError("preference_vector entries must be non-negative")
+        total = float(sum(preference_vector))
+        if total <= 0:
+            raise ValueError("preference_vector must sum to a positive value")
+        if not (0.0 <= tchebycheff_weight <= 1.0):
+            raise ValueError(f"tchebycheff_weight must be in [0, 1], got {tchebycheff_weight}")
+
+        normalised = [p / total for p in preference_vector]
+        self.register_buffer(
+            "preference_vector",
+            torch.tensor(normalised, dtype=torch.float32),
+        )
+        self.tchebycheff_weight = tchebycheff_weight
+        self._index = {name: i for i, name in enumerate(output_feature_names)}
+
+    def forward(self, per_task_losses, per_task_weights):
+        device = next(iter(per_task_losses.values())).device
+        losses = torch.stack([per_task_losses[name] * per_task_weights[name] for name in self.output_feature_names])
+        lam = self.preference_vector.to(device)
+
+        linear_term = (lam * losses).sum()
+        tcheb_term = (lam * losses).max()
+        return (1.0 - self.tchebycheff_weight) * linear_term + self.tchebycheff_weight * tcheb_term
+
+
+# Add to registry
+LOSS_BALANCER_REGISTRY["pareto_mtl"] = ParetoMTLLossBalancer
