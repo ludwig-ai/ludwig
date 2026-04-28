@@ -24,7 +24,7 @@ class ECDModelConfig(ModelConfig):
     model_type: str = schema_utils.ProtectedString("ecd")
 
     preset: str | None = schema_utils.StringOptions(
-        options=["medium_quality", "high_quality", "best_quality"],
+        options=["medium_quality", "high_quality", "best_quality", "tabular_realmlp"],
         default=None,
         allow_none=True,
         description=(
@@ -32,7 +32,9 @@ class ECDModelConfig(ModelConfig):
             "User-specified values always take precedence. "
             "'medium_quality': fast training with concat combiner. "
             "'high_quality': transformer combiner with uncertainty loss balancing. "
-            "'best_quality': FT-Transformer, uncertainty loss balancing, model soup."
+            "'best_quality': FT-Transformer, uncertainty loss balancing, model soup. "
+            "'tabular_realmlp': RealMLP defaults (Holzmüller et al., 2024) — robust scaling on number "
+            "features, deep concat FC stack, AdamW + cosine LR, long training horizon."
         ),
     )
 
