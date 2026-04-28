@@ -84,6 +84,12 @@ class ContrastiveAlignmentLoss(nn.Module):
             Scalar loss tensor.
         """
         projected = self._project(embeddings)
+        # All features must share the same batch size; mismatched sizes produce a
+        # non-square logits matrix where logits.T has the wrong number of rows for
+        # the targets tensor.
+        batch_sizes = {name: projected[name].shape[0] for name in self.feature_names}
+        if len(set(batch_sizes.values())) != 1:
+            raise ValueError(f"ContrastiveAlignmentLoss: batch size must match across all features, got {batch_sizes}")
         # ``log_temperature`` stores log(1/T) following the CLIP convention, so
         # exp(log_temperature) is the *inverse* temperature / logit scale.  Multiplying
         # the cosine similarity by this scale therefore sharpens the softmax when T is

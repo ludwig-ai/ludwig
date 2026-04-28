@@ -517,6 +517,15 @@ class ECDTrainerConfig(BaseTrainerConfig):
         ),
     )
 
+    contrastive_pretrain_learnable_temperature: bool = schema_utils.Boolean(
+        default=True,
+        description=(
+            "When True (default), the InfoNCE log-temperature is a trainable parameter "
+            "following the CLIP convention. Set to False to fix the temperature at "
+            "contrastive_pretrain_temperature throughout pre-alignment."
+        ),
+    )
+
     # ================ Modality Dropout ================
 
     modality_dropout: float = schema_utils.FloatRange(
