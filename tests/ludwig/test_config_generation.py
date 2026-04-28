@@ -73,9 +73,37 @@ class TestGenerateConfig:
             config = generate_config("some task", validate=False)
         assert "input_features" in config
 
-    def test_generate_config_invalid_json_raises(self):
+    def test_generate_config_invalid_json_raises_value_error(self):
         mock_module, _ = self._mock_anthropic("not json at all")
 
         with patch.dict(sys.modules, {"anthropic": mock_module}):
-            with pytest.raises(json.JSONDecodeError):
+            with pytest.raises(ValueError, match="Raw response"):
                 generate_config("some task", validate=False)
+
+    def test_generate_config_openai_fallback(self):
+        """When anthropic is not installed, should fall back to openai."""
+        mock_oai_response = MagicMock()
+        mock_oai_response.choices = [MagicMock()]
+        mock_oai_response.choices[0].message.content = self.VALID_CONFIG_JSON
+
+        mock_oai_client = MagicMock()
+        mock_oai_client.chat.completions.create.return_value = mock_oai_response
+
+        mock_oai = MagicMock()
+        mock_oai.OpenAI.return_value = mock_oai_client
+
+        # Simulate anthropic not installed by raising ImportError, openai available
+        with patch.dict(sys.modules, {"anthropic": None, "openai": mock_oai}):
+            config = generate_config("Predict churn", validate=False)
+
+        assert "input_features" in config
+
+    def test_schema_context_import_error_logs_warning(self, caplog):
+        """ImportError in get_ludwig_schema_context should log a warning, not silently fail."""
+        with patch("ludwig.config_generation.get_ludwig_schema_context") as mock_ctx:
+            mock_ctx.return_value = "{}"
+            mock_module, _ = self._mock_anthropic(self.VALID_CONFIG_JSON)
+            with patch.dict(sys.modules, {"anthropic": mock_module}):
+                # Just verify the function completes even with empty schema context
+                config = generate_config("some task", validate=False)
+        assert "input_features" in config

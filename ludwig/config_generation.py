@@ -98,7 +98,8 @@ def get_ludwig_schema_context() -> str:
             },
             indent=2,
         )
-    except Exception:
+    except Exception as exc:
+        logger.warning("Failed to build Ludwig schema context for config generation: %s", exc)
         return "{}"
 
 
@@ -178,14 +179,20 @@ Choose appropriate feature types, encoders, and combiner based on the task."""
         lines = config_str.split("\n")
         config_str = "\n".join(lines[1:-1])
 
-    config = json.loads(config_str)
+    try:
+        config = json.loads(config_str)
+    except json.JSONDecodeError as exc:
+        raise ValueError(
+            f"LLM returned non-JSON response (JSONDecodeError: {exc}). Raw response:\n{config_str}"
+        ) from exc
 
     if validate:
         try:
             from ludwig.schema.model_types.base import ModelConfig
 
-            ModelConfig.from_dict(config)
+            validated = ModelConfig.from_dict(config)
             logger.info("Generated config validated successfully")
+            return validated.to_dict()
         except Exception as e:
             raise ValueError(f"Generated config failed validation: {e}") from e
 

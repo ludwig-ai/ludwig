@@ -17,6 +17,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
+import torch
+
 
 class MultimodalCollator:
     """Collate image+text batches for a HuggingFace VLM.
@@ -83,6 +85,9 @@ class MultimodalCollator:
             pad_id = tokenizer.pad_token_id
             if pad_id is not None:
                 label_ids = label_ids.masked_fill(label_ids == pad_id, -100)
-            batch["labels"] = label_ids.to(batch["input_ids"].device)
+            # Resolve device from whatever tensor the processor emitted first.
+            first_tensor = next((v for v in batch.values() if isinstance(v, torch.Tensor)), None)
+            target_device = first_tensor.device if first_tensor is not None else torch.device("cpu")
+            batch["labels"] = label_ids.to(target_device)
 
         return batch

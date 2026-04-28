@@ -87,11 +87,12 @@ class _Mamba2Block(nn.Module):
 
         # Per-head scalar decay mixing (SSD-style): y_t = alpha_h * y_{t-1} + x_t.
         x_path = x_path.view(batch, seq_len, self.num_heads, self.head_dim)
-        alpha = torch.sigmoid(self.log_alpha).view(1, 1, self.num_heads, 1)
+        # (1, num_heads, 1) — hoisted outside the loop; shape unchanged per step.
+        alpha = torch.sigmoid(self.log_alpha).view(self.num_heads, 1)
         outputs = torch.empty_like(x_path)
         y = torch.zeros(batch, self.num_heads, self.head_dim, device=x.device, dtype=x.dtype)
         for t in range(seq_len):
-            y = alpha.squeeze(1).squeeze(0) * y + x_path[:, t]
+            y = alpha * y + x_path[:, t]
             outputs[:, t] = y
         x_path = outputs.view(batch, seq_len, self.d_inner)
 
@@ -194,7 +195,9 @@ class Mamba2Encoder(Encoder):
         x = self.embed_proj(x)
         x = self.stack(x)
         x = self.final_norm(x)
-        if self.reduce_output == "mean":
+        if self.reduce_output in (None, "none"):
+            pass
+        elif self.reduce_output == "mean":
             x = x.mean(dim=1)
         elif self.reduce_output == "sum":
             x = x.sum(dim=1)
@@ -202,6 +205,11 @@ class Mamba2Encoder(Encoder):
             x = x.max(dim=1).values
         elif self.reduce_output == "last":
             x = x[:, -1]
+        else:
+            raise ValueError(
+                f"Unknown reduce_output={self.reduce_output!r}. "
+                "Valid options: None, 'none', 'mean', 'sum', 'max', 'last'."
+            )
         x = self.output_proj(x)
         return {"encoder_output": x}
 
@@ -303,9 +311,14 @@ class JambaEncoder(Encoder):
             x = inputs
         x = self.embed_proj(x)
         for layer in self.layers:
-            x = layer(x)
+            if isinstance(layer, nn.TransformerEncoderLayer):
+                x = layer(x, src_key_padding_mask=mask)
+            else:
+                x = layer(x)
         x = self.final_norm(x)
-        if self.reduce_output == "mean":
+        if self.reduce_output in (None, "none"):
+            pass
+        elif self.reduce_output == "mean":
             x = x.mean(dim=1)
         elif self.reduce_output == "sum":
             x = x.sum(dim=1)
@@ -313,6 +326,11 @@ class JambaEncoder(Encoder):
             x = x.max(dim=1).values
         elif self.reduce_output == "last":
             x = x[:, -1]
+        else:
+            raise ValueError(
+                f"Unknown reduce_output={self.reduce_output!r}. "
+                "Valid options: None, 'none', 'mean', 'sum', 'max', 'last'."
+            )
         x = self.output_proj(x)
         return {"encoder_output": x}
 
