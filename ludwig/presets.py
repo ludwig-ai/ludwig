@@ -39,6 +39,28 @@ QUALITY_PRESETS = {
             "model_soup_top_k": 5,
         },
     },
+    # RealMLP defaults (Holzmüller et al., 2024). Strong "boring baseline" for tabular DL:
+    # robust (interquartile) scaling on number features, mild-but-not-trivial FC stack, AdamW
+    # with decoupled weight decay, cosine LR decay, long training horizon with early stopping.
+    # Source: https://arxiv.org/abs/2407.04491
+    "tabular_realmlp": {
+        "combiner": {"type": "concat", "num_fc_layers": 4, "output_size": 256, "dropout": 0.15},
+        "defaults": {
+            "number": {
+                # 'iq' is the Ludwig interquartile-range normalizer — the closest available
+                # match to scikit-learn's RobustScaler used by the RealMLP paper.
+                "preprocessing": {"normalization": "iq"},
+            },
+        },
+        "trainer": {
+            "epochs": 300,
+            "early_stop": 40,
+            "batch_size": 256,
+            "learning_rate": 0.0005,
+            "optimizer": {"type": "adamw", "weight_decay": 0.01},
+            "learning_rate_scheduler": {"decay": "cosine"},
+        },
+    },
 }
 
 
