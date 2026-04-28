@@ -83,9 +83,21 @@ def load_pretrained_from_config(
     logger.info("Loading large language model...")
     pretrained_model_name_or_path = weights_save_path or config_obj.base_model
     trust_remote_code = getattr(config_obj, "trust_remote_code", False)
-    model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(
-        pretrained_model_name_or_path, trust_remote_code=trust_remote_code, **load_kwargs
-    )
+    is_multimodal = getattr(config_obj, "is_multimodal", False)
+    if is_multimodal:
+        # VLMs — Qwen2-VL, LLaVA, InternVL, Idefics etc. — register their own vision-to-sequence
+        # head. AutoModelForVision2Seq picks the right class automatically so the vision tower,
+        # projector, and LM head all come along together.
+        from transformers import AutoModelForVision2Seq
+
+        logger.info("Loading multimodal (VLM) base model via AutoModelForVision2Seq")
+        model: PreTrainedModel = AutoModelForVision2Seq.from_pretrained(
+            pretrained_model_name_or_path, trust_remote_code=trust_remote_code, **load_kwargs
+        )
+    else:
+        model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(
+            pretrained_model_name_or_path, trust_remote_code=trust_remote_code, **load_kwargs
+        )
     return model
 
 
