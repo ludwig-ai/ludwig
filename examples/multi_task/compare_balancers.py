@@ -57,7 +57,7 @@ def build_config(balancer: str) -> dict:
 def run(balancer: str, dataset: pd.DataFrame) -> dict[str, float]:
     config = build_config(balancer)
     model = LudwigModel(config=config, logging_level=logging.WARNING)
-    stats, _, _ = model.train(
+    result = model.train(
         dataset=dataset,
         output_directory=str(HERE / f"results_{balancer}"),
         skip_save_processed_input=True,
@@ -66,7 +66,7 @@ def run(balancer: str, dataset: pd.DataFrame) -> dict[str, float]:
         skip_save_predictions=True,
         skip_save_model=True,
     )
-    val = stats.validation_stats
+    val = result.train_stats.validation or {}
 
     quality_rmse = min(val["quality"].get("root_mean_squared_error", [float("nan")]))
     recommended_acc = max(val["recommended"].get("accuracy", [float("nan")]))
