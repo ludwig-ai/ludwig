@@ -2,9 +2,9 @@ name: pytest
 
 on:
   push:
-    branches: ["main", "release-*"]
+    branches: ["main", "release-*", "future-capabilities"]
   pull_request:
-    branches: ["main", "release-*"]
+    branches: ["main", "release-*", "future-capabilities"]
 
 concurrency:
   group: pytest-${{ github.head_ref || github.sha }}

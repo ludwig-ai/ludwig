@@ -462,7 +462,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
     # ================ Loss Balancing ================
 
     loss_balancing: str = schema_utils.StringOptions(
-        options=["none", "log_transform", "uncertainty", "famo", "gradnorm"],
+        options=["none", "log_transform", "uncertainty", "famo", "gradnorm", "nash_mtl"],
         default="none",
         allow_none=False,
         description=(
@@ -471,7 +471,8 @@ class ECDTrainerConfig(BaseTrainerConfig):
             "'log_transform': log(1+loss) compression (DB-MTL). "
             "'uncertainty': learnable homoscedastic uncertainty weighting (Kendall et al., CVPR 2018). "
             "'famo': fast adaptive multitask optimization (Liu et al., NeurIPS 2023). "
-            "'gradnorm': gradient normalization (Chen et al., ICML 2018)."
+            "'gradnorm': gradient normalization (Chen et al., ICML 2018). "
+            "'nash_mtl': Nash bargaining solution for multi-task weighting (Navon et al., ICML 2022)."
         ),
     )
 
@@ -483,6 +484,46 @@ class ECDTrainerConfig(BaseTrainerConfig):
     loss_balancing_lr: float = schema_utils.Float(
         default=0.01,
         description="Learning rate for famo loss balancing weight updates.",
+    )
+
+    # ================ Contrastive Pre-alignment ================
+
+    contrastive_pretrain_epochs: int = schema_utils.NonNegativeInteger(
+        default=0,
+        description=(
+            "Number of epochs of contrastive pre-alignment between per-feature encoders to "
+            "run before the main training loop. 0 disables pre-alignment (default). A brief "
+            "warmup (1-3 epochs) is usually enough to pull encoder output spaces into "
+            "alignment so the downstream combiner sees already-comparable representations. "
+            "Inspired by CLIP-style alignment (Radford et al., ICML 2021) adapted to Ludwig's "
+            "multi-encoder ECD architecture."
+        ),
+    )
+
+    contrastive_pretrain_temperature: float = schema_utils.NonNegativeFloat(
+        default=0.07,
+        description=(
+            "Initial InfoNCE temperature for contrastive pre-alignment. Lower values sharpen "
+            "the softmax. 0.07 matches CLIP's initial value."
+        ),
+    )
+
+    contrastive_pretrain_projection_dim: int = schema_utils.PositiveInteger(
+        default=128,
+        description=(
+            "Width of the shared projection space used during contrastive pre-alignment. "
+            "The per-feature projection heads are discarded after pre-alignment — only the "
+            "updated encoder weights carry forward into the main training loop."
+        ),
+    )
+
+    contrastive_pretrain_learnable_temperature: bool = schema_utils.Boolean(
+        default=True,
+        description=(
+            "When True (default), the InfoNCE log-temperature is a trainable parameter "
+            "following the CLIP convention. Set to False to fix the temperature at "
+            "contrastive_pretrain_temperature throughout pre-alignment."
+        ),
     )
 
     # ================ Modality Dropout ================

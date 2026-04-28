@@ -53,3 +53,17 @@ class ConcatCombinerConfig(BaseCombinerConfig):
     norm_params: dict | None = common_fields.NormParamsField()
 
     fc_layers: list[dict[str, Any]] | None = common_fields.FCLayersField()
+
+    batch_ensemble: bool = schema_utils.Boolean(
+        default=False,
+        description=(
+            "Whether to use BatchEnsemble (TabM-style) for parameter-efficient ensembling. "
+            "Adds per-member rank-1 scaling vectors to the output layer, providing "
+            "ensemble-level performance at single-model cost."
+        ),
+    )
+
+    num_ensemble_members: int = schema_utils.PositiveInteger(
+        default=4,
+        description="Number of ensemble members when batch_ensemble is enabled.",
+    )
