@@ -472,7 +472,9 @@ class ECDTrainerConfig(BaseTrainerConfig):
             "'uncertainty': learnable homoscedastic uncertainty weighting (Kendall et al., CVPR 2018). "
             "'famo': fast adaptive multitask optimization (Liu et al., NeurIPS 2023). "
             "'gradnorm': gradient normalization (Chen et al., ICML 2018). "
-            "'nash_mtl': Nash bargaining solution for multi-task weighting (Navon et al., ICML 2022)."
+            "'nash_mtl': Nash bargaining solution for multi-task weighting (Navon et al., ICML 2022). "
+            "'pareto_mtl': Pareto-optimal multi-task learning with preference vectors "
+            "(Lin et al., NeurIPS 2019)."
         ),
     )
 
