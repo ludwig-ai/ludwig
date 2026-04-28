@@ -156,15 +156,16 @@ class TrainingStats:
     def __getitem__(self, key):
         return {TRAINING: self.training, VALIDATION: self.validation, TEST: self.test}[key]
 
-    # Make TrainingStats a proper Mapping: keys() + __iter__ so that dict(ts) and
-    # generic helpers like ludwig.utils.numerical_test_utils.assert_all_finite treat
-    # it as a dict rather than falling back to integer-index iteration (which raises
-    # KeyError(0) against our string-keyed __getitem__).
+    # Make TrainingStats a proper Mapping so dict(ts) and generic helpers like
+    # ludwig.utils.numerical_test_utils.assert_all_finite treat it as a dict
+    # rather than falling back to integer-index iteration (KeyError(0)).
+    _KEYS = (TRAINING, VALIDATION, TEST)
+
     def keys(self):
-        return (TRAINING, VALIDATION, TEST)
+        return self._KEYS
 
     def __iter__(self):
-        return iter(self.keys())
+        return iter(self._KEYS)
 
 
 @PublicAPI
