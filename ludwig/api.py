@@ -161,11 +161,11 @@ class TrainingStats:
     # rather than falling back to integer-index iteration (KeyError(0)).
     _KEYS = (TRAINING, VALIDATION, TEST)
 
-    def keys(self):
+    def keys(self):  # noqa: F811
         return self._KEYS
 
     def __iter__(self):
-        return iter(self._KEYS)
+        return iter(self._KEYS)  # noqa: F811
 
 
 @PublicAPI
