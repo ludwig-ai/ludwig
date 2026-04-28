@@ -462,7 +462,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
     # ================ Loss Balancing ================
 
     loss_balancing: str = schema_utils.StringOptions(
-        options=["none", "log_transform", "uncertainty", "famo", "gradnorm", "nash_mtl"],
+        options=["none", "log_transform", "uncertainty", "famo", "gradnorm", "nash_mtl", "pareto_mtl"],
         default="none",
         allow_none=False,
         description=(
@@ -472,7 +472,9 @@ class ECDTrainerConfig(BaseTrainerConfig):
             "'uncertainty': learnable homoscedastic uncertainty weighting (Kendall et al., CVPR 2018). "
             "'famo': fast adaptive multitask optimization (Liu et al., NeurIPS 2023). "
             "'gradnorm': gradient normalization (Chen et al., ICML 2018). "
-            "'nash_mtl': Nash bargaining solution for multi-task weighting (Navon et al., ICML 2022)."
+            "'nash_mtl': Nash bargaining solution for multi-task weighting (Navon et al., ICML 2022). "
+            "'pareto_mtl': Pareto-optimal multi-task learning with preference vectors "
+            "(Lin et al., NeurIPS 2019)."
         ),
     )
 
@@ -484,6 +486,30 @@ class ECDTrainerConfig(BaseTrainerConfig):
     loss_balancing_lr: float = schema_utils.Float(
         default=0.01,
         description="Learning rate for famo loss balancing weight updates.",
+    )
+
+    loss_balancing_preference_vector: list | None = schema_utils.List(
+        default=None,
+        allow_none=True,
+        description=(
+            "Preference vector used by `loss_balancing: pareto_mtl`. One entry per output feature "
+            "(in the order they appear in `output_features`), non-negative, normalised internally "
+            "to sum to 1. Training is steered toward the Pareto-optimal point where the task losses "
+            "are inversely proportional to this vector. When null, a uniform preference is used."
+        ),
+    )
+
+    loss_balancing_tchebycheff_weight: float = schema_utils.FloatRange(
+        default=0.5,
+        min=0.0,
+        max=1.0,
+        description=(
+            "Mixing weight for `pareto_mtl` between the linear-scalarised term (weight = "
+            "1 - tchebycheff_weight) and the Tchebycheff max term (weight = tchebycheff_weight). "
+            "Pure Tchebycheff (1.0) enforces exact preference adherence but is rough to train; "
+            "pure linear (0.0) trains smoothly but diverges from the exact preference. "
+            "Default 0.5 matches Mahapatra & Rajan's 'mixed-exact' scalarisation (ICML 2020)."
+        ),
     )
 
     # ================ Contrastive Pre-alignment ================
