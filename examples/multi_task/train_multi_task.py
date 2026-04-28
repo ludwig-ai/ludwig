@@ -118,7 +118,7 @@ def train_and_evaluate(
     print(f"\n--- Training: {name} ---")
     try:
         model = LudwigModel(config=config, logging_level=logging.WARNING)
-        train_stats, _, _ = model.train(
+        result = model.train(
             dataset=dataset,
             experiment_name="multi_task",
             model_name=name,
@@ -127,7 +127,7 @@ def train_and_evaluate(
 
         # Extract final validation metrics
         metrics = {}
-        vset = train_stats.get("validation", {})
+        vset = result.train_stats.validation or {}
         # quality_score: mean absolute error (lower is better)
         score_metrics = vset.get("quality_score", {})
         metrics["score_mae"] = _last_value(score_metrics.get("mean_absolute_error", []))

@@ -131,7 +131,8 @@ for label, config in [("Concat (baseline)", config_concat), ("HyperNetwork", con
     print("=" * 60)
 
     model = LudwigModel(config, logging_level=30)
-    model.train(dataset=df)
+    results_obj = model.train(dataset=df)
+    print(f"  Saved to: {results_obj.output_directory}")
 
     test_df = df[df["split"] == 2].copy()
     predictions, _ = model.predict(dataset=test_df)

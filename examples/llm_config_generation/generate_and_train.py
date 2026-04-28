@@ -219,13 +219,13 @@ def main():
         from ludwig.api import LudwigModel
 
         model = LudwigModel(config=config, logging_level="WARNING")
-        train_stats, _, output_dir = model.train(
+        result = model.train(
             dataset=csv_path,
             output_directory=tempfile.mkdtemp(prefix="ludwig_output_"),
         )
-        print(f"\nTraining complete. Outputs saved to: {output_dir}")
+        print(f"\nTraining complete. Outputs saved to: {result.output_directory}")
         print("\nFinal validation metrics:")
-        for feat_name, metrics in train_stats.get("validation", {}).items():
+        for feat_name, metrics in (result.train_stats.validation or {}).items():
             for metric_name, value in metrics.items():
                 if isinstance(value, (int, float)):
                     print(f"  {feat_name}/{metric_name}: {value:.4f}")
