@@ -1369,7 +1369,7 @@ class HyperNetworkCombiner(Combiner):
         self.projectors = ModuleList(
             [
                 Linear(
-                    torch.prod(torch.Tensor([*input_features.get(inp).output_shape])).type(torch.int32),
+                    int(torch.prod(torch.Tensor([*input_features.get(inp).output_shape]))),
                     hidden_size,
                 )
                 for inp in input_features
