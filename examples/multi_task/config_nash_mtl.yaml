@@ -1,0 +1,65 @@
+model_type: ecd
+
+input_features:
+  - name: fixed_acidity
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: volatile_acidity
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: citric_acid
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: residual_sugar
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: chlorides
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: free_sulfur_dioxide
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: total_sulfur_dioxide
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: density
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: pH
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: sulphates
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: alcohol
+    type: number
+    preprocessing:
+      normalization: zscore
+
+output_features:
+  - name: quality_score
+    type: number
+  - name: quality_binary
+    type: binary
+
+combiner:
+  type: concat
+  num_fc_layers: 2
+  output_size: 128
+  dropout: 0.1
+
+trainer:
+  epochs: 30
+  learning_rate: 0.001
+  batch_size: 128
+  loss_balancing: nash_mtl  # Requires PR #4092 / Ludwig >= 0.14

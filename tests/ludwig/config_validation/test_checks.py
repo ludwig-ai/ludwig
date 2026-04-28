@@ -508,3 +508,16 @@ def test_check_llm_text_encoder_is_not_used_with_ecd():
         ModelConfig.from_dict(config)
 
     assert "Please use the `model_type: llm` for text-to-text models." in str(excinfo.value)
+
+
+def test_check_grpo_requires_text_output():
+    """GRPO trainer with a non-text output feature should raise."""
+    config = {
+        "model_type": "llm",
+        "base_model": "facebook/opt-350m",
+        "input_features": [{"name": "prompt", "type": "text"}],
+        "output_features": [{"name": "label", "type": "category"}],
+        "trainer": {"type": "grpo"},
+    }
+    with pytest.raises(ConfigValidationError, match="GRPO trainer requires a text output feature"):
+        ModelConfig.from_dict(config)

@@ -64,6 +64,7 @@ from ludwig.modules.metric_modules import get_improved_fn, get_initial_validatio
 from ludwig.modules.metric_registry import get_metric_objective
 from ludwig.modules.optimization_modules import create_clipper
 from ludwig.progress_bar import LudwigProgressBar
+from ludwig.schema.model_types.base import ModelConfig
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.mixins import CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin
@@ -556,7 +557,7 @@ class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin,
 
     def tune_batch_size(
         self,
-        config: ModelConfigDict,
+        config: ModelConfig | ModelConfigDict,
         training_set: Dataset,
         random_seed: int = default_random_seed,
         max_trials: int = 20,

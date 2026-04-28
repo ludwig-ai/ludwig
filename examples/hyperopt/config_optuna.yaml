@@ -1,0 +1,83 @@
+model_type: ecd
+
+input_features:
+  - name: fixed acidity
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: volatile acidity
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: citric acid
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: residual sugar
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: chlorides
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: free sulfur dioxide
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: total sulfur dioxide
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: density
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: pH
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: sulphates
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: alcohol
+    type: number
+    preprocessing:
+      normalization: zscore
+
+output_features:
+  - name: quality
+    type: binary
+
+trainer:
+  epochs: 20
+
+# NOTE: The Optuna executor requires PR #4090 to be merged, or Ludwig >= 0.14.
+# Install: pip install ludwig optuna
+hyperopt:
+  executor:
+    type: optuna
+    num_samples: 20
+    sampler: auto        # auto selects the best sampler; also: tpe, gp, cmaes, random
+    pruner: hyperband    # stop unpromising trials early (MedianPruner also supported)
+    storage: sqlite:///optuna_results.db  # enables resumability across runs
+  parameters:
+    trainer.learning_rate:
+      space: loguniform
+      lower: 1.0e-5
+      upper: 1.0e-2
+    trainer.batch_size:
+      space: int
+      lower: 16
+      upper: 256
+    trainer.optimizer.type:
+      space: choice
+      categories:
+        - adam
+        - adamw
+        - radam
+        - schedule_free_adamw
+  goal: minimize
+  metric: validation.combined.loss
+  split: validation

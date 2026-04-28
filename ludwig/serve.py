@@ -122,9 +122,9 @@ _FEATURE_TYPE_TO_PYTHON: dict[str, type] = {
     "date": str,
     "h3": str,
     "vector": list,
-    "image": Any,
-    "audio": Any,
-    "timeseries": Any,
+    "image": str | bytes | list,
+    "audio": str | bytes | list,
+    "timeseries": list,
 }
 
 

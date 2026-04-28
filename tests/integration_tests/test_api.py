@@ -798,7 +798,7 @@ def test_llm_template_too_long(tmpdir, input_max_sequence_length, global_max_seq
     model = LudwigModel(zero_shot_config)
 
     if expect_raise:
-        with pytest.raises(RuntimeError):
+        with pytest.raises(ValueError):
             model.preprocess(dataset=data_csv1, output_directory=tmpdir)
     else:
         model.preprocess(dataset=data_csv1, output_directory=tmpdir)

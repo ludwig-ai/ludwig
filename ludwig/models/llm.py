@@ -164,21 +164,43 @@ class LLM(BaseModel):
     def initialize_adapter(self):
         """If an adapter config is provided, wrap the model with a PEFT model for fine-tuning.
 
-        Guarded by _adapter_initialized to prevent double-wrapping when called multiple times (e.g. prepare_for_training
-        is called on every Trainer construction, including on resume).
+        Handles both the singular ``config_obj.adapter`` and the multi-adapter
+        ``config_obj.adapters`` forms — the two fields are schema-level mutually exclusive.
+        Guarded by _adapter_initialized to prevent double-wrapping when called multiple
+        times (e.g. prepare_for_training is called on every Trainer construction,
+        including on resume).
         """
-        if self.config_obj.adapter and not self._adapter_initialized:
-            if self.config_obj.trainer.type != "finetune" and not self.config_obj.adapter.pretrained_adapter_weights:
-                raise ValueError(
-                    "Adapter config was provided, but trainer type is not set to `finetune`. Either set the trainer to "
-                    "`finetune` or remove the adapter config."
-                )
+        has_adapter = bool(self.config_obj.adapter)
+        has_adapters = getattr(self.config_obj, "adapters", None) is not None
+
+        if (has_adapter or has_adapters) and not self._adapter_initialized:
+            # Finetune is required for any adapter path unless we're loading pretrained
+            # adapter weights on the single-adapter fast path.
+            if self.config_obj.trainer.type != "finetune":
+                if has_adapter and self.config_obj.adapter.pretrained_adapter_weights:
+                    pass  # allowed: pretrained adapter inference
+                else:
+                    raise ValueError(
+                        "Adapter config was provided, but trainer type is not set to `finetune`. "
+                        "Either set the trainer to `finetune` or remove the adapter config."
+                    )
 
             self.model = initialize_adapter(self.model, self.config_obj)
 
             logger.info("==================================================")
             logger.info("Trainable Parameter Summary For Fine-Tuning")
-            logger.info(f"Fine-tuning with adapter: {self.config_obj.adapter.type}")
+            if has_adapter:
+                logger.info(f"Fine-tuning with adapter: {self.config_obj.adapter.type}")
+            else:
+                adapter_types = [
+                    cfg.get("type") if isinstance(cfg, dict) else cfg.type
+                    for cfg in self.config_obj.adapters.adapters.values()
+                ]
+                logger.info(
+                    "Fine-tuning with %d named adapters: %s",
+                    len(adapter_types),
+                    list(zip(self.config_obj.adapters.adapters.keys(), adapter_types)),
+                )
             self.model.print_trainable_parameters()
             logger.info("==================================================")
 
@@ -187,20 +209,48 @@ class LLM(BaseModel):
     def prepare_for_training(self):
         """Prepare the model for training by setting up quantization and adapters.
 
-        Safe to call multiple times (e.g. when resuming from a checkpoint). Quantization is applied at model-load time
-        in __init__ via load_pretrained_from_config, so prepare_model_for_kbit_training only needs to cast non-quantized
-        layers to float32 and freeze the quantized base — both operations are idempotent. Adapter initialization is
-        guarded by _adapter_initialized so the PEFT wrapper is only created once; on resume the saved adapter weights
-        are subsequently loaded by the trainer via load_state_dict.
+        Safe to call multiple times (e.g. when resuming from a checkpoint). For the bitsandbytes backend, quantization
+        is applied at model-load time in __init__ via load_pretrained_from_config, so prepare_model_for_kbit_training
+        only needs to cast non-quantized layers to float32 and freeze the quantized base — both operations are
+        idempotent. For the torchao backend, quantization / QAT preparation happens here after load. Adapter
+        initialization is guarded by _adapter_initialized so the PEFT wrapper is only created once; on resume the saved
+        adapter weights are subsequently loaded by the trainer via load_state_dict.
         """
-        if self.config_obj.quantization:
-            self.prepare_for_quantized_training()
+        quantization = self.config_obj.quantization
+        backend = getattr(quantization, "backend", "bitsandbytes") if quantization else None
+        if quantization:
+            if backend == "bitsandbytes":
+                self.prepare_for_quantized_training()
+            elif backend == "torchao":
+                self._prepare_for_torchao_training()
         self.initialize_adapter()
 
     def prepare_for_quantized_training(self):
         from peft import prepare_model_for_kbit_training
 
         self.model = prepare_model_for_kbit_training(self.model, use_gradient_checkpointing=False)
+
+    def _prepare_for_torchao_training(self):
+        """Insert torchao fake-quant observers for QAT, or defer PTQ until save for non-QAT.
+
+        * QAT (``quantization.qat: true``): insert fake-quant observers *before* training so
+          the model is trained in the target low-precision regime. Guarded by
+          ``_torchao_qat_prepared`` so repeated prepare_for_training calls do not re-wrap.
+        * PTQ (``quantization.qat: false``): do nothing here — we quantize at save time so
+          gradients flow through the trainable fp32 weights during fine-tuning. For inference-only
+          LLM configs this still gives quantized weights at export via ``save``.
+        """
+        quantization = self.config_obj.quantization
+        if not quantization.qat:
+            return
+        if getattr(self, "_torchao_qat_prepared", False):
+            return
+
+        from ludwig.utils.quantization import prepare_qat_model
+
+        logger.info("Preparing LLM for torchao QAT (mode=%s)", quantization.mode)
+        self.model = prepare_qat_model(self.model, quantization.mode)
+        self._torchao_qat_prepared = True
 
     def to_device(self, device):
         # Always refresh curr_device from actual parameter location, since
@@ -591,11 +641,38 @@ class LLM(BaseModel):
         # avoid this hack
         if self.config_obj.trainer.type != "none":
             weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
+            self._apply_torchao_save_time_quantization()
             # We initialize the model's generation configuration; otherwise, we get a validation error.
             self.model.generation_config = self.generation
             self.model.save_pretrained(weights_save_path)
         else:
             logger.info("Skipped saving LLM without weight adjustments.")
+
+    def _apply_torchao_save_time_quantization(self):
+        """For the torchao backend, quantize (or convert QAT -> quantized) at save time.
+
+        * PTQ (``qat: false``): apply torchao PTQ now so the saved weights are quantized.
+        * QAT (``qat: true``): convert the QAT-prepared model (fake-quant observers) to real
+          quantized weights via ``convert_qat_model``.
+
+        Idempotent via ``_torchao_quantized``: if training checkpoints call save() multiple
+        times we don't double-quantize.
+        """
+        quantization = self.config_obj.quantization
+        if not quantization or getattr(quantization, "backend", "bitsandbytes") != "torchao":
+            return
+        if getattr(self, "_torchao_quantized", False):
+            return
+
+        from ludwig.utils.quantization import convert_qat_model, quantize_model
+
+        if quantization.qat:
+            logger.info("Converting QAT-prepared LLM to %s quantized weights for save", quantization.mode)
+            self.model = convert_qat_model(self.model, quantization.mode)
+        else:
+            logger.info("Applying torchao PTQ (%s) before saving LLM", quantization.mode)
+            self.model = quantize_model(self.model, quantization.mode)
+        self._torchao_quantized = True
 
     def save_base_model(self, save_path):
         """Saves the base LLM model to the given path."""
@@ -662,7 +739,9 @@ class LLM(BaseModel):
     def load(self, save_path):
         """Loads the model from the given path."""
         weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-        if self.config_obj.adapter:
+        if getattr(self.config_obj, "adapters", None) is not None:
+            self._load_multi_adapters(weights_save_path)
+        elif self.config_obj.adapter:
             # Check if the saved weights are merged (no adapter_config.json) or adapter-only
             adapter_config_path = os.path.join(weights_save_path, "adapter_config.json")
             if os.path.exists(adapter_config_path):
@@ -686,6 +765,44 @@ class LLM(BaseModel):
             )
         else:
             logger.info("Skipped loading LLM without weight adjustments.")
+
+    def _load_multi_adapters(self, weights_save_path: str) -> None:
+        """Reload a multi-adapter PeftModel saved via `save_pretrained`.
+
+        PEFT stores each named adapter under a subdirectory at `weights_save_path/<name>/`. We load the first adapter
+        via `PeftModel.from_pretrained(base, path, adapter_name=name)` and every additional adapter via
+        `peft_model.load_adapter(path, adapter_name=name)`. The merged adapter (if configured) was saved just like any
+        other named adapter — it is loaded the same way, no special case needed. Finally we activate whichever adapter
+        the config declares via `set_adapter(active)`.
+        """
+        from peft import PeftModel  # noqa
+
+        adapters_cfg = self.config_obj.adapters
+        names = list(adapters_cfg.adapters.keys())
+        if adapters_cfg.merge is not None:
+            names = names + [adapters_cfg.merge.name]
+
+        if isinstance(self.model, PeftModel):
+            # Already wrapped (e.g. resuming from an in-memory init); peel back to the base.
+            self.model = self.model.base_model
+
+        first_name = names[0]
+        first_adapter_dir = os.path.join(weights_save_path, first_name)
+        if os.path.exists(first_adapter_dir):
+            self.model = PeftModel.from_pretrained(self.model, first_adapter_dir, adapter_name=first_name)
+        else:
+            # Fallback: PEFT may have saved adapters directly at `weights_save_path` rather
+            # than in per-name subdirectories (old save layout). Use the original path.
+            self.model = PeftModel.from_pretrained(self.model, weights_save_path, adapter_name=first_name)
+
+        for name in names[1:]:
+            adapter_dir = os.path.join(weights_save_path, name)
+            load_path = adapter_dir if os.path.exists(adapter_dir) else weights_save_path
+            self.model.load_adapter(load_path, adapter_name=name)
+
+        active = adapters_cfg.active or names[0]
+        self.model.set_adapter(active)
+        logger.info("Reloaded adapters: %s (active=%s)", names, active)
 
     def get_args(self):
         """Returns init arguments for constructing this model."""
