@@ -1,0 +1,31 @@
+model_type: ecd
+
+input_features:
+  - name: sensor_a
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: sensor_b
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: sensor_c
+    type: number
+    preprocessing:
+      normalization: zscore
+  - name: sensor_type
+    type: category
+
+output_features:
+  - name: anomaly
+    type: binary
+
+combiner:
+  type: hypernetwork
+  hidden_size: 128
+  hyper_hidden_size: 64
+  output_size: 128
+
+trainer:
+  epochs: 30
+  learning_rate: 0.001
