@@ -58,6 +58,15 @@ class TabPFNV2Combiner(Combiner):
         # so __init__ can be called with input_features=None for schema inspection.
         self.projection = torch.nn.LazyLinear(config.output_size)
 
+        # Check tabpfn availability eagerly so users get a clear pip install message
+        # immediately rather than a cryptic error at forward-pass time.
+        try:
+            import tabpfn  # noqa: F401
+        except ImportError as exc:
+            raise ImportError(
+                "The tabpfn_v2 combiner requires the optional 'tabpfn' package. " "Install with: pip install tabpfn"
+            ) from exc
+
         # Defer heavy TabPFN loading until _lazy_load_tabpfn() is explicitly called.
         self._tabpfn_model = None
 
