@@ -54,9 +54,9 @@ class TabPFNV2Combiner(Combiner):
         self.name = "TabPFNV2Combiner"
 
         self.output_size = config.output_size
-        # Input size = sum of all encoder output dims (computed from input_features).
-        concat_size = int(self.concatenated_shape[-1])
-        self.projection = torch.nn.Linear(concat_size, self.output_size)
+        # LazyLinear defers the in_features inference to the first forward pass,
+        # so __init__ can be called with input_features=None for schema inspection.
+        self.projection = torch.nn.LazyLinear(config.output_size)
 
         # Defer heavy TabPFN loading until _lazy_load_tabpfn() is explicitly called.
         self._tabpfn_model = None
