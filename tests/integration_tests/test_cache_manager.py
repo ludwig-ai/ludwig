@@ -1,4 +1,5 @@
 import os
+import tempfile
 from pathlib import Path
 
 import pandas as pd
@@ -68,6 +69,16 @@ def test_cache_dataset(use_cache_dir, use_split, use_df, tmpdir, change_test_dir
         train_path = os.path.join(tmpdir, "train")
         test_path = os.path.join(tmpdir, "test")
         val_path = os.path.join(tmpdir, "validation")
+
+    # CacheableDataframe has no backing file, so its cache directory is the system tempdir.
+    # CacheablePath uses the file's own directory (tmpdir).
+    if use_df and not use_cache_dir:
+        train_path = os.path.join(tempfile.gettempdir(), "dataset")
+        test_path = val_path = train_path
+        if use_split:
+            train_path = os.path.join(tempfile.gettempdir(), "train")
+            test_path = os.path.join(tempfile.gettempdir(), "test")
+            val_path = os.path.join(tempfile.gettempdir(), "validation")
 
     data_ext = dataset_manager.data_format  # "parquet"
     assert cache_map[META] == f"{train_path}.meta.json"
