@@ -881,13 +881,14 @@ def _run_train_gpu_load_cpu(config, data_parquet):
     [(256, 0.001), (8, 0.001)],
 )
 def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu, max_batch_size, expected_final_learning_rate):
+    out_feature = category_feature(decoder={"vocab_size": 2}, reduce_input="sum")
     config = {
         "input_features": [
             number_feature(normalization="zscore"),
             set_feature(),
             binary_feature(),
         ],
-        "output_features": [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")],
+        "output_features": [out_feature],
         "combiner": {"type": "concat", "output_size": 14},
         TRAINER: {
             "train_steps": 3,
@@ -895,19 +896,47 @@ def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu, max_batch_size, expect
             "learning_rate": "auto",
             "max_batch_size": max_batch_size,
         },
+        # Use a fixed split so we can guarantee both category values appear in every
+        # split bucket.  With vocab_size=2 and a random 70/10/20 split the validation
+        # set (~5 rows) has ~5% probability of being single-category, causing a
+        # hard InputDataError on every affected CI run.
+        "preprocessing": {"split": {"type": "fixed"}},
     }
 
     backend_config = copy.deepcopy(RAY_BACKEND_CONFIG)
 
     num_samples = 50
     csv_filename = os.path.join(tmpdir, "dataset.csv")
-    dataset_csv = generate_data(
-        config["input_features"], config["output_features"], csv_filename, num_examples=num_samples
-    )
-    dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
+    generate_data(config["input_features"], config["output_features"], csv_filename, num_examples=num_samples)
+
+    # Post-process: add an explicit "split" column (0=train, 1=val, 2=test) and
+    # pin at least one row of each category value into every split so neither val
+    # nor test can ever be single-category regardless of the random data draw.
+    df = pd.read_csv(csv_filename)
+    cat_col = out_feature["name"]
+    cat_vals = sorted(df[cat_col].unique().tolist())
+
+    n = len(df)
+    n_val = max(4, int(n * DEFAULT_PROBABILITIES[1]))
+    n_test = max(4, int(n * DEFAULT_PROBABILITIES[2]))
+    n_train = n - n_val - n_test
+    df["split"] = [0] * n_train + [1] * n_val + [2] * n_test
+
+    # For each split bucket, ensure every category value appears at least once.
+    for split_id, split_rows in [(0, n_train), (1, n_val), (2, n_test)]:
+        mask = df["split"] == split_id
+        present = set(df.loc[mask, cat_col].unique())
+        for i, val in enumerate(cat_vals):
+            if val not in present:
+                idx = df[mask].index[i % mask.sum()]
+                df.at[idx, cat_col] = val
+
+    df.to_csv(csv_filename, index=False)
+
+    dataset_parquet = create_data_set_to_use("parquet", csv_filename)
     model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config, evaluate=False)
 
-    num_train_samples = num_samples * DEFAULT_PROBABILITIES[0]
+    num_train_samples = n_train
     max_batch_size_by_train_examples = MAX_BATCH_SIZE_DATASET_FRACTION * num_train_samples
     max_batch_size = (
         max_batch_size_by_train_examples
