@@ -16,6 +16,7 @@
 
 import os
 import re
+import tempfile
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -61,7 +62,7 @@ class CacheableDataframe(CacheableDataset):
         return alphanum(self.name)
 
     def get_cache_directory(self) -> str:
-        return os.getcwd()
+        return tempfile.gettempdir()
 
     def unwrap(self) -> str | DataFrame:
         return self.df
