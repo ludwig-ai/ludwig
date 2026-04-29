@@ -6,6 +6,8 @@ Replaces the static weighted sum in BaseModel.train_loss() with pluggable strate
 - uncertainty: Homoscedastic uncertainty weighting (Kendall et al., CVPR 2018)
 - famo: Fast Adaptive Multitask Optimization (Liu et al., NeurIPS 2023)
 - gradnorm: Gradient normalization (Chen et al., ICML 2018)
+- nash_mtl: Nash bargaining for multi-task learning (Navon et al., ICML 2022)
+- pareto_mtl: Preference-conditioned Pareto scalarisation (Mahapatra & Rajan, ICML 2020)
 """
 
 import logging
@@ -85,10 +87,12 @@ class UncertaintyLossBalancer(LossBalancer):
         self.log_vars = nn.ParameterDict({name: nn.Parameter(torch.zeros(1)) for name in output_feature_names})
 
     def forward(self, per_task_losses, per_task_weights):
-        total = torch.tensor(0.0, device=next(iter(per_task_losses.values())).device)
+        total = next(iter(per_task_losses.values())).new_zeros(1).squeeze()
         for name, loss in per_task_losses.items():
-            precision = torch.exp(-self.log_vars[name])
-            total = total + per_task_weights[name] * (precision * loss + 0.5 * self.log_vars[name])
+            # Clamp log_vars to prevent exp overflow / underflow.
+            log_var = self.log_vars[name].clamp(min=-20.0, max=20.0)
+            precision = torch.exp(-log_var)
+            total = total + per_task_weights[name] * (precision * loss + 0.5 * log_var)
         return total
 
 
@@ -106,11 +110,10 @@ class FAMOLossBalancer(LossBalancer):
         self._prev_losses: dict[str, float] = {}
 
     def forward(self, per_task_losses, per_task_weights):
-        # Compute softmax weights from log_weights
         log_w = torch.stack([self.log_weights[name] for name in self.output_feature_names])
         weights = F.softmax(log_w, dim=0)
 
-        total = torch.tensor(0.0, device=next(iter(per_task_losses.values())).device)
+        total = next(iter(per_task_losses.values())).new_zeros(1).squeeze()
         for i, name in enumerate(self.output_feature_names):
             total = total + per_task_weights[name] * weights[i] * per_task_losses[name]
         return total
@@ -118,12 +121,11 @@ class FAMOLossBalancer(LossBalancer):
     @torch.no_grad()
     def post_step(self, per_task_losses):
         if self._prev_losses:
-            for i, name in enumerate(self.output_feature_names):
+            for name in self.output_feature_names:
                 curr = per_task_losses[name].detach().item()
                 prev = self._prev_losses.get(name, curr)
                 if prev > 0:
                     ratio = curr / (prev + 1e-8)
-                    # EMA update of log_weights based on loss ratio
                     self.log_weights[name].data += self.lr * (ratio - 1.0)
 
         self._prev_losses = {name: loss.detach().item() for name, loss in per_task_losses.items()}
@@ -143,20 +145,17 @@ class GradNormLossBalancer(LossBalancer):
         self._initial_losses: dict[str, float] = {}
 
     def forward(self, per_task_losses, per_task_weights):
-        total = torch.tensor(0.0, device=next(iter(per_task_losses.values())).device)
+        total = next(iter(per_task_losses.values())).new_zeros(1).squeeze()
         for name, loss in per_task_losses.items():
-            # Use learned task_weights instead of static weights
             total = total + torch.abs(self.task_weights[name]) * per_task_weights[name] * loss
         return total
 
     @torch.no_grad()
     def post_step(self, per_task_losses):
-        # Record initial losses on first step
         if not self._initial_losses:
             self._initial_losses = {name: loss.detach().item() for name, loss in per_task_losses.items()}
             return
 
-        # Compute inverse training rates
         loss_ratios = {}
         for name in self.output_feature_names:
             initial = self._initial_losses.get(name, 1.0)
@@ -166,7 +165,6 @@ class GradNormLossBalancer(LossBalancer):
         num_tasks = len(self.output_feature_names)
         mean_ratio = sum(loss_ratios.values()) / num_tasks
 
-        # Compute target weights based on inverse training rate
         for name in self.output_feature_names:
             relative_rate = loss_ratios[name] / (mean_ratio + 1e-8)
             target_weight = relative_rate**self.alpha
@@ -176,39 +174,6 @@ class GradNormLossBalancer(LossBalancer):
         total_weight = sum(torch.abs(self.task_weights[name]).item() for name in self.output_feature_names)
         for name in self.output_feature_names:
             self.task_weights[name].data *= num_tasks / (total_weight + 1e-8)
-
-
-LOSS_BALANCER_REGISTRY = {
-    "none": NoneLossBalancer,
-    "log_transform": LogTransformLossBalancer,
-    "uncertainty": UncertaintyLossBalancer,
-    "famo": FAMOLossBalancer,
-    "gradnorm": GradNormLossBalancer,
-}
-
-
-def create_loss_balancer(
-    strategy: str,
-    output_feature_names: list[str],
-    alpha: float = 1.5,
-    lr: float = 0.01,
-    preference_vector: list[float] | None = None,
-    tchebycheff_weight: float = 0.5,
-) -> LossBalancer:
-    """Create a loss balancer from strategy name."""
-    cls = LOSS_BALANCER_REGISTRY[strategy]
-    if strategy == "famo":
-        return cls(output_feature_names, alpha=alpha, lr=lr)
-    elif strategy == "gradnorm":
-        return cls(output_feature_names, alpha=alpha)
-    elif strategy == "pareto_mtl":
-        return cls(
-            output_feature_names,
-            preference_vector=preference_vector,
-            tchebycheff_weight=tchebycheff_weight,
-        )
-    else:
-        return cls(output_feature_names)
 
 
 class NashMTLLossBalancer(LossBalancer):
@@ -226,34 +191,24 @@ class NashMTLLossBalancer(LossBalancer):
         super().__init__(output_feature_names)
         self.update_rate = update_rate
         n = len(output_feature_names)
-        # Initialize with uniform weights
         self.task_weights = nn.ParameterDict({name: nn.Parameter(torch.ones(1) / n) for name in output_feature_names})
 
     def forward(self, per_task_losses, per_task_weights):
-        total = torch.tensor(0.0, device=next(iter(per_task_losses.values())).device)
+        total = next(iter(per_task_losses.values())).new_zeros(1).squeeze()
         for name, loss in per_task_losses.items():
             total = total + torch.abs(self.task_weights[name]) * per_task_weights[name] * loss
         return total
 
     @torch.no_grad()
     def post_step(self, per_task_losses):
-        # Nash bargaining update: weight inversely proportional to loss
-        # (tasks with higher loss get higher weight to equalize marginal gains)
         loss_values = torch.stack([per_task_losses[name].detach() for name in self.output_feature_names])
-
-        # Nash solution: weights proportional to 1/loss (equalize marginal contributions)
         inv_losses = 1.0 / (loss_values + 1e-8)
         target_weights = inv_losses / inv_losses.sum()
 
-        # Soft update
         for i, name in enumerate(self.output_feature_names):
             self.task_weights[name].data = (1 - self.update_rate) * self.task_weights[
                 name
             ].data + self.update_rate * target_weights[i]
-
-
-# Add to registry
-LOSS_BALANCER_REGISTRY["nash_mtl"] = NashMTLLossBalancer
 
 
 class ParetoMTLLossBalancer(LossBalancer):
@@ -324,5 +279,40 @@ class ParetoMTLLossBalancer(LossBalancer):
         return (1.0 - self.tchebycheff_weight) * linear_term + self.tchebycheff_weight * tcheb_term
 
 
-# Add to registry
-LOSS_BALANCER_REGISTRY["pareto_mtl"] = ParetoMTLLossBalancer
+LOSS_BALANCER_REGISTRY: dict[str, type[LossBalancer]] = {
+    "none": NoneLossBalancer,
+    "log_transform": LogTransformLossBalancer,
+    "uncertainty": UncertaintyLossBalancer,
+    "famo": FAMOLossBalancer,
+    "gradnorm": GradNormLossBalancer,
+    "nash_mtl": NashMTLLossBalancer,
+    "pareto_mtl": ParetoMTLLossBalancer,
+}
+
+
+def create_loss_balancer(
+    strategy: str,
+    output_feature_names: list[str],
+    alpha: float = 1.5,
+    lr: float = 0.01,
+    preference_vector: list[float] | None = None,
+    tchebycheff_weight: float = 0.5,
+) -> LossBalancer:
+    """Create a loss balancer from strategy name."""
+    if strategy not in LOSS_BALANCER_REGISTRY:
+        valid = sorted(LOSS_BALANCER_REGISTRY)
+        raise ValueError(f"Unknown loss balancing strategy {strategy!r}. Valid options: {valid}")
+
+    cls = LOSS_BALANCER_REGISTRY[strategy]
+    if strategy == "famo":
+        return cls(output_feature_names, alpha=alpha, lr=lr)
+    elif strategy == "gradnorm":
+        return cls(output_feature_names, alpha=alpha)
+    elif strategy == "pareto_mtl":
+        return cls(
+            output_feature_names,
+            preference_vector=preference_vector,
+            tchebycheff_weight=tchebycheff_weight,
+        )
+    else:
+        return cls(output_feature_names)
