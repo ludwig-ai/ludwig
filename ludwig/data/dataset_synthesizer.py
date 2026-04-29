@@ -18,6 +18,7 @@ import logging
 import os
 import random
 import string
+import tempfile
 import sys
 import uuid
 
@@ -176,7 +177,7 @@ def build_synthetic_dataset_df(dataset_size: int, config: ModelConfigDict) -> pd
 
 
 @DeveloperAPI
-def build_synthetic_dataset(dataset_size: int, features: list[dict], outdir: str = "."):
+def build_synthetic_dataset(dataset_size: int, features: list[dict], outdir: str | None = None):
     """Synthesizes a dataset for testing purposes.
 
     :param dataset_size: (int) size of the dataset
@@ -213,6 +214,8 @@ def build_synthetic_dataset(dataset_size: int, features: list[dict], outdir: str
         {name: vector_2, type: vector},
     ]
     """
+    if outdir is None:
+        outdir = tempfile.gettempdir()
     build_feature_parameters(features)
     header = []
     for feature in features:

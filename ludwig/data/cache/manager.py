@@ -1,5 +1,6 @@
 import logging
 import os
+import tempfile
 
 from ludwig.constants import CHECKSUM, META, TEST, TRAINING, VALIDATION
 from ludwig.data.cache.types import alphanum, CacheableDataset
@@ -152,7 +153,7 @@ class CacheManager:
     def get_cache_directory(self, dataset: CacheableDataset | None) -> str:
         if self._cache_dir is None:
             if dataset is None:
-                return os.getcwd()
+                return tempfile.gettempdir()
             return dataset.get_cache_directory()
         return self._cache_dir
 
