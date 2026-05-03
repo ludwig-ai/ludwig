@@ -18,8 +18,8 @@ import logging
 import os
 import random
 import string
-import tempfile
 import sys
+import tempfile
 import uuid
 
 import numpy as np
