@@ -224,7 +224,7 @@ def train_fn(
     device = ray_get_device()
     model = model.to(device)
 
-    trainer = RemoteTrainer(model=model, report_tqdm_to_ray=True, **executable_kwargs)
+    trainer = RemoteTrainer(model=model, device=str(device), report_tqdm_to_ray=True, **executable_kwargs)
     results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
 
     if results is not None:
@@ -293,7 +293,7 @@ def tune_batch_size_fn(
         device = get_torch_device()
         model = model.to(device)
 
-        trainer = RemoteTrainer(model=model, **executable_kwargs)
+        trainer = RemoteTrainer(model=model, device=device, **executable_kwargs)
         return trainer.tune_batch_size(ludwig_config, train_shard, **kwargs)
     finally:
         torch.cuda.empty_cache()
@@ -324,7 +324,7 @@ def tune_learning_rate_fn(
         device = get_torch_device()
         model = model.to(device)
 
-        trainer = RemoteTrainer(model=model, **executable_kwargs)
+        trainer = RemoteTrainer(model=model, device=device, **executable_kwargs)
         return trainer.tune_learning_rate(config, train_shard, **kwargs)
     finally:
         torch.cuda.empty_cache()

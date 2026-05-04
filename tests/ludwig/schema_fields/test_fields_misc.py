@@ -17,6 +17,54 @@ def get_marshmallow_field_from_metadata(dfield):
     return None
 
 
+def test_metaclass_field_override_with_protectedstring():
+    """Regression test: _LudwigModelMeta must preserve field annotations when a subclass overrides a base
+    class field with ProtectedString (or any FieldInfo default).
+
+    On Python 3.14 the class namespace carries annotations in __annotate_func__ rather than
+    __annotations__, so naively reading namespace['__annotations__'] returns an empty dict.
+    The metaclass must evaluate __annotate_func__ when present so that the annotations are not
+    silently discarded, which would make pydantic raise
+    'Field X requires a type annotation' at class definition time.
+    See https://github.com/ludwig-ai/ludwig/issues/4142 (Python 3.14 regression).
+    """
+
+    class Base(schema_utils.LudwigBaseConfig):
+        type: str
+
+    class Child(Base):
+        type: str = schema_utils.ProtectedString("child_type")
+
+    instance = Child()
+    assert instance.type == "child_type"
+
+    with pytest.raises(PydanticValidationError):
+        Child(type="wrong_type")
+
+
+def test_metaclass_annotations_not_lost_on_py314():
+    """Regression test: LudwigBaseConfig subclass with multiple annotated fields must retain all
+    annotations even on Python 3.14 (where __annotate_func__ replaces __annotations__ in the
+    class namespace during metaclass __new__).
+    """
+
+    class MyConfig(schema_utils.LudwigBaseConfig):
+        name: str = schema_utils.StringOptions(["a", "b"], default="a", allow_none=False)
+        value: int | None = None
+        flag: bool = False
+
+    instance = MyConfig()
+    assert instance.name == "a"
+    assert instance.value is None
+    assert instance.flag is False
+
+    # All three fields must appear in the pydantic model fields
+    fields = MyConfig.model_fields
+    assert "name" in fields
+    assert "value" in fields
+    assert "flag" in fields
+
+
 # Simple marshmallow fields:
 
 
