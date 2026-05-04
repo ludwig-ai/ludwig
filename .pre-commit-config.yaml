@@ -39,7 +39,7 @@ repos:
       - id: pyupgrade
         args: [--py312-plus]
   - repo: https://github.com/PyCQA/isort
-    rev: 8.0.1
+    rev: 9.0.0a3
     hooks:
       - id: isort
         name: Format imports
