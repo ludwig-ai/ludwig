@@ -194,7 +194,18 @@ class _LudwigModelMeta(type(BaseModel)):
     def __new__(mcs, name, bases, namespace, **kwargs):
         import dataclasses as _dc
 
-        annotations = namespace.get("__annotations__", {})
+        # Python 3.14+ uses __annotate_func__ for lazy annotation evaluation; the
+        # __annotations__ dict in the namespace is empty until the class is fully built.
+        # Evaluate eagerly so the rest of this metaclass can read and modify annotations.
+        if "__annotate_func__" in namespace:
+            try:
+                import annotationlib
+
+                annotations = dict(namespace["__annotate_func__"](annotationlib.Format.VALUE))
+            except Exception:
+                annotations = {}
+        else:
+            annotations = namespace.get("__annotations__", {})
 
         # Detect @property definitions and prevent pydantic from treating them as field defaults.
         # Properties that don't shadow inherited fields work fine as-is because pydantic

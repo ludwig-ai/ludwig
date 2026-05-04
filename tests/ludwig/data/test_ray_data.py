@@ -9,10 +9,57 @@ import pytest
 ray = pytest.importorskip("ray")  # noqa
 dask = pytest.importorskip("dask")  # noqa
 
-from ludwig.data.dataset.ray import RayDatasetBatcher, read_remote_parquet  # noqa
+from ludwig.data.dataset.ray import RayDatasetBatcher, RayDatasetShardBatcher, read_remote_parquet  # noqa
 
 # Mark the entire module as distributed
 pytestmark = pytest.mark.distributed
+
+
+def test_prefetch_batches_value():
+    """Regression test: both Ray batcher async readers must use prefetch_batches > 1.
+
+    prefetch_batches=1 starves the GPU because only one batch is in flight at a time.
+    The fix sets it to 4, which keeps more batches queued so the GPU stays busy.
+    See https://github.com/ludwig-ai/ludwig/issues/4142
+    """
+    import inspect
+    import re
+
+    src_batcher = inspect.getsource(RayDatasetBatcher._create_async_reader)
+    src_shard = inspect.getsource(RayDatasetShardBatcher._create_async_reader)
+
+    def _get_prefetch_value(src: str) -> int:
+        match = re.search(r"prefetch_batches\s*=\s*(\d+)", src)
+        assert match, "prefetch_batches kwarg not found in async reader source"
+        return int(match.group(1))
+
+    assert (
+        _get_prefetch_value(src_batcher) > 1
+    ), "RayDatasetBatcher uses prefetch_batches=1, which starves the GPU. Increase it."
+    assert (
+        _get_prefetch_value(src_shard) > 1
+    ), "RayDatasetShardBatcher uses prefetch_batches=1, which starves the GPU. Increase it."
+
+
+def test_train_fn_passes_device_to_remote_trainer():
+    """Regression test: train_fn must pass device= to RemoteTrainer so the trainer's self.device
+    matches the Ray-assigned GPU rather than falling back to get_torch_device().
+
+    Without this, metrics_to_device() and batch-to-device tensors may disagree with the model's
+    actual placement when running inside a Ray Train worker.
+    See https://github.com/ludwig-ai/ludwig/issues/4142
+    """
+    import inspect
+
+    from ludwig.backend.ray import train_fn
+
+    src = inspect.getsource(train_fn)
+    # The RemoteTrainer() call must forward device= so Trainer.__init__ doesn't
+    # silently override it with get_torch_device().
+    assert "RemoteTrainer(model=model, device=" in src, (
+        "train_fn must pass device= to RemoteTrainer to avoid device mismatch. "
+        "See https://github.com/ludwig-ai/ludwig/issues/4142"
+    )
 
 
 def test_async_reader_error():
