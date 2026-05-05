@@ -65,11 +65,95 @@ class BaseAdapterConfig(schema_utils.LudwigBaseConfig, ABC):
 
 
 @DeveloperAPI
+class EvaSubConfig(schema_utils.LudwigBaseConfig):
+    """Configuration for EVA (Explained Variance Adaptation) LoRA initialization.
+
+    EVA initializes LoRA based on the SVD of layer input activations, achieving state-of-the-art
+    performance by adapting the adapter directions to the actual data distribution.
+    Paper: https://arxiv.org/abs/2410.07170
+    """
+
+    rho: float = schema_utils.NonNegativeFloat(
+        default=2.0,
+        description="Scaling factor for EVA. Controls how strongly activations influence the initialization.",
+    )
+    tau: float = schema_utils.FloatRange(
+        default=0.99,
+        min=0.0,
+        max=1.0,
+        description="Momentum for running statistics in EVA.",
+    )
+    use_label_mask: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether to mask padding/ignore tokens when computing activation statistics.",
+    )
+    label_mask_value: int = schema_utils.Integer(
+        default=-100,
+        description="Token id to mask out (usually the ignore_index for cross-entropy loss).",
+    )
+    whiten: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to whiten activations before computing SVD.",
+    )
+    adjust_scaling_factors: bool = schema_utils.Boolean(
+        default=True,
+        description="Adjust LoRA scaling factors after EVA initialization to preserve pre-trained model outputs.",
+    )
+
+
+@DeveloperAPI
+class EvaSubConfigField(schema_utils.NestedConfigField):
+    def __init__(self):
+        super().__init__(EvaSubConfig, allow_none=True, default_missing=True)
+
+    def _jsonschema_type_mapping(self):
+        return schema_utils.unload_jsonschema_from_config_class(EvaSubConfig, title="EvaConfig")
+
+
+@DeveloperAPI
+class LoftQSubConfig(schema_utils.LudwigBaseConfig):
+    """Configuration for LoftQ quantization-aware LoRA initialization.
+
+    LoftQ simultaneously quantizes the backbone weights and initializes LoRA adapters
+    to minimize the quantization error. Requires `init_lora_weights='loftq'`.
+    Paper: https://arxiv.org/abs/2310.08659
+    """
+
+    loftq_bits: int = schema_utils.IntegerOptions(
+        options=[2, 4, 8],
+        default=4,
+        description="Number of bits for LoftQ quantization (2, 4, or 8).",
+    )
+    loftq_iter: int = schema_utils.PositiveInteger(
+        default=1,
+        description="Number of LoftQ iterations. More iterations improve approximation quality.",
+    )
+
+
+@DeveloperAPI
+class LoftQSubConfigField(schema_utils.NestedConfigField):
+    def __init__(self):
+        super().__init__(LoftQSubConfig, allow_none=True, default_missing=True)
+
+    def _jsonschema_type_mapping(self):
+        return schema_utils.unload_jsonschema_from_config_class(LoftQSubConfig, title="LoftQConfig")
+
+
+@DeveloperAPI
 @register_adapter(name="lora")
 class LoraConfig(BaseAdapterConfig):
     def __post_init__(self):
         if self.alpha is None:
             self.alpha = self.r * 2
+        if self.init_lora_weights == "loftq" and self.loftq_config is None:
+            raise ConfigValidationError(
+                "`loftq_config` must be set when `init_lora_weights` is 'loftq'. "
+                "Example: loftq_config: {loftq_bits: 4, loftq_iter: 1}"
+            )
+        if self.init_lora_weights == "eva" and self.eva_config is None:
+            raise ConfigValidationError(
+                "`eva_config` must be set when `init_lora_weights` is 'eva'. " "Example: eva_config: {rho: 2.0}"
+            )
 
     type: str = schema_utils.ProtectedString(
         "lora",
@@ -148,8 +232,93 @@ class LoraConfig(BaseAdapterConfig):
         ),
     )
 
+    init_lora_weights: str | bool = schema_utils.StringOptions(
+        options=["default", "gaussian", "eva", "olora", "pissa", "corda", "loftq", "orthogonal"],
+        default="default",
+        allow_none=False,
+        description=(
+            "Initialization strategy for LoRA weight matrices. "
+            "'default' uses the standard Kaiming uniform init (A) and zeros (B). "
+            "'gaussian' uses Gaussian init for A. "
+            "'pissa' (Principal Singular values and Singular vectors Adaptation) initializes using SVD of the "
+            "pretrained weight, converging faster and often outperforming standard LoRA. "
+            "Paper: https://arxiv.org/abs/2404.02948. "
+            "'eva' (Explained Variance Adaptation) initializes from the SVD of layer input activations — "
+            "requires `eva_config` to be set. Paper: https://arxiv.org/abs/2410.07170. "
+            "'corda' (Context-Oriented Decomposition Adaptation) combines PiSSA and full fine-tuning signals, "
+            "converging faster than PiSSA. Paper: https://arxiv.org/abs/2406.05223. "
+            "'olora' (Orthonormal LoRA) uses QR decomposition for better conditioning. "
+            "'loftq' (LoftQ) jointly quantizes base weights and initializes LoRA — "
+            "requires `loftq_config` to be set. Paper: https://arxiv.org/abs/2310.08659. "
+            "'orthogonal' uses orthogonal initialization."
+        ),
+    )
+
+    eva_config: EvaSubConfig | None = EvaSubConfigField().get_default_field()
+
+    loftq_config: LoftQSubConfig | None = LoftQSubConfigField().get_default_field()
+
+    rank_pattern: dict | None = schema_utils.Dict(
+        default=None,
+        allow_none=True,
+        description=(
+            "Per-layer rank overrides as a mapping of layer name (or regex) to rank integer. "
+            "Overrides the global `r` for matched layers. Useful for LoRA-XS style configurations "
+            "where different layers benefit from different ranks. "
+            "Example: {'model.layers.0.self_attn.q_proj': 4, 'model.layers.0.self_attn.v_proj': 2}"
+        ),
+    )
+
+    alpha_pattern: dict | None = schema_utils.Dict(
+        default=None,
+        allow_none=True,
+        description=(
+            "Per-layer alpha (scaling) overrides as a mapping of layer name (or regex) to float. "
+            "Overrides the global `alpha` for matched layers."
+        ),
+    )
+
+    layer_replication: list | None = schema_utils.List(
+        default=None,
+        allow_none=True,
+        description=(
+            "Layer replication configuration as a list of [start, end] index pairs. Enables depth-wise "
+            "parameter efficiency by sharing LoRA weights across layer ranges. "
+            "Example: [[0, 4], [2, 5]] creates two overlapping groups."
+        ),
+    )
+
     def to_config(self, task_type: str = None, **kwargs) -> "PeftConfig":
         from peft import LoraConfig as _LoraConfig
+
+        init_weights = self.init_lora_weights
+        if init_weights == "default":
+            init_weights = True
+
+        eva_config = None
+        loftq_config = None
+        if init_weights == "eva" and self.eva_config is not None:
+            from peft import EvaConfig as _EvaConfig
+
+            eva_config = _EvaConfig(
+                rho=self.eva_config.rho,
+                tau=self.eva_config.tau,
+                use_label_mask=self.eva_config.use_label_mask,
+                label_mask_value=self.eva_config.label_mask_value,
+                whiten=self.eva_config.whiten,
+                adjust_scaling_factors=self.eva_config.adjust_scaling_factors,
+            )
+        elif init_weights == "loftq" and self.loftq_config is not None:
+            from peft import LoftQConfig as _LoftQConfig
+
+            loftq_config = _LoftQConfig(
+                loftq_bits=self.loftq_config.loftq_bits,
+                loftq_iter=self.loftq_config.loftq_iter,
+            )
+
+        layer_replication = None
+        if self.layer_replication is not None:
+            layer_replication = [tuple(pair) for pair in self.layer_replication]
 
         return _LoraConfig(
             r=self.r,
@@ -160,6 +329,12 @@ class LoraConfig(BaseAdapterConfig):
             task_type=task_type,
             use_rslora=self.use_rslora,
             use_dora=self.use_dora,
+            init_lora_weights=init_weights,
+            eva_config=eva_config,
+            loftq_config=loftq_config,
+            rank_pattern=self.rank_pattern or {},
+            alpha_pattern=self.alpha_pattern or {},
+            layer_replication=layer_replication,
         )
 
     @classmethod
@@ -707,6 +882,427 @@ class BOFTAdapterConfig(BaseAdapterConfig):
             target_modules=self.target_modules,
             task_type=task_type,
         )
+
+
+@DeveloperAPI
+@register_adapter(name="tinylora")
+class TinyLoraAdapterConfig(BaseAdapterConfig):
+    """TinyLoRA: Extreme parameter-efficient fine-tuning via SVD projection.
+
+    Uses SVD decomposition of frozen weights and projects a tiny trainable vector through fixed random tensors.
+    Enables fine-tuning in as few as 13 parameters. Ideal for extremely constrained hardware or edge deployment.
+    Paper: https://arxiv.org/abs/2602.04118
+    """
+
+    type: str = schema_utils.ProtectedString("tinylora", description="TinyLoRA adapter (LoRA-XS equivalent).")
+
+    r: int = schema_utils.PositiveInteger(
+        default=2,
+        description="SVD rank for the frozen U, Sigma, V decomposition. The paper recommends r=2.",
+    )
+
+    u: int = schema_utils.PositiveInteger(
+        default=64,
+        description=(
+            "Trainable vector dimension per group. Controls the expressivity of the adaptation. "
+            "Can be as low as 1–13 for extreme parameter efficiency."
+        ),
+    )
+
+    weight_tying: float = schema_utils.FloatRange(
+        default=0.0,
+        min=0.0,
+        max=1.0,
+        description=(
+            "Degree of weight tying across target modules (0.0 = no sharing, 1.0 = full sharing). "
+            "Sharing trainable vectors across modules further reduces parameter count."
+        ),
+    )
+
+    projection_seed: int = schema_utils.NonNegativeInteger(
+        default=42,
+        description="Random seed for generating the fixed projection matrices.",
+    )
+
+    save_projection: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether to save the projection tensors in the state dict.",
+    )
+
+    tinylora_dropout: float = schema_utils.NonNegativeFloat(
+        default=0.0,
+        description="Dropout probability for TinyLoRA layers.",
+    )
+
+    target_modules: list[str] | None = schema_utils.List(
+        default=None,
+        allow_none=True,
+        description="List of module names or regex to apply TinyLoRA to.",
+    )
+
+    def to_config(self, task_type: str = None, **kwargs):
+        from peft import TinyLoraConfig as _TinyLoraConfig
+
+        return _TinyLoraConfig(
+            r=self.r,
+            u=self.u,
+            weight_tying=self.weight_tying,
+            projection_seed=self.projection_seed,
+            save_projection=self.save_projection,
+            tinylora_dropout=self.tinylora_dropout,
+            target_modules=self.target_modules,
+            task_type=task_type,
+        )
+
+    @classmethod
+    def name(cls) -> str:
+        return "TinyLoRA"
+
+    @classmethod
+    def description(cls) -> str:
+        return "TinyLoRA: extreme parameter-efficient fine-tuning via SVD projection (LoRA-XS variant)."
+
+
+@DeveloperAPI
+@register_adapter(name="c3a")
+class C3AAdapterConfig(BaseAdapterConfig):
+    """C3A: Contextual / Conditional / Compositional Adapter.
+
+    Uses block-diagonal matrices for structured parameter efficiency.
+    Enables context-aware adapter routing and multi-task modularity.
+    """
+
+    type: str = schema_utils.ProtectedString("c3a", description="C3A adapter.")
+
+    block_size: int = schema_utils.PositiveInteger(
+        default=256,
+        description=(
+            "Block size for C3A, must be divisible by both the input size and the output size of each target layer. "
+            "Setting this to the GCD of all target layer dimensions is a safe default. "
+            "Larger block sizes mean fewer parameters."
+        ),
+    )
+
+    target_modules: list[str] | None = schema_utils.List(
+        default=None,
+        allow_none=True,
+        description="List of module names or regex to apply C3A to.",
+    )
+
+    bias_type: str = schema_utils.StringOptions(
+        options=["none", "all", "c3a_only"],
+        default="none",
+        description="Bias type for C3A. 'none' trains no biases; 'all' or 'c3a_only' trains the adapter biases.",
+    )
+
+    def to_config(self, task_type: str = None, **kwargs):
+        from peft import C3AConfig as _C3AConfig
+
+        return _C3AConfig(
+            block_size=self.block_size,
+            target_modules=self.target_modules,
+            bias=self.bias_type,
+            block_size_pattern={},
+            task_type=task_type,
+        )
+
+    @classmethod
+    def name(cls) -> str:
+        return "C3A"
+
+    @classmethod
+    def description(cls) -> str:
+        return "C3A: context-aware block-diagonal adapter for multi-task and compositional fine-tuning."
+
+
+@DeveloperAPI
+@register_adapter(name="oft")
+class OFTAdapterConfig(BaseAdapterConfig):
+    """OFT: Orthogonal Fine-Tuning.
+
+    Applies orthogonal transformations to the weight matrices, preserving the hyperspherical energy
+    of the pre-trained model while adapting to new tasks. Particularly effective for maintaining
+    output diversity and preventing catastrophic forgetting.
+    Paper: https://arxiv.org/abs/2306.07280
+    """
+
+    type: str = schema_utils.ProtectedString("oft", description="OFT adapter.")
+
+    r: int = schema_utils.NonNegativeInteger(
+        default=0,
+        description=(
+            "OFT rank. When 0, the block size (`oft_block_size`) controls the granularity instead. "
+            "Cannot be set simultaneously with `oft_block_size`."
+        ),
+    )
+
+    oft_block_size: int = schema_utils.PositiveInteger(
+        default=32,
+        description="Block size for the butterfly factorization of the orthogonal transform.",
+    )
+
+    module_dropout: float = schema_utils.NonNegativeFloat(
+        default=0.0,
+        description="Probability of randomly zeroing an OFT block during training.",
+    )
+
+    target_modules: list[str] | None = schema_utils.List(
+        default=None,
+        allow_none=True,
+        description="List of module names or regex to apply OFT to.",
+    )
+
+    coft: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to use Constrained OFT (COFT), which enforces the constraint ||I - R^T R||_F <= eps.",
+    )
+
+    eps: float = schema_utils.NonNegativeFloat(
+        default=6e-5,
+        description="Constraint strength for COFT (only used when `coft=True`).",
+    )
+
+    def to_config(self, task_type: str = None, **kwargs):
+        from peft import OFTConfig as _OFTConfig
+
+        return _OFTConfig(
+            r=self.r,
+            oft_block_size=self.oft_block_size,
+            module_dropout=self.module_dropout,
+            target_modules=self.target_modules,
+            coft=self.coft,
+            eps=self.eps,
+            task_type=task_type,
+        )
+
+    @classmethod
+    def name(cls) -> str:
+        return "OFT"
+
+    @classmethod
+    def description(cls) -> str:
+        return "OFT: Orthogonal Fine-Tuning that preserves hyperspherical energy of the pre-trained model."
+
+
+@DeveloperAPI
+@register_adapter(name="hra")
+class HRAAdapterConfig(BaseAdapterConfig):
+    """HRA: Householder Reflection Adaptation.
+
+    Parameterizes weight updates as products of Householder reflections, which are orthogonal by construction.
+    Provides stronger expressivity than OFT with fewer hyperparameters.
+    Paper: https://arxiv.org/abs/2405.17484
+    """
+
+    type: str = schema_utils.ProtectedString("hra", description="HRA adapter.")
+
+    r: int = schema_utils.PositiveInteger(
+        default=8,
+        description="Number of Householder reflections (rank). More reflections = more expressive adaptation.",
+    )
+
+    apply_GS: bool = schema_utils.Boolean(
+        default=False,
+        description=(
+            "Whether to apply Gram-Schmidt orthogonalization to the Householder vectors. "
+            "Improves numerical stability at the cost of a small overhead."
+        ),
+    )
+
+    target_modules: list[str] | None = schema_utils.List(
+        default=None,
+        allow_none=True,
+        description="List of module names or regex to apply HRA to.",
+    )
+
+    def to_config(self, task_type: str = None, **kwargs):
+        from peft import HRAConfig as _HRAConfig
+
+        return _HRAConfig(
+            r=self.r,
+            apply_GS=self.apply_GS,
+            target_modules=self.target_modules,
+            task_type=task_type,
+        )
+
+    @classmethod
+    def name(cls) -> str:
+        return "HRA"
+
+    @classmethod
+    def description(cls) -> str:
+        return "HRA: Householder Reflection Adaptation — orthogonal updates via Householder reflections."
+
+
+@DeveloperAPI
+@register_adapter(name="waveft")
+class WaveFTAdapterConfig(BaseAdapterConfig):
+    """WaveFT: Wavelet-domain Fine-Tuning.
+
+    Learns weight updates in the wavelet frequency domain using discrete wavelet transforms.
+    Provides a different inductive bias from spatial methods like LoRA, often benefiting
+    tasks with structured or periodic patterns.
+    Paper: https://arxiv.org/abs/2411.09295
+    """
+
+    type: str = schema_utils.ProtectedString("waveft", description="WaveFT adapter.")
+
+    n_frequency: int = schema_utils.PositiveInteger(
+        default=2592,
+        description="Number of wavelet frequency components to learn. Fewer = more parameter efficient.",
+    )
+
+    scaling: float = schema_utils.NonNegativeFloat(
+        default=25.0,
+        description="Scaling factor applied to the wavelet-domain updates.",
+    )
+
+    wavelet_family: str = schema_utils.StringOptions(
+        options=["db1", "db2", "db3", "haar", "sym2", "coif1"],
+        default="db1",
+        description=(
+            "Wavelet family to use for the discrete wavelet transform. "
+            "'db1'/'haar' are simplest; higher-order Daubechies ('db2', 'db3') capture smoother features."
+        ),
+    )
+
+    target_modules: list[str] | None = schema_utils.List(
+        default=None,
+        allow_none=True,
+        description="List of module names or regex to apply WaveFT to.",
+    )
+
+    def to_config(self, task_type: str = None, **kwargs):
+        from peft import WaveFTConfig as _WaveFTConfig
+
+        return _WaveFTConfig(
+            n_frequency=self.n_frequency,
+            scaling=self.scaling,
+            wavelet_family=self.wavelet_family,
+            target_modules=self.target_modules,
+            n_frequency_pattern={},
+            task_type=task_type,
+        )
+
+    @classmethod
+    def name(cls) -> str:
+        return "WaveFT"
+
+    @classmethod
+    def description(cls) -> str:
+        return "WaveFT: Wavelet-domain fine-tuning with structured frequency-domain weight updates."
+
+
+@DeveloperAPI
+@register_adapter(name="ln_tuning")
+class LNTuningAdapterConfig(BaseAdapterConfig):
+    """LN-Tuning: Layer Normalization Tuning.
+
+    Fine-tunes only the layer normalization parameters (weight and bias) of the model.
+    Extremely parameter-efficient — often only ~0.1% of total parameters — while surprisingly
+    effective for domain adaptation tasks.
+    """
+
+    type: str = schema_utils.ProtectedString("ln_tuning", description="LN-Tuning adapter.")
+
+    target_modules: list[str] | None = schema_utils.List(
+        default=None,
+        allow_none=True,
+        description=(
+            "List of layer norm module names or regex to tune. "
+            "Defaults to all LayerNorm / RMSNorm modules in the model."
+        ),
+    )
+
+    def to_config(self, task_type: str = None, **kwargs):
+        from peft import LNTuningConfig as _LNTuningConfig
+
+        return _LNTuningConfig(
+            target_modules=self.target_modules,
+            task_type=task_type,
+        )
+
+    @classmethod
+    def name(cls) -> str:
+        return "LN-Tuning"
+
+    @classmethod
+    def description(cls) -> str:
+        return "LN-Tuning: tunes only the layer normalization parameters for ultra-lightweight adaptation."
+
+
+@DeveloperAPI
+@register_adapter(name="vblora")
+class VBLoRAAdapterConfig(BaseAdapterConfig):
+    """VBLoRA: Vector Bank LoRA.
+
+    Represents LoRA weight matrices as a sparse combination of shared vectors from a global bank.
+    Achieves significant parameter compression by reusing vectors across layers.
+    Paper: https://arxiv.org/abs/2405.15179
+    """
+
+    type: str = schema_utils.ProtectedString("vblora", description="VBLoRA adapter.")
+
+    r: int = schema_utils.PositiveInteger(
+        default=4,
+        description="LoRA rank dimension. Controls the bottleneck size of each adaptation.",
+    )
+
+    num_vectors: int = schema_utils.PositiveInteger(
+        default=256,
+        description="Number of vectors in the global vector bank shared across all layers.",
+    )
+
+    vector_length: int = schema_utils.PositiveInteger(
+        default=256,
+        description="Length (dimension) of each vector in the bank. Usually set to the hidden size or head dim.",
+    )
+
+    topk: int = schema_utils.PositiveInteger(
+        default=2,
+        description=(
+            "Number of top-k vectors selected from the bank for each LoRA matrix column. "
+            "Higher k increases expressivity but also parameter count."
+        ),
+    )
+
+    vblora_dropout: float = schema_utils.NonNegativeFloat(
+        default=0.0,
+        description="Dropout probability for VBLoRA layers.",
+    )
+
+    save_only_topk_weights: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to save only the top-k selection logits rather than the full bank weights.",
+    )
+
+    target_modules: list[str] | None = schema_utils.List(
+        default=None,
+        allow_none=True,
+        description="List of module names or regex to apply VBLoRA to.",
+    )
+
+    def to_config(self, task_type: str = None, **kwargs):
+        from peft import VBLoRAConfig as _VBLoRAConfig
+
+        return _VBLoRAConfig(
+            r=self.r,
+            num_vectors=self.num_vectors,
+            vector_length=self.vector_length,
+            topk=self.topk,
+            vblora_dropout=self.vblora_dropout,
+            save_only_topk_weights=self.save_only_topk_weights,
+            target_modules=self.target_modules,
+            task_type=task_type,
+        )
+
+    @classmethod
+    def name(cls) -> str:
+        return "VBLoRA"
+
+    @classmethod
+    def description(cls) -> str:
+        return "VBLoRA: Vector Bank LoRA that shares vectors across layers for extreme compression."
 
 
 @DeveloperAPI

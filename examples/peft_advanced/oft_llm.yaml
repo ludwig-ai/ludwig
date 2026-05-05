@@ -1,0 +1,27 @@
+model_type: llm
+base_model: meta-llama/Llama-3.2-1B
+
+input_features:
+  - name: instruction
+    type: text
+
+output_features:
+  - name: output
+    type: text
+
+# OFT: Orthogonal Fine-Tuning. Applies orthogonal transforms to weight matrices.
+# Preserves the hyperspherical energy of the pre-trained model, preventing forgetting.
+# Particularly effective for subject-driven generation and tasks requiring output diversity.
+# Paper: https://arxiv.org/abs/2306.07280
+adapter:
+  type: oft
+  oft_block_size: 32
+  module_dropout: 0.0
+  # Enable COFT for a stronger orthogonality constraint:
+  # coft: true
+  # eps: 0.00006
+
+trainer:
+  type: finetune
+  learning_rate: 0.0001
+  epochs: 3
