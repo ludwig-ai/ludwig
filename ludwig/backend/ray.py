@@ -869,6 +869,11 @@ class RayBackend(RemoteTrainingMixin, Backend):
         # Prevent Dask from converting object-dtype columns to PyArrow strings,
         # which corrupts binary data, numpy arrays, and complex Python objects.
         dask.config.set({"dataframe.convert-string": False})
+        # Use in-memory task-based shuffle instead of disk (partd). partd creates
+        # a temp directory per shuffle and its __del__ rmtrees it; under Ray's
+        # parallel task execution multiple workers can race on the same temp dir,
+        # causing FileNotFoundError on the .lock file.
+        dask.config.set({"dataframe.shuffle.method": "tasks"})
 
     def generate_bundles(self, num_cpu):
         # Ray requires that each bundle be scheduleable on a single node.
