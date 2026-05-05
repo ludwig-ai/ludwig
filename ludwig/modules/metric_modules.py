@@ -61,6 +61,7 @@ from ludwig.constants import (  # RESPONSE,
     MAXIMIZE,
     MEAN_ABSOLUTE_ERROR,
     MEAN_ABSOLUTE_PERCENTAGE_ERROR,
+    MEAN_ABSOLUTE_SCALED_ERROR,
     MEAN_SQUARED_ERROR,
     MINIMIZE,
     NEXT_TOKEN_PERPLEXITY,
@@ -78,6 +79,7 @@ from ludwig.constants import (  # RESPONSE,
     SEQUENCE_ACCURACY,
     SET,
     SPECIFICITY,
+    SYMMETRIC_MEAN_ABSOLUTE_PERCENTAGE_ERROR,
     TEXT,
     TIMESERIES,
     TOKEN_ACCURACY,
@@ -215,7 +217,7 @@ class LudwigMetric(Metric, ABC):
         self.unsync(should_unsync=self._is_synced and should_unsync)
 
 
-@register_metric(ROOT_MEAN_SQUARED_ERROR, [NUMBER], MINIMIZE, PREDICTIONS)
+@register_metric(ROOT_MEAN_SQUARED_ERROR, [NUMBER, TIMESERIES], MINIMIZE, PREDICTIONS)
 class RMSEMetric(MeanSquaredError, LudwigMetric):
     """Root mean squared error metric."""
 
@@ -574,6 +576,40 @@ class MAPEMetric(MeanAbsolutePercentageError, LudwigMetric):
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         super().update(preds, target)
+
+
+@register_metric(MEAN_ABSOLUTE_SCALED_ERROR, [TIMESERIES], MINIMIZE, PREDICTIONS)
+class MASEMetric(MeanMetric):
+    """Mean Absolute Scaled Error — scale-free metric that normalizes by the in-sample naive baseline.
+
+    For a forecast horizon, MASE = MAE(forecast) / MAE(naive_within_batch).
+    The naive baseline is computed as mean(|y_t - y_{t-1}|) over the target sequence.
+    When the target is a flat vector (horizon-only, no history), falls back to MAE / mean(|target|+eps).
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__()
+
+    def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
+        # preds, target: [batch, horizon]
+        mae = torch.mean(torch.abs(preds - target), dim=-1)  # [batch]
+        if target.shape[-1] > 1:
+            naive_scale = torch.mean(torch.abs(target[..., 1:] - target[..., :-1]), dim=-1) + 1e-8
+        else:
+            naive_scale = torch.mean(torch.abs(target), dim=-1) + 1e-8
+        return torch.mean(mae / naive_scale)
+
+
+@register_metric(SYMMETRIC_MEAN_ABSOLUTE_PERCENTAGE_ERROR, [TIMESERIES], MINIMIZE, PREDICTIONS)
+class SMAPEMetric(MeanMetric):
+    """Symmetric Mean Absolute Percentage Error."""
+
+    def __init__(self, **kwargs):
+        super().__init__()
+
+    def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
+        denom = torch.abs(target) + torch.abs(preds) + 1e-8
+        return torch.mean(200.0 * torch.abs(preds - target) / denom)
 
 
 @register_metric(JACCARD, [SET], MAXIMIZE, PROBABILITIES)

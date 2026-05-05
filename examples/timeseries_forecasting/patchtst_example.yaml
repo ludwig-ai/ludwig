@@ -1,0 +1,22 @@
+model_type: ecd
+input_features:
+  - name: history
+    type: timeseries
+    window_size: 128
+    encoder:
+      type: patchtst
+      patch_size: 16
+      patch_stride: 8
+      d_model: 128
+      num_heads: 8
+      num_layers: 3
+      output_size: 256
+output_features:
+  - name: forecast
+    type: timeseries
+    window_size: 24
+trainer:
+  epochs: 50
+  optimizer:
+    type: adamw
+    lr: 1e-4

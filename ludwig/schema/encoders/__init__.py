@@ -9,4 +9,5 @@ import ludwig.schema.encoders.mamba_hybrid
 import ludwig.schema.encoders.number_encoders
 import ludwig.schema.encoders.sequence_encoders
 import ludwig.schema.encoders.set_encoders
-import ludwig.schema.encoders.text_encoders  # noqa
+import ludwig.schema.encoders.text_encoders
+import ludwig.schema.encoders.timeseries_encoders  # noqa

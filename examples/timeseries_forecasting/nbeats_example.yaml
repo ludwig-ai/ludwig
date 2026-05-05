@@ -1,0 +1,20 @@
+model_type: ecd
+input_features:
+  - name: history
+    type: timeseries
+    window_size: 128
+    encoder:
+      type: nbeats
+      num_stacks: 2
+      num_blocks: 3
+      layer_size: 256
+      output_size: 256
+output_features:
+  - name: forecast
+    type: timeseries
+    window_size: 24
+trainer:
+  epochs: 50
+  optimizer:
+    type: adamw
+    lr: 1e-4
