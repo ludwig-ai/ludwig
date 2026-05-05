@@ -393,8 +393,9 @@ def create_vocabulary(
     processed_counts = processed_lines.explode().value_counts(sort=False)
     processed_counts = processor.compute(processed_counts)
     unit_counts = Counter(dict(processed_counts))
-    max_sequence_length = processor.compute(processed_lines.map(len).max())
-    sequence_length_99ptile = processor.compute(processed_lines.map(len).quantile(0.99))
+    lengths = processor.map_objects(processed_lines, len, meta=(processed_lines.name, int))
+    max_sequence_length = processor.compute(lengths.max())
+    sequence_length_99ptile = processor.compute(lengths.quantile(0.99))
 
     if tokenizer_type != "hf_tokenizer":
         # For non-HF tokenizers, add 2 for start and stop symbols.
@@ -423,7 +424,7 @@ def create_vocabulary(
     doc_unit_counts = None
     if compute_idf:
         # The document frequency used for TF-IDF. Similar to unit_counts, but de-duped by document.
-        document_counts = processed_lines.map(lambda x: set(x)).explode().value_counts(sort=False)
+        document_counts = processor.map_objects(processed_lines, set).explode().value_counts(sort=False)
         document_counts = processor.compute(document_counts)
         doc_unit_counts = Counter(dict(document_counts))
 
@@ -545,7 +546,8 @@ def build_sequence_matrix(
 
     format_dtype = int_type(len(inverse_vocabulary) - 1)
 
-    unit_vectors = sequences.map(
+    unit_vectors = processor.map_objects(
+        sequences,
         lambda sequence: _get_sequence_vector(
             sequence,
             tokenizer,
@@ -554,10 +556,10 @@ def build_sequence_matrix(
             inverse_vocabulary,
             lowercase=lowercase,
             unknown_symbol=unknown_symbol,
-        )
+        ),
     )
 
-    max_length = processor.compute(unit_vectors.map(len).max())
+    max_length = processor.compute(processor.map_objects(unit_vectors, len, meta=(unit_vectors.name, int)).max())
     if max_length < length_limit:
         logger.debug(f"max length of {format}: {max_length} < limit: {length_limit}")
     max_length = length_limit

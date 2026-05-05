@@ -203,7 +203,9 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
             timeseries, lambda ts: np.nan_to_num(np.array(tokenizer(ts)).astype(np.float32), nan=padding_value)
         )
 
-        max_length = backend.df_engine.compute(ts_vectors.map(len).max())
+        max_length = backend.df_engine.compute(
+            backend.df_engine.map_objects(ts_vectors, len, meta=(ts_vectors.name, int)).max()
+        )
         if max_length < length_limit:
             logger.debug(f"max length of {tokenizer_name}: {max_length} < limit: {length_limit}")
         max_length = length_limit

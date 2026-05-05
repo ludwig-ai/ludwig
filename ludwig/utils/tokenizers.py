@@ -1064,7 +1064,9 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
     model_name_lower = pretrained_model_name_or_path.lower()
     # Use BERTTokenizer only for actual BERT models, not for models like albert/roberta
     # that have "bert" in their name but use different tokenization (SentencePiece, BPE, etc.)
-    if "bert" in model_name_lower and not any(x in model_name_lower for x in ("albert", "roberta", "distilbert")):
+    if "bert" in model_name_lower and not any(
+        x in model_name_lower for x in ("albert", "roberta", "distilbert", "modernbert")
+    ):
         logger.info(f"Loading BERT tokenizer for {pretrained_model_name_or_path}")
         return BERTTokenizer(pretrained_model_name_or_path=pretrained_model_name_or_path, is_hf_tokenizer=True)
 

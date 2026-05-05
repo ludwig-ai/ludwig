@@ -62,17 +62,32 @@ def test_train_fn_passes_device_to_remote_trainer():
     )
 
 
+def test_progress_bar_does_not_call_rt_report_per_batch():
+    """Regression test: LudwigProgressBar must not call rt.report() on every training batch.
+
+    Each rt.report() call requires a round-trip through the Ray GCS (~1.9 s). With hundreds of
+    batches per run this completely dominates wall-clock time.  The fix silently suppresses the
+    tqdm bar inside Ray workers instead of reporting per-batch progress via rt.report().
+    """
+    from ludwig.progress_bar import LudwigProgressBar
+
+    with mock.patch("ludwig.progress_bar.rt") as mock_rt:
+        pbar = LudwigProgressBar(report_to_ray=True, config={"total": 10, "desc": "test"}, is_coordinator=True)
+        for _ in range(10):
+            pbar.update(1)
+        pbar.close()
+
+    mock_rt.report.assert_not_called()
+
+
 def test_async_reader_error():
     """Test that RayDatasetBatcher handles a dataset that produces no batches.
 
-    When the dataset's iter_batches raises an error in the producer thread, the batcher should end up with
-    last_batch=True (no data to consume).
+    When iter_batches yields nothing, the batcher should end up with last_batch=True.
     """
     mock_dataset = mock.Mock()
-    # map_batches returns a mock whose iter_batches yields nothing (empty iteration)
-    mock_mapped = mock.Mock()
-    mock_mapped.iter_batches.return_value = iter([])
-    mock_dataset.map_batches.return_value = mock_mapped
+    # iter_batches yields nothing (empty dataset)
+    mock_dataset.iter_batches.return_value = iter([])
 
     features = {
         "num1": {"name": "num1", "type": "number"},
