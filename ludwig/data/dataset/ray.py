@@ -310,7 +310,7 @@ class RayDatasetBatcher(_BaseBatcher):
 
         def producer():
             for batch in dataset.map_batches(to_tensors, batch_format="pandas").iter_batches(
-                prefetch_batches=1, batch_size=batch_size, batch_format="pandas"
+                prefetch_batches=4, batch_size=batch_size, batch_format="pandas"
             ):
                 res = self._prepare_batch(batch)
                 q.put(res)
@@ -359,7 +359,7 @@ class RayDatasetShardBatcher(_BaseBatcher):
             for batch in self.data_iterator.iter_batches(
                 batch_size=batch_size,
                 batch_format="pandas",
-                prefetch_batches=1,
+                prefetch_batches=4,
             ):
                 batch = to_tensors(batch)
                 res = self._prepare_batch(batch)
