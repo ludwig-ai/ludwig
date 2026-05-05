@@ -1,0 +1,30 @@
+model_type: llm
+base_model: meta-llama/Llama-3.2-1B
+
+input_features:
+  - name: instruction
+    type: text
+
+output_features:
+  - name: output
+    type: text
+
+adapter:
+  type: lora
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  # PiSSA: initialize via principal singular values/vectors of the weight matrix.
+  # Converges faster and often outperforms standard LoRA at the same rank.
+  # Paper: https://arxiv.org/abs/2404.02948
+  init_lora_weights: pissa
+  use_rslora: true
+
+trainer:
+  type: finetune
+  learning_rate: 0.0001
+  epochs: 3
+  batch_size: 4
+
+preprocessing:
+  global_max_sequence_length: 512

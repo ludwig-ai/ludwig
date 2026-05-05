@@ -120,6 +120,61 @@ adapter:
     use_dora:
       ui_display_name: Enable DoRa
       expected_impact: 2
+    init_lora_weights:
+      ui_display_name: LoRA Initializer
+      expected_impact: 3
+    rank_pattern:
+      ui_display_name: Per-Layer Rank Pattern
+      expected_impact: 2
+    alpha_pattern:
+      ui_display_name: Per-Layer Alpha Pattern
+      expected_impact: 2
+    layer_replication:
+      ui_display_name: Layer Replication
+      expected_impact: 2
+  tinylora:
+    type:
+      long_description: |
+        TinyLoRA is an extremely parameter-efficient fine-tuning method that uses SVD decomposition of frozen weights
+        and projects a tiny trainable vector through fixed random tensors. It can achieve fine-tuning with as few as
+        13 trainable parameters, making it ideal for extremely resource-constrained environments or edge deployment.
+        Paper: https://arxiv.org/abs/2602.04118
+  c3a:
+    type:
+      long_description: |
+        C3A (Contextual/Conditional/Compositional Adapter) uses block-diagonal structured matrices for parameter
+        efficiency. It enables context-aware adapter routing and multi-task modularity, making it well-suited for
+        multi-domain generalization and compositional fine-tuning workflows.
+  oft:
+    type:
+      long_description: |
+        OFT (Orthogonal Fine-Tuning) applies orthogonal transformations to weight matrices, preserving the
+        hyperspherical energy of the pre-trained model. This prevents catastrophic forgetting and maintains output
+        diversity while adapting to new tasks. Paper: https://arxiv.org/abs/2306.07280
+  hra:
+    type:
+      long_description: |
+        HRA (Householder Reflection Adaptation) parameterizes weight updates as products of Householder reflections,
+        which are orthogonal by construction. It provides stronger expressivity than OFT with fewer hyperparameters.
+        Paper: https://arxiv.org/abs/2405.17484
+  waveft:
+    type:
+      long_description: |
+        WaveFT (Wavelet-domain Fine-Tuning) learns weight updates in the wavelet frequency domain. It provides a
+        different inductive bias from spatial methods like LoRA, often benefiting tasks with structured or periodic
+        patterns. Paper: https://arxiv.org/abs/2411.09295
+  ln_tuning:
+    type:
+      long_description: |
+        LN-Tuning fine-tunes only the layer normalization parameters (weight and bias) of the model. It is
+        extremely parameter-efficient (often <0.1% of total parameters) while being surprisingly effective for
+        domain adaptation tasks.
+  vblora:
+    type:
+      long_description: |
+        VBLoRA (Vector Bank LoRA) represents LoRA weight matrices as a sparse combination of shared vectors from a
+        global bank. By reusing vectors across layers, it achieves significant parameter compression beyond standard
+        LoRA. Paper: https://arxiv.org/abs/2405.15179
   adalora:
     type:
       long_description: |

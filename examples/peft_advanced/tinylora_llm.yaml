@@ -1,0 +1,26 @@
+model_type: llm
+base_model: meta-llama/Llama-3.2-1B
+
+input_features:
+  - name: instruction
+    type: text
+
+output_features:
+  - name: output
+    type: text
+
+# TinyLoRA: LoRA-XS variant. Uses SVD + fixed random projection matrices.
+# Achieves fine-tuning with as few as 13 trainable parameters per layer.
+# Ideal for: edge devices, CPU-only inference, extremely memory-constrained GPUs.
+# Paper: https://arxiv.org/abs/2602.04118
+adapter:
+  type: tinylora
+  r: 2          # SVD rank — paper recommends r=2
+  u: 64         # trainable vector dimension — set to 13 for extreme efficiency
+  weight_tying: 0.0  # set > 0 to share trainable vectors across layers
+
+trainer:
+  type: finetune
+  learning_rate: 0.001
+  epochs: 3
+  batch_size: 8
