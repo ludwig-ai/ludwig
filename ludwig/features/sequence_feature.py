@@ -469,7 +469,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             if "idx2str" in metadata:
 
                 def idx2str(row):
-                    pred = np.asarray(row[predictions_col])
+                    pred = row[predictions_col]
                     length = metadata["max_sequence_length"]
                     return [
                         metadata["idx2str"][token] if token < len(metadata["idx2str"]) else UNKNOWN_SYMBOL
@@ -487,7 +487,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                         return metadata["idx2str"][last_pred]
                     return UNKNOWN_SYMBOL
 
-                result[last_preds_col] = result[last_preds_col].map(last_idx2str)
+                result[last_preds_col] = result[last_preds_col].map(last_idx2str, meta=(last_preds_col, "object"))
 
         probs_col = f"{self.feature_name}_{PROBABILITIES}"
         prob_col = f"{self.feature_name}_{PROBABILITY}"
@@ -495,13 +495,14 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             # currently does not return full probabilties because usually it is huge:
             # dataset x length x classes
             # TODO: add a mechanism for letting the user decide to save it
-            result[probs_col] = result[probs_col].map(compute_token_probabilities)
+            result[probs_col] = result[probs_col].map(compute_token_probabilities, meta=(probs_col, "object"))
             result[prob_col] = result[probs_col].map(
                 partial(
                     compute_sequence_probability,
                     max_sequence_length=metadata["max_sequence_length"],
                     return_log_prob=True,
-                )
+                ),
+                meta=(prob_col, float),
             )
 
         if lengths_col in result:
