@@ -1,0 +1,26 @@
+model_type: llm
+base_model: meta-llama/Llama-3.2-1B
+
+input_features:
+  - name: instruction
+    type: text
+
+output_features:
+  - name: output
+    type: text
+
+adapter:
+  type: lora
+  r: 16
+  alpha: 32
+  # CorDA: Context-Oriented Decomposition Adaptation.
+  # Combines PiSSA-style SVD init with context signals from the fine-tuning data.
+  # Converges faster than PiSSA in instruction-previewed mode while preserving world knowledge.
+  # Paper: https://arxiv.org/abs/2406.05223
+  init_lora_weights: corda
+
+trainer:
+  type: finetune
+  learning_rate: 0.0001
+  epochs: 3
+  batch_size: 4

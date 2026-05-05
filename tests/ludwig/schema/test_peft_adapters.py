@@ -4,20 +4,52 @@ import pytest
 
 from ludwig.schema.llms.peft import adapter_registry
 
+_ALL_ADAPTERS = [
+    "lora",
+    "adalora",
+    "ia3",
+    "vera",
+    "loha",
+    "lokr",
+    "fourierft",
+    "boft",
+    "tinylora",
+    "c3a",
+    "oft",
+    "hra",
+    "waveft",
+    "ln_tuning",
+    "vblora",
+]
+_ADAPTERS_WITH_TARGET_MODULES = [
+    "vera",
+    "loha",
+    "lokr",
+    "fourierft",
+    "boft",
+    "tinylora",
+    "c3a",
+    "oft",
+    "hra",
+    "waveft",
+    "ln_tuning",
+    "vblora",
+]
+
 
 class TestAdapterRegistry:
     def test_all_adapters_registered(self):
-        expected = {"lora", "adalora", "ia3", "vera", "loha", "lokr", "fourierft", "boft"}
+        expected = set(_ALL_ADAPTERS)
         assert expected.issubset(set(adapter_registry.keys()))
 
-    @pytest.mark.parametrize("adapter_type", ["lora", "adalora", "ia3", "vera", "loha", "lokr", "fourierft", "boft"])
+    @pytest.mark.parametrize("adapter_type", _ALL_ADAPTERS)
     def test_adapter_creates_valid_peft_config(self, adapter_type):
         cls = adapter_registry[adapter_type]
         inst = cls.model_validate({"type": adapter_type})
         peft_config = inst.to_config()
         assert peft_config is not None
 
-    @pytest.mark.parametrize("adapter_type", ["vera", "loha", "lokr", "fourierft", "boft"])
+    @pytest.mark.parametrize("adapter_type", _ADAPTERS_WITH_TARGET_MODULES)
     def test_new_adapter_has_target_modules(self, adapter_type):
         cls = adapter_registry[adapter_type]
         inst = cls.model_validate({"type": adapter_type})
@@ -53,6 +85,266 @@ class TestLoraPlus:
         assert len(groups) == 3
         lrs = sorted(g["lr"] for g in groups)
         assert lrs == [0.001, 0.001, 0.008]
+
+
+class TestLoraInitializers:
+    """Tests for PiSSA, EVA, CorDA, LoftQ, and other init_lora_weights options."""
+
+    @pytest.mark.parametrize("init", ["default", "gaussian", "pissa", "olora", "orthogonal"])
+    def test_init_lora_weights_string_options(self, init):
+        from ludwig.schema.llms.peft import LoraConfig
+
+        cfg = LoraConfig.model_validate({"type": "lora", "init_lora_weights": init})
+        peft_cfg = cfg.to_config(task_type="CAUSAL_LM")
+        expected = True if init == "default" else init
+        assert peft_cfg.init_lora_weights == expected
+
+    def test_pissa_init(self):
+        from ludwig.schema.llms.peft import LoraConfig
+
+        cfg = LoraConfig.model_validate({"type": "lora", "r": 4, "init_lora_weights": "pissa"})
+        peft_cfg = cfg.to_config(task_type="CAUSAL_LM")
+        assert peft_cfg.init_lora_weights == "pissa"
+        assert peft_cfg.r == 4
+
+    def test_eva_init_requires_eva_config(self):
+        from pydantic import ValidationError
+
+        from ludwig.schema.llms.peft import LoraConfig
+
+        with pytest.raises(ValidationError, match="eva_config"):
+            LoraConfig.model_validate({"type": "lora", "init_lora_weights": "eva"})
+
+    def test_eva_init_with_config(self):
+        from ludwig.schema.llms.peft import LoraConfig
+
+        cfg = LoraConfig.model_validate(
+            {
+                "type": "lora",
+                "init_lora_weights": "eva",
+                "eva_config": {"rho": 3.0, "tau": 0.95},
+            }
+        )
+        peft_cfg = cfg.to_config(task_type="CAUSAL_LM")
+        assert peft_cfg.init_lora_weights == "eva"
+        assert peft_cfg.eva_config is not None
+        assert peft_cfg.eva_config.rho == 3.0
+
+    def test_loftq_init_requires_loftq_config(self):
+        from pydantic import ValidationError
+
+        from ludwig.schema.llms.peft import LoraConfig
+
+        with pytest.raises(ValidationError, match="loftq_config"):
+            LoraConfig.model_validate({"type": "lora", "init_lora_weights": "loftq"})
+
+    def test_loftq_init_with_config(self):
+        from ludwig.schema.llms.peft import LoraConfig
+
+        cfg = LoraConfig.model_validate(
+            {
+                "type": "lora",
+                "init_lora_weights": "loftq",
+                "loftq_config": {"loftq_bits": 4, "loftq_iter": 2},
+            }
+        )
+        peft_cfg = cfg.to_config(task_type="CAUSAL_LM")
+        assert peft_cfg.init_lora_weights == "loftq"
+        assert peft_cfg.loftq_config["loftq_bits"] == 4
+        assert peft_cfg.loftq_config["loftq_iter"] == 2
+
+    def test_corda_init(self):
+        from ludwig.schema.llms.peft import LoraConfig
+
+        cfg = LoraConfig.model_validate({"type": "lora", "init_lora_weights": "corda"})
+        peft_cfg = cfg.to_config(task_type="CAUSAL_LM")
+        assert peft_cfg.init_lora_weights == "corda"
+
+    def test_rank_pattern(self):
+        from ludwig.schema.llms.peft import LoraConfig
+
+        pattern = {"model.layers.0.self_attn.q_proj": 4, "model.layers.0.self_attn.v_proj": 2}
+        cfg = LoraConfig.model_validate({"type": "lora", "r": 8, "rank_pattern": pattern})
+        peft_cfg = cfg.to_config(task_type="CAUSAL_LM")
+        assert peft_cfg.rank_pattern == pattern
+
+    def test_alpha_pattern(self):
+        from ludwig.schema.llms.peft import LoraConfig
+
+        pattern = {"model.layers.0.self_attn.q_proj": 16.0}
+        cfg = LoraConfig.model_validate({"type": "lora", "alpha_pattern": pattern})
+        peft_cfg = cfg.to_config(task_type="CAUSAL_LM")
+        assert peft_cfg.alpha_pattern == pattern
+
+    def test_layer_replication(self):
+        from ludwig.schema.llms.peft import LoraConfig
+
+        cfg = LoraConfig.model_validate({"type": "lora", "layer_replication": [[0, 4], [2, 5]]})
+        peft_cfg = cfg.to_config(task_type="CAUSAL_LM")
+        assert peft_cfg.layer_replication == [(0, 4), (2, 5)]
+
+    def test_default_rank_pattern_is_empty(self):
+        from ludwig.schema.llms.peft import LoraConfig
+
+        cfg = LoraConfig.model_validate({"type": "lora"})
+        peft_cfg = cfg.to_config(task_type="CAUSAL_LM")
+        assert peft_cfg.rank_pattern == {}
+        assert peft_cfg.alpha_pattern == {}
+
+
+class TestTinyLoraAdapter:
+    def test_defaults(self):
+        from ludwig.schema.llms.peft import TinyLoraAdapterConfig
+
+        cfg = TinyLoraAdapterConfig.model_validate({"type": "tinylora"})
+        assert cfg.r == 2
+        assert cfg.u == 64
+        assert cfg.weight_tying == 0.0
+
+    def test_custom_params(self):
+        from ludwig.schema.llms.peft import TinyLoraAdapterConfig
+
+        cfg = TinyLoraAdapterConfig.model_validate({"type": "tinylora", "r": 4, "u": 16, "weight_tying": 0.5})
+        peft_cfg = cfg.to_config(task_type="CAUSAL_LM")
+        assert peft_cfg.r == 4
+        assert peft_cfg.u == 16
+        assert peft_cfg.weight_tying == 0.5
+
+    def test_name_and_description(self):
+        from ludwig.schema.llms.peft import TinyLoraAdapterConfig
+
+        assert TinyLoraAdapterConfig.name() == "TinyLoRA"
+        assert "SVD" in TinyLoraAdapterConfig.description()
+
+
+class TestC3AAdapter:
+    def test_defaults(self):
+        from ludwig.schema.llms.peft import C3AAdapterConfig
+
+        cfg = C3AAdapterConfig.model_validate({"type": "c3a"})
+        assert cfg.block_size == 256
+
+    def test_custom_block_size(self):
+        from ludwig.schema.llms.peft import C3AAdapterConfig
+
+        cfg = C3AAdapterConfig.model_validate({"type": "c3a", "block_size": 128})
+        peft_cfg = cfg.to_config(task_type="CAUSAL_LM")
+        assert peft_cfg.block_size == 128
+
+    def test_name(self):
+        from ludwig.schema.llms.peft import C3AAdapterConfig
+
+        assert C3AAdapterConfig.name() == "C3A"
+
+
+class TestOFTAdapter:
+    def test_defaults(self):
+        from ludwig.schema.llms.peft import OFTAdapterConfig
+
+        cfg = OFTAdapterConfig.model_validate({"type": "oft"})
+        assert cfg.oft_block_size == 32
+        assert not cfg.coft
+
+    def test_coft_enabled(self):
+        from ludwig.schema.llms.peft import OFTAdapterConfig
+
+        cfg = OFTAdapterConfig.model_validate({"type": "oft", "coft": True, "eps": 1e-4})
+        peft_cfg = cfg.to_config(task_type="CAUSAL_LM")
+        assert peft_cfg.coft is True
+        assert peft_cfg.eps == 1e-4
+
+    def test_name(self):
+        from ludwig.schema.llms.peft import OFTAdapterConfig
+
+        assert OFTAdapterConfig.name() == "OFT"
+
+
+class TestHRAAdapter:
+    def test_defaults(self):
+        from ludwig.schema.llms.peft import HRAAdapterConfig
+
+        cfg = HRAAdapterConfig.model_validate({"type": "hra"})
+        assert cfg.r == 8
+        assert not cfg.apply_GS
+
+    def test_gram_schmidt(self):
+        from ludwig.schema.llms.peft import HRAAdapterConfig
+
+        cfg = HRAAdapterConfig.model_validate({"type": "hra", "r": 16, "apply_GS": True})
+        peft_cfg = cfg.to_config(task_type="CAUSAL_LM")
+        assert peft_cfg.r == 16
+        assert peft_cfg.apply_GS is True
+
+    def test_name(self):
+        from ludwig.schema.llms.peft import HRAAdapterConfig
+
+        assert HRAAdapterConfig.name() == "HRA"
+
+
+class TestWaveFTAdapter:
+    def test_defaults(self):
+        from ludwig.schema.llms.peft import WaveFTAdapterConfig
+
+        cfg = WaveFTAdapterConfig.model_validate({"type": "waveft"})
+        assert cfg.wavelet_family == "db1"
+        assert cfg.n_frequency == 2592
+
+    def test_custom_wavelet(self):
+        from ludwig.schema.llms.peft import WaveFTAdapterConfig
+
+        cfg = WaveFTAdapterConfig.model_validate({"type": "waveft", "wavelet_family": "db2", "n_frequency": 512})
+        peft_cfg = cfg.to_config(task_type="CAUSAL_LM")
+        assert peft_cfg.wavelet_family == "db2"
+        assert peft_cfg.n_frequency == 512
+
+    def test_name(self):
+        from ludwig.schema.llms.peft import WaveFTAdapterConfig
+
+        assert WaveFTAdapterConfig.name() == "WaveFT"
+
+
+class TestLNTuningAdapter:
+    def test_defaults(self):
+        from ludwig.schema.llms.peft import LNTuningAdapterConfig
+
+        cfg = LNTuningAdapterConfig.model_validate({"type": "ln_tuning"})
+        assert cfg.target_modules is None
+
+    def test_custom_target_modules(self):
+        from ludwig.schema.llms.peft import LNTuningAdapterConfig
+
+        cfg = LNTuningAdapterConfig.model_validate({"type": "ln_tuning", "target_modules": ["norm1", "norm2"]})
+        peft_cfg = cfg.to_config(task_type="CAUSAL_LM")
+        assert peft_cfg.target_modules == ["norm1", "norm2"]
+
+    def test_name(self):
+        from ludwig.schema.llms.peft import LNTuningAdapterConfig
+
+        assert LNTuningAdapterConfig.name() == "LN-Tuning"
+
+
+class TestVBLoRAAdapter:
+    def test_defaults(self):
+        from ludwig.schema.llms.peft import VBLoRAAdapterConfig
+
+        cfg = VBLoRAAdapterConfig.model_validate({"type": "vblora"})
+        assert cfg.r == 4
+        assert cfg.num_vectors == 256
+        assert cfg.topk == 2
+
+    def test_custom_params(self):
+        from ludwig.schema.llms.peft import VBLoRAAdapterConfig
+
+        cfg = VBLoRAAdapterConfig.model_validate({"type": "vblora", "r": 8, "num_vectors": 128, "topk": 4})
+        peft_cfg = cfg.to_config(task_type="CAUSAL_LM")
+        assert peft_cfg.r == 8
+        assert peft_cfg.num_vectors == 128
+        assert peft_cfg.topk == 4
+
+    def test_name(self):
+        from ludwig.schema.llms.peft import VBLoRAAdapterConfig
+
+        assert VBLoRAAdapterConfig.name() == "VBLoRA"
 
 
 class TestECDEncoderAdapter:
