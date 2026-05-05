@@ -83,14 +83,11 @@ def test_progress_bar_does_not_call_rt_report_per_batch():
 def test_async_reader_error():
     """Test that RayDatasetBatcher handles a dataset that produces no batches.
 
-    When the dataset's iter_batches raises an error in the producer thread, the batcher should end up with
-    last_batch=True (no data to consume).
+    When iter_batches yields nothing, the batcher should end up with last_batch=True.
     """
     mock_dataset = mock.Mock()
-    # map_batches returns a mock whose iter_batches yields nothing (empty iteration)
-    mock_mapped = mock.Mock()
-    mock_mapped.iter_batches.return_value = iter([])
-    mock_dataset.map_batches.return_value = mock_mapped
+    # iter_batches yields nothing (empty dataset)
+    mock_dataset.iter_batches.return_value = iter([])
 
     features = {
         "num1": {"name": "num1", "type": "number"},
