@@ -360,9 +360,7 @@ class TimeseriesOutputFeature(TimeseriesFeatureMixin, OutputFeature):
     ):
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
         if predictions_col in result:
-            result[predictions_col] = result[predictions_col].map(
-                lambda pred: pred.tolist(), meta=(predictions_col, "object")
-            )
+            result[predictions_col] = result[predictions_col].map(lambda pred: pred.tolist())
         return result
 
     @staticmethod

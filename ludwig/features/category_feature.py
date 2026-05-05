@@ -494,34 +494,26 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
         if predictions_col in predictions:
             if "idx2str" in metadata:
-                predictions[predictions_col] = predictions[predictions_col].map(
-                    lambda pred: metadata["idx2str"][pred], meta=(predictions_col, "object")
-                )
+                predictions[predictions_col] = predictions[predictions_col].map(lambda pred: metadata["idx2str"][pred])
 
         probabilities_col = f"{self.feature_name}_{PROBABILITIES}"
         if probabilities_col in predictions:
             prob_col = f"{self.feature_name}_{PROBABILITY}"
-            predictions[prob_col] = predictions[probabilities_col].map(max, meta=(prob_col, float))
-            predictions[probabilities_col] = predictions[probabilities_col].map(
-                lambda pred: pred.tolist(), meta=(probabilities_col, "object")
-            )
+            predictions[prob_col] = predictions[probabilities_col].map(max)
+            predictions[probabilities_col] = predictions[probabilities_col].map(lambda pred: pred.tolist())
             if "idx2str" in metadata:
                 for i, label in enumerate(metadata["idx2str"]):
                     key = f"{probabilities_col}_{label}"
 
                     # Use default param to force a capture before the loop completes, see:
                     # https://stackoverflow.com/questions/2295290/what-do-lambda-function-closures-capture
-                    predictions[key] = predictions[probabilities_col].map(
-                        lambda prob, i=i: prob[i],
-                        meta=(key, float),
-                    )
+                    predictions[key] = predictions[probabilities_col].map(lambda prob, i=i: prob[i])
 
         top_k_col = f"{self.feature_name}_predictions_top_k"
         if top_k_col in predictions:
             if "idx2str" in metadata:
                 predictions[top_k_col] = predictions[top_k_col].map(
-                    lambda pred_top_k: [metadata["idx2str"][pred] for pred in pred_top_k],
-                    meta=(top_k_col, "object"),
+                    lambda pred_top_k: [metadata["idx2str"][pred] for pred in pred_top_k]
                 )
 
         return predictions

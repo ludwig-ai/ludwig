@@ -468,8 +468,9 @@ class TestSequenceInputLocal:
             "output_features": [{"name": "label", "type": "category"}],
         }
 
-    def test_embed(self):
-        _train_and_check(self._config("embed"), self._df)
+    def test_rnn(self):
+        """Classic recurrent encoder."""
+        _train_and_check(self._config("rnn"), self._df)
 
     def test_parallel_cnn(self):
         """Most popular non-RNN sequence encoder in Ludwig."""
@@ -499,8 +500,8 @@ class TestSequenceInputRay:
             "output_features": [{"name": "label", "type": "category"}],
         }
 
-    def test_embed(self, ray_1gpu):
-        _train_and_check(self._config("embed"), self._df, backend=ray_1gpu)
+    def test_rnn(self, ray_1gpu):
+        _train_and_check(self._config("rnn"), self._df, backend=ray_1gpu)
 
     def test_parallel_cnn(self, ray_1gpu):
         _train_and_check(self._config("parallel_cnn"), self._df, backend=ray_1gpu)
@@ -600,8 +601,8 @@ class TestTimeseriesInputLocal:
     def test_dense(self):
         _train_and_check(self._config("dense"), self._df)
 
-    def test_parallel_cnn(self):
-        _train_and_check(self._config("parallel_cnn"), self._df)
+    def test_rnn(self):
+        _train_and_check(self._config("rnn"), self._df)
 
     def test_transformer(self):
         _train_and_check(self._config("transformer"), self._df)
@@ -629,8 +630,8 @@ class TestTimeseriesInputRay:
     def test_dense(self, ray_1gpu):
         _train_and_check(self._config("dense"), self._df, backend=ray_1gpu)
 
-    def test_parallel_cnn(self, ray_1gpu):
-        _train_and_check(self._config("parallel_cnn"), self._df, backend=ray_1gpu)
+    def test_rnn(self, ray_1gpu):
+        _train_and_check(self._config("rnn"), self._df, backend=ray_1gpu)
 
     def test_transformer(self, ray_1gpu):
         _train_and_check(self._config("transformer"), self._df, backend=ray_1gpu)
@@ -858,7 +859,7 @@ class TestOutputTypesLocal:
                         "name": "out_seq",
                         "type": "sequence",
                         "preprocessing": {"max_sequence_length": 10},
-                        "decoder": {"type": "transformer_generator"},
+                        "decoder": {"type": "generator"},
                     }
                 ],
             },
@@ -939,7 +940,7 @@ class TestOutputTypesRay:
                         "name": "out_seq",
                         "type": "sequence",
                         "preprocessing": {"max_sequence_length": 10},
-                        "decoder": {"type": "transformer_generator"},
+                        "decoder": {"type": "generator"},
                     }
                 ],
             },

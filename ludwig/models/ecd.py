@@ -192,13 +192,29 @@ class ECD(BaseModel):
     def save(self, save_path):
         """Saves the model to the given path using SafeTensors format.
 
-        Uses save_model() which correctly handles tied/shared weights (e.g. RNN decoder embedding-projection tying) by
-        recording sharing metadata in the safetensors file.
+        PyTorch RNN/GRU/LSTM layers pack weights into a contiguous flat buffer after flatten_parameters() is called
+        during the forward pass on CUDA. Each individual weight (weight_ih_l0, etc.) becomes a view into that buffer.
+        No single weight covers the entire storage, so safetensors _remove_duplicate_names fails with "None is
+        covering the entire storage." We clone such partial-view tensors to give each weight independent storage.
+
+        Tensors that cover their full storage — including genuinely tied weights like embedding↔projection tying in
+        the sequence decoder — are left untouched so save_model() can record the tie relationship in metadata.
         """
         from safetensors.torch import save_model
 
+        class _FlatWeightsCleaned(torch.nn.Module):
+            """Thin wrapper that clones RNN flat-buffer views in state_dict() so save_model() can proceed."""
+
+            def __init__(self, model):
+                super().__init__()
+                self._model = model
+
+            def state_dict(self, *args, **kwargs):
+                sd = self._model.state_dict(*args, **kwargs)
+                return {k: v.clone() if v.untyped_storage().nbytes() > v.nbytes else v for k, v in sd.items()}
+
         weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_SAFETENSORS_FILE_NAME)
-        save_model(self, weights_save_path)
+        save_model(_FlatWeightsCleaned(self), weights_save_path)
         # Ensure the file is fully flushed to disk before any other process reads it
         with open(weights_save_path, "rb") as f:
             os.fsync(f.fileno())

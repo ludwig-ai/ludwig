@@ -358,7 +358,6 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             if "bool2str" in metadata:
                 result[predictions_col] = result[predictions_col].map(
                     lambda pred: metadata["bool2str"][pred],
-                    meta=(predictions_col, "object"),
                 )
 
         probabilities_col = f"{self.feature_name}_{PROBABILITIES}"
@@ -374,9 +373,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
                     prob_col: np.where(
                         result[probabilities_col] > 0.5, result[probabilities_col], 1 - result[probabilities_col]
                     ),
-                    probabilities_col: result[probabilities_col].map(
-                        lambda x: [1 - x, x], meta=(probabilities_col, "object")
-                    ),
+                    probabilities_col: result[probabilities_col].map(lambda x: [1 - x, x]),
                 },
             )
 
