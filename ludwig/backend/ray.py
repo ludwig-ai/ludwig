@@ -29,7 +29,6 @@ import pandas as pd
 import ray
 import ray.train as rt
 import torch
-import tqdm
 from fsspec.config import conf
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray import ObjectRef
@@ -217,6 +216,7 @@ def train_fn(
         )
 
     model = ray.get(model_ref)
+
     # Use Ray Train's device assignment which respects use_gpu setting,
     # rather than get_torch_device() which always picks CUDA if available.
     from ray.train.torch import get_device as ray_get_device
@@ -330,41 +330,6 @@ def tune_learning_rate_fn(
         torch.cuda.empty_cache()
 
 
-class TqdmCallback(rt.UserCallback):
-    """Class for a custom ray callback that updates tqdm progress bars in the driver process."""
-
-    def __init__(self) -> None:
-        """Constructor for TqdmCallback."""
-        super().__init__()
-        self.progess_bars = {}
-
-    def after_report(self, run_context, metrics: list[dict], checkpoint=None) -> None:
-        """Called every time ray.train.report is called from subprocesses.
-
-        In Ray 2.x, metrics is a list of metric dicts (one per worker). We look for progress_bar data from the
-        coordinator worker.
-        """
-        for result in metrics:
-            progress_bar_opts = result.get("progress_bar")
-            if not progress_bar_opts:
-                continue
-            # Skip commands received by non-coordinators
-            if not progress_bar_opts["is_coordinator"]:
-                continue
-            _id = progress_bar_opts["id"]
-            action = progress_bar_opts.get("action")
-            if action == "create":
-                progress_bar_config = progress_bar_opts.get("config")
-                self.progess_bars[_id] = tqdm.tqdm(**progress_bar_config)
-            elif action == "close":
-                if _id in self.progess_bars:
-                    self.progess_bars[_id].close()
-            elif action == "update":
-                update_by = progress_bar_opts.get("update_by", 1)
-                if _id in self.progess_bars:
-                    self.progess_bars[_id].update(update_by)
-
-
 @contextlib.contextmanager
 def spread_env(use_gpu: bool = False, num_workers: int = 1, **kwargs):
     if TRAIN_ENABLE_WORKER_SPREAD_ENV in os.environ:
@@ -452,7 +417,8 @@ class RayTrainerV2(BaseTrainer):
             **kwargs,
         }
 
-        dataset = {"train": training_set.to_ray_dataset(shuffle=True)}
+        train_ds = training_set.to_ray_dataset(shuffle=True)
+        dataset = {"train": train_ds}
         if validation_set is not None:
             dataset["val"] = validation_set.to_ray_dataset(shuffle=False)
         if test_set is not None:
@@ -466,12 +432,10 @@ class RayTrainerV2(BaseTrainer):
         result = run_train_remote(
             _train_loop,
             trainer_kwargs=self.trainer_kwargs,
-            callbacks=[TqdmCallback()],
             datasets=dataset,
             train_loop_config=train_loop_config,
         )
 
-        # Load training results from the checkpoint saved by train_fn
         with result.checkpoint.as_directory() as tmpdir:
             safetensors_path = os.path.join(tmpdir, "model_weights.safetensors")
             meta_path = os.path.join(tmpdir, "train_meta.json")
