@@ -88,6 +88,8 @@ class RayDataset(Dataset):
         ds = self.ds
         if should_shuffle:
             ds = ds.random_shuffle(seed=random_seed)
+        # Materialize the dataset to avoid re-reading Parquet on every epoch.
+        ds = ds.materialize()
         yield RayDatasetBatcher(
             ds,
             self.features,
@@ -309,9 +311,8 @@ class RayDatasetBatcher(_BaseBatcher):
         to_tensors = self._to_tensors_fn()
 
         def producer():
-            for batch in dataset.map_batches(to_tensors, batch_format="pandas").iter_batches(
-                prefetch_batches=4, batch_size=batch_size, batch_format="pandas"
-            ):
+            for batch in dataset.iter_batches(prefetch_batches=4, batch_size=batch_size, batch_format="pandas"):
+                batch = to_tensors(batch)
                 res = self._prepare_batch(batch)
                 q.put(res)
             q.put(None)

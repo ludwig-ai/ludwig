@@ -123,7 +123,8 @@ class VectorFeatureMixin:
             raise
 
         # Determine vector size
-        vector_size = backend.df_engine.compute(proc_df[feature_config[PROC_COLUMN]].map(len).max())
+        _col = proc_df[feature_config[PROC_COLUMN]]
+        vector_size = backend.df_engine.compute(backend.df_engine.map_objects(_col, len, meta=(_col.name, int)).max())
         vector_size_param = preprocessing_parameters.get("vector_size")
         if vector_size_param is not None:
             # TODO(travis): do we even need a user param for vector size if we're going to auto-infer it in all
