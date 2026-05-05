@@ -107,7 +107,8 @@ class EvaSubConfigField(schema_utils.NestedConfigField):
         super().__init__(EvaSubConfig, allow_none=True, default_missing=True)
 
     def _jsonschema_type_mapping(self):
-        return schema_utils.unload_jsonschema_from_config_class(EvaSubConfig, title="EvaConfig")
+        inner = schema_utils.unload_jsonschema_from_config_class(EvaSubConfig, title="EvaConfig")
+        return {"oneOf": [inner, {"type": "null"}]}
 
 
 @DeveloperAPI
@@ -136,7 +137,8 @@ class LoftQSubConfigField(schema_utils.NestedConfigField):
         super().__init__(LoftQSubConfig, allow_none=True, default_missing=True)
 
     def _jsonschema_type_mapping(self):
-        return schema_utils.unload_jsonschema_from_config_class(LoftQSubConfig, title="LoftQConfig")
+        inner = schema_utils.unload_jsonschema_from_config_class(LoftQSubConfig, title="LoftQConfig")
+        return {"oneOf": [inner, {"type": "null"}]}
 
 
 @DeveloperAPI
