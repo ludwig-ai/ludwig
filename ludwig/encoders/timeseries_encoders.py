@@ -39,6 +39,7 @@ class PatchTSTEncoder(Encoder):
         self.patch_stride = patch_stride
         self.reduce_output = reduce_output
         self.output_size = output_size
+        self.max_sequence_length = max_sequence_length
 
         # Patch projection
         self.patch_proj = nn.Linear(patch_size, d_model)
@@ -107,7 +108,7 @@ class PatchTSTEncoder(Encoder):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([0])
+        return torch.Size([self.max_sequence_length])
 
     @property
     def output_shape(self) -> torch.Size:
@@ -162,6 +163,7 @@ class NBEATSEncoder(Encoder):
     ):
         super().__init__()
         self.output_size = output_size
+        self.max_sequence_length = max_sequence_length
         input_size = max_sequence_length
         theta_size = output_size
 
@@ -207,7 +209,7 @@ class NBEATSEncoder(Encoder):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([0])
+        return torch.Size([self.max_sequence_length])
 
     @property
     def output_shape(self) -> torch.Size:

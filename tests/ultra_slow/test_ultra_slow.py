@@ -607,6 +607,57 @@ class TestTimeseriesInputLocal:
     def test_transformer(self):
         _train_and_check(self._config("transformer"), self._df)
 
+    def test_patchtst(self):
+        """PatchTST: patch-based Transformer for time series (Nie et al., 2023)."""
+        df = pd.DataFrame({"ts": _ts_col(32), "label": _floats()})
+        _train_and_check(
+            {
+                "input_features": [
+                    {
+                        "name": "ts",
+                        "type": "timeseries",
+                        "encoder": {
+                            "type": "patchtst",
+                            "patch_size": 8,
+                            "patch_stride": 4,
+                            "d_model": 32,
+                            "num_heads": 2,
+                            "num_layers": 1,
+                            "ffn_dim": 64,
+                            "output_size": 32,
+                        },
+                        "preprocessing": {"timeseries_length_limit": 32},
+                    }
+                ],
+                "output_features": [{"name": "label", "type": "number"}],
+            },
+            df,
+        )
+
+    def test_nbeats(self):
+        """N-BEATS: Neural basis expansion analysis (Oreshkin et al., 2020)."""
+        df = pd.DataFrame({"ts": _ts_col(32), "label": _floats()})
+        _train_and_check(
+            {
+                "input_features": [
+                    {
+                        "name": "ts",
+                        "type": "timeseries",
+                        "encoder": {
+                            "type": "nbeats",
+                            "num_stacks": 1,
+                            "num_blocks": 2,
+                            "layer_size": 32,
+                            "output_size": 16,
+                        },
+                        "preprocessing": {"timeseries_length_limit": 32},
+                    }
+                ],
+                "output_features": [{"name": "label", "type": "number"}],
+            },
+            df,
+        )
+
 
 @pytest.mark.distributed
 class TestTimeseriesInputRay:
@@ -635,6 +686,59 @@ class TestTimeseriesInputRay:
 
     def test_transformer(self, ray_1gpu):
         _train_and_check(self._config("transformer"), self._df, backend=ray_1gpu)
+
+    def test_patchtst(self, ray_1gpu):
+        """PatchTST via Ray backend."""
+        df = pd.DataFrame({"ts": _ts_col(32), "label": _floats()})
+        _train_and_check(
+            {
+                "input_features": [
+                    {
+                        "name": "ts",
+                        "type": "timeseries",
+                        "encoder": {
+                            "type": "patchtst",
+                            "patch_size": 8,
+                            "patch_stride": 4,
+                            "d_model": 32,
+                            "num_heads": 2,
+                            "num_layers": 1,
+                            "ffn_dim": 64,
+                            "output_size": 32,
+                        },
+                        "preprocessing": {"timeseries_length_limit": 32},
+                    }
+                ],
+                "output_features": [{"name": "label", "type": "number"}],
+            },
+            df,
+            backend=ray_1gpu,
+        )
+
+    def test_nbeats(self, ray_1gpu):
+        """N-BEATS via Ray backend."""
+        df = pd.DataFrame({"ts": _ts_col(32), "label": _floats()})
+        _train_and_check(
+            {
+                "input_features": [
+                    {
+                        "name": "ts",
+                        "type": "timeseries",
+                        "encoder": {
+                            "type": "nbeats",
+                            "num_stacks": 1,
+                            "num_blocks": 2,
+                            "layer_size": 32,
+                            "output_size": 16,
+                        },
+                        "preprocessing": {"timeseries_length_limit": 32},
+                    }
+                ],
+                "output_features": [{"name": "label", "type": "number"}],
+            },
+            df,
+            backend=ray_1gpu,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -876,6 +980,23 @@ class TestOutputTypesLocal:
         )
 
     def test_timeseries_output(self):
+        _train_and_check(
+            {
+                "input_features": _base_inputs(),
+                "output_features": [
+                    {
+                        "name": "out_ts",
+                        "type": "timeseries",
+                        "preprocessing": {"timeseries_length_limit": 8},
+                        "decoder": {"output_size": 8},
+                    }
+                ],
+            },
+            self._df,
+        )
+
+    def test_timeseries_output_with_metrics(self):
+        """Timeseries output with MASE as the validation metric (PR #4147)."""
         _train_and_check(
             {
                 "input_features": _base_inputs(),
