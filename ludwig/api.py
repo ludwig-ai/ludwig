@@ -2077,86 +2077,40 @@ def kfold_cross_validate(
     logging_level: int = logging.INFO,
     **kwargs,
 ) -> tuple[dict, dict]:
-    """Performs k-fold cross validation and returns result data structures.
+    """Perform k-fold cross-validation and return aggregated metrics.
 
-    # Inputs
+    Args:
+        num_folds: Number of folds for cross-validation.
+        config: Model config dict or path to a YAML config file.
+        dataset: Source containing the full dataset. Note: `'hdf5'` format is
+            not supported for k-fold cross-validation.
+        data_format: Format hint for the data source. Inferred automatically when
+            `None`. Valid values: `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`,
+            `'feather'`, `'fwf'`, `'html'`, `'json'`, `'jsonl'`, `'parquet'`,
+            `'pickle'`, `'sas'`, `'spss'`, `'stata'`, `'tsv'`.
+        skip_save_training_description: Skip saving the experiment description JSON.
+        skip_save_training_statistics: Skip saving training statistics JSON.
+        skip_save_model: Skip saving model weights after each improvement.
+        skip_save_progress: Skip saving per-epoch checkpoints for resuming.
+        skip_save_log: Skip saving TensorBoard logs.
+        skip_save_processed_input: Skip caching preprocessed HDF5/JSON files.
+        skip_save_predictions: Skip writing prediction CSV files.
+        skip_save_eval_stats: Skip writing evaluation statistics JSON.
+        skip_collect_predictions: Do not collect postprocessed predictions.
+        skip_collect_overall_stats: Do not compute dataset-level aggregate metrics.
+        output_directory: Root directory for saved outputs.
+        random_seed: Seed for weight initialization, data splitting, and shuffling.
+        gpus: GPUs to use; same syntax as CUDA_VISIBLE_DEVICES.
+        gpu_memory_limit: Maximum memory fraction [0, 1] allowed per GPU device.
+        allow_parallel_threads: Allow Torch multi-threading at the cost of determinism.
+        backend: Backend instance or string name for preprocessing and training.
+        logging_level: Log level sent to stderr.
+        **kwargs: Forwarded to each fold's `experiment()` call.
 
-    :param num_folds: (int) number of folds to create for the cross-validation
-    :param config: (Union[dict, str]) model specification
-           required to build a model. Parameter may be a dictionary or string
-           specifying the file path to a yaml configuration file.  Refer to the
-           [User Guide](http://ludwig.ai/user_guide/#model-config)
-           for details.
-    :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
-        source containing the entire dataset to be used for k_fold processing.
-        :param data_format: (str, default: `None`) format to interpret data
-            sources. Will be inferred automatically if not specified.  Valid
-            formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`, `'feather'`,
-            `'fwf'`,
-            `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
-            `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
-            `'stata'`, `'tsv'`.  Currently `hdf5` format is not supported for
-            k_fold cross validation.
-    :param skip_save_training_description: (bool, default: `False`) disables
-            saving the description JSON file.
-    :param skip_save_training_statistics: (bool, default: `False`) disables
-            saving training statistics JSON file.
-    :param skip_save_model: (bool, default: `False`) disables
-        saving model weights and hyperparameters each time the model
-        improves. By default Ludwig saves model weights after each epoch
-        the validation metric improves, but if the model is really big
-        that can be time consuming. If you do not want to keep
-        the weights and just find out what performance a model can get
-        with a set of hyperparameters, use this parameter to skip it,
-        but the model will not be loadable later on and the returned model
-        will have the weights obtained at the end of training, instead of
-        the weights of the epoch with the best validation performance.
-    :param skip_save_progress: (bool, default: `False`) disables saving
-           progress each epoch. By default Ludwig saves weights and stats
-           after each epoch for enabling resuming of training, but if
-           the model is really big that can be time consuming and will uses
-           twice as much space, use this parameter to skip it, but training
-           cannot be resumed later on.
-    :param skip_save_log: (bool, default: `False`) disables saving TensorBoard
-           logs. By default Ludwig saves logs for the TensorBoard, but if it
-           is not needed turning it off can slightly increase the
-           overall speed.
-    :param skip_save_processed_input: (bool, default: `False`) if input
-        dataset is provided it is preprocessed and cached by saving an HDF5
-        and JSON files to avoid running the preprocessing again. If this
-        parameter is `False`, the HDF5 and JSON file are not saved.
-    :param skip_save_predictions: (bool, default: `False`) skips saving test
-            predictions CSV files.
-    :param skip_save_eval_stats: (bool, default: `False`) skips saving test
-            statistics JSON file.
-    :param skip_collect_predictions: (bool, default: `False`) skips collecting
-            post-processed predictions during eval.
-    :param skip_collect_overall_stats: (bool, default: `False`) skips collecting
-            overall stats during eval.
-    :param output_directory: (str, default: `'results'`) the directory that
-        will contain the training statistics, TensorBoard logs, the saved
-        model and the training progress files.
-    :param random_seed: (int, default: `42`) Random seed
-            used for weights initialization,
-           splits and any other random function.
-    :param gpus: (list, default: `None`) list of GPUs that are available
-            for training.
-    :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
-            [0, 1] allowed to allocate per GPU device.
-    :param allow_parallel_threads: (bool, default: `True`) allow Torch to
-            use multithreading parallelism
-           to improve performance at the cost of determinism.
-    :param backend: (Union[Backend, str]) `Backend` or string name
-            of backend to use to execute preprocessing / training steps.
-    :param logging_level: (int, default: INFO) log level to send to stderr.
-
-
-    # Return
-
-    :return: (tuple(kfold_cv_statistics, kfold_split_indices), dict) a tuple of
-            dictionaries `kfold_cv_statistics`: contains metrics from cv run.
-             `kfold_split_indices`: indices to split training data into
-             training fold and test fold.
+    Returns:
+        A tuple `(kfold_cv_statistics, kfold_split_indices)` where
+        `kfold_cv_statistics` maps fold name → training + eval metrics, and
+        `kfold_split_indices` maps fold name → training/test index arrays.
     """
     # if config is a path, convert to dictionary
     if isinstance(config, str):  # assume path
