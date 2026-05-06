@@ -158,7 +158,11 @@ class BaseFeature:
         super().__init__()
 
         if not feature.name:
-            raise ValueError("Missing feature name")
+            raise ValueError(
+                "Feature config is missing a 'name' field.\n"
+                "Every feature must have a unique name. "
+                "Check your config's input_features and output_features lists."
+            )
         self.feature_name = feature.name
 
         if not feature.column:
