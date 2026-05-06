@@ -95,15 +95,15 @@ def get_trainer_kwargs(**kwargs) -> dict[str, Any]:
     # Remove nics if present (legacy option)
     kwargs.pop("nics", None)
 
-    defaults = dict(
-        backend=TorchConfig(),
-        num_workers=num_workers,
-        use_gpu=use_gpu,
-        resources_per_worker={
+    defaults = {
+        "backend": TorchConfig(),
+        "num_workers": num_workers,
+        "use_gpu": use_gpu,
+        "resources_per_worker": {
             "CPU": 0 if use_gpu else 1,
             "GPU": 1 if use_gpu else 0,
         },
-    )
+    }
     return {**defaults, **kwargs}
 
 
@@ -151,9 +151,7 @@ def _make_picklable(obj):
     """Recursively convert defaultdicts (which contain unpicklable lambdas) to regular dicts."""
     from collections import defaultdict
 
-    if isinstance(obj, defaultdict):
-        return {k: _make_picklable(v) for k, v in obj.items()}
-    elif isinstance(obj, dict):
+    if isinstance(obj, defaultdict) or isinstance(obj, dict):
         return {k: _make_picklable(v) for k, v in obj.items()}
     elif isinstance(obj, tuple) and hasattr(obj, "_fields"):
         # NamedTuple: reconstruct with the same field names
@@ -166,10 +164,10 @@ def _make_picklable(obj):
 
 
 def train_fn(
-    executable_kwargs: dict[str, Any] = None,
-    model_ref: ObjectRef = None,  # noqa: F821
-    training_set_metadata: dict[str, Any] = None,
-    features: dict[str, dict] = None,
+    executable_kwargs: dict[str, Any] | None = None,
+    model_ref: ObjectRef = None,
+    training_set_metadata: dict[str, Any] | None = None,
+    features: dict[str, dict] | None = None,
     **kwargs,
 ):
     """Ray Train worker function for distributed training.
@@ -271,12 +269,12 @@ def train_fn(
 @ray.remote
 def tune_batch_size_fn(
     dataset: RayDataset = None,
-    data_loader_kwargs: dict[str, Any] = None,
-    executable_kwargs: dict[str, Any] = None,
-    model: ECD = None,  # noqa: F821
+    data_loader_kwargs: dict[str, Any] | None = None,
+    executable_kwargs: dict[str, Any] | None = None,
+    model: ECD = None,
     ludwig_config: ModelConfig | dict[str, Any] = None,
-    training_set_metadata: dict[str, Any] = None,
-    features: dict[str, dict] = None,
+    training_set_metadata: dict[str, Any] | None = None,
+    features: dict[str, dict] | None = None,
     **kwargs,
 ) -> int:
     # Pin GPU before loading the model to prevent memory leaking onto other devices
@@ -303,11 +301,11 @@ def tune_batch_size_fn(
 def tune_learning_rate_fn(
     dataset: RayDataset,
     config: dict[str, Any],
-    data_loader_kwargs: dict[str, Any] = None,
-    executable_kwargs: dict[str, Any] = None,
-    model: ECD = None,  # noqa: F821
-    training_set_metadata: dict[str, Any] = None,
-    features: dict[str, dict] = None,
+    data_loader_kwargs: dict[str, Any] | None = None,
+    executable_kwargs: dict[str, Any] | None = None,
+    model: ECD = None,
+    training_set_metadata: dict[str, Any] | None = None,
+    features: dict[str, dict] | None = None,
     **kwargs,
 ) -> float:
     # Pin GPU before loading the model to prevent memory leaking onto other devices
@@ -553,10 +551,10 @@ class RayTrainerV2(BaseTrainer):
 
 
 def eval_fn(
-    predictor_kwargs: dict[str, Any] = None,
-    model_ref: ObjectRef = None,  # noqa: F821
-    training_set_metadata: dict[str, Any] = None,
-    features: dict[str, dict] = None,
+    predictor_kwargs: dict[str, Any] | None = None,
+    model_ref: ObjectRef = None,
+    training_set_metadata: dict[str, Any] | None = None,
+    features: dict[str, dict] | None = None,
     **kwargs,
 ):
     """Ray Train worker function for distributed evaluation.
@@ -781,7 +779,7 @@ class RayPredictor(BasePredictor):
 
     def _check_dataset(self, dataset):
         if not isinstance(dataset, RayDataset):
-            raise RuntimeError(f"Ray backend requires RayDataset for inference, " f"found: {type(dataset)}")
+            raise RuntimeError(f"Ray backend requires RayDataset for inference, found: {type(dataset)}")
 
     def shutdown(self):
         for handle in self.actor_handles:
@@ -790,7 +788,7 @@ class RayPredictor(BasePredictor):
 
     def get_batch_infer_model(
         self,
-        model: "LudwigModel",  # noqa: F821
+        model: "LudwigModel",
         predictor_kwargs: dict[str, Any],
         output_columns: list[str],
         features: dict[str, dict],
@@ -831,14 +829,14 @@ class RayPredictor(BasePredictor):
 
             def _prepare_batch(self, batch: pd.DataFrame) -> dict[str, np.ndarray]:
                 res = {}
-                for c in self.features.keys():
+                for c in self.features:
                     if self.features[c][TYPE] not in _SCALAR_TYPES:
                         # Ensure columns stacked instead of turned into np.array([np.array, ...], dtype=object) objects
                         res[c] = np.stack(batch[c].values)
                     else:
                         res[c] = batch[c].to_numpy()
 
-                for c in self.features.keys():
+                for c in self.features:
                     reshape = self.reshape_map.get(c)
                     if reshape is not None:
                         res[c] = res[c].reshape((-1, *reshape))
@@ -886,7 +884,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         num_cpu = self._preprocessor_kwargs.get("num_cpu")
         if not num_cpu:
             logger.info(
-                "Backend config has num_cpu not set." " provision_preprocessing_workers() is a no-op in this case."
+                "Backend config has num_cpu not set. provision_preprocessing_workers() is a no-op in this case."
             )
             yield
         else:
@@ -919,7 +917,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         initialize_pytorch(gpus=-1)
         self._pytorch_kwargs = kwargs
 
-    def create_trainer(self, model: BaseModel, **kwargs) -> "BaseTrainer":  # noqa: F821
+    def create_trainer(self, model: BaseModel, **kwargs) -> "BaseTrainer":
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
         if model.type() == MODEL_LLM:
             from ludwig.trainers.registry import get_llm_ray_trainers_registry

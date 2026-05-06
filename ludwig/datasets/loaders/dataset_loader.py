@@ -55,7 +55,7 @@ class TqdmUpTo(tqdm):
             Total size (in tqdm units). If [default: None] remains unchanged.
         """
         if tsize is not None:
-            self.total = tsize  # noqa W0201
+            self.total = tsize
         self.update(b * bsize - self.n)  # will also set self.n = b * bsize
 
 
@@ -64,7 +64,7 @@ def _list_of_strings(list_or_string: str | list[str]) -> list[str]:
     return [list_or_string] if isinstance(list_or_string, str) else list_or_string
 
 
-def _glob_multiple(pathnames: list[str], root_dir: str = None, recursive: bool = True) -> set[str]:
+def _glob_multiple(pathnames: list[str], root_dir: str | None = None, recursive: bool = True) -> set[str]:
     """Recursive glob multiple patterns, returns set of matches.
 
     Note: glob's root_dir argument was added in python 3.10, not using it for compatibility.

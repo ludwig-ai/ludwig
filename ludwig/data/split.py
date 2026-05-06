@@ -226,8 +226,8 @@ class StratifySplitter(Splitter):
 
         return df_train, df_val, df_test
 
-    def validate(self, config: "ModelConfig"):  # noqa: F821
-        features = [f for f in config.input_features] + [f for f in config.output_features]
+    def validate(self, config: "ModelConfig"):
+        features = list(config.input_features) + list(config.output_features)
         feature_cols = {f.column for f in features}
         if self.column not in feature_cols:
             logging.info(
@@ -295,8 +295,8 @@ class DatetimeSplitter(Splitter):
         # For Dask, split by partition, as splitting by row is very inefficient.
         return tuple(backend.df_engine.split(df, self.probabilities))
 
-    def validate(self, config: "ModelConfig"):  # noqa: F821
-        features = [f for f in config.input_features] + [f for f in config.output_features]
+    def validate(self, config: "ModelConfig"):
+        features = list(config.input_features) + list(config.output_features)
         feature_cols = {f.column for f in features}
         if self.column not in feature_cols:
             logging.info(

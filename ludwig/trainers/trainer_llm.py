@@ -52,7 +52,7 @@ class NoneTrainer(BaseTrainer):
         skip_save_model: bool = False,
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
-        callbacks: list = None,
+        callbacks: list | None = None,
         report_tqdm_to_ray=False,
         random_seed: float = default_random_seed,
         distributed: DistributedStrategy | None = None,
@@ -289,7 +289,7 @@ class NoneTrainer(BaseTrainer):
 
     def evaluation(
         self,
-        dataset: "Dataset",  # noqa: F821
+        dataset: "Dataset",
         dataset_name: str,
         metrics_log: dict[str, dict[str, list[TrainerMetric]]],
         batch_size: int,
@@ -427,7 +427,7 @@ class FineTuneTrainer(Trainer):
         skip_save_model: bool = False,
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
-        callbacks: list = None,
+        callbacks: list | None = None,
         report_tqdm_to_ray=False,
         random_seed: int = default_random_seed,
         distributed: DistributedStrategy | None = None,

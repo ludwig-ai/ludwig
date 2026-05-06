@@ -113,7 +113,7 @@ def validate_conf_thresholds_and_probabilities_2d_3d(probabilities, threshold_ou
     for item, value in validation_mapping.items():
         item_len = len(value)
         if item_len != 2:
-            exception_message = "Two {} should be provided - " "{} was given.".format(item, item_len)
+            exception_message = f"Two {item} should be provided - {item_len} was given."
             logger.error(exception_message)
             raise RuntimeError(exception_message)
 
@@ -126,10 +126,10 @@ def load_data_for_viz(load_type, model_file_statistics, dtype=int, ground_truth_
     :param model_file_statistics: JSON file or list of json files containing any model experiment stats. :return List of
         training statistics loaded as json objects.
     """
-    supported_load_types = dict(
-        load_json=load_json,
-        load_from_file=partial(load_from_file, dtype=dtype, ground_truth_split=ground_truth_split),
-    )
+    supported_load_types = {
+        "load_json": load_json,
+        "load_from_file": partial(load_from_file, dtype=dtype, ground_truth_split=ground_truth_split),
+    }
     loader = supported_load_types[load_type]
     # Loads training stats from JSON file(s).
     try:
@@ -244,9 +244,7 @@ def _get_ground_truth_df(ground_truth: str) -> DataFrame:
     # determine ground truth data format and get appropriate reader
     data_format = figure_data_format_dataset(ground_truth)
     if data_format not in CACHEABLE_FORMATS:
-        raise ValueError(
-            "{} is not supported for ground truth file, " "valid types are {}".format(data_format, CACHEABLE_FORMATS)
-        )
+        raise ValueError(f"{data_format} is not supported for ground truth file, valid types are {CACHEABLE_FORMATS}")
     reader = get_from_registry(data_format, data_reader_registry)
 
     # retrieve ground truth from source data set
@@ -1351,10 +1349,10 @@ def frequency_vs_f1_cli(test_statistics: str | list[str], ground_truth_metadata:
 def learning_curves(
     train_stats_per_model: list[dict],
     output_feature_name: str | None = None,
-    model_names: str | list[str] = None,
-    output_directory: str = None,
+    model_names: str | list[str] | None = None,
+    output_directory: str | None = None,
     file_format: str = "pdf",
-    callbacks: list[Callback] = None,
+    callbacks: list[Callback] | None = None,
     **kwargs,
 ) -> None:
     """Show how model metrics change over training and validation data epochs.
@@ -1429,8 +1427,8 @@ def learning_curves(
 def compare_performance(
     test_stats_per_model: list[dict],
     output_feature_name: str | None = None,
-    model_names: str | list[str] = None,
-    output_directory: str = None,
+    model_names: str | list[str] | None = None,
+    output_directory: str | None = None,
     file_format: str = "pdf",
     **kwargs,
 ) -> None:
@@ -1487,7 +1485,7 @@ def compare_performance(
     output_feature_names = _validate_output_feature_name_from_test_stats(output_feature_name, test_stats_per_model_list)
 
     for output_feature_name in output_feature_names:
-        metric_names_sets = list(set(tspr[output_feature_name].keys()) for tspr in test_stats_per_model_list)
+        metric_names_sets = [set(tspr[output_feature_name].keys()) for tspr in test_stats_per_model_list]
         metric_names = metric_names_sets[0]
         for metric_names_set in metric_names_sets:
             metric_names = metric_names.intersection(metric_names_set)
@@ -1539,8 +1537,8 @@ def compare_classifiers_performance_from_prob(
     output_feature_name: str,
     labels_limit: int = 0,
     top_n_classes: list[int] | int = 3,
-    model_names: str | list[str] = None,
-    output_directory: str = None,
+    model_names: str | list[str] | None = None,
+    output_directory: str | None = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
     **kwargs,
@@ -1593,7 +1591,7 @@ def compare_classifiers_performance_from_prob(
     hits_at_ks = []
     mrrs = []
 
-    for i, prob in enumerate(probs):
+    for _i, prob in enumerate(probs):
         if labels_limit > 0 and prob.shape[1] > labels_limit + 1:
             prob_limit = prob[:, : labels_limit + 1]
             prob_limit[:, labels_limit] = prob[:, labels_limit:].sum(1)
@@ -1634,8 +1632,8 @@ def compare_classifiers_performance_from_pred(
     metadata: dict,
     output_feature_name: str,
     labels_limit: int,
-    model_names: str | list[str] = None,
-    output_directory: str = None,
+    model_names: str | list[str] | None = None,
+    output_directory: str | None = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
     **kwargs,
@@ -1695,7 +1693,7 @@ def compare_classifiers_performance_from_pred(
     recalls = []
     f1s = []
 
-    for i, pred in enumerate(preds):
+    for _i, pred in enumerate(preds):
         accuracies.append(sklearn.metrics.accuracy_score(ground_truth, pred))
         precisions.append(sklearn.metrics.precision_score(ground_truth, pred, average="macro"))
         recalls.append(sklearn.metrics.recall_score(ground_truth, pred, average="macro"))
@@ -1723,8 +1721,8 @@ def compare_classifiers_performance_subset(
     top_n_classes: list[int],
     labels_limit: int,
     subset: str,
-    model_names: str | list[str] = None,
-    output_directory: str = None,
+    model_names: str | list[str] | None = None,
+    output_directory: str | None = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
     **kwargs,
@@ -1796,13 +1794,10 @@ def compare_classifiers_performance_subset(
             subset_indices = np.argmax(prob, axis=1) < k
             gt_subset = ground_truth[subset_indices]
             logger.info(
-                "Subset for model_name {} is {:.2f}% of the data".format(
-                    model_names[i] if model_names and i < len(model_names) else i,
-                    len(gt_subset) / len(ground_truth) * 100,
-                )
+                f"Subset for model_name {model_names[i] if model_names and i < len(model_names) else i} is {len(gt_subset) / len(ground_truth) * 100:.2f}% of the data"
             )
-            model_names[i] = "{} ({:.2f}%)".format(
-                model_names[i] if model_names and i < len(model_names) else i, len(gt_subset) / len(ground_truth) * 100
+            model_names[i] = (
+                f"{model_names[i] if model_names and i < len(model_names) else i} ({len(gt_subset) / len(ground_truth) * 100:.2f}%)"
             )
 
         prob_subset = prob[subset_indices]
@@ -1844,8 +1839,8 @@ def compare_classifiers_performance_changing_k(
     output_feature_name: str,
     top_k: int,
     labels_limit: int,
-    model_names: str | list[str] = None,
-    output_directory: str = None,
+    model_names: str | list[str] | None = None,
+    output_directory: str | None = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
     **kwargs,
@@ -1893,7 +1888,7 @@ def compare_classifiers_performance_changing_k(
 
     hits_at_ks = []
     model_names_list = convert_to_list(model_names)
-    for i, prob in enumerate(probs):
+    for _i, prob in enumerate(probs):
         if labels_limit > 0 and prob.shape[1] > labels_limit + 1:
             prob_limit = prob[:, : labels_limit + 1]
             prob_limit[:, labels_limit] = prob[:, labels_limit:].sum(1)
@@ -1928,8 +1923,8 @@ def compare_classifiers_multiclass_multimetric(
     metadata: dict,
     output_feature_name: str,
     top_n_classes: list[int],
-    model_names: str | list[str] = None,
-    output_directory: str = None,
+    model_names: str | list[str] | None = None,
+    output_directory: str | None = None,
     file_format: str = "pdf",
     **kwargs,
 ) -> None:
@@ -1980,7 +1975,7 @@ def compare_classifiers_multiclass_multimetric(
             f1_scores = []
             labels = []
             for _, class_name in sorted(
-                ((metadata[output_feature_name]["str2idx"][key], key) for key in per_class_stats.keys()),
+                ((metadata[output_feature_name]["str2idx"][key], key) for key in per_class_stats),
                 key=lambda tup: tup[0],
             ):
                 class_stats = per_class_stats[class_name]
@@ -2004,8 +1999,7 @@ def compare_classifiers_multiclass_multimetric(
                     [ps, rs, fs],
                     ["precision", "recall", "f1 score"],
                     labels=ls,
-                    title="{} Multiclass Precision / Recall / "
-                    "F1 Score top {} {}".format(model_name_name, k, output_feature_name),
+                    title=f"{model_name_name} Multiclass Precision / Recall / F1 Score top {k} {output_feature_name}",
                     filename=filename,
                 )
 
@@ -2024,8 +2018,8 @@ def compare_classifiers_multiclass_multimetric(
                     [p_np[higher_f1s], r_np[higher_f1s], f1_np[higher_f1s]],
                     ["precision", "recall", "f1 score"],
                     labels=labels_np[higher_f1s].tolist(),
-                    title="{} Multiclass Precision / Recall / "
-                    "F1 Score best {} classes {}".format(model_name_name, k, output_feature_name),
+                    title=f"{model_name_name} Multiclass Precision / Recall / "
+                    f"F1 Score best {k} classes {output_feature_name}",
                     filename=filename,
                 )
                 lower_f1s = sorted_indices[:k]
@@ -2079,8 +2073,8 @@ def compare_classifiers_predictions(
     metadata: dict,
     output_feature_name: str,
     labels_limit: int,
-    model_names: str | list[str] = None,
-    output_directory: str = None,
+    model_names: str | list[str] | None = None,
+    output_directory: str | None = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
     **kwargs,
@@ -2159,35 +2153,17 @@ def compare_classifiers_predictions(
     logger.info(f"Both right: {both_right} {100 * both_right / all:.2f}%")
     logger.info(f"One right: {one_right} {100 * one_right / all:.2f}%")
     logger.info(
-        "  {} right / {} wrong: {} {:.2f}% {:.2f}%".format(
-            name_c1,
-            name_c2,
-            c1_right_c2_wrong,
-            100 * c1_right_c2_wrong / all,
-            100 * c1_right_c2_wrong / one_right if one_right > 0 else 0,
-        )
+        f"  {name_c1} right / {name_c2} wrong: {c1_right_c2_wrong} {100 * c1_right_c2_wrong / all:.2f}% {100 * c1_right_c2_wrong / one_right if one_right > 0 else 0:.2f}%"
     )
     logger.info(
-        "  {} wrong / {} right: {} {:.2f}% {:.2f}%".format(
-            name_c1,
-            name_c2,
-            c1_wrong_c2_right,
-            100 * c1_wrong_c2_right / all,
-            100 * c1_wrong_c2_right / one_right if one_right > 0 else 0,
-        )
+        f"  {name_c1} wrong / {name_c2} right: {c1_wrong_c2_right} {100 * c1_wrong_c2_right / all:.2f}% {100 * c1_wrong_c2_right / one_right if one_right > 0 else 0:.2f}%"
     )
     logger.info(f"Both wrong: {both_wrong} {100 * both_wrong / all:.2f}%")
     logger.info(
-        "  same prediction: {} {:.2f}% {:.2f}%".format(
-            both_wrong_same, 100 * both_wrong_same / all, 100 * both_wrong_same / both_wrong if both_wrong > 0 else 0
-        )
+        f"  same prediction: {both_wrong_same} {100 * both_wrong_same / all:.2f}% {100 * both_wrong_same / both_wrong if both_wrong > 0 else 0:.2f}%"
     )
     logger.info(
-        "  different prediction: {} {:.2f}% {:.2f}%".format(
-            both_wrong_different,
-            100 * both_wrong_different / all,
-            100 * both_wrong_different / both_wrong if both_wrong > 0 else 0,
-        )
+        f"  different prediction: {both_wrong_different} {100 * both_wrong_different / all:.2f}% {100 * both_wrong_different / both_wrong if both_wrong > 0 else 0:.2f}%"
     )
 
     filename = None
@@ -2220,8 +2196,8 @@ def compare_classifiers_predictions_distribution(
     metadata: dict,
     output_feature_name: str,
     labels_limit: int,
-    model_names: str | list[str] = None,
-    output_directory: str = None,
+    model_names: str | list[str] | None = None,
+    output_directory: str | None = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
     **kwargs,
@@ -2294,8 +2270,8 @@ def confidence_thresholding(
     metadata: dict,
     output_feature_name: str,
     labels_limit: int,
-    model_names: str | list[str] = None,
-    output_directory: str = None,
+    model_names: str | list[str] | None = None,
+    output_directory: str | None = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
     **kwargs,
@@ -2343,7 +2319,7 @@ def confidence_thresholding(
     accuracies = []
     dataset_kept = []
 
-    for i, prob in enumerate(probs):
+    for _i, prob in enumerate(probs):
         if labels_limit > 0 and prob.shape[1] > labels_limit + 1:
             prob_limit = prob[:, : labels_limit + 1]
             prob_limit[:, labels_limit] = prob[:, labels_limit:].sum(1)
@@ -2385,8 +2361,8 @@ def confidence_thresholding_data_vs_acc(
     metadata: dict,
     output_feature_name: str,
     labels_limit: int,
-    model_names: str | list[str] = None,
-    output_directory: str = None,
+    model_names: str | list[str] | None = None,
+    output_directory: str | None = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
     **kwargs,
@@ -2436,7 +2412,7 @@ def confidence_thresholding_data_vs_acc(
     accuracies = []
     dataset_kept = []
 
-    for i, prob in enumerate(probs):
+    for _i, prob in enumerate(probs):
         if labels_limit > 0 and prob.shape[1] > labels_limit + 1:
             prob_limit = prob[:, : labels_limit + 1]
             prob_limit[:, labels_limit] = prob[:, labels_limit:].sum(1)
@@ -2484,8 +2460,8 @@ def confidence_thresholding_data_vs_acc_subset(
     top_n_classes: list[int],
     labels_limit: int,
     subset: str,
-    model_names: str | list[str] = None,
-    output_directory: str = None,
+    model_names: str | list[str] | None = None,
+    output_directory: str | None = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
     **kwargs,
@@ -2570,10 +2546,7 @@ def confidence_thresholding_data_vs_acc_subset(
             subset_indices = np.argmax(prob, axis=1) < k
             gt_subset = ground_truth[subset_indices]
             logger.info(
-                "Subset for model_name {} is {:.2f}% of the data".format(
-                    model_names[i] if model_names and i < len(model_names) else i,
-                    len(gt_subset) / len(ground_truth) * 100,
-                )
+                f"Subset for model_name {model_names[i] if model_names and i < len(model_names) else i} is {len(gt_subset) / len(ground_truth) * 100:.2f}% of the data"
             )
 
         prob_subset = prob[subset_indices]
@@ -2620,8 +2593,8 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
     top_n_classes: int | list[int],
     labels_limit: int,
     subset: str,
-    model_names: str | list[str] = None,
-    output_directory: str = None,
+    model_names: str | list[str] | None = None,
+    output_directory: str | None = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
     **kwargs,
@@ -2719,10 +2692,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
                 subset_indices = np.argmax(prob, axis=1) == curr_k
                 gt_subset = ground_truth[subset_indices]
                 logger.info(
-                    "Subset for model_name {} is {:.2f}% of the data".format(
-                        model_names_list[i] if model_names_list and i < len(model_names_list) else i,
-                        len(gt_subset) / len(ground_truth) * 100,
-                    )
+                    f"Subset for model_name {model_names_list[i] if model_names_list and i < len(model_names_list) else i} is {len(gt_subset) / len(ground_truth) * 100:.2f}% of the data"
                 )
 
             prob_subset = prob[subset_indices]
@@ -2758,7 +2728,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
             dataset_kept,
             model_names_list,
             decimal_digits=2,
-            title="Confidence_Thresholding (Data vs Accuracy) " "for class {}".format(output_feature_name_name),
+            title=f"Confidence_Thresholding (Data vs Accuracy) for class {output_feature_name_name}",
             filename=filename,
         )
 
@@ -2770,8 +2740,8 @@ def confidence_thresholding_2thresholds_2d(
     metadata,
     threshold_output_feature_names: list[str],
     labels_limit: int,
-    model_names: str | list[str] = None,
-    output_directory: str = None,
+    model_names: str | list[str] | None = None,
+    output_directory: str | None = None,
     file_format: str = "pdf",
     **kwargs,
 ) -> None:
@@ -2961,7 +2931,7 @@ def confidence_thresholding_2thresholds_3d(
     metadata,
     threshold_output_feature_names: list[str],
     labels_limit: int,
-    output_directory: str = None,
+    output_directory: str | None = None,
     file_format: str = "pdf",
     **kwargs,
 ) -> None:
@@ -3085,8 +3055,8 @@ def binary_threshold_vs_metric(
     output_feature_name: str,
     metrics: list[str],
     positive_label: int = 1,
-    model_names: list[str] = None,
-    output_directory: str = None,
+    model_names: list[str] | None = None,
+    output_directory: str | None = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
     **kwargs,
@@ -3152,7 +3122,7 @@ def binary_threshold_vs_metric(
 
         scores = []
 
-        for i, prob in enumerate(probs):
+        for _i, prob in enumerate(probs):
             scores_alg = []
 
             if len(prob.shape) == 2:
@@ -3160,7 +3130,7 @@ def binary_threshold_vs_metric(
                     prob = prob[:, positive_label]
                 else:
                     raise Exception(
-                        "the specified positive label {} is not " "present in the probabilities".format(positive_label)
+                        f"the specified positive label {positive_label} is not present in the probabilities"
                     )
 
             for threshold in thresholds:
@@ -3198,8 +3168,8 @@ def precision_recall_curves(
     metadata: dict,
     output_feature_name: str,
     positive_label: int = 1,
-    model_names: str | list[str] = None,
-    output_directory: str = None,
+    model_names: str | list[str] | None = None,
+    output_directory: str | None = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
     **kwargs,
@@ -3267,8 +3237,8 @@ def precision_recall_curves(
 def precision_recall_curves_from_test_statistics(
     test_stats_per_model: list[dict],
     output_feature_name: str,
-    model_names: str | list[str] = None,
-    output_directory: str = None,
+    model_names: str | list[str] | None = None,
+    output_directory: str | None = None,
     file_format: str = "pdf",
     **kwargs,
 ) -> None:
@@ -3317,8 +3287,8 @@ def roc_curves(
     metadata: dict,
     output_feature_name: str,
     positive_label: int = 1,
-    model_names: str | list[str] = None,
-    output_directory: str = None,
+    model_names: str | list[str] | None = None,
+    output_directory: str | None = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
     **kwargs,
@@ -3366,7 +3336,7 @@ def roc_curves(
     model_names_list = convert_to_list(model_names)
     fpr_tprs = []
 
-    for i, prob in enumerate(probs):
+    for _i, prob in enumerate(probs):
         if len(prob.shape) > 1:
             prob = prob[:, positive_label]
         fpr, tpr, _ = sklearn.metrics.roc_curve(ground_truth, prob, pos_label=positive_label)
@@ -3384,8 +3354,8 @@ def roc_curves(
 def roc_curves_from_test_statistics(
     test_stats_per_model: list[dict],
     output_feature_name: str,
-    model_names: str | list[str] = None,
-    output_directory: str = None,
+    model_names: str | list[str] | None = None,
+    output_directory: str | None = None,
     file_format: str = "pdf",
     **kwargs,
 ) -> None:
@@ -3433,8 +3403,8 @@ def calibration_1_vs_all(
     output_feature_name: str,
     top_n_classes: list[int],
     labels_limit: int,
-    model_names: list[str] = None,
-    output_directory: str = None,
+    model_names: list[str] | None = None,
+    output_directory: str | None = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
     **kwargs,
@@ -3577,8 +3547,8 @@ def calibration_multiclass(
     metadata: dict,
     output_feature_name: str,
     labels_limit: int,
-    model_names: str | list[str] = None,
-    output_directory: str = None,
+    model_names: str | list[str] | None = None,
+    output_directory: str | None = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
     **kwargs,
@@ -3676,8 +3646,8 @@ def confusion_matrix(
     output_feature_name: str | None,
     top_n_classes: list[int],
     normalize: bool,
-    model_names: str | list[str] = None,
-    output_directory: str = None,
+    model_names: str | list[str] | None = None,
+    output_directory: str | None = None,
     file_format: str = "pdf",
     **kwargs,
 ) -> None:
@@ -3777,12 +3747,12 @@ def confusion_matrix(
                         class_desc_entropy,
                         desc_entropy,
                         labels=[labels[i] for i in class_desc_entropy],
-                        title="Classes ranked by entropy of " "Confusion Matrix row",
+                        title="Classes ranked by entropy of Confusion Matrix row",
                         filename=filename,
                     )
     if not confusion_matrix_found:
         logger.error("Cannot find confusion_matrix in evaluation data")
-        raise FileNotFoundError("Cannot find confusion_matrix in evaluation " "data")
+        raise FileNotFoundError("Cannot find confusion_matrix in evaluation data")
 
 
 @DeveloperAPI
@@ -3791,8 +3761,8 @@ def frequency_vs_f1(
     metadata: dict,
     output_feature_name: str | None,
     top_n_classes: list[int],
-    model_names: str | list[str] = None,
-    output_directory: str = None,
+    model_names: str | list[str] | None = None,
+    output_directory: str | None = None,
     file_format: str = "pdf",
     **kwargs,
 ):
@@ -3935,7 +3905,9 @@ def hyperopt_report_cli(hyperopt_stats_path, output_directory=None, file_format=
 
 
 @DeveloperAPI
-def hyperopt_report(hyperopt_stats_path: str, output_directory: str = None, file_format: str = "pdf", **kwargs) -> None:
+def hyperopt_report(
+    hyperopt_stats_path: str, output_directory: str | None = None, file_format: str = "pdf", **kwargs
+) -> None:
     """Produces a report about hyperparameter optimization creating one graph per hyperparameter to show the
     distribution of results and one additional graph of pairwise hyperparameters interactions.
 
@@ -4043,7 +4015,7 @@ def get_visualizations_registry() -> dict[str, Callable]:
         "confidence_thresholding": confidence_thresholding_cli,
         "confidence_thresholding_data_vs_acc": confidence_thresholding_data_vs_acc_cli,
         "confidence_thresholding_data_vs_acc_subset": confidence_thresholding_data_vs_acc_subset_cli,
-        "confidence_thresholding_data_vs_acc_subset_per_class": confidence_thresholding_data_vs_acc_subset_per_class_cli,  # noqa: E501
+        "confidence_thresholding_data_vs_acc_subset_per_class": confidence_thresholding_data_vs_acc_subset_per_class_cli,
         "confidence_thresholding_2thresholds_2d": confidence_thresholding_2thresholds_2d_cli,
         "confidence_thresholding_2thresholds_3d": confidence_thresholding_2thresholds_3d_cli,
         "binary_threshold_vs_metric": binary_threshold_vs_metric_cli,
@@ -4075,13 +4047,13 @@ def cli(sys_argv):
         "-sf",
         "--split_file",
         default=None,
-        help="file containing split values used in conjunction with " "ground truth file.",
+        help="file containing split values used in conjunction with ground truth file.",
     )
 
     parser.add_argument(
         "-od",
         "--output_directory",
-        help="directory where to save plots." "If not specified, plots will be displayed in a window",
+        help="directory where to save plots.If not specified, plots will be displayed in a window",
     )
     parser.add_argument(
         "-ff", "--file_format", help="file format of output plots", default="pdf", choices=["pdf", "png"]

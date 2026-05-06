@@ -173,8 +173,8 @@ class TemperatureScaling(CalibrationModule):
         before_calibration_ece = ece_criterion(logits, one_hot_labels).item()
         logger.info(
             "Before temperature scaling:\n"
-            "    Negative log-likelihood: %.3f\n"
-            "    Expected Calibration Error: %.3f" % (before_calibration_nll, before_calibration_ece)
+            f"    Negative log-likelihood: {before_calibration_nll:.3f}\n"
+            f"    Expected Calibration Error: {before_calibration_ece:.3f}"
         )
 
         # Optimizes the temperature to minimize NLL
@@ -191,18 +191,18 @@ class TemperatureScaling(CalibrationModule):
         # Calculate NLL and ECE after temperature scaling
         after_calibration_nll = nll_criterion(self.scale_logits(logits), one_hot_labels).item()
         after_calibration_ece = ece_criterion(self.scale_logits(logits), one_hot_labels).item()
-        logger.info("Optimal temperature: %.3f" % self.temperature.item())
+        logger.info(f"Optimal temperature: {self.temperature.item():.3f}")
         logger.info(
             "After temperature scaling:\n"
-            "    Negative log-likelihood: %.3f\n"
-            "    Expected Calibration Error: %.3f" % (after_calibration_nll, after_calibration_ece)
+            f"    Negative log-likelihood: {after_calibration_nll:.3f}\n"
+            f"    Expected Calibration Error: {after_calibration_ece:.3f}"
         )
         self.temperature.requires_grad = False
         # This should never happen, but if expected calibration error is higher after optimizing temperature, revert.
         if after_calibration_ece > before_calibration_ece:
             logger.warning(
                 "Expected calibration error higher after scaling, "
-                "reverting to temperature=%.3f." % original_temperature.item()
+                f"reverting to temperature={original_temperature.item():.3f}."
             )
             with torch.no_grad():
                 self.temperature.data = original_temperature.data
@@ -240,7 +240,7 @@ class MatrixScaling(CalibrationModule):
     mu: The regularization weight for bias vector. Defaults to off_diagonal_l2 if not specified.
     """
 
-    def __init__(self, num_classes: int = 2, off_diagonal_l2: float = 0.01, mu: float = None):
+    def __init__(self, num_classes: int = 2, off_diagonal_l2: float = 0.01, mu: float | None = None):
         super().__init__()
         self.num_classes = num_classes
         self.device = "cuda" if torch.cuda.is_available() and torch.cuda.device_count() > 0 else "cpu"
@@ -264,8 +264,8 @@ class MatrixScaling(CalibrationModule):
         before_calibration_ece = ece_criterion(logits, one_hot_labels).item()
         logger.info(
             "Before matrix scaling:\n"
-            "    Negative log-likelihood: %.3f\n"
-            "    Expected Calibration Error: %.3f" % (before_calibration_nll, before_calibration_ece)
+            f"    Negative log-likelihood: {before_calibration_nll:.3f}\n"
+            f"    Expected Calibration Error: {before_calibration_ece:.3f}"
         )
 
         # Optimizes the linear transform to minimize NLL
@@ -284,8 +284,8 @@ class MatrixScaling(CalibrationModule):
         after_calibration_ece = ece_criterion(self.scale_logits(logits), one_hot_labels).item()
         logger.info(
             "After matrix scaling:\n"
-            "    Negative log-likelihood: %.3f\n"
-            "    Expected Calibration Error: %.3f" % (after_calibration_nll, after_calibration_ece)
+            f"    Negative log-likelihood: {after_calibration_nll:.3f}\n"
+            f"    Expected Calibration Error: {after_calibration_ece:.3f}"
         )
         self.w.requires_grad = False
         self.b.requires_grad = False

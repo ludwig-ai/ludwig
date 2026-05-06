@@ -64,7 +64,7 @@ class NumberTransformer(nn.Module, ABC):
 
 
 class ZScoreTransformer(NumberTransformer):
-    def __init__(self, mean: float = None, std: float = None, **kwargs: dict):
+    def __init__(self, mean: float | None = None, std: float | None = None, **kwargs: dict):
         super().__init__()
         self.mu = float(mean) if mean is not None else mean
         self.sigma = float(std) if std is not None else std
@@ -99,7 +99,7 @@ class ZScoreTransformer(NumberTransformer):
 
 
 class MinMaxTransformer(NumberTransformer):
-    def __init__(self, min: float = None, max: float = None, **kwargs: dict):
+    def __init__(self, min: float | None = None, max: float | None = None, **kwargs: dict):
         super().__init__()
         self.min_value = float(min) if min is not None else min
         self.max_value = float(max) if max is not None else max
@@ -113,7 +113,7 @@ class MinMaxTransformer(NumberTransformer):
 
     def inverse_transform(self, x: np.ndarray) -> np.ndarray:
         if self.range is None:
-            raise ValueError("Numeric transformer needs to be instantiated with " "min and max values.")
+            raise ValueError("Numeric transformer needs to be instantiated with min and max values.")
         return x * self.range + self.min_value
 
     def transform_inference(self, x: torch.Tensor) -> torch.Tensor:
@@ -121,7 +121,7 @@ class MinMaxTransformer(NumberTransformer):
 
     def inverse_transform_inference(self, x: torch.Tensor) -> torch.Tensor:
         if self.range is None:
-            raise ValueError("Numeric transformer needs to be instantiated with " "min and max values.")
+            raise ValueError("Numeric transformer needs to be instantiated with min and max values.")
         return x * self.range + self.min_value
 
     @staticmethod
@@ -134,7 +134,7 @@ class MinMaxTransformer(NumberTransformer):
 
 
 class InterQuartileTransformer(NumberTransformer):
-    def __init__(self, q1: float = None, q2: float = None, q3: float = None, **kwargs: dict):
+    def __init__(self, q1: float | None = None, q2: float | None = None, q3: float | None = None, **kwargs: dict):
         super().__init__()
         self.q1 = float(q1) if q1 is not None else q1
         self.q2 = float(q2) if q2 is not None else q2
@@ -475,8 +475,7 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
     def create_predict_module(self) -> PredictModule:
         if getattr(self, "clip", None) and not (isinstance(self.clip, (list, tuple)) and len(self.clip) == 2):
             raise ValueError(
-                f"The clip parameter of {self.feature_name} is {self.clip}. "
-                f"It must be a list or a tuple of length 2."
+                f"The clip parameter of {self.feature_name} is {self.clip}. It must be a list or a tuple of length 2."
             )
         return _NumberPredict(getattr(self, "clip", None))
 

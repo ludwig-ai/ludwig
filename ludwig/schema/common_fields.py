@@ -6,7 +6,9 @@ from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 from ludwig.utils.torch_utils import initializer_registry
 
 
-def DropoutField(default: float = 0.0, description: str = None, parameter_metadata: ParameterMetadata = None) -> Field:
+def DropoutField(
+    default: float = 0.0, description: str | None = None, parameter_metadata: ParameterMetadata = None
+) -> Field:
     description = description or "Default dropout rate applied to fully connected layers."
     full_description = description + (
         " Increasing dropout is a common form of regularization to combat overfitting. "
@@ -23,7 +25,7 @@ def DropoutField(default: float = 0.0, description: str = None, parameter_metada
 
 
 def ResidualField(
-    default: bool = False, description: str = None, parameter_metadata: ParameterMetadata = None
+    default: bool = False, description: str | None = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     description = description or (
         "Whether to add a residual connection to each fully connected layer block. "
@@ -38,7 +40,7 @@ def ResidualField(
 
 
 def NumFCLayersField(
-    default: int = 0, description: str = None, parameter_metadata: ParameterMetadata = None, non_zero=False
+    default: int = 0, description: str | None = None, parameter_metadata: ParameterMetadata = None, non_zero=False
 ) -> Field:
     if non_zero and default <= 0:
         raise ValueError(f"NumFCLayersField: when non_zero=True, default must be > 0, got default={default}.")
@@ -63,7 +65,7 @@ def NumFCLayersField(
 
 
 def NormField(
-    default: str | None = None, description: str = None, parameter_metadata: ParameterMetadata = None
+    default: str | None = None, description: str | None = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     description = description or "Default normalization applied at the beginnging of fully connected layers."
     parameter_metadata = parameter_metadata or COMMON_METADATA["norm"]
@@ -76,7 +78,7 @@ def NormField(
     )
 
 
-def NormParamsField(description: str = None, parameter_metadata: ParameterMetadata = None) -> Field:
+def NormParamsField(description: str | None = None, parameter_metadata: ParameterMetadata = None) -> Field:
     description = description or "Default parameters passed to the `norm` module."
     parameter_metadata = parameter_metadata or COMMON_METADATA["norm_params"]
     return schema_utils.Dict(
@@ -85,7 +87,7 @@ def NormParamsField(description: str = None, parameter_metadata: ParameterMetada
     )
 
 
-def FCLayersField(description: str = None, parameter_metadata: ParameterMetadata = None) -> Field:
+def FCLayersField(description: str | None = None, parameter_metadata: ParameterMetadata = None) -> Field:
     description = description or (
         "List of dictionaries containing the parameters of all the fully connected layers. "
         "The length of the list determines the number of stacked fully connected layers "
@@ -109,9 +111,9 @@ initializer, see [torch.nn.init](https://pytorch.org/docs/stable/nn.init.html).
 
 
 def BiasInitializerField(
-    default: str = "zeros", description: str = None, parameter_metadata: ParameterMetadata = None
+    default: str = "zeros", description: str | None = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
-    initializers_str = ", ".join([f"`{i}`" for i in initializer_registry.keys()])
+    initializers_str = ", ".join([f"`{i}`" for i in initializer_registry])
     description = description or "Initializer for the bias vector."
     full_description = f"{description} Options: {initializers_str}. {INITIALIZER_SUFFIX}"
     parameter_metadata = parameter_metadata or COMMON_METADATA["bias_initializer"]
@@ -123,9 +125,9 @@ def BiasInitializerField(
 
 
 def WeightsInitializerField(
-    default: str = "xavier_uniform", description: str = None, parameter_metadata: ParameterMetadata = None
+    default: str = "xavier_uniform", description: str | None = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
-    initializers_str = ", ".join([f"`{i}`" for i in initializer_registry.keys()])
+    initializers_str = ", ".join([f"`{i}`" for i in initializer_registry])
     description = description or "Initializer for the weight matrix."
     full_description = f"{description} Options: {initializers_str}. {INITIALIZER_SUFFIX}"
     parameter_metadata = parameter_metadata or COMMON_METADATA["weights_initializer"]
@@ -137,7 +139,7 @@ def WeightsInitializerField(
 
 
 def EmbeddingInitializerField(
-    default: str | None = None, description: str = None, parameter_metadata: ParameterMetadata = None
+    default: str | None = None, description: str | None = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     description = description or "Initializer for the embedding matrix."
     parameter_metadata = parameter_metadata or COMMON_METADATA["embedding_initializer"]
@@ -151,7 +153,7 @@ def EmbeddingInitializerField(
 
 
 def EmbeddingSizeField(
-    default: int = 256, description: str = None, parameter_metadata: ParameterMetadata = None
+    default: int = 256, description: str | None = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     description = description or (
         "The maximum embedding size. The actual size will be `min(vocabulary_size, embedding_size)` for "
@@ -168,7 +170,7 @@ def EmbeddingSizeField(
 
 
 def EmbeddingsOnCPUField(
-    default: bool = False, description: str = None, parameter_metadata: ParameterMetadata = None
+    default: bool = False, description: str | None = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     description = description or (
         "Whether to force the placement of the embedding matrix in regular memory and have the CPU resolve them. "
@@ -186,7 +188,7 @@ def EmbeddingsOnCPUField(
 
 
 def EmbeddingsTrainableField(
-    default: bool = True, description: str = None, parameter_metadata: ParameterMetadata = None
+    default: bool = True, description: str | None = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     description = description or (
         "If `true` embeddings are trained during the training process, if `false` embeddings are fixed. "
@@ -202,7 +204,7 @@ def EmbeddingsTrainableField(
 
 
 def PretrainedEmbeddingsField(
-    default: str | None = None, description: str = None, parameter_metadata: ParameterMetadata = None
+    default: str | None = None, description: str | None = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     description = description or (
         "Path to a file containing pretrained embeddings. By default `dense` embeddings are initialized "
@@ -223,7 +225,7 @@ def PretrainedEmbeddingsField(
 
 
 def MaxSequenceLengthField(
-    default: int | None = None, description: str = None, parameter_metadata: ParameterMetadata = None
+    default: int | None = None, description: str | None = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     description = description or "[internal] Maximum sequence length from preprocessing."
     parameter_metadata = parameter_metadata or COMMON_METADATA["max_sequence_length"]
@@ -236,7 +238,7 @@ def MaxSequenceLengthField(
 
 
 def VocabField(
-    default: list | None = None, description: str = None, parameter_metadata: ParameterMetadata = None
+    default: list | None = None, description: str | None = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     description = description or "[internal] Vocabulary for the encoder from preprocessing."
     parameter_metadata = parameter_metadata or COMMON_METADATA["vocab"]
@@ -248,7 +250,7 @@ def VocabField(
 
 
 def VocabSizeField(
-    default: list | None = None, description: str = None, parameter_metadata: ParameterMetadata = None
+    default: list | None = None, description: str | None = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     description = description or "[internal] Size of the vocabulary from preprocessing."
     parameter_metadata = parameter_metadata or COMMON_METADATA["vocab_size"]
@@ -261,7 +263,7 @@ def VocabSizeField(
 
 
 def RepresentationField(
-    default: str = "dense", description: str = None, parameter_metadata: ParameterMetadata = None
+    default: str = "dense", description: str | None = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     description = description or (
         "Representation of the embedding. `dense` means the embeddings are initialized randomly, "
@@ -277,7 +279,7 @@ def RepresentationField(
 
 
 def ReduceOutputField(
-    default: str | None = "sum", description: str = None, parameter_metadata: ParameterMetadata = None
+    default: str | None = "sum", description: str | None = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     description = description or (
         "How to reduce the output tensor along the `s` sequence length dimension if the rank of the "

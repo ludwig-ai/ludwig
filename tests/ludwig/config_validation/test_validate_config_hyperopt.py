@@ -4,8 +4,8 @@ from unittest.mock import patch
 import pytest
 
 # Imported to populate the registry
-import ludwig.schema.hyperopt.parameter  # noqa: F401
-import ludwig.schema.hyperopt.scheduler  # noqa: F401
+import ludwig.schema.hyperopt.parameter
+import ludwig.schema.hyperopt.scheduler
 import ludwig.schema.hyperopt.search_algorithm  # noqa: F401
 from ludwig.constants import (
     EXECUTOR,

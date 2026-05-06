@@ -14,6 +14,7 @@ from ludwig.vector_index.base import VectorIndex
 
 if TYPE_CHECKING:
     from sentence_transformers import SentenceTransformer
+
     from ludwig.backend.base import Backend
 
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator

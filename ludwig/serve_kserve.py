@@ -68,7 +68,7 @@ def _build_model_class():
             # Emit v2 response envelope.
             outputs = []
             if pred_records:
-                for col in pred_records[0].keys():
+                for col in pred_records[0]:
                     outputs.append(
                         {
                             "name": col,

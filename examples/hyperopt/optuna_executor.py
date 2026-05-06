@@ -27,8 +27,8 @@ import pandas as pd
 DATA_DIR = pathlib.Path("data")
 DATA_DIR.mkdir(exist_ok=True)
 
-WHITE_URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/" "wine-quality/winequality-white.csv"
-RED_URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/" "wine-quality/winequality-red.csv"
+WHITE_URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-white.csv"
+RED_URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv"
 
 white_path = DATA_DIR / "winequality-white.csv"
 red_path = DATA_DIR / "winequality-red.csv"

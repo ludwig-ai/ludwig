@@ -348,7 +348,7 @@ def initialize_pytorch(
 ):
     param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads)
     if _TORCH_INIT_PARAMS is not None:
-        if _TORCH_INIT_PARAMS != param_tuple:
+        if param_tuple != _TORCH_INIT_PARAMS:
             warnings.warn(
                 "PyTorch has already been initialized. Changes to `gpus`, "
                 "`gpu_memory_limit`, and `allow_parallel_threads` will be ignored. "

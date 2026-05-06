@@ -125,7 +125,9 @@ def create_combiner(config: BaseCombinerConfig, **kwargs) -> Combiner:
 
 @register_combiner(ConcatCombinerConfig)
 class ConcatCombiner(Combiner):
-    def __init__(self, input_features: dict[str, "InputFeature"] = None, config: ConcatCombinerConfig = None, **kwargs):
+    def __init__(
+        self, input_features: dict[str, "InputFeature"] | None = None, config: ConcatCombinerConfig = None, **kwargs
+    ):
         super().__init__(input_features)
         self.name = "ConcatCombiner"
         logger.debug(f" {self.name}")
@@ -137,7 +139,7 @@ class ConcatCombiner(Combiner):
         fc_layers = config.fc_layers
         if fc_layers is None:
             fc_layers = []
-            for i in range(config.num_fc_layers):
+            for _i in range(config.num_fc_layers):
                 fc_layers.append({"output_size": config.output_size})
         self.fc_layers = fc_layers
 
@@ -202,7 +204,7 @@ class ConcatCombiner(Combiner):
             # potential use in decoders, e.g. LSTM state for seq2seq.
             # TODO(Justin): Think about how to make this communication work for multi-sequence
             # features. Other combiners.
-            for key, value in [d for d in inputs.values()][0].items():
+            for key, value in list(inputs.values())[0].items():
                 if key != ENCODER_OUTPUT:
                     return_data[key] = value
 
@@ -293,26 +295,16 @@ class SequenceConcatCombiner(Combiner):
                     # features have different lengths for some data points.
                     if if_representation.shape[1] != representation.shape[1]:
                         raise ValueError(
-                            "The sequence length of the input feature {} "
-                            "is {} and is different from the sequence "
-                            "length of the main sequence feature {} which "
-                            "is {}.\n Shape of {}: {}, shape of {}: {}.\n"
+                            f"The sequence length of the input feature {if_name} "
+                            f"is {if_representation.shape[1]} and is different from the sequence "
+                            f"length of the main sequence feature {self.main_sequence_feature} which "
+                            f"is {representation.shape[1]}.\n Shape of {if_name}: {if_representation.shape}, shape of {if_name}: {representation.shape}.\n"
                             "Sequence lengths of all sequential features "
                             "must be the same  in order to be concatenated "
                             "by the sequence concat combiner. "
                             "Try to impose the same max sequence length "
                             "as a preprocessing parameter to both features "
-                            "or to reduce the output of {}.".format(
-                                if_name,
-                                if_representation.shape[1],
-                                self.main_sequence_feature,
-                                representation.shape[1],
-                                if_name,
-                                if_representation.shape,
-                                if_name,
-                                representation.shape,
-                                if_name,
-                            )
+                            f"or to reduce the output of {if_name}."
                         )
                     # this assumes all sequence representations have the
                     # same sequence length, 2nd dimension
@@ -325,9 +317,9 @@ class SequenceConcatCombiner(Combiner):
 
                 else:
                     raise ValueError(
-                        "The representation of {} has rank {} and cannot be"
+                        f"The representation of {if_name} has rank {len(if_representation.shape)} and cannot be"
                         " concatenated by a sequence concat combiner. "
-                        "Only rank 2 and rank 3 tensors are supported.".format(if_name, len(if_representation.shape))
+                        "Only rank 2 and rank 3 tensors are supported."
                     )
 
         hidden = torch.cat(representations, 2)
@@ -343,7 +335,7 @@ class SequenceConcatCombiner(Combiner):
         return_data = {"combiner_output": hidden}
 
         if len(inputs) == 1:
-            for key, value in [d for d in inputs.values()][0].items():
+            for key, value in list(inputs.values())[0].items():
                 if key != ENCODER_OUTPUT:
                     return_data[key] = value
 
@@ -363,7 +355,7 @@ class SequenceCombiner(Combiner):
         )
 
         logger.debug(
-            f"combiner input shape {self.combiner.concatenated_shape}, " f"output shape {self.combiner.output_shape}"
+            f"combiner input shape {self.combiner.concatenated_shape}, output shape {self.combiner.output_shape}"
         )
 
         self.encoder_obj = get_from_registry(config.encoder.type, get_sequence_encoder_registry())(
@@ -481,7 +473,7 @@ class TabNetCombiner(Combiner):
         }
 
         if len(inputs) == 1:
-            for key, value in [d for d in inputs.values()][0].items():
+            for key, value in list(inputs.values())[0].items():
                 if key != ENCODER_OUTPUT:
                     return_data[key] = value
 
@@ -495,7 +487,10 @@ class TabNetCombiner(Combiner):
 @register_combiner(TransformerCombinerConfig)
 class TransformerCombiner(Combiner):
     def __init__(
-        self, input_features: dict[str, "InputFeature"] = None, config: TransformerCombinerConfig = None, **kwargs
+        self,
+        input_features: dict[str, "InputFeature"] | None = None,
+        config: TransformerCombinerConfig = None,
+        **kwargs,
     ):
         super().__init__(input_features)
         self.name = "TransformerCombiner"
@@ -582,7 +577,7 @@ class TransformerCombiner(Combiner):
         return_data = {"combiner_output": hidden}
 
         if len(inputs) == 1:
-            for key, value in [d for d in inputs.values()][0].items():
+            for key, value in list(inputs.values())[0].items():
                 if key != ENCODER_OUTPUT:
                     return_data[key] = value
 
@@ -592,7 +587,10 @@ class TransformerCombiner(Combiner):
 @register_combiner(TabTransformerCombinerConfig)
 class TabTransformerCombiner(Combiner):
     def __init__(
-        self, input_features: dict[str, "InputFeature"] = None, config: TabTransformerCombinerConfig = None, **kwargs
+        self,
+        input_features: dict[str, "InputFeature"] | None = None,
+        config: TabTransformerCombinerConfig = None,
+        **kwargs,
     ):
         super().__init__(input_features)
         self.name = "TabTransformerCombiner"
@@ -619,9 +617,9 @@ class TabTransformerCombiner(Combiner):
                     raise ValueError(
                         "TabTransformer parameter "
                         "`embed_input_feature_name` "
-                        "specified integer value ({}) "
+                        f"specified integer value ({self.embed_input_feature_name}) "
                         "needs to be smaller than "
-                        "`hidden_size` ({}).".format(self.embed_input_feature_name, config.hidden_size)
+                        f"`hidden_size` ({config.hidden_size})."
                     )
                 self.embed_i_f_name_layer = Embed(
                     vocab,
@@ -635,7 +633,7 @@ class TabTransformerCombiner(Combiner):
                     "`embed_input_feature_name` "
                     "should be either None, an integer or `add`, "
                     "the current value is "
-                    "{}".format(self.embed_input_feature_name)
+                    f"{self.embed_input_feature_name}"
                 )
         else:
             projector_size = config.hidden_size
@@ -788,7 +786,7 @@ class TabTransformerCombiner(Combiner):
         return_data = {"combiner_output": hidden}
 
         if len(inputs) == 1:
-            for key, value in [d for d in inputs.values()][0].items():
+            for key, value in list(inputs.values())[0].items():
                 if key != ENCODER_OUTPUT:
                     return_data[key] = value
 
@@ -939,7 +937,10 @@ class ComparatorCombiner(Combiner):
 @register_combiner(ProjectAggregateCombinerConfig)
 class ProjectAggregateCombiner(Combiner):
     def __init__(
-        self, input_features: dict[str, "InputFeature"] = None, config: ProjectAggregateCombinerConfig = None, **kwargs
+        self,
+        input_features: dict[str, "InputFeature"] | None = None,
+        config: ProjectAggregateCombinerConfig = None,
+        **kwargs,
     ):
         super().__init__(input_features)
         self.name = "ProjectAggregateCombiner"
@@ -964,7 +965,7 @@ class ProjectAggregateCombiner(Combiner):
         fc_layers = config.fc_layers
         if fc_layers is None and config.num_fc_layers is not None:
             fc_layers = []
-            for i in range(config.num_fc_layers):
+            for _i in range(config.num_fc_layers):
                 fc_layers.append({"output_size": config.output_size})
 
         self.fc_layers = fc_layers
@@ -1014,7 +1015,7 @@ class ProjectAggregateCombiner(Combiner):
             # potential use in decoders, e.g. LSTM state for seq2seq.
             # TODO(Justin): Think about how to make this communication work for multi-sequence
             # features. Other combiners.
-            for key, value in [d for d in inputs.values()][0].items():
+            for key, value in list(inputs.values())[0].items():
                 if key != ENCODER_OUTPUT:
                     return_data[key] = value
 
@@ -1030,7 +1031,10 @@ class FTTransformerCombiner(Combiner):
     """
 
     def __init__(
-        self, input_features: dict[str, "InputFeature"] = None, config: FTTransformerCombinerConfig = None, **kwargs
+        self,
+        input_features: dict[str, "InputFeature"] | None = None,
+        config: FTTransformerCombinerConfig = None,
+        **kwargs,
     ):
         super().__init__(input_features)
         self.name = "FTTransformerCombiner"
@@ -1103,7 +1107,10 @@ class CrossAttentionCombiner(Combiner):
     """
 
     def __init__(
-        self, input_features: dict[str, "InputFeature"] = None, config: CrossAttentionCombinerConfig = None, **kwargs
+        self,
+        input_features: dict[str, "InputFeature"] | None = None,
+        config: CrossAttentionCombinerConfig = None,
+        **kwargs,
     ):
         super().__init__(input_features)
         self.name = "CrossAttentionCombiner"
@@ -1185,7 +1192,7 @@ class PerceiverCombiner(Combiner):
     """
 
     def __init__(
-        self, input_features: dict[str, "InputFeature"] = None, config: PerceiverCombinerConfig = None, **kwargs
+        self, input_features: dict[str, "InputFeature"] | None = None, config: PerceiverCombinerConfig = None, **kwargs
     ):
         super().__init__(input_features)
         self.name = "PerceiverCombiner"
@@ -1276,7 +1283,10 @@ class GatedFusionCombiner(Combiner):
     """
 
     def __init__(
-        self, input_features: dict[str, "InputFeature"] = None, config: GatedFusionCombinerConfig = None, **kwargs
+        self,
+        input_features: dict[str, "InputFeature"] | None = None,
+        config: GatedFusionCombinerConfig = None,
+        **kwargs,
     ):
         super().__init__(input_features)
         self.name = "GatedFusionCombiner"
@@ -1357,7 +1367,7 @@ class HyperNetworkCombiner(Combiner):
     Unique Ludwig differentiator. Based on HyperFusion (arXiv 2403.13319, 2024).
     """
 
-    def __init__(self, input_features: dict[str, "InputFeature"] = None, config=None, **kwargs):
+    def __init__(self, input_features: dict[str, "InputFeature"] | None = None, config=None, **kwargs):
         super().__init__(input_features)
         self.name = "HyperNetworkCombiner"
         logger.debug(f" {self.name}")

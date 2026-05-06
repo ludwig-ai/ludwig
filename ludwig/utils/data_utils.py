@@ -153,7 +153,7 @@ def spread(fn):
         if dd is None or not hasattr(dask, "annotate"):
             return fn(*args, **kwargs)
 
-        with dask.annotate(ray_remote_args=dict(scheduling_strategy="SPREAD")):
+        with dask.annotate(ray_remote_args={"scheduling_strategy": "SPREAD"}):
             return fn(*args, **kwargs)
 
     return wrapped_fn
@@ -1031,21 +1031,21 @@ def get_pa_schema(df: DataFrame):
 
 
 data_reader_registry = {
-    **{fmt: read_csv for fmt in CSV_FORMATS},
-    **{fmt: read_tsv for fmt in TSV_FORMATS},
-    **{fmt: read_json for fmt in JSON_FORMATS},
-    **{fmt: read_jsonl for fmt in JSONL_FORMATS},
-    **{fmt: read_excel for fmt in EXCEL_FORMATS},
-    **{fmt: read_parquet for fmt in PARQUET_FORMATS},
-    **{fmt: read_pickle for fmt in PICKLE_FORMATS},
-    **{fmt: read_fwf for fmt in FWF_FORMATS},
-    **{fmt: read_feather for fmt in FEATHER_FORMATS},
-    **{fmt: read_html for fmt in HTML_FORMATS},
-    **{fmt: read_orc for fmt in ORC_FORMATS},
-    **{fmt: read_sas for fmt in SAS_FORMATS},
-    **{fmt: read_spss for fmt in SPSS_FORMATS},
-    **{fmt: read_stata for fmt in STATA_FORMATS},
-    **{fmt: read_hdf5 for fmt in HDF5_FORMATS},
+    **dict.fromkeys(CSV_FORMATS, read_csv),
+    **dict.fromkeys(TSV_FORMATS, read_tsv),
+    **dict.fromkeys(JSON_FORMATS, read_json),
+    **dict.fromkeys(JSONL_FORMATS, read_jsonl),
+    **dict.fromkeys(EXCEL_FORMATS, read_excel),
+    **dict.fromkeys(PARQUET_FORMATS, read_parquet),
+    **dict.fromkeys(PICKLE_FORMATS, read_pickle),
+    **dict.fromkeys(FWF_FORMATS, read_fwf),
+    **dict.fromkeys(FEATHER_FORMATS, read_feather),
+    **dict.fromkeys(HTML_FORMATS, read_html),
+    **dict.fromkeys(ORC_FORMATS, read_orc),
+    **dict.fromkeys(SAS_FORMATS, read_sas),
+    **dict.fromkeys(SPSS_FORMATS, read_spss),
+    **dict.fromkeys(STATA_FORMATS, read_stata),
+    **dict.fromkeys(HDF5_FORMATS, read_hdf5),
 }
 
 

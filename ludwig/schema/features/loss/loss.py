@@ -861,7 +861,7 @@ class PolyLossConfig(BaseLossConfig):
         default=1.0,
         min=0.0,
         description=(
-            "Coefficient for the polynomial correction term. " "epsilon=0 reduces PolyLoss to standard cross-entropy."
+            "Coefficient for the polynomial correction term. epsilon=0 reduces PolyLoss to standard cross-entropy."
         ),
     )
 

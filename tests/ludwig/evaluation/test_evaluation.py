@@ -22,7 +22,7 @@ def test_eval_steps_determinism():
 def _run_eval_steps_determinism():
     df = pd.DataFrame(
         {
-            "in": "a b c d e f g h i j k l m n o p q r s t".split(" "),
+            "in": ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t"],
             "out": [i for i in range(20)],
             "split": ([0] * 10) + ([2] * 10),
         }
@@ -76,6 +76,6 @@ def _run_eval_steps_determinism():
     for k in results1[0]["out"]:
         # The core assertion: repeated evaluations with the same eval_steps
         # setting must produce identical results (determinism).
-        assert (
-            results2[0]["out"][k] == results3[0]["out"][k]
-        ), f"Metric '{k}' differs between repeated evaluations: {results2[0]['out'][k]} vs {results3[0]['out'][k]}"
+        assert results2[0]["out"][k] == results3[0]["out"][k], (
+            f"Metric '{k}' differs between repeated evaluations: {results2[0]['out'][k]} vs {results3[0]['out'][k]}"
+        )

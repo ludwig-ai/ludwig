@@ -236,7 +236,7 @@ class LRSchedulerConfig(schema_utils.LudwigBaseConfig, ABC):
 # TODO(travis): too much boilerplate here, we should find a way to abstract all this and only require specifying the
 # minimal amount needed for the new config object.
 @DeveloperAPI
-def LRSchedulerDataclassField(description: str, default: dict = None):
+def LRSchedulerDataclassField(description: str, default: dict | None = None):
     """Returns custom dataclass field for `LRSchedulerConfig`. Allows `None` by default.
 
     Args:

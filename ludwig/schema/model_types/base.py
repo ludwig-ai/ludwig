@@ -103,21 +103,21 @@ class ModelConfig(schema_utils.LudwigBaseConfig, ABC):
         # NOTE: This must be kept consistent with build_dataset()
         for input_feature in config[INPUT_FEATURES]:
             input_feature[NAME] = get_sanitized_feature_name(input_feature[NAME])
-            if COLUMN in input_feature and input_feature[COLUMN]:
+            if input_feature.get(COLUMN):
                 input_feature[COLUMN] = get_sanitized_feature_name(input_feature[COLUMN])
         for output_feature in config[OUTPUT_FEATURES]:
             output_feature[NAME] = get_sanitized_feature_name(output_feature[NAME])
-            if COLUMN in output_feature and output_feature[COLUMN]:
+            if output_feature.get(COLUMN):
                 output_feature[COLUMN] = get_sanitized_feature_name(output_feature[COLUMN])
 
         # Sanitize tied feature names.
         for input_feature in config[INPUT_FEATURES]:
-            if TIED in input_feature and input_feature[TIED]:
+            if input_feature.get(TIED):
                 input_feature[TIED] = get_sanitized_feature_name(input_feature[TIED])
 
         # Sanitize dependent feature names.
         for output_feature in config[OUTPUT_FEATURES]:
-            if DEPENDENCIES in output_feature and output_feature[DEPENDENCIES]:
+            if output_feature.get(DEPENDENCIES):
                 output_feature[DEPENDENCIES] = [
                     get_sanitized_feature_name(feature_name) for feature_name in output_feature[DEPENDENCIES]
                 ]
@@ -154,7 +154,7 @@ class ModelConfig(schema_utils.LudwigBaseConfig, ABC):
             raise
         except ValueError as e:
             raise ConfigValidationError(f"Config validation error raised during config deserialization: {e}") from e
-        except (OSError, ValueError) as e:
+        except OSError as e:
             raise ConfigValidationError(f"Config validation error raised during config post-init: {e}") from e
 
         return config_obj

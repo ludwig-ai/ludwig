@@ -21,7 +21,6 @@ import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.utils.fs_utils import checksum
@@ -91,7 +90,7 @@ class CacheablePath(CacheableDataset):
         return self.path
 
 
-CacheInput = Union[str, DataFrame, CacheableDataset]
+CacheInput = str | DataFrame | CacheableDataset
 
 
 def wrap(dataset: CacheInput | None) -> CacheableDataset:

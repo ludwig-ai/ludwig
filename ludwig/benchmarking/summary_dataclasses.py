@@ -393,7 +393,7 @@ def summarize_resource_usage(path: str, tags: list[str] | None = None) -> list[R
     :param path: corresponds to the `output_dir` argument in a ResourceUsageTracker run.
     :param tags: (optional) list of tags to create summary for. If None, metrics from all tags will be summarized.
     """
-    summary = dict()
+    summary = {}
     # metric types: system_resource_usage, torch_ops_resource_usage.
     all_metric_types = {"system_resource_usage", "torch_ops_resource_usage"}
     for metric_type in all_metric_types.intersection(os.listdir(path)):

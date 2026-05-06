@@ -90,7 +90,7 @@ class DateFeatureMixin(BaseFeatureMixin):
                 "in the config. "
                 "The preprocessing fill in value will be used."
                 "For more details: "
-                "https://ludwig-ai.github.io/ludwig-docs/latest/configuration/features/date_features/#date-features-preprocessing"  # noqa
+                "https://ludwig-ai.github.io/ludwig-docs/latest/configuration/features/date_features/#date-features-preprocessing"
             )
             fill_value = preprocessing_parameters["fill_value"]
             if fill_value != "":

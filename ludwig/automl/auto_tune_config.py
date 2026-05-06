@@ -189,7 +189,7 @@ def reduce_text_feature_max_length(config, training_set_metadata) -> bool:
 # combinations and return that value if it is less than num_samples; else return num_samples.
 def _update_num_samples(num_samples, hyperparam_search_space):
     max_num_samples = 1
-    for param in hyperparam_search_space.keys():
+    for param in hyperparam_search_space:
         if hyperparam_search_space[param][SPACE] == "choice":
             max_num_samples *= len(hyperparam_search_space[param]["categories"])
         else:
@@ -238,7 +238,7 @@ def memory_tune_config(config, dataset, model_category, row_count, backend):
         # check if we have exhausted tuning of current param (e.g. we can no longer reduce the param value)
         param, min_value = param_list[0], params_to_modify[param_list[0]]
 
-        if param in modified_hyperparam_search_space.keys():
+        if param in modified_hyperparam_search_space:
             param_space = modified_hyperparam_search_space[param]["space"]
             if param_space == "choice":
                 if (
@@ -268,9 +268,9 @@ def memory_tune_config(config, dataset, model_category, row_count, backend):
     if model_category == TEXT and row_count > AUTOML_LARGE_TEXT_DATASET:
         if "checkpoints_per_epoch" not in config[TRAINER] and "steps_per_checkpoint" not in config[TRAINER]:
             checkpoints_per_epoch = max(2, math.floor(row_count / AUTOML_MAX_ROWS_PER_CHECKPOINT))
-            config[TRAINER][
-                "checkpoints_per_epoch"
-            ] = checkpoints_per_epoch  # decrease latency to get model accuracy signal
+            config[TRAINER]["checkpoints_per_epoch"] = (
+                checkpoints_per_epoch  # decrease latency to get model accuracy signal
+            )
         if "evaluate_training_set" not in config[TRAINER]:
             config[TRAINER]["evaluate_training_set"] = False  # reduce overhead for increased evaluation frequency
         if not fits_in_memory:

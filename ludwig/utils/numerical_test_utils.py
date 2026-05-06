@@ -51,12 +51,12 @@ def assert_all_finite(x: Any, keypath=""):
     """
     path_description = f" at {keypath} " if keypath else " "
     if np.isscalar(x):
-        assert np.isfinite(x), f"Value{path_description}should be finite, but is {str(x)}."
+        assert np.isfinite(x), f"Value{path_description}should be finite, but is {x!s}."
     elif isinstance(x, np.ndarray):
         non_finite_indices = np.nonzero(~np.isfinite(x))
         non_finite_values = x[non_finite_indices]
         assert np.all(np.isfinite(x)), (
-            f"All values{path_description}should be finite, but found {str(non_finite_values)} "
+            f"All values{path_description}should be finite, but found {non_finite_values!s} "
             "at positions {str(np.array(non_finite_indices).flatten())}."
         )
     elif _dict_like(x):
@@ -68,4 +68,4 @@ def assert_all_finite(x: Any, keypath=""):
         for i, v in enumerate(x):
             assert_all_finite(v, keypath=keypath + f"[{i}]")
     else:
-        assert False, f"Unhandled type {str(type(x))} for value{path_description}"
+        raise AssertionError(f"Unhandled type {type(x)!s} for value{path_description}")

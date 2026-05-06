@@ -77,5 +77,5 @@ def PreprocessingDataclassField(feature_type: str):
         )
     except Exception as e:
         raise ConfigValidationError(
-            f"Unsupported preprocessing type: {feature_type}. See preprocessing_registry. " f"Details: {e}"
+            f"Unsupported preprocessing type: {feature_type}. See preprocessing_registry. Details: {e}"
         )

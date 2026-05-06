@@ -788,9 +788,9 @@ def test_llm_template_too_long(tmpdir, input_max_sequence_length, global_max_seq
     global_max_sequence_length: {global_max_sequence_length}
   """)
     zero_shot_config["prompt"] = {}
-    zero_shot_config["prompt"][
-        "template"
-    ] = "This is a very long template that is longer than the max sequence length {instruction}"
+    zero_shot_config["prompt"]["template"] = (
+        "This is a very long template that is longer than the max sequence length {instruction}"
+    )
 
     input_features = [text_feature(name="instruction")]
     output_features = [text_feature(name="output", output_feature=True)]

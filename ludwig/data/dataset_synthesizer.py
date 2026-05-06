@@ -571,9 +571,7 @@ def cli_synthesize_dataset(dataset_size: int, features: list[dict], output_path:
     ]
     """
     if dataset_size is None or features is None or output_path is None:
-        raise ValueError(
-            "Missing one or more required parameters: '--dataset_size', " "'--features' or '--output_path'"
-        )
+        raise ValueError("Missing one or more required parameters: '--dataset_size', '--features' or '--output_path'")
     dataset = build_synthetic_dataset(dataset_size, features)
     save_csv(output_path, dataset)
 

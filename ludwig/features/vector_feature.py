@@ -132,8 +132,8 @@ class VectorFeatureMixin:
             # expectations?
             if vector_size != vector_size_param:
                 raise ValueError(
-                    "The user provided value for vector size ({}) does not "
-                    "match the value observed in the data: {}".format(preprocessing_parameters, vector_size)
+                    f"The user provided value for vector size ({preprocessing_parameters}) does not "
+                    f"match the value observed in the data: {vector_size}"
                 )
         else:
             logger.debug(f"Detected vector size: {vector_size}")
@@ -205,7 +205,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         return self.decoder_obj(hidden)
 
     def metric_kwargs(self):
-        return dict(num_outputs=self.output_shape[0])
+        return {"num_outputs": self.output_shape[0]}
 
     def create_predict_module(self) -> PredictModule:
         return _VectorPredict()

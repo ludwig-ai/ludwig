@@ -70,9 +70,9 @@ def run_sweep():
     results = []
 
     for depth in DEPTHS:
-        print(f"\n{"=" * 60}")
+        print(f"\n{'=' * 60}")
         print(f"  Training UNet with num_stages={depth}")
-        print(f"{"=" * 60}")
+        print(f"{'=' * 60}")
 
         config = yaml.safe_load(yaml.dump(BASE_CONFIG))  # deep copy via yaml round-trip
         config["output_features"][0]["decoder"]["num_stages"] = depth
@@ -108,7 +108,7 @@ def run_sweep():
             }
         )
 
-        print(f"  num_stages={depth}  params={n_params:,}  " f"best_val_loss={val_loss}  time={elapsed:.1f}s")
+        print(f"  num_stages={depth}  params={n_params:,}  best_val_loss={val_loss}  time={elapsed:.1f}s")
 
     # ── summary table ─────────────────────────────────────────────────────────
     print("\n\nDepth sweep summary")

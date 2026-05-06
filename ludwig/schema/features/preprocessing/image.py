@@ -95,8 +95,7 @@ class ImagePreprocessingConfig(BasePreprocessingConfig):
     infer_image_max_width: int = schema_utils.PositiveInteger(
         default=256,
         allow_none=False,
-        description="If infer_image_dimensions is set, this is used as the maximum width of the images in "
-        "the dataset.",
+        description="If infer_image_dimensions is set, this is used as the maximum width of the images in the dataset.",
         parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["infer_image_max_width"],
     )
 

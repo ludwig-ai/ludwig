@@ -343,7 +343,7 @@ class EmbedSequence(LudwigModule):
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None):
         if inputs.dtype not in [torch.int, torch.long]:
             raise RuntimeError(
-                f"Expected tensor of type torch.int or torch.long as input." f"Received {inputs.dtype} instead."
+                f"Expected tensor of type torch.int or torch.long as input.Received {inputs.dtype} instead."
             )
 
         embedded = self.embeddings(inputs)

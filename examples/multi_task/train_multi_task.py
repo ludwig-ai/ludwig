@@ -31,7 +31,7 @@ logging.basicConfig(level=logging.WARNING)
 # Dataset
 # ---------------------------------------------------------------------------
 
-WINE_URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/" "wine-quality/winequality-red.csv"
+WINE_URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv"
 
 WINE_FEATURES = [
     "fixed_acidity",
@@ -162,7 +162,7 @@ def _last_value(series) -> float | None:
 def print_comparison_table(results: dict) -> None:
     """Print a formatted side-by-side comparison of all methods."""
     col_w = 14
-    header = f"{'Method':<{col_w}} | " f"{'Score MAE':>{col_w}} | " f"{'Binary ROC-AUC':>{col_w}}"
+    header = f"{'Method':<{col_w}} | {'Score MAE':>{col_w}} | {'Binary ROC-AUC':>{col_w}}"
     separator = "-" * len(header)
     print()
     print("=" * len(header))
@@ -219,7 +219,7 @@ def main():
 
     # Attempt nash_mtl — will succeed if PR #4092 is available
     try:
-        from ludwig.api import LudwigModel  # noqa: F401
+        from ludwig.api import LudwigModel
 
         config = _base_config("nash_mtl")
         # Try instantiating to check if nash_mtl is a valid option

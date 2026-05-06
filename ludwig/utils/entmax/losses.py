@@ -11,7 +11,7 @@ class _GenericLoss(nn.Module):
     def __init__(self, ignore_index=IGNORE_INDEX_TOKEN_ID, reduction="elementwise_mean"):
         if reduction not in ("elementwise_mean", "sum", "none"):
             raise ValueError(
-                f"Invalid reduction mode '{reduction}'. " f"Expected one of: 'elementwise_mean', 'sum', 'none'."
+                f"Invalid reduction mode '{reduction}'. Expected one of: 'elementwise_mean', 'sum', 'none'."
             )
         self.reduction = reduction
         self.ignore_index = ignore_index
@@ -77,7 +77,7 @@ class SparsemaxLossFunction(_GenericLossFunction):
 
     @classmethod
     def forward(cls, ctx, X, target, k=None):
-        return super().forward(ctx, X, target, alpha=2, proj_args=dict(k=k))
+        return super().forward(ctx, X, target, alpha=2, proj_args={"k": k})
 
 
 class SparsemaxBisectLossFunction(_GenericLossFunction):
@@ -93,7 +93,7 @@ class SparsemaxBisectLossFunction(_GenericLossFunction):
 
     @classmethod
     def forward(cls, ctx, X, target, n_iter=50):
-        return super().forward(ctx, X, target, alpha=2, proj_args=dict(n_iter=n_iter))
+        return super().forward(ctx, X, target, alpha=2, proj_args={"n_iter": n_iter})
 
 
 class Entmax15LossFunction(_GenericLossFunction):
@@ -109,7 +109,7 @@ class Entmax15LossFunction(_GenericLossFunction):
 
     @classmethod
     def forward(cls, ctx, X, target, k=None):
-        return super().forward(ctx, X, target, alpha=1.5, proj_args=dict(k=k))
+        return super().forward(ctx, X, target, alpha=1.5, proj_args={"k": k})
 
 
 class EntmaxBisectLossFunction(_GenericLossFunction):
@@ -125,7 +125,7 @@ class EntmaxBisectLossFunction(_GenericLossFunction):
 
     @classmethod
     def forward(cls, ctx, X, target, alpha=1.5, n_iter=50):
-        return super().forward(ctx, X, target, alpha, proj_args=dict(n_iter=n_iter))
+        return super().forward(ctx, X, target, alpha, proj_args={"n_iter": n_iter})
 
 
 def sparsemax_loss(X, target, k=None):

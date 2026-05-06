@@ -205,7 +205,7 @@ class DaskEngine(DataFrameEngine):
             return df
 
         df_delayed = df.to_delayed()
-        df_delayed_new = list()
+        df_delayed_new = []
         empty_partition = None
         for ix, n in enumerate(ll):
             if n == 0:

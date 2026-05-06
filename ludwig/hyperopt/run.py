@@ -65,8 +65,8 @@ def hyperopt(
     training_set: str | dict | pd.DataFrame = None,
     validation_set: str | dict | pd.DataFrame = None,
     test_set: str | dict | pd.DataFrame = None,
-    training_set_metadata: str | dict = None,
-    data_format: str = None,
+    training_set_metadata: str | dict | None = None,
+    data_format: str | None = None,
     experiment_name: str = "hyperopt",
     model_name: str = "run",
     resume: bool | None = None,
@@ -81,11 +81,11 @@ def hyperopt(
     skip_save_eval_stats: bool = False,
     skip_save_hyperopt_statistics: bool = False,
     output_directory: str = "results",
-    gpus: str | int | list[int] = None,
+    gpus: str | int | list[int] | None = None,
     gpu_memory_limit: float | None = None,
     allow_parallel_threads: bool = True,
-    callbacks: list[Callback] = None,
-    tune_callbacks: list[TuneCallback] = None,
+    callbacks: list[Callback] | None = None,
+    tune_callbacks: list[TuneCallback] | None = None,
     backend: Backend | str = None,
     random_seed: int = default_random_seed,
     hyperopt_log_verbosity: int = 3,
@@ -256,30 +256,30 @@ def hyperopt(
     if split == TRAINING:
         if training_set is None and not splitter.has_split(0):
             raise ValueError(
-                'The data for the specified split for hyperopt "{}" '
+                f'The data for the specified split for hyperopt "{split}" '
                 "was not provided, "
                 "or the split amount specified in the preprocessing section "
-                "of the config is not greater than 0".format(split)
+                "of the config is not greater than 0"
             )
     elif split == VALIDATION:
         if validation_set is None and not splitter.has_split(1):
             raise ValueError(
-                'The data for the specified split for hyperopt "{}" '
+                f'The data for the specified split for hyperopt "{split}" '
                 "was not provided, "
                 "or the split amount specified in the preprocessing section "
-                "of the config is not greater than 0".format(split)
+                "of the config is not greater than 0"
             )
     elif split == TEST:
         if test_set is None and not splitter.has_split(2):
             raise ValueError(
-                'The data for the specified split for hyperopt "{}" '
+                f'The data for the specified split for hyperopt "{split}" '
                 "was not provided, "
                 "or the split amount specified in the preprocessing section "
-                "of the config is not greater than 0".format(split)
+                "of the config is not greater than 0"
             )
     else:
         raise ValueError(
-            'unrecognized hyperopt split "{}". ' "Please provide one of: {}".format(split, {TRAINING, VALIDATION, TEST})
+            f'unrecognized hyperopt split "{split}". Please provide one of: { ({TRAINING, VALIDATION, TEST}) }'
         )
     if output_feature == COMBINED:
         if metric != LOSS:
@@ -288,9 +288,9 @@ def hyperopt(
         output_feature_names = {of[NAME] for of in full_config[OUTPUT_FEATURES]}
         if output_feature not in output_feature_names:
             raise ValueError(
-                'The output feature specified for hyperopt "{}" '
+                f'The output feature specified for hyperopt "{output_feature}" '
                 "cannot be found in the config. "
-                'Available ones are: {} and "combined"'.format(output_feature, output_feature_names)
+                f'Available ones are: {output_feature_names} and "combined"'
             )
 
     hyperopt_executor = get_build_hyperopt_executor(executor[TYPE])(

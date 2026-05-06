@@ -3,7 +3,7 @@ from abc import ABC
 import ludwig.schema.hyperopt.parameter  # noqa: F401
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import LOSS, TEST, TRAIN, VALIDATION
-from ludwig.modules import metric_modules  # noqa: Needed to ensure that the metric registry is populated.
+from ludwig.modules import metric_modules  # noqa: F401  # Needed to ensure that the metric registry is populated.
 from ludwig.modules.metric_registry import get_metric_registry
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.hyperopt.executor import ExecutorConfig, ExecutorDataclassField

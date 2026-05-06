@@ -5,7 +5,7 @@ from ludwig.backend.ray import initialize_ray
 try:
     import ray
 except ImportError:
-    raise ImportError(" ray is not installed. " "In order to use auto_train please run " "pip install ludwig[ray]")
+    raise ImportError(" ray is not installed. In order to use auto_train please run pip install ludwig[ray]")
 
 
 def _ray_init():

@@ -232,7 +232,7 @@ def create_default_config(
     # read in all encoder configs
     for feat_type, default_configs in encoder_defaults.items():
         if feat_type in feature_types:
-            if feat_type not in model_configs.keys():
+            if feat_type not in model_configs:
                 model_configs[feat_type] = {}
             for encoder_name, encoder_config_path in default_configs.items():
                 model_configs[feat_type][encoder_name] = load_yaml(encoder_config_path)
@@ -341,7 +341,7 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
 def get_features_config(
     fields: list[FieldInfo],
     row_count: int,
-    target_name: str | list[str] = None,
+    target_name: str | list[str] | None = None,
 ) -> dict:
     """Constructs FieldInfo objects for each feature in dataset. These objects are used for downstream type
     inference.
@@ -357,7 +357,7 @@ def get_features_config(
     return get_config_from_metadata(metadata, targets)
 
 
-def convert_targets(target_name: str | list[str] = None) -> set[str]:
+def convert_targets(target_name: str | list[str] | None = None) -> set[str]:
     targets = target_name
     if isinstance(targets, str):
         targets = [targets]
@@ -366,7 +366,7 @@ def convert_targets(target_name: str | list[str] = None) -> set[str]:
     return set(targets)
 
 
-def get_config_from_metadata(metadata: list[FieldMetadata], targets: set[str] = None) -> dict:
+def get_config_from_metadata(metadata: list[FieldMetadata], targets: set[str] | None = None) -> dict:
     """Builds input/output feature sections of auto-train config using field metadata.
 
     # Inputs
@@ -389,7 +389,7 @@ def get_config_from_metadata(metadata: list[FieldMetadata], targets: set[str] = 
 
 
 @DeveloperAPI
-def get_field_metadata(fields: list[FieldInfo], row_count: int, targets: set[str] = None) -> list[FieldMetadata]:
+def get_field_metadata(fields: list[FieldInfo], row_count: int, targets: set[str] | None = None) -> list[FieldMetadata]:
     """Computes metadata for each field in dataset.
 
     # Inputs
@@ -422,7 +422,7 @@ def get_field_metadata(fields: list[FieldInfo], row_count: int, targets: set[str
     return metadata
 
 
-def infer_mode(field: FieldInfo, targets: set[str] = None) -> str:
+def infer_mode(field: FieldInfo, targets: set[str] | None = None) -> str:
     if field.name in targets:
         return "output"
     if field.name.lower() == "split":

@@ -1,10 +1,10 @@
 import random
-from typing import Any, Union
+from typing import Any
 
 from ludwig.schema.metadata.parameter_metadata import ExpectedImpact
 
 # base types for ludwig config parameters.
-ParameterBaseTypes = Union[str, float, int, bool, None]
+ParameterBaseTypes = str | float | int | bool | None
 
 
 def handle_property_type(
@@ -17,7 +17,7 @@ def handle_property_type(
         item: dictionary containing details on the parameter such as default, min and max values.
         expected_impact: threshold expected impact that we'd like to include.
     """
-    parameter_metadata = item.get("parameter_metadata", None)
+    parameter_metadata = item.get("parameter_metadata")
     if not parameter_metadata:
         return []
 
@@ -53,7 +53,7 @@ def explore_array(item: dict[str, Any]) -> list[list[ParameterBaseTypes]]:
     """
 
     candidates = []
-    if "default" in item and item["default"]:
+    if item.get("default"):
         candidates.append(item["default"])
 
     item_choices = []

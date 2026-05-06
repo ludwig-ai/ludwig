@@ -69,9 +69,9 @@ def check_types(
     assert len(actual_features) == len(expected_features)
     for actual_feature in actual_features:
         expected_feature = expected_features[actual_feature[NAME]]
-        assert (
-            actual_feature[TYPE] == expected_feature[TYPE]
-        ), f"{actual_feature[NAME]}: actual type {actual_feature[TYPE]} != {expected_feature[TYPE]}"
+        assert actual_feature[TYPE] == expected_feature[TYPE], (
+            f"{actual_feature[NAME]}: actual type {actual_feature[TYPE]} != {expected_feature[TYPE]}"
+        )
 
 
 @pytest.fixture(scope="module")
@@ -290,7 +290,7 @@ def test_train_with_config(time_budget, test_data_tabular_large, ray_cluster_2cp
 @pytest.mark.distributed
 def test_auto_train(test_data_tabular_large, ray_cluster_2cpu, tmpdir):
     _, ofeatures, dataset_csv = test_data_tabular_large
-    local_output_directory_path: str = f"{str(tmpdir)}/{OUTPUT_DIR}"
+    local_output_directory_path: str = f"{tmpdir!s}/{OUTPUT_DIR}"
     results = auto_train(
         dataset=dataset_csv,
         target=ofeatures[0][NAME],

@@ -21,7 +21,7 @@ def forecast_cli(
     horizon: int = 1,
     output_directory: str | None = None,
     output_format: str = "parquet",
-    callbacks: list[Callback] = None,
+    callbacks: list[Callback] | None = None,
     backend: Backend | str = None,
     logging_level: int = logging.INFO,
     **kwargs,
@@ -130,7 +130,7 @@ def cli(sys_argv):
     parser.add_argument(
         "-b",
         "--backend",
-        help="specifies backend to use for parallel / distributed execution, " "defaults to local execution",
+        help="specifies backend to use for parallel / distributed execution, defaults to local execution",
         choices=ALL_BACKENDS,
     )
 

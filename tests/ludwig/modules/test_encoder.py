@@ -150,8 +150,7 @@ def test_image_encoders_stacked_2dcnn():
     # check for parameter updates
     fpc, tpc, upc, not_updated = check_module_parameters_updated(encoder, (image_tensor,), target)
     assert upc == tpc, (
-        f"Not all trainable parameters updated.  Parameters not updated: {not_updated}."
-        f"  Module structure\n{encoder}"
+        f"Not all trainable parameters updated.  Parameters not updated: {not_updated}.  Module structure\n{encoder}"
     )
 
 
@@ -207,8 +206,7 @@ def test_image_encoders_mlpmixer():
     # check for parameter updates
     fpc, tpc, upc, not_updated = check_module_parameters_updated(encoder, (image_tensor,), target)
     assert upc == tpc, (
-        f"Not all trainable parameters updated.  Parameters not updated: {not_updated}."
-        f"  Module structure\n{encoder}"
+        f"Not all trainable parameters updated.  Parameters not updated: {not_updated}.  Module structure\n{encoder}"
     )
 
 
@@ -328,5 +326,5 @@ def test_sequence_encoders(encoder_type: Encoder, trainable: bool, reduce_output
 
     if trainable:
         assert upc > 0, (
-            f"No trainable parameters updated. Parameters not updated: {not_updated}." f"  Module structure\n{encoder}"
+            f"No trainable parameters updated. Parameters not updated: {not_updated}.  Module structure\n{encoder}"
         )

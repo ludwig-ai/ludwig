@@ -89,14 +89,14 @@ def _run_binary_predictions(tmpdir, backend, distinct_values, ray_cluster_2cpu):
     preds_df, _ = predict_with_backend(tmpdir, config, data_csv_path, backend, patch_args=patch_args)
     cols = set(preds_df.columns)
     assert f"{feature[NAME]}_predictions" in cols
-    assert f"{feature[NAME]}_probabilities_{str(false_value)}" in cols
-    assert f"{feature[NAME]}_probabilities_{str(true_value)}" in cols
+    assert f"{feature[NAME]}_probabilities_{false_value!s}" in cols
+    assert f"{feature[NAME]}_probabilities_{true_value!s}" in cols
     assert f"{feature[NAME]}_probability" in cols
 
     for pred, prob_0, prob_1, prob in zip(
         preds_df[f"{feature[NAME]}_predictions"],
-        preds_df[f"{feature[NAME]}_probabilities_{str(false_value)}"],
-        preds_df[f"{feature[NAME]}_probabilities_{str(true_value)}"],
+        preds_df[f"{feature[NAME]}_probabilities_{false_value!s}"],
+        preds_df[f"{feature[NAME]}_probabilities_{true_value!s}"],
         preds_df[f"{feature[NAME]}_probability"],
     ):
         assert pred == false_value or pred == true_value

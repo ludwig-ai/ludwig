@@ -164,6 +164,7 @@ pattern = 'LUDWIG_VERSION = "(?P<version>[^"]+)"'
 
 [tool.hatch.build.targets.wheel]
 packages = ["ludwig"]
+artifacts = ["ludwig/py.typed"]
 
 [tool.hatch.build.targets.wheel.shared-data]
 
@@ -175,12 +176,101 @@ include = [
     "pyproject.toml",
 ]
 
-[tool.isort]
-profile = "black"
-line_length = 120
-force_sort_within_sections = false
-order_by_type = false
-
-[tool.black]
+[tool.ruff]
+target-version = "py312"
 line-length = 120
-exclude = "./python/"
+exclude = ["python/"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "UP",   # pyupgrade (includes UP007: Optional→X|None, Union→X|Y)
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "SIM",  # flake8-simplify
+    "RUF",  # ruff-specific rules
+]
+ignore = [
+    "E501",   # line length — handled by formatter
+    "B006",   # mutable default args in function — handled separately
+    "B008",   # function calls in default args
+    "SIM108", # ternary operator — too aggressive
+    "SIM102", # nested if — too aggressive
+    "SIM117", # nested with — too aggressive
+    "UP035",  # deprecated imports — too broad
+    "RUF012", # mutable class attrs — too aggressive for schema classes
+    "B028",   # no-explicit-stacklevel in warnings.warn — deferred cleanup
+    "B904",   # raise-without-from-inside-except — deferred cleanup
+    "B905",   # zip-without-explicit-strict — deferred cleanup
+    "B027",   # empty-method-without-abstract-decorator — deferred cleanup
+    "B007",   # unused-loop-control-variable — deferred cleanup
+    "RUF059", # unused-unpacked-variable — deferred cleanup
+    "RUF005", # collection-literal-concatenation — style preference
+    "RUF001", # ambiguous-unicode-character-string — intentional unicode in some files
+    "RUF002", # ambiguous-unicode-character-docstring — intentional
+    "RUF003", # ambiguous-unicode-character-comment — intentional
+    "SIM105", # suppressible-exception — try/except/pass has legitimate uses
+    "B023",   # function-uses-loop-variable — too many false positives
+    "SIM115", # open-file-with-context-handler — deferred cleanup
+    "RUF015", # unnecessary-iterable-allocation — deferred cleanup
+    "C414",   # unnecessary-double-cast-or-process — deferred cleanup
+    "SIM201", # negate-equal-op — deferred cleanup
+    "B024",   # abstract-base-class-without-abstract-method — deferred cleanup
+    "E731",   # lambda-assignment — some lambdas are intentionally concise
+    "RUF046", # unnecessary-cast-to-int — deferred cleanup
+    "SIM110", # reimplemented-builtin — deferred cleanup
+    "B019",   # cached-instance-method — deferred cleanup (requires careful review)
+    "SIM101", # duplicate-isinstance-call — deferred cleanup
+    "SIM103", # needless-bool — deferred cleanup
+    "SIM401", # if-else-block-instead-of-dict-get — deferred cleanup
+    "C419",   # unnecessary-comprehension-in-call — deferred cleanup
+    "UP046",  # non-pep695-generic-class — Python 3.12+ syntax, deferred
+    "UP042",  # replace-str-enum — deferred cleanup
+    "B003",   # assignment-to-os-environ — reviewed, safe in context manager
+    "SIM113", # enumerate-for-loop — deferred cleanup
+    "RUF017", # quadratic-list-summation — deferred cleanup
+    "B020",   # loop-variable-overrides-iterator — fixed in automl.py
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "S101",   # allow assert in tests
+    "B011",   # allow assertFalse in tests
+    "B017",   # allow pytest.raises(Exception) in tests
+    "C408",   # dict()/list() literals fine in tests
+    "C416",   # unnecessary list comprehension — tests are explicit
+    "C417",   # map() usage fine in tests
+    "RUF013", # implicit Optional fine in test signatures
+    "SIM118", # key in dict.keys() fine in tests
+    "SIM109", # multiple equality comparisons fine in tests
+    "SIM212", # ternary ordering fine in tests
+    "F821",   # undefined name (sometimes from notebook stubs)
+    "F811",   # redefinition fine in tests
+    "E721",   # type comparison fine in tests
+    "UP031",  # %-format fine in tests
+    "RUF043", # regex metacharacter warning — backticks are not special in Python regex
+]
+"examples/**" = [
+    "E402",   # imports not at top — notebooks interleave imports with code
+    "F821",   # undefined names in notebooks (seaborn loaded earlier)
+    "C408",   # dict() literals fine in examples
+    "C405",   # list literal for set fine in examples
+    "RUF007", # itertools.pairwise — style preference, not required
+    "RUF043", # regex metacharacters in match= — intentional in examples
+    "B015",   # pointless comparison fine in examples
+    "SIM118", # key in dict.keys() fine in examples
+    "SIM212", # ternary ordering fine in examples
+    "UP031",  # %-format fine in examples
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["ludwig"]
+force-sort-within-sections = false
+order-by-type = false
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

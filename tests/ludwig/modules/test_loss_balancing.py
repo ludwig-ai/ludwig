@@ -22,7 +22,7 @@ def _make_losses(values: list[float]) -> dict[str, torch.Tensor]:
 
 
 def _make_weights() -> dict[str, float]:
-    return {name: 1.0 for name in FEATURE_NAMES}
+    return dict.fromkeys(FEATURE_NAMES, 1.0)
 
 
 class TestNoneLossBalancer:

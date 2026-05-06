@@ -513,31 +513,31 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
             if img_num_channels != num_channels:
                 logger.warning(
-                    "Image has {} channels, where as {} "
+                    f"Image has {img_num_channels} channels, where as {num_channels} "
                     "channels are expected. Dropping/adding channels "
-                    "with 0s as appropriate".format(img_num_channels, num_channels)
+                    "with 0s as appropriate"
                 )
         else:
             # If the image isn't like the first image, raise exception
             if img_num_channels != num_channels:
                 raise ValueError(
-                    "Image has {} channels, unlike the first image, which "
-                    "has {} channels. Make sure all the images have the same "
+                    f"Image has {img_num_channels} channels, unlike the first image, which "
+                    f"has {num_channels} channels. Make sure all the images have the same "
                     "number of channels or use the num_channels property in "
-                    "image preprocessing".format(img_num_channels, num_channels)
+                    "image preprocessing"
                 )
 
         if img.shape[1] != img_height or img.shape[2] != img_width:
             raise ValueError(
                 "Images are not of the same size. "
-                "Expected size is {}, "
-                "current image size is {}."
+                f"Expected size is {[img_height, img_width, num_channels]}, "
+                f"current image size is {img.shape}."
                 "Images are expected to be all of the same size "
                 "or explicit image width and height are expected "
                 "to be provided. "
                 "Additional information: "
                 "https://ludwig-ai.github.io/ludwig-docs/latest/configuration/features/image_features"
-                "#image-features-preprocessing".format([img_height, img_width, num_channels], img.shape)
+                "#image-features-preprocessing"
             )
 
         # Create class-masked image if required
@@ -599,9 +599,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
             # Update preprocessing parameters dictionary to reflect new height and width values
             preprocessing_parameters["width"] = width
             preprocessing_parameters["height"] = height
-            logger.info(
-                f"Set image feature height and width to {width} to be compatible with" f" {encoder_type} encoder."
-            )
+            logger.info(f"Set image feature height and width to {width} to be compatible with {encoder_type} encoder.")
         return width, height
 
     @staticmethod
@@ -706,8 +704,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 )
             elif num_classes > inferred_num_classes:
                 logger.warning(
-                    "Images inferred num classes {} does not match `num_classes` {}. "
-                    "Using inferred num classes {}.".format(inferred_num_classes, num_classes, inferred_num_classes)
+                    f"Images inferred num classes {inferred_num_classes} does not match `num_classes` {num_classes}. "
+                    f"Using inferred num classes {inferred_num_classes}."
                 )
 
         return channel_class_map
@@ -777,7 +775,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
                     width, height, preprocessing_parameters, encoder_type
                 )
             except ValueError as e:
-                raise ValueError("Image height and width must be set and have " "positive integer values: " + str(e))
+                raise ValueError("Image height and width must be set and have positive integer values: " + str(e))
             if height <= 0 or width <= 0:
                 raise ValueError("Image height and width must be positive integers")
         else:
@@ -861,7 +859,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
         name = feature_config[NAME]
         column = input_df[feature_config[COLUMN]]
-        encoder_type = feature_config[ENCODER][TYPE] if ENCODER in feature_config.keys() else None
+        encoder_type = feature_config[ENCODER][TYPE] if ENCODER in feature_config else None
 
         src_path = None
         if SRC in metadata:
@@ -872,8 +870,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
         )
 
         # determine if specified encoder is a torchvision model
-        model_type = feature_config[ENCODER].get("type", None) if ENCODER in feature_config.keys() else None
-        model_variant = feature_config[ENCODER].get("model_variant") if ENCODER in feature_config.keys() else None
+        model_type = feature_config[ENCODER].get("type", None) if ENCODER in feature_config else None
+        model_variant = feature_config[ENCODER].get("model_variant") if ENCODER in feature_config else None
         if model_variant:
             torchvision_parameters = _get_torchvision_parameters(model_type, model_variant)
         else:
@@ -1090,7 +1088,7 @@ class ImageOutputFeature(ImageFeatureMixin, OutputFeature):
         return self.decoder_obj(inputs, target=target)
 
     def metric_kwargs(self):
-        return dict(num_outputs=self.output_shape[0])
+        return {"num_outputs": self.output_shape[0]}
 
     def create_predict_module(self) -> PredictModule:
         return _ImagePredict()

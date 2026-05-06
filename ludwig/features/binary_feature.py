@@ -47,7 +47,7 @@ class _BinaryPreprocessing(torch.nn.Module):
     def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
         str2bool = metadata.get("str2bool")
-        self.str2bool = str2bool or {v: True for v in strings_utils.BOOL_TRUE_STRS}
+        self.str2bool = str2bool or dict.fromkeys(strings_utils.BOOL_TRUE_STRS, True)
         self.should_lower = str2bool is None
 
     def forward(self, v: PreprocessingInput) -> torch.Tensor:
@@ -71,7 +71,7 @@ class _BinaryPostprocessing(torch.nn.Module):
     def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
         bool2str = metadata.get("bool2str")
-        self.bool2str = {i: v for i, v in enumerate(bool2str)} if bool2str is not None else None
+        self.bool2str = dict(enumerate(bool2str)) if bool2str is not None else None
         self.predictions_key = PREDICTIONS
         self.probabilities_key = PROBABILITIES
 

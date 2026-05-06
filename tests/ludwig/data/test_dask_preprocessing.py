@@ -16,8 +16,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-ray = pytest.importorskip("ray")  # noqa
-dask = pytest.importorskip("dask")  # noqa
+ray = pytest.importorskip("ray")
+dask = pytest.importorskip("dask")
 
 pytestmark = pytest.mark.distributed
 
@@ -26,7 +26,24 @@ pytestmark = pytest.mark.distributed
 # ---------------------------------------------------------------------------
 
 RNG = np.random.default_rng(42)
-VOCAB = "the quick brown fox jumps over lazy dog cat sat mat hat bat rat big small".split()
+VOCAB = [
+    "the",
+    "quick",
+    "brown",
+    "fox",
+    "jumps",
+    "over",
+    "lazy",
+    "dog",
+    "cat",
+    "sat",
+    "mat",
+    "hat",
+    "bat",
+    "rat",
+    "big",
+    "small",
+]
 RAY_DASK_BACKEND = {"type": "ray", "processor": {"type": "dask"}}
 
 

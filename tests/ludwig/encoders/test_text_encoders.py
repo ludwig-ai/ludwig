@@ -95,9 +95,9 @@ def test_hf_ludwig_model_e2e(tmpdir, csv_filename, encoder_name):
 
     if encoder_name == "auto_transformer":
         # need to explciitly set the pretrained model name for auto_transformer
-        input_features[0][ENCODER][
-            "pretrained_model_name_or_path"
-        ] = "hf-internal-testing/tiny-bert-for-token-classification"
+        input_features[0][ENCODER]["pretrained_model_name_or_path"] = (
+            "hf-internal-testing/tiny-bert-for-token-classification"
+        )
 
     config = {
         "input_features": input_features,
@@ -149,9 +149,9 @@ def test_hf_ludwig_model_reduce_options(tmpdir, csv_filename, encoder_name, redu
 
     if encoder_name == "auto_transformer":
         # need to explciitly set the pretrained model name for auto_transformer
-        input_features[0][ENCODER][
-            "pretrained_model_name_or_path"
-        ] = "hf-internal-testing/tiny-bert-for-token-classification"
+        input_features[0][ENCODER]["pretrained_model_name_or_path"] = (
+            "hf-internal-testing/tiny-bert-for-token-classification"
+        )
 
     config = {
         "input_features": input_features,
@@ -277,7 +277,7 @@ def test_tfidf_encoder(vocab_size: int):
     batch_size = 10
     sequence_length = 32
     vocab = [str(i) for i in range(1, vocab_size + 1)]
-    str2idf = {s: 1 for s in vocab}
+    str2idf = dict.fromkeys(vocab, 1)
     text_encoder = text_encoders.TfIdfEncoder(
         max_sequence_length=sequence_length,
         str2idf=str2idf,

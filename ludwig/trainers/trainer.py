@@ -116,7 +116,7 @@ class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin,
         skip_save_model: bool = False,
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
-        callbacks: list = None,
+        callbacks: list | None = None,
         report_tqdm_to_ray=False,
         random_seed: float = default_random_seed,
         distributed: DistributedStrategy | None = None,
@@ -270,7 +270,7 @@ class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin,
             elif hasattr(self.compiled_model.model, "gradient_checkpointing_enable"):
                 if _TORCH210:
                     # https://pytorch.org/docs/stable/checkpoint.html
-                    # https://github.com/huggingface/transformers/blob/02f8738ef8c674300c314d004ba436cb5aaca165/src/transformers/modeling_utils.py#L2094 # noqa: E501
+                    # https://github.com/huggingface/transformers/blob/02f8738ef8c674300c314d004ba436cb5aaca165/src/transformers/modeling_utils.py#L2094
                     self.compiled_model.model.gradient_checkpointing_enable(
                         gradient_checkpointing_kwargs={"use_reentrant": True}
                     )

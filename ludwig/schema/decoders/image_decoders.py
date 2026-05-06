@@ -61,7 +61,7 @@ class UNetDecoderConfig(ImageDecoderConfig):
         ["batch"],
         default="batch",
         allow_none=True,
-        description="This is the default norm that will be used for each double conv layer." "It can be null or batch.",
+        description="This is the default norm that will be used for each double conv layer.It can be null or batch.",
         parameter_metadata=DECODER_METADATA["UNetDecoder"]["conv_norm"],
     )
 

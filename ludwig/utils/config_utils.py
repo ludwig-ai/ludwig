@@ -68,7 +68,7 @@ def get_preprocessing_params(config_obj: ModelConfig) -> PreprocessingConfigDict
     parameters from config defaults."""
     preprocessing_params = {}
     preprocessing_params.update(_to_dict(config_obj.preprocessing))
-    for feat_type in get_input_type_registry().keys():
+    for feat_type in get_input_type_registry():
         if hasattr(config_obj.defaults, feat_type):
             feat_defaults = getattr(config_obj.defaults, feat_type)
             preprocessing = (
@@ -149,7 +149,7 @@ def config_uses_llm(config: dict[str, Any] | ModelConfig) -> bool:
                     break
         else:
             raise ValueError(
-                "Invalid config cannot be checked for LLM usage because it has no input features." f"Config: {config}"
+                f"Invalid config cannot be checked for LLM usage because it has no input features.Config: {config}"
             )
     else:
         raise ValueError(f"Invalid config cannot be checked for LLM usage. Config: {config}")
@@ -190,8 +190,7 @@ def get_quantization(config: dict[str, Any] | ModelConfig) -> list[int | None]:
             return quantization_bits
         else:
             raise ValueError(
-                "Invalid config cannot be checked for quantization because it has no input features."
-                f"Config: {config}"
+                f"Invalid config cannot be checked for quantization because it has no input features.Config: {config}"
             )
     else:
         raise ValueError(f"Invalid config cannot be checked for quantization. Config: {config}")
