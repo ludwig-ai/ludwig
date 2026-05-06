@@ -54,17 +54,19 @@ class AttentionPooling(nn.Module):
 
 
 class SequenceReducer(LudwigModule):
-    """Reduces the sequence dimension of an input tensor according to the specified reduce_mode.  Any additional
-    kwargs are passed on to the reduce mode's constructor.  If using reduce_mode=="attention", the input_size kwarg
+    """Reduces the sequence dimension of an input tensor according to the specified reduce_mode. Any additional
+    kwargs are passed on to the reduce mode's constructor. If using reduce_mode=="attention", the input_size kwarg
     must also be specified.
 
     A sequence is a tensor of 2 or more dimensions, where the shape is [batch size x sequence length x ...].
 
-    :param reduce_mode: The reduction mode, one of {"last", "sum", "mean", "max", "concat", "attention",
-                        "attention_pooling", "none"}
-    :param max_sequence_length The maximum sequence length.  Only used for computation of shapes - inputs passed
-                               at runtime may have a smaller sequence length.
-    :param encoding_size The size of each sequence element/embedding vector, or None if input is a sequence of scalars.
+    Args:
+        reduce_mode: The reduction mode, one of {"last", "sum", "mean", "max", "concat", "attention",
+            "attention_pooling", "none"}.
+        max_sequence_length: The maximum sequence length. Only used for computation of shapes - inputs passed
+            at runtime may have a smaller sequence length.
+        encoding_size: The size of each sequence element/embedding vector, or None if input is a sequence of
+            scalars.
     """
 
     def __init__(
@@ -85,10 +87,12 @@ class SequenceReducer(LudwigModule):
     def forward(self, inputs, mask=None):
         """Forward pass of reducer.
 
-        :param inputs: A tensor of 2 or more dimensions, where the shape is [batch size x sequence length x ...].
-        :param mask: A mask tensor of 2 dimensions [batch size x sequence length].  Not yet implemented.
+        Args:
+            inputs: A tensor of 2 or more dimensions, where the shape is [batch size x sequence length x ...].
+            mask: A mask tensor of 2 dimensions [batch size x sequence length]. Not yet implemented.
 
-        :return: The input after applying the reduction operation to sequence dimension.
+        Returns:
+            The input after applying the reduction operation to sequence dimension.
         """
         return self._reduce_obj(inputs, mask=mask)
 
