@@ -1,8 +1,52 @@
+import io
+
+import numpy as np
 import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
 from tests.integration_tests.utils import generate_data_as_dataframe
+
+
+def test_dask_image_bytes_no_unicode_error():
+    """Regression test for GitHub #4149.
+
+    Dask's default dataframe.convert-string:True tries to decode all object-dtype
+    columns as UTF-8 strings.  JPEG/PNG bytes start with 0xFF/0x89 — invalid UTF-8
+    start bytes — so the conversion raises UnicodeDecodeError.
+
+    Ludwig fixes this by setting dataframe.convert-string:False at import time
+    (ludwig/__init__.py), before the caller creates any Dask DataFrame.  The old fix
+    in RayBackend.initialize() was too late: user DataFrames are created before
+    model.train() is called, so the broken _to_string_dtype node was already baked
+    into the task graph.
+    """
+    import dask
+    import dask.dataframe as dd
+    from PIL import Image
+
+    from ludwig.data.dataframe.dask import reset_index_across_all_partitions
+
+    assert (
+        dask.config.get("dataframe.convert-string") is False
+    ), "Ludwig must set dataframe.convert-string:False at import time (ludwig/__init__.py)"
+
+    def _jpeg_bytes() -> bytes:
+        buf = io.BytesIO()
+        Image.fromarray(np.zeros((8, 8, 3), dtype=np.uint8)).save(buf, "JPEG")
+        return buf.getvalue()
+
+    n = 16
+    df = dd.from_pandas(
+        pd.DataFrame({"image_data": [_jpeg_bytes() for _ in range(n)], "label": np.arange(n, dtype=float)}),
+        npartitions=4,
+    )
+
+    # reset_index is called inside Ludwig's build_dataset; it must not raise.
+    result = reset_index_across_all_partitions(df)
+    computed = result.compute()
+    assert len(computed) == n
+    assert computed["image_data"].iloc[0][:2] == b"\xff\xd8"  # JPEG magic bytes intact
 
 
 @pytest.mark.distributed
