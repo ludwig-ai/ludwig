@@ -6,7 +6,7 @@
 
 <div align="center">
 
-_Declarative deep learning framework built for scale and efficiency._
+**Declarative deep learning framework for LLMs, multimodal models, and tabular AI.**
 
 [![PyPI version](https://badge.fury.io/py/ludwig.svg)](https://badge.fury.io/py/ludwig)
 [![Discord](https://img.shields.io/badge/Discord-Join%20Chat-5865F2?logo=discord&logoColor=white)](https://discord.gg/CBgdrGnZjy)
@@ -15,97 +15,94 @@ _Declarative deep learning framework built for scale and efficiency._
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/ludwig-ai/ludwig/blob/main/LICENSE)
 [![X](https://img.shields.io/twitter/follow/ludwig_ai.svg?style=social&logo=twitter)](https://twitter.com/ludwig_ai)
 
+[**Docs**](https://ludwig.ai) · [**Getting Started**](https://ludwig.ai/latest/getting_started/) · [**Examples**](https://ludwig.ai/latest/examples) · [**Discord**](https://discord.gg/CBgdrGnZjy)
+
 </div>
 
-# 📖 What is Ludwig?
+______________________________________________________________________
 
-Ludwig is a **low-code** framework for building **custom** AI models like **LLMs** and other deep neural networks.
+## What is Ludwig?
 
-Key features:
+Ludwig is a **declarative deep learning framework** that lets you train, fine-tune, and deploy AI models — from LLM fine-tuning to tabular classification — using a YAML config file and zero boilerplate Python.
 
-- 🛠 **Build custom models with ease:** a declarative YAML configuration file is all you need to train a state-of-the-art LLM on your data. Support for multi-task and multi-modality learning. Comprehensive config validation detects invalid parameter combinations and prevents runtime failures.
-- ⚡ **Optimized for scale and efficiency:** automatic batch size selection, distributed training via [HuggingFace Accelerate](https://github.com/huggingface/accelerate), parameter efficient fine-tuning ([PEFT](https://github.com/huggingface/peft)) including LoRA, DoRA, and VeRA, 4-bit quantization (QLoRA, [torchao](https://github.com/pytorch/ao) with QAT), multi-adapter PEFT with weighted merging, paged and 8-bit optimizers, sequence packing, and larger-than-memory datasets.
-- 📐 **Expert level control:** retain full control of your models down to the activation functions. Support for hyperparameter optimization (Ray Tune, Optuna), explainability, and rich metric visualizations.
-- 🧱 **Modular and extensible:** experiment with different model architectures, tasks, features, and modalities with just a few parameter changes in the config. Think building blocks for deep learning.
-- 🚢 **Engineered for production:** prebuilt [Docker](https://hub.docker.com/u/ludwigai) containers, native support for running with [Ray](https://www.ray.io/) on [Kubernetes](https://github.com/ray-project/kuberay), [vLLM](https://github.com/vllm-project/vllm) serving for LLMs, export models to [SafeTensors](https://github.com/huggingface/safetensors), [`torch.export`](https://pytorch.org/docs/stable/export.html), or [ONNX](https://onnx.ai/), upload to [HuggingFace](https://huggingface.co/models) with one command, and auto-generated model cards and training reports.
-
-Ludwig is hosted by the
-[Linux Foundation AI & Data](https://lfaidata.foundation/).
-
-**Tech stack:** Python 3.12 | PyTorch 2.7+ | Pydantic 2 | Transformers 5 | Ray 2.54
-
-## 🆕 What's New in Ludwig 0.15
-
-- **GRPO alignment** — reward-model-free reinforcement learning from human feedback using Group Relative Policy Optimization, configurable with a single `trainer.type: grpo` flag
-- **torchao quantization + QAT** — PyTorch-native quantization backend (`int4_weight_only`, `int8_weight_only`, `int8_dynamic`, `float8`) with optional Quantization-Aware Training for 1–2 perplexity point recovery versus PTQ
-- **Multi-adapter PEFT** — train and deploy multiple named LoRA adapters on the same base model, with support for all PEFT weighted merge strategies (TIES, DARE, SVD, magnitude pruning)
-- **Native Optuna hyperopt executor** — `type: optuna` executor with auto/GP/TPE/CMA-ES samplers, pruning, and SQLite/PostgreSQL persistence for resumable runs, no Ray Tune required
-- **Timeseries forecasting** — first-class `TimeseriesOutputFeature` with `model.forecast(dataset, horizon=N)` API and efficient O(window_size + horizon) incremental preprocessing
-- **Muon and ScheduleFreeAdamW optimizers** — two new optimizers targeting large-scale pretraining and fine-tuning workloads
-- **Image segmentation decoders** — UNet, SegFormer, and FPN decoders for semantic segmentation output features
-- **Python 3.12, PyTorch 2.7, Transformers 5, Ray 2.54** — full upgrade of the entire dependency stack
-
-![img](https://raw.githubusercontent.com/ludwig-ai/ludwig-docs/main/docs/images/ludwig_legos_unanimated.gif)
-
-# 💾 Installation
-
-Install from PyPI. Be aware that Ludwig requires Python 3.12+.
-
-```shell
-pip install ludwig
+```yaml
+# Fine-tune Llama-3.1 with LoRA in one config file
+model_type: llm
+base_model: meta-llama/Llama-3.1-8B
+adapter:
+  type: lora
+trainer:
+  type: finetune
+  epochs: 3
+input_features:
+  - name: instruction
+    type: text
+output_features:
+  - name: response
+    type: text
 ```
 
-Or install with all optional dependencies:
-
-```shell
-pip install ludwig[full]
+```bash
+ludwig train --config model.yaml --dataset my_data.csv
 ```
 
-Please see [contributing](https://github.com/ludwig-ai/ludwig/blob/main/CONTRIBUTING.md) for more detailed installation instructions.
+**Tech stack:** Python 3.12 · PyTorch 2.7+ · Pydantic 2 · Transformers 5 · Ray 2.54
 
-# 🚂 Getting Started
+Ludwig is hosted by the [Linux Foundation AI & Data](https://lfaidata.foundation/).
 
-Want to take a quick peek at some of Ludwig's features? Check out this Colab Notebook 🚀 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1lB4ALmEyvcMycE3Mlnsd7I3bc0zxvk39)
+______________________________________________________________________
 
-Looking to fine-tune LLMs? Check out these notebooks:
+## What's New in Ludwig 0.15
 
-1. Fine-Tune Llama-2-7b: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1r4oSEwRJpYKBPM0M0RSh0pBEYK_gBKbe)
-1. Fine-Tune Llama-2-13b: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1zmSEzqZ7v4twBrXagj1TE_C--RNyVAyu)
-1. Fine-Tune Mistral-7b: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1i_8A1n__b7ljRWHzIsAdhO7u7r49vUm4)
+| Feature                         | Description                                                                                            |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| **PatchTST & N-BEATS encoders** | State-of-the-art timeseries forecasting encoders with MASE/sMAPE metrics                               |
+| **Advanced PEFT adapters**      | PiSSA, EVA, CorDA/LoftQ initializers; TinyLoRA, OFT, HRA, WaveFT, LN-Tuning, VBLoRA, C3A adapter types |
+| **VLM fine-tuning**             | Train LLaVA, Qwen2-VL, InternVL via `is_multimodal: true` with gated cross-attention                   |
+| **HyperNetwork combiner**       | Conditioning-based feature fusion — one feature generates weights for others                           |
+| **Nash-MTL & Pareto-MTL**       | Game-theoretic and preference-based multi-task loss balancing                                          |
+| **LLM config generation**       | `ludwig generate_config "describe your task"` — LLM writes the YAML for you                            |
+| **ModelInspector**              | Architecture analysis, weight collection, feature importance proxy                                     |
+| **Ray Serve & KServe**          | Distributed and Kubernetes-native model deployment shims                                               |
+| **GRPO alignment**              | Reward-model-free RLHF via Group Relative Policy Optimization                                          |
+| **torchao quantization + QAT**  | PyTorch-native `int4/int8/float8` with Quantization-Aware Training                                     |
+| **Multi-adapter PEFT**          | Multiple named LoRA adapters with weighted merging (TIES, DARE, SVD)                                   |
+| **Native Optuna executor**      | GPT/TPE/CMA-ES samplers, pruning, resumable SQLite/PostgreSQL storage                                  |
+| **Timeseries forecasting**      | `model.forecast(dataset, horizon=N)` API with `TimeseriesOutputFeature`                                |
+| **Muon & ScheduleFreeAdamW**    | New optimizers for large-scale pretraining and fine-tuning                                             |
+| **Image segmentation decoders** | UNet, SegFormer, FPN decoders for semantic segmentation                                                |
 
-For a full tutorial, check out the official [getting started guide](https://ludwig.ai/latest/getting_started/), or take a look at end-to-end [Examples](https://ludwig.ai/latest/examples).
+______________________________________________________________________
 
-## Large Language Model Fine-Tuning
+## Installation
+
+```bash
+pip install ludwig           # core
+pip install ludwig[full]     # all optional dependencies
+pip install ludwig[llm]      # LLM fine-tuning only
+```
+
+Requires Python 3.12+. See [contributing](https://github.com/ludwig-ai/ludwig/blob/main/CONTRIBUTING.md) for a full dependency matrix.
+
+______________________________________________________________________
+
+## Quick Start
+
+### Fine-tune an LLM (instruction tuning)
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1c3AO8l_H6V_x37RwQ8V7M6A-RmcBf2tG?usp=sharing)
 
-Ludwig supports the full spectrum of LLM fine-tuning techniques:
+Ludwig supports the full LLM fine-tuning spectrum:
 
-- **Supervised fine-tuning (SFT):** standard instruction tuning on input/output pairs
-- **Preference learning / alignment:** DPO, KTO, ORPO, and GRPO trainers for RLHF-style alignment
-- **Parameter-efficient fine-tuning:** LoRA, DoRA, VeRA, LoRA+, and adapter layers via [PEFT](https://github.com/huggingface/peft)
-- **Quantized training:** 4-bit QLoRA (bitsandbytes) and [torchao](https://github.com/pytorch/ao) quantization
-
-Let's fine-tune a pretrained LLM to follow instructions like a chatbot ("instruction tuning").
-
-### Prerequisites
-
-- [HuggingFace API Token](https://huggingface.co/docs/hub/security-tokens)
-- Access approval to your chosen base model (e.g., [Llama-3.1-8B](https://huggingface.co/meta-llama/Llama-3.1-8B))
-- GPU with at least 12 GiB of VRAM (in our tests, we used an Nvidia T4)
-
-### Running
-
-We'll use the [Stanford Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html) dataset, which will be formatted as a table-like file that looks like this:
-
-|                    instruction                    |      input       |                      output                       |
-| :-----------------------------------------------: | :--------------: | :-----------------------------------------------: |
-|       Give three tips for staying healthy.        |                  | 1.Eat a balanced diet and make sure to include... |
-| Arrange the items given below in the order to ... | cake, me, eating |                  I eating cake.                   |
-| Write an introductory paragraph about a famous... |  Michelle Obama  | Michelle Obama is an inspirational woman who r... |
-|                        ...                        |       ...        |                        ...                        |
-
-Create a YAML config file named `model.yaml` with the following:
+| Technique                         | Config key                                                               |
+| --------------------------------- | ------------------------------------------------------------------------ |
+| Supervised fine-tuning (SFT)      | `trainer.type: finetune`                                                 |
+| DPO / KTO / ORPO / GRPO alignment | `trainer.type: dpo` (or `kto`, `orpo`, `grpo`)                           |
+| LoRA / DoRA / VeRA / PiSSA        | `adapter.type: lora` (or `dora`, `vera`, `lora` + `init_weights: pissa`) |
+| 4-bit QLoRA (bitsandbytes)        | `quantization.bits: 4`                                                   |
+| torchao + QAT                     | `quantization.backend: torchao`                                          |
+| Multi-adapter with merging        | `adapters:` dict + `merge:` block                                        |
+| VLM (vision-language)             | `is_multimodal: true`                                                    |
 
 ```yaml
 model_type: llm
@@ -119,15 +116,8 @@ adapter:
 
 prompt:
   template: |
-    Below is an instruction that describes a task, paired with an input that may provide further context.
-    Write a response that appropriately completes the request.
-
-    ### Instruction:
-    {instruction}
-
-    ### Input:
-    {input}
-
+    ### Instruction: {instruction}
+    ### Input: {input}
     ### Response:
 
 input_features:
@@ -148,212 +138,214 @@ trainer:
     decay: cosine
     warmup_fraction: 0.01
 
-preprocessing:
-  sample_ratio: 0.1
-
 backend:
   type: local
 ```
 
-And now let's train the model:
-
 ```bash
-export HUGGING_FACE_HUB_TOKEN = "<api_token>"
-
+export HUGGING_FACE_HUB_TOKEN="<your_token>"
 ludwig train --config model.yaml --dataset "ludwig://alpaca"
 ```
 
-## Supervised ML
-
-Let's build a neural network that predicts whether a given movie critic's review on [Rotten Tomatoes](https://www.kaggle.com/stefanoleone992/rotten-tomatoes-movies-and-critic-reviews-dataset) was positive or negative.
-
-Our dataset will be a CSV file that looks like this:
-
-|     movie_title      | content_rating |              genres              | runtime | top_critic | review_content                                                                                                                                                                                                   | recommended |
-| :------------------: | :------------: | :------------------------------: | :-----: | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| Deliver Us from Evil |       R        |    Action & Adventure, Horror    |  117.0  | TRUE       | Director Scott Derrickson and his co-writer, Paul Harris Boardman, deliver a routine procedural with unremarkable frights.                                                                                       | 0           |
-|       Barbara        |     PG-13      | Art House & International, Drama |  105.0  | FALSE      | Somehow, in this stirring narrative, Barbara manages to keep hold of her principles, and her humanity and courage, and battles to save a dissident teenage girl whose life the Communists are trying to destroy. | 1           |
-|   Horrible Bosses    |       R        |              Comedy              |  98.0   | FALSE      | These bosses cannot justify either murder or lasting comic memories, fatally compromising a farce that could have been great but ends up merely mediocre.                                                        | 0           |
-|         ...          |      ...       |               ...                |   ...   | ...        | ...                                                                                                                                                                                                              | ...         |
-
-Download a sample of the dataset from [here](https://ludwig.ai/latest/data/rotten_tomatoes.csv).
-
-```bash
-wget https://ludwig.ai/latest/data/rotten_tomatoes.csv
-```
-
-Next create a YAML config file named `model.yaml` with the following:
+### Train a multimodal classifier
 
 ```yaml
 input_features:
-  - name: genres
-    type: set
-    preprocessing:
-      tokenizer: comma
-  - name: content_rating
-    type: category
-  - name: top_critic
-    type: binary
-  - name: runtime
-    type: number
-  - name: review_content
+  - name: review_text
     type: text
     encoder:
-      type: embed
+      type: bert
+  - name: star_rating
+    type: number
+  - name: product_image
+    type: image
+    encoder:
+      type: dinov2
+
 output_features:
   - name: recommended
     type: binary
 ```
 
-That's it! Now let's train the model:
-
 ```bash
-ludwig train --config model.yaml --dataset rotten_tomatoes.csv
+ludwig train --config model.yaml --dataset reviews.csv
 ```
 
-**Happy modeling**
+### Generate a config from natural language
 
-Try applying Ludwig to your data. [Reach out on Discord](https://discord.gg/CBgdrGnZjy)
-if you have any questions.
+```bash
+ludwig generate_config "I have a CSV with age, income, education level, and I want to predict loan default"
+```
 
-# ❓ Why you should use Ludwig
+### Make predictions
 
-- **Minimal machine learning boilerplate**
+```bash
+ludwig predict --model_path results/experiment_run/model --dataset new_data.csv
+```
 
-  Ludwig takes care of the engineering complexity of machine learning out of
-  the box, enabling research scientists to focus on building models at the
-  highest level of abstraction. Data preprocessing, hyperparameter
-  optimization, device management, and distributed training for
-  `torch.nn.Module` models come completely free.
+### Launch a REST API
 
-- **Easily build your benchmarks**
+```bash
+ludwig serve --model_path results/experiment_run/model
+# POST http://localhost:8000/predict
+```
 
-  Creating a state-of-the-art baseline and comparing it with a new model is a
-  simple config change.
+______________________________________________________________________
 
-- **Easily apply new architectures to multiple problems and datasets**
+## Capabilities
 
-  Apply new models across the extensive set of tasks and datasets that Ludwig
-  supports. Ludwig includes a
-  [full benchmarking toolkit](https://arxiv.org/abs/2111.04260) accessible to
-  any user, for running experiments with multiple models across multiple
-  datasets with just a simple configuration.
+<details>
+<summary><strong>LLM Fine-Tuning</strong></summary>
 
-- **Highly configurable data preprocessing, modeling, and metrics**
+- **Supervised fine-tuning (SFT)** on instruction/response pairs
+- **Alignment training**: DPO, KTO, ORPO, GRPO (reward-model-free RLHF)
+- **PEFT adapters**: LoRA, DoRA, VeRA, LoRA+, TinyLoRA, OFT, HRA, WaveFT, LN-Tuning, VBLoRA, C3A
+- **LoRA initializers**: PiSSA, EVA, CorDA, LoftQ for improved convergence
+- **Multi-adapter PEFT**: multiple named adapters on one base model, switchable at runtime; merge with TIES, DARE, SVD, magnitude pruning
+- **Quantization**: 4-bit/8-bit QLoRA (bitsandbytes), torchao int4/int8/float8 with QAT
+- **VLM fine-tuning**: LLaVA, Qwen2-VL, InternVL via `is_multimodal: true`
+- **Sequence packing** for efficient training on variable-length inputs
+- **Paged and 8-bit optimizers** for memory-efficient training
 
-  Any and all aspects of the model architecture, training loop, hyperparameter
-  search, and backend infrastructure can be modified as additional fields in
-  the declarative configuration to customize the pipeline to meet your
-  requirements. For details on what can be configured, check out
-  [Ludwig Configuration](https://ludwig.ai/latest/configuration/)
-  docs.
+</details>
 
-- **Multi-modal, multi-task learning out-of-the-box**
+<details>
+<summary><strong>Multimodal & Tabular Models</strong></summary>
 
-  Mix and match tabular data, text, images, and even audio into complex model
-  configurations without writing code.
+- **Input modalities**: text, numbers, categories, binary, sets, bags, sequences, images, audio, timeseries, vectors, dates
+- **Text encoders**: any HuggingFace Transformer (BERT, RoBERTa, ModernBERT, Qwen3, Llama-3.1, etc.), plus Mamba-2, Jamba
+- **Image encoders**: DINOv2, ConvNeXt, EfficientNet, ViT, CAFormer, ConvFormer, PoolFormer, TIMM (1000+ models)
+- **Timeseries encoders**: PatchTST, N-BEATS, CNN, RNN, Transformer; MASE and sMAPE metrics; `model.forecast()` API
+- **Combiners**: concat, transformer, tab_transformer, FT-Transformer, TabNet, TabPFN v2, HyperNetwork, ProjectAggregate, GatedFusion, Perceiver
+- **Multi-task learning**: multiple output features in a single model; Nash-MTL, Pareto-MTL, FAMO, GradNorm, uncertainty loss balancing
+- **Image segmentation**: UNet, SegFormer, FPN decoders
 
-- **Rich model exporting and tracking**
+</details>
 
-  Automatically track all trials and metrics with tools like Tensorboard,
-  Comet ML, Weights & Biases, MLFlow, and Aim Stack.
+<details>
+<summary><strong>Training Infrastructure</strong></summary>
 
-- **Automatically scale training to multi-GPU, multi-node clusters**
+- **Distributed training**: HuggingFace Accelerate with DDP, FSDP, DeepSpeed (zero-code changes)
+- **Ray backend**: training across a Ray cluster, larger-than-memory datasets via Ray Data
+- **Automatic batch size selection** and learning rate range test
+- **Mixed precision** (fp16/bf16), gradient checkpointing, gradient accumulation
+- **Optimizers**: AdamW, Adafactor, SGD, Muon, ScheduleFreeAdamW, Lion, paged/8-bit variants
+- **Learning rate schedulers**: cosine, linear, polynomial, reduce-on-plateau, OneCycleLR
+- **Model Soup**: uniform and greedy checkpoint averaging for better generalization at zero inference cost
+- **Modality dropout** for robust multimodal models
 
-  Go from training on your local machine to the cloud without code changes. Ludwig uses
-  [HuggingFace Accelerate](https://github.com/huggingface/accelerate) under the hood for
-  transparent distributed training across DDP, FSDP, and DeepSpeed configurations.
+</details>
 
-- **Low-code interface for state-of-the-art models, including pre-trained Huggingface Transformers**
+<details>
+<summary><strong>Hyperparameter Optimization</strong></summary>
 
-  Ludwig also natively integrates with pre-trained models, such as the ones
-  available in [Huggingface Transformers](https://huggingface.co/docs/transformers/index).
-  Users can choose from a vast collection of state-of-the-art pre-trained
-  PyTorch models to use without needing to write any code at all. For example,
-  training a BERT-based sentiment analysis model with Ludwig is as simple as:
+- **Executors**: Ray Tune (ASHA, PBT, Bayesian) and native Optuna (auto/GP/TPE/CMA-ES)
+- **Optuna persistence**: SQLite or PostgreSQL for resumable HPO runs
+- **Pruning** with Optuna's MedianPruner and HyperbandPruner
+- **Search spaces**: uniform, log-uniform, choice, randint, quantized
+- **Full Ludwig config** is searchable — any nested parameter can be a hyperparameter
 
-  ```shell
-  ludwig train --dataset sst5 --config_str "{input_features: [{name: sentence, type: text, encoder: bert}], output_features: [{name: label, type: category}]}"
-  ```
+</details>
 
-- **Low-code interface for AutoML**
+<details>
+<summary><strong>Production & Deployment</strong></summary>
 
-  [Ludwig AutoML](https://ludwig.ai/latest/user_guide/automl/)
-  allows users to obtain trained models by providing just a dataset, the
-  target column, and a time budget.
+- **REST API**: FastAPI server with Prometheus metrics and structured logging (`ludwig serve`)
+- **vLLM serving**: OpenAI-compatible API with PagedAttention and continuous batching
+- **Ray Serve**: distributed deployment with auto-scaling and traffic splitting
+- **KServe**: Kubernetes-native deployment with Open Inference Protocol v2
+- **Model export**: SafeTensors (default), `torch.export` `.pt2` bundles, ONNX
+- **HuggingFace Hub**: `ludwig upload hf_hub` — push model + auto-generated model card
+- **Docker**: prebuilt containers at [ludwigai/ludwig](https://hub.docker.com/u/ludwigai)
 
-  ```python
-  auto_train_results = ludwig.automl.auto_train(dataset=my_dataset_df, target=target_column_name, time_limit_s=7200)
-  ```
+</details>
 
-- **Easy productionisation**
+<details>
+<summary><strong>Tooling & Integrations</strong></summary>
 
-  Ludwig makes it easy to serve deep learning models, including on GPUs.
-  Launch a REST API for your trained Ludwig model.
+- **Experiment tracking**: TensorBoard, Weights & Biases, Comet ML, MLflow, Aim Stack
+- **Model inspection**: `ModelInspector` — weight enumeration, architecture summary, feature importance proxy
+- **Visualizations**: learning curves, confusion matrices, calibration plots, ROC curves, hyperopt analysis
+- **AutoML**: `ludwig.automl.auto_train()` — give it a dataset and a time budget
+- **LLM config generation**: `ludwig generate_config "describe your task"` — LLM writes the YAML
+- **K-fold cross-validation**: `ludwig experiment --k_fold N`
+- **Dataset Zoo**: 50+ built-in benchmark datasets (`ludwig://mnist`, `ludwig://alpaca`, …)
 
-  ```shell
-  ludwig serve --model_path=/path/to/model
-  ```
+</details>
 
-  Ludwig supports exporting trained models to [SafeTensors](https://github.com/huggingface/safetensors) (default), [`torch.export`](https://pytorch.org/docs/stable/export.html) `.pt2` bundles, or [ONNX](https://onnx.ai/) via the dynamo-based exporter.
+______________________________________________________________________
 
-  ```shell
-  ludwig export_model --model_path=/path/to/model --output_path=exported/ --format=torch_export
-  ```
+## Examples
 
-# 📚 Tutorials
+### LLM & Alignment
 
-- [Text Classification](https://ludwig.ai/latest/examples/text_classification)
-- [Tabular Data Classification](https://ludwig.ai/latest/examples/adult_census_income)
-- [Image Classification](https://ludwig.ai/latest/examples/mnist)
-- [Multimodal Classification](https://ludwig.ai/latest/examples/multimodal_classification)
+| Use Case                              | Link                                                                                |
+| ------------------------------------- | ----------------------------------------------------------------------------------- |
+| LLM instruction tuning (LoRA + QLoRA) | [examples/llm](https://ludwig.ai/latest/examples/llm/llm_finetuning)                |
+| DPO / GRPO alignment                  | [examples/llm/alignment](https://ludwig.ai/latest/examples/llm/alignment)           |
+| Advanced PEFT (PiSSA, OFT, VBLoRA, …) | [examples/llms/peft_advanced](https://ludwig.ai/latest/examples/llms/peft_advanced) |
+| VLM fine-tuning (LLaVA, Qwen2-VL)     | [examples/vlm](https://github.com/ludwig-ai/ludwig/tree/main/examples/vlm)          |
 
-# 🔬 Example Use Cases
+### Tabular & Multimodal
 
-- [Named Entity Recognition Tagging](https://ludwig.ai/latest/examples/ner_tagging)
-- [Natural Language Understanding](https://ludwig.ai/latest/examples/nlu)
-- [Machine Translation](https://ludwig.ai/latest/examples/machine_translation)
-- [Chit-Chat Dialogue Modeling through seq2seq](https://ludwig.ai/latest/examples/seq2seq)
-- [Sentiment Analysis](https://ludwig.ai/latest/examples/sentiment_analysis)
-- [One-shot Learning with Siamese Networks](https://ludwig.ai/latest/examples/oneshot)
-- [Visual Question Answering](https://ludwig.ai/latest/examples/visual_qa)
-- [Spoken Digit Speech Recognition](https://ludwig.ai/latest/examples/speech_recognition)
-- [Speaker Verification](https://ludwig.ai/latest/examples/speaker_verification)
-- [Binary Classification (Titanic)](https://ludwig.ai/latest/examples/titanic)
-- [Timeseries forecasting](https://ludwig.ai/latest/examples/forecasting)
-- [Timeseries forecasting (Weather)](https://ludwig.ai/latest/examples/weather)
-- [Movie rating prediction](https://ludwig.ai/latest/examples/movie_ratings)
-- [Multi-label classification](https://ludwig.ai/latest/examples/multi_label)
-- [Multi-Task Learning](https://ludwig.ai/latest/examples/multi_task)
-- [Simple Regression: Fuel Efficiency Prediction](https://ludwig.ai/latest/examples/fuel_efficiency)
-- [Fraud Detection](https://ludwig.ai/latest/examples/fraud)
+| Use Case                               | Link                                                                                              |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Binary classification (Titanic)        | [examples/titanic](https://ludwig.ai/latest/examples/titanic)                                     |
+| Tabular classification (census income) | [examples/adult_census_income](https://ludwig.ai/latest/examples/adult_census_income)             |
+| Multimodal classification              | [examples/multimodal_classification](https://ludwig.ai/latest/examples/multimodal_classification) |
+| Multi-task learning                    | [examples/multi_task](https://ludwig.ai/latest/examples/multi_task)                               |
 
-# 💡 More Information
+### Timeseries & Vision
 
-Read our publications on [Ludwig](https://arxiv.org/pdf/1909.07930.pdf), [declarative ML](https://arxiv.org/pdf/2107.08148.pdf), and [Ludwig’s SoTA benchmarks](https://openreview.net/pdf?id=hwjnu6qW7E4).
+| Use Case                                   | Link                                                                                      |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| Timeseries forecasting (PatchTST, N-BEATS) | [examples/forecasting](https://ludwig.ai/latest/examples/forecasting)                     |
+| Weather forecasting                        | [examples/weather](https://ludwig.ai/latest/examples/weather)                             |
+| Image classification (MNIST)               | [examples/mnist](https://ludwig.ai/latest/examples/mnist)                                 |
+| Semantic segmentation                      | [examples/semantic_segmentation](https://ludwig.ai/latest/examples/semantic_segmentation) |
 
-Learn more about [how Ludwig works](https://ludwig.ai/latest/user_guide/how_ludwig_works/), [how to get started](https://ludwig.ai/latest/getting_started/), and work through more [examples](https://ludwig.ai/latest/examples).
+### NLP & Audio
 
-If you are interested in [contributing](https://github.com/ludwig-ai/ludwig/blob/main/CONTRIBUTING.md), have questions, comments, or thoughts to share, or if you just want to be in the
-know, please consider [joining our Community Discord](https://discord.gg/CBgdrGnZjy) and follow us on [X](https://twitter.com/ludwig_ai)!
+| Use Case                 | Link                                                                                    |
+| ------------------------ | --------------------------------------------------------------------------------------- |
+| Text classification      | [examples/text_classification](https://ludwig.ai/latest/examples/text_classification)   |
+| Named entity recognition | [examples/ner_tagging](https://ludwig.ai/latest/examples/ner_tagging)                   |
+| Machine translation      | [examples/machine_translation](https://ludwig.ai/latest/examples/machine_translation)   |
+| Speech recognition       | [examples/speech_recognition](https://ludwig.ai/latest/examples/speech_recognition)     |
+| Speaker verification     | [examples/speaker_verification](https://ludwig.ai/latest/examples/speaker_verification) |
 
-# 🤝 Join the community to build Ludwig with us
+______________________________________________________________________
 
-Ludwig is an actively managed open-source project that relies on contributions from folks just like
-you. Consider joining the active group of Ludwig contributors to make Ludwig an even
-more accessible and feature rich framework for everyone to use!
+## Why Ludwig?
+
+- **Zero boilerplate** — no training loop, no data pipeline, no evaluation code. The YAML config is the entire program.
+- **Best-in-class LLM support** — full spectrum from LoRA to GRPO alignment, torchao QAT, and VLM fine-tuning, all in config.
+- **Multimodal out of the box** — mix text, images, numbers, audio, and timeseries with one config change.
+- **Scale without code changes** — go from laptop → multi-GPU → Ray cluster by changing `backend.type`.
+- **Expert control when you need it** — every activation function, scheduler, and optimizer is configurable.
+- **Reproducible research** — every run is logged and the full config is saved. Compare experiments with `ludwig visualize`.
+
+______________________________________________________________________
+
+## Publications
+
+- [Ludwig: A Type-Based Declarative Deep Learning Toolbox](https://arxiv.org/pdf/1909.07930.pdf) (2019)
+- [Declarative Machine Learning Systems](https://arxiv.org/pdf/2107.08148.pdf) (2021)
+- [Ludwig's State-of-the-Art Benchmarks](https://openreview.net/pdf?id=hwjnu6qW7E4)
+
+______________________________________________________________________
+
+## Community
+
+[![Discord](https://img.shields.io/badge/Discord-Join%20Chat-5865F2?logo=discord&logoColor=white)](https://discord.gg/CBgdrGnZjy)
+
+- [Discord](https://discord.gg/CBgdrGnZjy) — ask questions, share what you've built
+- [GitHub Issues](https://github.com/ludwig-ai/ludwig/issues) — bugs and feature requests
+- [X / Twitter](https://twitter.com/ludwig_ai) — announcements
+- [Medium](https://medium.com/ludwig-ai) — tutorials and deep-dives
 
 <a href="https://github.com/ludwig-ai/ludwig/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=ludwig-ai/ludwig" />
-</a><br/>
-
-## Star History
+</a>
 
 [![Star History Chart](https://api.star-history.com/svg?repos=ludwig-ai/ludwig&type=Date)](https://star-history.com/#ludwig-ai/ludwig&Date)
-
-# 👋 Getting Involved
-
-- [Discord](https://discord.gg/CBgdrGnZjy)
-- [X (Twitter)](https://twitter.com/ludwig_ai)
-- [Medium](https://medium.com/ludwig-ai)
-- [GitHub Issues](https://github.com/ludwig-ai/ludwig/issues)
