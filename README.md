@@ -52,7 +52,7 @@ Ludwig is hosted by the [Linux Foundation AI & Data](https://lfaidata.foundation
 
 ______________________________________________________________________
 
-## What's New in Ludwig 0.15
+## What's New in Ludwig 0.16
 
 | Feature                         | Description                                                                                            |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------ |
