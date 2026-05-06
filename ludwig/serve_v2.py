@@ -14,7 +14,6 @@ import logging
 import time
 from typing import Any
 
-import numpy as np
 import pandas as pd
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,6 +22,7 @@ from pydantic import BaseModel as PydanticBaseModel
 from pydantic import create_model, Field
 
 from ludwig.constants import COLUMN
+from ludwig.utils.data_utils import numpy_to_python
 
 logger = logging.getLogger(__name__)
 
@@ -51,26 +51,6 @@ try:
     METRICS_AVAILABLE = True
 except ImportError:
     METRICS_AVAILABLE = False
-
-
-# ---------------------------------------------------------------------------
-# Numpy → Python serialization helpers
-# ---------------------------------------------------------------------------
-def _numpy_safe(obj: Any) -> Any:
-    """Recursively convert numpy scalars / arrays to plain Python types."""
-    if isinstance(obj, np.integer):
-        return int(obj)
-    if isinstance(obj, np.floating):
-        return float(obj)
-    if isinstance(obj, np.bool_):
-        return bool(obj)
-    if isinstance(obj, np.ndarray):
-        return obj.tolist()
-    if isinstance(obj, dict):
-        return {k: _numpy_safe(v) for k, v in obj.items()}
-    if isinstance(obj, (list, tuple, set)):
-        return [_numpy_safe(v) for v in obj]
-    return obj
 
 
 # ---------------------------------------------------------------------------
@@ -346,7 +326,7 @@ def create_app(
             _record_error("predict")
             raise HTTPException(status_code=500, detail=str(exc))
 
-        result = _numpy_safe(resp_df.to_dict("records")[0])
+        result = numpy_to_python(resp_df.to_dict("records")[0])
         latency = time.monotonic() - start
         _log_response("predict", model_manager._output_feature_names, latency)
         _record_success("predict", latency)
@@ -392,7 +372,7 @@ def create_app(
             _record_error("batch_predict")
             raise HTTPException(status_code=500, detail=str(exc))
 
-        result = _numpy_safe(resp_df.to_dict("split"))
+        result = numpy_to_python(resp_df.to_dict("split"))
         latency = time.monotonic() - start
         _log_response("batch_predict", model_manager._output_feature_names, latency)
         _record_success("batch_predict", latency)

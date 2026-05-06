@@ -456,6 +456,27 @@ def hash_dict(d: dict, max_length: int | None = 6) -> bytes:
 
 
 @DeveloperAPI
+def numpy_to_python(obj: Any) -> Any:
+    """Recursively convert numpy scalars and arrays to plain Python types.
+
+    Suitable for making objects JSON-serializable without a full JSON round-trip.
+    """
+    if isinstance(obj, np.integer):
+        return int(obj)
+    if isinstance(obj, np.floating):
+        return float(obj)
+    if isinstance(obj, np.bool_):
+        return bool(obj)
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    if isinstance(obj, dict):
+        return {k: numpy_to_python(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple, set)):
+        return [numpy_to_python(v) for v in obj]
+    return obj
+
+
+@DeveloperAPI
 def to_json_dict(d):
     """Converts Python dict to pure JSON ready format."""
     return json.loads(json.dumps(d, cls=NumpyEncoder))
