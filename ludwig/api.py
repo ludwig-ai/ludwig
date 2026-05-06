@@ -377,7 +377,9 @@ class LudwigModel:
         ):
             self._initialize_llm_for_zero_shot()
 
-    def _get_or_create_model(self, config_obj=None, random_seed: int = default_random_seed):
+    def _get_or_create_model(
+        self, config_obj: ModelConfig | None = None, random_seed: int = default_random_seed
+    ) -> None:
         """Single entry point for model instantiation.
 
         Creates self.model from config_obj (or self.config_obj) if it hasn't been created yet. Safe to call multiple
@@ -2156,7 +2158,7 @@ class LudwigModel:
         model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
         save_json(model_hyperparameters_path, self.config_obj.to_dict())
 
-    def export_model(self, save_path: str, format: str = "safetensors", sample_input: dict | None = None):
+    def export_model(self, save_path: str, format: str = "safetensors", sample_input: dict | None = None) -> None:
         """Export the model in various formats.
 
         Args:
@@ -2179,11 +2181,11 @@ class LudwigModel:
 
     def _preprocess_for_prediction(
         self,
-        dataset,
-        data_format=None,
-        split=None,
-        include_outputs=False,
-        callbacks=None,
+        dataset: str | dict | pd.DataFrame | Dataset,
+        data_format: str | None = None,
+        split: str | None = None,
+        include_outputs: bool = False,
+        callbacks: list | None = None,
     ):
         """Shared preprocessing wrapper for predict, evaluate, and collect_activations."""
         return preprocess_for_prediction(
@@ -2211,7 +2213,7 @@ class LudwigModel:
                 "Call train() or load() before predict/evaluate."
             )
 
-    def free_gpu_memory(self):
+    def free_gpu_memory(self) -> None:
         """Manually moves the model to CPU to force GPU memory to be freed.
 
         For more context: https://discuss.pytorch.org/t/how-can-we-release-gpu-memory-cache/14530/35
@@ -2508,7 +2510,7 @@ def kfold_cross_validate(
     return kfold_cv_stats, kfold_split_indices
 
 
-def _get_compute_description(backend) -> dict:
+def _get_compute_description(backend: Backend) -> dict:
     """Returns the compute description for the backend."""
     compute_description = {"num_nodes": backend.num_nodes}
 
@@ -2535,16 +2537,16 @@ def _get_compute_description(backend) -> dict:
 
 @PublicAPI
 def get_experiment_description(
-    config,
-    dataset=None,
-    training_set=None,
-    validation_set=None,
-    test_set=None,
-    training_set_metadata=None,
-    data_format=None,
-    backend=None,
-    random_seed=None,
-):
+    config: ModelConfigDict,
+    dataset: str | dict | pd.DataFrame | None = None,
+    training_set: str | dict | pd.DataFrame | None = None,
+    validation_set: str | dict | pd.DataFrame | None = None,
+    test_set: str | dict | pd.DataFrame | None = None,
+    training_set_metadata: TrainingSetMetadataDict | None = None,
+    data_format: str | None = None,
+    backend: Backend | None = None,
+    random_seed: int | None = None,
+) -> dict:
     description = OrderedDict()
     description["ludwig_version"] = LUDWIG_VERSION
     description["command"] = " ".join(sys.argv)

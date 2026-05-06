@@ -383,7 +383,7 @@ def server(
 # ---------------------------------------------------------------------------
 # Form / file helpers (unchanged from original)
 # ---------------------------------------------------------------------------
-def _write_file(v, files):
+def _write_file(v: "UploadFile", files: list) -> str:
     # Convert UploadFile to a NamedTemporaryFile to ensure it's on the disk
     suffix = os.path.splitext(v.filename)[1]
     named_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
@@ -393,7 +393,7 @@ def _write_file(v, files):
     return named_file.name
 
 
-def _read_image_buffer(v):
+def _read_image_buffer(v: "UploadFile") -> torch.Tensor:
     # read bytes sent via REST API and convert to image tensor
     # in [channels, height, width] format
     byte_string = io.BytesIO(v.file.read()).read()
@@ -401,7 +401,7 @@ def _read_image_buffer(v):
     return image  # channels, height, width
 
 
-def convert_input(form, input_features):
+def convert_input(form: "Request", input_features: dict):
     """Returns a new input and a list of files to be cleaned up."""
     new_input = {}
     files = []
@@ -418,7 +418,7 @@ def convert_input(form, input_features):
     return new_input, files
 
 
-def convert_batch_input(form, input_features):
+def convert_batch_input(form: "Request", input_features: dict):
     """Returns a new input and a list of files to be cleaned up."""
     file_index = {}
     files = []
