@@ -145,8 +145,7 @@ class TransformerDecoderConfig(BaseDecoderConfig):
     num_heads: int = schema_utils.PositiveInteger(
         default=8,
         description=(
-            "Number of attention heads in each multi-head attention sub-layer. "
-            "d_model must be divisible by num_heads."
+            "Number of attention heads in each multi-head attention sub-layer. d_model must be divisible by num_heads."
         ),
     )
 

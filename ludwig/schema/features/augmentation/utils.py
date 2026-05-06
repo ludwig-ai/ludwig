@@ -137,7 +137,7 @@ def AugmentationDataclassField(
             default_factory=load_default,
         )
     except Exception as e:
-        raise ConfigValidationError(f"Unsupported augmentation type. See augmentation_registry. " f"Details: {e}")
+        raise ConfigValidationError(f"Unsupported augmentation type. See augmentation_registry. Details: {e}")
 
 
 @DeveloperAPI

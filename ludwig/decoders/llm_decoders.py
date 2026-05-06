@@ -406,7 +406,7 @@ class CategoryExtractorDecoder(Decoder):
             return None
         if not hasattr(self.tokenizer, "tokenizer"):
             logger.warning(
-                "constrain_to_vocabulary=True requires an HF tokenizer. " "Falling back to unconstrained generation."
+                "constrain_to_vocabulary=True requires an HF tokenizer. Falling back to unconstrained generation."
             )
             return None
 

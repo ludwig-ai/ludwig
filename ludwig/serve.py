@@ -357,10 +357,7 @@ def server(
             missing_features = input_features - set(data_df.columns)
             _record_error("batch_predict")
             return JSONResponse(
-                {
-                    "error": "Data received does not contain all input features. "
-                    f"Missing features: {missing_features}."
-                },
+                {"error": f"Data received does not contain all input features. Missing features: {missing_features}."},
                 status_code=400,
             )
 
@@ -445,7 +442,7 @@ def convert_batch_input(form, input_features):
     """Returns a new input and a list of files to be cleaned up."""
     file_index = {}
     files = []
-    for k, v in form.multi_items():
+    for _k, v in form.multi_items():
         if isinstance(v, UploadFile):
             file_index[v.filename] = v
 

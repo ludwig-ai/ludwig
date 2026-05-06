@@ -130,7 +130,7 @@ def parse_args():
     parser.add_argument(
         "--model",
         default=DEFAULT_MODEL,
-        help=f"LLM model name (default: {DEFAULT_MODEL}). " "Claude models start with 'claude', OpenAI with 'gpt'.",
+        help=f"LLM model name (default: {DEFAULT_MODEL}). Claude models start with 'claude', OpenAI with 'gpt'.",
     )
     parser.add_argument(
         "--no-train",

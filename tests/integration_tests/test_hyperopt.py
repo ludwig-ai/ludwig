@@ -293,8 +293,7 @@ def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_
                 "upper": 0.01,
                 "space": "loguniform",
             },
-            output_feature_name
-            + ".decoder.fc_layers": {
+            output_feature_name + ".decoder.fc_layers": {
                 "space": "choice",
                 "categories": [
                     [{"output_size": 8}, {"output_size": 4}],
@@ -412,10 +411,14 @@ def test_hyperopt_with_feature_specific_parameters(csv_filename, tmpdir, ray_clu
         TRAINER: {"epochs": 1, "learning_rate": 0.001, BATCH_SIZE: 128},
         HYPEROPT: {
             "parameters": {
-                input_features[0][NAME]
-                + ".encoder.filter_size": {"space": "choice", "categories": filter_size_search_space},
-                input_features[1][NAME]
-                + ".encoder.embedding_size": {"space": "choice", "categories": embedding_size_search_space},
+                input_features[0][NAME] + ".encoder.filter_size": {
+                    "space": "choice",
+                    "categories": filter_size_search_space,
+                },
+                input_features[1][NAME] + ".encoder.embedding_size": {
+                    "space": "choice",
+                    "categories": embedding_size_search_space,
+                },
             },
             "goal": "minimize",
             "output_feature": output_features[0][NAME],

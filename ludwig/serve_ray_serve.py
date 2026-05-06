@@ -35,7 +35,7 @@ def _import_ray_serve():
         from ray import serve
     except ImportError as exc:
         raise ImportError(
-            "Ray Serve is required for ludwig.serve_ray_serve. Install with: " "pip install 'ludwig[distributed]'"
+            "Ray Serve is required for ludwig.serve_ray_serve. Install with: pip install 'ludwig[distributed]'"
         ) from exc
     return serve
 

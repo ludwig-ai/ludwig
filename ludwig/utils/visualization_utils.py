@@ -479,7 +479,7 @@ def donut(
     for i in list(set(outside_groups)):
         wedges.append(inside[i])
         labels.append(inside_labels[i])
-        for j in range(group_count[i]):
+        for _j in range(group_count[i]):
             wedges.append(outside[so_far])
             labels.append(outside_labels[so_far])
             so_far += 1
@@ -909,8 +909,8 @@ def roc_curves(
 def precision_recall_curves_plot(
     precision_recalls: dict[str, list[float]],
     model_names: list[str],
-    title: str = None,
-    filename: str = None,
+    title: str | None = None,
+    filename: str | None = None,
     callbacks=None,
 ):
     """Generates a precision recall curve for each model in the model_names list.
@@ -1426,7 +1426,7 @@ def hyperopt_report(hyperparameters, hyperopt_results_df, metric, filename_templ
         else:
             # TODO: more research needed on how to handle RayTune "sample_from" search space
             raise ValueError(
-                f"{hp_params[SPACE]} search space not supported in Ludwig.  "  # noqa: E713
+                f"{hp_params[SPACE]} search space not supported in Ludwig.  "
                 f"Supported values are {RAY_TUNE_FLOAT_SPACES | RAY_TUNE_INT_SPACES | RAY_TUNE_CATEGORY_SPACES}."
             )
 

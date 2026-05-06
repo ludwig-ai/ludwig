@@ -191,12 +191,12 @@ def test_conv1d_stack(layers: None | list, num_layers: None | int, dropout: floa
     if dropout == 0:
         # all trainable parameters should be updated
         assert tpc == upc, (
-            f"All parameter not updated. Parameters not updated: {not_updated}" f"\nModule structure:\n{conv1_stack}"
+            f"All parameter not updated. Parameters not updated: {not_updated}\nModule structure:\n{conv1_stack}"
         )
     else:
         # with specified config and random seed, non-zero dropout update parameter count could take different values
         assert (tpc == upc) or (upc == 1), (
-            f"All parameter not updated. Parameters not updated: {not_updated}" f"\nModule structure:\n{conv1_stack}"
+            f"All parameter not updated. Parameters not updated: {not_updated}\nModule structure:\n{conv1_stack}"
         )
 
 
@@ -334,7 +334,7 @@ def test_parallel_conv1d_stack(stacked_layers: None | list, dropout: float) -> N
 #  2D Convolutional Tests
 ###
 @pytest.mark.parametrize(
-    ("img_height,img_width,in_channels,out_channels,pool_kernel_size," "pool_stride,pool_padding,pool_dilation"),
+    ("img_height,img_width,in_channels,out_channels,pool_kernel_size,pool_stride,pool_padding,pool_dilation"),
     [(224, 224, 3, 16, 2, 2, 0, 1)],
 )
 @pytest.mark.parametrize("stride,padding", [(1, "valid"), (1, "same"), (2, "valid")])
@@ -511,6 +511,4 @@ def test_resnet(
     target = torch.randn(output_tensor.shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(resnet, (input_tensor,), target)
     # all trainable parameters should be updated
-    assert tpc == upc, (
-        f"All parameter not updated. Parameters not updated: {not_updated}" f"\nModule structure:\n{resnet}"
-    )
+    assert tpc == upc, f"All parameter not updated. Parameters not updated: {not_updated}\nModule structure:\n{resnet}"

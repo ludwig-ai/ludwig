@@ -270,12 +270,12 @@ def set_hyperopt_defaults_(config: "ModelConfig"):
             scheduler.max_t = epochs  # run scheduler until trainer epochs limit hit
 
 
-def set_preprocessing_parameters(config: "ModelConfig") -> None:  # noqa: F821
+def set_preprocessing_parameters(config: "ModelConfig") -> None:
     """Reconcile conflicting preprocessing parameters in place."""
     _set_max_sequence_length(config)
 
 
-def _set_max_sequence_length(config: "ModelConfig") -> None:  # noqa: F821
+def _set_max_sequence_length(config: "ModelConfig") -> None:
     """Ensures that `max_sequence_length` is never less than `sequence_length`."""
 
     types_with_sequence_length = [SEQUENCE, TEXT]

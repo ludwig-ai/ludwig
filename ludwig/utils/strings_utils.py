@@ -323,14 +323,14 @@ def create_vocabulary(
     data: Series,
     tokenizer_type: str = "space",
     lowercase: bool = True,
-    num_most_frequent: int = None,
-    vocab_file: str = None,
+    num_most_frequent: int | None = None,
+    vocab_file: str | None = None,
     add_special_symbols: bool = True,
     unknown_symbol: str = UNKNOWN_SYMBOL,
     padding_symbol: str = PADDING_SYMBOL,
     start_symbol: str = START_SYMBOL,
     stop_symbol: str = STOP_SYMBOL,
-    pretrained_model_name_or_path: str = None,
+    pretrained_model_name_or_path: str | None = None,
     ngram_size: int | None = None,
     compute_idf: bool = False,
     processor: DataFrameEngine = PANDAS,
@@ -444,7 +444,7 @@ def create_vocabulary(
         else None
     )
 
-    if pad_idx is None and padding_symbol in str2idx.keys():
+    if pad_idx is None and padding_symbol in str2idx:
         pad_idx = str2idx[padding_symbol]
 
     return Vocabulary(

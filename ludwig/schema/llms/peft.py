@@ -154,7 +154,7 @@ class LoraConfig(BaseAdapterConfig):
             )
         if self.init_lora_weights == "eva" and self.eva_config is None:
             raise ConfigValidationError(
-                "`eva_config` must be set when `init_lora_weights` is 'eva'. " "Example: eva_config: {rho: 2.0}"
+                "`eva_config` must be set when `init_lora_weights` is 'eva'. Example: eva_config: {rho: 2.0}"
             )
 
     type: str = schema_utils.ProtectedString(
@@ -290,7 +290,7 @@ class LoraConfig(BaseAdapterConfig):
         ),
     )
 
-    def to_config(self, task_type: str = None, **kwargs) -> "PeftConfig":
+    def to_config(self, task_type: str | None = None, **kwargs) -> "PeftConfig":
         from peft import LoraConfig as _LoraConfig
 
         init_weights = self.init_lora_weights
@@ -650,7 +650,7 @@ class AdaptionPromptConfig(BaseAdapterConfig):
         parameter_metadata=LLM_METADATA["adapter"]["adaption_prompt"]["adapter_layers"],
     )
 
-    def to_config(self, task_type: str = None, **kwargs) -> "PeftConfig":
+    def to_config(self, task_type: str | None = None, **kwargs) -> "PeftConfig":
         from peft import AdaptionPromptConfig as _AdaptionPromptConfig
 
         return _AdaptionPromptConfig(
@@ -719,7 +719,7 @@ class IA3Config(BaseAdapterConfig):
         parameter_metadata=LLM_METADATA["adapter"]["ia3"]["init_ia3_weights"],
     )
 
-    def to_config(self, task_type: str = None, **kwargs) -> "PeftConfig":
+    def to_config(self, task_type: str | None = None, **kwargs) -> "PeftConfig":
         from peft import IA3Config as _IA3Config
 
         return _IA3Config(
@@ -761,7 +761,7 @@ class VeraAdapterConfig(BaseAdapterConfig):
         default=0, description="PRNG key for shared random projection matrices."
     )
 
-    def to_config(self, task_type: str = None, **kwargs):
+    def to_config(self, task_type: str | None = None, **kwargs):
         from peft import VeraConfig as _VeraConfig
 
         return _VeraConfig(
@@ -791,7 +791,7 @@ class LoHaAdapterConfig(BaseAdapterConfig):
         default=None, allow_none=True, description="List of module names to apply LoHa to."
     )
 
-    def to_config(self, task_type: str = None, **kwargs):
+    def to_config(self, task_type: str | None = None, **kwargs):
         from peft import LoHaConfig as _LoHaConfig
 
         return _LoHaConfig(r=self.r, alpha=self.alpha, target_modules=self.target_modules, task_type=task_type)
@@ -815,7 +815,7 @@ class LoKrAdapterConfig(BaseAdapterConfig):
         default=None, allow_none=True, description="List of module names to apply LoKr to."
     )
 
-    def to_config(self, task_type: str = None, **kwargs):
+    def to_config(self, task_type: str | None = None, **kwargs):
         from peft import LoKrConfig as _LoKrConfig
 
         return _LoKrConfig(r=self.r, alpha=self.alpha, target_modules=self.target_modules, task_type=task_type)
@@ -840,7 +840,7 @@ class FourierFTAdapterConfig(BaseAdapterConfig):
         default=None, allow_none=True, description="List of module names to apply FourierFT to."
     )
 
-    def to_config(self, task_type: str = None, **kwargs):
+    def to_config(self, task_type: str | None = None, **kwargs):
         from peft import FourierFTConfig as _FourierFTConfig
 
         return _FourierFTConfig(
@@ -874,7 +874,7 @@ class BOFTAdapterConfig(BaseAdapterConfig):
         default=None, allow_none=True, description="List of module names to apply BOFT to."
     )
 
-    def to_config(self, task_type: str = None, **kwargs):
+    def to_config(self, task_type: str | None = None, **kwargs):
         from peft import BOFTConfig as _BOFTConfig
 
         return _BOFTConfig(
@@ -942,7 +942,7 @@ class TinyLoraAdapterConfig(BaseAdapterConfig):
         description="List of module names or regex to apply TinyLoRA to.",
     )
 
-    def to_config(self, task_type: str = None, **kwargs):
+    def to_config(self, task_type: str | None = None, **kwargs):
         from peft import TinyLoraConfig as _TinyLoraConfig
 
         return _TinyLoraConfig(
@@ -997,7 +997,7 @@ class C3AAdapterConfig(BaseAdapterConfig):
         description="Bias type for C3A. 'none' trains no biases; 'all' or 'c3a_only' trains the adapter biases.",
     )
 
-    def to_config(self, task_type: str = None, **kwargs):
+    def to_config(self, task_type: str | None = None, **kwargs):
         from peft import C3AConfig as _C3AConfig
 
         return _C3AConfig(
@@ -1064,7 +1064,7 @@ class OFTAdapterConfig(BaseAdapterConfig):
         description="Constraint strength for COFT (only used when `coft=True`).",
     )
 
-    def to_config(self, task_type: str = None, **kwargs):
+    def to_config(self, task_type: str | None = None, **kwargs):
         from peft import OFTConfig as _OFTConfig
 
         return _OFTConfig(
@@ -1117,7 +1117,7 @@ class HRAAdapterConfig(BaseAdapterConfig):
         description="List of module names or regex to apply HRA to.",
     )
 
-    def to_config(self, task_type: str = None, **kwargs):
+    def to_config(self, task_type: str | None = None, **kwargs):
         from peft import HRAConfig as _HRAConfig
 
         return _HRAConfig(
@@ -1174,7 +1174,7 @@ class WaveFTAdapterConfig(BaseAdapterConfig):
         description="List of module names or regex to apply WaveFT to.",
     )
 
-    def to_config(self, task_type: str = None, **kwargs):
+    def to_config(self, task_type: str | None = None, **kwargs):
         from peft import WaveFTConfig as _WaveFTConfig
 
         return _WaveFTConfig(
@@ -1216,7 +1216,7 @@ class LNTuningAdapterConfig(BaseAdapterConfig):
         ),
     )
 
-    def to_config(self, task_type: str = None, **kwargs):
+    def to_config(self, task_type: str | None = None, **kwargs):
         from peft import LNTuningConfig as _LNTuningConfig
 
         return _LNTuningConfig(
@@ -1284,7 +1284,7 @@ class VBLoRAAdapterConfig(BaseAdapterConfig):
         description="List of module names or regex to apply VBLoRA to.",
     )
 
-    def to_config(self, task_type: str = None, **kwargs):
+    def to_config(self, task_type: str | None = None, **kwargs):
         from peft import VBLoRAConfig as _VBLoRAConfig
 
         return _VBLoRAConfig(
@@ -1413,7 +1413,7 @@ class MergeAdaptersConfig(schema_utils.LudwigBaseConfig):
         default=None,
         allow_none=True,
         description=(
-            "Per-source weights; must have the same length as `sources`. " "If null, all weights default to 1.0."
+            "Per-source weights; must have the same length as `sources`. If null, all weights default to 1.0."
         ),
     )
 

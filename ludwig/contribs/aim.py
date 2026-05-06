@@ -45,7 +45,7 @@ class AimCallback(Callback):
 
         self.aim_run["base_config"] = self.normalize_config(base_config)
 
-        params = dict(name=model_name, dir=experiment_directory)
+        params = {"name": model_name, "dir": experiment_directory}
         self.aim_run["params"] = params
 
     def aim_track(self, progress_tracker):

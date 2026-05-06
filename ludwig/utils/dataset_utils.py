@@ -51,7 +51,7 @@ def get_repeatable_train_val_test_split(
     if stratify_colname:
         do_stratify_split = True
         if stratify_colname not in df_input.columns:
-            raise ValueError("%s is not a column in the dataframe" % (stratify_colname))
+            raise ValueError(f"{stratify_colname} is not a column in the dataframe")
     else:
         do_stratify_split = False
         if "split" not in df_input.columns:

@@ -186,5 +186,5 @@ def test_tabnet(
     else:
         # update count should equal trainable number of parameters
         assert tpc == upc, (
-            f"All parameter not updated. Parameters not updated: {not_updated}" f"\nModule structure:\n{tabnet}"
+            f"All parameter not updated. Parameters not updated: {not_updated}\nModule structure:\n{tabnet}"
         )

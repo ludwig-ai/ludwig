@@ -11,7 +11,7 @@ import logging
 import os
 import warnings
 from abc import ABC, abstractmethod
-from functools import lru_cache
+from functools import cache
 from typing import Any
 
 import yaml
@@ -493,7 +493,7 @@ class LudwigBaseConfig(BaseModel, metaclass=_LudwigModelMeta):
         return cls.model_validate(d)
 
     @classmethod
-    @lru_cache(maxsize=None)
+    @cache
     def get_valid_field_names(cls) -> set[str]:
         """Return the set of valid field names for this config class."""
         return set(cls.model_fields.keys())
@@ -588,8 +588,7 @@ def remove_duplicate_fields(properties: dict, fields: list[str] | None = None) -
     """Util function for removing duplicated schema elements."""
     duplicate_fields = [NAME, TYPE, COLUMN, PROC_COLUMN, ACTIVE] if fields is None else fields
     for key in duplicate_fields:
-        if key in properties:
-            del properties[key]
+        properties.pop(key, None)
 
 
 @DeveloperAPI
@@ -819,7 +818,7 @@ def _annotation_to_json_type(annotation) -> str | list | None:
 
 
 @DeveloperAPI
-def unload_jsonschema_from_config_class(mclass, additional_properties: bool = True, title: str = None) -> dict:
+def unload_jsonschema_from_config_class(mclass, additional_properties: bool = True, title: str | None = None) -> dict:
     """Get a JSON schema dict for a Ludwig config class.
 
     Iterates over pydantic model_fields and checks metadata markers for TypeSelection, NestedConfigField, and legacy
@@ -929,7 +928,7 @@ def String(
     description: str,
     default: None | str,
     allow_none: bool = False,
-    pattern: str = None,
+    pattern: str | None = None,
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a pydantic Field for string values."""
@@ -1103,8 +1102,8 @@ def IntegerRange(
     default: None | int,
     allow_none: bool = False,
     parameter_metadata: ParameterMetadata = None,
-    min: int = None,
-    max: int = None,
+    min: int | None = None,
+    max: int | None = None,
     min_inclusive: bool = True,
     max_inclusive: bool = True,
 ):
@@ -1180,8 +1179,8 @@ def FloatRange(
     allow_none: bool = False,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
-    min: int = None,
-    max: int = None,
+    min: int | None = None,
+    max: int | None = None,
     min_inclusive: bool = True,
     max_inclusive: bool = True,
 ):
@@ -1216,7 +1215,7 @@ def Dict(
     if default is not None:
         if not isinstance(default, dict):
             raise ValueError(f"Invalid default: `{default}`")
-        if not all(isinstance(k, str) for k in default.keys()):
+        if not all(isinstance(k, str) for k in default):
             raise ValueError(f"Invalid default: `{default}` (non-string keys)")
     elif not allow_none:
         default = {}

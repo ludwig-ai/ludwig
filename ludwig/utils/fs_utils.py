@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 def get_default_cache_location() -> str:
     """Returns a path to the default LUDWIG_CACHE location, or $HOME/.ludwig_cache."""
     cache_path = None
-    if "LUDWIG_CACHE" in os.environ and os.environ["LUDWIG_CACHE"]:
+    if os.environ.get("LUDWIG_CACHE"):
         cache_path = os.environ["LUDWIG_CACHE"]
     else:
         cache_path = str(pathlib.Path.home().joinpath(".ludwig_cache"))

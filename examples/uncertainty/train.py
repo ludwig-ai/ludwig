@@ -28,7 +28,7 @@ logging.basicConfig(level=logging.WARNING)
 # Dataset
 # ---------------------------------------------------------------------------
 
-WINE_URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/" "wine-quality/winequality-red.csv"
+WINE_URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv"
 
 WINE_FEATURES = [
     "fixed_acidity",

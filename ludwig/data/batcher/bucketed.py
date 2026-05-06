@@ -54,7 +54,7 @@ class BucketedBatcher(Batcher):
         self.ignore_last = ignore_last
         self.batch_size = batch_size
         self.total_size = min(map(len, dataset.get_dataset().values()))
-        self.bucket_sizes = np.array([x for x in map(len, self.buckets_idcs)])
+        self.bucket_sizes = np.array(list(map(len, self.buckets_idcs)))
         self.steps_per_epoch = self._compute_steps_per_epoch()
         self.indices = np.array([0] * buckets)
         self.step = 0

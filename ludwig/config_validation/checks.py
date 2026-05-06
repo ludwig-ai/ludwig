@@ -42,7 +42,7 @@ class ConfigCheckRegistry:
     def register(self, check_fn):
         self._registry.append(check_fn)
 
-    def check_config(self, config: "ModelConfig") -> None:  # noqa: F821
+    def check_config(self, config: "ModelConfig") -> None:
         for check_fn in self._registry:
             check_fn(config)
 
@@ -66,13 +66,13 @@ class ConfigCheck(ABC):
 
     @staticmethod
     @abstractmethod
-    def check(config: "ModelConfig") -> None:  # noqa: F821
+    def check(config: "ModelConfig") -> None:
         """Checks config for validity."""
         raise NotImplementedError
 
 
 @register_config_check
-def check_feature_names_unique(config: "ModelConfig") -> None:  # noqa: F821
+def check_feature_names_unique(config: "ModelConfig") -> None:
     """Checks that all feature names are unique."""
     input_features = config.input_features
     input_feature_names = {input_feature.name for input_feature in input_features}
@@ -85,7 +85,7 @@ def check_feature_names_unique(config: "ModelConfig") -> None:  # noqa: F821
 
 
 @register_config_check
-def check_tied_features_valid(config: "ModelConfig") -> None:  # noqa: F821
+def check_tied_features_valid(config: "ModelConfig") -> None:
     """Checks that all tied features are valid."""
     input_features = config.input_features
     input_feature_names = {input_feature.name for input_feature in input_features}
@@ -99,7 +99,7 @@ def check_tied_features_valid(config: "ModelConfig") -> None:  # noqa: F821
 
 
 @register_config_check
-def check_training_runway(config: "ModelConfig") -> None:  # noqa: F821
+def check_training_runway(config: "ModelConfig") -> None:
     """Checks that checkpoints_per_epoch and steps_per_checkpoint aren't simultaneously defined."""
     if config.model_type == MODEL_ECD:
         if config.trainer.checkpoints_per_epoch != 0 and config.trainer.steps_per_checkpoint != 0:
@@ -111,7 +111,7 @@ def check_training_runway(config: "ModelConfig") -> None:  # noqa: F821
 
 
 @register_config_check
-def check_ray_backend_in_memory_preprocessing(config: "ModelConfig") -> None:  # noqa: F821
+def check_ray_backend_in_memory_preprocessing(config: "ModelConfig") -> None:
     """Checks that in memory preprocessing is used with Ray backend."""
     if config.backend is None:
         return
@@ -133,7 +133,7 @@ def check_ray_backend_in_memory_preprocessing(config: "ModelConfig") -> None:  #
                 )
 
 
-def check_sequence_concat_combiner_requirements(config: "ModelConfig") -> None:  # noqa: F821
+def check_sequence_concat_combiner_requirements(config: "ModelConfig") -> None:
     """Checks that sequence concat combiner has at least one input feature that's sequential."""
     if config.model_type != MODEL_ECD:
         return
@@ -151,7 +151,7 @@ def check_sequence_concat_combiner_requirements(config: "ModelConfig") -> None: 
 
 
 @register_config_check
-def check_comparator_combiner_requirements(config: "ModelConfig") -> None:  # noqa: F821
+def check_comparator_combiner_requirements(config: "ModelConfig") -> None:
     """Checks that all of the feature names for entity_1 and entity_2 are valid features."""
     if config.model_type != MODEL_ECD:
         return
@@ -162,12 +162,12 @@ def check_comparator_combiner_requirements(config: "ModelConfig") -> None:  # no
     for feature_name in config.combiner.entity_1:
         if feature_name not in input_feature_names:
             raise ConfigValidationError(
-                f"Feature {feature_name} in entity_1 for the comparator combiner is not a valid " "input feature name."
+                f"Feature {feature_name} in entity_1 for the comparator combiner is not a valid input feature name."
             )
     for feature_name in config.combiner.entity_2:
         if feature_name not in input_feature_names:
             raise ConfigValidationError(
-                f"Feature {feature_name} in entity_2 for the comparator combiner is not a valid " "input feature name."
+                f"Feature {feature_name} in entity_2 for the comparator combiner is not a valid input feature name."
             )
 
     if sorted(config.combiner.entity_1 + config.combiner.entity_2) != sorted(input_feature_names):
@@ -175,7 +175,7 @@ def check_comparator_combiner_requirements(config: "ModelConfig") -> None:  # no
 
 
 @register_config_check
-def check_class_balance_preprocessing(config: "ModelConfig") -> None:  # noqa: F821
+def check_class_balance_preprocessing(config: "ModelConfig") -> None:
     """Class balancing is only available for datasets with a single output feature."""
     if config.preprocessing.oversample_minority or config.preprocessing.undersample_majority:
         if len(config.output_features) != 1:
@@ -185,7 +185,7 @@ def check_class_balance_preprocessing(config: "ModelConfig") -> None:  # noqa: F
 
 
 @register_config_check
-def check_sampling_exclusivity(config: "ModelConfig") -> None:  # noqa: F821
+def check_sampling_exclusivity(config: "ModelConfig") -> None:
     """Oversample minority and undersample majority are mutually exclusive."""
     if config.preprocessing.oversample_minority and config.preprocessing.undersample_majority:
         raise ConfigValidationError(
@@ -194,7 +194,7 @@ def check_sampling_exclusivity(config: "ModelConfig") -> None:  # noqa: F821
 
 
 @register_config_check
-def check_validation_metric_exists(config: "ModelConfig") -> None:  # noqa: F821
+def check_validation_metric_exists(config: "ModelConfig") -> None:
     """Checks that the specified validation metric exists."""
     validation_metric_name = config.trainer.validation_metric
 
@@ -212,7 +212,7 @@ def check_validation_metric_exists(config: "ModelConfig") -> None:  # noqa: F821
 
 
 @register_config_check
-def check_splitter(config: "ModelConfig") -> None:  # noqa: F821
+def check_splitter(config: "ModelConfig") -> None:
     """Checks the validity of the splitter configuration."""
     from ludwig.data.split import get_splitter
 
@@ -221,7 +221,7 @@ def check_splitter(config: "ModelConfig") -> None:  # noqa: F821
 
 
 @register_config_check
-def check_hf_tokenizer_requirements(config: "ModelConfig") -> None:  # noqa: F821
+def check_hf_tokenizer_requirements(config: "ModelConfig") -> None:
     """Checks that the HuggingFace tokenizer has a pretrained_model_name_or_path specified."""
 
     for input_feature in config.input_features:
@@ -234,7 +234,7 @@ def check_hf_tokenizer_requirements(config: "ModelConfig") -> None:  # noqa: F82
 
 
 @register_config_check
-def check_hf_encoder_requirements(config: "ModelConfig") -> None:  # noqa: F821
+def check_hf_encoder_requirements(config: "ModelConfig") -> None:
     """Checks that a HuggingFace encoder has a pretrained_model_name_or_path specified."""
 
     for input_feature in config.input_features:
@@ -247,7 +247,7 @@ def check_hf_encoder_requirements(config: "ModelConfig") -> None:  # noqa: F821
 
 
 @register_config_check
-def check_stacked_transformer_requirements(config: "ModelConfig") -> None:  # noqa: F821
+def check_stacked_transformer_requirements(config: "ModelConfig") -> None:
     """Checks that the transformer encoder type correctly configures `num_heads` and `hidden_size`"""
 
     def is_divisible(hidden_size: int, num_heads: int) -> bool:
@@ -271,7 +271,7 @@ def check_stacked_transformer_requirements(config: "ModelConfig") -> None:  # no
 
 
 @register_config_check
-def check_hyperopt_search_algorithm_dependencies_installed(config: "ModelConfig") -> None:  # noqa: F821
+def check_hyperopt_search_algorithm_dependencies_installed(config: "ModelConfig") -> None:
     """Check that the hyperopt search algorithm dependencies are installed."""
     if config.hyperopt is None:
         return
@@ -283,7 +283,7 @@ def check_hyperopt_search_algorithm_dependencies_installed(config: "ModelConfig"
 
 
 @register_config_check
-def check_hyperopt_scheduler_dependencies_installed(config: "ModelConfig") -> None:  # noqa: F821
+def check_hyperopt_scheduler_dependencies_installed(config: "ModelConfig") -> None:
     """Check that the hyperopt scheduler dependencies are installed."""
     if config.hyperopt is None:
         return
@@ -295,7 +295,7 @@ def check_hyperopt_scheduler_dependencies_installed(config: "ModelConfig") -> No
 
 
 @register_config_check
-def check_tagger_decoder_requirements(config: "ModelConfig") -> None:  # noqa: F821
+def check_tagger_decoder_requirements(config: "ModelConfig") -> None:
     """Checks that the tagger decoder has at least one sequence, text or timeseries input feature where the
     encoder's reduce_output will produce a 3D shaped output from the combiner."""
     # Check if there is a text or sequence output feature using a tagger decoder
@@ -326,12 +326,12 @@ def check_tagger_decoder_requirements(config: "ModelConfig") -> None:  # noqa: F
 
 
 @register_config_check
-def check_hyperopt_parameter_dicts(config: "ModelConfig") -> None:  # noqa: F821
+def check_hyperopt_parameter_dicts(config: "ModelConfig") -> None:
     """Checks for hyperopt parameter dicts against their config objects."""
     if config.hyperopt is None:
         return
 
-    from ludwig.schema.hyperopt.utils import get_parameter_cls, parameter_config_registry  # noqa: F401
+    from ludwig.schema.hyperopt.utils import get_parameter_cls, parameter_config_registry
 
     for parameter, space in config.hyperopt.parameters.items():
         # skip nested hyperopt parameters
@@ -369,7 +369,7 @@ def check_hyperopt_parameter_dicts(config: "ModelConfig") -> None:  # noqa: F821
 
 
 @register_config_check
-def check_concat_combiner_requirements(config: "ModelConfig") -> None:  # noqa: F821
+def check_concat_combiner_requirements(config: "ModelConfig") -> None:
     """Checks that if the concat combiner receives a mixture of sequence and non-sequence features, that all
     sequence features are configured with reduce_output to be 2D tensors."""
     if config.model_type != MODEL_ECD:
@@ -400,12 +400,12 @@ def check_concat_combiner_requirements(config: "ModelConfig") -> None:  # noqa: 
 
 
 @register_config_check
-def check_hyperopt_nested_parameter_dicts(config: "ModelConfig") -> None:  # noqa: F821
+def check_hyperopt_nested_parameter_dicts(config: "ModelConfig") -> None:
     """Checks that all nested parameters in a hyperopt config exist."""
     if config.hyperopt is None or "." not in config.hyperopt.parameters:
         return
 
-    from ludwig.schema.hyperopt.utils import get_parameter_cls  # noqa: F401
+    from ludwig.schema.hyperopt.utils import get_parameter_cls
     from ludwig.schema.model_types.base import ModelConfig
 
     space = config.hyperopt.parameters["."]
@@ -436,7 +436,7 @@ def check_hyperopt_nested_parameter_dicts(config: "ModelConfig") -> None:  # noq
 
 
 @register_config_check
-def check_llm_exactly_one_input_text_feature(config: "ModelConfig"):  # noqa: F821
+def check_llm_exactly_one_input_text_feature(config: "ModelConfig"):
     if config.model_type != MODEL_LLM:
         return
 
@@ -447,7 +447,7 @@ def check_llm_exactly_one_input_text_feature(config: "ModelConfig"):  # noqa: F8
 
 
 @register_config_check
-def check_llm_finetuning_output_feature_config(config: "ModelConfig"):  # noqa: F821
+def check_llm_finetuning_output_feature_config(config: "ModelConfig"):
     """Checks that the output feature config for LLM finetuning is valid."""
     if config.model_type != MODEL_LLM:
         return
@@ -463,7 +463,7 @@ def check_llm_finetuning_output_feature_config(config: "ModelConfig"):  # noqa: 
 
 
 @register_config_check
-def check_llm_finetuning_trainer_config(config: "ModelConfig"):  # noqa: F821
+def check_llm_finetuning_trainer_config(config: "ModelConfig"):
     """Ensures that trainer type is finetune if adapter is not None."""
     if config.model_type != MODEL_LLM:
         return
@@ -481,7 +481,7 @@ def check_llm_finetuning_trainer_config(config: "ModelConfig"):  # noqa: F821
 
 
 @register_config_check
-def check_llm_finetuning_backend_config(config: "ModelConfig"):  # noqa: F821
+def check_llm_finetuning_backend_config(config: "ModelConfig"):
     """Checks that the LLM finetuning using Ray is configured correctly."""
     if config.model_type != MODEL_LLM:
         return
@@ -568,7 +568,7 @@ def _get_llm_model_config(model_name: str) -> AutoConfig:
 
 # TODO(geoffrey, arnav): uncomment this when we have reconciled the config with the backend kwarg in api.py
 # @register_config_check
-def check_llm_quantization_backend_incompatibility(config: "ModelConfig") -> None:  # noqa: F821
+def check_llm_quantization_backend_incompatibility(config: "ModelConfig") -> None:
     """Checks that LLM model type with quantization uses the local backend."""
     if config.model_type != MODEL_LLM:
         return
@@ -620,7 +620,7 @@ def check_llm_text_encoder_is_not_used_with_ecd(config: "ModelConfig") -> None:
 
 
 @register_config_check
-def check_qlora_requirements(config: "ModelConfig") -> None:  # noqa: F821
+def check_qlora_requirements(config: "ModelConfig") -> None:
     """Checks that all the necessary settings are in place for QLoRA."""
     if config.model_type != MODEL_LLM or config.trainer.type == "none":
         return
@@ -630,7 +630,7 @@ def check_qlora_requirements(config: "ModelConfig") -> None:  # noqa: F821
 
 
 @register_config_check
-def check_qlora_merge_and_unload_compatibility(config: "ModelConfig") -> None:  # noqa: F821
+def check_qlora_merge_and_unload_compatibility(config: "ModelConfig") -> None:
     """Checks that model.merge_and_unload() is supported by underlying model.save_pretrained() when merging QLoRA
     layers."""
     if config.model_type != MODEL_LLM or config.trainer.type == "none":
@@ -655,7 +655,7 @@ the quantization section from your Ludwig configuration."""
 
 
 @register_config_check
-def check_prompt_requirements(config: "ModelConfig") -> None:  # noqa: F821
+def check_prompt_requirements(config: "ModelConfig") -> None:
     """Checks that prompt's template and task properties are valid, according to the description on the schema."""
     if config.model_type != MODEL_LLM:
         return

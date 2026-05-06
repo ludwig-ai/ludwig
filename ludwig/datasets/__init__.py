@@ -231,7 +231,7 @@ def list_datasets() -> list[str]:
 
 @PublicAPI
 def get_datasets_output_features(
-    dataset: str = None, include_competitions: bool = True, include_data_modalities: bool = False
+    dataset: str | None = None, include_competitions: bool = True, include_data_modalities: bool = False
 ) -> dict:
     """Returns a dictionary with the output features for each dataset. Optionally, you can pass a dataset name
     which will then cause the function to return a dictionary with the output features for that dataset.
@@ -303,7 +303,7 @@ def download_dataset(dataset_name: str, output_dir: str = "."):
 
 
 @DeveloperAPI
-def get_buffer(dataset_name: str, kaggle_username: str = None, kaggle_key: str = None) -> BytesIO:
+def get_buffer(dataset_name: str, kaggle_username: str | None = None, kaggle_key: str | None = None) -> BytesIO:
     """Returns a byte buffer for the specified dataset."""
     try:
         if dataset_name.startswith(HF_PREFIX):

@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 def evaluate_cli(
     model_path: str,
     dataset: str | dict | pd.DataFrame = None,
-    data_format: str = None,
+    data_format: str | None = None,
     split: str = FULL,
     batch_size: int = 128,
     skip_save_unprocessed_output: bool = False,
@@ -42,10 +42,10 @@ def evaluate_cli(
     skip_collect_predictions: bool = False,
     skip_collect_overall_stats: bool = False,
     output_directory: str = "results",
-    gpus: str | int | list[int] = None,
+    gpus: str | int | list[int] | None = None,
     gpu_memory_limit: float | None = None,
     allow_parallel_threads: bool = True,
-    callbacks: list[Callback] = None,
+    callbacks: list[Callback] | None = None,
     backend: Backend | str = None,
     logging_level: int = logging.INFO,
     **kwargs,
@@ -150,7 +150,7 @@ def cli(sys_argv):
             "feather",
             "fwf",
             "hdf5",
-            "html" "tables",
+            "htmltables",
             "json",
             "jsonl",
             "parquet",
@@ -227,7 +227,7 @@ def cli(sys_argv):
     parser.add_argument(
         "-b",
         "--backend",
-        help="specifies backend to use for parallel / distributed execution, " "defaults to local execution",
+        help="specifies backend to use for parallel / distributed execution, defaults to local execution",
         choices=ALL_BACKENDS,
     )
     parser.add_argument(

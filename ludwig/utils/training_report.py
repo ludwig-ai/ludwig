@@ -8,7 +8,7 @@ compliance documentation, and reproducibility.
 import logging
 import os
 import platform
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ def generate_training_report(
     """
     report = {
         "report_version": "1.0",
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
     }
 
     # Environment

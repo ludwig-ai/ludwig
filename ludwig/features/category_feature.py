@@ -80,7 +80,7 @@ class _CategoryPreprocessing(torch.nn.Module):
 class _CategoryPostprocessing(torch.nn.Module):
     def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
-        self.idx2str = {i: v for i, v in enumerate(metadata["idx2str"])}
+        self.idx2str = dict(enumerate(metadata["idx2str"]))
         self.unk = UNKNOWN_SYMBOL
         self.predictions_key = PREDICTIONS
         self.probabilities_key = PROBABILITIES
@@ -158,7 +158,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
             processor=backend.df_engine,
         )
 
-        if "vocab" in preprocessing_parameters and preprocessing_parameters["vocab"]:  # Check that vocab is non-empty
+        if preprocessing_parameters.get("vocab"):  # Check that vocab is non-empty
             # If vocab was explciitly provided, override the inferred vocab
             idx2str = preprocessing_parameters["vocab"]
             str2idx = {s: i for i, s in enumerate(idx2str)}
@@ -180,13 +180,13 @@ class CategoryFeatureMixin(BaseFeatureMixin):
                 CATEGORY,
                 f"""
                 At least 2 distinct values are required for category output features, but column
-                only contains {str(idx2str)}.
+                only contains {idx2str!s}.
                 """,
             )
         if vocab_size <= 1:
             # Category input feature with vocab size 1
             logger.info(
-                f"Input feature '{column.name}' contains only 1 distinct value {str(idx2str)}. This is not useful"
+                f"Input feature '{column.name}' contains only 1 distinct value {idx2str!s}. This is not useful"
                 " for machine learning models because this feature has zero variance. Consider removing this feature"
                 " from your input features."
             )
@@ -413,7 +413,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             if feature_metadata["str2idx"].keys() != feature_config.loss.class_weights.keys():
                 raise ValueError(
                     f"The class_weights keys ({feature_config.loss.class_weights.keys()}) are not compatible with "
-                    f'the classes ({feature_metadata["str2idx"].keys()}) of feature {feature_config.column}. '
+                    f"the classes ({feature_metadata['str2idx'].keys()}) of feature {feature_config.column}. "
                     "Check the metadata JSON file to see the classes "
                     "and consider there needs to be a weight "
                     "for the <UNK> class too."
@@ -441,12 +441,10 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                         curr_row_length = len(row)
                         if curr_row_length != first_row_length:
                             raise ValueError(
-                                "The length of row {} of the class_similarities "
-                                "of {} is {}, different from the length of "
-                                "the first row {}. All rows must have "
-                                "the same length.".format(
-                                    curr_row, feature_config.column, curr_row_length, first_row_length
-                                )
+                                f"The length of row {curr_row} of the class_similarities "
+                                f"of {feature_config.column} is {curr_row_length}, different from the length of "
+                                f"the first row {first_row_length}. All rows must have "
+                                "the same length."
                             )
                         else:
                             curr_row += 1
@@ -454,11 +452,9 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
                 if all_rows_length != len(similarities):
                     raise ValueError(
-                        "The class_similarities matrix of {} has "
-                        "{} rows and {} columns, "
-                        "their number must be identical.".format(
-                            feature_config.column, len(similarities), all_rows_length
-                        )
+                        f"The class_similarities matrix of {feature_config.column} has "
+                        f"{len(similarities)} rows and {all_rows_length} columns, "
+                        "their number must be identical."
                     )
 
                 if all_rows_length != feature_config.num_classes:
@@ -479,7 +475,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 raise ValueError(
                     "class_similarities_temperature > 0, "
                     "but no class_similarities are provided "
-                    "for feature {}".format(feature_config.column)
+                    f"for feature {feature_config.column}"
                 )
 
     @staticmethod

@@ -120,7 +120,7 @@ class LocalTestBackend(LocalBackend):
 
 # Simulates running training on a separate node from the driver process
 class FakeRemoteBackend(LocalBackend):
-    def create_trainer(self, **kwargs) -> "BaseTrainer":  # noqa: F821
+    def create_trainer(self, **kwargs) -> "BaseTrainer":
         return FakeRemoteTrainer(**kwargs)
 
     @property
@@ -663,7 +663,7 @@ def spawn(fn):
         results = queue.get()
         if isinstance(results, Exception):
             raise RuntimeError(
-                f"Spawned subprocess raised {type(results).__name__}, " f"check log output above for stack trace."
+                f"Spawned subprocess raised {type(results).__name__}, check log output above for stack trace."
             )
         return results
 
@@ -1050,9 +1050,9 @@ def assert_all_required_metrics_exist(
         if feature_name in required_metrics:
             required_metric_names = set(required_metrics[feature_name])
             metric_names = set(metrics_dict.keys())
-            assert required_metric_names.issubset(
-                metric_names
-            ), f"required metrics {required_metric_names} not in metrics {metric_names} for feature {feature_name}"
+            assert required_metric_names.issubset(metric_names), (
+                f"required metrics {required_metric_names} not in metrics {metric_names} for feature {feature_name}"
+            )
 
 
 def assert_preprocessed_dataset_shape_and_dtype_for_feature(
@@ -1092,15 +1092,15 @@ def assert_preprocessed_dataset_shape_and_dtype_for_feature(
 
         # Check that the proc col is of the correct dtype
         result_df_proc_col_dtypes = set(result_df_proc_col.map(lambda x: x.dtype))
-        assert all(
-            [expected_dtype == dtype for dtype in result_df_proc_col_dtypes]
-        ), f"proc dtype should be {expected_dtype}, got the following set of values: {result_df_proc_col_dtypes}"
+        assert all([expected_dtype == dtype for dtype in result_df_proc_col_dtypes]), (
+            f"proc dtype should be {expected_dtype}, got the following set of values: {result_df_proc_col_dtypes}"
+        )
 
         # Check that the proc col is of the right dimensions
         result_df_proc_col_shapes = set(result_df_proc_col.map(lambda x: x.shape))
-        assert all(
-            expected_shape == shape for shape in result_df_proc_col_shapes
-        ), f"proc shape should be {expected_shape}, got the following set of values: {result_df_proc_col_shapes}"
+        assert all(expected_shape == shape for shape in result_df_proc_col_shapes), (
+            f"proc shape should be {expected_shape}, got the following set of values: {result_df_proc_col_shapes}"
+        )
 
 
 @contextlib.contextmanager
@@ -1121,7 +1121,7 @@ def remote_tmpdir(fs_protocol, bucket):
             with use_credentials(minio_test_creds()):
                 fs_utils.delete(tmpdir, recursive=True)
         except Exception as e:
-            logger.info(f"failed to delete remote tempdir: {str(e)}")
+            logger.info(f"failed to delete remote tempdir: {e!s}")
 
 
 def minio_test_creds():

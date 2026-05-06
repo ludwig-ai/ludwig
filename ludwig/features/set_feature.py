@@ -97,7 +97,7 @@ class _SetPostprocessing(torch.nn.Module):
 
     def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
-        self.idx2str = {i: v for i, v in enumerate(metadata["idx2str"])}
+        self.idx2str = dict(enumerate(metadata["idx2str"]))
         self.predictions_key = PREDICTIONS
         self.probabilities_key = PROBABILITIES
         self.unk = UNKNOWN_SYMBOL
@@ -304,7 +304,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             if feature_metadata["str2idx"].keys() != feature_config.loss.class_weights.keys():
                 raise ValueError(
                     f"The class_weights keys ({feature_config.loss.class_weights.keys()}) are not compatible with "
-                    f'the classes ({feature_metadata["str2idx"].keys()}) of feature {feature_config.name}. '
+                    f"the classes ({feature_metadata['str2idx'].keys()}) of feature {feature_config.name}. "
                     "Check the metadata JSON file to see the classes "
                     "and consider there needs to be a weight "
                     "for the <UNK> and <PAD> class too."

@@ -63,7 +63,7 @@ class TabNet(LudwigModule):
         # to get the shared blocks
         self.feature_transforms = nn.ModuleList([FeatureTransformer(input_size, size + output_size, **kargs)])
         self.attentive_transforms = nn.ModuleList([None])
-        for i in range(num_steps):
+        for _i in range(num_steps):
             self.feature_transforms.append(
                 FeatureTransformer(
                     input_size,
@@ -91,7 +91,7 @@ class TabNet(LudwigModule):
 
     def forward(self, features: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, list[torch.Tensor]]:
         if features.dim() != 2:
-            raise ValueError(f"Expecting incoming tensor to be dim 2, " f"instead dim={features.dim()}")
+            raise ValueError(f"Expecting incoming tensor to be dim 2, instead dim={features.dim()}")
 
         # shape notation
         # i_s: input_size
@@ -178,7 +178,7 @@ class FeatureBlock(LudwigModule):
         apply_glu: bool = True,
         bn_momentum: float = 0.1,
         bn_epsilon: float = 1e-3,
-        bn_virtual_bs: int = None,
+        bn_virtual_bs: int | None = None,
         shared_fc_layer: LudwigModule = None,
     ):
         super().__init__()
@@ -227,7 +227,7 @@ class AttentiveTransformer(LudwigModule):
         size: int,
         bn_momentum: float = 0.1,
         bn_epsilon: float = 1e-3,
-        bn_virtual_bs: int = None,
+        bn_virtual_bs: int | None = None,
         entmax_mode: str = "sparsemax",
         entmax_alpha: float = 1.5,
     ):
@@ -298,7 +298,7 @@ class FeatureTransformer(LudwigModule):
         num_shared_blocks: int = 2,
         bn_momentum: float = 0.1,
         bn_epsilon: float = 1e-3,
-        bn_virtual_bs: int = None,
+        bn_virtual_bs: int | None = None,
     ):
         super().__init__()
         if shared_fc_layers is None:

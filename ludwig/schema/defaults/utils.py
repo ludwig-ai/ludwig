@@ -60,5 +60,5 @@ def DefaultsDataclassField(feature_type: str, defaults_registry: Registry = ecd_
         )
     except Exception as e:
         raise ConfigValidationError(
-            f"Unsupported feature type: {feature_type}. Allowed: {defaults_registry.keys()}. " f"Details: {e}"
+            f"Unsupported feature type: {feature_type}. Allowed: {defaults_registry.keys()}. Details: {e}"
         )

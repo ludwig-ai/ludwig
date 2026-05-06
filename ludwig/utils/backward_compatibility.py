@@ -209,7 +209,7 @@ def _traverse_dicts(config: Any, f: Callable[[dict], None]):
     f should in-place modify the config dict. f will be called on leaves first, root last.
     """
     if isinstance(config, dict):
-        for k, v in config.items():
+        for _k, v in config.items():
             _traverse_dicts(v, f)
         f(config)
     elif isinstance(config, list):
@@ -539,7 +539,7 @@ def _upgrade_trainer(trainer: TrainerConfigDict) -> TrainerConfigDict:
 @register_config_transformation("0.5")
 def _upgrade_preprocessing_defaults(config: ModelConfigDict) -> ModelConfigDict:
     """Move feature-specific preprocessing parameters into defaults in config (in-place)"""
-    type_specific_preprocessing_params = dict()
+    type_specific_preprocessing_params = {}
 
     # If preprocessing section specified and it contains feature specific preprocessing parameters,
     # make a copy and delete it from the preprocessing section
@@ -823,7 +823,7 @@ def upgrade_metadata(metadata: TrainingSetMetadataDict) -> TrainingSetMetadataDi
 
 
 def _upgrade_metadata_missing_values(metadata: TrainingSetMetadataDict):
-    for k, v in metadata.items():
+    for _k, v in metadata.items():
         if isinstance(v, dict) and _is_old_missing_value_strategy(v):
             _update_old_missing_value_strategy(v)
         elif isinstance(v, dict) and _is_image_feature(v):

@@ -89,7 +89,7 @@ def query_yes_no(question: str, default: str | None = "yes"):
     elif default == "no":
         prompt = " [y/N] "
     else:
-        raise ValueError("invalid default answer: '%s'" % default)
+        raise ValueError(f"invalid default answer: '{default}'")
 
     while True:
         logger.info(question + prompt)
@@ -99,4 +99,4 @@ def query_yes_no(question: str, default: str | None = "yes"):
         elif choice in valid:
             return valid[choice]
         else:
-            logger.info("Please respond with 'yes' or 'no' " "(or 'y' or 'n').\n")
+            logger.info("Please respond with 'yes' or 'no' (or 'y' or 'n').\n")

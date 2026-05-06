@@ -64,7 +64,7 @@ class TabPFNV2Combiner(Combiner):
             import tabpfn  # noqa: F401
         except ImportError as exc:
             raise ImportError(
-                "The tabpfn_v2 combiner requires the optional 'tabpfn' package. " "Install with: pip install tabpfn"
+                "The tabpfn_v2 combiner requires the optional 'tabpfn' package. Install with: pip install tabpfn"
             ) from exc
 
         # Defer heavy TabPFN loading until _lazy_load_tabpfn() is explicitly called.
@@ -77,7 +77,7 @@ class TabPFNV2Combiner(Combiner):
             from tabpfn import TabPFNRegressor
         except ImportError as exc:
             raise ImportError(
-                "The tabpfn_v2 combiner requires the optional 'tabpfn' package. " "Install with: pip install tabpfn"
+                "The tabpfn_v2 combiner requires the optional 'tabpfn' package. Install with: pip install tabpfn"
             ) from exc
         self._tabpfn_model = TabPFNRegressor(
             device=self.config.device,

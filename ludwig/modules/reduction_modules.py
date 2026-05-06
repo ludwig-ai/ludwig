@@ -67,7 +67,9 @@ class SequenceReducer(LudwigModule):
     :param encoding_size The size of each sequence element/embedding vector, or None if input is a sequence of scalars.
     """
 
-    def __init__(self, reduce_mode: str = None, max_sequence_length: int = 256, encoding_size: int = None, **kwargs):
+    def __init__(
+        self, reduce_mode: str | None = None, max_sequence_length: int = 256, encoding_size: int | None = None, **kwargs
+    ):
         super().__init__()
         # save as private variable for debugging
         self._reduce_mode = reduce_mode

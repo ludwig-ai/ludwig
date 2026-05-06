@@ -57,7 +57,7 @@ def merge_dict(dct, merge_dct):
     :return: None
     """
     dct = copy.deepcopy(dct)
-    for k, v in merge_dct.items():
+    for k, _v in merge_dct.items():
         if k in dct and isinstance(dct[k], dict) and isinstance(merge_dct[k], Mapping):
             dct[k] = merge_dict(dct[k], merge_dct[k])
         else:

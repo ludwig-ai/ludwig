@@ -515,9 +515,9 @@ def test_update_missing_value_strategy(missing_value_strategy: str):
 
     expected_config = copy.deepcopy(old_valid_config)
     if missing_value_strategy == "backfill":
-        expected_config["input_features"][0]["preprocessing"]["missing_value_strategy"] == "bfill"
+        expected_config["input_features"][0]["preprocessing"]["missing_value_strategy"] = "bfill"
     else:
-        expected_config["input_features"][0]["preprocessing"]["missing_value_strategy"] == "ffill"
+        expected_config["input_features"][0]["preprocessing"]["missing_value_strategy"] = "ffill"
 
     assert updated_config == expected_config
 

@@ -33,25 +33,14 @@ repos:
       - id: end-of-file-fixer
       - id: trailing-whitespace
       - id: mixed-line-ending
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.21.2
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.12
     hooks:
-      - id: pyupgrade
-        args: [--py312-plus]
-  - repo: https://github.com/PyCQA/isort
-    rev: 8.0.1
-    hooks:
-      - id: isort
-        name: Format imports
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.3.0
-    hooks:
-      - id: flake8
-  - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 26.3.1
-    hooks:
-      - id: black
-        name: Format code
+      - id: ruff
+        name: Lint and fix (ruff)
+        args: [--fix]
+      - id: ruff-format
+        name: Format code (ruff)
   - repo: https://github.com/asottile/blacken-docs
     rev: 1.20.0
     hooks:

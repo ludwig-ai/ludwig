@@ -78,7 +78,7 @@ TABULAR_TYPES = {CATEGORY, NUMBER, BINARY}
 
 
 class AutoTrainResults:
-    def __init__(self, experiment_analysis: ExperimentAnalysis, creds: dict[str, Any] = None):
+    def __init__(self, experiment_analysis: ExperimentAnalysis, creds: dict[str, Any] | None = None):
         self._experiment_analysis = experiment_analysis
         self._creds = creds
 
@@ -120,7 +120,7 @@ def auto_train(
     time_limit_s: int | float,
     output_directory: str = OUTPUT_DIR,
     tune_for_memory: bool = False,
-    user_config: dict = None,
+    user_config: dict | None = None,
     random_seed: int = default_random_seed,
     use_reference_config: bool = False,
     **kwargs,
@@ -169,7 +169,7 @@ def create_auto_config(
     target: str | list[str],
     time_limit_s: int | float,
     tune_for_memory: bool = False,
-    user_config: dict = None,
+    user_config: dict | None = None,
     random_seed: int = default_random_seed,
     imbalance_threshold: float = 0.9,
     use_reference_config: bool = False,
@@ -228,7 +228,7 @@ def create_automl_config_for_features(
     target: str | list[str],
     time_limit_s: int | float,
     tune_for_memory: bool = False,
-    user_config: dict = None,
+    user_config: dict | None = None,
     random_seed: int = default_random_seed,
     imbalance_threshold: float = 0.9,
     use_reference_config: bool = False,
@@ -248,7 +248,7 @@ def create_automl_config_for_features(
 @PublicAPI
 def create_features_config(
     dataset_info: DatasetInfo,
-    target_name: str | list[str] = None,
+    target_name: str | list[str] | None = None,
 ) -> ModelConfigDict:
     return get_features_config(dataset_info.fields, dataset_info.row_count, target_name)
 
@@ -329,7 +329,7 @@ def _model_select(
 
         # override combiner heuristic if explicitly provided by user
         if user_config is not None:
-            if "combiner" in user_config.keys():
+            if "combiner" in user_config:
                 model_type = user_config["combiner"]["type"]
                 base_config = merge_dict(base_config, default_configs["combiner"][model_type])
     else:
@@ -375,12 +375,12 @@ def _model_select(
 
         # remove all parameters from hyperparameter search that user has
         # provided explicit values for
-        hyperopt_params = copy.deepcopy(base_config["hyperopt"]["parameters"])
-        for hyperopt_params in hyperopt_params.keys():
-            config_section, param = hyperopt_params.split(".")[0], hyperopt_params.split(".")[1]
-            if config_section in user_config.keys():
+        hyperopt_params_copy = copy.deepcopy(base_config["hyperopt"]["parameters"])
+        for param_key in hyperopt_params_copy:
+            config_section, param = param_key.split(".")[0], param_key.split(".")[1]
+            if config_section in user_config:
                 if param in user_config[config_section]:
-                    del base_config["hyperopt"]["parameters"][hyperopt_params]
+                    del base_config["hyperopt"]["parameters"][param_key]
 
     # if single output feature, set relevant metric and goal if not already set
     base_config = set_output_feature_metric(base_config)
@@ -421,7 +421,7 @@ def init_config(
     tune_for_memory: bool = False,
     suggested: bool = False,
     hyperopt: bool = False,
-    output: str = None,
+    output: str | None = None,
     random_seed: int = default_random_seed,
     use_reference_config: bool = False,
     **kwargs,

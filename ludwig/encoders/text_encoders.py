@@ -290,7 +290,7 @@ class ALBERTEncoder(HFTextEncoder):
         pad_token_id: int = 0,
         bos_token_id: int = 2,
         eos_token_id: int = 3,
-        pretrained_kwargs: dict = None,
+        pretrained_kwargs: dict | None = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -298,28 +298,28 @@ class ALBERTEncoder(HFTextEncoder):
 
         from transformers import AlbertConfig, AlbertModel
 
-        hf_config_params = dict(
-            vocab_size=vocab_size,
-            embedding_size=embedding_size,
-            hidden_size=hidden_size,
-            num_hidden_layers=num_hidden_layers,
-            num_hidden_groups=num_hidden_groups,
-            num_attention_heads=num_attention_heads,
-            intermediate_size=intermediate_size,
-            inner_group_num=inner_group_num,
-            hidden_act=hidden_act,
-            hidden_dropout_prob=hidden_dropout_prob,
-            attention_probs_dropout_prob=attention_probs_dropout_prob,
-            max_position_embeddings=max_position_embeddings,
-            type_vocab_size=type_vocab_size,
-            initializer_range=initializer_range,
-            layer_norm_eps=layer_norm_eps,
-            classifier_dropout_prob=classifier_dropout_prob,
-            position_embedding_type=position_embedding_type,
-            pad_token_id=pad_token_id,
-            bos_token_id=bos_token_id,
-            eos_token_id=eos_token_id,
-        )
+        hf_config_params = {
+            "vocab_size": vocab_size,
+            "embedding_size": embedding_size,
+            "hidden_size": hidden_size,
+            "num_hidden_layers": num_hidden_layers,
+            "num_hidden_groups": num_hidden_groups,
+            "num_attention_heads": num_attention_heads,
+            "intermediate_size": intermediate_size,
+            "inner_group_num": inner_group_num,
+            "hidden_act": hidden_act,
+            "hidden_dropout_prob": hidden_dropout_prob,
+            "attention_probs_dropout_prob": attention_probs_dropout_prob,
+            "max_position_embeddings": max_position_embeddings,
+            "type_vocab_size": type_vocab_size,
+            "initializer_range": initializer_range,
+            "layer_norm_eps": layer_norm_eps,
+            "classifier_dropout_prob": classifier_dropout_prob,
+            "position_embedding_type": position_embedding_type,
+            "pad_token_id": pad_token_id,
+            "bos_token_id": bos_token_id,
+            "eos_token_id": eos_token_id,
+        }
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -416,7 +416,7 @@ class MT5Encoder(HFTextEncoder):
         d_kv: int = 64,
         d_ff: int = 1024,
         num_layers: int = 8,
-        num_decoder_layers: int = None,
+        num_decoder_layers: int | None = None,
         num_heads: int = 6,
         relative_attention_num_buckets: int = 32,
         dropout_rate: float = 0.1,
@@ -430,7 +430,7 @@ class MT5Encoder(HFTextEncoder):
         pad_token_id: int = 0,
         eos_token_id: int = 1,
         decoder_start_token_id: int = 0,
-        pretrained_kwargs: dict = None,
+        pretrained_kwargs: dict | None = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -438,27 +438,27 @@ class MT5Encoder(HFTextEncoder):
 
         from transformers import MT5Config, MT5EncoderModel
 
-        hf_config_params = dict(
-            vocab_size=vocab_size,
-            d_model=d_model,
-            d_kv=d_kv,
-            d_ff=d_ff,
-            num_layers=num_layers,
-            num_decoder_layers=num_decoder_layers,
-            num_heads=num_heads,
-            relative_attention_num_buckets=relative_attention_num_buckets,
-            dropout_rate=dropout_rate,
-            layer_norm_epsilon=layer_norm_epsilon,
-            initializer_factor=initializer_factor,
-            feed_forward_proj=feed_forward_proj,
-            is_encoder_decoder=is_encoder_decoder,
-            use_cache=use_cache,
-            tokenizer_class=tokenizer_class,
-            tie_word_embeddings=tie_word_embeddings,
-            pad_token_id=pad_token_id,
-            eos_token_id=eos_token_id,
-            decoder_start_token_id=decoder_start_token_id,
-        )
+        hf_config_params = {
+            "vocab_size": vocab_size,
+            "d_model": d_model,
+            "d_kv": d_kv,
+            "d_ff": d_ff,
+            "num_layers": num_layers,
+            "num_decoder_layers": num_decoder_layers,
+            "num_heads": num_heads,
+            "relative_attention_num_buckets": relative_attention_num_buckets,
+            "dropout_rate": dropout_rate,
+            "layer_norm_epsilon": layer_norm_epsilon,
+            "initializer_factor": initializer_factor,
+            "feed_forward_proj": feed_forward_proj,
+            "is_encoder_decoder": is_encoder_decoder,
+            "use_cache": use_cache,
+            "tokenizer_class": tokenizer_class,
+            "tie_word_embeddings": tie_word_embeddings,
+            "pad_token_id": pad_token_id,
+            "eos_token_id": eos_token_id,
+            "decoder_start_token_id": decoder_start_token_id,
+        }
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -547,14 +547,14 @@ class XLMRoBERTaEncoder(HFTextEncoder):
         reduce_output: str = "cls_pooled",
         trainable: bool = False,
         adapter: BaseAdapterConfig | None = None,
-        vocab_size: int = None,
+        vocab_size: int | None = None,
         pad_token_id: int = 1,
         bos_token_id: int = 0,
         eos_token_id: int = 2,
         max_position_embeddings: int = 514,
         type_vocab_size: int = 1,
         add_pooling_layer: bool = True,
-        pretrained_kwargs: dict = None,
+        pretrained_kwargs: dict | None = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -562,13 +562,13 @@ class XLMRoBERTaEncoder(HFTextEncoder):
 
         from transformers import XLMRobertaConfig, XLMRobertaModel
 
-        hf_config_params = dict(
-            pad_token_id=pad_token_id,
-            bos_token_id=bos_token_id,
-            eos_token_id=eos_token_id,
-            max_position_embeddings=max_position_embeddings,
-            type_vocab_size=type_vocab_size,
-        )
+        hf_config_params = {
+            "pad_token_id": pad_token_id,
+            "bos_token_id": bos_token_id,
+            "eos_token_id": eos_token_id,
+            "max_position_embeddings": max_position_embeddings,
+            "type_vocab_size": type_vocab_size,
+        }
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -678,8 +678,8 @@ class BERTEncoder(HFTextEncoder):
         pad_token_id: int = 0,
         gradient_checkpointing: bool = False,
         position_embedding_type: str = "absolute",
-        classifier_dropout: float = None,
-        pretrained_kwargs: dict = None,
+        classifier_dropout: float | None = None,
+        pretrained_kwargs: dict | None = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -687,24 +687,24 @@ class BERTEncoder(HFTextEncoder):
 
         from transformers import BertConfig, BertModel
 
-        hf_config_params = dict(
-            vocab_size=vocab_size,
-            hidden_size=hidden_size,
-            num_hidden_layers=num_hidden_layers,
-            num_attention_heads=num_attention_heads,
-            intermediate_size=intermediate_size,
-            hidden_act=hidden_act,
-            hidden_dropout_prob=hidden_dropout_prob,
-            attention_probs_dropout_prob=attention_probs_dropout_prob,
-            max_position_embeddings=max_position_embeddings,
-            type_vocab_size=type_vocab_size,
-            initializer_range=initializer_range,
-            layer_norm_eps=layer_norm_eps,
-            pad_token_id=pad_token_id,
-            gradient_checkpointing=gradient_checkpointing,
-            position_embedding_type=position_embedding_type,
-            classifier_dropout=classifier_dropout,
-        )
+        hf_config_params = {
+            "vocab_size": vocab_size,
+            "hidden_size": hidden_size,
+            "num_hidden_layers": num_hidden_layers,
+            "num_attention_heads": num_attention_heads,
+            "intermediate_size": intermediate_size,
+            "hidden_act": hidden_act,
+            "hidden_dropout_prob": hidden_dropout_prob,
+            "attention_probs_dropout_prob": attention_probs_dropout_prob,
+            "max_position_embeddings": max_position_embeddings,
+            "type_vocab_size": type_vocab_size,
+            "initializer_range": initializer_range,
+            "layer_norm_eps": layer_norm_eps,
+            "pad_token_id": pad_token_id,
+            "gradient_checkpointing": gradient_checkpointing,
+            "position_embedding_type": position_embedding_type,
+            "classifier_dropout": classifier_dropout,
+        }
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -827,7 +827,7 @@ class XLMEncoder(HFTextEncoder):
         lang_id: int = 0,
         pad_token_id: int = 2,
         bos_token_id: int = 0,
-        pretrained_kwargs: dict = None,
+        pretrained_kwargs: dict | None = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -835,36 +835,36 @@ class XLMEncoder(HFTextEncoder):
 
         from transformers import XLMConfig, XLMModel
 
-        hf_config_params = dict(
-            vocab_size=vocab_size,
-            emb_dim=emb_dim,
-            n_layers=n_layers,
-            n_heads=n_heads,
-            dropout=dropout,
-            attention_dropout=attention_dropout,
-            gelu_activation=gelu_activation,
-            sinusoidal_embeddings=sinusoidal_embeddings,
-            causal=causal,
-            asm=asm,
-            n_langs=n_langs,
-            use_lang_emb=use_lang_emb,
-            max_position_embeddings=max_position_embeddings,
-            embed_init_std=embed_init_std,
-            layer_norm_eps=layer_norm_eps,
-            init_std=init_std,
-            bos_index=bos_index,
-            eos_index=eos_index,
-            pad_index=pad_index,
-            unk_index=unk_index,
-            mask_index=mask_index,
-            is_encoder=is_encoder,
-            start_n_top=start_n_top,
-            end_n_top=end_n_top,
-            mask_token_id=mask_token_id,
-            lang_id=lang_id,
-            pad_token_id=pad_token_id,
-            bos_token_id=bos_token_id,
-        )
+        hf_config_params = {
+            "vocab_size": vocab_size,
+            "emb_dim": emb_dim,
+            "n_layers": n_layers,
+            "n_heads": n_heads,
+            "dropout": dropout,
+            "attention_dropout": attention_dropout,
+            "gelu_activation": gelu_activation,
+            "sinusoidal_embeddings": sinusoidal_embeddings,
+            "causal": causal,
+            "asm": asm,
+            "n_langs": n_langs,
+            "use_lang_emb": use_lang_emb,
+            "max_position_embeddings": max_position_embeddings,
+            "embed_init_std": embed_init_std,
+            "layer_norm_eps": layer_norm_eps,
+            "init_std": init_std,
+            "bos_index": bos_index,
+            "eos_index": eos_index,
+            "pad_index": pad_index,
+            "unk_index": unk_index,
+            "mask_index": mask_index,
+            "is_encoder": is_encoder,
+            "start_n_top": start_n_top,
+            "end_n_top": end_n_top,
+            "mask_token_id": mask_token_id,
+            "lang_id": lang_id,
+            "pad_token_id": pad_token_id,
+            "bos_token_id": bos_token_id,
+        }
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -963,7 +963,7 @@ class GPTEncoder(HFTextEncoder):
         attn_pdrop: float = 0.1,
         layer_norm_epsilon: float = 1e-5,
         initializer_range: float = 0.02,
-        pretrained_kwargs: dict = None,
+        pretrained_kwargs: dict | None = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -971,20 +971,20 @@ class GPTEncoder(HFTextEncoder):
 
         from transformers import OpenAIGPTConfig, OpenAIGPTModel
 
-        hf_config_params = dict(
-            vocab_size=vocab_size,
-            n_positions=n_positions,
-            n_ctx=n_ctx,
-            n_embd=n_embd,
-            n_layer=n_layer,
-            n_head=n_head,
-            afn=afn,
-            resid_pdrop=resid_pdrop,
-            embd_pdrop=embd_pdrop,
-            attn_pdrop=attn_pdrop,
-            layer_norm_epsilon=layer_norm_epsilon,
-            initializer_range=initializer_range,
-        )
+        hf_config_params = {
+            "vocab_size": vocab_size,
+            "n_positions": n_positions,
+            "n_ctx": n_ctx,
+            "n_embd": n_embd,
+            "n_layer": n_layer,
+            "n_head": n_head,
+            "afn": afn,
+            "resid_pdrop": resid_pdrop,
+            "embd_pdrop": embd_pdrop,
+            "attn_pdrop": attn_pdrop,
+            "layer_norm_epsilon": layer_norm_epsilon,
+            "initializer_range": initializer_range,
+        }
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -1082,7 +1082,7 @@ class GPT2Encoder(HFTextEncoder):
         layer_norm_epsilon: float = 1e-5,
         initializer_range: float = 0.02,
         scale_attn_weights: bool = True,
-        pretrained_kwargs: dict = None,
+        pretrained_kwargs: dict | None = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -1090,22 +1090,22 @@ class GPT2Encoder(HFTextEncoder):
 
         from transformers import GPT2Config, GPT2Model
 
-        hf_config_params = dict(
-            vocab_size=vocab_size,
-            n_positions=n_positions,
-            n_ctx=n_ctx,
-            n_embd=n_embd,
-            n_layer=n_layer,
-            n_head=n_head,
-            n_inner=n_inner,
-            activation_function=activation_function,
-            resid_pdrop=resid_pdrop,
-            embd_pdrop=embd_pdrop,
-            attn_pdrop=attn_pdrop,
-            layer_norm_epsilon=layer_norm_epsilon,
-            initializer_range=initializer_range,
-            scale_attn_weights=scale_attn_weights,
-        )
+        hf_config_params = {
+            "vocab_size": vocab_size,
+            "n_positions": n_positions,
+            "n_ctx": n_ctx,
+            "n_embd": n_embd,
+            "n_layer": n_layer,
+            "n_head": n_head,
+            "n_inner": n_inner,
+            "activation_function": activation_function,
+            "resid_pdrop": resid_pdrop,
+            "embd_pdrop": embd_pdrop,
+            "attn_pdrop": attn_pdrop,
+            "layer_norm_epsilon": layer_norm_epsilon,
+            "initializer_range": initializer_range,
+            "scale_attn_weights": scale_attn_weights,
+        }
 
         if use_pretrained:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -1216,13 +1216,13 @@ class RoBERTaEncoder(HFTextEncoder):
         reduce_output: str = "cls_pooled",
         trainable: bool = False,
         adapter: BaseAdapterConfig | None = None,
-        vocab_size: int = None,
+        vocab_size: int | None = None,
         pad_token_id: int = 1,
         bos_token_id: int = 0,
         eos_token_id: int = 2,
         max_position_embeddings: int = 514,
         type_vocab_size: int = 1,
-        pretrained_kwargs: dict = None,
+        pretrained_kwargs: dict | None = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -1230,13 +1230,13 @@ class RoBERTaEncoder(HFTextEncoder):
 
         from transformers import RobertaConfig, RobertaModel
 
-        hf_config_params = dict(
-            pad_token_id=pad_token_id,
-            bos_token_id=bos_token_id,
-            eos_token_id=eos_token_id,
-            max_position_embeddings=max_position_embeddings,
-            type_vocab_size=type_vocab_size,
-        )
+        hf_config_params = {
+            "pad_token_id": pad_token_id,
+            "bos_token_id": bos_token_id,
+            "eos_token_id": eos_token_id,
+            "max_position_embeddings": max_position_embeddings,
+            "type_vocab_size": type_vocab_size,
+        }
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -1350,7 +1350,7 @@ class XLNetEncoder(HFTextEncoder):
         pad_token_id: int = 5,
         bos_token_id: int = 1,
         eos_token_id: int = 2,
-        pretrained_kwargs: dict = None,
+        pretrained_kwargs: dict | None = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -1358,35 +1358,35 @@ class XLNetEncoder(HFTextEncoder):
 
         from transformers import XLNetConfig, XLNetModel
 
-        hf_config_params = dict(
-            vocab_size=vocab_size,
-            d_model=d_model,
-            n_layer=n_layer,
-            n_head=n_head,
-            d_inner=d_inner,
-            ff_activation=ff_activation,
-            untie_r=untie_r,
-            attn_type=attn_type,
-            initializer_range=initializer_range,
-            layer_norm_eps=layer_norm_eps,
-            dropout=dropout,
-            mem_len=mem_len,
-            reuse_len=reuse_len,
-            use_mems_eval=use_mems_eval,
-            use_mems_train=use_mems_train,
-            bi_data=bi_data,
-            clamp_len=clamp_len,
-            same_length=same_length,
-            summary_type=summary_type,
-            summary_use_proj=summary_use_proj,
-            summary_activation=summary_activation,
-            summary_last_dropout=summary_last_dropout,
-            start_n_top=start_n_top,
-            end_n_top=end_n_top,
-            pad_token_id=pad_token_id,
-            bos_token_id=bos_token_id,
-            eos_token_id=eos_token_id,
-        )
+        hf_config_params = {
+            "vocab_size": vocab_size,
+            "d_model": d_model,
+            "n_layer": n_layer,
+            "n_head": n_head,
+            "d_inner": d_inner,
+            "ff_activation": ff_activation,
+            "untie_r": untie_r,
+            "attn_type": attn_type,
+            "initializer_range": initializer_range,
+            "layer_norm_eps": layer_norm_eps,
+            "dropout": dropout,
+            "mem_len": mem_len,
+            "reuse_len": reuse_len,
+            "use_mems_eval": use_mems_eval,
+            "use_mems_train": use_mems_train,
+            "bi_data": bi_data,
+            "clamp_len": clamp_len,
+            "same_length": same_length,
+            "summary_type": summary_type,
+            "summary_use_proj": summary_use_proj,
+            "summary_activation": summary_activation,
+            "summary_last_dropout": summary_last_dropout,
+            "start_n_top": start_n_top,
+            "end_n_top": end_n_top,
+            "pad_token_id": pad_token_id,
+            "bos_token_id": bos_token_id,
+            "eos_token_id": eos_token_id,
+        }
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -1482,7 +1482,7 @@ class DistilBERTEncoder(HFTextEncoder):
         initializer_range: float = 0.02,
         qa_dropout: float = 0.1,
         seq_classif_dropout: float = 0.2,
-        pretrained_kwargs: dict = None,
+        pretrained_kwargs: dict | None = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -1490,21 +1490,21 @@ class DistilBERTEncoder(HFTextEncoder):
 
         from transformers import DistilBertConfig, DistilBertModel
 
-        hf_config_params = dict(
-            vocab_size=vocab_size,
-            max_position_embeddings=max_position_embeddings,
-            sinusoidal_pos_embds=sinusoidal_pos_embds,
-            n_layers=n_layers,
-            n_heads=n_heads,
-            dim=dim,
-            hidden_dim=hidden_dim,
-            dropout=dropout,
-            attention_dropout=attention_dropout,
-            activation=activation,
-            initializer_range=initializer_range,
-            qa_dropout=qa_dropout,
-            seq_classif_dropout=seq_classif_dropout,
-        )
+        hf_config_params = {
+            "vocab_size": vocab_size,
+            "max_position_embeddings": max_position_embeddings,
+            "sinusoidal_pos_embds": sinusoidal_pos_embds,
+            "n_layers": n_layers,
+            "n_heads": n_heads,
+            "dim": dim,
+            "hidden_dim": hidden_dim,
+            "dropout": dropout,
+            "attention_dropout": attention_dropout,
+            "activation": activation,
+            "initializer_range": initializer_range,
+            "qa_dropout": qa_dropout,
+            "seq_classif_dropout": seq_classif_dropout,
+        }
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -1610,8 +1610,8 @@ class CamemBERTEncoder(HFTextEncoder):
         pad_token_id: int = 0,
         gradient_checkpointing: bool = False,
         position_embedding_type: str = "absolute",
-        classifier_dropout: float = None,
-        pretrained_kwargs: dict = None,
+        classifier_dropout: float | None = None,
+        pretrained_kwargs: dict | None = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -1619,24 +1619,24 @@ class CamemBERTEncoder(HFTextEncoder):
 
         from transformers import CamembertConfig, CamembertModel
 
-        hf_config_params = dict(
-            vocab_size=vocab_size,
-            hidden_size=hidden_size,
-            num_hidden_layers=num_hidden_layers,
-            num_attention_heads=num_attention_heads,
-            intermediate_size=intermediate_size,
-            hidden_act=hidden_act,
-            hidden_dropout_prob=hidden_dropout_prob,
-            attention_probs_dropout_prob=attention_probs_dropout_prob,
-            max_position_embeddings=max_position_embeddings,
-            type_vocab_size=type_vocab_size,
-            initializer_range=initializer_range,
-            layer_norm_eps=layer_norm_eps,
-            pad_token_id=pad_token_id,
-            gradient_checkpointing=gradient_checkpointing,
-            position_embedding_type=position_embedding_type,
-            classifier_dropout=classifier_dropout,
-        )
+        hf_config_params = {
+            "vocab_size": vocab_size,
+            "hidden_size": hidden_size,
+            "num_hidden_layers": num_hidden_layers,
+            "num_attention_heads": num_attention_heads,
+            "intermediate_size": intermediate_size,
+            "hidden_act": hidden_act,
+            "hidden_dropout_prob": hidden_dropout_prob,
+            "attention_probs_dropout_prob": attention_probs_dropout_prob,
+            "max_position_embeddings": max_position_embeddings,
+            "type_vocab_size": type_vocab_size,
+            "initializer_range": initializer_range,
+            "layer_norm_eps": layer_norm_eps,
+            "pad_token_id": pad_token_id,
+            "gradient_checkpointing": gradient_checkpointing,
+            "position_embedding_type": position_embedding_type,
+            "classifier_dropout": classifier_dropout,
+        }
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -1744,7 +1744,7 @@ class T5Encoder(HFTextEncoder):
         layer_norm_eps: float = 1e-6,
         initializer_factor: float = 1,
         feed_forward_proj: str = "relu",
-        pretrained_kwargs: dict = None,
+        pretrained_kwargs: dict | None = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -1752,20 +1752,20 @@ class T5Encoder(HFTextEncoder):
 
         from transformers import T5Config, T5Model
 
-        hf_config_params = dict(
-            vocab_size=vocab_size,
-            d_model=d_model,
-            d_kv=d_kv,
-            d_ff=d_ff,
-            num_layers=num_layers,
-            num_decoder_layers=num_decoder_layers,
-            num_heads=num_heads,
-            relative_attention_num_buckets=relative_attention_num_buckets,
-            dropout_rate=dropout_rate,
-            layer_norm_eps=layer_norm_eps,
-            initializer_factor=initializer_factor,
-            feed_forward_proj=feed_forward_proj,
-        )
+        hf_config_params = {
+            "vocab_size": vocab_size,
+            "d_model": d_model,
+            "d_kv": d_kv,
+            "d_ff": d_ff,
+            "num_layers": num_layers,
+            "num_decoder_layers": num_decoder_layers,
+            "num_heads": num_heads,
+            "relative_attention_num_buckets": relative_attention_num_buckets,
+            "dropout_rate": dropout_rate,
+            "layer_norm_eps": layer_norm_eps,
+            "initializer_factor": initializer_factor,
+            "feed_forward_proj": feed_forward_proj,
+        }
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -1871,7 +1871,7 @@ class ELECTRAEncoder(HFTextEncoder):
         layer_norm_eps: float = 1e-12,
         position_embedding_type: str = "absolute",
         classifier_dropout: float | None = None,
-        pretrained_kwargs: dict = None,
+        pretrained_kwargs: dict | None = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -1879,23 +1879,23 @@ class ELECTRAEncoder(HFTextEncoder):
 
         from transformers import ElectraConfig, ElectraModel
 
-        hf_config_params = dict(
-            vocab_size=vocab_size,
-            embedding_size=embedding_size,
-            hidden_size=hidden_size,
-            num_hidden_layers=num_hidden_layers,
-            num_attention_heads=num_attention_heads,
-            intermediate_size=intermediate_size,
-            hidden_act=hidden_act,
-            hidden_dropout_prob=hidden_dropout_prob,
-            attention_probs_dropout_prob=attention_probs_dropout_prob,
-            max_position_embeddings=max_position_embeddings,
-            type_vocab_size=type_vocab_size,
-            initializer_range=initializer_range,
-            layer_norm_eps=layer_norm_eps,
-            position_embedding_type=position_embedding_type,
-            classifier_dropout=classifier_dropout,
-        )
+        hf_config_params = {
+            "vocab_size": vocab_size,
+            "embedding_size": embedding_size,
+            "hidden_size": hidden_size,
+            "num_hidden_layers": num_hidden_layers,
+            "num_attention_heads": num_attention_heads,
+            "intermediate_size": intermediate_size,
+            "hidden_act": hidden_act,
+            "hidden_dropout_prob": hidden_dropout_prob,
+            "attention_probs_dropout_prob": attention_probs_dropout_prob,
+            "max_position_embeddings": max_position_embeddings,
+            "type_vocab_size": type_vocab_size,
+            "initializer_range": initializer_range,
+            "layer_norm_eps": layer_norm_eps,
+            "position_embedding_type": position_embedding_type,
+            "classifier_dropout": classifier_dropout,
+        }
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -1989,7 +1989,7 @@ class LongformerEncoder(HFTextEncoder):
         adapter: BaseAdapterConfig | None = None,
         vocab_size: int = 50265,
         num_tokens: int | None = None,
-        pretrained_kwargs: dict = None,
+        pretrained_kwargs: dict | None = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -2110,7 +2110,7 @@ class ModernBERTEncoder(HFTextEncoder):
         initializer_range: float = 0.02,
         layer_norm_eps: float = 1e-5,
         pad_token_id: int = 50283,
-        pretrained_kwargs: dict = None,
+        pretrained_kwargs: dict | None = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -2118,19 +2118,19 @@ class ModernBERTEncoder(HFTextEncoder):
 
         from transformers import ModernBertConfig, ModernBertModel
 
-        hf_config_params = dict(
-            vocab_size=vocab_size,
-            hidden_size=hidden_size,
-            num_hidden_layers=num_hidden_layers,
-            num_attention_heads=num_attention_heads,
-            intermediate_size=intermediate_size,
-            hidden_act=hidden_act,
-            hidden_dropout_prob=hidden_dropout_prob,
-            max_position_embeddings=max_position_embeddings,
-            initializer_range=initializer_range,
-            layer_norm_eps=layer_norm_eps,
-            pad_token_id=pad_token_id,
-        )
+        hf_config_params = {
+            "vocab_size": vocab_size,
+            "hidden_size": hidden_size,
+            "num_hidden_layers": num_hidden_layers,
+            "num_attention_heads": num_attention_heads,
+            "intermediate_size": intermediate_size,
+            "hidden_act": hidden_act,
+            "hidden_dropout_prob": hidden_dropout_prob,
+            "max_position_embeddings": max_position_embeddings,
+            "initializer_range": initializer_range,
+            "layer_norm_eps": layer_norm_eps,
+            "pad_token_id": pad_token_id,
+        }
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -2227,7 +2227,7 @@ class AutoTransformerEncoder(HFTextEncoder):
         trainable: bool = False,
         adapter: BaseAdapterConfig | None = None,
         vocab_size: int | None = None,
-        pretrained_kwargs: dict = None,
+        pretrained_kwargs: dict | None = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -2269,11 +2269,11 @@ class AutoTransformerEncoder(HFTextEncoder):
 
         # The forward signature of AutoModel is not consistent across implementations, so we need to make sure we're
         # only passing in params included in the forward signature.
-        kwargs = dict(
-            input_ids=inputs,
-            attention_mask=mask,
-            token_type_ids=torch.zeros_like(inputs),
-        )
+        kwargs = {
+            "input_ids": inputs,
+            "attention_mask": mask,
+            "token_type_ids": torch.zeros_like(inputs),
+        }
         kwargs = {k: v for k, v in kwargs.items() if k in self.forward_kwargs}
 
         transformer_outputs = self.transformer.module(**kwargs)
@@ -2343,7 +2343,7 @@ class TfIdfEncoder(Encoder):
         encoder_config=None,
         str2idf=None,
         vocab=None,
-        vocab_size: int = None,
+        vocab_size: int | None = None,
         ngram_range: tuple[int, int] = (1, 1),
         max_df: float = 1.0,
         min_df: int = 1,
@@ -2604,7 +2604,7 @@ class LLMEncoder(Encoder):
 
         if self.config.adapter and self.adapter_is_initialized:
             adapter_type_prefix = self.ADAPTER_PARAM_NAME_PREFIX[self.config.adapter.type]
-            exclude_model_keys = [k for k in destination.keys() if adapter_type_prefix not in k]
+            exclude_model_keys = [k for k in destination if adapter_type_prefix not in k]
 
             for k in exclude_model_keys:
                 del destination[k]
@@ -2679,6 +2679,6 @@ class LLMEncoder(Encoder):
             from peft.utils.save_and_load import get_peft_model_state_dict
 
             sd = get_peft_model_state_dict(self.model)
-            for k in sd.keys():
+            for k in sd:
                 if k in unexpected_keys:
                     unexpected_keys.remove(k)

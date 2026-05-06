@@ -15,7 +15,7 @@ def convert_to_dict(
 ):
     """Convert predictions from DataFrame format to a dictionary."""
     output = {}
-    for of_name, output_feature in output_features.items():
+    for of_name, _output_feature in output_features.items():
         feature_keys = {k for k in predictions.columns if k.startswith(of_name)}
         feature_dict = {}
         for key in feature_keys:

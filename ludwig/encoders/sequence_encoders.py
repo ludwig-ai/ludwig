@@ -75,9 +75,9 @@ class SequencePassthroughEncoder(SequenceEncoder):
 
     def __init__(
         self,
-        reduce_output: str = None,
+        reduce_output: str | None = None,
         max_sequence_length: int = 256,
-        encoding_size: int = None,
+        encoding_size: int | None = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -851,7 +851,7 @@ class StackedCNN(SequenceEncoder):
             ]
             self.num_conv_layers = 6
         else:
-            raise ValueError("Invalid layer parametrization, use either conv_layers or " "num_conv_layers")
+            raise ValueError("Invalid layer parametrization, use either conv_layers or num_conv_layers")
 
         # The user is expected to provide fc_layers or num_fc_layers
         # The following logic handles the case where the user either provides
@@ -861,7 +861,7 @@ class StackedCNN(SequenceEncoder):
             fc_layers = [{"output_size": 512}, {"output_size": 256}]
             num_fc_layers = 2
         elif fc_layers is not None and num_fc_layers is not None:
-            raise ValueError("Invalid layer parametrization, use either fc_layers or " "num_fc_layers only. Not both.")
+            raise ValueError("Invalid layer parametrization, use either fc_layers or num_fc_layers only. Not both.")
 
         self.max_sequence_length = max_sequence_length
         self.num_filters = num_filters
@@ -1193,7 +1193,7 @@ class StackedParallelCNN(SequenceEncoder):
             ]
             self.num_stacked_layers = 6
         else:
-            raise ValueError("Invalid layer parametrization, use either stacked_layers or" " num_stacked_layers")
+            raise ValueError("Invalid layer parametrization, use either stacked_layers or num_stacked_layers")
 
         # The user is expected to provide fc_layers or num_fc_layers
         # The following logic handles the case where the user either provides
@@ -1203,7 +1203,7 @@ class StackedParallelCNN(SequenceEncoder):
             fc_layers = [{"output_size": 512}, {"output_size": 256}]
             num_fc_layers = 2
         elif fc_layers is not None and num_fc_layers is not None:
-            raise ValueError("Invalid layer parametrization, use either fc_layers or " "num_fc_layers only. Not both.")
+            raise ValueError("Invalid layer parametrization, use either fc_layers or num_fc_layers only. Not both.")
 
         self.should_embed = should_embed
         self.embed_sequence = None
@@ -1776,7 +1776,7 @@ class StackedCNNRNN(SequenceEncoder):
             self.conv_layers = [{"pool_size": 3}, {"pool_size": None}]
             self.num_conv_layers = 2
         else:
-            raise ValueError("Invalid layer parametrization, use either conv_layers or " "num_conv_layers")
+            raise ValueError("Invalid layer parametrization, use either conv_layers or num_conv_layers")
 
         self.max_sequence_length = max_sequence_length
         self.should_embed = should_embed

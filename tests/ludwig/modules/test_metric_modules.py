@@ -396,7 +396,7 @@ class TestSyncContextDispatch:
         mock_sync.assert_called_once()
         kwargs = mock_sync.call_args[1]
         assert kwargs["dist_sync_fn"] is None, (
-            "Expected no gather function when LocalStrategy is active and " "torch.distributed is not initialised."
+            "Expected no gather function when LocalStrategy is active and torch.distributed is not initialised."
         )
 
     # ------------------------------------------------------------------
@@ -482,9 +482,9 @@ class TestSyncContextDispatch:
                 pass
 
         kwargs = mock_sync.call_args[1]
-        assert (
-            kwargs["dist_sync_fn"] is sentinel_gather
-        ), "Expected the strategy's gather function, not the torch.distributed fallback."
+        assert kwargs["dist_sync_fn"] is sentinel_gather, (
+            "Expected the strategy's gather function, not the torch.distributed fallback."
+        )
         assert kwargs["dist_sync_fn"] is not gather_all_tensors
 
         # Restore LocalStrategy for subsequent tests.

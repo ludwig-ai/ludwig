@@ -34,17 +34,17 @@ logger = logging.getLogger(__name__)
 def predict_cli(
     model_path: str,
     dataset: str | dict | pd.DataFrame = None,
-    data_format: str = None,
+    data_format: str | None = None,
     split: str = FULL,
     batch_size: int = 128,
     generation_config: str | None = None,
     skip_save_unprocessed_output: bool = False,
     skip_save_predictions: bool = False,
     output_directory: str = "results",
-    gpus: str | int | list[int] = None,
+    gpus: str | int | list[int] | None = None,
     gpu_memory_limit: float | None = None,
     allow_parallel_threads: bool = True,
-    callbacks: list[Callback] = None,
+    callbacks: list[Callback] | None = None,
     backend: Backend | str = None,
     logging_level: int = logging.INFO,
     **kwargs,
@@ -125,7 +125,7 @@ def predict_cli(
 
 def cli(sys_argv):
     parser = argparse.ArgumentParser(
-        description="This script loads a pretrained model " "and uses it to predict",
+        description="This script loads a pretrained model and uses it to predict",
         prog="ludwig predict",
         usage="%(prog)s [options]",
     )
@@ -214,7 +214,7 @@ def cli(sys_argv):
     parser.add_argument(
         "-b",
         "--backend",
-        help="specifies backend to use for parallel / distributed execution, " "defaults to local execution",
+        help="specifies backend to use for parallel / distributed execution, defaults to local execution",
         choices=ALL_BACKENDS,
     )
     parser.add_argument(

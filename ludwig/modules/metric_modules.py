@@ -21,9 +21,8 @@ from typing import Any
 
 import torch
 from torch import Tensor, tensor
-from torchmetrics import MeanAbsoluteError, MeanAbsolutePercentageError
+from torchmetrics import MeanAbsoluteError, MeanAbsolutePercentageError, MeanSquaredError, Metric
 from torchmetrics import MeanMetric as _MeanMetric
-from torchmetrics import MeanSquaredError, Metric
 from torchmetrics.classification import (
     BinaryAccuracy,
     BinaryAUROC,

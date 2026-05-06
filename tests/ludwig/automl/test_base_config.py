@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 import yaml
 
-ray = pytest.importorskip("ray")  # noqa
+ray = pytest.importorskip("ray")
 
 # Prevent Dask from converting object-dtype columns to PyArrow strings.
 dask.config.set({"dataframe.convert-string": False})

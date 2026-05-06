@@ -130,10 +130,7 @@ punctuation = {".", ",", "@", "$", "%", "/", ":", ";", "+", "="}
 
 def load_nlp_pipeline(language="xx"):
     if language not in language_module_registry:
-        logger.error(
-            "Language {} is not supported."
-            "Suported languages are: {}".format(language, language_module_registry.keys())
-        )
+        logger.error(f"Language {language} is not supported.Suported languages are: {language_module_registry.keys()}")
         raise ValueError
     else:
         spacy_module_name = language_module_registry[language]
@@ -152,7 +149,7 @@ def load_nlp_pipeline(language="xx"):
         try:
             nlp_pipelines[language] = spacy.load(spacy_module_name, disable=["parser", "tagger", "ner"])
         except OSError:
-            logger.info(" spaCy {} model is missing, downloading it " "(this will only happen once)")
+            logger.info(" spaCy {} model is missing, downloading it (this will only happen once)")
             from spacy.cli import download
 
             download(spacy_module_name)

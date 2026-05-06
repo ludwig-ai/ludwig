@@ -1,9 +1,9 @@
 import contextlib
-from typing import Any, Optional, Union
+from typing import Any
 
 from ludwig.utils import data_utils
 
-CredInputs = Optional[Union[str, dict[str, Any]]]
+CredInputs = str | dict[str, Any] | None
 
 
 DEFAULTS = "defaults"

@@ -110,7 +110,7 @@ class WrapperModule(torch.nn.Module):
         self.input_maps.update(
             {
                 arg_name: InputIdentity(arg_name)
-                for arg_name in self.model.input_features.keys()
+                for arg_name in self.model.input_features
                 if self.model.input_features.get(arg_name).type() not in EMBEDDED_TYPES
             }
         )

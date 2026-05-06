@@ -67,7 +67,7 @@ def get_decoder_descriptions(model_type: str, feature_type: str):
     }
 
     for k, v in DECODER_METADATA.items():
-        if k in valid_decoders.keys():
+        if k in valid_decoders:
             output[valid_decoders[k]] = convert_metadata_to_json(v[TYPE])
 
     return output

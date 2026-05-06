@@ -116,7 +116,10 @@ def convert_dict_to_df(predictions: dict[str, dict[str, list[Any] | torch.Tensor
 
 
 def convert_predictions(
-    predictions, output_features, return_type="dict", backend: Optional["Backend"] = None  # noqa: F821
+    predictions,
+    output_features,
+    return_type="dict",
+    backend: Optional["Backend"] = None,  # noqa: F821
 ):
     convert_fn = get_from_registry(return_type, conversion_registry)
     return convert_fn(predictions, output_features, backend)
@@ -131,6 +134,6 @@ def convert_to_df(
 
 
 conversion_registry = {
-    **{format: convert_to_dict for format in DICT_FORMATS},
-    **{format: convert_to_df for format in DATAFRAME_FORMATS},
+    **dict.fromkeys(DICT_FORMATS, convert_to_dict),
+    **dict.fromkeys(DATAFRAME_FORMATS, convert_to_df),
 }

@@ -129,8 +129,8 @@ def test_visualization_learning_curves_output_saved(csv_filename):
         )
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 4 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 4
 
 
 def test_visualization_confusion_matrix_output_saved(csv_filename):
@@ -172,8 +172,8 @@ def test_visualization_confusion_matrix_output_saved(csv_filename):
         result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 2 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 2
 
 
 def test_visualization_compare_performance_output_saved(csv_filename):
@@ -219,8 +219,8 @@ def test_visualization_compare_performance_output_saved(csv_filename):
         result = subprocess.run(command, capture_output=True)
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 1 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 1
 
 
 def test_visualization_compare_classifiers_from_prob_csv_output_saved(csv_filename):
@@ -276,8 +276,8 @@ def test_visualization_compare_classifiers_from_prob_csv_output_saved(csv_filena
         result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 1 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 1
 
 
 def test_visualization_compare_classifiers_from_prob_npy_output_saved(csv_filename):
@@ -333,8 +333,8 @@ def test_visualization_compare_classifiers_from_prob_npy_output_saved(csv_filena
         result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 1 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 1
 
 
 def test_visualization_compare_classifiers_from_pred_npy_output_saved(csv_filename):
@@ -390,8 +390,8 @@ def test_visualization_compare_classifiers_from_pred_npy_output_saved(csv_filena
         result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 1 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 1
 
 
 def test_visualization_compare_classifiers_from_pred_csv_output_saved(csv_filename):
@@ -447,8 +447,8 @@ def test_visualization_compare_classifiers_from_pred_csv_output_saved(csv_filena
         result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 1 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 1
 
 
 def test_visualization_compare_classifiers_subset_output_saved(csv_filename):
@@ -504,8 +504,8 @@ def test_visualization_compare_classifiers_subset_output_saved(csv_filename):
         result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 1 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 1
 
 
 def test_visualization_compare_classifiers_changing_k_output_pdf(csv_filename):
@@ -557,8 +557,8 @@ def test_visualization_compare_classifiers_changing_k_output_pdf(csv_filename):
         result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 1 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 1
 
 
 def test_visualization_compare_classifiers_multiclass_multimetric_output_saved(csv_filename):
@@ -604,8 +604,8 @@ def test_visualization_compare_classifiers_multiclass_multimetric_output_saved(c
         result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 4 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 4
 
 
 def test_visualization_compare_classifiers_predictions_npy_output_saved(csv_filename):
@@ -660,8 +660,8 @@ def test_visualization_compare_classifiers_predictions_npy_output_saved(csv_file
         result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 1 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 1
 
 
 def test_visualization_compare_classifiers_predictions_csv_output_saved(csv_filename):
@@ -716,8 +716,8 @@ def test_visualization_compare_classifiers_predictions_csv_output_saved(csv_file
         result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 1 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 1
 
 
 def test_visualization_cmp_classifiers_predictions_distribution_output_saved(csv_filename):
@@ -771,8 +771,8 @@ def test_visualization_cmp_classifiers_predictions_distribution_output_saved(csv
         result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 1 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 1
 
 
 def test_visualization_cconfidence_thresholding_output_saved(csv_filename):
@@ -826,8 +826,8 @@ def test_visualization_cconfidence_thresholding_output_saved(csv_filename):
         result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 1 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 1
 
 
 def test_visualization_confidence_thresholding_data_vs_acc_output_saved(csv_filename):
@@ -881,8 +881,8 @@ def test_visualization_confidence_thresholding_data_vs_acc_output_saved(csv_file
         result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 1 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 1
 
 
 def test_visualization_confidence_thresholding_data_vs_acc_subset_output_saved(csv_filename):
@@ -938,8 +938,8 @@ def test_visualization_confidence_thresholding_data_vs_acc_subset_output_saved(c
         result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 1 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 1
 
 
 def test_vis_confidence_thresholding_data_vs_acc_subset_per_class_output_saved(csv_filename):
@@ -995,10 +995,10 @@ def test_vis_confidence_thresholding_data_vs_acc_subset_per_class_output_saved(c
         result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
+        assert result.returncode == 0
         # 3 figures should be saved because experiment setting top_n_classes = 3
         # hence one figure per class
-        assert 3 == len(figure_cnt)
+        assert len(figure_cnt) == 3
 
 
 def test_vis_confidence_thresholding_2thresholds_2d_output_saved(csv_filename):
@@ -1063,8 +1063,8 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(csv_filename):
         )
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 3 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 3
 
 
 def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
@@ -1127,8 +1127,8 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
         )
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 1 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 1
 
 
 @pytest.mark.parametrize("binary_output_type", [True, False])
@@ -1201,8 +1201,8 @@ def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename, bin
         result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 4 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 4
 
 
 @pytest.mark.parametrize("binary_output_type", [True, False])
@@ -1258,8 +1258,8 @@ def test_visualization_precision_recall_curves_output_saved(csv_filename, binary
         result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 1 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 1
 
 
 def test_visualization_precision_recall_curves_from_test_statistics_output_saved(csv_filename):
@@ -1302,8 +1302,8 @@ def test_visualization_precision_recall_curves_from_test_statistics_output_saved
         result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 1 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 1
 
 
 @pytest.mark.parametrize("binary_output_type", [True, False])
@@ -1365,8 +1365,8 @@ def test_visualization_roc_curves_output_saved(csv_filename, binary_output_type)
         result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 1 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 1
 
 
 def test_visualization_roc_curves_from_test_statistics_output_saved(csv_filename):
@@ -1409,8 +1409,8 @@ def test_visualization_roc_curves_from_test_statistics_output_saved(csv_filename
         result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 1 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 1
 
 
 def test_visualization_calibration_1_vs_all_output_saved(csv_filename):
@@ -1468,8 +1468,8 @@ def test_visualization_calibration_1_vs_all_output_saved(csv_filename):
         result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 5 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 5
 
 
 def test_visualization_calibration_multiclass_output_saved(csv_filename):
@@ -1523,8 +1523,8 @@ def test_visualization_calibration_multiclass_output_saved(csv_filename):
         result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 2 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 2
 
 
 def test_visualization_frequency_vs_f1_output_saved(csv_filename):
@@ -1573,8 +1573,8 @@ def test_visualization_frequency_vs_f1_output_saved(csv_filename):
         result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
-        assert 0 == result.returncode
-        assert 2 == len(figure_cnt)
+        assert result.returncode == 0
+        assert len(figure_cnt) == 2
 
 
 def test_load_ground_truth_split_from_df(csv_filename):

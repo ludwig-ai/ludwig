@@ -387,7 +387,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             if feature_metadata["str2idx"].keys() != feature_config.loss.class_weights.keys():
                 raise ValueError(
                     f"The class_weights keys ({feature_config.loss.class_weights.keys()}) are not compatible with "
-                    f'the classes ({feature_metadata["str2idx"].keys()}) of feature {feature_config.column}. '
+                    f"the classes ({feature_metadata['str2idx'].keys()}) of feature {feature_config.column}. "
                     "Check the metadata JSON file to see the classes "
                     "and consider there needs to be a weight "
                     "for the <UNK> class too."
@@ -415,12 +415,10 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                         curr_row_length = len(row)
                         if curr_row_length != first_row_length:
                             raise ValueError(
-                                "The length of row {} of the class_similarities "
-                                "of {} is {}, different from the length of "
-                                "the first row {}. All rows must have "
-                                "the same length.".format(
-                                    curr_row, feature_config.column, curr_row_length, first_row_length
-                                )
+                                f"The length of row {curr_row} of the class_similarities "
+                                f"of {feature_config.column} is {curr_row_length}, different from the length of "
+                                f"the first row {first_row_length}. All rows must have "
+                                "the same length."
                             )
                         else:
                             curr_row += 1

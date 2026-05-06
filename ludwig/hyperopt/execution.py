@@ -70,9 +70,7 @@ def _patch_bohb_configspace_conversion():
         def convert_search_space(spec):
             resolved_vars, domain_vars, grid_vars = parse_spec_vars(spec)
             if grid_vars:
-                raise ValueError(
-                    "Grid search parameters cannot be automatically converted " "to a TuneBOHB search space."
-                )
+                raise ValueError("Grid search parameters cannot be automatically converted to a TuneBOHB search space.")
             spec = flatten_dict(spec, prevent_delimiter=True)
             resolved_vars, domain_vars, grid_vars = parse_spec_vars(spec)
 
@@ -127,7 +125,7 @@ def _patch_bohb_configspace_conversion():
 
                 raise ValueError(
                     "TuneBOHB does not support parameters of type "
-                    "`{}` with samplers of type `{}`".format(type(domain).__name__, type(domain.sampler).__name__)
+                    f"`{type(domain).__name__}` with samplers of type `{type(domain.sampler).__name__}`"
                 )
 
             cs = ConfigSpace.ConfigurationSpace()
@@ -228,10 +226,10 @@ class RayTuneExecutor:
         goal: str,
         split: str,
         search_alg: dict | None = None,
-        cpu_resources_per_trial: int = None,
-        gpu_resources_per_trial: int = None,
-        kubernetes_namespace: str = None,
-        time_budget_s: int | float | datetime.timedelta = None,
+        cpu_resources_per_trial: int | None = None,
+        gpu_resources_per_trial: int | None = None,
+        kubernetes_namespace: str | None = None,
+        time_budget_s: int | float | datetime.timedelta | None = None,
         max_concurrent_trials: int | None = None,
         num_samples: int = 1,
         scheduler: dict | None = None,
@@ -348,7 +346,7 @@ class RayTuneExecutor:
             logger.info("Returning metric score from training (validation) statistics")
             return self.get_metric_score_from_train_stats(train_stats, VALIDATION)
         elif self._has_metric(train_stats, TRAINING):
-            logger.info("Returning metric score from training split statistics, " "as no validation was given")
+            logger.info("Returning metric score from training split statistics, as no validation was given")
             return self.get_metric_score_from_train_stats(train_stats, TRAINING)
         else:
             raise RuntimeError("Unable to obtain metric score from missing training (validation) statistics")
@@ -485,7 +483,7 @@ class RayTuneExecutor:
                 checkpoint = None
         except Exception:
             logger.warning(
-                f"Cannot get best model path for {trial_path} due to exception below:" f"\n{traceback.format_exc()}"
+                f"Cannot get best model path for {trial_path} due to exception below:\n{traceback.format_exc()}"
             )
             yield None
             return
@@ -587,7 +585,7 @@ class RayTuneExecutor:
         modified_config = merge_with_defaults(modified_config)
 
         hyperopt_dict["config"] = modified_config
-        hyperopt_dict["experiment_name "] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
+        hyperopt_dict["experiment_name "] = f"{hyperopt_dict['experiment_name']}_{trial_id}"
         hyperopt_dict["output_directory"] = str(trial_dir)
 
         tune_executor = self
@@ -829,35 +827,35 @@ class RayTuneExecutor:
             # Enforce fractional GPU utilization
             gpu_memory_limit = self.gpu_resources_per_trial
 
-        hyperopt_dict = dict(
-            config=config,
-            dataset=dataset,
-            training_set=training_set,
-            validation_set=validation_set,
-            test_set=test_set,
-            training_set_metadata=training_set_metadata,
-            data_format=data_format,
-            experiment_name=experiment_name,
-            model_name=model_name,
-            eval_split=self.split,
-            skip_save_training_description=skip_save_training_description,
-            skip_save_training_statistics=skip_save_training_statistics,
-            skip_save_model=skip_save_model,
-            skip_save_progress=skip_save_progress,
-            skip_save_log=skip_save_log,
-            skip_save_processed_input=skip_save_processed_input,
-            skip_save_unprocessed_output=skip_save_unprocessed_output,
-            skip_save_predictions=skip_save_predictions,
-            skip_save_eval_stats=skip_save_eval_stats,
-            output_directory=output_directory,
-            gpus=gpus,
-            gpu_memory_limit=gpu_memory_limit,
-            allow_parallel_threads=allow_parallel_threads,
-            callbacks=callbacks,
-            backend=backend,
-            random_seed=random_seed,
-            debug=debug,
-        )
+        hyperopt_dict = {
+            "config": config,
+            "dataset": dataset,
+            "training_set": training_set,
+            "validation_set": validation_set,
+            "test_set": test_set,
+            "training_set_metadata": training_set_metadata,
+            "data_format": data_format,
+            "experiment_name": experiment_name,
+            "model_name": model_name,
+            "eval_split": self.split,
+            "skip_save_training_description": skip_save_training_description,
+            "skip_save_training_statistics": skip_save_training_statistics,
+            "skip_save_model": skip_save_model,
+            "skip_save_progress": skip_save_progress,
+            "skip_save_log": skip_save_log,
+            "skip_save_processed_input": skip_save_processed_input,
+            "skip_save_unprocessed_output": skip_save_unprocessed_output,
+            "skip_save_predictions": skip_save_predictions,
+            "skip_save_eval_stats": skip_save_eval_stats,
+            "output_directory": output_directory,
+            "gpus": gpus,
+            "gpu_memory_limit": gpu_memory_limit,
+            "allow_parallel_threads": allow_parallel_threads,
+            "callbacks": callbacks,
+            "backend": backend,
+            "random_seed": random_seed,
+            "debug": debug,
+        }
 
         mode = "min" if self.goal != MAXIMIZE else "max"
         metric = "metric_score"
@@ -865,7 +863,7 @@ class RayTuneExecutor:
         self.search_algorithm.check_for_random_seed(random_seed)
         if self.search_algorithm.search_alg_dict is not None:
             if TYPE not in self.search_algorithm.search_alg_dict:
-                candiate_search_algs = [search_alg for search_alg in SEARCH_ALG_IMPORT.keys()]
+                candiate_search_algs = list(SEARCH_ALG_IMPORT.keys())
                 logger.warning(
                     "WARNING: search_alg type parameter missing, using 'variant_generator' as default. "
                     f"These are possible values for the type parameter: {candiate_search_algs}."
@@ -1122,7 +1120,7 @@ def set_values(params: dict[str, Any], model_dict: dict[str, Any]):
         if isinstance(value, dict):
             for sub_key, sub_value in value.items():
                 if key not in model_dict:
-                    model_dict[key] = dict()
+                    model_dict[key] = {}
                 model_dict[key][sub_key] = sub_value
         else:
             model_dict[key] = value

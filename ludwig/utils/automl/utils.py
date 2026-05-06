@@ -107,9 +107,9 @@ def _add_option_to_evaluate(
     point_to_evaluate: dict, dataset_config: dict, hyperopt_params: dict, option_type: str
 ) -> dict:
     options = dataset_config[option_type]
-    for option in options.keys():
+    for option in options:
         option_param = option_type + "." + option
-        if option_param in hyperopt_params.keys():
+        if option_param in hyperopt_params:
             option_val = options[option]
             point_to_evaluate[option_param] = option_val
             if option_val not in hyperopt_params[option_param]["categories"]:

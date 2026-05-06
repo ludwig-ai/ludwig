@@ -191,7 +191,7 @@ class ECD(BaseModel):
         return decoder_outputs
 
     def unskip(self):
-        for k in self.input_features.keys():
+        for k in self.input_features:
             self.input_features.set(k, self.input_features.get(k).unskip())
 
     def save(self, save_path):

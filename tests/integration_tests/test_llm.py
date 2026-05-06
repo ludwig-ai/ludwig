@@ -759,7 +759,7 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
     model = LudwigModel.load(str(model_directory), backend=backend)
 
     base_model = LLM(ModelConfig.from_dict(config))
-    assert not _compare_models(base_model, model.model)  # noqa F821
+    assert not _compare_models(base_model, model.model)
 
     preds, _ = model.predict(dataset=prediction_df, output_directory=output_directory)
     preds = convert_preds(preds)
@@ -806,7 +806,7 @@ def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_stra
     model = LudwigModel.load(os.path.join(str(tmpdir), "api_experiment_run", MODEL_FILE_NAME))
 
     base_model = LLM(ModelConfig.from_dict(config))
-    assert not _compare_models(base_model, model.model)  # noqa F821
+    assert not _compare_models(base_model, model.model)
 
     preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
     preds = convert_preds(preds)
@@ -826,7 +826,7 @@ def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_stra
             {"bits": 4},
             (
                 ImportError,
-                "Using `load_in_8bit=True` requires Accelerate: `pip install accelerate` and the latest version of bitsandbytes `pip install -i https://test.pypi.org/simple/ bitsandbytes` or pip install bitsandbytes` ",  # noqa: E501
+                "Using `load_in_8bit=True` requires Accelerate: `pip install accelerate` and the latest version of bitsandbytes `pip install -i https://test.pypi.org/simple/ bitsandbytes` or pip install bitsandbytes` ",
             ),
             id="qlora-4bit-not-merged",
         ),
@@ -836,7 +836,7 @@ def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_stra
             {"bits": 8},
             (
                 ImportError,
-                "Using `load_in_8bit=True` requires Accelerate: `pip install accelerate` and the latest version of bitsandbytes `pip install -i https://test.pypi.org/simple/ bitsandbytes` or pip install bitsandbytes` ",  # noqa: E501
+                "Using `load_in_8bit=True` requires Accelerate: `pip install accelerate` and the latest version of bitsandbytes `pip install -i https://test.pypi.org/simple/ bitsandbytes` or pip install bitsandbytes` ",
             ),
             id="qlora-8bit-merged",
         ),
@@ -846,7 +846,7 @@ def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_stra
             {"bits": 8},
             (
                 ImportError,
-                "Using `load_in_8bit=True` requires Accelerate: `pip install accelerate` and the latest version of bitsandbytes `pip install -i https://test.pypi.org/simple/ bitsandbytes` or pip install bitsandbytes` ",  # noqa E501
+                "Using `load_in_8bit=True` requires Accelerate: `pip install accelerate` and the latest version of bitsandbytes `pip install -i https://test.pypi.org/simple/ bitsandbytes` or pip install bitsandbytes` ",
             ),
             id="qlora-8bit-not-merged",
         ),
@@ -878,8 +878,8 @@ def test_llm_lora_finetuning_merge_and_unload_quantized_accelerate_required(
 
     model = LudwigModel(config)
 
-    error_class: type  # noqa [F842]  # incorrect flagging of "local variable is annotated but never used
-    error_message: str  # noqa [F842]  # incorrect flagging of "local variable is annotated but never used
+    error_class: type
+    error_message: str
     error_class, error_message = error_raised
     with pytest.raises(error_class) as excinfo:
         train_df = generate_data(input_features, output_features, filename=csv_filename, num_examples=3)
@@ -935,7 +935,7 @@ quantization section from your Ludwig configuration."""
     ],
 )
 @pytest.mark.parametrize(
-    "target_modules,merge_adapter_into_base_model,expected_lora_in_features,expected_lora_out_features,expected_file_names",  # noqa: E501
+    "target_modules,merge_adapter_into_base_model,expected_lora_in_features,expected_lora_out_features,expected_file_names",
     [
         pytest.param(
             None,
@@ -1295,7 +1295,7 @@ def test_local_path_loading(tmpdir):
     from huggingface_hub import snapshot_download
 
     # Download the model to a local directory
-    local_path: str = f"{str(tmpdir)}/test_local_path_loading"
+    local_path: str = f"{tmpdir!s}/test_local_path_loading"
     repo_id: str = "HuggingFaceH4/tiny-random-LlamaForCausalLM"
     os.makedirs(local_path, exist_ok=True)
     snapshot_download(repo_id=repo_id, local_dir=local_path)
@@ -1358,7 +1358,7 @@ def test_llm_finetuning_with_embedding_noise(
     model = LudwigModel.load(str(model_directory), backend=LOCAL_BACKEND)
 
     base_model = LLM(ModelConfig.from_dict(config))
-    assert not _compare_models(base_model, model.model)  # noqa F821
+    assert not _compare_models(base_model, model.model)
 
     preds, _ = model.predict(dataset=prediction_df, output_directory=output_directory)
     preds = convert_preds(preds)

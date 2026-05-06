@@ -31,7 +31,7 @@ def is_dask_series_or_df(df: DataFrame, backend: Optional["Backend"]) -> bool:  
 
 
 @DeveloperAPI
-def flatten_df(df: DataFrame, df_engine: DataFrameEngine) -> tuple[DataFrame, dict[str, tuple]]:  # noqa: F821
+def flatten_df(df: DataFrame, df_engine: DataFrameEngine) -> tuple[DataFrame, dict[str, tuple]]:
     """Returns a flattened dataframe with a dictionary of the original shapes, keyed by dataframe columns."""
     # Workaround for: https://issues.apache.org/jira/browse/ARROW-5645
     column_shapes = {}
@@ -51,7 +51,7 @@ def flatten_df(df: DataFrame, df_engine: DataFrameEngine) -> tuple[DataFrame, di
 
 
 @DeveloperAPI
-def unflatten_df(df: DataFrame, column_shapes: dict[str, tuple], df_engine: DataFrameEngine) -> DataFrame:  # noqa: F821
+def unflatten_df(df: DataFrame, column_shapes: dict[str, tuple], df_engine: DataFrameEngine) -> DataFrame:
     """Returns an unflattened dataframe, the reverse of flatten_df."""
     for c in df.columns:
         shape = column_shapes.get(c)

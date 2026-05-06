@@ -24,7 +24,7 @@ class MLP(LudwigModule):
         self,
         in_features: int | tuple[int],
         hidden_size: int,
-        out_features: int | tuple[int] = None,
+        out_features: int | tuple[int] | None = None,
         dropout: float = 0.0,
     ):
         super().__init__()

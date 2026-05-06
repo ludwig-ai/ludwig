@@ -83,7 +83,7 @@ class TestLLMEncoder:
         assert encoder.model_name == encoder_config.base_model
         assert isinstance(encoder.model, PreTrainedModel)
         # Check adapter was not initialized
-        for k in ADAPTER_CONFIG_MAP.keys():
+        for k in ADAPTER_CONFIG_MAP:
             prefix = self.adapter_param_name_prefix(k)
             assert all(map(lambda k: prefix not in k, encoder.state_dict().keys()))
         assert encoder.input_shape == torch.Size([encoder_config.max_sequence_length])
@@ -103,7 +103,7 @@ class TestLLMEncoder:
         assert encoder.model_name == encoder_config.base_model
         assert isinstance(encoder.model, PreTrainedModel)
         # Check adapter was not initialized
-        for k in ADAPTER_CONFIG_MAP.keys():
+        for k in ADAPTER_CONFIG_MAP:
             prefix = self.adapter_param_name_prefix(k)
             assert all(map(lambda k: prefix not in k, encoder.state_dict().keys()))
         assert encoder.input_shape == torch.Size([context_len])
@@ -156,7 +156,7 @@ class TestLLMEncoder:
         # With no adapter, the state dict should only contain the model parameters
         encoder = LLMEncoder(encoder_config=encoder_config)
         # Check adapter was not initialized
-        for k in ADAPTER_CONFIG_MAP.keys():
+        for k in ADAPTER_CONFIG_MAP:
             prefix = self.adapter_param_name_prefix(k)
             assert all(map(lambda k: prefix not in k, encoder.state_dict().keys()))
 

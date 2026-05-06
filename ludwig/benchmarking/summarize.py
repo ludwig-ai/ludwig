@@ -64,11 +64,7 @@ def export_and_print(
         os.makedirs(output_path, exist_ok=True)
 
         logger.info(
-            "Model performance metrics for *{}* vs. *{}* on dataset *{}*".format(
-                experiment_metric_diff.base_experiment_name,
-                experiment_metric_diff.experimental_experiment_name,
-                experiment_metric_diff.dataset_name,
-            )
+            f"Model performance metrics for *{experiment_metric_diff.base_experiment_name}* vs. *{experiment_metric_diff.experimental_experiment_name}* on dataset *{experiment_metric_diff.dataset_name}*"
         )
         logger.info(experiment_metric_diff.to_string())
         filename = (
@@ -82,12 +78,7 @@ def export_and_print(
         os.makedirs(output_path, exist_ok=True)
         for tag_diff in experiment_resource_diff:
             logger.info(
-                "Resource usage for *{}* vs. *{}* on *{}* of dataset *{}*".format(
-                    tag_diff.base_experiment_name,
-                    tag_diff.experimental_experiment_name,
-                    tag_diff.code_block_tag,
-                    dataset_name,
-                )
+                f"Resource usage for *{tag_diff.base_experiment_name}* vs. *{tag_diff.experimental_experiment_name}* on *{tag_diff.code_block_tag}* of dataset *{dataset_name}*"
             )
             logger.info(tag_diff.to_string())
             filename = (

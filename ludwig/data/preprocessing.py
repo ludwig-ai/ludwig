@@ -69,11 +69,11 @@ from ludwig.schema.model_types.base import ModelConfig
 from ludwig.types import FeatureConfigDict, ModelConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils import data_utils, strings_utils
 from ludwig.utils.backward_compatibility import upgrade_metadata
-from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP  # legacy, kept for backward compat
 from ludwig.utils.data_utils import (
     CACHEABLE_FORMATS,
     CSV_FORMATS,
     DATA_TEST_PARQUET_FP,
+    DATA_TRAIN_HDF5_FP,  # legacy, kept for backward compat
     DATA_TRAIN_PARQUET_FP,
     DATA_VALIDATION_PARQUET_FP,
     DATAFRAME_FORMATS,
@@ -201,7 +201,7 @@ class DictPreprocessor(DataFormatPreprocessor):
     ):
         num_overrides = override_in_memory_flag(features, True)
         if num_overrides > 0:
-            logger.warning("Using in_memory = False is not supported " "with {} data format.".format("dict"))
+            logger.warning("Using in_memory = False is not supported with {} data format.".format("dict"))
 
         df_engine = backend.df_engine
         if dataset is not None:
@@ -261,7 +261,7 @@ class DataFramePreprocessor(DataFormatPreprocessor):
     ):
         num_overrides = override_in_memory_flag(features, True)
         if num_overrides > 0:
-            logger.warning("Using in_memory = False is not supported " "with {} data format.".format("dataframe"))
+            logger.warning("Using in_memory = False is not supported with {} data format.".format("dataframe"))
 
         if isinstance(dataset, pd.DataFrame):
             dataset = backend.df_engine.from_pandas(dataset)
@@ -1098,22 +1098,22 @@ class HDF5Preprocessor(DataFormatPreprocessor):
         not_none_set = dataset if dataset is not None else training_set
 
         if not training_set_metadata:
-            raise ValueError("When providing HDF5 data, " "training_set_metadata must not be None.")
+            raise ValueError("When providing HDF5 data, training_set_metadata must not be None.")
 
         logger.info("Using full hdf5 and json")
 
         if DATA_TRAIN_HDF5_FP not in training_set_metadata:
             logger.warning(
                 "data_train_hdf5_fp not present in training_set_metadata. "
-                "Adding it with the current HDF5 file path {}".format(not_none_set)
+                f"Adding it with the current HDF5 file path {not_none_set}"
             )
             training_set_metadata[DATA_TRAIN_HDF5_FP] = not_none_set
 
         elif training_set_metadata[DATA_TRAIN_HDF5_FP] != not_none_set:
             logger.warning(
-                "data_train_hdf5_fp in training_set_metadata is {}, "
-                "different from the current HDF5 file path {}. "
-                "Replacing it".format(training_set_metadata[DATA_TRAIN_HDF5_FP], not_none_set)
+                f"data_train_hdf5_fp in training_set_metadata is {training_set_metadata[DATA_TRAIN_HDF5_FP]}, "
+                f"different from the current HDF5 file path {not_none_set}. "
+                "Replacing it"
             )
             training_set_metadata[DATA_TRAIN_HDF5_FP] = not_none_set
 
@@ -1123,7 +1123,7 @@ class HDF5Preprocessor(DataFormatPreprocessor):
             )
 
         elif training_set is not None:
-            kwargs = dict(preprocessing_params=preprocessing_params, backend=backend, split_data=False)
+            kwargs = {"preprocessing_params": preprocessing_params, "backend": backend, "split_data": False}
             training_set = load_hdf5(training_set, shuffle_training=True, **kwargs)
 
             if validation_set is not None:
@@ -1136,23 +1136,23 @@ class HDF5Preprocessor(DataFormatPreprocessor):
 
 
 data_format_preprocessor_registry = {
-    **{fmt: DictPreprocessor for fmt in DICT_FORMATS},
-    **{fmt: DataFramePreprocessor for fmt in DATAFRAME_FORMATS},
-    **{fmt: CSVPreprocessor for fmt in CSV_FORMATS},
-    **{fmt: TSVPreprocessor for fmt in TSV_FORMATS},
-    **{fmt: JSONPreprocessor for fmt in JSON_FORMATS},
-    **{fmt: JSONLPreprocessor for fmt in JSONL_FORMATS},
-    **{fmt: ExcelPreprocessor for fmt in EXCEL_FORMATS},
-    **{fmt: ParquetPreprocessor for fmt in PARQUET_FORMATS},
-    **{fmt: PicklePreprocessor for fmt in PICKLE_FORMATS},
-    **{fmt: FWFPreprocessor for fmt in FWF_FORMATS},
-    **{fmt: FatherPreprocessor for fmt in FEATHER_FORMATS},
-    **{fmt: HTMLPreprocessor for fmt in HTML_FORMATS},
-    **{fmt: ORCPreprocessor for fmt in ORC_FORMATS},
-    **{fmt: SASPreprocessor for fmt in SAS_FORMATS},
-    **{fmt: SPSSPreprocessor for fmt in SPSS_FORMATS},
-    **{fmt: StataPreprocessor for fmt in STATA_FORMATS},
-    **{fmt: HDF5Preprocessor for fmt in HDF5_FORMATS},
+    **dict.fromkeys(DICT_FORMATS, DictPreprocessor),
+    **dict.fromkeys(DATAFRAME_FORMATS, DataFramePreprocessor),
+    **dict.fromkeys(CSV_FORMATS, CSVPreprocessor),
+    **dict.fromkeys(TSV_FORMATS, TSVPreprocessor),
+    **dict.fromkeys(JSON_FORMATS, JSONPreprocessor),
+    **dict.fromkeys(JSONL_FORMATS, JSONLPreprocessor),
+    **dict.fromkeys(EXCEL_FORMATS, ExcelPreprocessor),
+    **dict.fromkeys(PARQUET_FORMATS, ParquetPreprocessor),
+    **dict.fromkeys(PICKLE_FORMATS, PicklePreprocessor),
+    **dict.fromkeys(FWF_FORMATS, FWFPreprocessor),
+    **dict.fromkeys(FEATHER_FORMATS, FatherPreprocessor),
+    **dict.fromkeys(HTML_FORMATS, HTMLPreprocessor),
+    **dict.fromkeys(ORC_FORMATS, ORCPreprocessor),
+    **dict.fromkeys(SAS_FORMATS, SASPreprocessor),
+    **dict.fromkeys(SPSS_FORMATS, SPSSPreprocessor),
+    **dict.fromkeys(STATA_FORMATS, StataPreprocessor),
+    **dict.fromkeys(HDF5_FORMATS, HDF5Preprocessor),
 }
 
 
@@ -1238,7 +1238,7 @@ def build_dataset(
         else:
             logger.warning(
                 f"Specified split column {global_preprocessing_parameters['split']['column']} for fixed "
-                f"split strategy was not found in dataset."  # noqa: E713
+                f"split strategy was not found in dataset."
             )
 
     # update input features with prompt configs during preprocessing (as opposed to during the model forward pass)
@@ -1474,7 +1474,7 @@ def cast_columns(dataset_cols, features, backend) -> None:
             )
         except KeyError as e:
             raise KeyError(
-                f"Feature name {e} specified in the config was not found in dataset with columns: "  # noqa: E713
+                f"Feature name {e} specified in the config was not found in dataset with columns: "
                 + f"{list(dataset_cols.keys())}"
             )
 
@@ -1675,8 +1675,7 @@ def precompute_fill_value(
     elif missing_value_strategy == FILL_WITH_MEAN:
         if feature[TYPE] != NUMBER:
             raise ValueError(
-                f"Filling missing values with mean is supported "
-                f"only for number types, not for type {feature[TYPE]}.",
+                f"Filling missing values with mean is supported only for number types, not for type {feature[TYPE]}.",
             )
         return backend.df_engine.compute(dataset_cols[feature[COLUMN]].astype(float).mean())
     elif missing_value_strategy in {FILL_WITH_FALSE, FILL_WITH_TRUE}:
@@ -2119,7 +2118,7 @@ def _preprocess_file_for_training(
     if dataset:
         # Use data and ignore _train, _validation and _test.
         # Also ignore data and train set metadata needs preprocessing
-        logger.info("Using full raw dataset, no hdf5 and json file " "with the same name have been found")
+        logger.info("Using full raw dataset, no hdf5 and json file with the same name have been found")
         logger.info("Building dataset (it may take a while)")
 
         dataset_df = read_fn(dataset, backend.df_engine.df_lib)
@@ -2142,7 +2141,7 @@ def _preprocess_file_for_training(
         # use data_train (including _validation and _test if they are present)
         # and ignore data and train set metadata
         # needs preprocessing
-        logger.info("Using training raw csv, no hdf5 and json " "file with the same name have been found")
+        logger.info("Using training raw csv, no hdf5 and json file with the same name have been found")
         logger.info("Building dataset (it may take a while)")
 
         concatenated_df = concatenate_files(training_set, validation_set, test_set, read_fn, backend)
@@ -2292,7 +2291,7 @@ def preprocess_for_prediction(
     if data_format not in HDF5_FORMATS:
         num_overrides = override_in_memory_flag(config_dict["input_features"], True)
         if num_overrides > 0:
-            logger.warning("Using in_memory = False is not supported " "with {} data format.".format(data_format))
+            logger.warning(f"Using in_memory = False is not supported with {data_format} data format.")
 
     preprocessing_params = {}
     config_defaults = config_dict.get(DEFAULTS, {})
