@@ -1,7 +1,7 @@
 """Custom Ray datasource utilities for reading binary files with None handling."""
 
 import logging
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import pandas as pd
 import ray
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 def read_binary_files_with_index(
     paths_and_idxs: list[tuple[str | None, int]],
-    filesystem: Optional["pyarrow.fs.FileSystem"] = None,
+    filesystem: "pyarrow.fs.FileSystem | None" = None,
 ) -> "ray.data.Dataset":
     """Read binary files into a Ray Dataset, handling None paths and HTTP URLs.
 

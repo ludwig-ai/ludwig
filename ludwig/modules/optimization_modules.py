@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 import dataclasses
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import torch
 
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from ludwig.schema.optimizers import BaseOptimizerConfig, GradientClippingConfig
 
 
-def create_clipper(gradient_clipping_config: Optional["GradientClippingConfig"]):
+def create_clipper(gradient_clipping_config: "GradientClippingConfig | None"):
     from ludwig.schema.optimizers import GradientClippingConfig
 
     """Utility function that will convert a None-type gradient clipping config to the correct form."""
