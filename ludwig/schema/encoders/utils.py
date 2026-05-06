@@ -90,7 +90,7 @@ def get_encoder_conds(encoder_classes: dict[str, type["BaseEncoderConfig"]]) -> 
 
 @DeveloperAPI
 def EncoderDataclassField(
-    model_type: str, feature_type: str, default: str, description: str = "", blocklist: list[str] = []
+    model_type: str, feature_type: str, default: str, description: str = "", blocklist: list[str] | None = None
 ) -> Field:
     """Custom dataclass field that when used inside a dataclass will allow the user to specify an encoder config.
 
@@ -113,7 +113,7 @@ def EncoderDataclassField(
             #
             # Also, note the placement inside this function - since this is a list, it will not update with any late
             # additions to the registry (e.g. in our tests)!
-            enum = [e for e in encoder_registry if e not in blocklist]
+            enum = [e for e in encoder_registry if not blocklist or e not in blocklist]
 
             return {
                 "type": "object",
