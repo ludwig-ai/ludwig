@@ -749,34 +749,14 @@ class LudwigModel:
         data_format: str = "auto",
         random_seed: int = default_random_seed,
     ) -> None:
-        """Performs one epoch of training of the model on `dataset`.
+        """Train the model for one epoch on `dataset` (online / incremental learning).
 
-        # Inputs
-
-        :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
-            source containing the entire dataset to be used in the experiment.
-            If it has a split column, it will be used for splitting (0 for train,
-            1 for validation, 2 for test), otherwise the dataset will be
-            randomly split.
-        :param training_set_metadata: (Union[str, dict], default: `None`)
-            metadata JSON file or loaded metadata.  Intermediate preprocessed
-        structure containing the mappings of the input
-            dataset created the first time an input file is used in the same
-            directory with the same name and a '.meta.json' extension.
-        :param data_format: (str, default: `None`) format to interpret data
-            sources. Will be inferred automatically if not specified.  Valid
-            formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`, `'feather'`,
-            `'fwf'`, `'hdf5'` (cache file produced during previous training),
-            `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
-            `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
-            `'stata'`, `'tsv'`.
-        :param random_seed: (int, default: `42`) a random seed that is going to be
-               used anywhere there is a call to a random number generator: data
-               splitting, parameter initialization and training set shuffling
-
-        # Return
-
-        :return: (None) `None`
+        Args:
+            dataset: Source containing the training data for this epoch.
+            training_set_metadata: Pre-computed metadata from a prior run. When
+                `None`, metadata is derived from the provided dataset.
+            data_format: Format hint for the data source. Inferred when `'auto'`.
+            random_seed: Seed for data splitting and parameter initialization.
         """
         training_set_metadata = training_set_metadata or self.training_set_metadata
         preprocessing_params = get_preprocessing_params(self.config_obj)
@@ -1564,14 +1544,15 @@ class LudwigModel:
         return eval_stats, train_stats, preprocessed_data, output_directory
 
     def collect_weights(self, tensor_names: list[str] | None = None, **kwargs) -> list:
-        """Load a pre-trained model and collect the tensors with a specific name.
+        """Return the named tensors (weight matrices) from the trained model.
 
-        # Inputs
-        :param tensor_names: (list, default: `None`) List of tensor names to collect
-            weights
+        Args:
+            tensor_names: Names of tensors to retrieve. When `None`, all tensors
+                are returned.
+            **kwargs: Unused; accepted for forward-compatibility.
 
-        # Return
-        :return: (list) List of tensors
+        Returns:
+            List of `(name, tensor)` tuples.
         """
         self._check_initialization()
         collected_tensors = self.model.collect_weights(tensor_names)
@@ -1586,29 +1567,19 @@ class LudwigModel:
         batch_size: int = 128,
         **kwargs,
     ) -> list:
-        """Loads a pre-trained model model and input data to collect the values of the activations contained in the
-        tensors.
+        """Collect intermediate-layer activations for the given dataset.
 
-        # Inputs
-        :param layer_names: (list) list of strings for layer names in the model
-            to collect activations.
-        :param dataset: (Union[str, Dict[str, list], pandas.DataFrame]) source
-            containing the data to make predictions.
-        :param data_format: (str, default: `None`) format to interpret data
-            sources. Will be inferred automatically if not specified.  Valid
-            formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`, `'feather'`,
-            `'fwf'`, `'hdf5'` (cache file produced during previous training),
-            `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
-            `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
-            `'stata'`, `'tsv'`.
-        :param split: (str, default= `'full'`): if the input dataset contains
-            a split column, this parameter indicates which split of the data
-            to use. Possible values are `'full'`, `'training'`, `'validation'`, `'test'`.
-        :param batch_size: (int, default: 128) size of batch to use when making
-            predictions.
+        Args:
+            layer_names: Names of layers in the model to collect activations from.
+            dataset: Source containing the data to run through the model.
+            data_format: Format hint for the data source. Inferred when `None`.
+            split: Which data split to use when the dataset has a split column.
+                One of `'full'`, `'training'`, `'validation'`, `'test'`.
+            batch_size: Number of rows per inference batch.
+            **kwargs: Unused; accepted for forward-compatibility.
 
-        # Return
-        :return: (list) list of collected tensors.
+        Returns:
+            List of activation tensors, one per layer name.
         """
         self._check_initialization()
 
@@ -1642,52 +1613,31 @@ class LudwigModel:
         random_seed: int = default_random_seed,
         **kwargs,
     ) -> PreprocessedDataset:
-        """This function is used to preprocess data.
+        """Preprocess a dataset and return it split into training / validation / test sets.
 
-        # Inputs
+        Args:
+            dataset: Source containing the full dataset. Mutually exclusive with
+                `training_set` / `validation_set` / `test_set`.
+            training_set: Source containing training data only.
+            validation_set: Source containing validation data only.
+            test_set: Source containing test data only.
+            training_set_metadata: Pre-computed metadata dict or `.meta.json` path
+                from a prior Ludwig run on the same dataset.
+            data_format: Format hint for data sources. Inferred when `None`.
+                Valid values: `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`,
+                `'feather'`, `'fwf'`, `'hdf5'`, `'html'`, `'json'`, `'jsonl'`,
+                `'parquet'`, `'pickle'`, `'sas'`, `'spss'`, `'stata'`, `'tsv'`.
+            skip_save_processed_input: Skip caching the preprocessed HDF5/JSON files.
+            random_seed: Seed for data splitting and shuffling.
+            **kwargs: Forwarded to the underlying preprocessing function.
 
-        :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
-            source containing the entire dataset to be used in the experiment.
-            If it has a split column, it will be used for splitting
-            (0 for train, 1 for validation, 2 for test),
-            otherwise the dataset will be randomly split.
-        :param training_set: (Union[str, dict, pandas.DataFrame], default: `None`)
-            source containing training data.
-        :param validation_set: (Union[str, dict, pandas.DataFrame], default: `None`)
-            source containing validation data.
-        :param test_set: (Union[str, dict, pandas.DataFrame], default: `None`)
-            source containing test data.
-        :param training_set_metadata: (Union[str, dict], default: `None`)
-            metadata JSON file or loaded metadata. Intermediate preprocessed
-            structure containing the mappings of the input dataset created the
-            first time an input file is used in the same directory with the
-            same name and a '.meta.json' extension.
-        :param data_format: (str, default: `None`) format to interpret data
-            sources. Will be inferred automatically if not specified.  Valid
-            formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`,
-            `'feather'`, `'fwf'`,
-            `'hdf5'` (cache file produced during previous training),
-            `'html'` (file containing a single HTML `<table>`),
-            `'json'`, `'jsonl'`, `'parquet'`,
-            `'pickle'` (pickled Pandas DataFrame),
-            `'sas'`, `'spss'`, `'stata'`, `'tsv'`.
-        :param skip_save_processed_input: (bool, default: `False`) if input
-            dataset is provided it is preprocessed and cached by saving an HDF5
-            and JSON files to avoid running the preprocessing again. If this
-            parameter is `False`, the HDF5 and JSON file are not saved.
-        :param random_seed: (int, default: `42`) a random seed that will be
-            used anywhere there is a call to a random number generator: data
-            splitting, parameter initialization and training set shuffling
+        Returns:
+            A `PreprocessedDataset` namedtuple with fields `training_set`,
+            `validation_set`, `test_set`, and `training_set_metadata`.
 
-        # Return
-
-        :return: (PreprocessedDataset) data structure containing
-            `(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)`.
-
-        # Raises
-
-        RuntimeError: An error occurred while preprocessing the data. Examples include training dataset
-            being empty after preprocessing, lazy loading not being supported with RayBackend, etc.
+        Raises:
+            RuntimeError: If preprocessing fails (e.g., empty training set after
+                filtering, or lazy loading incompatible with RayBackend).
         """
         print_boxed("PREPROCESSING")
 
