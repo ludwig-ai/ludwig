@@ -32,10 +32,10 @@ def hyperopt_report_cli(hyperopt_stats_path, output_directory=None, file_format=
     """Produces a report about hyperparameter optimization creating one graph per hyperparameter to show the
     distribution of results and one additional graph of pairwise hyperparameters interactions.
 
-    :param hyperopt_stats_path: path to the hyperopt results JSON file
-    :param output_directory: path where to save the output plots
-    :param file_format: format of the output plot, pdf or png
-    :return:
+    Args:
+        hyperopt_stats_path: Path to the hyperopt results JSON file.
+        output_directory: Path where to save the output plots.
+        file_format: Format of the output plot, pdf or png.
     """
 
     hyperopt_report(hyperopt_stats_path, output_directory=output_directory, file_format=file_format)
@@ -48,17 +48,10 @@ def hyperopt_report(
     """Produces a report about hyperparameter optimization creating one graph per hyperparameter to show the
     distribution of results and one additional graph of pairwise hyperparameters interactions.
 
-    # Inputs
-
-    :param hyperopt_stats_path: (str) path to the hyperopt results JSON file.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window.
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-
-    # Return
-
-    :return: (None)
+    Args:
+        hyperopt_stats_path: Path to the hyperopt results JSON file.
+        output_directory: Directory where to save plots. If not specified, plots will be displayed in a window.
+        file_format: File format of output plots — 'pdf' or 'png'.
     """
     filename_template = "hyperopt_{}." + file_format
     filename_template_path = generate_filename_template_path(output_directory, filename_template)
@@ -82,9 +75,9 @@ def hyperopt_hiplot_cli(hyperopt_stats_path, output_directory=None, **kwargs):
     """Produces a parallel coordinate plot about hyperparameter optimization creating one HTML file and optionally
     a CSV file to be read by hiplot.
 
-    :param hyperopt_stats_path: path to the hyperopt results JSON file
-    :param output_directory: path where to save the output plots
-    :return:
+    Args:
+        hyperopt_stats_path: Path to the hyperopt results JSON file.
+        output_directory: Path where to save the output plots.
     """
 
     hyperopt_hiplot(hyperopt_stats_path, output_directory=output_directory)
@@ -95,15 +88,9 @@ def hyperopt_hiplot(hyperopt_stats_path, output_directory=None, **kwargs):
     """Produces a parallel coordinate plot about hyperparameter optimization creating one HTML file and optionally
     a CSV file to be read by hiplot.
 
-    # Inputs
-
-    :param hyperopt_stats_path: (str) path to the hyperopt results JSON file.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window.
-
-    # Return
-
-    :return: (None)
+    Args:
+        hyperopt_stats_path: Path to the hyperopt results JSON file.
+        output_directory: Directory where to save plots. If not specified, plots will be displayed in a window.
     """
     filename = "hyperopt_hiplot.html"
     filename_path = generate_filename_template_path(output_directory, filename)
