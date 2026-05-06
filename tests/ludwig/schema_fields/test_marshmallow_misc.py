@@ -18,7 +18,7 @@ class CustomTestSchema(LudwigBaseConfig):
 
 def test_assert_is_a_marshmallow_clas():
     assert_is_a_config_class(ECDTrainerConfig)
-    with pytest.raises(AssertionError, match=r"Expected.*config class"):
+    with pytest.raises(TypeError, match=r"Expected.*config class"):
         assert_is_a_config_class(lcc.ConcatCombiner)
 
 
