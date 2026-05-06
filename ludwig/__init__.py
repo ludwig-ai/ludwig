@@ -21,3 +21,18 @@ logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(message)s")
 
 # Disable annoying message about NUMEXPR_MAX_THREADS
 logging.getLogger("numexpr").setLevel(logging.WARNING)
+
+# Prevent Dask from converting object-dtype columns to PyArrow strings.
+# Dask's default convert-string:True tries to decode every object column as
+# UTF-8, which corrupts binary data (image bytes, numpy arrays, etc.) with a
+# UnicodeDecodeError.  This must be set at import time — before the caller
+# creates any Dask DataFrame — because the _to_string_dtype expression node is
+# baked into the task graph at dd.from_pandas() / dd.read_*() time.
+# Setting it in RayBackend.initialize() (which happens after train() is called)
+# is too late to help user-provided DataFrames.  GitHub issue #4149.
+try:
+    import dask
+
+    dask.config.set({"dataframe.convert-string": False})
+except ImportError:
+    pass

@@ -25,6 +25,7 @@ Sections
   vector, timeseries
 """
 
+import io
 import os
 import tempfile
 
@@ -1095,3 +1096,73 @@ class TestOutputTypesRay:
             self._df,
             backend=ray_1gpu,
         )
+
+
+# ---------------------------------------------------------------------------
+# IMAGE input — binary bytes in a pre-existing Dask DataFrame (GitHub #4149)
+# ---------------------------------------------------------------------------
+
+
+def _jpeg_bytes_col(n: int = N) -> list[bytes]:
+    """Return n small (8×8 RGB) JPEG-encoded images as raw bytes."""
+    from PIL import Image
+
+    result = []
+    for i in range(n):
+        buf = io.BytesIO()
+        arr = np.full((32, 32, 3), [i % 256, (i * 7) % 256, (i * 13) % 256], dtype=np.uint8)
+        Image.fromarray(arr).save(buf, "JPEG")
+        result.append(buf.getvalue())
+    return result
+
+
+class TestImageBytesRay:
+    """Regression tests for GitHub #4149.
+
+    The bug: when a user passes a Dask DataFrame whose image column contains raw
+    binary bytes (JPEG/PNG), Dask's _to_string_dtype tries to decode the bytes as
+    UTF-8, failing with UnicodeDecodeError.  The fix moves
+    dask.config(dataframe.convert-string:False) to ludwig/__init__.py so it is set
+    before the user ever creates a Dask DataFrame.
+    """
+
+    _IMAGE_CONFIG = {
+        "input_features": [
+            {
+                "name": "image_data",
+                "type": "image",
+                "preprocessing": {"height": 32, "width": 32, "num_channels": 3},
+                "encoder": {"type": "stacked_cnn", "output_size": 16},
+            }
+        ],
+        "output_features": [{"name": "label", "type": "number"}],
+        "trainer": {"epochs": 1, "learning_rate": LR, "batch_size": 16},
+    }
+
+    def test_image_bytes_pandas_local_backend(self):
+        """Pandas DataFrame with bytes column — verifies local image-bytes path works."""
+        pd_df = pd.DataFrame({"image_data": _jpeg_bytes_col(), "label": RNG.standard_normal(N).tolist()})
+        with tempfile.TemporaryDirectory() as out:
+            model = LudwigModel(self._IMAGE_CONFIG, logging_level=40)
+            result = model.train(dataset=pd_df, output_directory=out)
+            assert result.train_stats is not None
+
+    def test_image_bytes_dask_ray_backend(self, ray_1gpu):
+        """Dask DataFrame with bytes column + Ray backend — the exact scenario from #4149.
+
+        The Dask DataFrame is created before model.train() is called to faithfully
+        replicate the user scenario where dd.from_pandas() would fail with
+        UnicodeDecodeError if dask.config.convert-string is not set to False.
+        """
+        import dask.dataframe as dd
+
+        pd_df = pd.DataFrame({"image_data": _jpeg_bytes_col(), "label": RNG.standard_normal(N).tolist()})
+        # Create Dask DataFrame before calling train — this is the user pattern that
+        # triggered the original bug.
+        dask_df = dd.from_pandas(pd_df, npartitions=4)
+
+        config = {**self._IMAGE_CONFIG, "backend": ray_1gpu}
+        with tempfile.TemporaryDirectory() as out:
+            model = LudwigModel(config, logging_level=40)
+            result = model.train(dataset=dask_df, output_directory=out)
+            assert result.train_stats is not None
