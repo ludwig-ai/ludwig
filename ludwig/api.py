@@ -727,33 +727,15 @@ class LudwigModel:
                     )
                     self.model, train_trainset_stats, train_valiset_stats, train_testset_stats = train_stats
 
-                    # Calibrates output feature probabilities on validation set if calibration is enabled.
-                    # Must be done after training, and before final model parameters are saved.
+                    # Calibrate output probabilities and save model (coordinator-only).
+                    # Must run after training completes, before final model parameters are saved.
                     if self.backend.is_coordinator():
                         calibrator = Calibrator(
                             self.model,
                             self.backend,
                             batch_size=trainer.eval_batch_size,
                         )
-                        if calibrator.calibration_enabled():
-                            if validation_set is None:
-                                logger.warning(
-                                    "Calibration uses validation set, but no validation split specified."
-                                    "Will use training set for calibration."
-                                    "Recommend providing a validation set when using calibration."
-                                )
-                                calibrator.train_calibration(training_set, TRAINING)
-                            elif len(validation_set) < MIN_DATASET_SPLIT_ROWS:
-                                logger.warning(
-                                    f"Validation set size ({len(validation_set)} rows) is too small for calibration."
-                                    "Will use training set for calibration."
-                                    f"Validation set much have at least {MIN_DATASET_SPLIT_ROWS} rows."
-                                )
-                                calibrator.train_calibration(training_set, TRAINING)
-                            else:
-                                calibrator.train_calibration(validation_set, VALIDATION)
-                        if not skip_save_model:
-                            self.model.save(model_dir)
+                        self._run_calibration(calibrator, validation_set, training_set, skip_save_model, model_dir)
 
                     # Evaluation Frequency
                     if self.config_obj.model_type == MODEL_ECD and self.config_obj.trainer.steps_per_checkpoint:
@@ -933,6 +915,39 @@ class LudwigModel:
             self._tune_batch_size_and_grad_accum(self._online_trainer, dataset, random_seed=random_seed)
 
         self.model = self._online_trainer.train_online(training_dataset)
+
+    def _run_calibration(
+        self,
+        calibrator: Calibrator,
+        validation_set: Dataset | None,
+        training_set: Dataset,
+        skip_save_model: bool,
+        model_dir: str,
+    ) -> None:
+        """Run post-training probability calibration and save the model.
+
+        Must be called only on the coordinator node, after training completes and
+        before the final model is saved.
+        """
+        if calibrator.calibration_enabled():
+            if validation_set is None:
+                logger.warning(
+                    "Calibration uses validation set, but no validation split specified. "
+                    "Will use training set for calibration. "
+                    "Recommend providing a validation set when using calibration."
+                )
+                calibrator.train_calibration(training_set, TRAINING)
+            elif len(validation_set) < MIN_DATASET_SPLIT_ROWS:
+                logger.warning(
+                    f"Validation set size ({len(validation_set)} rows) is too small for calibration. "
+                    "Will use training set for calibration. "
+                    f"Validation set must have at least {MIN_DATASET_SPLIT_ROWS} rows."
+                )
+                calibrator.train_calibration(training_set, TRAINING)
+            else:
+                calibrator.train_calibration(validation_set, VALIDATION)
+        if not skip_save_model:
+            self.model.save(model_dir)
 
     def _tune_batch_size_and_grad_accum(self, trainer, dataset, random_seed: int = default_random_seed):
         """Sets AUTO batch-size-related parameters based on the trainer, backend type, and number of workers.
