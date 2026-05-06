@@ -329,10 +329,6 @@ class LudwigModel:
         :param callbacks: (list, default: `None`) a list of
               `ludwig.callbacks.Callback` objects that provide hooks into the
                Ludwig pipeline.
-
-        # Return
-
-        :return: (None) `None`
         """
         # check if config is a path or a dict
         if isinstance(config, str):  # assume path
@@ -455,7 +451,7 @@ class LudwigModel:
             `'json'`, `'jsonl'`, `'parquet'`,
             `'pickle'` (pickled Pandas DataFrame),
             `'sas'`, `'spss'`, `'stata'`, `'tsv'`.
-        :param experiment_name: (str, default: `'experiment'`) name for
+        :param experiment_name: (str, default: `'api_experiment'`) name for
             the experiment.
         :param model_name: (str, default: `'run'`) name of the model that is
             being used.
@@ -2271,12 +2267,7 @@ class LudwigModel:
         self.config_obj = ModelConfig.from_dict(self._user_config)
 
     def is_merge_and_unload_set(self) -> bool:
-        """Check whether the encapsulated model is of type LLM and is configured to merge_and_unload QLoRA weights.
-
-        # Return
-
-        :return (bool): whether merge_and_unload should be done.
-        """
+        """Return True if this model is an LLM configured to merge_and_unload QLoRA adapter weights."""
         # TODO: In the future, it may be possible to move up the model type check into the BaseModel class.
         return self.config_obj.model_type == MODEL_LLM and self.model.is_merge_and_unload_set()
 
