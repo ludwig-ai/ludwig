@@ -125,31 +125,29 @@ def auto_train(
     use_reference_config: bool = False,
     **kwargs,
 ) -> AutoTrainResults:
-    """Main auto train API that first builds configs for each model type (e.g. concat, tabnet, transformer). Then
-    selects model based on dataset attributes. And finally runs a hyperparameter optimization experiment.
+    """Select the best model type for the dataset and run hyperparameter optimization.
 
-    All batch and learning rate tuning is done @ training time.
+    Builds configs for each model type (concat, tabnet, transformer), selects
+    one based on dataset attributes, then runs a hyperopt experiment. Batch
+    size and learning rate tuning happen automatically at training time.
 
-    # Inputs
-    :param dataset: (str, pd.DataFrame, dd.DataFrame) data source to train over.
-    :param target: (str) name of target feature
-    :param time_limit_s: (int, float) total time allocated to auto_train. acts
-                        as the stopping parameter
-    :param output_directory: (str) directory into which to write results, defaults to
-                             current working directory.
-    :param tune_for_memory: (bool) refine hyperopt search space for available
-                            host / GPU memory
-    :param user_config: (dict) override automatic selection of specified config items
-    :param random_seed: (int, default: `42`) a random seed that will be used anywhere
-                        there is a call to a random number generator, including
-                        hyperparameter search sampling, as well as data splitting,
-                        parameter initialization and training set shuffling
-    :param use_reference_config: (bool) refine hyperopt search space by setting first
-                                 search point from reference model config, if any
-    :param kwargs: additional keyword args passed down to `ludwig.hyperopt.run.hyperopt`.
+    Args:
+        dataset: Data source to train over.
+        target: Name of the target feature.
+        time_limit_s: Total wall-clock seconds allocated to auto-training.
+        output_directory: Directory into which to write results.
+        tune_for_memory: Deprecated. Has no effect; ``batch_size=auto`` is
+            used instead.
+        user_config: Override automatic selection of specified config items.
+        random_seed: Random seed for hyperparameter sampling, data splitting,
+            parameter initialization, and training-set shuffling.
+        use_reference_config: If ``True``, seed the first hyperopt search
+            point from a reference model config when one is available.
+        **kwargs: Additional keyword args forwarded to
+            ``ludwig.hyperopt.run.hyperopt``.
 
-    # Returns
-    :return: (AutoTrainResults) results containing hyperopt experiments and best model
+    Returns:
+        Results containing the hyperopt experiments and the best model.
     """
     config = create_auto_config(
         dataset,
@@ -175,27 +173,25 @@ def create_auto_config(
     use_reference_config: bool = False,
     backend: Backend | str = None,
 ) -> ModelConfigDict:
-    """Returns an auto-generated Ludwig config with the intent of training the best model on given given dataset /
-    target in the given time limit.
+    """Return an auto-generated Ludwig config for the given dataset, target, and time budget.
 
-    # Inputs
-    :param dataset: (str, pd.DataFrame, dd.DataFrame, DatasetInfo) data source to train over.
-    :param target: (str, List[str]) name of target feature
-    :param time_limit_s: (int, float) total time allocated to auto_train. acts
-                         as the stopping parameter
-    :param tune_for_memory: (bool) DEPRECATED refine hyperopt search space for available
-                            host / GPU memory
-    :param user_config: (dict) override automatic selection of specified config items
-    :param random_seed: (int, default: `42`) a random seed that will be used anywhere
-                        there is a call to a random number generator, including
-                        hyperparameter search sampling, as well as data splitting,
-                        parameter initialization and training set shuffling
-    :param imbalance_threshold: (float) maximum imbalance ratio (minority / majority) to perform stratified sampling
-    :param use_reference_config: (bool) refine hyperopt search space by setting first
-                                 search point from reference model config, if any
+    Args:
+        dataset: Data source to train over, or a pre-computed ``DatasetInfo``.
+        target: Name or list of names of the target feature(s).
+        time_limit_s: Total wall-clock seconds allocated to auto-training.
+        tune_for_memory: Deprecated. Has no effect; ``batch_size=auto`` is
+            used instead.
+        user_config: Override automatic selection of specified config items.
+        random_seed: Random seed for hyperparameter sampling, data splitting,
+            parameter initialization, and training-set shuffling.
+        imbalance_threshold: Maximum imbalance ratio (minority / majority)
+            below which stratified sampling is applied.
+        use_reference_config: If ``True``, seed the first hyperopt search
+            point from a reference model config when one is available.
+        backend: Backend or string name of the backend to use.
 
-    # Return
-    :return: (dict) selected model configuration
+    Returns:
+        Selected Ludwig model configuration dict.
     """
     backend = initialize_backend(backend)
 
@@ -261,22 +257,20 @@ def train_with_config(
     random_seed: int = default_random_seed,
     **kwargs,
 ) -> AutoTrainResults:
-    """Performs hyperparameter optimization with respect to the given config and selects the best model.
+    """Run hyperparameter optimization with the given config and return the best model.
 
-    # Inputs
-    :param dataset: (str) filepath to dataset.
-    :param config: (dict) optional Ludwig configuration to use for training, defaults
-                   to `create_auto_config`.
-    :param output_directory: (str) directory into which to write results, defaults to
-        current working directory.
-    :param random_seed: (int, default: `42`) a random seed that will be used anywhere
-                        there is a call to a random number generator, including
-                        hyperparameter search sampling, as well as data splitting,
-                        parameter initialization and training set shuffling
-    :param kwargs: additional keyword args passed down to `ludwig.hyperopt.run.hyperopt`.
+    Args:
+        dataset: Data source to train over (file path or DataFrame).
+        config: Ludwig config dict to use for training. Typically produced by
+            ``create_auto_config``.
+        output_directory: Directory into which to write results.
+        random_seed: Random seed for hyperparameter sampling, data splitting,
+            parameter initialization, and training-set shuffling.
+        **kwargs: Additional keyword args forwarded to
+            ``ludwig.hyperopt.run.hyperopt``.
 
-    # Returns
-    :return: (AutoTrainResults) results containing hyperopt experiments and best model
+    Returns:
+        Results containing the hyperopt experiments and the best model.
     """
     _ray_init()
 
