@@ -24,7 +24,12 @@ def PublicAPI(*args, **kwargs):
 
     if "stability" in kwargs:
         stability = kwargs["stability"]
-        assert stability in ["stable", "experimental"], stability
+        if stability not in ("stable", "experimental"):
+            raise ValueError(
+                f"Unknown stability level '{stability}'.\n"
+                f"Expected one of: 'stable', 'experimental'.\n"
+                f"Fix: use @PublicAPI(stability='stable') or @PublicAPI(stability='experimental')."
+            )
     elif kwargs:
         raise ValueError(f"Unknown kwargs: {kwargs.keys()}")
     else:

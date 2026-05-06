@@ -173,7 +173,12 @@ class ECD(BaseModel):
         else:
             targets = None
 
-        assert list(inputs.keys()) == self.input_features.keys()
+        if list(inputs.keys()) != list(self.input_features.keys()):
+            raise ValueError(
+                f"Input feature keys don't match model's expected features.\n"
+                f"Expected: {list(self.input_features.keys())}\n"
+                f"Got: {list(inputs.keys())}"
+            )
 
         encoder_outputs = self.encode(inputs)
         if self.modality_dropout is not None:

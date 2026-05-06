@@ -284,9 +284,15 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
             self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
     def forward(self, inputs):
-        assert isinstance(inputs, torch.Tensor)
-        assert inputs.dtype in (torch.int8, torch.int16, torch.int32, torch.int64)
-        assert len(inputs.shape) == 1 or (len(inputs.shape) == 2 and inputs.shape[1] == 1)
+        if not isinstance(inputs, torch.Tensor):
+            raise TypeError(f"Category feature forward expects a torch.Tensor, got {type(inputs).__name__}.")
+        _valid_dtypes = (torch.int8, torch.int16, torch.int32, torch.int64)
+        if inputs.dtype not in _valid_dtypes:
+            raise ValueError(f"Category feature inputs dtype must be one of {_valid_dtypes}, got {inputs.dtype}.")
+        if not (len(inputs.shape) == 1 or (len(inputs.shape) == 2 and inputs.shape[1] == 1)):
+            raise ValueError(
+                f"Category feature inputs must be 1D or 2D with shape[1]==1, got shape {tuple(inputs.shape)}."
+            )
 
         inputs = inputs.reshape(-1, 1)
         if inputs.dtype == torch.int8 or inputs.dtype == torch.int16:

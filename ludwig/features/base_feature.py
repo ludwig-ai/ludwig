@@ -654,7 +654,8 @@ def create_passthrough_input_feature(feature: InputFeature, config: BaseFeatureC
             super().__init__(config)
 
         def forward(self, inputs, mask=None):
-            assert isinstance(inputs, torch.Tensor)
+            if not isinstance(inputs, torch.Tensor):
+                raise TypeError(f"PassthroughPreproc forward expects a torch.Tensor, got {type(inputs).__name__}.")
             return {ENCODER_OUTPUT: inputs}
 
         @property

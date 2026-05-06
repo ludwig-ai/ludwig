@@ -409,9 +409,14 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
             self.encoder_obj.set_bin_edges(input_feature_config.encoder.ple_bin_edges)
 
     def forward(self, inputs):
-        assert isinstance(inputs, torch.Tensor)
-        assert inputs.dtype == torch.float32 or inputs.dtype == torch.float64
-        assert len(inputs.shape) == 1 or (len(inputs.shape) == 2 and inputs.shape[1] == 1)
+        if not isinstance(inputs, torch.Tensor):
+            raise TypeError(f"Number feature forward expects a torch.Tensor, got {type(inputs).__name__}.")
+        if inputs.dtype not in (torch.float32, torch.float64):
+            raise ValueError(f"Number feature inputs dtype must be float32 or float64, got {inputs.dtype}.")
+        if not (len(inputs.shape) == 1 or (len(inputs.shape) == 2 and inputs.shape[1] == 1)):
+            raise ValueError(
+                f"Number feature inputs must be 1D or 2D with shape[1]==1, got shape {tuple(inputs.shape)}."
+            )
 
         if len(inputs.shape) == 1:
             inputs = inputs[:, None]

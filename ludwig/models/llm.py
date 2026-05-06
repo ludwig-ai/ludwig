@@ -483,7 +483,12 @@ class LLM(BaseModel):
         else:
             targets = None
 
-        assert list(inputs.keys()) == list(self.input_features.keys())
+        if list(inputs.keys()) != list(self.input_features.keys()):
+            raise ValueError(
+                f"Input feature keys don't match model's expected features.\n"
+                f"Expected: {list(self.input_features.keys())}\n"
+                f"Got: {list(inputs.keys())}"
+            )
 
         input_ids = self.get_input_ids(inputs)
         target_ids = self.get_target_ids(targets) if targets else None

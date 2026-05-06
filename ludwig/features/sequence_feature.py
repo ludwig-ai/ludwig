@@ -297,9 +297,13 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
             self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
     def forward(self, inputs: torch.Tensor, mask=None):
-        assert isinstance(inputs, torch.Tensor)
-        assert inputs.dtype in [torch.int8, inputs.dtype, torch.int16, torch.int32, torch.int64]
-        assert len(inputs.shape) == 2
+        if not isinstance(inputs, torch.Tensor):
+            raise TypeError(f"Sequence feature forward expects a torch.Tensor, got {type(inputs).__name__}.")
+        _valid_dtypes = (torch.int8, torch.int16, torch.int32, torch.int64)
+        if inputs.dtype not in _valid_dtypes:
+            raise ValueError(f"Sequence feature inputs dtype must be an integer type, got {inputs.dtype}.")
+        if len(inputs.shape) != 2:
+            raise ValueError(f"Sequence feature inputs must be 2D (batch x seq_len), got shape {tuple(inputs.shape)}.")
         inputs_exp = inputs.type(torch.int32)
         inputs_mask = torch.not_equal(inputs, SpecialSymbol.PADDING.value)
         lengths = torch.sum(inputs_mask.type(torch.int32), dim=1)

@@ -424,7 +424,11 @@ class RayTuneExecutor:
     @lru_cache(maxsize=1)
     def _get_kubernetes_node_address_by_ip(self) -> Callable:
         """Returns a method to get the node name by IP address within a K8s cluster."""
-        assert self.kubernetes_namespace is not None
+        if self.kubernetes_namespace is None:
+            raise ValueError(
+                "kubernetes_namespace is required for Kubernetes-based hyperopt syncing.\n"
+                "Fix: set kubernetes_namespace in your hyperopt backend config."
+            )
         from ray.tune.integration.kubernetes import KubernetesSyncer
 
         # Initialized with null local and remote directories as we only need to use get_node_address_by_ip.
@@ -876,9 +880,11 @@ class RayTuneExecutor:
             search_alg = None
 
         if self.max_concurrent_trials:
-            assert (
-                self.max_concurrent_trials > 0
-            ), f"`max_concurrent_trials` must be greater than 0, got {self.max_concurrent_trials}"
+            if self.max_concurrent_trials <= 0:
+                raise ValueError(
+                    f"`max_concurrent_trials` must be greater than 0, got {self.max_concurrent_trials}.\n"
+                    f"Fix: set max_concurrent_trials to a positive integer."
+                )
             if isinstance(search_alg, BasicVariantGenerator) or search_alg is None:
                 search_alg = BasicVariantGenerator(max_concurrent=self.max_concurrent_trials)
             elif isinstance(search_alg, ConcurrencyLimiter):

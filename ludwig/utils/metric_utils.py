@@ -28,7 +28,10 @@ def dynamic_partition(data: Tensor, partitions: Tensor, num_partitions: int) -> 
 
     From https://discuss.pytorch.org/t/equivalent-of-tf-dynamic-partition/53735.
     """
-    assert data.size() == partitions.size()
+    if data.size() != partitions.size():
+        raise ValueError(
+            f"data and partitions must have the same size, got data={data.size()} partitions={partitions.size()}."
+        )
 
     # Flatten data into 1D vectors to do partitioning correctly.
     data = data.view(-1)

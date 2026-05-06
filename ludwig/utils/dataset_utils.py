@@ -85,7 +85,12 @@ def get_repeatable_train_val_test_split(
             df_temp, y_temp, stratify=y_temp, test_size=relative_frac_test, random_state=random_seed
         )
 
-    assert len(df_input) == len(df_train) + len(df_val) + len(df_test)
+    total_split = len(df_train) + len(df_val) + len(df_test)
+    if len(df_input) != total_split:
+        raise RuntimeError(
+            f"Dataset split produced {total_split} rows but input had {len(df_input)} rows. "
+            f"This is an internal error — please report it."
+        )
     df_train["split"] = TRAIN_SPLIT
     df_val["split"] = VALIDATION_SPLIT
     df_test["split"] = TEST_SPLIT

@@ -70,7 +70,12 @@ def concat_dependencies(
             if len(feature_hidden_state.shape) > 2:
                 # The dependent feature is also sequential.
                 # matrix matrix -> concat
-                assert combiner_hidden_state.shape[1] == feature_hidden_state.shape[1]
+                if combiner_hidden_state.shape[1] != feature_hidden_state.shape[1]:
+                    raise ValueError(
+                        f"Sequence length mismatch between combiner output ({combiner_hidden_state.shape[1]}) "
+                        f"and dependent feature '{feature_name}' ({feature_hidden_state.shape[1]}). "
+                        f"Both sequential features must have the same sequence length."
+                    )
                 dependency_hidden_states.append(feature_hidden_state)
             else:
                 # The dependent feature is not sequential.

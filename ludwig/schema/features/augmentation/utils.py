@@ -101,7 +101,11 @@ def AugmentationDataclassField(
             return get_augmentation_list_jsonschema(feature_type, default)
 
     try:
-        assert isinstance(default, list), "Augmentation config must be a list."
+        if not isinstance(default, list):
+            raise TypeError(
+                f"Augmentation config must be a list, got {type(default).__name__}.\n"
+                f"Fix: provide augmentation as a list of dicts, e.g. [{{'type': 'random_horizontal_flip'}}]."
+            )
         load_augmentation_list = []
         dump_augmentation_list = []
         for augmentation in default:

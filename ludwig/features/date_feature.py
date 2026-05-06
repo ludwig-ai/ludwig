@@ -130,8 +130,11 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
             self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
     def forward(self, inputs):
-        assert isinstance(inputs, torch.Tensor), type(inputs)
-        assert inputs.dtype in [torch.int16, torch.int32, torch.int64, torch.float32], inputs.dtype
+        if not isinstance(inputs, torch.Tensor):
+            raise TypeError(f"Date feature forward expects a torch.Tensor, got {type(inputs).__name__}.")
+        _valid_dtypes = (torch.int16, torch.int32, torch.int64, torch.float32)
+        if inputs.dtype not in _valid_dtypes:
+            raise ValueError(f"Date feature inputs dtype must be one of {_valid_dtypes}, got {inputs.dtype}.")
         inputs_encoded = self.encoder_obj(inputs)
         return inputs_encoded
 

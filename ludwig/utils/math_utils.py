@@ -45,7 +45,8 @@ def convert_size(size_bytes):
 
 
 def round2precision(val, precision: int = 0, which: str = ""):
-    assert precision >= 0
+    if precision < 0:
+        raise ValueError(f"precision must be non-negative, got {precision}")
     val *= 10**precision
     round_callback = round
     if which.lower() == "up":

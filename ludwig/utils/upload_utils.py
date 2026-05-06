@@ -126,7 +126,11 @@ def hf_hub_login():
         hf_token = f.read()
 
     hf_api = HfApi(token=hf_token)
-    assert hf_api.token == hf_token
+    if hf_api.token != hf_token:
+        raise RuntimeError(
+            "HuggingFace API token mismatch after initialization. "
+            "This is an internal error — try re-authenticating with `huggingface-cli login`."
+        )
 
     return hf_api
 

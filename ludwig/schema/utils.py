@@ -602,9 +602,11 @@ class ListSerializable(ABC):
 @DeveloperAPI
 def assert_is_a_config_class(cls):
     """Assert that cls is a Ludwig config class (pydantic BaseModel)."""
-    assert issubclass(
-        cls, LudwigBaseConfig
-    ), f"Expected a Ludwig config class (LudwigBaseConfig subclass), but `{cls}` is not."
+    if not issubclass(cls, LudwigBaseConfig):
+        raise TypeError(
+            f"Expected a Ludwig config class (LudwigBaseConfig subclass), but got '{cls}'.\n"
+            f"Fix: ensure the class inherits from LudwigBaseConfig."
+        )
 
 
 def _default_matches_json_type(default_val, type_str) -> bool:
@@ -960,20 +962,22 @@ def StringOptions(
 ):
     """Returns a pydantic Field that enforces string inputs must be one of `options`."""
     options = list(options)  # ensure list, not dict_keys or other iterable
-    assert len(options) > 0, "Must provide non-empty list of options!"
+    if len(options) == 0:
+        raise ValueError("Must provide non-empty list of options!")
 
-    if default is not None:
-        assert isinstance(default, str), f"Provided default `{default}` should be a string!"
+    if default is not None and not isinstance(default, str):
+        raise ValueError(f"Provided default `{default}` should be a string!")
 
     if allow_none and None not in options:
         options = options + [None]
     if not allow_none and None in options:
         options = [o for o in options if o is not None]
 
-    assert len(options) == len(
-        {o for o in options if o is not None} | ({None} if None in options else set())
-    ), f"Provided options must be unique! See: {options}"
-    assert default in options, f"Provided default `{default}` is not one of allowed options: {options}"
+    unique_options = {o for o in options if o is not None} | ({None} if None in options else set())
+    if len(options) != len(unique_options):
+        raise ValueError(f"Provided options must be unique! See: {options}")
+    if default not in options:
+        raise ValueError(f"Provided default `{default}` is not one of allowed options: {options}")
 
     json_extra = _make_json_schema_extra(
         description=description,

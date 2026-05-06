@@ -123,9 +123,12 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
             self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
     def forward(self, inputs):
-        assert isinstance(inputs, torch.Tensor)
-        assert inputs.dtype in [torch.uint8, torch.int64]
-        assert len(inputs.shape) == 2
+        if not isinstance(inputs, torch.Tensor):
+            raise TypeError(f"H3 feature forward expects a torch.Tensor, got {type(inputs).__name__}.")
+        if inputs.dtype not in (torch.uint8, torch.int64):
+            raise ValueError(f"H3 feature inputs dtype must be uint8 or int64, got {inputs.dtype}.")
+        if len(inputs.shape) != 2:
+            raise ValueError(f"H3 feature inputs must be 2D, got shape {tuple(inputs.shape)}.")
 
         inputs_encoded = self.encoder_obj(inputs)
 

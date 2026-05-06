@@ -214,8 +214,11 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
             self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
     def forward(self, inputs):
-        assert isinstance(inputs, torch.Tensor)
-        assert inputs.dtype in [torch.bool, torch.int64, torch.float32]
+        if not isinstance(inputs, torch.Tensor):
+            raise TypeError(f"Set feature forward expects a torch.Tensor, got {type(inputs).__name__}.")
+        _valid_dtypes = (torch.bool, torch.int64, torch.float32)
+        if inputs.dtype not in _valid_dtypes:
+            raise ValueError(f"Set feature inputs dtype must be one of {_valid_dtypes}, got {inputs.dtype}.")
 
         encoder_output = self.encoder_obj(inputs)
 

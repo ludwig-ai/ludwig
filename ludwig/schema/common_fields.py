@@ -40,7 +40,8 @@ def ResidualField(
 def NumFCLayersField(
     default: int = 0, description: str = None, parameter_metadata: ParameterMetadata = None, non_zero=False
 ) -> Field:
-    assert (not non_zero) or (default > 0 and non_zero)
+    if non_zero and default <= 0:
+        raise ValueError(f"NumFCLayersField: when non_zero=True, default must be > 0, got default={default}.")
 
     description = description or "Number of stacked fully connected layers to apply."
     full_description = description + (

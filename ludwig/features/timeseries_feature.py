@@ -270,9 +270,13 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
         super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)
 
     def forward(self, inputs, mask=None):
-        assert isinstance(inputs, torch.Tensor)
-        assert inputs.dtype in [torch.float16, torch.float32, torch.float64]
-        assert len(inputs.shape) == 2
+        if not isinstance(inputs, torch.Tensor):
+            raise TypeError(f"Timeseries feature forward expects a torch.Tensor, got {type(inputs).__name__}.")
+        _valid_dtypes = (torch.float16, torch.float32, torch.float64)
+        if inputs.dtype not in _valid_dtypes:
+            raise ValueError(f"Timeseries feature inputs dtype must be a float type, got {inputs.dtype}.")
+        if len(inputs.shape) != 2:
+            raise ValueError(f"Timeseries feature inputs must be 2D, got shape {tuple(inputs.shape)}.")
 
         inputs_exp = inputs.type(torch.float32)
         encoder_output = self.encoder_obj(inputs_exp, mask=mask)

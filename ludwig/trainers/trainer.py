@@ -1191,12 +1191,18 @@ class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin,
                         # `Linear8bitLt._save_to_state_dict`. These contain information about how the 8-bit tensors
                         # are tiled, but the fields themselves never exist in the module and get returned as unexpected
                         # keys when loading the state dict. The
-                        assert (
-                            unexpected_keys == [] or only_weights_format_keys
-                        ), f"Unexpected keys found in state dict: {unexpected_keys}"
+                        if unexpected_keys and not only_weights_format_keys:
+                            raise RuntimeError(
+                                f"Unexpected keys found in state dict: {unexpected_keys}.\n"
+                                "This may indicate a model architecture mismatch between checkpoint and current model."
+                            )
                     else:
                         _, unexpected_keys = self.model.load_state_dict(state_dict, strict=False)
-                        assert unexpected_keys == [], f"Unexpected keys found in state dict: {unexpected_keys}"
+                        if unexpected_keys:
+                            raise RuntimeError(
+                                f"Unexpected keys found in state dict: {unexpected_keys}.\n"
+                                "This may indicate a model architecture mismatch between checkpoint and current model."
+                            )
             elif return_state_dict:
                 state_dict = self.model.cpu().state_dict()
 
