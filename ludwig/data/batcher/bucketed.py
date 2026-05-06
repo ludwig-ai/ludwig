@@ -89,7 +89,7 @@ class BucketedBatcher(Batcher):
                 elif self.trim_side == "left":
                     sub_batch[key] = selected_samples[:, -max_length:]
                 else:
-                    raise ValueError("Invalid trim side:", self.trim_side)
+                    raise ValueError(f"Invalid trim_side '{self.trim_side}'. Expected 'left' or 'right'.")
 
             else:
                 sub_batch[key] = self.dataset.get(key, selected_idcs)
