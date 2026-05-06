@@ -1,10 +1,16 @@
+from __future__ import annotations
+
 import logging
 import os
 import tempfile
 from os import PathLike
+from typing import TYPE_CHECKING
 
-from transformers import AutoTokenizer, PreTrainedModel
+from transformers import AutoTokenizer
 from transformers.tokenization_utils import PreTrainedTokenizer
+
+if TYPE_CHECKING:
+    from transformers import PreTrainedModel
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.utils.error_handling_utils import default_retry
