@@ -13,13 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from __future__ import annotations
+
 import logging
 from functools import partial
+from typing import TYPE_CHECKING
 
 import numpy as np
 import torch
 from torch import Tensor
-from transformers import PreTrainedTokenizer
+
+if TYPE_CHECKING:
+    from transformers import PreTrainedTokenizer
 
 from ludwig.constants import (
     COLUMN,
