@@ -340,7 +340,7 @@ def num_channels_in_image(img: torch.Tensor):
 def get_unique_channels(
     image_sample: list[torch.Tensor],
     num_channels: int,
-    num_classes: int = None,
+    num_classes: int | None = None,
 ) -> torch.Tensor:
     """Returns a tensor of unique channel values from a list of images.
     Args:
@@ -376,7 +376,7 @@ def get_unique_channels(
             channel_class_map = torch.concat((channel_class_map, uniq_chans)).unique(dim=0)
         if channel_class_map.shape[0] > IMAGE_MAX_CLASSES:
             raise ValueError(
-                f"Images inferred num classes {channel_class_map.shape[0]} exceeds " f"max classes {IMAGE_MAX_CLASSES}."
+                f"Images inferred num classes {channel_class_map.shape[0]} exceeds max classes {IMAGE_MAX_CLASSES}."
             )
 
         n_images += 1

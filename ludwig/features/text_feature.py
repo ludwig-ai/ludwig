@@ -380,7 +380,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
             if feature_metadata["str2idx"].keys() != feature_config.loss.class_weights.keys():
                 raise ValueError(
                     f"The class_weights keys ({feature_config.loss.class_weights.keys()}) are not compatible with "
-                    f'the classes ({feature_metadata["str2idx"].keys()}) of feature {feature_config.column}. '
+                    f"the classes ({feature_metadata['str2idx'].keys()}) of feature {feature_config.column}. "
                     "Check the metadata JSON file to see the classes "
                     "and consider there needs to be a weight "
                     "for the <UNK> class too."
@@ -402,7 +402,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                 raise ValueError(
                     "class_similarities_temperature > 0,"
                     "but no class similarities are provided "
-                    "for feature {}".format(feature_config.column)
+                    f"for feature {feature_config.column}"
                 )
 
     @staticmethod

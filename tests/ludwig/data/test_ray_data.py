@@ -6,8 +6,8 @@ import pandas as pd
 import pytest
 
 # Skip these tests if Ray is not installed
-ray = pytest.importorskip("ray")  # noqa
-dask = pytest.importorskip("dask")  # noqa
+ray = pytest.importorskip("ray")
+dask = pytest.importorskip("dask")
 
 from ludwig.data.dataset.ray import RayDatasetBatcher, RayDatasetShardBatcher, read_remote_parquet  # noqa
 
@@ -33,12 +33,12 @@ def test_prefetch_batches_value():
         assert match, "prefetch_batches kwarg not found in async reader source"
         return int(match.group(1))
 
-    assert (
-        _get_prefetch_value(src_batcher) > 1
-    ), "RayDatasetBatcher uses prefetch_batches=1, which starves the GPU. Increase it."
-    assert (
-        _get_prefetch_value(src_shard) > 1
-    ), "RayDatasetShardBatcher uses prefetch_batches=1, which starves the GPU. Increase it."
+    assert _get_prefetch_value(src_batcher) > 1, (
+        "RayDatasetBatcher uses prefetch_batches=1, which starves the GPU. Increase it."
+    )
+    assert _get_prefetch_value(src_shard) > 1, (
+        "RayDatasetShardBatcher uses prefetch_batches=1, which starves the GPU. Increase it."
+    )
 
 
 def test_train_fn_passes_device_to_remote_trainer():

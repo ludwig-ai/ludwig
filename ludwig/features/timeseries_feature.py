@@ -328,7 +328,7 @@ class TimeseriesOutputFeature(TimeseriesFeatureMixin, OutputFeature):
         return self.loss.to_dict()
 
     def metric_kwargs(self):
-        return dict(num_outputs=self.output_shape[0])
+        return {"num_outputs": self.output_shape[0]}
 
     def create_predict_module(self) -> PredictModule:
         return _VectorPredict()

@@ -149,7 +149,7 @@ def test_learning_curves_vis_api(experiment_to_use, training_only):
                 [train_stats], output_feature_name=None, output_directory=tmpvizdir, file_format=viz_output
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 3 == len(figure_cnt)
+            assert len(figure_cnt) == 3
 
 
 def test_compare_performance_vis_api(experiment_to_use):
@@ -173,7 +173,7 @@ def test_compare_performance_vis_api(experiment_to_use):
                 file_format=viz_output,
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 1 == len(figure_cnt)
+            assert len(figure_cnt) == 1
 
 
 def test_compare_classifier_performance_from_prob_vis_api(experiment_to_use):
@@ -200,7 +200,7 @@ def test_compare_classifier_performance_from_prob_vis_api(experiment_to_use):
                 file_format=viz_output,
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 1 == len(figure_cnt)
+            assert len(figure_cnt) == 1
 
 
 def test_compare_classifier_performance_from_pred_vis_api(experiment_to_use):
@@ -226,7 +226,7 @@ def test_compare_classifier_performance_from_pred_vis_api(experiment_to_use):
                 file_format=viz_output,
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 1 == len(figure_cnt)
+            assert len(figure_cnt) == 1
 
 
 def test_compare_classifiers_performance_subset_vis_api(experiment_to_use):
@@ -254,7 +254,7 @@ def test_compare_classifiers_performance_subset_vis_api(experiment_to_use):
                 file_format=viz_output,
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 1 == len(figure_cnt)
+            assert len(figure_cnt) == 1
 
 
 def test_compare_classifiers_performance_changing_k_vis_api(experiment_to_use):
@@ -281,7 +281,7 @@ def test_compare_classifiers_performance_changing_k_vis_api(experiment_to_use):
                 file_format=viz_output,
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 1 == len(figure_cnt)
+            assert len(figure_cnt) == 1
 
 
 def test_compare_classifiers_multiclass_multimetric_vis_api(experiment_to_use):
@@ -307,7 +307,7 @@ def test_compare_classifiers_multiclass_multimetric_vis_api(experiment_to_use):
                 file_format=viz_output,
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 4 == len(figure_cnt)
+            assert len(figure_cnt) == 4
 
 
 def test_compare_classifiers_predictions_vis_api(experiment_to_use):
@@ -333,7 +333,7 @@ def test_compare_classifiers_predictions_vis_api(experiment_to_use):
                 file_format=viz_output,
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 1 == len(figure_cnt)
+            assert len(figure_cnt) == 1
 
 
 def test_compare_classifiers_predictions_distribution_vis_api(experiment_to_use):
@@ -359,7 +359,7 @@ def test_compare_classifiers_predictions_distribution_vis_api(experiment_to_use)
                 file_format=viz_output,
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 1 == len(figure_cnt)
+            assert len(figure_cnt) == 1
 
 
 def test_confidence_thresholding_vis_api(experiment_to_use):
@@ -385,7 +385,7 @@ def test_confidence_thresholding_vis_api(experiment_to_use):
                 file_format=viz_output,
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 1 == len(figure_cnt)
+            assert len(figure_cnt) == 1
 
 
 def test_confidence_thresholding_data_vs_acc_vis_api(experiment_to_use):
@@ -411,7 +411,7 @@ def test_confidence_thresholding_data_vs_acc_vis_api(experiment_to_use):
                 file_format=viz_output,
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 1 == len(figure_cnt)
+            assert len(figure_cnt) == 1
 
 
 def test_confidence_thresholding_data_vs_acc_subset_vis_api(experiment_to_use):
@@ -439,7 +439,7 @@ def test_confidence_thresholding_data_vs_acc_subset_vis_api(experiment_to_use):
                 file_format=viz_output,
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 1 == len(figure_cnt)
+            assert len(figure_cnt) == 1
 
 
 def test_confidence_thresholding_data_vs_acc_subset_per_class_vis_api(experiment_to_use):
@@ -469,7 +469,7 @@ def test_confidence_thresholding_data_vs_acc_subset_per_class_vis_api(experiment
             figure_cnt = glob.glob(vis_output_pattern_pdf)
             # 3 figures should be saved because experiment setting top_n_classes = 3
             # hence one figure per class
-            assert 2 == len(figure_cnt)
+            assert len(figure_cnt) == 2
 
 
 def test_confidence_thresholding_2thresholds_2d_vis_api(csv_filename):
@@ -541,7 +541,7 @@ def test_confidence_thresholding_2thresholds_2d_vis_api(csv_filename):
                 file_format=viz_output,
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 3 == len(figure_cnt)
+            assert len(figure_cnt) == 3
 
 
 def test_confidence_thresholding_2thresholds_3d_vis_api(csv_filename):
@@ -614,7 +614,7 @@ def test_confidence_thresholding_2thresholds_3d_vis_api(csv_filename):
                 file_format=viz_output,
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 1 == len(figure_cnt)
+            assert len(figure_cnt) == 1
 
 
 def test_binary_threshold_vs_metric_vis_api(experiment_to_use):
@@ -643,7 +643,7 @@ def test_binary_threshold_vs_metric_vis_api(experiment_to_use):
                 file_format=viz_output,
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 1 == len(figure_cnt)
+            assert len(figure_cnt) == 1
 
 
 def test_precision_recall_curves_vis_api(experiment_to_use):
@@ -670,7 +670,7 @@ def test_precision_recall_curves_vis_api(experiment_to_use):
                 file_format=viz_output,
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 1 == len(figure_cnt)
+            assert len(figure_cnt) == 1
 
 
 def test_precision_recall_curves_from_test_statistics_vis_api(csv_filename):
@@ -704,7 +704,7 @@ def test_precision_recall_curves_from_test_statistics_vis_api(csv_filename):
                 file_format=viz_output,
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 1 == len(figure_cnt)
+            assert len(figure_cnt) == 1
 
 
 def test_roc_curves_vis_api(experiment_to_use):
@@ -731,7 +731,7 @@ def test_roc_curves_vis_api(experiment_to_use):
                 file_format=viz_output,
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 1 == len(figure_cnt)
+            assert len(figure_cnt) == 1
 
 
 def test_roc_curves_from_test_statistics_vis_api(csv_filename):
@@ -765,7 +765,7 @@ def test_roc_curves_from_test_statistics_vis_api(csv_filename):
                 file_format=viz_output,
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 1 == len(figure_cnt)
+            assert len(figure_cnt) == 1
 
 
 def test_calibration_1_vs_all_vis_api(experiment_to_use):
@@ -792,7 +792,7 @@ def test_calibration_1_vs_all_vis_api(experiment_to_use):
                 file_format=viz_output,
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 5 == len(figure_cnt)
+            assert len(figure_cnt) == 5
 
 
 def test_calibration_multiclass_vis_api(experiment_to_use):
@@ -818,7 +818,7 @@ def test_calibration_multiclass_vis_api(experiment_to_use):
                 file_format=viz_output,
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 2 == len(figure_cnt)
+            assert len(figure_cnt) == 2
 
 
 def test_confusion_matrix_vis_api(experiment_to_use):
@@ -845,7 +845,7 @@ def test_confusion_matrix_vis_api(experiment_to_use):
                 file_format=viz_output,
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 4 == len(figure_cnt)
+            assert len(figure_cnt) == 4
 
 
 def test_frequency_vs_f1_vis_api(experiment_to_use):
@@ -871,7 +871,7 @@ def test_frequency_vs_f1_vis_api(experiment_to_use):
                 file_format=viz_output,
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 2 == len(figure_cnt)
+            assert len(figure_cnt) == 2
 
 
 @pytest.mark.distributed
@@ -891,7 +891,7 @@ def test_hyperopt_report_vis_api(hyperopt_results_multiple_parameters, tmpdir):
     assert os.path.isdir(vis_dir)
 
     figure_cnt = glob.glob(os.path.join(vis_dir, "*"))
-    assert 4 == len(figure_cnt)
+    assert len(figure_cnt) == 4
 
 
 @pytest.mark.distributed

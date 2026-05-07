@@ -38,7 +38,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
     def type() -> str:
         """Returns the model type."""
 
-    def __init__(self, random_seed: int = None):
+    def __init__(self, random_seed: int | None = None):
         self._random_seed = random_seed
 
         # TODO: with change to misc_utils.set_random_seed() this may be redundant
@@ -108,7 +108,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         for output_feature_def in output_features_def:
             # TODO(Justin): Check that the semantics of input_size align with what the combiner's output shape returns
             # for seq2seq.
-            setattr(getattr(output_feature_configs, output_feature_def[NAME]), "input_size", combiner.output_shape[-1])
+            getattr(output_feature_configs, output_feature_def[NAME]).input_size = combiner.output_shape[-1]
             output_features[output_feature_def[NAME]] = cls.build_single_output(
                 getattr(output_feature_configs, output_feature_def[NAME]), output_features
             )
@@ -301,7 +301,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         weight_names = {name for name, _ in self.named_parameters()}
         for name in tensor_names:
             if name not in weight_names:
-                raise ValueError(f'Requested tensor name filter "{name}" not present in the model graph')  # noqa: E713
+                raise ValueError(f'Requested tensor name filter "{name}" not present in the model graph')
 
         # Apply filter.
         tensor_set = set(tensor_names)

@@ -33,17 +33,17 @@ logger = logging.getLogger(__name__)
 
 
 def train_cli(
-    config: str | dict = None,
+    config: str | dict | None = None,
     dataset: str | dict | pd.DataFrame = None,
     training_set: str | dict | pd.DataFrame = None,
     validation_set: str | dict | pd.DataFrame = None,
     test_set: str | dict | pd.DataFrame = None,
-    training_set_metadata: str | dict = None,
-    data_format: str = None,
+    training_set_metadata: str | dict | None = None,
+    data_format: str | None = None,
     experiment_name: str = "api_experiment",
     model_name: str = "run",
-    model_load_path: str = None,
-    model_resume_path: str = None,
+    model_load_path: str | None = None,
+    model_resume_path: str | None = None,
     skip_save_training_description: bool = False,
     skip_save_training_statistics: bool = False,
     skip_save_model: bool = False,
@@ -51,10 +51,10 @@ def train_cli(
     skip_save_log: bool = False,
     skip_save_processed_input: bool = False,
     output_directory: str = "results",
-    gpus: str | int | list[int] = None,
+    gpus: str | int | list[int] | None = None,
     gpu_memory_limit: float | None = None,
     allow_parallel_threads: bool = True,
-    callbacks: list[Callback] = None,
+    callbacks: list[Callback] | None = None,
     backend: Backend | str = None,
     random_seed: int = default_random_seed,
     logging_level: int = logging.INFO,
@@ -246,7 +246,7 @@ def cli(sys_argv):
             "feather",
             "fwf",
             "hdf5",
-            "html" "tables",
+            "htmltables",
             "json",
             "jsonl",
             "parquet",
@@ -362,7 +362,7 @@ def cli(sys_argv):
     parser.add_argument(
         "-b",
         "--backend",
-        help="specifies backend to use for parallel / distributed execution, " "defaults to local execution",
+        help="specifies backend to use for parallel / distributed execution, defaults to local execution",
         choices=ALL_BACKENDS,
     )
     parser.add_argument(

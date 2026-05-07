@@ -17,7 +17,7 @@ def warn_structure_refactor(old_module: str, new_module: str, direct: bool = Tru
         )
 
         if direct:
-            warning += f" Example: Do a global search and " f"replace `{old_module}` with `{new_module}`."
+            warning += f" Example: Do a global search and replace `{old_module}` with `{new_module}`."
         else:
             warning += (
                 f"\nATTENTION: This module may have been split or refactored. Please "

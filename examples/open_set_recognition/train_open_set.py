@@ -248,18 +248,18 @@ def main():
     eos_unknown = results[1][2]
     obj_unknown = results[2][2]
 
-    assert (
-        eos_unknown < ce_unknown
-    ), f"Entropic loss should reduce unknown confidence: {eos_unknown:.3f} < {ce_unknown:.3f}"
-    assert (
-        obj_unknown < ce_unknown
-    ), f"Objectosphere loss should reduce unknown confidence: {obj_unknown:.3f} < {ce_unknown:.3f}"
+    assert eos_unknown < ce_unknown, (
+        f"Entropic loss should reduce unknown confidence: {eos_unknown:.3f} < {ce_unknown:.3f}"
+    )
+    assert obj_unknown < ce_unknown, (
+        f"Objectosphere loss should reduce unknown confidence: {obj_unknown:.3f} < {ce_unknown:.3f}"
+    )
 
     obj_norm_known = results[2][3]
     obj_norm_unknown = results[2][4]
-    assert (
-        obj_norm_known > obj_norm_unknown * 1.5
-    ), f"Objectosphere should create norm gap: known={obj_norm_known:.3f} unknown={obj_norm_unknown:.3f}"
+    assert obj_norm_known > obj_norm_unknown * 1.5, (
+        f"Objectosphere should create norm gap: known={obj_norm_known:.3f} unknown={obj_norm_unknown:.3f}"
+    )
 
     print("\nAll assertions passed.")
 

@@ -32,7 +32,7 @@ rnn_layers_registry = {
 class RecurrentStack(LudwigModule):
     def __init__(
         self,
-        input_size: int = None,
+        input_size: int | None = None,
         hidden_size: int = 256,
         cell_type: str = "rnn",
         max_sequence_length: int | None = None,

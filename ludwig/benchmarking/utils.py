@@ -260,7 +260,7 @@ def delete_hyperopt_outputs(output_directory: str):
     Args:
         output_directory: output directory of the hyperopt run.
     """
-    for path, currentDirectory, files in os.walk(output_directory):
+    for path, _currentDirectory, files in os.walk(output_directory):
         for file in files:
             filename = os.path.join(path, file)
             if file not in HYPEROPT_OUTDIR_RETAINED_FILES:

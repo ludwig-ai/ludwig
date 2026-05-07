@@ -88,7 +88,7 @@ def _entmax_bisect_forward(X, alpha, dim, n_iter, ensure_sum_one, cls=EntmaxBise
 
     dm = tau_hi - tau_lo
 
-    for it in range(n_iter):
+    for _it in range(n_iter):
         dm /= 2
         tau_m = tau_lo + dm
         p_m = cls._p(X - tau_m, alpha)

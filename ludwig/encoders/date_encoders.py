@@ -100,18 +100,18 @@ class DateEncoderBase(Encoder):
         )
 
         # Store FC stack params for use after subclass sets up component encoders.
-        self._fc_stack_params = dict(
-            fc_layers=fc_layers,
-            num_fc_layers=num_fc_layers,
-            output_size=output_size,
-            use_bias=use_bias,
-            weights_initializer=weights_initializer,
-            bias_initializer=bias_initializer,
-            norm=norm,
-            norm_params=norm_params,
-            activation=activation,
-            dropout=dropout,
-        )
+        self._fc_stack_params = {
+            "fc_layers": fc_layers,
+            "num_fc_layers": num_fc_layers,
+            "output_size": output_size,
+            "use_bias": use_bias,
+            "weights_initializer": weights_initializer,
+            "bias_initializer": bias_initializer,
+            "norm": norm,
+            "norm_params": norm_params,
+            "activation": activation,
+            "dropout": dropout,
+        }
 
     def _build_fc_stack(self, component_output_size: int):
         """Build the final FC stack given the total size of encoded components.

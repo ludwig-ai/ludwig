@@ -92,16 +92,7 @@ def test_sequence_encoders(
     assert ENCODER_OUTPUT in encoder_out
     assert isinstance(encoder_out[ENCODER_OUTPUT], torch.Tensor)
 
-    if enc_encoder == "parallel_cnn":
-        number_parallel_cnn_layers = PARALLEL_CNN_LAYERS
-        output_dimension = encoder_parameters["num_filters"] * number_parallel_cnn_layers
-        assert (
-            encoder_out[ENCODER_OUTPUT].shape == (BATCH_SIZE, SEQ_SIZE, output_dimension)
-            if enc_reduce_output is None
-            else (BATCH_SIZE, output_dimension)
-        )
-
-    elif enc_encoder == "stacked_parallel_cnn":
+    if enc_encoder == "parallel_cnn" or enc_encoder == "stacked_parallel_cnn":
         number_parallel_cnn_layers = PARALLEL_CNN_LAYERS
         output_dimension = encoder_parameters["num_filters"] * number_parallel_cnn_layers
         assert (

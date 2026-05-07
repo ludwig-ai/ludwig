@@ -107,7 +107,7 @@ def load_pretrained_from_config(
 def to_device(
     model: PreTrainedModel,
     device: str | torch.DeviceObjType,
-    config_obj: "LLMModelConfig",  # noqa F821
+    config_obj: "LLMModelConfig",
     curr_device: torch.DeviceObjType,
 ) -> tuple[PreTrainedModel, torch.DeviceObjType]:
     """Move an LLM to the requested device, accounting for sharding and adapters.
@@ -132,15 +132,15 @@ def to_device(
     num_gpus = torch.cuda.device_count()
     if device == torch.device("cuda") and num_gpus > 1:
         # TODO: make this configurable in the future. These parameters are from FastChat:
-        # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L90  # noqa
-        # TODO: Wrap device_map="auto" in a try-except block since it may not be supported for all models (E.g. BertLMHead)  # noqa
+        # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L90
+        # TODO: Wrap device_map="auto" in a try-except block since it may not be supported for all models (E.g. BertLMHead)
         # We don't add quantization here (float16 or bfloat16) since we may not always want to quantize. We should
         # make quantization configurable in the future via the trainer config.
         model_kwargs.update(
-            dict(
-                low_cpu_mem_usage=True,
-                max_memory={i: "13GiB" for i in range(num_gpus)},
-            )
+            {
+                "low_cpu_mem_usage": True,
+                "max_memory": dict.fromkeys(range(num_gpus), "13GiB"),
+            }
         )
 
         if config_obj.base_model not in _MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION:
@@ -161,7 +161,7 @@ def to_device(
                 )
 
                 # Leave this import inline to support a minimal install of Ludwig
-                from peft import PeftModel  # noqa
+                from peft import PeftModel
 
                 model = PeftModel.from_pretrained(
                     model,
@@ -199,9 +199,7 @@ def _load_peft_config(pretrained_adapter_weights: str):
     return PeftConfig.from_peft_type(**config_dict)
 
 
-def initialize_adapter(
-    model: PreTrainedModel, config_obj: "LLMModelConfig"  # noqa F821
-) -> Union["PeftModel", PreTrainedModel]:  # noqa F821
+def initialize_adapter(model: PreTrainedModel, config_obj: "LLMModelConfig") -> Union["PeftModel", PreTrainedModel]:  # noqa F821
     """Wrap a pretrained model with a PEFT model for fine-tuning.
 
     Dispatches to the multi-adapter path when ``config_obj.adapters`` is set (several
@@ -235,7 +233,7 @@ def initialize_adapter(
             )
         else:
             # Leave this import inline to support a minimal install of Ludwig
-            from peft import get_peft_model, TaskType  # noqa
+            from peft import get_peft_model, TaskType
 
             # If no pretrained adapter is provided, we want to load untrained weights into the model
             peft_config = config_obj.adapter.to_config(
@@ -247,9 +245,7 @@ def initialize_adapter(
     return model
 
 
-def _initialize_multi_adapters(
-    model: PreTrainedModel, config_obj: "LLMModelConfig"  # noqa F821
-) -> "PeftModel":  # noqa F821
+def _initialize_multi_adapters(model: PreTrainedModel, config_obj: "LLMModelConfig") -> "PeftModel":  # noqa F821
     """Attach several named PEFT adapters to ``model`` and (optionally) a merged one.
 
     PEFT's public multi-adapter surface:
@@ -586,7 +582,10 @@ def pad_target_tensor_for_fine_tuning(
 
 
 def generate_merged_ids(
-    input_ids: torch.tensor, target_ids: torch.tensor, tokenizer: PreTrainedTokenizer, max_sequence_length: int = None
+    input_ids: torch.tensor,
+    target_ids: torch.tensor,
+    tokenizer: PreTrainedTokenizer,
+    max_sequence_length: int | None = None,
 ):
     """Generate merged input and target IDs tensor.
 
@@ -663,7 +662,7 @@ def get_realigned_target_and_prediction_tensors_for_inference(
     predictions: dict[str, dict[str, torch.Tensor]],
     of_name: str,
     tokenizer: PreTrainedTokenizer,
-    pad_value: int = None,
+    pad_value: int | None = None,
 ) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]:
     """Realigns the target tensor with the predictions.
 
@@ -774,7 +773,7 @@ def generate_merged_ids_packed(
     input_ids: torch.tensor,
     target_ids: torch.tensor,
     tokenizer,
-    max_sequence_length: int = None,
+    max_sequence_length: int | None = None,
     max_sequences_per_pack: int = 8,
 ):
     """Generate merged IDs with sequence packing for throughput improvement.

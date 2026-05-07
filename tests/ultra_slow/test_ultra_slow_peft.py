@@ -26,7 +26,7 @@ from ludwig.api import LudwigModel
 # ---------------------------------------------------------------------------
 
 RNG = np.random.default_rng(42)
-VOCAB = "the quick brown fox jumps over the lazy dog sat on a mat".split()
+VOCAB = ["the", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog", "sat", "on", "a", "mat"]
 N = 40  # small enough for a single-step smoke test
 
 

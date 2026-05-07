@@ -180,7 +180,7 @@ def test_config_bad_encoder_name():
 
 
 def test_config_fill_values():
-    vector_fill_values = ["1.0 0.0 1.04 10.49", "1 2 3 4 5" "0" "1.0" ""]
+    vector_fill_values = ["1.0 0.0 1.04 10.49", "1 2 3 4 501.0"]
     binary_fill_values = ["yes", "No", "1", "TRUE", 1]
     for vector_fill_value, binary_fill_value in zip(vector_fill_values, binary_fill_values):
         config = {

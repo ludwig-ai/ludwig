@@ -32,7 +32,7 @@ class ConfusionMatrix:
 
         if labels is not None:
             self.label2idx = {label: idx for idx, label in enumerate(labels)}
-            self.idx2label = {idx: label for idx, label in enumerate(labels)}
+            self.idx2label = dict(enumerate(labels))
             labels = list(range(len(labels)))
         else:
             self.label2idx = {

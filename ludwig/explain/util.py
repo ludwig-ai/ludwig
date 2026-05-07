@@ -33,7 +33,7 @@ def prepare_data(model: LudwigModel, inputs_df: pd.DataFrame, sample_df: pd.Data
 
 def get_pred_col(preds, target):
     t = target.lower()
-    for c in preds.keys():
+    for c in preds:
         if c.lower() == t:
             if "probabilities" in preds[c]:
                 return preds[c]["probabilities"]
@@ -44,7 +44,7 @@ def get_pred_col(preds, target):
 
 def get_feature_name(model: LudwigModel, target: str) -> str:
     t = target.lower()
-    for c in model.training_set_metadata.keys():
+    for c in model.training_set_metadata:
         if c.lower() == t:
             return c
     raise ValueError(f"Unable to find target column {t} in {model.training_set_metadata.keys()}")

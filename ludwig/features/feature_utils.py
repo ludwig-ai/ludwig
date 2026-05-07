@@ -29,9 +29,9 @@ FEATURE_NAME_SUFFIX_LENGTH = len(FEATURE_NAME_SUFFIX)
 
 def should_regularize(regularize_layers):
     regularize = False
-    if isinstance(regularize_layers, bool) and regularize_layers:
-        regularize = True
-    elif isinstance(regularize_layers, (list, tuple)) and regularize_layers and regularize_layers[-1]:
+    if (isinstance(regularize_layers, bool) and regularize_layers) or (
+        isinstance(regularize_layers, (list, tuple)) and regularize_layers and regularize_layers[-1]
+    ):
         regularize = True
     return regularize
 
@@ -117,15 +117,17 @@ def compute_feature_hash(feature: dict) -> str:
 
     Returns: Feature hash name
     """
-    feature_data = dict(
-        preprocessing=feature.get(PREPROCESSING, {}),
-        type=feature[TYPE],
-    )
+    feature_data = {
+        "preprocessing": feature.get(PREPROCESSING, {}),
+        "type": feature[TYPE],
+    }
     return sanitize(feature[NAME]) + "_" + hash_dict(feature_data).decode("ascii")
 
 
 def get_input_size_with_dependencies(
-    combiner_output_size: int, dependencies: list[str], other_output_features  # Dict[str, "OutputFeature"]
+    combiner_output_size: int,
+    dependencies: list[str],
+    other_output_features,  # Dict[str, "OutputFeature"]
 ):
     """Returns the input size for the first layer of this output feature's FC stack, accounting for dependencies on
     other output features.
@@ -193,10 +195,7 @@ class LudwigFeatureDict(torch.nn.Module):
         return iter(self.keys())
 
     def keys(self) -> list[str]:
-        return [
-            get_name_from_module_dict_key(feature_name)
-            for feature_name in self.internal_key_to_original_name_map.keys()
-        ]
+        return [get_name_from_module_dict_key(feature_name) for feature_name in self.internal_key_to_original_name_map]
 
     def values(self) -> list[torch.nn.Module]:
         return [module for _, module in self.module_dict.items()]

@@ -1,7 +1,7 @@
 import copy
 import random
 from collections import deque, namedtuple
-from typing import Any, Deque
+from typing import Any
 
 import pandas as pd
 
@@ -21,9 +21,9 @@ ConfigOption = namedtuple("ConfigOption", ["config_option", "fully_explored"])
 def explore_properties(
     jsonschema_properties: dict[str, Any],
     parent_parameter_path: str,
-    dq: Deque[ConfigOption],
+    dq: deque[ConfigOption],
     allow_list: list[str] = [],
-) -> Deque[tuple[dict, bool]]:
+) -> deque[tuple[dict, bool]]:
     """Recursively explores the `properties` part of any subsection of the schema.
 
     Args:
@@ -115,7 +115,7 @@ def get_samples(jsonschema_property: dict[str, Any]) -> list[ParameterBaseTypes]
         return get_potential_values(jsonschema_property)
 
 
-def merge_dq(config_options: dict[str, Any], child_config_options_dq: Deque[ConfigOption]) -> Deque[ConfigOption]:
+def merge_dq(config_options: dict[str, Any], child_config_options_dq: deque[ConfigOption]) -> deque[ConfigOption]:
     """Merge config_options with the child_config_options in the dq."""
     dq = deque()
     while child_config_options_dq:
@@ -125,7 +125,7 @@ def merge_dq(config_options: dict[str, Any], child_config_options_dq: Deque[Conf
     return dq
 
 
-def explore_from_all_of(config_options: dict[str, Any], item: dict[str, Any], key_so_far: str) -> Deque[ConfigOption]:
+def explore_from_all_of(config_options: dict[str, Any], item: dict[str, Any], key_so_far: str) -> deque[ConfigOption]:
     """Takes a child of `allOf` and calls `explore_properties` on it."""
     for parameter_name_or_section in item["if"]["properties"]:
         config_options[key_so_far + "." + parameter_name_or_section] = item["if"]["properties"][
@@ -235,7 +235,7 @@ def create_nested_dict(flat_dict: dict[str, float | str]) -> ModelConfigDict:
 
 
 def combine_configs(
-    explored: Deque[tuple[dict, bool]], config: ModelConfigDict
+    explored: deque[tuple[dict, bool]], config: ModelConfigDict
 ) -> list[tuple[ModelConfigDict, pd.DataFrame]]:
     """Merge base config with explored sections.
 
@@ -257,7 +257,7 @@ def combine_configs(
 
 
 def combine_configs_for_comparator_combiner(
-    explored: Deque[tuple], config: ModelConfigDict
+    explored: deque[tuple], config: ModelConfigDict
 ) -> list[tuple[ModelConfigDict, pd.DataFrame]]:
     """Merge base config with explored sections.
 
@@ -288,7 +288,7 @@ def combine_configs_for_comparator_combiner(
 
 
 def combine_configs_for_sequence_combiner(
-    explored: Deque[tuple], config: ModelConfigDict
+    explored: deque[tuple], config: ModelConfigDict
 ) -> list[tuple[ModelConfigDict, pd.DataFrame]]:
     """Merge base config with explored sections.
 

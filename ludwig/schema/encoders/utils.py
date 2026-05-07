@@ -67,7 +67,7 @@ def get_encoder_descriptions(model_type: str, feature_type: str) -> dict[str, An
     }
 
     for k, v in ENCODER_METADATA.items():
-        if k in valid_encoders.keys():
+        if k in valid_encoders:
             output[valid_encoders[k]] = convert_metadata_to_json(v[TYPE])
 
     return output
@@ -113,7 +113,7 @@ def EncoderDataclassField(
             #
             # Also, note the placement inside this function - since this is a list, it will not update with any late
             # additions to the registry (e.g. in our tests)!
-            enum = [e for e in encoder_registry.keys() if e not in blocklist]
+            enum = [e for e in encoder_registry if e not in blocklist]
 
             return {
                 "type": "object",

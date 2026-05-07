@@ -21,7 +21,7 @@ def _get_runs(experiment_id: str):
 
 
 @DeveloperAPI
-def get_or_create_experiment_id(experiment_name, artifact_uri: str = None):
+def get_or_create_experiment_id(experiment_name, artifact_uri: str | None = None):
     """Gets experiment id from mlflow."""
     experiment = mlflow.get_experiment_by_name(experiment_name)
     if experiment is not None:

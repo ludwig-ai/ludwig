@@ -44,7 +44,7 @@ class BaseTokenizer:
 
 class CharactersToListTokenizer(BaseTokenizer):
     def __call__(self, text):
-        return [char for char in text]
+        return list(text)
 
 
 class SpaceStringToListTokenizer(torch.nn.Module):

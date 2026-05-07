@@ -1,6 +1,6 @@
 __version__ = "1.1.dev0"
 
-from ludwig.utils.entmax.activations import entmax15, Entmax15, sparsemax, Sparsemax
+from ludwig.utils.entmax.activations import Entmax15, entmax15, Sparsemax, sparsemax
 from ludwig.utils.entmax.losses import (
     entmax15_loss,
     Entmax15Loss,
@@ -14,20 +14,20 @@ from ludwig.utils.entmax.losses import (
 from ludwig.utils.entmax.root_finding import entmax_bisect, EntmaxBisect, sparsemax_bisect, SparsemaxBisect
 
 __all__ = [
-    "entmax15",
     "Entmax15",
-    "sparsemax",
-    "Sparsemax",
-    "entmax15_loss",
     "Entmax15Loss",
-    "entmax_bisect_loss",
+    "EntmaxBisect",
     "EntmaxBisectLoss",
-    "sparsemax_bisect_loss",
-    "sparsemax_loss",
+    "Sparsemax",
+    "SparsemaxBisect",
     "SparsemaxBisectLoss",
     "SparsemaxLoss",
+    "entmax15",
+    "entmax15_loss",
     "entmax_bisect",
-    "EntmaxBisect",
+    "entmax_bisect_loss",
+    "sparsemax",
     "sparsemax_bisect",
-    "SparsemaxBisect",
+    "sparsemax_bisect_loss",
+    "sparsemax_loss",
 ]

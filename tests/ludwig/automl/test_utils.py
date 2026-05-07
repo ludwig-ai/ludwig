@@ -1,6 +1,6 @@
 import pytest
 
-ray = pytest.importorskip("ray")  # noqa
+ray = pytest.importorskip("ray")
 
 from ludwig.utils.automl.utils import get_model_type  # noqa
 

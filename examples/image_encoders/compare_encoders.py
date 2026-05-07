@@ -125,8 +125,7 @@ def main() -> None:
         "--encoders",
         nargs="+",
         default=None,
-        help="Subset of encoders to run (e.g. --encoders stacked_cnn dinov2_linear_probe). "
-        "Defaults to all encoders.",
+        help="Subset of encoders to run (e.g. --encoders stacked_cnn dinov2_linear_probe). Defaults to all encoders.",
     )
     args = parser.parse_args()
 

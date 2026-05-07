@@ -125,7 +125,7 @@ class HyperoptTestCallback(TuneCallback):
         super().on_trial_start(iteration, trials, trial, **info)
         self.trial_ids.add(trial.trial_id)
 
-    def on_trial_complete(self, iteration: int, trials: list["Trial"], trial: "Trial", **info):  # noqa
+    def on_trial_complete(self, iteration: int, trials: list["Trial"], trial: "Trial", **info):
         super().on_trial_complete(iteration, trials, trial, **info)
         self.trial_status[trial.trial_id] = trial.status
 

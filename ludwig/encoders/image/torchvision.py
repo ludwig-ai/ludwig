@@ -49,7 +49,7 @@ class TVBaseEncoder(ImageEncoder):
 
     def __init__(
         self,
-        model_variant: str | int = None,
+        model_variant: str | int | None = None,
         use_pretrained: bool = True,
         saved_weights_in_checkpoint: bool = False,
         model_cache_dir: str | None = None,

@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 # TODO(Arnav): Re-enable once we add DotProduct Combiner: https://github.com/ludwig-ai/ludwig/issues/3150
 # @register_decoder("passthrough", [BINARY, CATEGORY, NUMBER, SET, VECTOR, SEQUENCE, TEXT])
 class PassthroughDecoder(Decoder):
-    def __init__(self, input_size: int = 1, num_classes: int = None, decoder_config=None, **kwargs):
+    def __init__(self, input_size: int = 1, num_classes: int | None = None, decoder_config=None, **kwargs):
         super().__init__()
         self.config = decoder_config
 
@@ -144,8 +144,8 @@ class Projector(Decoder):
                 self.clip = partial(torch.clip, min=clip[0], max=clip[1])
             else:
                 raise ValueError(
-                    "The clip parameter of {} is {}. "
-                    "It must be a list or a tuple of length 2.".format(self.feature_name, self.clip)
+                    f"The clip parameter of {self.feature_name} is {self.clip}. "
+                    "It must be a list or a tuple of length 2."
                 )
         else:
             self.clip = None
@@ -229,7 +229,7 @@ class AnomalyDecoder(Decoder):
         decoder_config: AnomalyDecoderConfig instance.
     """
 
-    def __init__(self, input_size: int = None, decoder_config=None, **kwargs):
+    def __init__(self, input_size: int | None = None, decoder_config=None, **kwargs):
         super().__init__()
         self.config = decoder_config
         self.input_size = input_size or 1
@@ -305,7 +305,7 @@ class MLPClassifier(Decoder):
     def __init__(
         self,
         input_size: int,
-        num_classes: int = None,
+        num_classes: int | None = None,
         num_fc_layers: int = 1,
         output_size: int = 256,
         activation: str = "relu",

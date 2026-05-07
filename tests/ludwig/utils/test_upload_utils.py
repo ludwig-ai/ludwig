@@ -98,7 +98,7 @@ def output_directory_manager(tmpdir) -> str:
             [],
             (
                 ValueError,
-                "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
+                "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",
             ),
             id="model_weights_missing",
         ),
@@ -108,7 +108,7 @@ def output_directory_manager(tmpdir) -> str:
             ],
             (
                 ValueError,
-                "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
+                "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",
             ),
             id="model_weights_unexpected_name_format_combination",
         ),
@@ -118,7 +118,7 @@ def output_directory_manager(tmpdir) -> str:
             ],
             (
                 ValueError,
-                "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
+                "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",
             ),
             id="model_weights_unrecognized_format",
         ),
@@ -128,7 +128,7 @@ def output_directory_manager(tmpdir) -> str:
             ],
             (
                 ValueError,
-                "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",  # noqa E501
+                "Can't find model weights at {model_weights_path}. Trained model weights should either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`or `adapter_model.safetensors` if using parameter efficient fine-tuning methods like LoRA.",
             ),
             id="model_weights_unrecognized_name",
         ),
@@ -158,8 +158,8 @@ def test_upload_to_hf_hub__validate_upload_parameters(
     repo_id: str = "test_account/test_repo"
     model_path: str = str(model_path)
     if error_raised:
-        error_class: type  # noqa [F842]  # incorrect flagging of "local variable is annotated but never used
-        error_message: str  # noqa [F842]  # incorrect flagging of "local variable is annotated but never used
+        error_class: type
+        error_message: str
         error_class, error_message = error_raised
         with pytest.raises(error_class) as excinfo:
             HuggingFaceHub._validate_upload_parameters(

@@ -72,7 +72,7 @@ from tests.integration_tests.utils import (
     vector_feature,
 )
 
-ray = pytest.importorskip("ray")  # noqa
+ray = pytest.importorskip("ray")
 
 # Mark the entire module as distributed
 pytestmark = [pytest.mark.distributed, pytest.mark.integration_tests_a]
@@ -84,7 +84,7 @@ from ludwig.backend.ray import get_trainer_kwargs, RayBackend  # noqa: E402
 from ludwig.data.dataframe.dask import DaskEngine  # noqa: E402
 
 try:
-    import modin  # noqa: E402
+    import modin
 except ImportError:
     modin = None
 

@@ -245,7 +245,7 @@ class Conv1DStack(LudwigModule):
             input_shape = self.stack[i].input_shape
             output_shape = self.stack[i].output_shape
 
-            logger.debug(f"{self.__class__.__name__}: " f"input_shape {input_shape}, output shape {output_shape}")
+            logger.debug(f"{self.__class__.__name__}: input_shape {input_shape}, output shape {output_shape}")
 
             # pass along shape for the input to the next layer
             l_in, prior_layer_channels = output_shape
@@ -259,7 +259,7 @@ class Conv1DStack(LudwigModule):
         hidden = inputs
 
         # todo: enumerate for debugging, remove after testing
-        for i, layer in enumerate(self.stack):
+        for _i, layer in enumerate(self.stack):
             hidden = layer(hidden)
 
         if hidden.shape[1] == 0:
@@ -546,7 +546,7 @@ class Conv2DLayer(LudwigModule):
         activation: str = "relu",
         dropout: float = 0,
         pool_function: int = "max",
-        pool_kernel_size: int | tuple[int] = None,
+        pool_kernel_size: int | tuple[int] | None = None,
         pool_stride: int | None = None,
         pool_padding: int | tuple[int] = 0,
         pool_dilation: int | tuple[int] = 1,
@@ -645,7 +645,7 @@ class Conv2DStack(LudwigModule):
         default_dropout: int = 0,
         default_pool_function: int = "max",
         default_pool_kernel_size: int | tuple[int] = 2,
-        default_pool_stride: int | tuple[int] = None,
+        default_pool_stride: int | tuple[int] | None = None,
         default_pool_padding: int | tuple[int] = 0,
         default_pool_dilation: int | tuple[int] = 1,
     ):
@@ -655,7 +655,7 @@ class Conv2DStack(LudwigModule):
         first_in_channels = self._check_in_channels(first_in_channels, layers)
         default_pool_stride = default_pool_stride or default_pool_kernel_size
         if layers is not None and num_layers is not None:
-            raise Warning("Both layers and num_layers are not None." "Default to using layers.")
+            raise Warning("Both layers and num_layers are not None.Default to using layers.")
         if (
             first_in_channels is not None
             and layers is not None
@@ -774,7 +774,7 @@ class Conv2DStack(LudwigModule):
         elif layers is not None and len(layers) > 0 and "in_channels" in layers[0]:
             return layers[0]["in_channels"]
         raise ValueError(
-            "In_channels for first layer should be specified either via " "`first_in_channels` or `layers` arguments."
+            "In_channels for first layer should be specified either via `first_in_channels` or `layers` arguments."
         )
 
     @property
@@ -1145,8 +1145,8 @@ class ResNet(LudwigModule):
         conv_stride: int | tuple[int] = 2,
         first_pool_kernel_size: int | tuple[int] = 3,
         first_pool_stride: int | tuple[int] = 2,
-        block_sizes: list[int] = None,
-        block_strides: list[int | tuple[int]] = None,
+        block_sizes: list[int] | None = None,
+        block_strides: list[int | tuple[int]] | None = None,
         batch_norm_momentum: float = 0.1,
         batch_norm_epsilon: float = 0.001,
     ):
@@ -1305,8 +1305,9 @@ def get_resnet_block_sizes(resnet_size):
     try:
         return resnet_choices[resnet_size]
     except KeyError:
-        err = "Could not find layers for selected Resnet size.\n" "Size received: {}; sizes allowed: {}.".format(
-            resnet_size, resnet_choices.keys()
+        err = (
+            "Could not find layers for selected Resnet size.\n"
+            f"Size received: {resnet_size}; sizes allowed: {resnet_choices.keys()}."
         )
         raise ValueError(err)
 
@@ -1318,7 +1319,7 @@ class UNetDoubleConvLayer(LudwigModule):
         img_width: int,
         in_channels: int,
         out_channels: int,
-        norm: str = None,
+        norm: str | None = None,
     ):
         """Two Conv2d layers, each followed by a ReLU, used for U-Net.
 
@@ -1369,7 +1370,7 @@ class UNetDownStack(LudwigModule):
         img_height: int,
         img_width: int,
         in_channels: int,
-        norm: str = None,
+        norm: str | None = None,
         stack_depth: int = 4,
     ):
         """Creates the contracting downsampling path of a U-Net stack.
@@ -1398,7 +1399,7 @@ class UNetDownStack(LudwigModule):
 
         self._input_shape = (in_c, height, width)
 
-        for i in range(stack_depth):
+        for _i in range(stack_depth):
             self.conv_layers.append(UNetDoubleConvLayer(height, width, in_c, out_c, norm))
             in_c = out_c
             out_c = out_c * 2
@@ -1438,7 +1439,7 @@ class UNetUpStack(LudwigModule):
         img_height: int,
         img_width: int,
         out_channels: int,
-        norm: str = None,
+        norm: str | None = None,
         stack_depth: int = 4,
     ):
         """Creates the expansive upsampling path of a U-Net stack.
@@ -1467,7 +1468,7 @@ class UNetUpStack(LudwigModule):
 
         self._input_shape = (in_c, height, width)
 
-        for i in range(stack_depth):
+        for _i in range(stack_depth):
             self.up_layers.append(nn.ConvTranspose2d(in_c, out_c, kernel_size=2, stride=2))
             height = height * 2
             width = width * 2

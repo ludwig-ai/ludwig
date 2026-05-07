@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 
 # Skip these tests if Ray is not installed
-ray = pytest.importorskip("ray")  # noqa
+ray = pytest.importorskip("ray")
 
 from ray.train.torch import TorchConfig  # noqa
 

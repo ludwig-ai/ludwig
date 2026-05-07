@@ -47,7 +47,7 @@ from ludwig.api import LudwigModel  # noqa: E402
 
 RNG = np.random.default_rng(42)
 N = 200  # number of training rows — small but enough for 1 epoch
-VOCAB = "the quick brown fox jumps over the lazy dog sat on a mat".split()
+VOCAB = ["the", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog", "sat", "on", "a", "mat"]
 LR = 1e-6  # tiny LR: loss should only decrease or stay flat
 RAY_BACKEND = {"type": "ray", "processor": {"type": "dask"}}
 
@@ -112,9 +112,9 @@ def _train_and_check(config: dict, df: pd.DataFrame, backend=None, tmpdir: str |
 
         # ── 1. Assets exist ──────────────────────────────────────────────
         assert os.path.exists(os.path.join(output_dir, "model")), "model directory missing"
-        assert os.path.exists(
-            os.path.join(output_dir, "model", "model_hyperparameters.json")
-        ), "hyperparameters JSON missing"
+        assert os.path.exists(os.path.join(output_dir, "model", "model_hyperparameters.json")), (
+            "hyperparameters JSON missing"
+        )
 
         # ── 2. GPU was used (local backend only — Ray workers run in subprocesses) ──
         if backend is None and torch.cuda.is_available():

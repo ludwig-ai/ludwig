@@ -35,7 +35,7 @@ class LudwigProgressBar:
         if not report_to_ray and is_coordinator:
             self.progress_bar = tqdm.tqdm(**config)
 
-    def set_postfix(self, ordered_dict: dict = None, **kwargs) -> None:
+    def set_postfix(self, ordered_dict: dict | None = None, **kwargs) -> None:
         if self.progress_bar:
             self.progress_bar.set_postfix(ordered_dict, **kwargs)
 

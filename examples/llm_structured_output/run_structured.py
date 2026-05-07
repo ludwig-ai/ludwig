@@ -186,7 +186,7 @@ def run_sentiment_comparison() -> None:
         preds_constrained["sentiment_predictions"],
     ):
         short_text = textwrap.shorten(text, width=50)
-        print(f"{short_text:<52} {str(unconstrained):<30} {str(constrained):<15}")
+        print(f"{short_text:<52} {unconstrained!s:<30} {constrained!s:<15}")
 
     # Count invalid outputs in unconstrained
     valid_labels = {"positive", "negative", "neutral"}

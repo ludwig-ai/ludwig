@@ -18,7 +18,7 @@ import pandas as pd
 # 1. Load and prepare data
 # ---------------------------------------------------------------------------
 
-DATA_URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/" "winequality-red.csv"
+DATA_URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv"
 
 print("Downloading wine quality data...")
 df = pd.read_csv(DATA_URL, sep=";")
@@ -89,7 +89,7 @@ OPTIMIZERS = {
 # 3. Train and collect results
 # ---------------------------------------------------------------------------
 
-from ludwig.api import LudwigModel  # noqa: E402  (import after pip install note)
+from ludwig.api import LudwigModel
 
 results = []
 

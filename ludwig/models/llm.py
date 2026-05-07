@@ -154,7 +154,7 @@ class LLM(BaseModel):
         self.generation.pad_token_id = self.tokenizer.pad_token_id
         self.max_new_tokens = self.generation.max_new_tokens
         # max input length value copied from FastChat
-        # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L183  # noqa E501
+        # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L183
         self.max_input_length = self.context_len - self.max_new_tokens - 8
 
     @property
@@ -394,7 +394,7 @@ class LLM(BaseModel):
                         f"Input length {input_ids_sample_no_padding.shape[1]} is "
                         f"greater than max input length {self.max_input_length}. Truncating."
                     )
-                    input_ids_sample_no_padding = input_ids_sample_no_padding[:, -self.max_input_length :]  # noqa E203
+                    input_ids_sample_no_padding = input_ids_sample_no_padding[:, -self.max_input_length :]
 
                 input_lengths.append(input_ids_sample_no_padding.shape[1])
 
@@ -402,13 +402,13 @@ class LLM(BaseModel):
                 model_device = next(self.model.parameters()).device
                 input_ids_sample_no_padding = input_ids_sample_no_padding.to(model_device)
 
-                generate_kwargs = dict(
-                    input_ids=input_ids_sample_no_padding,
-                    attention_mask=mask,
-                    generation_config=self.generation,
-                    return_dict_in_generate=True,
-                    output_scores=True,
-                )
+                generate_kwargs = {
+                    "input_ids": input_ids_sample_no_padding,
+                    "attention_mask": mask,
+                    "generation_config": self.generation,
+                    "return_dict_in_generate": True,
+                    "output_scores": True,
+                }
                 if logits_processor is not None:
                     generate_kwargs["logits_processor"] = logits_processor
 
@@ -727,7 +727,7 @@ class LLM(BaseModel):
         # Override properties of the model to indicate that it is no longer quantized.
         # This is also necessary to ensure that the model can be saved, otherwise it will raise an error like
         # "You are calling `save_pretrained` on a 4-bit converted model. This is currently not supported"
-        # See: https://github.com/huggingface/transformers/blob/0ad4e7e6dad670a7151aaceb1af3c272a3bf73a8/src/transformers/modeling_utils.py#L2054 # noqa
+        # See: https://github.com/huggingface/transformers/blob/0ad4e7e6dad670a7151aaceb1af3c272a3bf73a8/src/transformers/modeling_utils.py#L2054
         self.model.is_loaded_in_4bit = False
         self.model.is_loaded_in_8bit = False
 
@@ -750,7 +750,7 @@ class LLM(BaseModel):
             # Check if the saved weights are merged (no adapter_config.json) or adapter-only
             adapter_config_path = os.path.join(weights_save_path, "adapter_config.json")
             if os.path.exists(adapter_config_path):
-                from peft import PeftModel  # noqa
+                from peft import PeftModel
 
                 if isinstance(self.model, PeftModel):
                     # Unwrap and reload PeftModel
@@ -780,7 +780,7 @@ class LLM(BaseModel):
         other named adapter — it is loaded the same way, no special case needed. Finally we activate whichever adapter
         the config declares via `set_adapter(active)`.
         """
-        from peft import PeftModel  # noqa
+        from peft import PeftModel
 
         adapters_cfg = self.config_obj.adapters
         names = list(adapters_cfg.adapters.keys())
@@ -867,8 +867,8 @@ class LLM(BaseModel):
         # tensors. Padding left with -100 to match the length of the target tensor masks the input ids during
         # softmax cross entropy loss computation. This ensures that the loss is computed only for the target
         # token IDs. Examples:
-        # BERTLMHead: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/bert/modeling_bert.py#L1216-L1219 # noqa
-        # GPTNeoForCausalLM: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/gpt_neo/modeling_gpt_neo.py#L736 # noqa
+        # BERTLMHead: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/bert/modeling_bert.py#L1216-L1219
+        # GPTNeoForCausalLM: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/gpt_neo/modeling_gpt_neo.py#L736
         _targets = pad_target_tensor_for_fine_tuning(targets, predictions, self.model_inputs, of_name)
 
         return _targets

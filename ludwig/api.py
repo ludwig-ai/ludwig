@@ -120,7 +120,7 @@ logger = logging.getLogger(__name__)
 
 @PublicAPI
 @dataclass
-class EvaluationFrequency:  # noqa F821
+class EvaluationFrequency:
     """Represents the frequency of periodic evaluation of a metric during training. For example:
 
     "every epoch"
@@ -169,7 +169,7 @@ class TrainingStats:
         return self._KEYS
 
     def __iter__(self):
-        return iter(self._KEYS)  # noqa: F811
+        return iter(self._KEYS)
 
 
 @PublicAPI
@@ -1155,7 +1155,7 @@ class LudwigModel:
     def predict(
         self,
         dataset: str | dict | pd.DataFrame | None = None,
-        data_format: str = None,
+        data_format: str | None = None,
         split: str = FULL,
         batch_size: int = 128,
         generation_config: dict | None = None,
@@ -1698,7 +1698,7 @@ class LudwigModel:
         elif eval_split == TEST:
             eval_set = preprocessed_data.test_set
         else:
-            logger.warning(f"Eval split {eval_split} not supported. " f"Using validation set instead")
+            logger.warning(f"Eval split {eval_split} not supported. Using validation set instead")
 
         if eval_set is not None:
             trainer_dict = self.config_obj.trainer.to_dict()
@@ -1726,12 +1726,12 @@ class LudwigModel:
                 )
                 eval_stats = None
         else:
-            logger.warning(f"The evaluation set {eval_set} was not provided. " f"Skipping evaluation")
+            logger.warning(f"The evaluation set {eval_set} was not provided. Skipping evaluation")
             eval_stats = None
 
         return eval_stats, train_stats, preprocessed_data, output_directory
 
-    def collect_weights(self, tensor_names: list[str] = None, **kwargs) -> list:
+    def collect_weights(self, tensor_names: list[str] | None = None, **kwargs) -> list:
         """Load a pre-trained model and collect the tensors with a specific name.
 
         # Inputs
@@ -2139,7 +2139,7 @@ class LudwigModel:
         model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
         save_json(model_hyperparameters_path, self.config_obj.to_dict())
 
-    def export_model(self, save_path: str, format: str = "safetensors", sample_input: dict = None):
+    def export_model(self, save_path: str, format: str = "safetensors", sample_input: dict | None = None):
         """Export the model in various formats.
 
         Args:
@@ -2266,8 +2266,8 @@ class LudwigModel:
 def kfold_cross_validate(
     num_folds: int,
     config: dict | str,
-    dataset: str = None,
-    data_format: str = None,
+    dataset: str | None = None,
+    data_format: str | None = None,
     skip_save_training_description: bool = False,
     skip_save_training_statistics: bool = False,
     skip_save_model: bool = False,

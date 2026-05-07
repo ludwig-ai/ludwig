@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 class VersionTransformation:
     """Wrapper class for transformations to config dicts."""
 
-    def __init__(self, transform: Callable[[dict], dict], version: str, prefixes: list[str] = None):
+    def __init__(self, transform: Callable[[dict], dict], version: str, prefixes: list[str] | None = None):
         """Constructor.
 
         Args:
@@ -115,7 +115,7 @@ class VersionTransformation:
         )
 
     def __repr__(self):
-        return f'VersionTransformation(<function>, version="{self.version}", prefixes={repr(self.prefixes)})'
+        return f'VersionTransformation(<function>, version="{self.version}", prefixes={self.prefixes!r})'
 
 
 class VersionTransformationRegistry:
@@ -148,7 +148,7 @@ class VersionTransformationRegistry:
             v = pkg_version.parse(v)
             return from_version <= v <= to_version
 
-        versions = [v for v in self._registry.keys() if in_range(v, to_version, from_version)]
+        versions = [v for v in self._registry if in_range(v, to_version, from_version)]
 
         transforms = sorted(t for v in versions for t in self._registry[v])
         return transforms

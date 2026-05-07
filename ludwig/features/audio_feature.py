@@ -301,9 +301,9 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
             if num_fft_points < window_length_in_samp:
                 raise ValueError(
-                    "num_fft_points: {} < window length in "
-                    "samples: {} (corresponds to window length"
-                    " in s: {}".format(num_fft_points, window_length_in_s, window_length_in_samp)
+                    f"num_fft_points: {num_fft_points} < window length in "
+                    f"samples: {window_length_in_s} (corresponds to window length"
+                    f" in s: {window_length_in_samp}"
                 )
         else:
             num_fft_points = window_length_in_samp
@@ -366,8 +366,8 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
         if not isinstance(first_audio_entry, str) and not isinstance(first_audio_entry, torch.Tensor):
             raise ValueError(
-                "Invalid audio feature data type.  Detected type is {}, "
-                "expected either string for local/remote file path or Torch Tensor.".format(type(first_audio_entry))
+                f"Invalid audio feature data type.  Detected type is {type(first_audio_entry)}, "
+                "expected either string for local/remote file path or Torch Tensor."
             )
 
         src_path = None
@@ -420,8 +420,8 @@ class AudioFeatureMixin(BaseFeatureMixin):
         if not audio_length_limit_in_samp.is_integer():
             raise ValueError(
                 "Audio_file_length_limit has to be chosen "
-                "so that {} (in s) * {} (sampling rate in Hz) "
-                "is an integer.".format(audio_length_limit_in_s, sampling_rate_in_hz)
+                f"so that {audio_length_limit_in_s} (in s) * {sampling_rate_in_hz} (sampling rate in Hz) "
+                "is an integer."
             )
         audio_length_limit_in_samp = int(audio_length_limit_in_samp)
 
@@ -442,9 +442,9 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
         super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)
 
         if not getattr(self.encoder_obj.config, "embedding_size", None):
-            raise ValueError("embedding_size has to be defined - " 'check "update_config_with_metadata()"')
+            raise ValueError('embedding_size has to be defined - check "update_config_with_metadata()"')
         if not getattr(self.encoder_obj.config, "max_sequence_length", None):
-            raise ValueError("max_sequence_length has to be defined - " 'check "update_config_with_metadata()"')
+            raise ValueError('max_sequence_length has to be defined - check "update_config_with_metadata()"')
 
     def forward(self, inputs, mask=None):
         if not isinstance(inputs, torch.Tensor):

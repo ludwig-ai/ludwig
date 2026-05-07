@@ -122,13 +122,13 @@ class ProgressTracker:
         best_eval_train_metrics: dict[str, dict[str, float]],
         best_eval_validation_metrics: dict[str, dict[str, float]],
         best_eval_test_metrics: dict[str, dict[str, float]],
-        llm_eval_examples: dict[str, list[str]] = None,
-        checkpoint_to_step: dict[str, int] = None,
-        checkpoint_to_epoch: dict[str, int] = None,
-        incremental_step_token_usage: dict[str, int] = None,
-        cumulative_step_token_usage: dict[str, int] = None,
-        incremental_checkpoint_token_usage: dict[str, int] = None,
-        cumulative_checkpoint_token_usage: dict[str, int] = None,
+        llm_eval_examples: dict[str, list[str]] | None = None,
+        checkpoint_to_step: dict[str, int] | None = None,
+        checkpoint_to_epoch: dict[str, int] | None = None,
+        incremental_step_token_usage: dict[str, int] | None = None,
+        cumulative_step_token_usage: dict[str, int] | None = None,
+        incremental_checkpoint_token_usage: dict[str, int] | None = None,
+        cumulative_checkpoint_token_usage: dict[str, int] | None = None,
         total_tokens_used: int = 0,
     ):
         """JSON-serializable holder object that stores information related to training progress.
@@ -441,10 +441,13 @@ def get_training_report(
     best_function = get_best_function(validation_metric)
 
     training_report = []
-    best_vali_index, (
-        epoch_best_validation_metric,
-        step_best_validation_metric,
-        best_validation_metric,
+    (
+        best_vali_index,
+        (
+            epoch_best_validation_metric,
+            step_best_validation_metric,
+            best_validation_metric,
+        ),
     ) = best_function(
         enumerate(validation_field_result[validation_metric]),
         # -1 for the last element of the TrainerMetric namedtuple.
@@ -463,9 +466,7 @@ def get_training_report(
     if include_test_set:
         validation_selected_test_metric_score = train_testset_stats[validation_field][validation_metric][
             best_vali_index
-        ][
-            -1
-        ]  # -1 for the last element of the TrainerMetric namedtuple.
+        ][-1]  # -1 for the last element of the TrainerMetric namedtuple.
 
         training_report.append(
             [

@@ -29,7 +29,7 @@ class LabelExplanation:
     # The attribution for each input feature.
     feature_attributions: list[FeatureAttribution] = field(default_factory=list)
 
-    def add(self, feature_name: str, attribution: float, token_attributions: list[tuple[str, float]] = None):
+    def add(self, feature_name: str, attribution: float, token_attributions: list[tuple[str, float]] | None = None):
         """Add the attribution for a single input feature."""
         self.feature_attributions.append(FeatureAttribution(feature_name, attribution, token_attributions))
 
@@ -55,7 +55,7 @@ class Explanation:
         self,
         feat_names: list[str],
         feat_attributions: npt.NDArray[np.float64],
-        feat_to_token_attributions: dict[str, list[tuple[str, float]]] = None,
+        feat_to_token_attributions: dict[str, list[tuple[str, float]]] | None = None,
         prepend: bool = False,
     ):
         """Add the feature attributions for a single label."""

@@ -27,9 +27,9 @@ def test_dask_image_bytes_no_unicode_error():
 
     from ludwig.data.dataframe.dask import reset_index_across_all_partitions
 
-    assert (
-        dask.config.get("dataframe.convert-string") is False
-    ), "Ludwig must set dataframe.convert-string:False at import time (ludwig/__init__.py)"
+    assert dask.config.get("dataframe.convert-string") is False, (
+        "Ludwig must set dataframe.convert-string:False at import time (ludwig/__init__.py)"
+    )
 
     def _jpeg_bytes() -> bytes:
         buf = io.BytesIO()

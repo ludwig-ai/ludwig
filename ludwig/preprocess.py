@@ -33,16 +33,16 @@ logger = logging.getLogger(__name__)
 
 
 def preprocess_cli(
-    preprocessing_config: str | dict = None,
+    preprocessing_config: str | dict | None = None,
     dataset: str | dict | pd.DataFrame = None,
     training_set: str | dict | pd.DataFrame = None,
     validation_set: str | dict | pd.DataFrame = None,
     test_set: str | dict | pd.DataFrame = None,
-    training_set_metadata: str | dict = None,
-    data_format: str = None,
+    training_set_metadata: str | dict | None = None,
+    data_format: str | None = None,
     random_seed: int = default_random_seed,
     logging_level: int = logging.INFO,
-    callbacks: list[Callback] = None,
+    callbacks: list[Callback] | None = None,
     backend: Backend | str = None,
     **kwargs,
 ) -> None:
@@ -194,7 +194,7 @@ def cli(sys_argv):
             "feather",
             "fwf",
             "hdf5",
-            "html" "tables",
+            "htmltables",
             "json",
             "jsonl",
             "parquet",
@@ -246,7 +246,7 @@ def cli(sys_argv):
     parser.add_argument(
         "-b",
         "--backend",
-        help="specifies backend to use for parallel / distributed execution, " "defaults to local execution",
+        help="specifies backend to use for parallel / distributed execution, defaults to local execution",
         choices=ALL_BACKENDS,
     )
     parser.add_argument(
