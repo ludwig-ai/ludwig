@@ -640,7 +640,9 @@ def split_by_slices(slices: list[Any], n: int, probabilities: list[float]) -> li
 @DeveloperAPI
 def shuffle_unison_inplace(list_of_lists, random_state=None):
     if list_of_lists:
-        assert all(len(single_list) == len(list_of_lists[0]) for single_list in list_of_lists)
+        if not all(len(single_list) == len(list_of_lists[0]) for single_list in list_of_lists):
+            lengths = [len(lst) for lst in list_of_lists]
+            raise ValueError(f"All lists must have the same length for unison shuffling, got lengths: {lengths}.")
         if random_state is not None:
             p = random_state.permutation(len(list_of_lists[0]))
         else:

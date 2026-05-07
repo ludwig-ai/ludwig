@@ -9,7 +9,10 @@ from ludwig.utils.entmax.root_finding import entmax_bisect, sparsemax_bisect
 
 class _GenericLoss(nn.Module):
     def __init__(self, ignore_index=IGNORE_INDEX_TOKEN_ID, reduction="elementwise_mean"):
-        assert reduction in ["elementwise_mean", "sum", "none"]
+        if reduction not in ("elementwise_mean", "sum", "none"):
+            raise ValueError(
+                f"Invalid reduction mode '{reduction}'. " f"Expected one of: 'elementwise_mean', 'sum', 'none'."
+            )
         self.reduction = reduction
         self.ignore_index = ignore_index
         super().__init__()
@@ -37,7 +40,10 @@ class _GenericLossFunction(Function):
     @classmethod
     def forward(cls, ctx, X, target, alpha, proj_args):
         """X (FloatTensor): n x num_classes target (LongTensor): n, the indices of the target classes."""
-        assert X.shape[0] == target.shape[0]
+        if X.shape[0] != target.shape[0]:
+            raise ValueError(
+                f"X and target batch sizes must match, got X.shape[0]={X.shape[0]}, target.shape[0]={target.shape[0]}."
+            )
 
         p_star = cls.project(X, alpha, **proj_args)
         loss = cls.omega(p_star, alpha)

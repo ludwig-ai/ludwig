@@ -100,7 +100,11 @@ class Predictor(BasePredictor):
             Used to call Ludwig helper functions.
         """
         model = model or dist_model
-        assert isinstance(model, BaseModel)
+        if not isinstance(model, BaseModel):
+            raise TypeError(
+                f"model must be a BaseModel instance, got {type(model).__name__}.\n"
+                f"Fix: pass a Ludwig BaseModel (ECD or LLM) as the model argument."
+            )
 
         self._batch_size = batch_size
         self._distributed = distributed if distributed is not None else LocalStrategy()

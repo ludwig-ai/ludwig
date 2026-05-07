@@ -193,7 +193,8 @@ class DistributedStrategy(ABC):
 
     @classmethod
     def replace_model_from_serialization(cls, state: nn.Module | tuple[nn.Module, list[dict]]) -> nn.Module:
-        assert isinstance(state, nn.Module)
+        if not isinstance(state, nn.Module):
+            raise TypeError(f"replace_model_from_serialization expected an nn.Module, got {type(state).__name__}.")
         return state
 
 

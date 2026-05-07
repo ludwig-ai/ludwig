@@ -29,7 +29,11 @@ def get_split_indices(
     Returns:
         Array of split indices (0, 1, or 2) for each sample.
     """
-    assert abs(sum(probabilities) - 1.0) < 1e-6, f"Split probabilities must sum to 1, got {sum(probabilities)}"
+    if abs(sum(probabilities) - 1.0) >= 1e-6:
+        raise ValueError(
+            f"Split probabilities must sum to 1, got {sum(probabilities)}.\n"
+            f"Fix: ensure your train/validation/test split fractions sum to 1.0 (e.g., [0.7, 0.1, 0.2])."
+        )
 
     rng = np.random.RandomState(random_seed)
     indices = rng.permutation(n_samples)

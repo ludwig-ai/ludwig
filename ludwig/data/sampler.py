@@ -50,11 +50,19 @@ class DistributedSampler:
 
         # add extra samples to make it evenly divisible
         indices += indices[: (self.total_size - len(indices))]
-        assert len(indices) == self.total_size
+        if len(indices) != self.total_size:
+            raise RuntimeError(
+                f"Sampler produced {len(indices)} indices but expected {self.total_size}. "
+                f"This is an internal error — please report it."
+            )
 
         # subsample
         indices = indices[self.rank : self.total_size : self.num_replicas]
-        assert len(indices) == self.num_samples
+        if len(indices) != self.num_samples:
+            raise RuntimeError(
+                f"Sampler subsample produced {len(indices)} indices but expected {self.num_samples}. "
+                f"This is an internal error — please report it."
+            )
 
         return iter(indices)
 

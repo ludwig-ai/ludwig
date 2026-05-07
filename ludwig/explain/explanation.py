@@ -59,15 +59,15 @@ class Explanation:
         prepend: bool = False,
     ):
         """Add the feature attributions for a single label."""
-        assert len(feat_names) == len(
-            feat_attributions
-        ), f"Expected {len(feat_names)} feature attributions, got {len(feat_attributions)}"
+        if len(feat_names) != len(feat_attributions):
+            raise ValueError(f"Expected {len(feat_names)} feature attributions, got {len(feat_attributions)}.")
         if len(self.label_explanations) > 0:
             # Check that the feature attributions are the same shape as existing explanations.
-            assert self.label_explanations[0].to_array().shape == feat_attributions.shape, (
-                f"Expected feature attributions of shape {self.label_explanations[0].to_array().shape}, "
-                f"got {feat_attributions.shape}"
-            )
+            expected_shape = self.label_explanations[0].to_array().shape
+            if expected_shape != feat_attributions.shape:
+                raise ValueError(
+                    f"Expected feature attributions of shape {expected_shape}, got {feat_attributions.shape}."
+                )
 
         le = LabelExplanation()
         for i, feat_name in enumerate(feat_names):

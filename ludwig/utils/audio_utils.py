@@ -134,7 +134,8 @@ def get_group_delay(
     )
     denominator = torch.square(torch.abs(X_stft_transform))
     group_delay = torch.divide(nominator, denominator + 1e-10)
-    assert not torch.isnan(group_delay).any(), "There are NaN values in group delay"
+    if torch.isnan(group_delay).any():
+        raise RuntimeError("NaN values detected in computed group delay. Check input audio data for degenerate values.")
     return torch.transpose(group_delay, 0, 1)
 
 

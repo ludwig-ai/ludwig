@@ -815,7 +815,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
                     "and first image cannot be read, so image num channels is unknown"
                 )
 
-        assert isinstance(num_channels, int), ValueError("Number of image channels needs to be an integer")
+        if not isinstance(num_channels, int):
+            raise ValueError(f"Number of image channels needs to be an integer, got {type(num_channels).__name__}.")
 
         average_file_size = np.mean(sample_num_bytes) if sample_num_bytes else None
 
@@ -1008,8 +1009,10 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
             )
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
-        assert isinstance(inputs, torch.Tensor), f"inputs to image feature must be a torch tensor, got {type(inputs)}"
-        assert inputs.dtype in [torch.float32], f"inputs to image feature must be a float32 tensor, got {inputs.dtype}"
+        if not isinstance(inputs, torch.Tensor):
+            raise TypeError(f"Image feature forward expects a torch.Tensor, got {type(inputs).__name__}.")
+        if inputs.dtype != torch.float32:
+            raise ValueError(f"Image feature inputs must be a float32 tensor, got {inputs.dtype}.")
 
         inputs_encoded = self.encoder_obj(inputs)
 

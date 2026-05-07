@@ -102,8 +102,8 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
             self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
     def forward(self, inputs):
-        assert isinstance(inputs, torch.Tensor)
-        # assert inputs.dtype == tf.bool # this fails
+        if not isinstance(inputs, torch.Tensor):
+            raise TypeError(f"Bag feature forward expects a torch.Tensor, got {type(inputs).__name__}.")
 
         encoder_output = self.encoder_obj(inputs)
 

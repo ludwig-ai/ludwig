@@ -71,7 +71,7 @@ def test_metaclass_annotations_not_lost_on_py314():
 def test_StringOptions():
     # Test case of default conflicting with allowed options:
     test_options = ["one"]
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         schema_utils.StringOptions(test_options, default=None, allow_none=False)
 
     # Test creating a schema with simple option, null not allowed:

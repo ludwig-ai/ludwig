@@ -1035,7 +1035,8 @@ class _MuonOptimizer(torch.optim.Optimizer):
     @torch.no_grad()
     def _zeropower_via_newtonschulz5(self, G: torch.Tensor, steps: int = 5) -> torch.Tensor:
         """Newton-Schulz iteration to approximate the orthogonal factor of G."""
-        assert G.ndim >= 2
+        if G.ndim < 2:
+            raise ValueError(f"_zeropower_via_newtonschulz5 requires a matrix (ndim >= 2), got ndim={G.ndim}.")
         a, b, c = self._NS_COEFFS
         X = G.bfloat16() if G.dtype not in (torch.float16, torch.bfloat16) else G
         X = X / (X.norm() + 1e-7)

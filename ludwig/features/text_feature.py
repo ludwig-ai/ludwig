@@ -250,14 +250,13 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)
 
     def forward(self, inputs, mask=None):
-        assert isinstance(inputs, torch.Tensor)
-        assert (
-            inputs.dtype == torch.int8
-            or inputs.dtype == torch.int16
-            or inputs.dtype == torch.int32
-            or inputs.dtype == torch.int64
-        )
-        assert len(inputs.shape) == 2
+        if not isinstance(inputs, torch.Tensor):
+            raise TypeError(f"Text feature forward expects a torch.Tensor, got {type(inputs).__name__}.")
+        _valid_dtypes = (torch.int8, torch.int16, torch.int32, torch.int64)
+        if inputs.dtype not in _valid_dtypes:
+            raise ValueError(f"Text feature inputs dtype must be an integer type, got {inputs.dtype}.")
+        if len(inputs.shape) != 2:
+            raise ValueError(f"Text feature inputs must be 2D (batch x seq_len), got shape {tuple(inputs.shape)}.")
 
         inputs_mask = torch.not_equal(inputs, SpecialSymbol.PADDING.value)
 

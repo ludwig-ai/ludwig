@@ -307,9 +307,12 @@ def get_input_tensors(
     model.config_obj.preprocessing.sample_size = sample_size_bak
 
     # Make sure the number of rows in the preprocessed dataset matches the number of rows in the input data
-    assert (
-        dataset.to_df().shape[0] == input_set.shape[0]
-    ), f"Expected {input_set.shape[0]} rows in preprocessed dataset, but got {dataset.to_df().shape[0]}"
+    preprocessed_rows = dataset.to_df().shape[0]
+    if preprocessed_rows != input_set.shape[0]:
+        raise RuntimeError(
+            f"Expected {input_set.shape[0]} rows in preprocessed dataset, but got {preprocessed_rows}. "
+            f"This is an internal error — please report it."
+        )
 
     # Convert dataset into a dict of tensors, and split each tensor into batches to control GPU memory usage
     inputs = {
@@ -510,12 +513,9 @@ def get_token_attributions(
     Returns:
         An array of token-attribution pairs of shape [batch_size, sequence_length, 2].
     """
-    assert (
-        input_ids.dtype == torch.int8
-        or input_ids.dtype == torch.int16
-        or input_ids.dtype == torch.int32
-        or input_ids.dtype == torch.int64
-    )
+    _integer_dtypes = (torch.int8, torch.int16, torch.int32, torch.int64)
+    if input_ids.dtype not in _integer_dtypes:
+        raise ValueError(f"input_ids must be an integer tensor (int8/int16/int32/int64), got dtype={input_ids.dtype}.")
 
     # Normalize token-level attributions to visualize the relative importance of each token.
     norm = torch.linalg.norm(token_attributions, dim=1)

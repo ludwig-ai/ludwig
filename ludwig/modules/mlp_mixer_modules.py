@@ -66,7 +66,10 @@ class MixerBlock(LudwigModule):
         self.layernorm2 = nn.LayerNorm(normalized_shape=embed_size)
 
     def forward(self, inputs: torch.Tensor, **kwargs):
-        assert inputs.shape[1:] == self.input_shape
+        if inputs.shape[1:] != self.input_shape:
+            raise ValueError(
+                f"MixerBlock got input shape {tuple(inputs.shape[1:])}, expected {tuple(self.input_shape)}."
+            )
 
         hidden = inputs
         hidden = self.layernorm1(hidden).transpose(1, 2)
@@ -78,7 +81,11 @@ class MixerBlock(LudwigModule):
         hidden = self.mlp2(hidden)
 
         output = hidden + mid
-        assert output.shape[1:] == self.output_shape
+        if output.shape[1:] != self.output_shape:
+            raise RuntimeError(
+                f"MixerBlock produced output shape {tuple(output.shape[1:])}, expected {tuple(self.output_shape)}. "
+                f"This is an internal error — please report it."
+            )
         return output
 
     @property
@@ -112,7 +119,11 @@ class MLPMixer(LudwigModule):
         avg_pool: bool = True,
     ):
         super().__init__()
-        assert (img_height % patch_size == 0) and (img_width % patch_size == 0)
+        if img_height % patch_size != 0 or img_width % patch_size != 0:
+            raise ValueError(
+                f"Image dimensions ({img_height}x{img_width}) must be divisible by patch_size={patch_size}.\n"
+                f"Fix: choose a patch_size that evenly divides both image height and width."
+            )
 
         self._input_shape = (in_channels, img_height, img_width)
         n_patches = int(img_height * img_width / (patch_size**2))
@@ -143,7 +154,8 @@ class MLPMixer(LudwigModule):
             self._output_shape = torch.Size((n_patches, embed_size))
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
-        assert inputs.shape[1:] == self.input_shape
+        if inputs.shape[1:] != self.input_shape:
+            raise ValueError(f"MLPMixer got input shape {tuple(inputs.shape[1:])}, expected {tuple(self.input_shape)}.")
         hidden = self.patch_conv(inputs)
         hidden = hidden.flatten(2).transpose(1, 2)
 
@@ -154,7 +166,11 @@ class MLPMixer(LudwigModule):
         if self.avg_pool:
             hidden = torch.mean(hidden, dim=1)
 
-        assert hidden.shape[1:] == self.output_shape
+        if hidden.shape[1:] != self.output_shape:
+            raise RuntimeError(
+                f"MLPMixer produced output shape {tuple(hidden.shape[1:])}, expected {tuple(self.output_shape)}. "
+                f"This is an internal error — please report it."
+            )
 
         return hidden
 

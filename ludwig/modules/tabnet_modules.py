@@ -190,7 +190,11 @@ class FeatureBlock(LudwigModule):
         # Initialize fc_layer before assigning to shared layer for torchscript compatibilty
         self.fc_layer = nn.Linear(input_size, units, bias=False)
         if shared_fc_layer is not None:
-            assert shared_fc_layer.weight.shape == self.fc_layer.weight.shape
+            if shared_fc_layer.weight.shape != self.fc_layer.weight.shape:
+                raise RuntimeError(
+                    f"shared_fc_layer weight shape {tuple(shared_fc_layer.weight.shape)} doesn't match "
+                    f"expected shape {tuple(self.fc_layer.weight.shape)} for input_size={input_size}, size={size}."
+                )
             self.fc_layer = shared_fc_layer
 
         self.batch_norm = GhostBatchNormalization(

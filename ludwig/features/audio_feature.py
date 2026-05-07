@@ -447,9 +447,14 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
             raise ValueError("max_sequence_length has to be defined - " 'check "update_config_with_metadata()"')
 
     def forward(self, inputs, mask=None):
-        assert isinstance(inputs, torch.Tensor)
-        assert inputs.dtype == torch.float32
-        assert len(inputs.shape) == 3, f"expected 3D shape, found: {inputs.shape}"
+        if not isinstance(inputs, torch.Tensor):
+            raise TypeError(f"Audio feature forward expects a torch.Tensor, got {type(inputs).__name__}.")
+        if inputs.dtype != torch.float32:
+            raise ValueError(f"Audio feature inputs dtype must be float32, got {inputs.dtype}.")
+        if len(inputs.shape) != 3:
+            raise ValueError(
+                f"Audio feature inputs must be 3D (batch x time x features), got shape {tuple(inputs.shape)}."
+            )
 
         encoder_output = self.encoder_obj(inputs, mask=mask)
 

@@ -42,7 +42,7 @@ def test_explanation_dataclass():
     # test add()
     explanation.add(["f1", "f2", "f3"], feature_attributions_for_label_1)
 
-    with pytest.raises(AssertionError, match="Expected feature attributions of shape"):
+    with pytest.raises(ValueError, match="Expected feature attributions of shape"):
         # test add() with wrong shape
         explanation.add(["f1", "f2", "f3", "f4"], np.array([1, 2, 3, 4]))
 

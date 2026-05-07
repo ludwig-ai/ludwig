@@ -156,7 +156,11 @@ class MultiNodeCheckpoint(Checkpoint):
                     model_weights = state[MODEL_WEIGHTS_FILE_NAME]
 
                 _, unexpected_keys = self.model.load_state_dict(model_weights, strict=False)
-                assert unexpected_keys == [], f"Unexpected keys found in state dict: {unexpected_keys}"
+                if unexpected_keys:
+                    raise RuntimeError(
+                        f"Unexpected keys found in state dict: {unexpected_keys}.\n"
+                        f"This may indicate a model architecture mismatch between the checkpoint and current model."
+                    )
                 if self.optimizer is not None:
                     self.optimizer.load_state_dict(state["optim_state"])
                 if self.scheduler is not None and "scheduler_state" in state:

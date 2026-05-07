@@ -242,5 +242,6 @@ class AccelerateStrategy(DistributedStrategy):
 
     @classmethod
     def replace_model_from_serialization(cls, state):
-        assert isinstance(state, Module)
+        if not isinstance(state, Module):
+            raise TypeError(f"replace_model_from_serialization expected an nn.Module, got {type(state).__name__}.")
         return state
