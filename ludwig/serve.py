@@ -24,7 +24,6 @@ import tempfile
 import time
 from typing import Any
 
-import numpy as np
 import pandas as pd
 import torch
 from pydantic import BaseModel, create_model, Field
@@ -34,6 +33,7 @@ from ludwig.api import LudwigModel
 from ludwig.constants import AUDIO, COLUMN
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.utils.data_utils import numpy_to_python
 from ludwig.utils.print_utils import get_logging_level_registry, print_ludwig
 
 logger = logging.getLogger(__name__)
@@ -86,26 +86,6 @@ except ImportError:
 # ---------------------------------------------------------------------------
 ALL_FEATURES_PRESENT_ERROR = {"error": "entry must contain all input features"}
 COULD_NOT_RUN_INFERENCE_ERROR = {"error": "Unexpected Error: could not run inference on model"}
-
-
-# ---------------------------------------------------------------------------
-# Numpy → Python serialization helpers
-# ---------------------------------------------------------------------------
-def _numpy_safe(obj: Any) -> Any:
-    """Recursively convert numpy scalars / arrays to plain Python types."""
-    if isinstance(obj, np.integer):
-        return int(obj)
-    if isinstance(obj, np.floating):
-        return float(obj)
-    if isinstance(obj, np.bool_):
-        return bool(obj)
-    if isinstance(obj, np.ndarray):
-        return obj.tolist()
-    if isinstance(obj, dict):
-        return {k: _numpy_safe(v) for k, v in obj.items()}
-    if isinstance(obj, (list, tuple, set)):
-        return [_numpy_safe(v) for v in obj]
-    return obj
 
 
 # ---------------------------------------------------------------------------
@@ -319,7 +299,7 @@ def server(
                     status_code=504,
                 )
 
-            resp = _numpy_safe(resp_df.to_dict("records")[0])
+            resp = numpy_to_python(resp_df.to_dict("records")[0])
             latency = time.monotonic() - start
             _log_response("predict", output_feature_names, latency)
             _record_success("predict", latency)
@@ -383,7 +363,7 @@ def server(
                     status_code=504,
                 )
 
-            resp = _numpy_safe(resp_df.to_dict("split"))
+            resp = numpy_to_python(resp_df.to_dict("split"))
             latency = time.monotonic() - start
             _log_response("batch_predict", output_feature_names, latency)
             _record_success("batch_predict", latency)

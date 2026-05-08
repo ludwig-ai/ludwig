@@ -328,7 +328,10 @@ def grayscale(img: torch.Tensor) -> torch.Tensor:
 def num_channels_in_image(img: torch.Tensor):
     """Returns number of channels in image."""
     if img is None or img.ndim < 2:
-        raise ValueError("Invalid image data")
+        raise ValueError(
+            f"Cannot determine number of channels: expected a 2D or 3D image tensor, "
+            f"got {'None' if img is None else f'{img.ndim}D tensor with shape {tuple(img.shape)}'}."
+        )
 
     if img.ndim == 2:
         return 1

@@ -1920,9 +1920,11 @@ def preprocess_for_training(
     """Returns training, val and test datasets with training set metadata."""
     config_dict = _get_config_dict(config)
 
-    # sanity check to make sure some data source is provided
     if dataset is None and training_set is None:
-        raise ValueError("No training data is provided!")
+        raise ValueError(
+            "No training data provided. Pass either 'dataset' (combined dataset with split column) "
+            "or 'training_set' (pre-split training data) to train()."
+        )
 
     # preload ludwig and HF datasets
     dataset, training_set, validation_set, test_set = load_dataset_uris(
@@ -2273,9 +2275,10 @@ def preprocess_for_prediction(
     """
     config_dict = _get_config_dict(config)
 
-    # Sanity Check to make sure some data source is provided
     if dataset is None:
-        raise ValueError("No training data is provided!")
+        raise ValueError(
+            "No dataset provided. Pass 'dataset' as a path, DataFrame, or HuggingFace Dataset to preprocess()."
+        )
 
     if isinstance(dataset, Dataset):
         return dataset, training_set_metadata

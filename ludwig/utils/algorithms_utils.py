@@ -64,7 +64,11 @@ def topological_sort(graph_unsorted):
             # weren't able to resolve any of them, which means there
             # are nodes with cyclic edges that will never be resolved,
             # so we bail out with an error.
-            raise RuntimeError("A cyclic dependency occurred")
+            cyclic_nodes = list(graph_unsorted.keys())
+            raise RuntimeError(
+                f"Cyclic dependency detected among output features: {cyclic_nodes}.\n"
+                "Check that no output feature lists another output feature as a dependency of itself."
+            )
 
     return graph_sorted
 

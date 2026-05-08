@@ -283,7 +283,10 @@ class LudwigModule(Module):
         elif isinstance(output_tensor, dict) and ENCODER_OUTPUT in output_tensor:
             return output_tensor[ENCODER_OUTPUT].size()[1:]
         else:
-            raise ValueError("Unknown output tensor type.")
+            raise ValueError(
+                f"Cannot determine output shape from encoder output of type {type(output_tensor).__name__}.\n"
+                f"Expected a torch.Tensor or a dict with key '{ENCODER_OUTPUT}'."
+            )
 
 
 def freeze_parameters(module: nn.Module):

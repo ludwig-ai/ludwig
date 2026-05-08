@@ -221,6 +221,7 @@ ignore = [
     "B024",   # abstract-base-class-without-abstract-method — deferred cleanup
     "E731",   # lambda-assignment — some lambdas are intentionally concise
     "RUF046", # unnecessary-cast-to-int — deferred cleanup
+    "RUF022", # unsorted-dunder-all — thematic grouping with comments is preferred
     "SIM110", # reimplemented-builtin — deferred cleanup
     "B019",   # cached-instance-method — deferred cleanup (requires careful review)
     "SIM101", # duplicate-isinstance-call — deferred cleanup

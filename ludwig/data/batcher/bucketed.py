@@ -89,7 +89,7 @@ class BucketedBatcher(Batcher):
                 elif self.trim_side == "left":
                     sub_batch[key] = selected_samples[:, -max_length:]
                 else:
-                    raise ValueError("Invalid trim side:", self.trim_side)
+                    raise ValueError(f"Invalid trim_side '{self.trim_side}'. Expected 'left' or 'right'.")
 
             else:
                 sub_batch[key] = self.dataset.get(key, selected_idcs)
@@ -112,52 +112,3 @@ class BucketedBatcher(Batcher):
 
     def _compute_steps_per_epoch(self) -> int:
         return int(np.sum(np.ceil(self.bucket_sizes / self.batch_size)).item())
-
-
-# dynamic_length_encoders = {
-#     'rnn',
-#     'embed'
-# }
-#
-# todo future: reintroduce the bucketed batcher
-# def initialize_batcher(dataset, batch_size=128, bucketing_field=None,
-#                        input_features=None, preprocessing=None,
-#                        should_shuffle=True, ignore_last=False):
-#     if bucketing_field is not None:
-#         bucketing_feature = [
-#             feature for feature in input_features if
-#             feature[NAME] == bucketing_field
-#         ]
-#         if not bucketing_feature:
-#             raise ValueError(
-#                 'Bucketing field {} not present in input features'.format(
-#                     bucketing_field
-#                 )
-#             )
-#         else:
-#             bucketing_feature = bucketing_feature[0]
-#         should_trim = bucketing_feature[
-#                           'encoder'] in dynamic_length_encoders
-#         if 'preprocessing' in bucketing_feature:
-#             trim_side = bucketing_feature['preprocessing']['padding']
-#         else:
-#             trim_side = preprocessing[bucketing_feature[TYPE]]['padding']
-#
-#         batcher = BucketedBatcher(
-#             dataset,
-#             bucketing_field=bucketing_field,
-#             batch_size=batch_size,
-#             buckets=10,
-#             ignore_last=ignore_last,
-#             should_shuffle=should_shuffle,
-#             should_trim=should_trim,
-#             trim_side=trim_side
-#         )
-#     else:
-#         batcher = Batcher(
-#             dataset,
-#             batch_size,
-#             should_shuffle=should_shuffle,
-#             ignore_last=ignore_last
-#         )
-#     return batcher

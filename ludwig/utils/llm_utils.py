@@ -391,7 +391,9 @@ def has_padding_token(input_tensor: torch.Tensor, tokenizer: PreTrainedTokenizer
     elif input_tensor.dim() == 2:
         return torch.any(input_tensor == tokenizer.pad_token_id, dim=-1).item()
     else:
-        raise ValueError("Input tensor must be 1D or 2D")
+        raise ValueError(
+            f"Input tensor must be 1D (single sequence) or 2D (batch of sequences), got {input_tensor.dim()}D tensor."
+        )
 
 
 def remove_left_padding(input_ids_sample: torch.Tensor, tokenizer: PreTrainedTokenizer):
