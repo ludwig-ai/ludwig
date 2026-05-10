@@ -18,6 +18,7 @@ from ludwig.datasets.dataset_config import DatasetConfig
 from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 
 # PublicAPI
+from ludwig.datasets.loaders.openml_loader import openml_suite_loaders  # noqa: F401
 from ludwig.datasets.utils import model_configs_for_dataset  # noqa
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import print_ludwig
