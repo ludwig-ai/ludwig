@@ -93,8 +93,12 @@ def to_numpy_dataset(df: DataFrame, backend: Optional["Backend"] = None) -> dict
 @DeveloperAPI
 def from_numpy_dataset(dataset) -> pd.DataFrame:
     """Returns a pandas dataframe from the dataset."""
+    import numpy as np
+
     col_mapping = {}
     for k, v in dataset.items():
+        if not isinstance(v, np.ndarray):
+            v = np.array(v)
         if len(v.shape) > 1:
             # unstacking, needed for ndarrays of dimension 2 and more
             (*vals,) = v
@@ -104,6 +108,10 @@ def from_numpy_dataset(dataset) -> pd.DataFrame:
             # to a column of float64
             vals = v
         col_mapping[k] = vals
+    if not col_mapping:
+        # pandas 2.x: pd.DataFrame.from_dict({}) returns RangeIndex (int) columns;
+        # explicitly return object-dtype Index so .str accessor works downstream.
+        return pd.DataFrame(columns=pd.Index([], dtype="object"))
     return pd.DataFrame.from_dict(col_mapping)
 
 

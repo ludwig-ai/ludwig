@@ -1,32 +1,19 @@
 version: 1.0
 name: sst2
-download_urls: https://nlp.stanford.edu/~socherr/stanfordSentimentTreebank.zip
-sha256:
-  stanfordSentimentTreebank.zip: 3f5209483b46bbf129cacbbbe6ae02fe780407034f61cf6342b7833257c3f1db
-train_filenames: train.csv
-validation_filenames: dev.csv
-test_filenames: test.csv
-loader: sst.SST2Loader
+huggingface_dataset_id: stanfordnlp/sst2
+loader: hugging_face.HFLoader
 description: |
-  The SST2 dataset.
+  The SST2 dataset (Stanford Sentiment Treebank, binary).
 
-  This dataset is constructed using the Stanford Sentiment Treebank Dataset.
-  This dataset contains binary labels (positive or negative) for each sample.
+  Loaded from HuggingFace (stanfordnlp/sst2) since the original Stanford
+  download URL (nlp.stanford.edu) is no longer publicly accessible.
 
-  The original dataset specified 5 labels:
-  very negative, negative, neutral, positive, very positive with
-  the following cutoffs:
-  [0, 0.2], (0.2, 0.4], (0.4, 0.6], (0.6, 0.8], (0.8, 1.0]
-
-  In the construction of this dataset, we remove all neutral phrases
-  and assign a negative label if the original rating falls
-  into the following range: [0, 0.4] and a positive label
-  if the original rating is between (0.6, 1.0].
+  Labels: 0=negative, 1=positive.
 columns:
   - name: sentence
     type: text
   - name: label
     type: binary
 output_features:
-    - name: label
-      type: binary
+  - name: label
+    type: binary

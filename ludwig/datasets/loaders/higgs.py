@@ -30,8 +30,16 @@ class HiggsLoader(DatasetLoader):
 
     def transform_dataframe(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         processed_df = super().transform_dataframe(dataframe)
+        n = len(processed_df)
+        # The HIGGS CSV may contain fewer rows than the canonical 11M depending on
+        # which version was downloaded — derive split boundaries from actual length.
         if self.add_validation_set:
-            processed_df["split"] = [0] * 10000000 + [1] * 500000 + [2] * 500000
+            n_test = min(500000, max(1, int(n * 0.05)))
+            n_val = min(500000, max(1, int(n * 0.05)))
+            n_train = n - n_test - n_val
+            processed_df["split"] = [0] * n_train + [1] * n_val + [2] * n_test
         else:
-            processed_df["split"] = [0] * 10500000 + [2] * 500000
+            n_test = min(500000, max(1, int(n * 0.05)))
+            n_train = n - n_test
+            processed_df["split"] = [0] * n_train + [2] * n_test
         return processed_df

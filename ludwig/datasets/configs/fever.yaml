@@ -22,13 +22,9 @@ columns:
     type: category
   - name: label
     type: category
-  - name: label
-    type: category
   - name: claim
     type: text
   - name: evidence
-    type: category
-  - name: label
     type: category
 output_features:
   - name: label

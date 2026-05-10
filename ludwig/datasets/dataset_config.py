@@ -97,3 +97,9 @@ class DatasetConfig:
 
     # The OpenML task ID, or None if this dataset is not hosted on OpenML.
     openml_task_id: int | None = None
+
+    # HuggingFace dataset path (e.g. "stanfordnlp/sst2"), used by HFLoader.
+    huggingface_dataset_id: str | None = None
+
+    # HuggingFace dataset subset/configuration name (e.g. "sentiment" for tweet_eval).
+    huggingface_subsample: str | None = None
