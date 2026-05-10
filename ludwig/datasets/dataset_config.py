@@ -94,3 +94,6 @@ class DatasetConfig:
     # The loader module and class to use, relative to ludwig.datasets.loaders. Only change this if the dataset requires
     # processing which is not handled by the default loader.
     loader: str = "dataset_loader.DatasetLoader"
+
+    # The OpenML task ID, or None if this dataset is not hosted on OpenML.
+    openml_task_id: int | None = None
