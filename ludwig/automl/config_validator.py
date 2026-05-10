@@ -23,10 +23,10 @@ import pandas as pd
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.automl.config_enumerator import (
-    DECODER_REGISTRY,
-    ENCODER_REGISTRY,
     FeatureSpec,
     get_valid_combiners,
+    get_valid_decoders,
+    get_valid_encoders,
 )
 from ludwig.constants import (
     BATCH_SIZE,
@@ -156,21 +156,18 @@ def validate_config_for_dataset(
     output_names = _get_feature_names(output_features)
 
     # ------------------------------------------------------------------
-    # Check 1: input feature columns exist in df
+    # Input/output columns present in dataframe
     # ------------------------------------------------------------------
     for name in input_names:
         if name not in df_columns:
             failures.append(f"Input feature column '{name}' not found in dataframe (columns: {sorted(df_columns)}).")
 
-    # ------------------------------------------------------------------
-    # Check 2: output feature columns exist in df
-    # ------------------------------------------------------------------
     for name in output_names:
         if name not in df_columns:
             failures.append(f"Output feature column '{name}' not found in dataframe (columns: {sorted(df_columns)}).")
 
     # ------------------------------------------------------------------
-    # Check 3: encoder types are valid for their feature types
+    # Encoder types valid for their feature types
     # ------------------------------------------------------------------
     for feat in input_features:
         feat_name = feat.get("name", "<unknown>")
@@ -185,8 +182,8 @@ def validate_config_for_dataset(
             # No encoder specified — Ludwig will use the default, which is always valid.
             continue
 
-        valid_encoders = ENCODER_REGISTRY.get(feat_type)
-        if valid_encoders is None:
+        valid_encoders = get_valid_encoders(feat_type)
+        if not valid_encoders:
             warnings.append(
                 f"Input feature '{feat_name}' has unknown feature type '{feat_type}'; cannot validate encoder."
             )
@@ -197,7 +194,7 @@ def validate_config_for_dataset(
             )
 
     # ------------------------------------------------------------------
-    # Check 4: decoder types are valid for their output feature types
+    # Decoder types valid for their output feature types
     # ------------------------------------------------------------------
     for feat in output_features:
         feat_name = feat.get("name", "<unknown>")
@@ -211,8 +208,8 @@ def validate_config_for_dataset(
         if dec_type is None:
             continue
 
-        valid_decoders = DECODER_REGISTRY.get(feat_type)
-        if valid_decoders is None:
+        valid_decoders = get_valid_decoders(feat_type)
+        if not valid_decoders:
             warnings.append(
                 f"Output feature '{feat_name}' has unknown feature type '{feat_type}'; cannot validate decoder."
             )
@@ -223,7 +220,7 @@ def validate_config_for_dataset(
             )
 
     # ------------------------------------------------------------------
-    # Check 5: combiner type is valid for the input feature set
+    # Combiner compatible with input feature set
     # ------------------------------------------------------------------
     combiner_type = _get_combiner_type(config_dict)
     if combiner_type is not None:
@@ -247,7 +244,7 @@ def validate_config_for_dataset(
         warnings.append("No combiner type specified in config; skipping combiner compatibility check.")
 
     # ------------------------------------------------------------------
-    # Check 6: batch_size < len(df) * 0.7 (train split has >= 1 batch)
+    # Batch size fits within training split
     # ------------------------------------------------------------------
     trainer = config_dict.get("trainer", {})
     batch_size = trainer.get(BATCH_SIZE) if isinstance(trainer, dict) else None
@@ -261,7 +258,7 @@ def validate_config_for_dataset(
             )
 
     # ------------------------------------------------------------------
-    # Check 7: no output feature is also an input feature
+    # No column serves as both input and output
     # ------------------------------------------------------------------
     overlap = set(input_names) & set(output_names)
     if overlap:
@@ -270,7 +267,7 @@ def validate_config_for_dataset(
         )
 
     # ------------------------------------------------------------------
-    # Check 8: each output feature has >1 distinct non-null value
+    # Each output feature has enough distinct values to train on
     # ------------------------------------------------------------------
     for name in output_names:
         if name not in df_columns:

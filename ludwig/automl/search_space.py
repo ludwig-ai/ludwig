@@ -21,7 +21,7 @@ import os
 import random
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 from ludwig.api_annotations import DeveloperAPI
 
@@ -171,7 +171,6 @@ _DEFAULT_ALL_COMBINERS: list[str] = [
     "hypernetwork",
 ]
 
-# Combiner constraints for the built-in defaults.
 _DEFAULT_COMBINER_CONSTRAINTS: dict[str, dict] = {
     "tabnet": {"requires_all_tabular": True},
     "tabpfn_v2": {"requires_all_tabular": True},
@@ -182,17 +181,29 @@ _DEFAULT_COMBINER_CONSTRAINTS: dict[str, dict] = {
     "sequence_concat": {"requires_sequential": True},
 }
 
-# Combiner hyperparameter grids for built-in defaults.
+# Shared FC-layer hyperparam grid used by several combiners.
+_FC_HYPERPARAMS: dict[str, list] = {
+    "num_fc_layers": [1, 2, 3],
+    "output_size": [64, 128, 256],
+    "dropout": [0.0, 0.1, 0.3],
+}
+
 _DEFAULT_COMBINER_HYPERPARAMS: dict[str, dict[str, list]] = {
-    "concat": {"num_fc_layers": [1, 2, 3], "output_size": [64, 128, 256], "dropout": [0.0, 0.1, 0.3]},
-    "tabtransformer": {"num_fc_layers": [1, 2, 3], "output_size": [64, 128, 256], "dropout": [0.0, 0.1, 0.3]},
-    "ft_transformer": {"num_fc_layers": [1, 2, 3], "output_size": [64, 128, 256], "dropout": [0.0, 0.1, 0.3]},
-    "project_aggregate": {"num_fc_layers": [1, 2, 3], "output_size": [64, 128, 256], "dropout": [0.0, 0.1, 0.3]},
-    "gated_fusion": {"num_fc_layers": [1, 2, 3], "output_size": [64, 128, 256], "dropout": [0.0, 0.1, 0.3]},
-    "hypernetwork": {"num_fc_layers": [1, 2, 3], "output_size": [64, 128, 256], "dropout": [0.0, 0.1, 0.3]},
+    "concat": _FC_HYPERPARAMS,
+    "tabtransformer": _FC_HYPERPARAMS,
+    "ft_transformer": _FC_HYPERPARAMS,
+    "project_aggregate": _FC_HYPERPARAMS,
+    "gated_fusion": _FC_HYPERPARAMS,
+    "hypernetwork": _FC_HYPERPARAMS,
     "tabnet": {"size": [8, 16, 32], "output_size": [8, 16, 32], "num_steps": [3, 5, 7]},
     "transformer": {"num_heads": [2, 4, 8], "num_layers": [1, 2, 3], "dropout": [0.0, 0.1, 0.3]},
 }
+
+_DEFAULT_TRAINER_SPEC = TrainerSpec(
+    learning_rate_values=[1e-4, 3e-4, 1e-3, 3e-3, 1e-2],
+    batch_size_values=[64, 128, 256, 512],
+    default_epochs=50,
+)
 
 
 def _build_default_search_space() -> SearchSpace:
@@ -205,13 +216,14 @@ def _build_default_search_space() -> SearchSpace:
             if feat_type not in encoders[enc_name].feature_types:
                 encoders[enc_name].feature_types.append(feat_type)
 
-    combiners: dict[str, CombinerSpec] = {}
-    for comb_name in _DEFAULT_ALL_COMBINERS:
-        combiners[comb_name] = CombinerSpec(
-            name=comb_name,
-            constraints=_DEFAULT_COMBINER_CONSTRAINTS.get(comb_name, {}),
-            hyperparameters=_DEFAULT_COMBINER_HYPERPARAMS.get(comb_name, {}),
+    combiners: dict[str, CombinerSpec] = {
+        name: CombinerSpec(
+            name=name,
+            constraints=_DEFAULT_COMBINER_CONSTRAINTS.get(name, {}),
+            hyperparameters=_DEFAULT_COMBINER_HYPERPARAMS.get(name, {}),
         )
+        for name in _DEFAULT_ALL_COMBINERS
+    }
 
     decoders: dict[str, DecoderSpec] = {}
     for feat_type, dec_names in _DEFAULT_DECODER_REGISTRY.items():
@@ -221,13 +233,7 @@ def _build_default_search_space() -> SearchSpace:
             if feat_type not in decoders[dec_name].feature_types:
                 decoders[dec_name].feature_types.append(feat_type)
 
-    trainer = TrainerSpec(
-        learning_rate_values=[1e-4, 3e-4, 1e-3, 3e-3, 1e-2],
-        batch_size_values=[64, 128, 256, 512],
-        default_epochs=50,
-    )
-
-    return SearchSpace.__new_from_specs__(encoders, combiners, decoders, trainer)
+    return SearchSpace._from_specs(encoders, combiners, decoders, _DEFAULT_TRAINER_SPEC)
 
 
 # ---------------------------------------------------------------------------
@@ -245,65 +251,54 @@ def _extract_hyperparameters(raw: dict[str, Any]) -> dict[str, list]:
     return result
 
 
-def _load_encoders_from_dir(enc_dir: Path) -> dict[str, EncoderSpec]:
-    """Loads all encoder YAML files from *enc_dir*."""
+def _iter_yaml_dir(spec_dir: Path) -> Iterator[tuple[Path, dict]]:
+    """Yields (path, data) for each valid named YAML file in *spec_dir*."""
     import yaml
 
-    encoders: dict[str, EncoderSpec] = {}
-    for yaml_path in sorted(enc_dir.glob("*.yaml")):
+    for yaml_path in sorted(spec_dir.glob("*.yaml")):
         with open(yaml_path) as fh:
             data = yaml.safe_load(fh)
-        if not isinstance(data, dict) or "name" not in data:
-            logger.warning(f"Skipping encoder YAML without 'name' key: {yaml_path}")
-            continue
-        name = data["name"]
-        encoders[name] = EncoderSpec(
-            name=name,
+        if isinstance(data, dict) and "name" in data:
+            yield yaml_path, data
+        else:
+            logger.warning(f"Skipping YAML without 'name' key: {yaml_path}")
+
+
+def _load_encoders_from_dir(enc_dir: Path) -> dict[str, EncoderSpec]:
+    """Loads all encoder YAML files from *enc_dir*."""
+    return {
+        data["name"]: EncoderSpec(
+            name=data["name"],
             feature_types=list(data.get("feature_types", [])),
             preprocessing=dict(data.get("preprocessing", {})),
             hyperparameters=_extract_hyperparameters(data.get("hyperparameters", {})),
         )
-    return encoders
+        for _, data in _iter_yaml_dir(enc_dir)
+    }
 
 
 def _load_combiners_from_dir(comb_dir: Path) -> dict[str, CombinerSpec]:
     """Loads all combiner YAML files from *comb_dir*."""
-    import yaml
-
-    combiners: dict[str, CombinerSpec] = {}
-    for yaml_path in sorted(comb_dir.glob("*.yaml")):
-        with open(yaml_path) as fh:
-            data = yaml.safe_load(fh)
-        if not isinstance(data, dict) or "name" not in data:
-            logger.warning(f"Skipping combiner YAML without 'name' key: {yaml_path}")
-            continue
-        name = data["name"]
-        combiners[name] = CombinerSpec(
-            name=name,
+    return {
+        data["name"]: CombinerSpec(
+            name=data["name"],
             constraints=dict(data.get("constraints", {})),
             hyperparameters=_extract_hyperparameters(data.get("hyperparameters", {})),
         )
-    return combiners
+        for _, data in _iter_yaml_dir(comb_dir)
+    }
 
 
 def _load_decoders_from_dir(dec_dir: Path) -> dict[str, DecoderSpec]:
     """Loads all decoder YAML files from *dec_dir*."""
-    import yaml
-
-    decoders: dict[str, DecoderSpec] = {}
-    for yaml_path in sorted(dec_dir.glob("*.yaml")):
-        with open(yaml_path) as fh:
-            data = yaml.safe_load(fh)
-        if not isinstance(data, dict) or "name" not in data:
-            logger.warning(f"Skipping decoder YAML without 'name' key: {yaml_path}")
-            continue
-        name = data["name"]
-        decoders[name] = DecoderSpec(
-            name=name,
+    return {
+        data["name"]: DecoderSpec(
+            name=data["name"],
             feature_types=list(data.get("feature_types", [])),
             hyperparameters=_extract_hyperparameters(data.get("hyperparameters", {})),
         )
-    return decoders
+        for _, data in _iter_yaml_dir(dec_dir)
+    }
 
 
 def _load_trainer_from_yaml(trainer_path: Path) -> TrainerSpec:
@@ -318,9 +313,9 @@ def _load_trainer_from_yaml(trainer_path: Path) -> TrainerSpec:
     epochs_spec = data.get("epochs", {})
 
     return TrainerSpec(
-        learning_rate_values=list(lr_spec.get("values", [1e-4, 3e-4, 1e-3, 3e-3, 1e-2])),
-        batch_size_values=list(bs_spec.get("values", [64, 128, 256, 512])),
-        default_epochs=int(epochs_spec.get("default", 50)),
+        learning_rate_values=list(lr_spec.get("values", _DEFAULT_TRAINER_SPEC.learning_rate_values)),
+        batch_size_values=list(bs_spec.get("values", _DEFAULT_TRAINER_SPEC.batch_size_values)),
+        default_epochs=int(epochs_spec.get("default", _DEFAULT_TRAINER_SPEC.default_epochs)),
     )
 
 
@@ -362,29 +357,20 @@ class SearchSpace:
             self.combiners = _load_combiners_from_dir(root / "combiners")
             self.decoders = _load_decoders_from_dir(root / "decoders")
             trainer_yaml = root / "trainer.yaml"
-            self.trainer = (
-                _load_trainer_from_yaml(trainer_yaml)
-                if trainer_yaml.exists()
-                else TrainerSpec(
-                    learning_rate_values=[1e-4, 3e-4, 1e-3, 3e-3, 1e-2],
-                    batch_size_values=[64, 128, 256, 512],
-                    default_epochs=50,
-                )
-            )
+            self.trainer = _load_trainer_from_yaml(trainer_yaml) if trainer_yaml.exists() else _DEFAULT_TRAINER_SPEC
 
-        # Build derived indices.
         self.encoder_registry: dict[str, list[str]] = self._build_encoder_registry()
         self.decoder_registry: dict[str, list[str]] = self._build_decoder_registry()
 
     @classmethod
-    def __new_from_specs__(
+    def _from_specs(
         cls,
         encoders: dict[str, EncoderSpec],
         combiners: dict[str, CombinerSpec],
         decoders: dict[str, DecoderSpec],
         trainer: TrainerSpec,
     ) -> SearchSpace:
-        """Internal constructor used by ``_build_default_search_space``."""
+        """Internal constructor: build a SearchSpace directly from spec dicts."""
         instance = cls.__new__(cls)
         instance.encoders = encoders
         instance.combiners = combiners

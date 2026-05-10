@@ -143,7 +143,7 @@ def _sample_trainer_params(
     return params
 
 
-def _limited_encoders(
+def _candidate_encoders(
     feature_type: str,
     rng: random.Random,
     search_space: SearchSpace | None = None,
@@ -232,7 +232,7 @@ def sample_configs(
             input_encoders: dict[str, str] = {}
             encoder_hyperparams: dict[str, dict] = {}
             for feat in input_features:
-                choices = _limited_encoders(feat.type, rng, ss)
+                choices = _candidate_encoders(feat.type, rng, ss)
                 if not choices:
                     logger.warning(f"sample_configs: no encoders for feature type '{feat.type}'; skipping feature.")
                     choices = ["passthrough"]

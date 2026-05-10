@@ -215,6 +215,14 @@ def enumerate_config_specs(
         f"(features={len(input_features)}, combiners={len(valid_combiners)}, decoders={len(valid_decoders)})"
     )
 
+    def _make_spec(enc_combo: tuple, combiner: str, decoder: str) -> ConfigSpec:
+        return ConfigSpec(
+            input_encoders={f.name: enc for f, enc in zip(input_features, enc_combo)},
+            combiner=combiner,
+            output_decoder=decoder,
+            output_type=output_feature.type,
+        )
+
     results: list[ConfigSpec] = []
     encoder_combos = itertools.product(*per_feature_encoders)
 
@@ -226,14 +234,7 @@ def enumerate_config_specs(
             for combiner in valid_combiners:
                 for decoder in valid_decoders:
                     if flat_idx == next_sample:
-                        results.append(
-                            ConfigSpec(
-                                input_encoders={f.name: enc for f, enc in zip(input_features, enc_combo)},
-                                combiner=combiner,
-                                output_decoder=decoder,
-                                output_type=output_feature.type,
-                            )
-                        )
+                        results.append(_make_spec(enc_combo, combiner, decoder))
                         next_sample += stride
                         if len(results) >= max_configs:
                             return results
@@ -242,13 +243,6 @@ def enumerate_config_specs(
         for enc_combo in encoder_combos:
             for combiner in valid_combiners:
                 for decoder in valid_decoders:
-                    results.append(
-                        ConfigSpec(
-                            input_encoders={f.name: enc for f, enc in zip(input_features, enc_combo)},
-                            combiner=combiner,
-                            output_decoder=decoder,
-                            output_type=output_feature.type,
-                        )
-                    )
+                    results.append(_make_spec(enc_combo, combiner, decoder))
 
     return results

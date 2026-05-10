@@ -64,10 +64,10 @@ class DatasetQualityReport:
 
     def summary(self) -> str:
         """One-line summary string."""
-        n_pass = sum(1 for c in self.checks if c.status == CheckStatus.PASS)
-        n_warn = len(self.warnings)
-        n_fail = len(self.failures)
-        overall = "PASS" if self.passed else "FAIL"
+        n_fail = sum(1 for c in self.checks if c.status == CheckStatus.FAIL)
+        n_warn = sum(1 for c in self.checks if c.status == CheckStatus.WARN)
+        n_pass = len(self.checks) - n_fail - n_warn
+        overall = "PASS" if n_fail == 0 else "FAIL"
         return (
             f"[{overall}] Dataset '{self.dataset_name}' "
             f"({self.n_rows} rows, {self.n_cols} cols): "
