@@ -267,9 +267,16 @@ class DatasetLoader:
                     f"the original source failed with the following error {e}."
                 )
                 if not self.config.fallback_mirrors:
-                    logger.exception(f"No fallback mirror found. Failed to download dataset {self.config.name}.")
+                    raise RuntimeError(f"Failed to download dataset {self.config.name}. Original error: {e}") from e
                 else:
-                    self.download_from_fallback_mirrors()
+                    try:
+                        self.download_from_fallback_mirrors()
+                    except Exception as fallback_e:
+                        raise RuntimeError(
+                            f"Failed to download dataset {self.config.name}. "
+                            f"Original error: {e}. "
+                            f"Fallback also failed: {fallback_e}"
+                        ) from e
         self.verify()
         if self.state == DatasetState.DOWNLOADED:
             # Extract dataset
