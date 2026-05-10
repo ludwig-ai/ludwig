@@ -32,6 +32,7 @@ from ludwig.automl.config_enumerator import (
     get_valid_decoders,
     get_valid_encoders,
 )
+from ludwig.automl.search_space import _default_search_space, SearchSpace
 from ludwig.constants import (
     BATCH_SIZE,
     COMBINER,
@@ -43,15 +44,6 @@ from ludwig.constants import (
 )
 
 logger = logging.getLogger(__name__)
-
-# ---------------------------------------------------------------------------
-# Hyperparameter grids
-# ---------------------------------------------------------------------------
-
-_LR_VALUES: list[float] = [1e-4, 3e-4, 1e-3, 3e-3, 1e-2]
-_BATCH_SIZES: list[int] = [64, 128, 256, 512]
-_NUM_LAYERS: list[int] = [1, 2, 3]
-_DROPOUTS: list[float] = [0.0, 0.1, 0.3]
 
 # Maximum number of encoder choices sampled per feature type to keep configs tractable.
 _MAX_ENCODERS_PER_TYPE: int = 3
@@ -95,11 +87,30 @@ def _build_config_dict(
     spec: ConfigSpec,
     trainer_params: dict,
     combiner_params: dict | None = None,
+    encoder_hyperparams: dict[str, dict] | None = None,
 ) -> dict:
-    """Builds a complete Ludwig config dict from a :class:`ConfigSpec` and trainer params."""
-    input_feature_dicts = [
-        {"name": f.name, TYPE: f.type, "encoder": {TYPE: spec.input_encoders[f.name]}} for f in input_features
-    ]
+    """Builds a complete Ludwig config dict from a :class:`ConfigSpec` and trainer params.
+
+    # Inputs
+    :param input_features: Input feature specs.
+    :param output_feature: Output feature spec.
+    :param spec: The :class:`ConfigSpec` (encoder assignments, combiner, decoder).
+    :param trainer_params: Trainer hyperparameters dict.
+    :param combiner_params: Optional combiner hyperparameter dict (includes ``type`` key).
+    :param encoder_hyperparams: Optional mapping of feature name -> encoder hyperparam dict
+        (merged into each input feature's ``encoder`` sub-dict).
+    """
+    encoder_hyperparams = encoder_hyperparams or {}
+    input_feature_dicts = []
+    for f in input_features:
+        enc_dict: dict = {TYPE: spec.input_encoders[f.name]}
+        extra = encoder_hyperparams.get(f.name, {})
+        # extra already contains {type: ..., param: val, ...} — merge, type wins from spec
+        for k, v in extra.items():
+            if k != TYPE:
+                enc_dict[k] = v
+        input_feature_dicts.append({"name": f.name, TYPE: f.type, "encoder": enc_dict})
+
     output_feature_dict = {
         "name": output_feature.name,
         TYPE: output_feature.type,
@@ -114,11 +125,17 @@ def _build_config_dict(
     }
 
 
-def _sample_trainer_params(rng: random.Random, max_epochs: int, time_limit_s: int | None) -> dict:
-    """Samples a single set of trainer hyperparameters from the predefined grids."""
+def _sample_trainer_params(
+    rng: random.Random,
+    max_epochs: int,
+    time_limit_s: int | None,
+    search_space: SearchSpace | None = None,
+) -> dict:
+    """Samples a single set of trainer hyperparameters from the search space grids."""
+    ss = search_space or _default_search_space()
     params: dict = {
-        LEARNING_RATE: rng.choice(_LR_VALUES),
-        BATCH_SIZE: rng.choice(_BATCH_SIZES),
+        LEARNING_RATE: rng.choice(ss.trainer.learning_rate_values),
+        BATCH_SIZE: rng.choice(ss.trainer.batch_size_values),
         "epochs": max_epochs,
     }
     if time_limit_s is not None:
@@ -126,28 +143,13 @@ def _sample_trainer_params(rng: random.Random, max_epochs: int, time_limit_s: in
     return params
 
 
-def _sample_combiner_params(combiner: str, rng: random.Random) -> dict:
-    """Samples combiner-level hyperparameters (FC layers, dropout, etc.)."""
-    params: dict = {TYPE: combiner}
-    # concat-like combiners support num_fc_layers / output_size / dropout.
-    if combiner in ("concat", "tabtransformer", "ft_transformer", "project_aggregate", "gated_fusion", "hypernetwork"):
-        params["num_fc_layers"] = rng.choice(_NUM_LAYERS)
-        params["dropout"] = rng.choice(_DROPOUTS)
-        params["output_size"] = rng.choice([64, 128, 256])
-    elif combiner == "tabnet":
-        params["size"] = rng.choice([8, 16, 32])
-        params["output_size"] = rng.choice([8, 16, 32])
-        params["num_steps"] = rng.choice([3, 5, 7])
-    elif combiner == "transformer":
-        params["num_heads"] = rng.choice([2, 4, 8])
-        params["num_layers"] = rng.choice(_NUM_LAYERS)
-        params["dropout"] = rng.choice(_DROPOUTS)
-    return params
-
-
-def _limited_encoders(feature_type: str, rng: random.Random) -> list[str]:
+def _limited_encoders(
+    feature_type: str,
+    rng: random.Random,
+    search_space: SearchSpace | None = None,
+) -> list[str]:
     """Returns up to *_MAX_ENCODERS_PER_TYPE* encoders for *feature_type*, sampled without replacement."""
-    all_encoders = get_valid_encoders(feature_type)
+    all_encoders = get_valid_encoders(feature_type, search_space)
     if len(all_encoders) <= _MAX_ENCODERS_PER_TYPE:
         return list(all_encoders)
     return rng.sample(all_encoders, _MAX_ENCODERS_PER_TYPE)
@@ -166,6 +168,7 @@ def sample_configs(
     seed: int = 42,
     max_epochs: int = 50,
     time_limit_s: int | None = None,
+    search_space: SearchSpace | None = None,
 ) -> list[SampledConfig]:
     """Samples *n* diverse Ludwig configs for the given feature schema.
 
@@ -173,7 +176,8 @@ def sample_configs(
 
     - At least 1 config per valid combiner (up to *n*).
     - Remaining configs distributed proportionally across combiners.
-    - Trainer hyperparams sampled from predefined grids (LR, batch size, layers, dropout).
+    - Trainer hyperparams sampled from the search space grids (LR, batch size).
+    - Encoder and combiner hyperparams sampled from per-spec grids in the search space.
     - Encoder choices sampled per feature type (up to 3 options per type).
     - Configs are deduplicated by :attr:`SampledConfig.config_hash`.
 
@@ -184,14 +188,17 @@ def sample_configs(
     :param seed: (int) Random seed for reproducibility.
     :param max_epochs: (int) Maximum training epochs written into each config's trainer section.
     :param time_limit_s: (int | None) Optional wall-clock time limit passed to the trainer.
+    :param search_space: (:class:`~ludwig.automl.search_space.SearchSpace` | None) Optional
+        custom search space.  Uses the built-in defaults when ``None``.
 
     # Return
     :return: (list[SampledConfig]) Deduplicated sampled configs (up to *n*).
     """
+    ss = search_space or _default_search_space()
     rng = random.Random(seed)
 
-    valid_combiners = get_valid_combiners(input_features)
-    valid_decoders = get_valid_decoders(output_feature.type)
+    valid_combiners = get_valid_combiners(input_features, ss)
+    valid_decoders = get_valid_decoders(output_feature.type, ss)
 
     if not valid_combiners:
         logger.warning("sample_configs: no valid combiners for the given input feature schema.")
@@ -212,9 +219,8 @@ def sample_configs(
     seen_hashes: set[str] = set()
     results: list[SampledConfig] = []
 
-    # Pre-sample limited encoder lists per feature type (same across all combiner iterations
-    # for consistency, but regenerated each attempt inside the inner loop).
     for combiner, budget in combiner_budget.items():
+        combiner_spec = ss.combiners.get(combiner)
         attempts = 0
         generated = 0
         max_attempts = budget * 20  # avoid infinite loop on very small spaces
@@ -222,18 +228,28 @@ def sample_configs(
         while generated < budget and attempts < max_attempts:
             attempts += 1
 
-            # Sample one encoder per input feature.
+            # Sample one encoder per input feature (with hyperparams).
             input_encoders: dict[str, str] = {}
+            encoder_hyperparams: dict[str, dict] = {}
             for feat in input_features:
-                choices = _limited_encoders(feat.type, rng)
+                choices = _limited_encoders(feat.type, rng, ss)
                 if not choices:
                     logger.warning(f"sample_configs: no encoders for feature type '{feat.type}'; skipping feature.")
                     choices = ["passthrough"]
-                input_encoders[feat.name] = rng.choice(choices)
+                enc_name = rng.choice(choices)
+                input_encoders[feat.name] = enc_name
+                enc_spec = ss.encoders.get(enc_name)
+                if enc_spec is not None:
+                    encoder_hyperparams[feat.name] = ss.sample_hyperparams(enc_spec, rng)
 
             decoder = rng.choice(valid_decoders)
-            trainer_params = _sample_trainer_params(rng, max_epochs, time_limit_s)
-            combiner_params = _sample_combiner_params(combiner, rng)
+            trainer_params = _sample_trainer_params(rng, max_epochs, time_limit_s, ss)
+
+            # Sample combiner hyperparams via the SearchSpace.
+            if combiner_spec is not None:
+                combiner_params = ss.sample_hyperparams(combiner_spec, rng)
+            else:
+                combiner_params = {TYPE: combiner}
 
             spec = ConfigSpec(
                 input_encoders=input_encoders,
@@ -241,7 +257,9 @@ def sample_configs(
                 output_decoder=decoder,
                 output_type=output_feature.type,
             )
-            config_dict = _build_config_dict(input_features, output_feature, spec, trainer_params, combiner_params)
+            config_dict = _build_config_dict(
+                input_features, output_feature, spec, trainer_params, combiner_params, encoder_hyperparams
+            )
             config_hash = _hash_config(config_dict)
 
             if config_hash in seen_hashes:
@@ -280,6 +298,7 @@ def configs_from_dataframe(
     target_column: str,
     n: int = 100,
     seed: int = 42,
+    search_space: SearchSpace | None = None,
 ) -> list[SampledConfig]:
     """Convenience function: infers the feature schema from *df* and samples *n* configs.
 
@@ -292,6 +311,8 @@ def configs_from_dataframe(
     :param target_column: (str) Name of the output / target column.
     :param n: (int) Target number of sampled configs.
     :param seed: (int) Random seed for reproducibility.
+    :param search_space: (:class:`~ludwig.automl.search_space.SearchSpace` | None) Optional
+        custom search space.  Uses the built-in defaults when ``None``.
 
     # Return
     :return: (list[SampledConfig]) Sampled configs for the inferred schema.
@@ -326,4 +347,5 @@ def configs_from_dataframe(
         output_feature=output_feature,
         n=n,
         seed=seed,
+        search_space=search_space,
     )

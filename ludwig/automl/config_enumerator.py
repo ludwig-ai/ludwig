@@ -22,138 +22,26 @@ from dataclasses import dataclass
 from typing import NamedTuple
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (
-    AUDIO,
-    BAG,
-    BINARY,
-    CATEGORY,
-    DATE,
-    H3,
-    IMAGE,
-    NUMBER,
-    SEQUENCE,
-    SET,
-    TEXT,
-    TIMESERIES,
-    VECTOR,
-)
+from ludwig.automl.search_space import _default_search_space, SearchSpace
 
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Registry: encoders per input feature type (ECD model)
+# Backwards-compatible module-level registry aliases
 # ---------------------------------------------------------------------------
+# These are computed lazily from the default SearchSpace so that existing code
+# that does ``from ludwig.automl.config_enumerator import ENCODER_REGISTRY``
+# continues to work without modification.
 
-ENCODER_REGISTRY: dict[str, list[str]] = {
-    BINARY: ["passthrough", "dense"],
-    CATEGORY: ["onehot", "passthrough", "dense", "sparse", "target", "hash"],
-    NUMBER: ["passthrough", "dense", "ple", "periodic", "bins"],
-    VECTOR: ["passthrough", "dense"],
-    TEXT: [
-        "bert",
-        "distilbert",
-        "roberta",
-        "xlnet",
-        "albert",
-        "electra",
-        "longformer",
-        "auto_transformer",
-        "deberta",
-        "modernbert",
-        "camembert",
-        "gpt",
-        "gpt2",
-        "t5",
-        "mt5",
-        "xlm",
-        "xlmroberta",
-        "tf_idf",
-        "embed",
-        "rnn",
-        "parallel_cnn",
-        "stacked_cnn",
-        "transformer",
-        "mamba2",
-    ],
-    IMAGE: [
-        "stacked_cnn",
-        "resnet",
-        "efficientnet",
-        "vit",
-        "densenet",
-        "alexnet",
-        "vgg",
-        "googlenet",
-        "inceptionv3",
-        "mobilenetv2",
-        "regnet",
-        "convnext",
-        "dinov2",
-        "siglip",
-        "swin_transformer",
-        "maxvit",
-    ],
-    AUDIO: ["rnn", "stacked_cnn", "parallel_cnn", "wav2vec2", "hubert", "whisper", "mamba2"],
-    TIMESERIES: [
-        "dense",
-        "rnn",
-        "stacked_cnn",
-        "parallel_cnn",
-        "patchtst",
-        "nbeats",
-        "mamba2",
-        "transformer",
-        "passthrough",
-    ],
-    SEQUENCE: ["embed", "rnn", "stacked_cnn", "parallel_cnn", "transformer", "mamba2"],
-    DATE: ["embed", "wave"],
-    H3: ["embed", "rnn", "weighted_sum"],
-    BAG: ["embed"],
-    SET: ["embed"],
-}
 
-# ---------------------------------------------------------------------------
-# Registry: decoders per output feature type (ECD model)
-# ---------------------------------------------------------------------------
-
-DECODER_REGISTRY: dict[str, list[str]] = {
-    BINARY: ["mlp_classifier", "regressor"],
-    CATEGORY: ["classifier", "mlp_classifier"],
-    NUMBER: ["regressor"],
-    TEXT: ["generator", "tagger", "transformer_generator"],
-    SEQUENCE: ["generator", "tagger", "transformer_generator"],
-    IMAGE: ["fpn", "segformer", "unet"],
-    SET: ["classifier"],
-    VECTOR: ["projector"],
-    TIMESERIES: ["projector"],
-}
-
-# ---------------------------------------------------------------------------
-# Combiner lists and compatibility constraints
-# ---------------------------------------------------------------------------
-
-ALL_COMBINERS: list[str] = [
-    "concat",
-    "tabnet",
-    "transformer",
-    "tabtransformer",
-    "ft_transformer",
-    "tabpfn_v2",
-    "project_aggregate",
-    "comparator",
-    "sequence",
-    "sequence_concat",
-    "cross_attention",
-    "perceiver",
-    "gated_fusion",
-    "hypernetwork",
-]
-
-# Feature types considered "tabular" for tabnet / tabpfn_v2 compatibility.
-_TABULAR_TYPES: frozenset[str] = frozenset({BINARY, CATEGORY, NUMBER})
-
-# Feature types that satisfy the sequence/timeseries combiner requirement.
-_SEQUENTIAL_TYPES: frozenset[str] = frozenset({SEQUENCE, TEXT, TIMESERIES})
+def __getattr__(name: str):
+    if name == "ENCODER_REGISTRY":
+        return _default_search_space().encoder_registry
+    if name == "DECODER_REGISTRY":
+        return _default_search_space().decoder_registry
+    if name == "ALL_COMBINERS":
+        return list(_default_search_space().combiners.keys())
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 # ---------------------------------------------------------------------------
@@ -186,17 +74,20 @@ class ConfigSpec:
 
 
 @DeveloperAPI
-def get_valid_encoders(feature_type: str) -> list[str]:
+def get_valid_encoders(feature_type: str, search_space: SearchSpace | None = None) -> list[str]:
     """Returns the list of valid encoder names for *feature_type*.
 
     # Inputs
     :param feature_type: (str) A Ludwig feature type constant (e.g. ``"text"``, ``"image"``).
+    :param search_space: (:class:`~ludwig.automl.search_space.SearchSpace` | None) Optional
+        custom search space.  Uses the built-in defaults when ``None``.
 
     # Return
     :return: (list[str]) Encoder names registered for that feature type.  Returns an empty
         list for unknown feature types (with a warning logged).
     """
-    encoders = ENCODER_REGISTRY.get(feature_type)
+    ss = search_space or _default_search_space()
+    encoders = ss.encoder_registry.get(feature_type)
     if encoders is None:
         logger.warning(f"No encoder registry entry for feature type '{feature_type}'; returning empty list.")
         return []
@@ -204,17 +95,20 @@ def get_valid_encoders(feature_type: str) -> list[str]:
 
 
 @DeveloperAPI
-def get_valid_decoders(feature_type: str) -> list[str]:
+def get_valid_decoders(feature_type: str, search_space: SearchSpace | None = None) -> list[str]:
     """Returns the list of valid decoder names for *feature_type*.
 
     # Inputs
     :param feature_type: (str) A Ludwig feature type constant used as an output feature.
+    :param search_space: (:class:`~ludwig.automl.search_space.SearchSpace` | None) Optional
+        custom search space.  Uses the built-in defaults when ``None``.
 
     # Return
     :return: (list[str]) Decoder names registered for that feature type.  Returns an empty
         list for unknown/unsupported output feature types (with a warning logged).
     """
-    decoders = DECODER_REGISTRY.get(feature_type)
+    ss = search_space or _default_search_space()
+    decoders = ss.decoder_registry.get(feature_type)
     if decoders is None:
         logger.warning(f"No decoder registry entry for feature type '{feature_type}'; returning empty list.")
         return []
@@ -222,41 +116,49 @@ def get_valid_decoders(feature_type: str) -> list[str]:
 
 
 @DeveloperAPI
-def get_valid_combiners(input_features: list[FeatureSpec]) -> list[str]:
+def get_valid_combiners(
+    input_features: list[FeatureSpec],
+    search_space: SearchSpace | None = None,
+) -> list[str]:
     """Returns the list of valid combiner names for the given input feature schema.
 
-    Applies the following compatibility constraints:
+    Applies compatibility constraints stored in each :class:`~ludwig.automl.search_space.CombinerSpec`:
 
-    - ``"tabnet"`` and ``"tabpfn_v2"``: only when **all** input features are tabular
+    - ``requires_all_tabular``: only when **all** input features are tabular
       (BINARY, CATEGORY, or NUMBER).
-    - ``"comparator"``: only when there are **exactly 2** input features.
-    - ``"sequence"`` and ``"sequence_concat"``: only when at least one input feature is
+    - ``exact_n_inputs``: only when the number of input features equals that value.
+    - ``requires_sequential``: only when at least one input feature is
       SEQUENCE, TEXT, or TIMESERIES.
-    - All other combiners are always compatible.
 
     # Inputs
     :param input_features: (list[FeatureSpec]) The input feature specifications.
+    :param search_space: (:class:`~ludwig.automl.search_space.SearchSpace` | None) Optional
+        custom search space.  Uses the built-in defaults when ``None``.
 
     # Return
     :return: (list[str]) Compatible combiner names.
     """
+    ss = search_space or _default_search_space()
+
+    _tabular = frozenset({"binary", "category", "number"})
+    _sequential = frozenset({"sequence", "text", "timeseries"})
+
     input_types = {f.type for f in input_features}
     n_inputs = len(input_features)
-    all_tabular = input_types.issubset(_TABULAR_TYPES)
-    has_sequential = bool(input_types & _SEQUENTIAL_TYPES)
+    all_tabular = input_types.issubset(_tabular)
+    has_sequential = bool(input_types & _sequential)
 
     valid: list[str] = []
-    for combiner in ALL_COMBINERS:
-        if combiner in ("tabnet", "tabpfn_v2"):
-            if not all_tabular:
-                continue
-        elif combiner == "comparator":
-            if n_inputs != 2:
-                continue
-        elif combiner in ("sequence", "sequence_concat"):
-            if not has_sequential:
-                continue
-        valid.append(combiner)
+    for spec in ss.combiners.values():
+        c = spec.constraints
+        if c.get("requires_all_tabular") and not all_tabular:
+            continue
+        exact_n = c.get("exact_n_inputs")
+        if exact_n is not None and n_inputs != exact_n:
+            continue
+        if c.get("requires_sequential") and not has_sequential:
+            continue
+        valid.append(spec.name)
 
     return valid
 
@@ -271,6 +173,7 @@ def enumerate_config_specs(
     input_features: list[FeatureSpec],
     output_feature: FeatureSpec,
     max_configs: int | None = None,
+    search_space: SearchSpace | None = None,
 ) -> list[ConfigSpec]:
     """Enumerates all valid (encoder, combiner, decoder) combinations for the given schema.
 
@@ -283,15 +186,17 @@ def enumerate_config_specs(
     :param output_feature: (FeatureSpec) The single output feature specification.
     :param max_configs: (int | None) Maximum number of ``ConfigSpec`` objects to return.
         ``None`` means unlimited.
+    :param search_space: (:class:`~ludwig.automl.search_space.SearchSpace` | None) Optional
+        custom search space.  Uses the built-in defaults when ``None``.
 
     # Return
     :return: (list[ConfigSpec]) All (or up to *max_configs*) valid config specs.
     """
-    # Collect per-feature encoder lists.
-    per_feature_encoders: list[list[str]] = [get_valid_encoders(f.type) for f in input_features]
+    ss = search_space or _default_search_space()
 
-    valid_combiners = get_valid_combiners(input_features)
-    valid_decoders = get_valid_decoders(output_feature.type)
+    per_feature_encoders: list[list[str]] = [get_valid_encoders(f.type, ss) for f in input_features]
+    valid_combiners = get_valid_combiners(input_features, ss)
+    valid_decoders = get_valid_decoders(output_feature.type, ss)
 
     if not valid_combiners:
         logger.warning("No valid combiners for the given input feature schema; returning empty list.")
@@ -300,7 +205,6 @@ def enumerate_config_specs(
         logger.warning(f"No valid decoders for output feature type '{output_feature.type}'; returning empty list.")
         return []
 
-    # Total space size (may be huge).
     total = 1
     for enc_list in per_feature_encoders:
         total *= max(len(enc_list), 1)
@@ -312,12 +216,9 @@ def enumerate_config_specs(
     )
 
     results: list[ConfigSpec] = []
-
-    # Iterate deterministically: encoder combos × combiners × decoders.
     encoder_combos = itertools.product(*per_feature_encoders)
 
     if max_configs is not None and total > max_configs:
-        # Deterministic stride-based sampling across the full Cartesian product.
         stride = max(1, total // max_configs)
         flat_idx = 0
         next_sample = 0
