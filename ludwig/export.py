@@ -28,10 +28,10 @@ logger = logging.getLogger(__name__)
 def export_mlflow(model_path, output_path="mlflow", registered_model_name=None, callbacks=None, **kwargs):
     """Exports a trained Ludwig model as an MLflow model.
 
-    # Inputs
-    :param model_path: (str) filepath to the trained Ludwig model.
-    :param output_path: (str) output directory for the MLflow model.
-    :param registered_model_name: (str, default: `None`) register model with this name.
+    Args:
+        model_path: filepath to the trained Ludwig model.
+        output_path: output directory for the MLflow model.
+        registered_model_name: register model with this name. Defaults to None.
     """
     logger.info(f"Loading Ludwig model from {model_path}")
 
@@ -47,10 +47,10 @@ def export_mlflow(model_path, output_path="mlflow", registered_model_name=None, 
 def export_model(model_path, output_path, format="safetensors", **kwargs):
     """Exports a trained Ludwig model in various formats.
 
-    # Inputs
-    :param model_path: (str) filepath to the trained Ludwig model.
-    :param output_path: (str) output directory for the exported model.
-    :param format: (str) export format: safetensors, torch_export, onnx.
+    Args:
+        model_path: filepath to the trained Ludwig model.
+        output_path: output directory for the exported model.
+        format: export format: safetensors, torch_export, onnx.
     """
     logger.info(f"Loading Ludwig model from {model_path}")
     model = LudwigModel.load(model_path)

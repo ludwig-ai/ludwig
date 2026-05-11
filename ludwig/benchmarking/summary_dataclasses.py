@@ -53,9 +53,10 @@ class MetricDiff:
 def build_diff(name: str, base_value: float, experimental_value: float) -> MetricDiff:
     """Build a diff between any type of metric.
 
-    :param name: name assigned to the metric to be diff-ed.
-    :param base_value: base value of the metric.
-    :param experimental_value: experimental value of the metric.
+    Args:
+        name: name assigned to the metric to be diff-ed.
+        base_value: base value of the metric.
+        experimental_value: experimental value of the metric.
     """
     diff = experimental_value - base_value
     diff_percentage = 100 * diff / base_value if base_value != 0 else "inf"
@@ -160,8 +161,9 @@ class MetricsDiff:
 def export_metrics_diff_to_csv(metrics_diff: MetricsDiff, path: str):
     """Export metrics report to .csv.
 
-    :param metrics_diff: MetricsDiff object containing the diff for two experiments on a dataset.
-    :param path: file name of the exported csv.
+    Args:
+        metrics_diff: MetricsDiff object containing the diff for two experiments on a dataset.
+        path: file name of the exported csv.
     """
     with open(path, "w", newline="") as f:
         writer = csv.DictWriter(
@@ -204,8 +206,9 @@ def export_metrics_diff_to_csv(metrics_diff: MetricsDiff, path: str):
 def build_metrics_summary(experiment_local_directory: str) -> MetricsSummary:
     """Build a metrics summary for an experiment.
 
-    :param experiment_local_directory: directory where the experiment artifacts live.
-        e.g. local_experiment_repo/ames_housing/some_experiment/
+    Args:
+        experiment_local_directory: directory where the experiment artifacts live.
+            e.g. local_experiment_repo/ames_housing/some_experiment/
     """
     config = load_json(
         os.path.join(experiment_local_directory, "experiment_run", MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME)
@@ -235,10 +238,11 @@ def build_metrics_diff(
 ) -> MetricsDiff:
     """Build a MetricsDiff object between two experiments on a dataset.
 
-    :param dataset_name: the name of the Ludwig dataset.
-    :param base_experiment_name: the name of the base experiment.
-    :param experimental_experiment_name: the name of the experimental experiment.
-    :param local_directory: the local directory where the experiment artifacts are downloaded.
+    Args:
+        dataset_name: the name of the Ludwig dataset.
+        base_experiment_name: the name of the base experiment.
+        experimental_experiment_name: the name of the experimental experiment.
+        local_directory: the local directory where the experiment artifacts are downloaded.
     """
     base_summary: MetricsSummary = build_metrics_summary(
         os.path.join(local_directory, dataset_name, base_experiment_name)
@@ -331,8 +335,9 @@ class ResourceUsageDiff:
 def export_resource_usage_diff_to_csv(resource_usage_diff: ResourceUsageDiff, path: str):
     """Export resource usage metrics report to .csv.
 
-    :param resource_usage_diff: ResourceUsageDiff object containing the diff for two experiments on a dataset.
-    :param path: file name of the exported csv.
+    Args:
+        resource_usage_diff: ResourceUsageDiff object containing the diff for two experiments on a dataset.
+        path: file name of the exported csv.
     """
     with open(path, "w", newline="") as f:
         writer = csv.DictWriter(
@@ -370,9 +375,10 @@ def average_runs(path_to_runs_dir: str) -> dict[str, int | float]:
 
     Metrics for code blocks/functions that were executed exactly once will be returned as is.
 
-    :param path_to_runs_dir: path to where metrics specific to a tag are stored.
-        e.g. resource_usage_out_dir/torch_ops_resource_usage/LudwigModel.evaluate/
-        This directory will contain JSON files with the following pattern run_*.json
+    Args:
+        path_to_runs_dir: path to where metrics specific to a tag are stored.
+            e.g. resource_usage_out_dir/torch_ops_resource_usage/LudwigModel.evaluate/
+            This directory will contain JSON files with the following pattern run_*.json
     """
     runs = [load_json(os.path.join(path_to_runs_dir, run)) for run in os.listdir(path_to_runs_dir)]
     # asserting that keys to each of the dictionaries are consistent throughout the runs.
@@ -390,8 +396,9 @@ def summarize_resource_usage(path: str, tags: list[str] | None = None) -> list[R
     Each entry of the list corresponds to the metrics collected from a code block/function run.
     Important: code blocks that ran more than once are averaged.
 
-    :param path: corresponds to the `output_dir` argument in a ResourceUsageTracker run.
-    :param tags: (optional) list of tags to create summary for. If None, metrics from all tags will be summarized.
+    Args:
+        path: corresponds to the `output_dir` argument in a ResourceUsageTracker run.
+        tags: optional list of tags to create summary for. If None, metrics from all tags will be summarized.
     """
     summary = {}
     # metric types: system_resource_usage, torch_ops_resource_usage.
@@ -431,8 +438,9 @@ def build_resource_usage_diff(
 ) -> list[ResourceUsageDiff]:
     """Build and return a ResourceUsageDiff object to diff resource usage metrics between two experiments.
 
-    :param base_path: corresponds to the `output_dir` argument in the base ResourceUsageTracker run.
-    :param experimental_path: corresponds to the `output_dir` argument in the experimental ResourceUsageTracker run.
+    Args:
+        base_path: corresponds to the `output_dir` argument in the base ResourceUsageTracker run.
+        experimental_path: corresponds to the `output_dir` argument in the experimental ResourceUsageTracker run.
     """
     base_summary_list = summarize_resource_usage(base_path)
     experimental_summary_list = summarize_resource_usage(experimental_path)

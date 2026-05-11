@@ -156,16 +156,16 @@ class IntegratedGradientsExplainer(Explainer):
     def explain(self) -> ExplanationsResult:
         """Explain the model's predictions using Integrated Gradients.
 
-        # Return
+        Returns:
+            ExplanationsResult containing the explanations.
 
-        :return: ExplanationsResult containing the explanations.
-            `global_explanations`: (Explanation) Aggregate explanation for the entire input data.
+            `global_explanations`: Aggregate explanation for the entire input data.
 
-            `row_explanations`: (List[Explanation]) A list of explanations, one for each row in the input data. Each
+            `row_explanations`: A list of explanations, one for each row in the input data. Each
             explanation contains the integrated gradients for each label in the target feature's vocab with respect to
             each input feature.
 
-            `expected_values`: (List[float]) of length [output feature cardinality] Average convergence delta for each
+            `expected_values`: Of length [output feature cardinality]. Average convergence delta for each
             label in the target feature's vocab.
         """
 
@@ -271,11 +271,12 @@ def get_input_tensors(
 ) -> list[torch.Tensor]:
     """Convert the input data into a list of variables, one for each input feature.
 
-    # Inputs
+    Args:
+        model: The LudwigModel to use for encoding.
+        input_set: The input data to encode of shape [batch size, num input features].
 
-    :param model: The LudwigModel to use for encoding.
-    :param input_set: The input data to encode of shape [batch size, num input features].  # Return
-    :return: A list of variables, one for each input feature. Shape of each variable is [batch size, embedding size].
+    Returns:
+        A list of variables, one for each input feature. Shape of each variable is [batch size, embedding size].
     """
     # Ignore sample_ratio and sample_size from the model config, since we want to explain all the data.
     sample_ratio_bak = model.config_obj.preprocessing.sample_ratio

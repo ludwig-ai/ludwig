@@ -54,25 +54,16 @@ def confidence_thresholding_cli(
 ) -> None:
     """Load model data from files to be shown by confidence_thresholding.
 
-    # Inputs
-
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
-    :param ground_truth: (str) path to ground truth file.
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
-    :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
-    :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
-    :return None:
+    Args:
+        probabilities: List of prediction results file names to extract probabilities from.
+        ground_truth: Path to ground truth file.
+        ground_truth_split: Type of ground truth split - `0` for training split,
+            `1` for validation split or `2` for test split.
+        split_file: File path to csv file containing split values.
+        ground_truth_metadata: File path to feature metadata json file created during training.
+        output_feature_name: Name of the output feature to visualize.
+        output_directory: Name of output directory containing training results.
+        kwargs: Parameters for the requested visualizations.
     """
     # retrieve feature metadata to convert raw predictions to encoded value
     metadata = load_json(ground_truth_metadata)
@@ -111,28 +102,19 @@ def confidence_thresholding(
     the model and the data coverage while increasing a threshold (x axis) on
     the probabilities of predictions for the specified output_feature_name.
 
-    # Inputs
-
-    :param probabilities_per_model: (List[numpy.array]) list of model
-        probabilities.
-    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
-    :param metadata: (dict) feature metadata dictionary
-    :param output_feature_name: (str) output feature name
-    :param labels_limit: (int) upper limit on the numeric encoded label value.
-        Encoded numeric label values in dataset that are higher than
-        `labels_limit` are considered to be "rare" labels.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
-        list of the model names to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
-        metadata['str2idx'] in np.vectorize
-
-    # Return
-
-    :return: (None)
+    Args:
+        probabilities_per_model: List of model probabilities.
+        ground_truth: Ground truth values.
+        metadata: Feature metadata dictionary.
+        output_feature_name: Output feature name.
+        labels_limit: Upper limit on the numeric encoded label value. Encoded
+            numeric label values in dataset that are higher than `labels_limit`
+            are considered to be "rare" labels.
+        model_names: Model name or list of the model names to use as labels.
+        output_directory: Directory where to save plots. If not specified, plots
+            will be displayed in a window.
+        file_format: File format of output plots - `'pdf'` or `'png'`.
+        ground_truth_apply_idx: Whether to use metadata['str2idx'] in np.vectorize.
     """
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
@@ -196,25 +178,16 @@ def confidence_thresholding_data_vs_acc_cli(
 ) -> None:
     """Load model data from files to be shown by confidence_thresholding_data_vs_acc_cli.
 
-    # Inputs
-
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
-    :param ground_truth: (str) path to ground truth file.
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
-    :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
-    :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
-    :return None:
+    Args:
+        probabilities: List of prediction results file names to extract probabilities from.
+        ground_truth: Path to ground truth file.
+        ground_truth_split: Type of ground truth split - `0` for training split,
+            `1` for validation split or `2` for test split.
+        split_file: File path to csv file containing split values.
+        ground_truth_metadata: File path to feature metadata json file created during training.
+        output_feature_name: Name of the output feature to visualize.
+        output_directory: Name of output directory containing training results.
+        kwargs: Parameters for the requested visualizations.
     """
     # retrieve feature metadata to convert raw predictions to encoded value
     metadata = load_json(ground_truth_metadata)
@@ -256,27 +229,19 @@ def confidence_thresholding_data_vs_acc(
     not visualizing the threshold and having coverage as x axis instead of
     the threshold.
 
-    # Inputs
-
-    :param probabilities_per_model: (List[numpy.array]) list of model
-        probabilities.
-    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
-    :param metadata: (dict) feature metadata dictionary
-    :param output_feature_name: (str) output feature name
-    :param labels_limit: (int) upper limit on the numeric encoded label value.
-        Encoded numeric label values in dataset that are higher than
-        `labels_limit` are considered to be "rare" labels.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
-        list of the model names to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
-        metadata['str2idx'] in np.vectorize
-
-    # Return
-    :return: (None)
+    Args:
+        probabilities_per_model: List of model probabilities.
+        ground_truth: Ground truth values.
+        metadata: Feature metadata dictionary.
+        output_feature_name: Output feature name.
+        labels_limit: Upper limit on the numeric encoded label value. Encoded
+            numeric label values in dataset that are higher than `labels_limit`
+            are considered to be "rare" labels.
+        model_names: Model name or list of the model names to use as labels.
+        output_directory: Directory where to save plots. If not specified, plots
+            will be displayed in a window.
+        file_format: File format of output plots - `'pdf'` or `'png'`.
+        ground_truth_apply_idx: Whether to use metadata['str2idx'] in np.vectorize.
     """
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
@@ -344,25 +309,16 @@ def confidence_thresholding_data_vs_acc_subset_cli(
 ) -> None:
     """Load model data from files to be shown by confidence_thresholding_data_vs_acc_subset.
 
-    # Inputs
-
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
-    :param ground_truth: (str) path to ground truth file.
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
-    :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
-    :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
-    :return None:
+    Args:
+        probabilities: List of prediction results file names to extract probabilities from.
+        ground_truth: Path to ground truth file.
+        ground_truth_split: Type of ground truth split - `0` for training split,
+            `1` for validation split or `2` for test split.
+        split_file: File path to csv file containing split values.
+        ground_truth_metadata: File path to feature metadata json file created during training.
+        output_feature_name: Name of the output feature to visualize.
+        output_directory: Name of output directory containing training results.
+        kwargs: Parameters for the requested visualizations.
     """
     # retrieve feature metadata to convert raw predictions to encoded value
     metadata = load_json(ground_truth_metadata)
@@ -399,32 +355,22 @@ def confidence_thresholding_data_vs_acc_subset(
 ) -> None:
     """Show models comparison of confidence threshold data vs accuracy on a subset of data.
 
-    # Inputs
-
-    :param probabilities_per_model: (List[numpy.array]) list of model
-        probabilities.
-    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
-    :param metadata: (dict) feature metadata dictionary
-    :param output_feature_name: (str) output feature name
-    :param top_n_classes: (List[int]) list containing the number of classes
-        to plot.
-    :param labels_limit: (int) upper limit on the numeric encoded label value.
-        Encoded numeric label values in dataset that are higher than
-        `labels_limit` are considered to be "rare" labels.
-    :param subset: (str) string specifying type of subset filtering.  Valid
-        values are `ground_truth` or `predictions`.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
-        list of the model names to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
-        metadata['str2idx'] in np.vectorize
-
-    # Return
-
-    :return: (None)
+    Args:
+        probabilities_per_model: List of model probabilities.
+        ground_truth: Ground truth values.
+        metadata: Feature metadata dictionary.
+        output_feature_name: Output feature name.
+        top_n_classes: List containing the number of classes to plot.
+        labels_limit: Upper limit on the numeric encoded label value. Encoded
+            numeric label values in dataset that are higher than `labels_limit`
+            are considered to be "rare" labels.
+        subset: String specifying type of subset filtering. Valid values are
+            `ground_truth` or `predictions`.
+        model_names: Model name or list of the model names to use as labels.
+        output_directory: Directory where to save plots. If not specified, plots
+            will be displayed in a window.
+        file_format: File format of output plots - `'pdf'` or `'png'`.
+        ground_truth_apply_idx: Whether to use metadata['str2idx'] in np.vectorize.
     """
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
@@ -510,24 +456,16 @@ def confidence_thresholding_data_vs_acc_subset_per_class_cli(
 ) -> None:
     """Load model data from files to be shown by compare_classifiers_multiclass.
 
-    # Inputs
-
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
-    :param ground_truth: (str) path to ground truth file.
-    :param ground_truth_metadata: (str) path to ground truth metadata file.
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
-    :param split_file: (str, None) file path to csv file containing split values
-    :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
-    :return None:
+    Args:
+        probabilities: List of prediction results file names to extract probabilities from.
+        ground_truth: Path to ground truth file.
+        ground_truth_metadata: Path to ground truth metadata file.
+        ground_truth_split: Type of ground truth split - `0` for training split,
+            `1` for validation split or `2` for test split.
+        split_file: File path to csv file containing split values.
+        output_feature_name: Name of the output feature to visualize.
+        output_directory: Name of output directory containing training results.
+        kwargs: Parameters for the requested visualizations.
     """
     # retrieve feature metadata to convert raw predictions to encoded value
     metadata = load_json(ground_truth_metadata)
@@ -564,33 +502,24 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
 ) -> None:
     """Show models comparison of confidence threshold data vs accuracy on a subset of data per class in top n classes.
 
-    # Inputs
-
-    :param probabilities_per_model: (List[numpy.array]) list of model
-        probabilities.
-    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
-    :param metadata: (dict) intermediate preprocess structure created during
-        training containing the mappings of the input dataset.
-    :param output_feature_name: (str) name of the output feature to use
-        for the visualization.
-    :param top_n_classes: (Union[int, List[int]]) number of top classes or list
-        containing the number of top classes to plot.
-    :param labels_limit: (int) upper limit on the numeric encoded label value.
-        Encoded numeric label values in dataset that are higher than
-        `labels_limit` are considered to be "rare" labels.
-    :param subset: (str) string specifying type of subset filtering.  Valid
-        values are `ground_truth` or `predictions`.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
-        list of the model names to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
-        metadata['str2idx'] in np.vectorize
-
-    # Return
-    :return: (None)
+    Args:
+        probabilities_per_model: List of model probabilities.
+        ground_truth: Ground truth values.
+        metadata: Intermediate preprocess structure created during training containing
+            the mappings of the input dataset.
+        output_feature_name: Name of the output feature to use for the visualization.
+        top_n_classes: Number of top classes or list containing the number of top
+            classes to plot.
+        labels_limit: Upper limit on the numeric encoded label value. Encoded
+            numeric label values in dataset that are higher than `labels_limit`
+            are considered to be "rare" labels.
+        subset: String specifying type of subset filtering. Valid values are
+            `ground_truth` or `predictions`.
+        model_names: Model name or list of the model names to use as labels.
+        output_directory: Directory where to save plots. If not specified, plots
+            will be displayed in a window.
+        file_format: File format of output plots - `'pdf'` or `'png'`.
+        ground_truth_apply_idx: Whether to use metadata['str2idx'] in np.vectorize.
     """
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
@@ -686,26 +615,16 @@ def confidence_thresholding_2thresholds_2d_cli(
 ) -> None:
     """Load model data from files to be shown by confidence_thresholding_2thresholds_2d_cli.
 
-    # Inputs
-
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
-    :param ground_truth: (str) path to ground truth file.
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
-    :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
-    :param threshold_output_feature_names: (List[str]) name of the output
-        feature to visualizes.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
-    :return None:
+    Args:
+        probabilities: List of prediction results file names to extract probabilities from.
+        ground_truth: Path to ground truth file.
+        ground_truth_split: Type of ground truth split - `0` for training split,
+            `1` for validation split or `2` for test split.
+        split_file: File path to csv file containing split values.
+        ground_truth_metadata: File path to feature metadata json file created during training.
+        threshold_output_feature_names: Name of the output feature to visualize.
+        output_directory: Name of output directory containing training results.
+        kwargs: Parameters for the requested visualizations.
     """
     # retrieve feature metadata to convert raw predictions to encoded value
     metadata = load_json(ground_truth_metadata)
@@ -746,28 +665,19 @@ def confidence_thresholding_2thresholds_2d(
 ) -> None:
     """Show confidence threshold data vs accuracy for two output feature names.
 
-    # Inputs
-
-    :param probabilities_per_model: (List[numpy.array]) list of model
-        probabilities.
-    :param ground_truth: (Union[List[np.array], List[pd.Series]]) containing
-        ground truth data
-    :param metadata: (dict) feature metadata dictionary
-    :param threshold_output_feature_names: (List[str]) List containing two output
-        feature names for visualization.
-    :param labels_limit: (int) upper limit on the numeric encoded label value.
-        Encoded numeric label values in dataset that are higher than
-        `labels_limit` are considered to be "rare" labels.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
-        list of the model names to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-
-    # Return
-
-    :return: (None)
+    Args:
+        probabilities_per_model: List of model probabilities.
+        ground_truths: Containing ground truth data.
+        metadata: Feature metadata dictionary.
+        threshold_output_feature_names: List containing two output feature names
+            for visualization.
+        labels_limit: Upper limit on the numeric encoded label value. Encoded
+            numeric label values in dataset that are higher than `labels_limit`
+            are considered to be "rare" labels.
+        model_names: Model name or list of the model names to use as labels.
+        output_directory: Directory where to save plots. If not specified, plots
+            will be displayed in a window.
+        file_format: File format of output plots - `'pdf'` or `'png'`.
     """
     try:
         validate_conf_thresholds_and_probabilities_2d_3d(probabilities_per_model, threshold_output_feature_names)
@@ -928,26 +838,16 @@ def confidence_thresholding_2thresholds_3d_cli(
 ) -> None:
     """Load model data from files to be shown by confidence_thresholding_2thresholds_3d_cli.
 
-    # Inputs
-
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
-    :param ground_truth: (str) path to ground truth file.
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
-    :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
-    :param threshold_output_feature_names: (List[str]) name of the output
-        feature to visualizes.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
-    :return None:
+    Args:
+        probabilities: List of prediction results file names to extract probabilities from.
+        ground_truth: Path to ground truth file.
+        ground_truth_split: Type of ground truth split - `0` for training split,
+            `1` for validation split or `2` for test split.
+        split_file: File path to csv file containing split values.
+        ground_truth_metadata: File path to feature metadata json file created during training.
+        threshold_output_feature_names: Name of the output feature to visualize.
+        output_directory: Name of output directory containing training results.
+        kwargs: Parameters for the requested visualizations.
     """
     # retrieve feature metadata to convert raw predictions to encoded value
     metadata = load_json(ground_truth_metadata)
@@ -986,26 +886,18 @@ def confidence_thresholding_2thresholds_3d(
 ) -> None:
     """Show 3d confidence threshold data vs accuracy for two output feature names.
 
-    # Inputs
-
-    :param probabilities_per_model: (List[numpy.array]) list of model
-        probabilities.
-    :param ground_truth: (Union[List[np.array], List[pd.Series]]) containing
-        ground truth data
-    :param metadata: (dict) feature metadata dictionary
-    :param threshold_output_feature_names: (List[str]) List containing two output
-        feature names for visualization.
-    :param labels_limit: (int) upper limit on the numeric encoded label value.
-        Encoded numeric label values in dataset that are higher than
-        `labels_limit` are considered to be "rare" labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-
-    # Return
-
-    :return: (None)
+    Args:
+        probabilities_per_model: List of model probabilities.
+        ground_truths: Containing ground truth data.
+        metadata: Feature metadata dictionary.
+        threshold_output_feature_names: List containing two output feature names
+            for visualization.
+        labels_limit: Upper limit on the numeric encoded label value. Encoded
+            numeric label values in dataset that are higher than `labels_limit`
+            are considered to be "rare" labels.
+        output_directory: Directory where to save plots. If not specified, plots
+            will be displayed in a window.
+        file_format: File format of output plots - `'pdf'` or `'png'`.
     """
     try:
         validate_conf_thresholds_and_probabilities_2d_3d(probabilities_per_model, threshold_output_feature_names)
@@ -1103,25 +995,16 @@ def binary_threshold_vs_metric_cli(
 ) -> None:
     """Load model data from files to be shown by binary_threshold_vs_metric_cli.
 
-    # Inputs
-
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
-    :param ground_truth: (str) path to ground truth file.
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
-    :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
-    :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
-    :return None:
+    Args:
+        probabilities: List of prediction results file names to extract probabilities from.
+        ground_truth: Path to ground truth file.
+        ground_truth_split: Type of ground truth split - `0` for training split,
+            `1` for validation split or `2` for test split.
+        split_file: File path to csv file containing split values.
+        ground_truth_metadata: File path to feature metadata json file created during training.
+        output_feature_name: Name of the output feature to visualize.
+        output_directory: Name of output directory containing training results.
+        kwargs: Parameters for the requested visualizations.
     """
 
     # retrieve feature metadata to convert raw predictions to encoded value
@@ -1163,29 +1046,18 @@ def binary_threshold_vs_metric(
     on  the confidence of the model against the metric for the specified
     output_feature_name.
 
-    # Inputs
-
-    :param probabilities_per_model: (List[numpy.array]) list of model
-        probabilities.
-    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
-    :param metadata: (dict) feature metadata dictionary
-    :param output_feature_name: (str) output feature name
-    :param metrics: (List[str]) metrics to display (`'f1'`, `'precision'`,
-        `'recall'`, `'accuracy'`).
-    :param positive_label: (int, default: `1`) numeric encoded value for the
-        positive class.
-    :param model_names: (List[str], default: `None`) list of the names of the
-        models to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
-        metadata['str2idx'] in np.vectorize
-
-    # Return
-
-    :return: (`None`)
+    Args:
+        probabilities_per_model: List of model probabilities.
+        ground_truth: Ground truth values.
+        metadata: Feature metadata dictionary.
+        output_feature_name: Output feature name.
+        metrics: Metrics to display (`'f1'`, `'precision'`, `'recall'`, `'accuracy'`).
+        positive_label: Numeric encoded value for the positive class.
+        model_names: List of the names of the models to use as labels.
+        output_directory: Directory where to save plots. If not specified, plots
+            will be displayed in a window.
+        file_format: File format of output plots - `'pdf'` or `'png'`.
+        ground_truth_apply_idx: Whether to use metadata['str2idx'] in np.vectorize.
     """
 
     if not isinstance(ground_truth, np.ndarray):

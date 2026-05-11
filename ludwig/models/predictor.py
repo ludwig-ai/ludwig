@@ -92,12 +92,13 @@ class Predictor(BasePredictor):
         **kwargs,
     ):
         """
-        :param dist_model: model to use for prediction, post-wrap for distributed training
-        :param batch_size: batch size to use for prediction
-        :param distributed: distributed strategy to use for prediction
-        :param report_tqdm_to_ray: whether to report tqdm progress to Ray
-        :param model: Ludwig BaseModel before being wrapped for distributed training.
-            Used to call Ludwig helper functions.
+        Args:
+            dist_model: model to use for prediction, post-wrap for distributed training.
+            batch_size: batch size to use for prediction.
+            distributed: distributed strategy to use for prediction.
+            report_tqdm_to_ray: whether to report tqdm progress to Ray.
+            model: Ludwig BaseModel before being wrapped for distributed training. Used to call Ludwig helper
+                functions.
         """
         model = model or dist_model
         if not isinstance(model, BaseModel):

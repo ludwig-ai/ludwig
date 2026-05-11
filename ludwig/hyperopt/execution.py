@@ -1021,44 +1021,42 @@ class RayTuneExecutor:
                         kwargs[key] = {}
                 temp_ordered_trials.append(kwargs)
 
-            # Trials w/empty eval_stats fields & non-empty training_stats fields ran intermediate
-            # tune.report call(s) but were terminated before reporting eval_stats from post-train
-            # evaluation (e.g., trial stopped due to time budget or relatively poor performance.)
-            # For any such trials, run model evaluation for the best model in that trial & record
-            # results in ordered_trials which is returned & is persisted in hyperopt_statistics.json.
+            # Trials with empty eval_stats but non-empty training_stats were terminated before
+            # post-train evaluation (e.g., time budget or early stopping). Evaluate the best
+            # checkpoint on the validation split so results are recorded in hyperopt_statistics.json.
             for trial in temp_ordered_trials:
-                if trial["eval_stats"] == "{}" and trial["training_stats"] != "{}":
-                    # Evaluate the best model on the eval_split, which is validation_set
-                    if validation_set is not None and validation_set.size > 0:
-                        trial_path = trial["trial_dir"]
-                        with self._get_best_model_path(trial_path, analysis) as best_model_path:
-                            if best_model_path is not None:
-                                try:
-                                    self._evaluate_best_model(
-                                        trial,
-                                        trial_path,
-                                        best_model_path,
-                                        validation_set,
-                                        data_format,
-                                        skip_save_unprocessed_output,
-                                        skip_save_predictions,
-                                        skip_save_eval_stats,
-                                        gpus,
-                                        gpu_memory_limit,
-                                        allow_parallel_threads,
-                                        backend,
-                                        debug,
-                                    )
-                                except Exception:
-                                    logger.warning(
-                                        f"Failed to evaluate best model for trial {trial_path}. "
-                                        "This can happen with incomplete checkpoints from early stopping. "
-                                        f"Full exception:\n{traceback.format_exc()}"
-                                    )
-                            else:
-                                logger.warning("Skipping evaluation as no model checkpoints were available")
-                    else:
-                        logger.warning("Skipping evaluation as no validation set was provided")
+                if trial["eval_stats"] != "{}" or trial["training_stats"] == "{}":
+                    continue
+                if validation_set is None or validation_set.size == 0:
+                    logger.warning("Skipping evaluation as no validation set was provided")
+                    continue
+                trial_path = trial["trial_dir"]
+                with self._get_best_model_path(trial_path, analysis) as best_model_path:
+                    if best_model_path is None:
+                        logger.warning("Skipping evaluation as no model checkpoints were available")
+                        continue
+                    try:
+                        self._evaluate_best_model(
+                            trial,
+                            trial_path,
+                            best_model_path,
+                            validation_set,
+                            data_format,
+                            skip_save_unprocessed_output,
+                            skip_save_predictions,
+                            skip_save_eval_stats,
+                            gpus,
+                            gpu_memory_limit,
+                            allow_parallel_threads,
+                            backend,
+                            debug,
+                        )
+                    except Exception:
+                        logger.warning(
+                            f"Failed to evaluate best model for trial {trial_path}. "
+                            "This can happen with incomplete checkpoints from early stopping. "
+                            f"Full exception:\n{traceback.format_exc()}"
+                        )
 
             ordered_trials = [TrialResults.from_dict(load_json_values(kwargs)) for kwargs in temp_ordered_trials]
         else:

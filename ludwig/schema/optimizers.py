@@ -1189,7 +1189,11 @@ if _SOAPOptimizer is not None:
 @DeveloperAPI
 def get_optimizer_conds():
     """Returns a JSON schema of conditionals to validate against optimizer types defined in
-    `ludwig.modules.optimization_modules.optimizer_registry`."""
+    `ludwig.modules.optimization_modules.optimizer_registry`.
+
+    Returns:
+        List of JSON schema conditionals for all registered optimizer types.
+    """
     conds = []
     for optimizer in optimizer_registry:
         optimizer_cls = optimizer_registry[optimizer][1]
@@ -1210,9 +1214,12 @@ def OptimizerDataclassField(default="adam", description="", parameter_metadata: 
 
     Sets default optimizer to 'adam'.
 
-    :param default: Dict specifying an optimizer with a `type` field and its associated parameters. Will attempt to use
-           `type` to load optimizer from registry with given params. (default: {"type": "adam"}).
-    :return: Initialized dataclass field that converts untyped dicts with params to optimizer dataclass instances.
+    Args:
+        default: Dict specifying an optimizer with a `type` field and its associated parameters. Will attempt
+            to use `type` to load optimizer from registry with given params. (default: {"type": "adam"}).
+
+    Returns:
+        Initialized dataclass field that converts untyped dicts with params to optimizer dataclass instances.
     """
 
     class OptimizerSelection(schema_utils.TypeSelection):
@@ -1284,8 +1291,9 @@ def GradientClippingDataclassField(description: str, default: dict = {}):
     """Returns custom dataclass field for `ludwig.modules.optimization_modules.GradientClippingConfig`. Allows
     `None` by default.
 
-    :param description: Description of the gradient dataclass field
-    :param default: dict that specifies clipping param values that will be loaded by its schema class (default: {}).
+    Args:
+        description: Description of the gradient dataclass field.
+        default: Dict that specifies clipping param values that will be loaded by its schema class (default: {}).
     """
     allow_none = True
 
