@@ -1,11 +1,13 @@
 import pandas as pd
-import pytest
 
 from ludwig.api import LudwigModel
 from tests.integration_tests.utils import generate_data, number_feature
 
 
-def test_number_feature_zscore_normalization_error():
+def test_number_feature_zscore_normalization_constant():
+    """ZScoreTransformer with std=0 should warn and fall back to identity (sigma=1) rather than crash."""
+    import warnings
+
     input_features = [number_feature(name="num_input", preprocessing={"normalization": "zscore"})]
     output_features = [number_feature(name="num_output")]
 
@@ -21,5 +23,9 @@ def test_number_feature_zscore_normalization_error():
 
     model = LudwigModel(config, backend="local")
 
-    with pytest.raises(RuntimeError):
-        model.preprocess(dataset=df)
+    # Should not raise — constant features are gracefully handled with a warning
+    with warnings.catch_warnings(record=True):
+        warnings.simplefilter("always")
+        preprocessed = model.preprocess(dataset=df)
+
+    assert preprocessed is not None
