@@ -63,8 +63,11 @@ def place_on_device(x, device):
 def sequence_length_2D(sequence: torch.Tensor) -> torch.Tensor:
     """Returns the number of non-padding elements per sequence in batch.
 
-    :param sequence: (torch.Tensor) A 2D tensor of shape [batch size x max sequence length].  # Return
-    :returns: (torch.Tensor) The count on non-zero elements per sequence.
+    Args:
+        sequence: A 2D tensor of shape [batch size x max sequence length].
+
+    Returns:
+        The count of non-zero elements per sequence.
     """
     used = (sequence != SpecialSymbol.PADDING.value).type(torch.int32)
     length = torch.sum(used, 1)
@@ -75,8 +78,11 @@ def sequence_length_2D(sequence: torch.Tensor) -> torch.Tensor:
 def sequence_length_3D(sequence: torch.Tensor) -> torch.Tensor:
     """Returns the number of non-zero elements per sequence in batch.
 
-    :param sequence: (torch.Tensor) A 3D tensor of shape [batch size x max sequence length x hidden size].  # Return
-    :returns: (torch.Tensor) The count on non-zero elements per sequence.
+    Args:
+        sequence: A 3D tensor of shape [batch size x max sequence length x hidden size].
+
+    Returns:
+        The count of non-zero elements per sequence.
     """
     used = torch.sign(torch.amax(torch.abs(sequence), dim=2))
     length = torch.sum(used, 1)
@@ -89,10 +95,13 @@ def sequence_mask(lengths: torch.Tensor, maxlen: int | None = None, dtype: torch
     """Returns a mask of shape (batch_size x maxlen), where mask[i] is True for each element up to lengths[i],
     otherwise False i.e. if maxlen=5 and lengths[i] = 3, mask[i] = [True, True True, False False].
 
-    :param lengths: (torch.Tensor) A 1d integer tensor of shape [batch size].
-    :param maxlen: (Optional[int]) The maximum sequence length.  If not specified, the max(lengths) is used.
-    :param dtype: (type) The type to output.  # Return
-    :returns: (torch.Tensor) A sequence mask tensor of shape (batch_size x maxlen).
+    Args:
+        lengths: A 1d integer tensor of shape [batch size].
+        maxlen: The maximum sequence length. If not specified, the max(lengths) is used.
+        dtype: The type to output.
+
+    Returns:
+        A sequence mask tensor of shape (batch_size x maxlen).
     """
     if maxlen is None:
         maxlen = lengths.max()

@@ -34,11 +34,9 @@ logger = logging.getLogger(__name__)
 def learning_curves_cli(training_statistics: "str | list[str]", **kwargs: dict) -> None:
     """Load model data from files to be shown by learning_curves.
 
-    # Inputs
-
-    :param training_statistics: (Union[str, List[str]]) path to experiment training statistics file
-    :param kwargs: (dict) parameters for the requested visualizations.  # Return
-    :return None:
+    Args:
+        training_statistics: Path to experiment training statistics file.
+        **kwargs: Parameters for the requested visualizations.
     """
     train_stats_per_model = load_training_stats_for_viz("load_json", training_statistics)
     learning_curves(train_stats_per_model, **kwargs)
@@ -60,24 +58,16 @@ def learning_curves(
     it produces a line plot showing how that metric changed over the course
     of the epochs of training on the training and validation sets.
 
-    # Inputs
-
-    :param train_stats_per_model: (List[dict]) list containing dictionary of
-        training statistics per model.
-    :param output_feature_name: (Union[str, `None`], default: `None`) name of the output feature
-        to use for the visualization.  If `None`, use all output features.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
-        list of the model names to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-    :param callbacks: (list, default: `None`) a list of
-        `ludwig.callbacks.Callback` objects that provide hooks into the
-        Ludwig pipeline.
-
-    # Return
-    :return: (None)
+    Args:
+        train_stats_per_model: List containing dictionary of training statistics per model.
+        output_feature_name: Name of the output feature to use for the visualization.
+            If None, use all output features.
+        model_names: Model name or list of the model names to use as labels.
+        output_directory: Directory where to save plots. If not specified, plots will
+            be displayed in a window.
+        file_format: File format of output plots — 'pdf' or 'png'.
+        callbacks: A list of `ludwig.callbacks.Callback` objects that provide hooks
+            into the Ludwig pipeline.
     """
     filename_template = "learning_curves_{}_{}." + file_format
     filename_template_path = generate_filename_template_path(output_directory, filename_template)
