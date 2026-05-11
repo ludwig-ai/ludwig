@@ -947,6 +947,37 @@ def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu, max_batch_size, expect
     assert model.config[TRAINER]["learning_rate"] == expected_final_learning_rate
 
 
+@pytest.mark.distributed
+def test_tune_batch_size_ray_non_mean_metric_output(tmpdir, ray_cluster_2cpu):
+    """Regression: tune_batch_size_fn must call init_dist_strategy("local") before running.
+
+    The existing test_tune_batch_size_lr_cpu uses category output, whose eval_loss_metric
+    (SoftmaxCrossEntropyMetric) inherits MeanMetric and takes a shortcut path that bypasses
+    TorchMetrics forward() → sync_context(). This test uses number output (MSEMetric), which
+    is NOT a MeanMetric and goes through the full TorchMetrics forward() → sync_context() →
+    get_current_dist_strategy() path. Without init_dist_strategy("local") in tune_batch_size_fn
+    that call raises RuntimeError: Distributed strategy not initialized.
+
+    See: https://github.com/ludwig-ai/ludwig/issues/4149
+    """
+    config = {
+        "input_features": [number_feature(normalization="zscore"), binary_feature()],
+        "output_features": [number_feature()],
+        "combiner": {"type": "concat", "output_size": 8},
+        TRAINER: {
+            "train_steps": 2,
+            "batch_size": "auto",
+            "max_batch_size": 32,
+        },
+    }
+    csv_filename = os.path.join(tmpdir, "dataset.csv")
+    generate_data(config["input_features"], config["output_features"], csv_filename, num_examples=40)
+    dataset_parquet = create_data_set_to_use("parquet", csv_filename)
+    # If tune_batch_size_fn is missing init_dist_strategy this raises:
+    #   RuntimeError: Distributed strategy not initialized
+    run_api_experiment(config, dataset=dataset_parquet, backend_config=RAY_BACKEND_CONFIG, evaluate=False)
+
+
 @pytest.mark.slow
 @pytest.mark.parametrize("calibration", [True, False])
 @pytest.mark.distributed

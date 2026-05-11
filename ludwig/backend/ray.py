@@ -280,6 +280,11 @@ def tune_batch_size_fn(
     # Pin GPU before loading the model to prevent memory leaking onto other devices
     initialize_pytorch()
 
+    # Initialize a local distributed strategy so metric modules can sync.
+    from ludwig.distributed import init_dist_strategy
+
+    init_dist_strategy("local")
+
     try:
         ds = dataset.to_ray_dataset(shuffle=False)
         train_shard = RayDatasetShard(
@@ -310,6 +315,11 @@ def tune_learning_rate_fn(
 ) -> float:
     # Pin GPU before loading the model to prevent memory leaking onto other devices
     initialize_pytorch()
+
+    # Initialize a local distributed strategy so metric modules can sync.
+    from ludwig.distributed import init_dist_strategy
+
+    init_dist_strategy("local")
 
     try:
         ds = dataset.to_ray_dataset(shuffle=False)
