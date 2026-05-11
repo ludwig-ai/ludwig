@@ -12,6 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""Dataset quality checks for Ludwig training data.
+
+Usage::
+
+    from ludwig.utils.dataset_quality import check_dataset_quality
+
+    report = check_dataset_quality(df, target_column="label")
+    print(report.summary())          # one-line PASS/FAIL + counts
+    for f in report.failures:
+        print(f.name, f.message)     # actionable failure details
+
+Checks performed
+----------------
+minimum_size, missing_values, high_cardinality_target, single_class,
+class_imbalance, id_columns, near_duplicate_columns, low_variance_columns,
+target_leakage.
+"""
+
 from __future__ import annotations
 
 import logging
