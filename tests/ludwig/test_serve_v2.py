@@ -1,36 +1,37 @@
 """Tests for modernized serving."""
 
-from ludwig.serve_v2 import _numpy_safe, build_request_schema, build_response_schema, ModelManager
+from ludwig.serve_v2 import build_request_schema, build_response_schema, ModelManager
+from ludwig.utils.data_utils import numpy_to_python
 
 
 class TestNumpySafe:
     def test_int(self):
         import numpy as np
 
-        assert _numpy_safe(np.int64(42)) == 42
-        assert isinstance(_numpy_safe(np.int64(42)), int)
+        assert numpy_to_python(np.int64(42)) == 42
+        assert isinstance(numpy_to_python(np.int64(42)), int)
 
     def test_float(self):
         import numpy as np
 
-        assert isinstance(_numpy_safe(np.float32(3.14)), float)
+        assert isinstance(numpy_to_python(np.float32(3.14)), float)
 
     def test_array(self):
         import numpy as np
 
-        result = _numpy_safe(np.array([1, 2, 3]))
+        result = numpy_to_python(np.array([1, 2, 3]))
         assert result == [1, 2, 3]
 
     def test_nested_dict(self):
         import numpy as np
 
         data = {"a": np.int64(1), "b": {"c": np.array([1.0, 2.0])}}
-        result = _numpy_safe(data)
+        result = numpy_to_python(data)
         assert result == {"a": 1, "b": {"c": [1.0, 2.0]}}
 
     def test_passthrough(self):
-        assert _numpy_safe("hello") == "hello"
-        assert _numpy_safe(42) == 42
+        assert numpy_to_python("hello") == "hello"
+        assert numpy_to_python(42) == 42
 
 
 class TestSchemaGeneration:

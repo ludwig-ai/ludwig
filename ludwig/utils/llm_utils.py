@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 import logging
 import tempfile
@@ -12,7 +14,7 @@ try:
     from bitsandbytes.nn.modules import Embedding as BnbEmbedding
 except Exception:
     BnbEmbedding = None
-from transformers import AutoConfig, AutoModelForCausalLM, PreTrainedModel, PreTrainedTokenizer, TextStreamer
+from transformers import AutoModelForCausalLM, TextStreamer
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, PREDICTIONS, PROBABILITIES
 from ludwig.schema.trainer import LLMTrainerConfig
@@ -21,6 +23,8 @@ from ludwig.utils.logging_utils import log_once
 from ludwig.utils.model_utils import find_embedding_layer_with_path
 
 if TYPE_CHECKING:
+    from transformers import AutoConfig, PreTrainedModel, PreTrainedTokenizer
+
     from ludwig.schema.encoders.text_encoders import LLMEncoderConfig
     from ludwig.schema.model_types.llm import LLMModelConfig
 
@@ -36,7 +40,7 @@ _MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION = set()
 
 @default_retry(tries=8)
 def load_pretrained_from_config(
-    config_obj: Union["LLMModelConfig", "LLMEncoderConfig"],
+    config_obj: LLMModelConfig | LLMEncoderConfig,
     model_config: AutoConfig | None = None,
     weights_save_path: str | None = None,
 ) -> PreTrainedModel:
@@ -107,7 +111,7 @@ def load_pretrained_from_config(
 def to_device(
     model: PreTrainedModel,
     device: str | torch.DeviceObjType,
-    config_obj: "LLMModelConfig",
+    config_obj: LLMModelConfig,
     curr_device: torch.DeviceObjType,
 ) -> tuple[PreTrainedModel, torch.DeviceObjType]:
     """Move an LLM to the requested device, accounting for sharding and adapters.

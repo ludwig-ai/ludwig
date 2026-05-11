@@ -22,7 +22,7 @@ def explore_properties(
     jsonschema_properties: dict[str, Any],
     parent_parameter_path: str,
     dq: deque[ConfigOption],
-    allow_list: list[str] = [],
+    allow_list: list[str] | None = None,
 ) -> deque[tuple[dict, bool]]:
     """Recursively explores the `properties` part of any subsection of the schema.
 

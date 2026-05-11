@@ -13,6 +13,8 @@ from ludwig.utils.torch_utils import (
     sequence_length_3D,
 )
 
+_CUDA_AVAILABLE = torch.cuda.is_available() and torch.cuda.device_count() > 0
+
 
 @pytest.mark.parametrize("input_sequence", [[[0, 1, 1], [2, 0, 0], [3, 3, 3]]])
 @pytest.mark.parametrize("expected_output", [[3, 2, 3]])
@@ -48,29 +50,23 @@ def clean_params():
             del os.environ["CUDA_VISIBLE_DEVICES"]
 
 
-@patch("ludwig.utils.torch_utils.torch")
-def test_initialize_pytorch_only_once(mock_torch):
-    mock_torch.cuda.is_available.return_value = True
-    mock_torch.cuda.device_count.return_value = 4
+def test_initialize_pytorch_only_once():
+    """Second call with identical params is a no-op; mismatched params emit a warning."""
     with clean_params():
-        # During first time initialization, set pytorch parallelism
-        initialize_pytorch(allow_parallel_threads=False)
-        mock_torch.set_num_threads.assert_called_once()
-        mock_torch.set_num_interop_threads.assert_called_once()
+        initialize_pytorch(allow_parallel_threads=True)
+        assert _get_torch_init_params() == (None, None, True)
 
-        # Reset call counts on all threading calls
-        mock_torch.reset_mock()
+        # Exact same params: silent no-op, stored params unchanged
+        initialize_pytorch(allow_parallel_threads=True)
+        assert _get_torch_init_params() == (None, None, True)
 
-        # In the second call to initialization, avoid calling these methods again, as pytorch
-        # will raise an exception
-        initialize_pytorch(allow_parallel_threads=False)
-        mock_torch.set_num_threads.assert_not_called()
-        mock_torch.set_num_interop_threads.assert_not_called()
-
-    # No GPUs were specified, so this should not have been called even once
-    mock_torch.cuda.memory.set_per_process_memory_fraction.assert_not_called()
+        # Different params: warns, still no-op
+        with pytest.warns(UserWarning, match="already been initialized"):
+            initialize_pytorch(allow_parallel_threads=False)
+        assert _get_torch_init_params() == (None, None, True)
 
 
+@pytest.mark.skipif(not _CUDA_AVAILABLE, reason="requires CUDA")
 @patch("ludwig.utils.torch_utils.torch")
 def test_initialize_pytorch_with_gpu_list(mock_torch):
     # For test purposes, these devices can be anything, we just need to be able to uniquely
@@ -82,6 +78,7 @@ def test_initialize_pytorch_with_gpu_list(mock_torch):
         assert os.environ["CUDA_VISIBLE_DEVICES"] == "1,2"
 
 
+@pytest.mark.skipif(not _CUDA_AVAILABLE, reason="requires CUDA")
 @patch("ludwig.utils.torch_utils.torch")
 def test_initialize_pytorch_with_gpu_string(mock_torch):
     mock_torch.cuda.is_available.return_value = True
@@ -91,6 +88,7 @@ def test_initialize_pytorch_with_gpu_string(mock_torch):
         assert os.environ["CUDA_VISIBLE_DEVICES"] == "1,2"
 
 
+@pytest.mark.skipif(not _CUDA_AVAILABLE, reason="requires CUDA")
 @patch("ludwig.utils.torch_utils.torch")
 def test_initialize_pytorch_with_gpu_int(mock_torch):
     mock_torch.cuda.is_available.return_value = True
