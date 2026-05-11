@@ -79,11 +79,11 @@ class DatasetInfo:
 def allocate_experiment_resources(resources: Resources) -> dict:
     """Allocates ray trial resources based on available resources.
 
-    # Inputs :param resources (dict) specifies all available GPUs, CPUs and associated     metadata of the machines
-    (i.e. memory)
+    Args:
+        resources: specifies all available GPUs, CPUs and associated metadata of the machines (i.e. memory).
 
-    # Return
-    :return: (dict) gpu and cpu resources per trial
+    Returns:
+        gpu and cpu resources per trial.
     """
     # TODO (ASN):
     # (1) expand logic to support multiple GPUs per trial (multi-gpu training)
@@ -176,21 +176,18 @@ def create_default_config(
     - infers resource constraints and adds gpu and cpu resource allocation per
       trial
 
-    # Inputs
-    :param dataset_info: (str) filepath Dataset Info object.
-    :param target_name: (str, List[str]) name of target feature
-    :param time_limit_s: (int, float) total time allocated to auto_train. acts
-                                    as the stopping parameter
-    :param random_seed: (int, default: `42`) a random seed that will be used anywhere
-                        there is a call to a random number generator, including
-                        hyperparameter search sampling, as well as data splitting,
-                        parameter initialization and training set shuffling
-    :param imbalance_threshold: (float) maximum imbalance ratio (minority / majority) to perform stratified sampling
-    :param backend: (Backend) backend to use for training.
+    Args:
+        dataset_info: Dataset Info object.
+        target_name: name of target feature.
+        time_limit_s: total time allocated to auto_train. Acts as the stopping parameter.
+        random_seed: a random seed that will be used anywhere there is a call to a random number generator,
+            including hyperparameter search sampling, as well as data splitting, parameter initialization and
+            training set shuffling.
+        imbalance_threshold: maximum imbalance ratio (minority / majority) to perform stratified sampling.
+        backend: backend to use for training.
 
-    # Return
-    :return: (dict) dictionaries contain auto train config files for all available
-    combiner types
+    Returns:
+        dictionaries containing auto train config files for all available combiner types.
     """
     base_automl_config = load_yaml(BASE_AUTOML_CONFIG)
     base_automl_config.update(features_config)
@@ -256,9 +253,11 @@ def get_dataset_info(df: pd.DataFrame | dd.DataFrame) -> DatasetInfo:
     """Constructs FieldInfo objects for each feature in dataset. These objects are used for downstream type
     inference.
 
-    # Inputs
-    :param df: (Union[pd.DataFrame, dd.DataFrame]) Pandas or Dask dataframe.  # Return
-    :return: (DatasetInfo) Structure containing list of FieldInfo objects.
+    Args:
+        df: Pandas or Dask dataframe.
+
+    Returns:
+        Structure containing list of FieldInfo objects.
     """
     source = wrap_data_source(df)
     return get_dataset_info_from_source(source)
@@ -291,9 +290,11 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
     """Constructs FieldInfo objects for each feature in dataset. These objects are used for downstream type
     inference.
 
-    # Inputs
-    :param source: (DataSource) A wrapper around a data source, which may represent a pandas or Dask dataframe. # Return
-    :return: (DatasetInfo) Structure containing list of FieldInfo objects.
+    Args:
+        source: A wrapper around a data source, which may represent a pandas or Dask dataframe.
+
+    Returns:
+        Structure containing list of FieldInfo objects.
     """
     row_count = len(source)
     fields = []
@@ -346,11 +347,13 @@ def get_features_config(
     """Constructs FieldInfo objects for each feature in dataset. These objects are used for downstream type
     inference.
 
-    # Inputs
-    :param fields: (List[FieldInfo]) FieldInfo objects for all fields in dataset
-    :param row_count: (int) total number of entries in original dataset :param target_name (str, List[str]) name of
-        target feature # Return
-    :return: (dict) section of auto_train config for input_features and output_features
+    Args:
+        fields: FieldInfo objects for all fields in dataset.
+        row_count: total number of entries in original dataset.
+        target_name: name of target feature.
+
+    Returns:
+        Section of auto_train config for input_features and output_features.
     """
     targets = convert_targets(target_name)
     metadata = get_field_metadata(fields, row_count, targets)
@@ -369,10 +372,12 @@ def convert_targets(target_name: str | list[str] | None = None) -> set[str]:
 def get_config_from_metadata(metadata: list[FieldMetadata], targets: set[str] | None = None) -> dict:
     """Builds input/output feature sections of auto-train config using field metadata.
 
-    # Inputs
-    :param metadata: (List[FieldMetadata]) field descriptions :param targets (Set[str]) names of target features #
-        Return
-    :return: (dict) section of auto_train config for input_features and output_features
+    Args:
+        metadata: FieldMetadata objects describing each field.
+        targets: names of target features.
+
+    Returns:
+        Section of auto_train config for input_features and output_features.
     """
     config = {
         "input_features": [],
@@ -392,11 +397,13 @@ def get_config_from_metadata(metadata: list[FieldMetadata], targets: set[str] | 
 def get_field_metadata(fields: list[FieldInfo], row_count: int, targets: set[str] | None = None) -> list[FieldMetadata]:
     """Computes metadata for each field in dataset.
 
-    # Inputs
-    :param fields: (List[FieldInfo]) FieldInfo objects for all fields in dataset
-    :param row_count: (int) total number of entries in original dataset :param targets (Set[str]) names of target
-        features # Return
-    :return: (List[FieldMetadata]) list of objects containing metadata for each field
+    Args:
+        fields: FieldInfo objects for all fields in dataset.
+        row_count: total number of entries in original dataset.
+        targets: names of target features.
+
+    Returns:
+        List of objects containing metadata for each field.
     """
 
     metadata = []

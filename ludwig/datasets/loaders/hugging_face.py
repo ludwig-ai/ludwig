@@ -38,8 +38,9 @@ class HFLoader(DatasetLoader):
     def load_hf_to_dict(hf_id: str | None = None, hf_subsample: str | None = None) -> dict[str, pd.DataFrame]:
         """Returns a map of split -> pd.DataFrame for the given HF dataset.
 
-        :param hf_id: (str) path to dataset on HuggingFace platform
-        :param hf_subsample: (str) name of dataset configuration on HuggingFace platform
+        Args:
+            hf_id: path to dataset on HuggingFace platform.
+            hf_subsample: name of dataset configuration on HuggingFace platform.
         """
         dataset_dict: dict[str, datasets.Dataset] = datasets.load_dataset(path=hf_id, name=hf_subsample)
         pandas_dict = {}
@@ -57,8 +58,6 @@ class HFLoader(DatasetLoader):
         containing train, validation, and test data or one dataframe that is the concatenation of all three
         depending on whether `split` is set to True or False.
 
-        :param split: (bool) directive for how to interpret if dataset contains validation or test set (see below)
-
         Note that some datasets may not provide a validation set or a test set. In this case:
         - If split is True, the DataFrames corresponding to the missing sets are initialized to be empty
         - If split is False, the "split" column in the resulting DataFrame will reflect the fact that there is no
@@ -66,8 +65,10 @@ class HFLoader(DatasetLoader):
 
         A train set should always be provided by Hugging Face.
 
-        :param hf_id: (str) path to dataset on HuggingFace platform
-        :param hf_subsample: (str) name of dataset configuration on HuggingFace platform
+        Args:
+            hf_id: path to dataset on HuggingFace platform.
+            hf_subsample: name of dataset configuration on HuggingFace platform.
+            split: directive for how to interpret if dataset contains validation or test set.
         """
         self.config.huggingface_dataset_id = hf_id
         self.config.huggingface_subsample = hf_subsample

@@ -479,9 +479,12 @@ def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt sche
     """Custom dataclass field that when used inside of a dataclass will allow any scheduler in
     `ludwig.schema.hyperopt.scheduler.scheduler_registry`. Sets default scheduler to 'fifo'.
 
-    :param default: Dict specifying a scheduler with a `type` field and its associated parameters. Will attempt to use
-           `type` to load scheduler from registry with given params. (default: {"type": "fifo"}).
-    :return: Initialized dataclass field that converts untyped dicts with params to scheduler dataclass instances.
+    Args:
+        default: Dict specifying a scheduler with a `type` field and its associated parameters. Will attempt to
+            use `type` to load scheduler from registry with given params. (default: {"type": "fifo"}).
+
+    Returns:
+        Initialized dataclass field that converts untyped dicts with params to scheduler dataclass instances.
     """
 
     class SchedulerConfigField(schema_utils.SchemaField):

@@ -26,10 +26,7 @@ _logger = logging.getLogger(__name__)
 
 
 def get_default_conda_env():
-    """
-    :return: The default Conda environment for MLflow Models produced by calls to
-             :func:`save_model()` and :func:`log_model()`.
-    """
+    """Returns the default Conda environment for MLflow Models produced by calls to save_model() and log_model()."""
     import ludwig
 
     # Ludwig is not yet available via the default conda channels, so we install it via pip
@@ -51,48 +48,21 @@ def save_model(
 ):
     """Save a Ludwig model to a path on the local file system.
 
-    :param ludwig_model: Ludwig model (an instance of `ludwig.api.LudwigModel`_) to be saved.
-    :param path: Local path where the model is to be saved.
-    :param conda_env: Either a dictionary representation of a Conda environment or the path to a
-                      Conda environment yaml file. If provided, this describes the environment
-                      this model should be run in. At minimum, it should specify the dependencies
-                      contained in :func:`get_default_conda_env()`. If ``None``, the default
-                      :func:`get_default_conda_env()` environment is added to the model.
-                      The following is an *example* dictionary representation of a Conda
-                      environment::
-
-                        {
-                            'name': 'mlflow-env',
-                            'channels': ['defaults'],
-                            'dependencies': [
-                                'python=3.7.0',
-                                'pip': [
-                                    'ludwig==0.4.0'
-                                ]
-                            ]
-                        }
-
-    :param mlflow_model: :py:mod:`mlflow.models.Model` this flavor is being added to.
-
-    :param signature: (Experimental) :py:class:`ModelSignature <mlflow.models.ModelSignature>`
-                      describes model input and output :py:class:`Schema <mlflow.types.Schema>`.
-                      The model signature can be :py:func:`inferred <mlflow.models.infer_signature>`
-                      from datasets with valid model input (e.g. the training dataset with target
-                      column omitted) and valid model output (e.g. model predictions generated on
-                      the training dataset), for example:
-
-                      .. code-block:: python
-
-                        from mlflow.models.signature import infer_signature
-
-                        train = df.drop_column("target_label")
-                        predictions = ...  # compute model predictions
-                        signature = infer_signature(train, predictions)
-    :param input_example: (Experimental) Input example provides one or several instances of valid
-                          model input. The example can be used as a hint of what data to feed the
-                          model. The given example will be converted to a Pandas DataFrame and then
-                          serialized to json using the Pandas split-oriented format. Bytes are
-                          base64-encoded.
+    Args:
+        ludwig_model: Ludwig model (an instance of `ludwig.api.LudwigModel`) to be saved.
+        path: Local path where the model is to be saved.
+        conda_env: Either a dictionary representation of a Conda environment or the path to a Conda environment
+            yaml file. If provided, this describes the environment this model should be run in. At minimum, it
+            should specify the dependencies contained in `get_default_conda_env()`. If ``None``, the default
+            `get_default_conda_env()` environment is added to the model.
+        mlflow_model: `mlflow.models.Model` this flavor is being added to.
+        signature: Describes model input and output schema. The model signature can be inferred from datasets
+            with valid model input (e.g. the training dataset with target column omitted) and valid model output
+            (e.g. model predictions generated on the training dataset).
+        input_example: Input example provides one or several instances of valid model input. The example can be
+            used as a hint of what data to feed the model. The given example will be converted to a Pandas
+            DataFrame and then serialized to json using the Pandas split-oriented format. Bytes are
+            base64-encoded.
     """
     import ludwig
 
@@ -190,7 +160,8 @@ def _load_model(path):
 def _load_pyfunc(path):
     """Load PyFunc implementation. Called by ``pyfunc.load_pyfunc``.
 
-    :param path: Local filesystem path to the MLflow Model with the ``ludwig`` flavor.
+    Args:
+        path: Local filesystem path to the MLflow Model with the ``ludwig`` flavor.
     """
     return _LudwigModelWrapper(_load_model(path))
 
@@ -198,18 +169,18 @@ def _load_pyfunc(path):
 def load_model(model_uri):
     """Load a Ludwig model from a local file or a run.
 
-    :param model_uri: The location, in URI format, of the MLflow model. For example:
+    Args:
+        model_uri: The location, in URI format, of the MLflow model. For example:
+            - ``/Users/me/path/to/local/model``
+            - ``relative/path/to/local/model``
+            - ``s3://my_bucket/path/to/model``
+            - ``runs:/<mlflow_run_id>/run-relative/path/to/model``
 
-                      - ``/Users/me/path/to/local/model``
-                      - ``relative/path/to/local/model``
-                      - ``s3://my_bucket/path/to/model``
-                      - ``runs:/<mlflow_run_id>/run-relative/path/to/model``
+            For more information about supported URI schemes, see
+            `Referencing Artifacts <https://www.mlflow.org/docs/latest/tracking.html#artifact-locations>`_.
 
-                      For more information about supported URI schemes, see
-                      `Referencing Artifacts <https://www.mlflow.org/docs/latest/tracking.html#
-                      artifact-locations>`_.
-
-    :return: A Ludwig model (an instance of `ludwig.api.LudwigModel`_).
+    Returns:
+        A Ludwig model (an instance of `ludwig.api.LudwigModel`).
     """
     local_model_path = _download_artifact_from_uri(artifact_uri=model_uri)
     flavor_conf = _get_flavor_configuration(model_path=local_model_path, flavor_name=FLAVOR_NAME)

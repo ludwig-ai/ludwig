@@ -67,123 +67,66 @@ def experiment_cli(
     logging_level: int = logging.INFO,
     **kwargs,
 ):
-    """Trains a model on a dataset's training and validation splits and uses it to predict on the test split. It
-    saves the trained model and the statistics of training and testing.
+    """Train a model and evaluate it on a test split, saving both model and statistics.
 
-     # Inputs
+    Args:
+        config: In-memory config dict or path to a YAML config file.
+        dataset: Source containing the entire dataset. If it has a split
+            column, it will be used for splitting (0: train, 1: validation,
+            2: test); otherwise the dataset will be randomly split.
+        training_set: Source containing training data.
+        validation_set: Source containing validation data.
+        test_set: Source containing test data.
+        training_set_metadata: Metadata JSON file or loaded metadata dict.
+        data_format: Format to interpret data sources. Inferred automatically
+            if not specified. Valid values: ``'auto'``, ``'csv'``,
+            ``'excel'``, ``'feather'``, ``'fwf'``, ``'hdf5'``,
+            ``'html'``, ``'json'``, ``'jsonl'``, ``'parquet'``,
+            ``'pickle'``, ``'sas'``, ``'spss'``, ``'stata'``, ``'tsv'``.
+        experiment_name: Name for the experiment.
+        model_name: Name of the model being used.
+        model_load_path: If specified, load this pre-trained model as
+            initialization (useful for transfer learning).
+        model_resume_path: Resume training from this checkpoint directory.
+        eval_split: Split to evaluate on. Valid values: ``'training'``,
+            ``'validation'``, ``'test'``.
+        skip_save_training_description: Disable saving the description JSON
+            file.
+        skip_save_training_statistics: Disable saving training statistics
+            JSON file.
+        skip_save_model: Disable saving model weights after each epoch the
+            validation metric improves.
+        skip_save_progress: Disable saving weights and stats after each epoch.
+        skip_save_log: Disable saving TensorBoard logs.
+        skip_save_processed_input: Disable caching preprocessed input.
+        skip_save_unprocessed_output: If ``True``, skip saving raw numpy
+            output files; only postprocessed CSV files are saved.
+        skip_save_predictions: Disable saving test prediction CSV files.
+        skip_save_eval_stats: Disable saving test statistics JSON file.
+        skip_collect_predictions: Skip collecting postprocessed predictions
+            during evaluation.
+        skip_collect_overall_stats: Skip collecting overall stats during
+            evaluation.
+        output_directory: Directory that will contain all results.
+        gpus: List of GPUs available for training.
+        gpu_memory_limit: Maximum memory fraction ``[0, 1]`` allowed to
+            allocate per GPU device.
+        allow_parallel_threads: Allow PyTorch to use multithreading
+            parallelism.
+        callbacks: List of ``Callback`` objects providing hooks into the
+            Ludwig pipeline.
+        backend: Backend or string name of the backend to use.
+        random_seed: Random seed for weights initialization, splits, and
+            shuffling.
+        logging_level: Log level sent to stderr.
 
-     :param config: (Union[str, dict]) in-memory representation of
-             config or string path to a YAML config file.
-     :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
-         source containing the entire dataset to be used in the experiment.
-         If it has a split column, it will be used for splitting (0 for train,
-         1 for validation, 2 for test), otherwise the dataset will be
-         randomly split.
-     :param training_set: (Union[str, dict, pandas.DataFrame], default: `None`)
-         source containing training data.
-     :param validation_set: (Union[str, dict, pandas.DataFrame], default: `None`)
-         source containing validation data.
-     :param test_set: (Union[str, dict, pandas.DataFrame], default: `None`)
-         source containing test data.
-     :param training_set_metadata: (Union[str, dict], default: `None`)
-         metadata JSON file or loaded metadata.  Intermediate preprocessed
-         structure containing the mappings of the input
-         dataset created the first time an input file is used in the same
-         directory with the same name and a '.meta.json' extension.
-     :param data_format: (str, default: `None`) format to interpret data
-         sources. Will be inferred automatically if not specified.  Valid
-         formats are `'auto'`, `'csv'`, `'excel'`, `'feather'`,
-         `'fwf'`, `'hdf5'` (cache file produced during previous training),
-         `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
-         `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
-         `'stata'`, `'tsv'`.
-     :param experiment_name: (str, default: `'experiment'`) name for
-         the experiment.
-     :param model_name: (str, default: `'run'`) name of the model that is
-         being used.
-     :param model_load_path: (str, default: `None`) if this is specified the
-         loaded model will be used as initialization
-         (useful for transfer learning).
-     :param model_resume_path: (str, default: `None`) resumes training of
-         the model from the path specified. The config is restored.
-         In addition to config, training statistics and loss for
-         epoch and the state of the optimizer are restored such that
-         training can be effectively continued from a previously interrupted
-         training process.
-     :param eval_split: (str, default: `test`) split on which
-         to perform evaluation. Valid values are `training`, `validation`
-         and `test`.
-     :param skip_save_training_description: (bool, default: `False`) disables
-         saving the description JSON file.
-     :param skip_save_training_statistics: (bool, default: `False`) disables
-         saving training statistics JSON file.
-     :param skip_save_model: (bool, default: `False`) disables
-         saving model weights and hyperparameters each time the model
-         improves. By default Ludwig saves model weights after each epoch
-         the validation metric improves, but if the model is really big
-         that can be time consuming. If you do not want to keep
-         the weights and just find out what performance a model can get
-         with a set of hyperparameters, use this parameter to skip it,
-         but the model will not be loadable later on and the returned model
-         will have the weights obtained at the end of training, instead of
-         the weights of the epoch with the best validation performance.
-    :param skip_save_progress: (bool, default: `False`) disables saving
-         progress each epoch. By default Ludwig saves weights and stats
-         after each epoch for enabling resuming of training, but if
-         the model is really big that can be time consuming and will uses
-         twice as much space, use this parameter to skip it, but training
-         cannot be resumed later on.
-     :param skip_save_log: (bool, default: `False`) disables saving
-         TensorBoard logs. By default Ludwig saves logs for the TensorBoard,
-         but if it is not needed turning it off can slightly increase the
-         overall speed.
-     :param skip_save_processed_input: (bool, default: `False`) if input
-         dataset is provided it is preprocessed and cached by saving an HDF5
-         and JSON files to avoid running the preprocessing again. If this
-         parameter is `False`, the HDF5 and JSON file are not saved.
-     :param skip_save_unprocessed_output: (bool, default: `False`) by default
-         predictions and their probabilities are saved in both raw
-         unprocessed numpy files containing tensors and as postprocessed
-         CSV files (one for each output feature). If this parameter is True,
-         only the CSV ones are saved and the numpy ones are skipped.
-     :param skip_save_predictions: (bool, default: `False`) skips saving test
-         predictions CSV files
-     :param skip_save_eval_stats: (bool, default: `False`) skips saving test
-         statistics JSON file
-    :param skip_collect_predictions: (bool, default: `False`) skips
-         collecting post-processed predictions during eval.
-     :param skip_collect_overall_stats: (bool, default: `False`) skips
-         collecting overall stats during eval.
-     :param output_directory: (str, default: `'results'`) the directory that
-         will contain the training statistics, TensorBoard logs, the saved
-         model and the training progress files.
-     :param gpus: (list, default: `None`) list of GPUs that are available
-         for training.
-     :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
-            [0, 1] allowed to allocate per GPU device.
-     :param allow_parallel_threads: (bool, default: `True`) allow PyTorch
-         to use multithreading parallelism to improve performance at
-         the cost of determinism.
-     :param callbacks: (list, default: `None`) a list of
-         `ludwig.callbacks.Callback` objects that provide hooks into the
-         Ludwig pipeline.
-     :param backend: (Union[Backend, str]) `Backend` or string name
-         of backend to use to execute preprocessing / training steps.
-     :param random_seed: (int: default: 42) random seed used for weights
-         initialization, splits and any other random function.
-     :param logging_level: (int) Log level that will be sent to stderr.
-
-     # Return
-     :return: (Tuple[LudwigModel, dict, dict, tuple, str)):
-        `(model, evaluation_statistics, training_statistics, preprocessed_data, output_directory)`
-         `model` LudwigModel instance
-         `evaluation_statistics` dictionary with evaluation performance
-             statistics on the test_set,
-         `training_statistics` is a nested dictionary of dataset -> feature_name -> metric_name -> List of metrics.
-                Each metric corresponds to each training checkpoint.
-         `preprocessed_data` tuple containing preprocessed
-         `(training_set, validation_set, test_set)`, `output_directory`
-         filepath string to where results are stored.
+    Returns:
+        Tuple of ``(model, eval_stats, train_stats, preprocessed_data,
+        output_directory)`` where ``model`` is the trained ``LudwigModel``,
+        ``eval_stats`` are per-split evaluation metrics, ``train_stats``
+        are per-epoch training metrics, ``preprocessed_data`` is a tuple of
+        ``(training_set, validation_set, test_set)``, and
+        ``output_directory`` is the path where results were saved.
     """
     if HYPEROPT in config:
         if not query_yes_no(HYPEROPT_WARNING + CONTINUE_PROMPT):
@@ -252,17 +195,17 @@ def kfold_cross_validate_cli(
     skip_save_k_fold_split_indices=False,
     **kwargs,
 ):
-    """Wrapper function to performs k-fold cross validation.
+    """Run k-fold cross validation and save results to ``output_directory``.
 
-    # Inputs
-    :param k_fold: (int) number of folds to create for the cross-validation
-    :param config: (Union[str, dict], default: None) a dictionary or file path containing model configuration. Refer to
-        the [User Guide] (http://ludwig.ai/user_guide/#model-config) for details.
-    :param dataset: (string, default: None)
-    :param output_directory: (string, default: 'results')
-    :param random_seed: (int) Random seed used k-fold splits.
-    :param skip_save_k_fold_split_indices: (boolean, default: False) Disables saving k-fold split indices
-    :return: None
+    Args:
+        k_fold: Number of folds to create for cross-validation.
+        config: Config dict or path to a YAML config file.
+        dataset: Dataset source.
+        data_format: Format to interpret the dataset.
+        output_directory: Directory into which to write results.
+        random_seed: Random seed used for k-fold splits.
+        skip_save_k_fold_split_indices: If ``True``, skip saving the per-fold
+            split index arrays.
     """
 
     kfold_cv_stats, kfold_split_indices = kfold_cross_validate(

@@ -39,7 +39,8 @@ def get_optimizer_class_and_kwargs(
 ) -> tuple[type[torch.optim.Optimizer], dict]:
     """Returns the optimizer class and kwargs for the optimizer.
 
-    :return: Tuple of optimizer class and kwargs for the optimizer.
+    Returns:
+        Tuple of optimizer class and kwargs for the optimizer.
     """
     from ludwig.schema.optimizers import optimizer_registry
 
@@ -132,10 +133,13 @@ def create_optimizer(
 ) -> torch.optim.Optimizer:
     """Returns a ready-to-use torch optimizer instance based on the given optimizer config.
 
-    :param model: Underlying Ludwig model
-    :param learning_rate: Initial learning rate for the optimizer
-    :param optimizer_config: Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig`.
-    :return: Initialized instance of a torch optimizer.
+    Args:
+        model: Underlying Ludwig model.
+        learning_rate: Initial learning rate for the optimizer.
+        optimizer_config: Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig`.
+
+    Returns:
+        Initialized instance of a torch optimizer.
     """
     # Make sure the optimizer is compatible with the available resources:
     if (optimizer_config.is_paged or optimizer_config.is_8bit) and (

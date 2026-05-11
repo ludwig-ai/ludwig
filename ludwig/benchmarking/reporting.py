@@ -13,7 +13,8 @@ from ludwig.constants import LUDWIG_TAG
 def initialize_stats_dict(main_function_events: list[profiler_util.FunctionEvent]) -> dict[str, list]:
     """Initialize dictionary which stores resource usage information per tagged code block.
 
-    :param main_function_events: list of main function events.
+    Args:
+        main_function_events: list of main function events.
     """
     info = {}
     for event_name in [evt.name for evt in main_function_events]:
@@ -24,7 +25,8 @@ def initialize_stats_dict(main_function_events: list[profiler_util.FunctionEvent
 def get_memory_details(kineto_event: _KinetoEvent) -> tuple[str, int]:
     """Get device name and number of bytes (de)allocated during an event.
 
-    :param kineto_event: a Kineto event instance.
+    Args:
+        kineto_event: a Kineto event instance.
     """
     if kineto_event.device_type() in [DeviceType.CPU, DeviceType.MKLDNN, DeviceType.IDEEP]:
         return "cpu", kineto_event.nbytes()
@@ -39,8 +41,9 @@ def get_device_memory_usage(
 ) -> dict[str, DeviceUsageMetrics]:
     """Get CPU and CUDA memory usage for an event.
 
-    :param kineto_event: a Kineto event instance.
-    :param memory_events: list of memory events.
+    Args:
+        kineto_event: a Kineto event instance.
+        memory_events: list of memory events.
     """
     mem_records_acc = profiler_util.MemRecordsAcc(memory_events)
     start_us = kineto_event.start_ns() / 1000
@@ -70,8 +73,9 @@ def get_device_memory_usage(
 def get_torch_op_time(events: list[profiler_util.FunctionEvent], attr: str) -> int | float:
     """Get time torch operators spent executing for a list of events.
 
-    :param events: list of events.
-    :param attr: a FunctionEvent attribute. Expecting one of "cpu_time_total", "device_time_total".
+    Args:
+        events: list of events.
+        attr: a FunctionEvent attribute. Expecting one of "cpu_time_total", "device_time_total".
     """
     if attr not in ["cpu_time_total", "device_time_total"]:
         return -1
@@ -90,7 +94,8 @@ def get_torch_op_time(events: list[profiler_util.FunctionEvent], attr: str) -> i
 def get_device_run_durations(function_event: profiler_util.FunctionEvent) -> tuple[float, float]:
     """Get CPU and device run durations for an event.
 
-    :param function_event: a function event instance.
+    Args:
+        function_event: a function event instance.
     """
     torch_cpu_time = get_torch_op_time(function_event.cpu_children, "cpu_time_total")
     torch_device_time = get_torch_op_time(function_event.cpu_children, "device_time_total")
@@ -114,11 +119,12 @@ def get_resource_usage_report(
 ) -> dict[str, list[TorchProfilerMetrics]]:
     """Get relevant information from Kineto events and function events exported by the profiler.
 
-    :param main_kineto_events: list of main Kineto events.
-    :param main_function_events: list of main function events.
-    :param memory_events: list of memory events.
-    :param out_of_memory_events: list of out of memory events.
-    :param info: dictionary used to record resource usage metrics.
+    Args:
+        main_kineto_events: list of main Kineto events.
+        main_function_events: list of main function events.
+        memory_events: list of memory events.
+        out_of_memory_events: list of out of memory events.
+        info: dictionary used to record resource usage metrics.
     """
     main_kineto_events = sorted(
         (evt for evt in main_kineto_events if LUDWIG_TAG in evt.name()), key=lambda x: x.correlation_id()
@@ -152,8 +158,9 @@ def get_all_events(
     """Return main Kineto and function events, memory and OOM events for functions/code blocks tagged in
     LudwigProfiler.
 
-    :param kineto_events: list of Kineto Events.
-    :param function_events: list of function events.
+    Args:
+        kineto_events: list of Kineto Events.
+        function_events: list of function events.
     """
     # LUDWIG_TAG is prepended to LudwigProfiler tags. This edited tag is passed in to `torch.profiler.record_function`
     # so we can easily retrieve events for code blocks wrapped with LudwigProfiler.
@@ -176,8 +183,9 @@ def get_metrics_from_torch_profiler(profile: torch.profiler.profiler.profile) ->
     The torch profiler surfaces these metrics that are tracked under the hood by `libkineto`.
     More on the Kineto project: https://github.com/pytorch/kineto
 
-    :param profile: profiler object that contains all the events that
-        were registered during the execution of the wrapped code block.
+    Args:
+        profile: profiler object that contains all the events that were registered during the execution of the
+            wrapped code block.
     """
     # events in both of these lists are in chronological order.
     kineto_events = profile.profiler.kineto_results.events()
@@ -199,7 +207,8 @@ def get_metrics_from_torch_profiler(profile: torch.profiler.profiler.profile) ->
 def get_metrics_from_system_usage_profiler(system_usage_info: dict) -> SystemResourceMetrics:
     """Package system resource usage metrics (no torch operators) in a dataclass.
 
-    :param system_usage_info: dictionary containing resource usage information.
+    Args:
+        system_usage_info: dictionary containing resource usage information.
     """
     device_usage_dict: dict[str, DeviceUsageMetrics] = {}
     for key in system_usage_info:

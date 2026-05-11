@@ -24,17 +24,40 @@ from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainingSetMetadat
 
 @PublicAPI
 class Callback(ABC):
-    def on_cmdline(self, cmd: str, *args: list[str]):
-        """Called when Ludwig is run on the command line with the callback enabled.
+    """Base class for Ludwig lifecycle callbacks.
 
-        :param cmd: The Ludwig subcommand being run, ex. "train", "evaluate", "predict", ...
-        :param args: The full list of command-line arguments (sys.argv).
+    Override any hook methods to execute custom logic at specific points in the
+    Ludwig pipeline (training, evaluation, hyperopt, etc.). All hook methods
+    are no-ops by default.
+
+    Example::
+
+        class MyCallback(Callback):
+            def on_train_start(self, model, config, config_fp, **kwargs):
+                print(f"Training started with config: {config_fp}")
+
+            def on_epoch_end(self, trainer, progress_tracker, save_path, **kwargs):
+                epoch = progress_tracker.epoch
+                loss = progress_tracker.train_metrics.get("combined", {}).get("loss", [])
+                if loss:
+                    print(f"Epoch {epoch}: loss = {loss[-1]:.4f}")
+
+        model = LudwigModel(config, callbacks=[MyCallback()])
+    """
+
+    def on_cmdline(self, cmd: str, *args: list[str]):
+        """Called when Ludwig is run from the command line.
+
+        Args:
+            cmd: The Ludwig subcommand being run (e.g., ``"train"``, ``"predict"``).
+            *args: The full list of command-line arguments (``sys.argv``).
         """
 
     def on_preprocess_start(self, config: ModelConfigDict, **kwargs):
         """Called before preprocessing starts.
 
-        :param config: The config dictionary.
+        Args:
+            config: The full Ludwig config dict.
         """
 
     def on_preprocess_end(
@@ -47,74 +70,80 @@ class Callback(ABC):
     ):
         """Called after preprocessing ends.
 
-        :param training_set: The training set.
-        :type training_set: ludwig.dataset.base.Dataset
-        :param validation_set: The validation set.
-        :type validation_set: ludwig.dataset.base.Dataset
-        :param test_set: The test set.
-        :type test_set: ludwig.dataset.base.Dataset
-        :param training_set_metadata: Values inferred from the training set, including preprocessing settings,
-            vocabularies, feature statistics, etc. Same as training_set_metadata.json.
+        Args:
+            training_set: Preprocessed training dataset.
+            validation_set: Preprocessed validation dataset.
+            test_set: Preprocessed test dataset.
+            training_set_metadata: Metadata inferred from the training set,
+                including vocabularies, feature statistics, and preprocessing
+                settings (same content as ``training_set_metadata.json``).
         """
 
     def on_hyperopt_init(self, experiment_name: str, **kwargs):
         """Called to initialize state before hyperparameter optimization begins.
 
-        :param experiment_name: The name of the current experiment.
+        Args:
+            experiment_name: Name of the current experiment.
         """
 
     def on_hyperopt_preprocessing_start(self, experiment_name: str, **kwargs):
         """Called before data preprocessing for hyperparameter optimization begins.
 
-        :param experiment_name: The name of the current experiment.
+        Args:
+            experiment_name: Name of the current experiment.
         """
 
     def on_hyperopt_preprocessing_end(self, experiment_name: str, **kwargs):
-        """Called after data preprocessing for hyperparameter optimization is completed.
+        """Called after data preprocessing for hyperparameter optimization completes.
 
-        :param experiment_name: The name of the current experiment.
+        Args:
+            experiment_name: Name of the current experiment.
         """
 
     def on_hyperopt_start(self, experiment_name: str, **kwargs):
         """Called before any hyperparameter optimization trials are started.
 
-        :param experiment_name: The name of the current experiment.
+        Args:
+            experiment_name: Name of the current experiment.
         """
 
     def on_hyperopt_end(self, experiment_name: str, **kwargs):
         """Called after all hyperparameter optimization trials are completed.
 
-        :param experiment_name: The name of the current experiment.
+        Args:
+            experiment_name: Name of the current experiment.
         """
 
     def on_hyperopt_finish(self, experiment_name: str, **kwargs):
-        """Deprecated.
-
-        Use on_hyperopt_end instead.
-        """
-        # TODO(travis): remove in favor of on_hyperopt_end for naming consistency
+        """Deprecated — use ``on_hyperopt_end`` instead."""
 
     def on_hyperopt_trial_start(self, parameters: HyperoptConfigDict, **kwargs):
         """Called before the start of each hyperparameter optimization trial.
 
-        :param parameters: The complete dictionary of parameters for this hyperparameter optimization experiment.
+        Args:
+            parameters: The full parameter dict for this hyperopt trial.
         """
 
     def on_hyperopt_trial_end(self, parameters: HyperoptConfigDict, **kwargs):
         """Called after the end of each hyperparameter optimization trial.
 
-        :param parameters: The complete dictionary of parameters for this hyperparameter optimization experiment.
+        Args:
+            parameters: The full parameter dict for this hyperopt trial.
         """
 
     def should_stop_hyperopt(self):
-        """Returns true if the entire hyperopt run (all trials) should be stopped.
+        """Return ``True`` to stop the entire hyperopt run early.
 
-        See: https://docs.ray.io/en/latest/tune/api_docs/stoppers.html#ray.tune.Stopper
+        See `Ray Tune Stoppers <https://docs.ray.io/en/latest/tune/api_docs/stoppers.html>`_.
         """
         return False
 
     def on_resume_training(self, is_coordinator: bool, **kwargs):
-        pass
+        """Called when training is resumed from a checkpoint.
+
+        Args:
+            is_coordinator: Whether this worker is the coordinator.
+        """
 
     def on_train_init(
         self,
@@ -126,14 +155,16 @@ class Callback(ABC):
         resume_directory: str | None,
         **kwargs,
     ):
-        """Called after preprocessing, but before the creation of the model and trainer objects.
+        """Called after preprocessing but before model and trainer objects are created.
 
-        :param base_config: The user-specified config, before the insertion of defaults or inferred values.
-        :param experiment_directory: The experiment directory, same as output_directory if no experiment specified.
-        :param experiment_name: The experiment name.
-        :param model_name: The model name.
-        :param output_directory: file path to where training results are stored.
-        :param resume_directory: model directory to resume training from, or None.
+        Args:
+            base_config: User-specified config before defaults/inferred values are added.
+            experiment_directory: Experiment directory (same as ``output_directory``
+                when no experiment name is specified).
+            experiment_name: The experiment name.
+            model_name: The model name.
+            output_directory: Path where training results are stored.
+            resume_directory: Checkpoint directory to resume from, or ``None``.
         """
 
     def on_train_start(
@@ -143,203 +174,193 @@ class Callback(ABC):
         config_fp: str | None,
         **kwargs,
     ):
-        """Called after creation of trainer, before the start of training.
+        """Called after the trainer is created, before training begins.
 
-        :param model: The ludwig model.
-        :type model: ludwig.utils.torch_utils.LudwigModule
-        :param config: The config dictionary.
-        :param config_fp: The file path to the config, or none if config was passed to stdin.
+        Args:
+            model: The Ludwig model (``LudwigModule`` instance).
+            config: The full config dict.
+            config_fp: Path to the YAML config file, or ``None`` if config was
+                passed as a dict.
         """
 
     def on_train_end(self, output_directory: str, **kwargs):
         """Called at the end of training, before the model is saved.
 
-        :param output_directory: file path to where training results are stored.
+        Args:
+            output_directory: Path where training results are stored.
         """
 
     def on_trainer_train_setup(self, trainer, save_path: str, is_coordinator: bool, **kwargs):
-        """Called in every trainer (distributed or local) before training starts.
+        """Called in every trainer (coordinator or worker) before training starts.
 
-        :param trainer: The trainer instance.
-        :type trainer: trainer: ludwig.models.Trainer
-        :param save_path: The path to the directory model is saved in.
-        :param is_coordinator: Is this trainer the coordinator.
+        Args:
+            trainer: The trainer instance.
+            save_path: Path to the directory where the model is saved.
+            is_coordinator: Whether this trainer is the coordinator.
         """
 
     def on_trainer_train_teardown(self, trainer, progress_tracker, save_path: str, is_coordinator: bool, **kwargs):
-        """Called in every trainer (distributed or local) after training completes.
+        """Called in every trainer (coordinator or worker) after training completes.
 
-        :param trainer: The trainer instance.
-        :type trainer: ludwig.models.trainer.Trainer
-        :param progress_tracker: An object which tracks training progress.
-        :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
-        :param save_path: The path to the directory model is saved in.
-        :param is_coordinator: Is this trainer the coordinator.
+        Args:
+            trainer: The trainer instance.
+            progress_tracker: Object tracking training progress (epochs, metrics, etc.).
+            save_path: Path to the directory where the model is saved.
+            is_coordinator: Whether this trainer is the coordinator.
         """
 
     def on_batch_start(self, trainer, progress_tracker, save_path: str, **kwargs):
-        """Called on coordinator only before each batch.
+        """Called on the coordinator before each training batch.
 
-        :param trainer: The trainer instance.
-        :type trainer: ludwig.models.trainer.Trainer
-        :param progress_tracker: An object which tracks training progress.
-        :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
-        :param save_path: The path to the directory model is saved in.
+        Args:
+            trainer: The trainer instance.
+            progress_tracker: Object tracking training progress.
+            save_path: Path to the model save directory.
         """
 
     def on_batch_end(self, trainer, progress_tracker, save_path: str, sync_step: bool = True, **kwargs):
-        """Called on coordinator only after each batch.
+        """Called on the coordinator after each training batch.
 
-        :param trainer: The trainer instance.
-        :type trainer: ludwig.models.trainer.Trainer
-        :param progress_tracker: An object which tracks training progress.
-        :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
-        :param save_path: The path to the directory model is saved in.
-        :param sync_step: Whether the model params were updated and synced in this step.
+        Args:
+            trainer: The trainer instance.
+            progress_tracker: Object tracking training progress.
+            save_path: Path to the model save directory.
+            sync_step: Whether model params were updated and synced in this step.
         """
 
     def on_eval_start(self, trainer, progress_tracker, save_path: str, **kwargs):
-        """Called on coordinator at the start of evaluation.
+        """Called on the coordinator at the start of evaluation.
 
-        :param trainer: The trainer instance.
-        :type trainer: ludwig.models.trainer.Trainer
-        :param progress_tracker: An object which tracks training progress.
-        :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
-        :param save_path: The path to the directory model is saved in.
+        Args:
+            trainer: The trainer instance.
+            progress_tracker: Object tracking training progress.
+            save_path: Path to the model save directory.
         """
 
     def on_eval_end(self, trainer, progress_tracker, save_path: str, **kwargs):
-        """Called on coordinator at the end of evaluation.
+        """Called on the coordinator at the end of evaluation.
 
-        :param trainer: The trainer instance.
-        :type trainer: ludwig.models.trainer.Trainer
-        :param progress_tracker: An object which tracks training progress.
-        :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
-        :param save_path: The path to the directory model is saved in.
+        Args:
+            trainer: The trainer instance.
+            progress_tracker: Object tracking training progress.
+            save_path: Path to the model save directory.
         """
 
     def on_epoch_start(self, trainer, progress_tracker, save_path: str, **kwargs):
-        """Called on coordinator only before the start of each epoch.
+        """Called on the coordinator before the start of each epoch.
 
-        :param trainer: The trainer instance.
-        :type trainer: ludwig.models.trainer.Trainer
-        :param progress_tracker: An object which tracks training progress.
-        :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
-        :param save_path: The path to the directory model is saved in.
+        Args:
+            trainer: The trainer instance.
+            progress_tracker: Object tracking training progress.
+            save_path: Path to the model save directory.
         """
 
     def on_epoch_end(self, trainer, progress_tracker, save_path: str, **kwargs):
-        """Called on coordinator only after the end of each epoch.
+        """Called on the coordinator after the end of each epoch.
 
-        :param trainer: The trainer instance.
-        :type trainer: ludwig.models.trainer.Trainer
-        :param progress_tracker: An object which tracks training progress.
-        :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
-        :param save_path: The path to the directory model is saved in.
+        Args:
+            trainer: The trainer instance.
+            progress_tracker: Object tracking training progress.
+            save_path: Path to the model save directory.
         """
 
     def on_validation_start(self, trainer, progress_tracker, save_path: str, **kwargs):
-        """Called on coordinator before validation starts.
+        """Called on the coordinator before validation starts.
 
-        :param trainer: The trainer instance.
-        :type trainer: ludwig.models.trainer.Trainer
-        :param progress_tracker: An object which tracks training progress.
-        :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
-        :param save_path: The path to the directory model is saved in.
+        Args:
+            trainer: The trainer instance.
+            progress_tracker: Object tracking training progress.
+            save_path: Path to the model save directory.
         """
 
     def on_validation_end(self, trainer, progress_tracker, save_path: str, **kwargs):
-        """Called on coordinator after validation is complete.
+        """Called on the coordinator after validation completes.
 
-        :param trainer: The trainer instance.
-        :type trainer: ludwig.models.trainer.Trainer
-        :param progress_tracker: An object which tracks training progress.
-        :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
-        :param save_path: The path to the directory model is saved in.
+        Args:
+            trainer: The trainer instance.
+            progress_tracker: Object tracking training progress.
+            save_path: Path to the model save directory.
         """
 
     def on_test_start(self, trainer, progress_tracker, save_path: str, **kwargs):
-        """Called on coordinator before testing starts.
+        """Called on the coordinator before test evaluation starts.
 
-        :param trainer: The trainer instance.
-        :type trainer: ludwig.models.trainer.Trainer
-        :param progress_tracker: An object which tracks training progress.
-        :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
-        :param save_path: The path to the directory model is saved in.
+        Args:
+            trainer: The trainer instance.
+            progress_tracker: Object tracking training progress.
+            save_path: Path to the model save directory.
         """
 
     def on_test_end(self, trainer, progress_tracker, save_path: str, **kwargs):
-        """Called on coordinator after testing ends.
+        """Called on the coordinator after test evaluation ends.
 
-        :param trainer: The trainer instance.
-        :type trainer: ludwig.models.trainer.Trainer
-        :param progress_tracker: An object which tracks training progress.
-        :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
-        :param save_path: The path to the directory model is saved in.
+        Args:
+            trainer: The trainer instance.
+            progress_tracker: Object tracking training progress.
+            save_path: Path to the model save directory.
         """
 
     def should_early_stop(self, trainer, progress_tracker, is_coordinator, **kwargs):
-        # Triggers early stopping if any callback on any worker returns True
+        """Return ``True`` to trigger early stopping on any worker.
+
+        Ludwig ORs the return value across all workers, so any worker returning
+        ``True`` will stop training.
+        """
         return False
 
     def on_checkpoint(self, trainer, progress_tracker, **kwargs):
-        """Called after each checkpoint is passed, regardless of whether the model was evaluated or saved at that
-        checkpoint."""
+        """Called after each checkpoint, regardless of whether the model was evaluated or saved."""
 
     def on_save_best_checkpoint(self, trainer, progress_tracker, save_path, **kwargs):
-        """Called on every worker immediately after a new best model is checkpointed."""
+        """Called on every worker immediately after a new best model checkpoint is saved."""
 
     def on_build_metadata_start(self, df, mode: str, **kwargs):
-        """Called before building metadata for dataset.
+        """Called before building dataset metadata.
 
-        :param df: The dataset.
-        :type df: pd.DataFrame
-        :param mode: "prediction", "training", or None.
+        Args:
+            df: The dataset (``pd.DataFrame``).
+            mode: One of ``"prediction"``, ``"training"``, or ``None``.
         """
 
     def on_build_metadata_end(self, df, mode, **kwargs):
-        """Called after building dataset metadata.
+        """Called after dataset metadata has been built.
 
-        :param df: The dataset.
-        :type df: pd.DataFrame
-        :param mode: "prediction", "training", or None.
+        Args:
+            df: The dataset (``pd.DataFrame``).
+            mode: One of ``"prediction"``, ``"training"``, or ``None``.
         """
 
     def on_build_data_start(self, df, mode, **kwargs):
-        """Called before build_data, which does preprocessing, handling missing values, adding metadata to
-        training_set_metadata.
+        """Called before ``build_data`` (preprocessing, missing-value handling, metadata update).
 
-        :param df: The dataset.
-        :type df: pd.DataFrame
-        :param mode: "prediction", "training", or None.
+        Args:
+            df: The dataset (``pd.DataFrame``).
+            mode: One of ``"prediction"``, ``"training"``, or ``None``.
         """
 
     def on_build_data_end(self, df, mode, **kwargs):
-        """Called after build_data completes.
+        """Called after ``build_data`` completes.
 
-        :param df: The dataset.
-        :type df: pd.DataFrame
-        :param mode: "prediction", "training", or None.
+        Args:
+            df: The dataset (``pd.DataFrame``).
+            mode: One of ``"prediction"``, ``"training"``, or ``None``.
         """
 
     def on_evaluation_start(self, **kwargs):
-        """Called before preprocessing for evaluation."""
+        """Called before preprocessing for standalone evaluation."""
 
     def on_evaluation_end(self, **kwargs):
-        """Called after evaluation is complete."""
+        """Called after standalone evaluation completes."""
 
     def on_visualize_figure(self, fig, **kwargs):
-        """Called after a visualization is generated.
+        """Called after a visualization figure is generated.
 
-        :param fig: The figure.
-        :type fig: matplotlib.figure.Figure
+        Args:
+            fig: The generated ``matplotlib.figure.Figure``.
         """
 
     def on_ludwig_end(self, **kwargs):
-        """Convenience method for any cleanup.
-
-        Not yet implemented.
-        """
+        """Called at the very end of a Ludwig run for any cleanup."""
 
     def prepare_ray_tune(
         self,
@@ -347,12 +368,16 @@ class Callback(ABC):
         tune_config: dict[str, Any],
         tune_callbacks: list[Callable],
         **kwargs,
-    ):
-        """Configures Ray Tune callback and config.
+    ) -> tuple[Callable, dict[str, Any]]:
+        """Configure the Ray Tune training function and config before a hyperopt run.
 
-        :param train_fn: The function which runs the experiment trial.
-        :param tune_config: The ray tune configuration dictionary.
-        :param tune_callbacks: List of callbacks (not used yet).
-        :returns: Tuple[Callable, Dict] The train_fn and tune_config, which will be passed to ray tune.
+        Args:
+            train_fn: The function that runs a single hyperopt trial.
+            tune_config: The Ray Tune configuration dict.
+            tune_callbacks: Additional Ray Tune callbacks (not yet used by Ludwig).
+
+        Returns:
+            A tuple ``(train_fn, tune_config)`` — possibly modified — that is
+            passed directly to Ray Tune.
         """
         return train_fn, tune_config
