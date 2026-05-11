@@ -52,9 +52,9 @@ def merge_dict(dct, merge_dct):
     dict_merge recurses down into dicts nested to an arbitrary depth, updating keys. The ``merge_dct`` is merged
     into ``dct``.
 
-    :param dct: dict onto which the merge is executed
-    :param merge_dct: dct merged into dct
-    :return: None
+    Args:
+        dct: Dict onto which the merge is executed.
+        merge_dct: Dict merged into dct.
     """
     dct = copy.deepcopy(dct)
     for k, _v in merge_dct.items():

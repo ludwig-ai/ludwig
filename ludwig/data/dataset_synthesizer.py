@@ -180,12 +180,12 @@ def build_synthetic_dataset_df(dataset_size: int, config: ModelConfigDict) -> pd
 def build_synthetic_dataset(dataset_size: int, features: list[dict], outdir: str | None = None):
     """Synthesizes a dataset for testing purposes.
 
-    :param dataset_size: (int) size of the dataset
-    :param features: (List[dict]) list of features to generate in YAML format.
-        Provide a list containing one dictionary for each feature,
-        each dictionary must include a name, a type
-        and can include some generation parameters depending on the type
-    :param outdir: (str) Path to an output directory. Used for saving synthetic image and audio files.
+    Args:
+        dataset_size: size of the dataset.
+        features: list of features to generate in YAML format. Provide a list containing one dictionary for
+            each feature, each dictionary must include a name, a type and can include some generation parameters
+            depending on the type.
+        outdir: Path to an output directory. Used for saving synthetic image and audio files.
 
     Example content for features:
 
@@ -534,14 +534,14 @@ cyclers_registry = {"category": cycle_category, "binary": cycle_binary}
 
 
 def cli_synthesize_dataset(dataset_size: int, features: list[dict], output_path: str, **kwargs) -> None:
-    """Symthesizes a dataset for testing purposes.
+    """Synthesizes a dataset for testing purposes.
 
-    :param dataset_size: (int) size of the dataset
-    :param features: (List[dict]) list of features to generate in YAML format.
-        Provide a list contaning one dictionary for each feature,
-        each dictionary must include a name, a type
-        and can include some generation parameters depending on the type
-    :param output_path: (str) path where to save the output CSV file
+    Args:
+        dataset_size: size of the dataset.
+        features: list of features to generate in YAML format. Provide a list containing one dictionary for
+            each feature, each dictionary must include a name, a type and can include some generation parameters
+            depending on the type.
+        output_path: path where to save the output CSV file.
 
     Example content for features:
 

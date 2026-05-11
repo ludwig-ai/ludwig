@@ -1818,30 +1818,18 @@ class LudwigModel:
     ) -> bool:
         """Uploads trained model artifacts to the HuggingFace Hub.
 
-        # Inputs
+        Args:
+            repo_id: A namespace (user or an organization) and a repo name separated by a `/`.
+            model_path: The path of the saved model. This is either (a) the folder where the 'model_weights'
+                folder and the 'model_hyperparameters.json' file are stored, or (b) the parent of that folder.
+            private: Whether the model repo should be private. Defaults to False.
+            repo_type: Set to `"dataset"` or `"space"` if uploading to a dataset or space, `None` or `"model"`
+                if uploading to a model. Default is `None`.
+            commit_message: The summary / title / first line of the generated commit.
+            commit_description: The description of the generated commit.
 
-        :param repo_id: (`str`)
-            A namespace (user or an organization) and a repo name separated
-            by a `/`.
-        :param model_path: (`str`)
-            The path of the saved model. This is either (a) the folder where
-            the 'model_weights' folder and the 'model_hyperparameters.json' file
-            are stored, or (b) the parent of that folder.
-        :param private: (`bool`, *optional*, defaults to `False`)
-            Whether the model repo should be private.
-        :param repo_type: (`str`, *optional*)
-            Set to `"dataset"` or `"space"` if uploading to a dataset or
-            space, `None` or `"model"` if uploading to a model. Default is
-            `None`.
-        :param commit_message: (`str`, *optional*)
-            The summary / title / first line of the generated commit. Defaults to:
-            `f"Upload {path_in_repo} with huggingface_hub"`
-        :param commit_description: (`str` *optional*)
-            The description of the generated commit
-
-        # Returns
-
-        :return: (bool) True for success, False for failure.
+        Returns:
+            True for success, False for failure.
         """
         if model_weights_exist(os.path.join(model_path, MODEL_FILE_NAME)) and os.path.exists(
             os.path.join(model_path, MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME)
@@ -1872,13 +1860,8 @@ class LudwigModel:
     def save_config(self, save_path: str) -> None:
         """Save config to specified location.
 
-        # Inputs
-
-        :param save_path: (str) filepath string to save config as a
-            JSON file.
-
-        # Return
-        :return: `None`
+        Args:
+            save_path: filepath string to save config as a JSON file.
         """
         os.makedirs(save_path, exist_ok=True)
         model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
@@ -1952,11 +1935,12 @@ class LudwigModel:
     def create_model(config_obj: ModelConfig | dict, random_seed: int = default_random_seed) -> BaseModel:
         """Instantiates BaseModel object.
 
-        # Inputs
-        :param config_obj: (Union[Config, dict]) Ludwig config object
-        :param random_seed: (int, default: ludwig default random seed) Random seed used for weights initialization,
-            splits and any other random function. # Return
-        :return: (ludwig.models.BaseModel) Instance of the Ludwig model object.
+        Args:
+            config_obj: Ludwig config object.
+            random_seed: Random seed used for weights initialization, splits and any other random function.
+
+        Returns:
+            Instance of the Ludwig model object.
         """
         if isinstance(config_obj, dict):
             config_obj = ModelConfig.from_dict(config_obj)
@@ -1967,14 +1951,9 @@ class LudwigModel:
     def set_logging_level(logging_level: int) -> None:
         """Sets level for log messages.
 
-        # Inputs
-
-        :param logging_level: (int) Set/Update the logging level. Use logging
-        constants like `logging.DEBUG` , `logging.INFO` and `logging.ERROR`.
-
-        # Return
-
-        :return: `None`
+        Args:
+            logging_level: Set/Update the logging level. Use logging constants like `logging.DEBUG`,
+                `logging.INFO` and `logging.ERROR`.
         """
         logging.getLogger("ludwig").setLevel(logging_level)
         if logging_level in {logging.WARNING, logging.ERROR, logging.CRITICAL}:

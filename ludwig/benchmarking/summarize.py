@@ -21,12 +21,13 @@ def summarize_metrics(
 ) -> tuple[list[str], list[MetricsDiff], list[list[ResourceUsageDiff]]]:
     """Build metric and resource usage diffs from experiment artifacts.
 
-    bench_config_path: bench config file path. Can be the same one that was used to run
-        these experiments.
-    base_experiment: name of the experiment we're comparing against.
-    experimental_experiment: name of the experiment we're comparing.
-    download_base_path: base path under which live the stored artifacts of
-        the benchmarking experiments.
+    Args:
+        bench_config_path: Bench config file path. Can be the same one that was used to run
+            these experiments.
+        base_experiment: Name of the experiment we're comparing against.
+        experimental_experiment: Name of the experiment we're comparing.
+        download_base_path: Base path under which live the stored artifacts of
+            the benchmarking experiments.
     """
     local_dir, dataset_list = download_artifacts(
         bench_config_path, base_experiment, experimental_experiment, download_base_path
@@ -55,9 +56,10 @@ def export_and_print(
 ) -> None:
     """Export to CSV and print a diff of performance and resource usage metrics of two experiments.
 
-    :param dataset_list: list of datasets for which to print the diffs.
-    :param metric_diffs: Diffs for the performance metrics by dataset.
-    :param resource_usage_diffs: Diffs for the resource usage metrics per dataset per LudwigProfiler tag.
+    Args:
+        dataset_list: List of datasets for which to print the diffs.
+        metric_diffs: Diffs for the performance metrics by dataset.
+        resource_usage_diffs: Diffs for the resource usage metrics per dataset per LudwigProfiler tag.
     """
     for dataset_name, experiment_metric_diff in zip(dataset_list, metric_diffs):
         output_path = os.path.join("summarize_output", "performance_metrics", dataset_name)
