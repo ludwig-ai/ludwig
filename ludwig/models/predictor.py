@@ -464,7 +464,7 @@ def calculate_overall_stats(output_features, predictions, dataset, training_set_
         feature_metadata = training_set_metadata[output_feature.feature_name]
         feature_metadata.update(training_set_metadata[output_feature.feature_name])
 
-        feature_df = predictions.loc[:, predictions.columns.str.startswith(of_name)]
+        feature_df = predictions.loc[:, [c for c in predictions.columns if str(c).startswith(of_name)]]
         feature_df = feature_df.rename(columns=lambda c: c[len(of_name) + 1 :])
 
         target = dataset.loc[:, output_feature.proc_column]

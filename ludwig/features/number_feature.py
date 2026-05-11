@@ -70,12 +70,16 @@ class ZScoreTransformer(NumberTransformer):
         self.sigma = float(std) if std is not None else std
         self.feature_name = kwargs.get(NAME, "")
         if self.sigma == 0:
-            raise RuntimeError(
-                f"Cannot apply zscore normalization to `{self.feature_name}` since it has a standard deviation of 0. "
-                f"This is most likely because `{self.feature_name}` has a constant value of {self.mu} for all rows in "
-                "the dataset. Consider removing this feature from your Ludwig config since it is not useful for "
-                "your machine learning model."
+            import logging as _logging
+
+            _logging.getLogger(__name__).warning(
+                "Cannot apply zscore normalization to `%s` since it has a standard deviation of 0 "
+                "(constant value %s). The feature will be passed through unchanged.",
+                self.feature_name,
+                self.mu,
             )
+            # Avoid division-by-zero; transform yields (x - mu) / 1 = 0 for all constant rows.
+            self.sigma = 1.0
 
     def transform(self, x: np.ndarray) -> np.ndarray:
         return (x - self.mu) / self.sigma

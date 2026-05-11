@@ -5,7 +5,7 @@ import sys
 
 from ludwig.globals import MODEL_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, model_weights_exist
 from ludwig.utils.print_utils import get_logging_level_registry
-from ludwig.utils.upload_utils import HuggingFaceHub, Predibase
+from ludwig.utils.upload_utils import HuggingFaceHub
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 def get_upload_registry():
     return {
         "hf_hub": HuggingFaceHub,
-        "predibase": Predibase,
     }
 
 
@@ -34,7 +33,7 @@ def upload_cli(
     Args:
         service (`str`):
             Name of the hosted model service to push the trained artifacts to.
-            Currently, this only supports `hf_hub` and `predibase`.
+            Currently only `hf_hub` is supported.
         repo_id (`str`):
             A namespace (user or an organization) and a repo name separated
             by a `/`.
@@ -54,11 +53,9 @@ def upload_cli(
         commit_description (`str` *optional*):
             The description of the generated commit
         dataset_file (`str`, *optional*):
-            The path to the dataset file. Required if `service` is set to
-            `"predibase"` for new model repos.
+            The path to the dataset file.
         dataset_name (`str`, *optional*):
-            The name of the dataset. Used by the `service`
-            `"predibase"`.
+            The name of the dataset.
     """
     model_service = get_upload_registry().get(service, "hf_hub")
     hub: HuggingFaceHub = model_service()
@@ -99,7 +96,7 @@ def cli(sys_argv):
         "service",
         help="Name of the model repository service.",
         default="hf_hub",
-        choices=["hf_hub", "predibase"],
+        choices=["hf_hub"],
     )
 
     parser.add_argument(

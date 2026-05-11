@@ -19,11 +19,42 @@ from sklearn.model_selection import train_test_split
 from ludwig.datasets.dataset_config import DatasetConfig
 from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 
+_RAW_COLUMNS = (
+    [
+        "Elevation",
+        "Aspect",
+        "Slope",
+        "Horizontal_Distance_To_Hydrology",
+        "Vertical_Distance_To_Hydrology",
+        "Horizontal_Distance_To_Roadways",
+        "Hillshade_9am",
+        "Hillshade_Noon",
+        "Hillshade_3pm",
+        "Horizontal_Distance_To_Fire_Points",
+    ]
+    + [f"Wilderness_Area_{i}" for i in range(1, 5)]
+    + [f"Soil_Type_{i}" for i in range(1, 41)]
+    + ["Cover_Type"]
+)
+
 
 class ForestCoverLoader(DatasetLoader):
     def __init__(self, config: DatasetConfig, cache_dir: str | None = None, use_tabnet_split=True):
         super().__init__(config, cache_dir=cache_dir)
         self.use_tabnet_split = use_tabnet_split
+
+    def load_file_to_dataframe(self, file_path: str, **kwargs) -> pd.DataFrame:
+        """Read the headerless covtype.data file and assign raw column names."""
+        return pd.read_csv(file_path, header=None, names=_RAW_COLUMNS)
+
+    def load_files_to_dataframe(self, file_paths: list[str], root_dir=None) -> pd.DataFrame:
+        """Bypass base-class column-name reassignment — raw file already has correct names."""
+        import os
+
+        if root_dir:
+            file_paths = [os.path.join(root_dir, p) for p in file_paths]
+        frames = [self.load_file_to_dataframe(p) for p in file_paths]
+        return pd.concat(frames, ignore_index=True)
 
     def transform_dataframe(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         df = super().transform_dataframe(dataframe)

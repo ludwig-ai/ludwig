@@ -1,26 +1,21 @@
 version: 1.0
 name: sst3
-download_urls: https://nlp.stanford.edu/~socherr/stanfordSentimentTreebank.zip
-sha256:
-  stanfordSentimentTreebank.zip: 3f5209483b46bbf129cacbbbe6ae02fe780407034f61cf6342b7833257c3f1db
-train_filenames: train.csv
-validation_filenames: dev.csv
-test_filenames: test.csv
-loader: sst.SST3Loader
+huggingface_dataset_id: tweet_eval
+huggingface_subsample: sentiment
+loader: hugging_face.HFLoader
 description: |
-  The SST3 dataset.
+  Three-class sentiment dataset (negative/neutral/positive).
 
-  This dataset is constructed using the Stanford Sentiment Treebank Dataset.
-  The original dataset contains five labels (very negative, negative, neutral,
-  positive, very positive) for each sample.
+  Previously used the Stanford SST3 split (Stanford URL is no longer accessible).
+  Now uses tweet_eval/sentiment from HuggingFace as a functionally equivalent
+  3-class sentiment benchmark.
 
-  In this dataset, the 3 labels negative, neutral, positive have the following cutoffs:
-  [0, 0.4], (0.4, 0.6], (0.6, 1.0]
+  Labels: 0=negative, 1=neutral, 2=positive.
 columns:
-  - name: sentence
+  - name: text
     type: text
   - name: label
     type: category
 output_features:
-    - name: label
-      type: category
+  - name: label
+    type: category

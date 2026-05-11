@@ -1,27 +1,19 @@
 version: 1.0
 name: sst5
-download_urls: https://nlp.stanford.edu/~socherr/stanfordSentimentTreebank.zip
-sha256:
-  stanfordSentimentTreebank.zip: 3f5209483b46bbf129cacbbbe6ae02fe780407034f61cf6342b7833257c3f1db
-train_filenames: train.csv
-validation_filenames: dev.csv
-test_filenames: test.csv
-loader: sst.SST5Loader
+huggingface_dataset_id: SetFit/sst5
+loader: hugging_face.HFLoader
 description: |
-  The SST5 dataset.
+  The SST5 dataset (Stanford Sentiment Treebank, 5-class).
 
-  This dataset is constructed using the Stanford Sentiment Treebank Dataset.
-  This dataset contains five labels (very negative, negative, neutral,
-  positive, very positive) for each sample.
+  Loaded from HuggingFace (SetFit/sst5) since the original Stanford
+  download URL (nlp.stanford.edu) is no longer publicly accessible.
 
-  In the original dataset, the  5 labels: very negative, negative, neutral, positive,
-  and very positive have the following cutoffs:
-  [0, 0.2], (0.2, 0.4], (0.4, 0.6], (0.6, 0.8], (0.8, 1.0]
+  Labels: 0=very negative, 1=negative, 2=neutral, 3=positive, 4=very positive.
 columns:
-  - name: sentence
+  - name: text
     type: text
   - name: label
     type: category
 output_features:
-    - name: label
-      type: category
+  - name: label
+    type: category

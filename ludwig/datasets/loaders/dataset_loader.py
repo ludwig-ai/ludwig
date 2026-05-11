@@ -267,9 +267,16 @@ class DatasetLoader:
                     f"the original source failed with the following error {e}."
                 )
                 if not self.config.fallback_mirrors:
-                    logger.exception(f"No fallback mirror found. Failed to download dataset {self.config.name}.")
+                    raise RuntimeError(f"Failed to download dataset {self.config.name}. Original error: {e}") from e
                 else:
-                    self.download_from_fallback_mirrors()
+                    try:
+                        self.download_from_fallback_mirrors()
+                    except Exception as fallback_e:
+                        raise RuntimeError(
+                            f"Failed to download dataset {self.config.name}. "
+                            f"Original error: {e}. "
+                            f"Fallback also failed: {fallback_e}"
+                        ) from e
         self.verify()
         if self.state == DatasetState.DOWNLOADED:
             # Extract dataset
@@ -430,14 +437,24 @@ class DatasetLoader:
                 set_cols_dfs = []
                 for df in dataframes:
                     # Split column is not included in configs, add in if pre-set split is present
-                    if SPLIT in df.columns:
-                        column_names.append(SPLIT)
+                    cols = list(column_names)
+                    if SPLIT in df.columns and SPLIT not in cols:
+                        cols.append(SPLIT)
 
-                    # If the number of columns in the dataframe does not match the number of columns in the config,
-                    # then the dataframe likely has an extra column that we don't want - i.e. "Unnamed: 0".
-                    if len(column_names) != len(df.columns):
-                        df = df[column_names]
-                    set_cols_dfs.append(df.set_axis(column_names, axis=1))
+                    # If the dataframe already has named columns (parquet / CSV with header),
+                    # filter by name rather than renaming positionally.  This avoids silently
+                    # mapping the wrong column to a name when the file is a labeled split that
+                    # has a different column set from the train split (e.g. unlabeled test files).
+                    if any(c in df.columns for c in cols):
+                        existing = [c for c in cols if c in df.columns]
+                        df = df[existing]
+                        cols = existing
+                    elif len(cols) != len(df.columns):
+                        # Positional file (no header): trim extra columns like "Unnamed: 0".
+                        existing = cols[: len(df.columns)]
+                        df = df.iloc[:, : len(existing)]
+                        cols = existing
+                    set_cols_dfs.append(df.set_axis(cols, axis=1))
                 return pd.concat(set_cols_dfs, ignore_index=True)
             else:
                 return pd.concat(dataframes, ignore_index=True)

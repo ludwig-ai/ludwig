@@ -65,13 +65,19 @@ class HFLoader(DatasetLoader):
 
         A train set should always be provided by Hugging Face.
 
-        Args:
-            hf_id: path to dataset on HuggingFace platform.
-            hf_subsample: name of dataset configuration on HuggingFace platform.
-            split: directive for how to interpret if dataset contains validation or test set.
+        :param hf_id: (str) path to dataset on HuggingFace platform; falls back to config.huggingface_dataset_id
+        :param hf_subsample: (str) name of dataset configuration on HuggingFace platform; falls back to config
+        :param split: directive for how to interpret if dataset contains validation or test set.
         """
-        self.config.huggingface_dataset_id = hf_id
-        self.config.huggingface_subsample = hf_subsample
+        # Fall back to config values so that HFLoader works with the standard load(split=True) call pattern.
+        if hf_id is None:
+            hf_id = getattr(self.config, "huggingface_dataset_id", None)
+        if hf_subsample is None:
+            hf_subsample = getattr(self.config, "huggingface_subsample", None)
+        if hf_id is None:
+            raise ValueError(
+                "No HuggingFace dataset ID provided. Set config.huggingface_dataset_id or pass hf_id= to load()."
+            )
         pandas_dict = self.load_hf_to_dict(
             hf_id=hf_id,
             hf_subsample=hf_subsample,
