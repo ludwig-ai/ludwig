@@ -45,11 +45,9 @@ logger = logging.getLogger(__name__)
 def compare_performance_cli(test_statistics: "str | list[str]", **kwargs: dict) -> None:
     """Load model data from files to be shown by compare_performance.
 
-    # Inputs
-
-    :param test_statistics: (Union[str, List[str]]) path to experiment test statistics file.
-    :param kwargs: (dict) parameters for the requested visualizations.  # Return
-    :return None:
+    Args:
+        test_statistics: Path to experiment test statistics file.
+        kwargs: Parameters for the requested visualizations.
     """
     test_stats_per_model = load_data_for_viz("load_json", test_statistics)
     compare_performance(test_stats_per_model, **kwargs)
@@ -70,24 +68,16 @@ def compare_performance(
     it produces bars in a bar plot, one for each overall metric available
     in the test_statistics file for the specified output_feature_name.
 
-    # Inputs
+    Args:
+        test_stats_per_model: Dictionary containing evaluation performance statistics.
+        output_feature_name: Name of the output feature to use for the visualization.
+            If `None`, use all output features.
+        model_names: Model name or list of the model names to use as labels.
+        output_directory: Directory where to save plots. If not specified, plots
+            will be displayed in a window.
+        file_format: File format of output plots - `'pdf'` or `'png'`.
 
-    :param test_stats_per_model: (List[dict]) dictionary containing evaluation
-        performance statistics.
-    :param output_feature_name: (Union[str, `None`], default: `None`) name of the output feature
-        to use for the visualization.  If `None`, use all output features.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
-        list of the model names to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-
-    # Return
-
-    :return: (None)
-
-    # Example usage:
+    Example usage:
 
     ```python
     model_a = LudwigModel(config)
@@ -174,24 +164,16 @@ def compare_classifiers_performance_from_prob_cli(
 ) -> None:
     """Load model data from files to be shown by compare_classifiers_from_prob.
 
-    # Inputs
-
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
-    :param ground_truth: (str) path to ground truth file
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
-    :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
-    :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-        results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-    :return None:
+    Args:
+        probabilities: List of prediction results file names to extract probabilities from.
+        ground_truth: Path to ground truth file.
+        ground_truth_split: Type of ground truth split - `0` for training split,
+            `1` for validation split or `2` for test split.
+        split_file: File path to csv file containing split values.
+        ground_truth_metadata: File path to feature metadata json file created during training.
+        output_feature_name: Name of the output feature to visualize.
+        output_directory: Name of output directory containing training results.
+        kwargs: Parameters for the requested visualizations.
     """
 
     # retrieve feature metadata to convert raw predictions to encoded value
@@ -236,30 +218,20 @@ def compare_classifiers_performance_from_prob(
     computed on the fly from the probabilities of predictions for the specified
     `model_names`.
 
-    # Inputs
-
-    :param probabilities_per_model: (List[np.ndarray]) path to experiment
-        probabilities file
-    :param ground_truth: (pd.Series) ground truth values
-    :param metadata: (dict) feature metadata dictionary
-    :param output_feature_name: (str) output feature name
-    :param top_n_classes: (List[int]) list containing the number of classes
-        to plot.
-    :param labels_limit: (int) upper limit on the numeric encoded label value.
-        Encoded numeric label values in dataset that are higher than
-        `labels_limit` are considered to be "rare" labels.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
-        list of the model names to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
-        metadata['str2idx'] in np.vectorize
-
-    # Return
-
-    :return: (None)
+    Args:
+        probabilities_per_model: Path to experiment probabilities file.
+        ground_truth: Ground truth values.
+        metadata: Feature metadata dictionary.
+        output_feature_name: Output feature name.
+        top_n_classes: List containing the number of classes to plot.
+        labels_limit: Upper limit on the numeric encoded label value. Encoded
+            numeric label values in dataset that are higher than `labels_limit`
+            are considered to be "rare" labels.
+        model_names: Model name or list of the model names to use as labels.
+        output_directory: Directory where to save plots. If not specified, plots
+            will be displayed in a window.
+        file_format: File format of output plots - `'pdf'` or `'png'`.
+        ground_truth_apply_idx: Whether to use metadata['str2idx'] in np.vectorize.
     """
 
     if not isinstance(ground_truth, np.ndarray):
@@ -325,26 +297,17 @@ def compare_classifiers_performance_from_pred_cli(
 ) -> None:
     """Load model data from files to be shown by compare_classifiers_from_pred.
 
-    # Inputs
-
-    :param predictions: (List[str]) list of prediction results file names
-        to extract predictions from.
-    :param ground_truth: (str) path to ground truth file.
-    :param ground_truth_metadata: (str) path to ground truth metadata file.
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
-    :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
-    :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-        results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
-    :return None:
+    Args:
+        predictions: List of prediction results file names to extract predictions from.
+        ground_truth: Path to ground truth file.
+        ground_truth_metadata: Path to ground truth metadata file / file path to
+            feature metadata json file created during training.
+        ground_truth_split: Type of ground truth split - `0` for training split,
+            `1` for validation split or `2` for test split.
+        split_file: File path to csv file containing split values.
+        output_feature_name: Name of the output feature to visualize.
+        output_directory: Name of output directory containing training results.
+        kwargs: Parameters for the requested visualizations.
     """
     # retrieve feature metadata to convert raw predictions to encoded value
     metadata = load_json(ground_truth_metadata)
@@ -379,27 +342,19 @@ def compare_classifiers_performance_from_pred(
     computed on the fly from the predictions for the specified
     `model_names`.
 
-    # Inputs
-
-    :param predictions_per_model: (List[str]) path to experiment predictions file.
-    :param ground_truth: (pd.Series) ground truth values
-    :param metadata: (dict) feature metadata dictionary.
-    :param output_feature_name: (str) name of the output feature to visualize.
-    :param labels_limit: (int) upper limit on the numeric encoded label value.
-        Encoded numeric label values in dataset that are higher than
-        `labels_limit` are considered to be "rare" labels.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
-        list of the model names to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
-        metadata['str2idx'] in np.vectorize
-
-    # Return
-
-    :return: (None)
+    Args:
+        predictions_per_model: Path to experiment predictions file.
+        ground_truth: Ground truth values.
+        metadata: Feature metadata dictionary.
+        output_feature_name: Name of the output feature to visualize.
+        labels_limit: Upper limit on the numeric encoded label value. Encoded
+            numeric label values in dataset that are higher than `labels_limit`
+            are considered to be "rare" labels.
+        model_names: Model name or list of the model names to use as labels.
+        output_directory: Directory where to save plots. If not specified, plots
+            will be displayed in a window.
+        file_format: File format of output plots - `'pdf'` or `'png'`.
+        ground_truth_apply_idx: Whether to use metadata['str2idx'] in np.vectorize.
     """
 
     if not isinstance(ground_truth, np.ndarray):
@@ -460,25 +415,16 @@ def compare_classifiers_performance_subset_cli(
 ) -> None:
     """Load model data from files to be shown by compare_classifiers_subset.
 
-    # Inputs
-
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
-    :param ground_truth: (str) path to ground truth file
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
-    :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
-    :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
-    :return None:
+    Args:
+        probabilities: List of prediction results file names to extract probabilities from.
+        ground_truth: Path to ground truth file.
+        ground_truth_split: Type of ground truth split - `0` for training split,
+            `1` for validation split or `2` for test split.
+        split_file: File path to csv file containing split values.
+        ground_truth_metadata: File path to feature metadata json file created during training.
+        output_feature_name: Name of the output feature to visualize.
+        output_directory: Name of output directory containing training results.
+        kwargs: Parameters for the requested visualizations.
     """
     # retrieve feature metadata to convert raw predictions to encoded value
     metadata = load_json(ground_truth_metadata)
@@ -522,32 +468,22 @@ def compare_classifiers_performance_subset(
      The way the subset is obtained is using the `top_n_classes` and
      `subset` parameters.
 
-     # Inputs
-
-    :param probabilities_per_model: (List[numpy.array]) list of model
-        probabilities.
-    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
-    :param metadata: (dict) feature metadata dictionary
-    :param output_feature_name: (str) output feature name
-    :param top_n_classes: (List[int]) list containing the number of classes
-        to plot.
-    :param labels_limit: (int) upper limit on the numeric encoded label value.
-        Encoded numeric label values in dataset that are higher than
-        `labels_limit` are considered to be "rare" labels.
-    :param subset: (str) string specifying type of subset filtering.  Valid
-        values are `ground_truth` or `predictions`.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
-        list of the model names to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
-        metadata['str2idx'] in np.vectorize
-
-    # Return
-
-    :return: (None)
+    Args:
+        probabilities_per_model: List of model probabilities.
+        ground_truth: Ground truth values.
+        metadata: Feature metadata dictionary.
+        output_feature_name: Output feature name.
+        top_n_classes: List containing the number of classes to plot.
+        labels_limit: Upper limit on the numeric encoded label value. Encoded
+            numeric label values in dataset that are higher than `labels_limit`
+            are considered to be "rare" labels.
+        subset: String specifying type of subset filtering. Valid values are
+            `ground_truth` or `predictions`.
+        model_names: Model name or list of the model names to use as labels.
+        output_directory: Directory where to save plots. If not specified, plots
+            will be displayed in a window.
+        file_format: File format of output plots - `'pdf'` or `'png'`.
+        ground_truth_apply_idx: Whether to use metadata['str2idx'] in np.vectorize.
     """
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
@@ -631,26 +567,16 @@ def compare_classifiers_performance_changing_k_cli(
 ) -> None:
     """Load model data from files to be shown by compare_classifiers_changing_k.
 
-    # Inputs
-
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
-    :param ground_truth: (str) path to ground truth file
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
-    :param split_file: (str, None) file path to csv file containing split values
-    :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
-    :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
-    :return None:
+    Args:
+        probabilities: List of prediction results file names to extract probabilities from.
+        ground_truth: Path to ground truth file.
+        ground_truth_split: Type of ground truth split - `0` for training split,
+            `1` for validation split or `2` for test split.
+        split_file: File path to csv file containing split values.
+        ground_truth_metadata: File path to feature metadata json file created during training.
+        output_feature_name: Name of the output feature to visualize.
+        output_directory: Name of output directory containing training results.
+        kwargs: Parameters for the requested visualizations.
     """
     # retrieve feature metadata to convert raw predictions to encoded value
     metadata = load_json(ground_truth_metadata)
@@ -691,29 +617,20 @@ def compare_classifiers_performance_changing_k(
     first k) while changing k from 1 to top_k for the specified
     `output_feature_name`.
 
-    # Inputs
-
-    :param probabilities_per_model: (List[numpy.array]) list of model
-        probabilities.
-    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
-    :param metadata: (dict) feature metadata dictionary
-    :param output_feature_name: (str) output feature name
-    :param top_k: (int) number of elements in the ranklist to consider.
-    :param labels_limit: (int) upper limit on the numeric encoded label value.
-        Encoded numeric label values in dataset that are higher than
-        `labels_limit` are considered to be "rare" labels.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
-        list of the model names to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
-        metadata['str2idx'] in np.vectorize
-
-    # Return
-
-    :return: (None)
+    Args:
+        probabilities_per_model: List of model probabilities.
+        ground_truth: Ground truth values.
+        metadata: Feature metadata dictionary.
+        output_feature_name: Output feature name.
+        top_k: Number of elements in the ranklist to consider.
+        labels_limit: Upper limit on the numeric encoded label value. Encoded
+            numeric label values in dataset that are higher than `labels_limit`
+            are considered to be "rare" labels.
+        model_names: Model name or list of the model names to use as labels.
+        output_directory: Directory where to save plots. If not specified, plots
+            will be displayed in a window.
+        file_format: File format of output plots - `'pdf'` or `'png'`.
+        ground_truth_apply_idx: Whether to use metadata['str2idx'] in np.vectorize.
     """
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
@@ -762,12 +679,10 @@ def compare_classifiers_multiclass_multimetric_cli(
 ) -> None:
     """Load model data from files to be shown by compare_classifiers_multiclass.
 
-    # Inputs
-
-    :param test_statistics: (Union[str, List[str]]) path to experiment test statistics file.
-    :param ground_truth_metadata: (str) path to ground truth metadata file.
-    :param kwargs: (dict) parameters for the requested visualizations.  # Return
-    :return None:
+    Args:
+        test_statistics: Path to experiment test statistics file.
+        ground_truth_metadata: Path to ground truth metadata file.
+        kwargs: Parameters for the requested visualizations.
     """
     test_stats_per_model = load_data_for_viz("load_json", test_statistics)
     metadata = load_json(ground_truth_metadata)
@@ -790,25 +705,17 @@ def compare_classifiers_multiclass_multimetric(
     For each model it produces four plots that show the precision,
     recall and F1 of the model on several classes for the specified output_feature_name.
 
-    # Inputs
-
-    :param test_stats_per_model: (List[dict]) list containing dictionary of
-        evaluation performance statistics
-    :param metadata: (dict) intermediate preprocess structure created during
-        training containing the mappings of the input dataset.
-    :param output_feature_name: (Union[str, `None`]) name of the output feature
-        to use for the visualization.  If `None`, use all output features.
-    :param top_n_classes: (List[int]) list containing the number of classes
-        to plot.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
-        list of the model names to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-
-    # Return
-    :return: (None)
+    Args:
+        test_stats_per_model: List containing dictionary of evaluation performance statistics.
+        metadata: Intermediate preprocess structure created during training containing
+            the mappings of the input dataset.
+        output_feature_name: Name of the output feature to use for the visualization.
+            If `None`, use all output features.
+        top_n_classes: List containing the number of classes to plot.
+        model_names: Model name or list of the model names to use as labels.
+        output_directory: Directory where to save plots. If not specified, plots
+            will be displayed in a window.
+        file_format: File format of output plots - `'pdf'` or `'png'`.
     """
     filename_template = "compare_classifiers_multiclass_multimetric_{}_{}_{}." + file_format
     filename_template_path = generate_filename_template_path(output_directory, filename_template)
@@ -936,25 +843,16 @@ def compare_classifiers_predictions_cli(
 ) -> None:
     """Load model data from files to be shown by compare_classifiers_predictions.
 
-    # Inputs
-
-    :param predictions: (List[str]) list of prediction results file names
-        to extract predictions from.
-    :param ground_truth: (str) path to ground truth file.
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
-    :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
-    :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
-    :return None:
+    Args:
+        predictions: List of prediction results file names to extract predictions from.
+        ground_truth: Path to ground truth file.
+        ground_truth_split: Type of ground truth split - `0` for training split,
+            `1` for validation split or `2` for test split.
+        split_file: File path to csv file containing split values.
+        ground_truth_metadata: File path to feature metadata json file created during training.
+        output_feature_name: Name of the output feature to visualize.
+        output_directory: Name of output directory containing training results.
+        kwargs: Parameters for the requested visualizations.
     """
     # retrieve feature metadata to convert raw predictions to encoded value
     metadata = load_json(ground_truth_metadata)
@@ -985,28 +883,20 @@ def compare_classifiers_predictions(
 ) -> None:
     """Show two models comparison of their output_feature_name predictions.
 
-    # Inputs
-
-    :param predictions_per_model: (List[list]) list containing the model
-        predictions for the specified output_feature_name.
-    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
-    :param metadata: (dict) feature metadata dictionary
-    :param output_feature_name: (str) output feature name
-    :param labels_limit: (int) upper limit on the numeric encoded label value.
-        Encoded numeric label values in dataset that are higher than
-        `labels_limit` are considered to be "rare" labels.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
-        list of the model names to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
-        metadata['str2idx'] in np.vectorize
-
-    # Return
-
-    :return: (None)
+    Args:
+        predictions_per_model: List containing the model predictions for the
+            specified output_feature_name.
+        ground_truth: Ground truth values.
+        metadata: Feature metadata dictionary.
+        output_feature_name: Output feature name.
+        labels_limit: Upper limit on the numeric encoded label value. Encoded
+            numeric label values in dataset that are higher than `labels_limit`
+            are considered to be "rare" labels.
+        model_names: Model name or list of the model names to use as labels.
+        output_directory: Directory where to save plots. If not specified, plots
+            will be displayed in a window.
+        file_format: File format of output plots - `'pdf'` or `'png'`.
+        ground_truth_apply_idx: Whether to use metadata['str2idx'] in np.vectorize.
     """
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
@@ -1106,25 +996,16 @@ def compare_classifiers_predictions_distribution_cli(
 ) -> None:
     """Load model data from files to be shown by compare_predictions_distribution.
 
-    # Inputs
-
-    :param predictions: (List[str]) list of prediction results file names
-        to extract predictions from.
-    :param ground_truth: (str) path to ground truth file.
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
-    :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
-    :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
-    :return None:
+    Args:
+        predictions: List of prediction results file names to extract predictions from.
+        ground_truth: Path to ground truth file.
+        ground_truth_split: Type of ground truth split - `0` for training split,
+            `1` for validation split or `2` for test split.
+        split_file: File path to csv file containing split values.
+        ground_truth_metadata: File path to feature metadata json file created during training.
+        output_feature_name: Name of the output feature to visualize.
+        output_directory: Name of output directory containing training results.
+        kwargs: Parameters for the requested visualizations.
     """
     # retrieve feature metadata to convert raw predictions to encoded value
     metadata = load_json(ground_truth_metadata)
@@ -1158,28 +1039,20 @@ def compare_classifiers_predictions_distribution(
     predictions of the models for the first 10 classes of the specified
     output_feature_name.
 
-    # Inputs
-
-    :param predictions_per_model: (List[list]) list containing the model
-        predictions for the specified output_feature_name.
-    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
-    :param metadata: (dict) feature metadata dictionary
-    :param output_feature_name: (str) output feature name
-    :param labels_limit: (int) upper limit on the numeric encoded label value.
-        Encoded numeric label values in dataset that are higher than
-        `labels_limit` are considered to be "rare" labels.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
-        list of the model names to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
-        metadata['str2idx'] in np.vectorize
-
-    # Return
-
-    :return: (None)
+    Args:
+        predictions_per_model: List containing the model predictions for the
+            specified output_feature_name.
+        ground_truth: Ground truth values.
+        metadata: Feature metadata dictionary.
+        output_feature_name: Output feature name.
+        labels_limit: Upper limit on the numeric encoded label value. Encoded
+            numeric label values in dataset that are higher than `labels_limit`
+            are considered to be "rare" labels.
+        model_names: Model name or list of the model names to use as labels.
+        output_directory: Directory where to save plots. If not specified, plots
+            will be displayed in a window.
+        file_format: File format of output plots - `'pdf'` or `'png'`.
+        ground_truth_apply_idx: Whether to use metadata['str2idx'] in np.vectorize.
     """
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
@@ -1217,12 +1090,10 @@ def compare_classifiers_predictions_distribution(
 def frequency_vs_f1_cli(test_statistics: "str | list[str]", ground_truth_metadata: str, **kwargs: dict) -> None:
     """Load model data from files to be shown by frequency_vs_f1.
 
-    # Inputs
-
-    :param test_statistics: (Union[str, List[str]]) path to experiment test statistics file.
-    :param ground_truth_metadata: (str) path to ground truth metadata file.
-    :param kwargs: (dict) parameters for the requested visualizations.  # Return
-    :return None:
+    Args:
+        test_statistics: Path to experiment test statistics file.
+        ground_truth_metadata: Path to ground truth metadata file.
+        kwargs: Parameters for the requested visualizations.
     """
     test_stats_per_model = load_data_for_viz("load_json", test_statistics)
     metadata = load_json(ground_truth_metadata)
@@ -1257,26 +1128,18 @@ def frequency_vs_f1(
     but the axes are flipped and the classes on the x axis are sorted by
     frequency.
 
-    # Inputs
-
-    :param test_stats_per_model: (List[dict]) dictionary containing evaluation
-        performance statistics.
-    :param metadata: (dict) intermediate preprocess structure created during
-        training containing the mappings of the input dataset.
-    :param output_feature_name: (Union[str, `None`]) name of the output feature
-        to use for the visualization.  If `None`, use all output features.
-    :param top_n_classes: (List[int]) number of top classes or list
-        containing the number of top classes to plot.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
-        list of the model names to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-
-    # Return
-
-    :return: (None)
+    Args:
+        test_stats_per_model: Dictionary containing evaluation performance statistics.
+        metadata: Intermediate preprocess structure created during training containing
+            the mappings of the input dataset.
+        output_feature_name: Name of the output feature to use for the visualization.
+            If `None`, use all output features.
+        top_n_classes: Number of top classes or list containing the number of top
+            classes to plot.
+        model_names: Model name or list of the model names to use as labels.
+        output_directory: Directory where to save plots. If not specified, plots
+            will be displayed in a window.
+        file_format: File format of output plots - `'pdf'` or `'png'`.
     """
     test_stats_per_model_list = test_stats_per_model
     model_names_list = convert_to_list(model_names)

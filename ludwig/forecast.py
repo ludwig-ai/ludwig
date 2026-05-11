@@ -28,27 +28,16 @@ def forecast_cli(
 ) -> None:
     """Loads pre-trained model to forecast on the provided dataset.
 
-    # Inputs
-
-    :param model_path: (str) filepath to pre-trained model.
-    :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
-        source containing the entire dataset to be used in the prediction.
-    :param data_format: (str, default: `None`) format to interpret data
-        sources. Will be inferred automatically if not specified.
-    :param horizon: How many samples into the future to forecast.
-    :param output_directory: (str, default: `'results'`) the directory that
-        will contain the forecasted values.
-    :param output_format: (str) format of the output dataset.
-    :param callbacks: (list, default: `None`) a list of
-        `ludwig.callbacks.Callback` objects that provide hooks into the
-        Ludwig pipeline.
-    :param backend: (Union[Backend, str]) `Backend` or string name
-        of backend to use to execute preprocessing / training steps.
-    :param logging_level: (int) Log level that will be sent to stderr.
-
-    # Returns
-
-    :return: ('None')
+    Args:
+        model_path: Filepath to pre-trained model.
+        dataset: Source containing the entire dataset to be used in the prediction.
+        data_format: Format to interpret data sources. Will be inferred automatically if not specified.
+        horizon: How many samples into the future to forecast.
+        output_directory: The directory that will contain the forecasted values.
+        output_format: Format of the output dataset.
+        callbacks: A list of `ludwig.callbacks.Callback` objects that provide hooks into the Ludwig pipeline.
+        backend: Backend or string name of backend to use to execute preprocessing / training steps.
+        logging_level: Log level that will be sent to stderr.
     """
     model = LudwigModel.load(
         model_path,

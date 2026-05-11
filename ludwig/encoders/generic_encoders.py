@@ -39,9 +39,10 @@ class PassthroughEncoder(Encoder):
         self.input_size = input_size
 
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
-        """
-        :param inputs: The inputs fed into the encoder.
-               Shape: [batch x 1], type tf.float32
+        """Forward pass through the encoder.
+
+        Args:
+            inputs: The inputs fed into the encoder. Shape: [batch x 1].
         """
         return {ENCODER_OUTPUT: inputs}
 
@@ -99,9 +100,10 @@ class DenseEncoder(Encoder):
         )
 
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
-        """
-        :param inputs: The inputs fed into the encoder.
-               Shape: [batch x 1], type tf.float32
+        """Forward pass through the encoder.
+
+        Args:
+            inputs: The inputs fed into the encoder. Shape: [batch x 1].
         """
         return {ENCODER_OUTPUT: self.fc_stack(inputs)}
 

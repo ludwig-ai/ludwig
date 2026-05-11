@@ -20,12 +20,11 @@ class Explainer(metaclass=ABCMeta):
     ):
         """Constructor for the explainer.
 
-        # Inputs
-
-        :param model: (LudwigModel) The LudwigModel to explain.
-        :param inputs_df: (pd.DataFrame) The input data to explain.
-        :param sample_df: (pd.DataFrame) A sample of the ground truth data.
-        :param target: (str) The name of the target to explain.
+        Args:
+            model: The LudwigModel to explain.
+            inputs_df: The input data to explain.
+            sample_df: A sample of the ground truth data.
+            target: The name of the target to explain.
         """
         self.model = model
         self.inputs_df = inputs_df
@@ -68,7 +67,6 @@ class Explainer(metaclass=ABCMeta):
     def explain(self) -> ExplanationsResult:
         """Explain the model's predictions.
 
-        # Return
-
-        :return: ExplanationsResult containing the explanations.
+        Returns:
+            ExplanationsResult containing the explanations.
         """

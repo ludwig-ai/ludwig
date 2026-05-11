@@ -142,9 +142,10 @@ class Stacked2DCNN(ImageEncoder):
         )
 
     def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
-        """
-        :param inputs: The inputs fed into the encoder.
-                Shape: [batch x channels x height x width], type torch.uint8
+        """Forward pass through the encoder.
+
+        Args:
+            inputs: The inputs fed into the encoder. Shape: [batch x channels x height x width].
         """
 
         hidden = self.conv_stack_2d(inputs)

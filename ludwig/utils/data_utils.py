@@ -175,14 +175,17 @@ def read_xsv(data_fp, df_lib=PANDAS_DF, separator=",", header=0, nrows=None, ski
     """Helper method to read a csv file. Wraps around pd.read_csv to handle some exceptions. Can extend to cover
     cases as necessary.
 
-    :param data_fp: path to the xsv file
-    :param df_lib: DataFrame library used to read in the CSV
-    :param separator: defaults separator to use for splitting
-    :param header: header argument for pandas to read the csv
-    :param nrows: number of rows to read from the csv, None means all
-    :param skiprows: number of rows to skip from the csv, None means no skips
-    :param dtype: dtype to use for columns. Defaults to object to disable type inference.
-    :return: Pandas dataframe with the data
+    Args:
+        data_fp: path to the xsv file
+        df_lib: DataFrame library used to read in the CSV
+        separator: defaults separator to use for splitting
+        header: header argument for pandas to read the csv
+        nrows: number of rows to read from the csv, None means all
+        skiprows: number of rows to skip from the csv, None means no skips
+        dtype: dtype to use for columns. Defaults to object to disable type inference.
+
+    Returns:
+        Pandas dataframe with the data
     """
     with open_file(data_fp, "r", encoding="utf8") as csvfile:
         try:
@@ -729,13 +732,17 @@ def class_counts(dataset, labels_field):
 def load_from_file(file_name, field=None, dtype=int, ground_truth_split=2):
     """Load experiment data from supported file formats.
 
-    Experiment data can be test/train statistics, model predictions, probability, ground truth,  ground truth metadata.
-    :param file_name: Path to file to be loaded
-    :param field: Target Prediction field.
-    :param dtype:
-    :param ground_truth_split: Ground truth split filter where 0 is train 1 is validation and 2 is test split. By
-        default test split is used when loading ground truth from hdf5.
-    :return: Experiment data as array
+    Experiment data can be test/train statistics, model predictions, probability, ground truth, ground truth metadata.
+
+    Args:
+        file_name: Path to file to be loaded.
+        field: Target Prediction field.
+        dtype: dtype to use when loading matrix data.
+        ground_truth_split: Ground truth split filter where 0 is train 1 is validation and 2 is test split. By
+            default test split is used when loading ground truth from hdf5.
+
+    Returns:
+        Experiment data as array.
     """
     if file_name.endswith(".hdf5") and field is not None:
         dataset = pd.read_hdf(file_name, key=HDF5_COLUMNS_KEY)
@@ -752,12 +759,14 @@ def load_from_file(file_name, field=None, dtype=int, ground_truth_split=2):
 
 @DeveloperAPI
 def replace_file_extension(file_path, extension):
-    """Return a file path for a file with same name but different format. a.csv, json -> a.json a.csv, hdf5 ->
-    a.hdf5.
+    """Return a file path for a file with same name but different format. a.csv, json -> a.json a.csv, hdf5 -> a.hdf5.
 
-    :param file_path: original file path
-    :param extension: file extension
-    :return: file path with same name but different format
+    Args:
+        file_path: original file path
+        extension: file extension
+
+    Returns:
+        file path with same name but different format
     """
     if file_path is None:
         return None
@@ -780,9 +789,10 @@ def add_sequence_feature_column(df, col_name, seq_length):
     delimited strings composed of preceding values of the same column up to seq_length. For example values of the
     i-th row of the new column will be a space-delimited string of df[col_name][i-seq_length].
 
-    :param df: input dataframe
-    :param col_name: column name containing sequential data
-    :param seq_length: length of an array of preceeding column values to use
+    Args:
+        df: input dataframe
+        col_name: column name containing sequential data
+        seq_length: length of an array of preceeding column values to use
     """
     if col_name not in df.columns.values:
         logger.error(f"{col_name} column does not exist")
