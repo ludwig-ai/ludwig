@@ -1064,9 +1064,11 @@ class LudwigModel:
                 "supported."
             )
         if not torch.cuda.is_available():
-            # GPU is generally well-advised for working with LLMs and is required for loading quantized models, see
-            # https://github.com/ludwig-ai/ludwig/issues/3695.
-            raise ValueError("GPU is not available.")
+            # GPU is required for loading quantized models. See https://github.com/ludwig-ai/ludwig/issues/3695.
+            raise ValueError(
+                "A CUDA GPU is required for generate() with quantized LLMs, but none was detected.\n"
+                "Either run on a GPU machine or disable quantization in your model config."
+            )
 
         # Decoder-only models require left-padding for correct generation results (right-padding causes HF warnings).
         padding_side = "left" if not getattr(self.model.model.config, "is_encoder_decoder", False) else "right"
