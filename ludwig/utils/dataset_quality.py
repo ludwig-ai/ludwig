@@ -154,9 +154,23 @@ def _check_constant_columns(df: pd.DataFrame) -> CheckResult:
     )
 
 
+_MAX_CORR_COLS = 50
+
+
 def _check_near_duplicate_columns(df: pd.DataFrame, threshold: float) -> CheckResult:
     """Finds pairs of numeric columns whose Pearson |r| exceeds *threshold*."""
     numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+    if len(numeric_cols) > _MAX_CORR_COLS:
+        logger.warning(
+            f"Skipping near-duplicate column check: {len(numeric_cols)} numeric columns exceeds "
+            f"the {_MAX_CORR_COLS}-column cap to avoid O(n²) runtime."
+        )
+        return CheckResult(
+            name="near_duplicate_columns",
+            status=CheckStatus.WARN,
+            message=f"Too many numeric columns ({len(numeric_cols)}) to check for near-duplicates efficiently.",
+            details={"pairs": [], "threshold": threshold},
+        )
     near_dup_pairs: list[tuple[str, str, float]] = []
 
     for i in range(len(numeric_cols)):
@@ -248,8 +262,9 @@ def _check_id_columns(df: pd.DataFrame) -> CheckResult:
         if pd.api.types.is_integer_dtype(series):
             unique_sorted = sorted(series.unique())
             if len(unique_sorted) >= 2:
-                expected = list(range(int(unique_sorted[0]), int(unique_sorted[-1]) + 1))
-                if unique_sorted == expected:
+                # Check sequential without allocating a full range list
+                lo, hi = int(unique_sorted[0]), int(unique_sorted[-1])
+                if hi - lo + 1 == len(unique_sorted):
                     id_cols.append(col)
 
     if id_cols:
@@ -267,7 +282,7 @@ def _check_id_columns(df: pd.DataFrame) -> CheckResult:
     )
 
 
-def _check_class_imbalance(df: pd.DataFrame, target_column: str, min_rows: int) -> CheckResult:
+def _check_class_imbalance(df: pd.DataFrame, target_column: str) -> CheckResult:
     """Warns if the minority class represents less than 1% of total rows."""
     if target_column not in df.columns:
         return CheckResult(
@@ -278,6 +293,13 @@ def _check_class_imbalance(df: pd.DataFrame, target_column: str, min_rows: int) 
         )
 
     target_series = df[target_column].dropna()
+    if len(target_series) == 0:
+        return CheckResult(
+            name="class_imbalance",
+            status=CheckStatus.WARN,
+            message=f"Target column '{target_column}' has no non-null values; skipping imbalance check.",
+            details={},
+        )
     if pd.api.types.is_numeric_dtype(target_series) and target_series.nunique() > 20:
         # Continuous target — not a classification problem.
         return CheckResult(
@@ -404,7 +426,7 @@ def check_dataset_quality(
 
     if target_column is not None:
         checks.append(_check_target_leakage(df, target_column, threshold=max_correlation_threshold))
-        checks.append(_check_class_imbalance(df, target_column, min_rows))
+        checks.append(_check_class_imbalance(df, target_column))
         checks.append(_check_single_class(df, target_column))
 
     report = DatasetQualityReport(

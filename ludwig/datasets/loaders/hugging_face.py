@@ -74,6 +74,10 @@ class HFLoader(DatasetLoader):
             hf_id = getattr(self.config, "huggingface_dataset_id", None)
         if hf_subsample is None:
             hf_subsample = getattr(self.config, "huggingface_subsample", None)
+        if hf_id is None:
+            raise ValueError(
+                "No HuggingFace dataset ID provided. Set config.huggingface_dataset_id or pass hf_id= to load()."
+            )
         pandas_dict = self.load_hf_to_dict(
             hf_id=hf_id,
             hf_subsample=hf_subsample,

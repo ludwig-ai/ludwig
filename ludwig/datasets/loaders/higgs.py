@@ -34,12 +34,12 @@ class HiggsLoader(DatasetLoader):
         # The HIGGS CSV may contain fewer rows than the canonical 11M depending on
         # which version was downloaded — derive split boundaries from actual length.
         if self.add_validation_set:
-            n_test = min(500000, max(1, int(n * 0.05)))
-            n_val = min(500000, max(1, int(n * 0.05)))
-            n_train = n - n_test - n_val
+            n_test = min(n // 3, max(1, int(n * 0.05)))
+            n_val = min(n // 3, max(1, int(n * 0.05)))
+            n_train = max(0, n - n_test - n_val)
             processed_df["split"] = [0] * n_train + [1] * n_val + [2] * n_test
         else:
-            n_test = min(500000, max(1, int(n * 0.05)))
-            n_train = n - n_test
+            n_test = min(n // 2, max(1, int(n * 0.05)))
+            n_train = max(0, n - n_test)
             processed_df["split"] = [0] * n_train + [2] * n_test
         return processed_df

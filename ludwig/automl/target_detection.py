@@ -90,8 +90,8 @@ def _is_id_column(series: pd.Series) -> bool:
     if pd.api.types.is_integer_dtype(series):
         unique_sorted = sorted(series.dropna().unique())
         if len(unique_sorted) >= 2:
-            expected = list(range(int(unique_sorted[0]), int(unique_sorted[-1]) + 1))
-            if unique_sorted == expected:
+            lo, hi = int(unique_sorted[0]), int(unique_sorted[-1])
+            if hi - lo + 1 == len(unique_sorted):
                 return True
     return False
 

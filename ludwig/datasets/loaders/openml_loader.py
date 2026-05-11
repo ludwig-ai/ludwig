@@ -53,8 +53,18 @@ class OpenMLLoader(DatasetLoader):
             raise ValueError("No OpenML task ID provided. Set config.openml_task_id or pass openml_task_id= to load().")
 
         if os.path.exists(self.processed_dataset_path):
-            logger.info(f"Loading cached OpenML task {task_id} from {self.processed_dataset_path}")
-            df = pd.read_parquet(self.processed_dataset_path)
+            # Validate that the cached file was written for this task ID.
+            import pyarrow.parquet as pq
+
+            cached_meta = pq.read_metadata(self.processed_dataset_path).metadata or {}
+            cached_task_id = cached_meta.get(b"openml_task_id", b"").decode()
+            if cached_task_id and int(cached_task_id) != int(task_id):
+                logger.warning(f"Cached file was for task {cached_task_id}, but requested task {task_id}. Re-fetching.")
+                os.remove(self.processed_dataset_path)
+                df = self._fetch_and_cache(task_id)
+            else:
+                logger.info(f"Loading cached OpenML task {task_id} from {self.processed_dataset_path}")
+                df = pd.read_parquet(self.processed_dataset_path)
         else:
             df = self._fetch_and_cache(task_id)
 
@@ -100,7 +110,13 @@ class OpenMLLoader(DatasetLoader):
 
         os.makedirs(self.processed_dataset_dir, exist_ok=True)
         logger.info(f"Saving processed OpenML task {task_id} to {self.processed_dataset_path}")
-        df.to_parquet(self.processed_dataset_path, index=False)
+        import pyarrow as pa
+        import pyarrow.parquet as pq
+
+        table = pa.Table.from_pandas(df, preserve_index=False)
+        existing_meta = table.schema.metadata or {}
+        table = table.replace_schema_metadata({**existing_meta, b"openml_task_id": str(task_id).encode()})
+        pq.write_table(table, self.processed_dataset_path)
         return df
 
     @staticmethod

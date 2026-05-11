@@ -205,9 +205,16 @@ def enumerate_config_specs(
         logger.warning(f"No valid decoders for output feature type '{output_feature.type}'; returning empty list.")
         return []
 
+    empty_features = [f.name for f, enc_list in zip(input_features, per_feature_encoders) if not enc_list]
+    if empty_features:
+        logger.warning(
+            f"No valid encoders found for feature(s) {empty_features}; enumerate_config_specs will return empty list."
+        )
+        return []
+
     total = 1
     for enc_list in per_feature_encoders:
-        total *= max(len(enc_list), 1)
+        total *= len(enc_list)
     total *= len(valid_combiners) * len(valid_decoders)
 
     logger.debug(

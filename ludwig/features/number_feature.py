@@ -78,7 +78,7 @@ class ZScoreTransformer(NumberTransformer):
                 self.feature_name,
                 self.mu,
             )
-            # Fall back to identity: treat as zero-centered constant
+            # Avoid division-by-zero; transform yields (x - mu) / 1 = 0 for all constant rows.
             self.sigma = 1.0
 
     def transform(self, x: np.ndarray) -> np.ndarray:
