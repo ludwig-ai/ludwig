@@ -18,11 +18,13 @@ TEXT_AVG_WORDS_CUTOFF = 5
 def infer_type(field: FieldInfo, missing_value_percent: float, row_count: int) -> str:
     """Perform type inference on field.
 
-    # Inputs
-    :param field: (FieldInfo) object describing field
-    :param missing_value_percent: (float) percent of missing values in the column
-    :param row_count: (int) total number of entries in original dataset  # Return
-    :return: (str) feature type
+    Args:
+        field: Object describing field.
+        missing_value_percent: Percent of missing values in the column.
+        row_count: Total number of entries in original dataset.
+
+    Returns:
+        Feature type string.
     """
     if field.dtype == DATE or field.dtype.startswith("datetime"):
         return DATE

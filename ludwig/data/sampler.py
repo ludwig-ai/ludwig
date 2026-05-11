@@ -75,6 +75,7 @@ class DistributedSampler:
         When `shuffle=True`, this ensures all replicas use a different random ordering for each epoch. Otherwise, the
         next iteration of this sampler will yield the same ordering.
 
-        :param epoch: (int) epoch number
+        Args:
+            epoch: Epoch number.
         """
         self.epoch = epoch

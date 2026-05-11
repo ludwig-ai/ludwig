@@ -101,12 +101,11 @@ def _encode_categorical_feature(raw: np.array, str2idx: dict) -> np.array:
     """Encodes raw categorical string value to encoded numeric value.
 
     Args:
-    :param raw: (np.array) string categorical representation
-    :param str2idx: (dict) dictionary that maps string representation to
-        encoded value.
+        raw: String categorical representation.
+        str2idx: Dictionary that maps string representation to encoded value.
 
     Returns:
-        np.array
+        Encoded numeric value.
     """
     return str2idx[raw]
 
@@ -133,16 +132,13 @@ def _extract_ground_truth_values(
     """Helper function to extract ground truth values.
 
     Args:
-    :param ground_truth: (str, DataFrame) path to source data containing ground truth or ground truth dataframe
-    :param output_feature_name: (str) output feature name for ground
-        truth values.
-    :param ground_truth_split: (int) dataset split to use for ground truth,
-        defaults to 2.
-    :param split_file: (Union[str, None]) optional file path to split values.
+        ground_truth: Path to source data containing ground truth or ground truth dataframe.
+        output_feature_name: Output feature name for ground truth values.
+        ground_truth_split: Dataset split to use for ground truth, defaults to 2.
+        split_file: Optional file path to split values.
 
-    # Return
-
-    :return pd.Series: ground truth values from source data set
+    Returns:
+        Ground truth values from source data set.
     """
     ground_truth_df = _get_ground_truth_df(ground_truth) if isinstance(ground_truth, str) else ground_truth
 
@@ -212,9 +208,12 @@ def _get_cols_from_predictions(predictions_paths, cols, metadata):
 def validate_conf_thresholds_and_probabilities_2d_3d(probabilities, threshold_output_feature_names):
     """Ensure probabilities and threshold output_feature_names arrays have two members each.
 
-    :param probabilities: List of probabilities per model
-    :param threshhold_output_feature_names: List of threshhold output_feature_names per model
-    :raise: RuntimeError
+    Args:
+        probabilities: List of probabilities per model.
+        threshold_output_feature_names: List of threshold output_feature_names per model.
+
+    Raises:
+        RuntimeError: If either list does not contain exactly two members.
     """
     validation_mapping = {
         "probabilities": probabilities,
@@ -232,9 +231,12 @@ def validate_conf_thresholds_and_probabilities_2d_3d(probabilities, threshold_ou
 def load_data_for_viz(load_type, model_file_statistics, dtype=int, ground_truth_split=2) -> "dict[str, Any]":
     """Load JSON files (training stats, evaluation stats...) for a list of models.
 
-    :param load_type: type of the data loader to be used.
-    :param model_file_statistics: JSON file or list of json files containing any model experiment stats. :return List of
-        training statistics loaded as json objects.
+    Args:
+        load_type: Type of the data loader to be used.
+        model_file_statistics: JSON file or list of json files containing any model experiment stats.
+
+    Returns:
+        List of training statistics loaded as json objects.
     """
     supported_load_types = {
         "load_json": load_json,
@@ -269,9 +271,12 @@ def _load_training_stats(data: dict) -> TrainingStats:
 def load_training_stats_for_viz(load_type, model_file_statistics, dtype=int, ground_truth_split=2) -> TrainingStats:
     """Load model file data (specifically training stats) for a list of models.
 
-    :param load_type: type of the data loader to be used.
-    :param model_file_statistics: JSON file or list of json files containing any model experiment stats. :return List of
-        model statistics loaded as TrainingStats objects.
+    Args:
+        load_type: Type of the data loader to be used.
+        model_file_statistics: JSON file or list of json files containing any model experiment stats.
+
+    Returns:
+        List of model statistics loaded as TrainingStats objects.
     """
     stats_per_model = load_data_for_viz(
         load_type, model_file_statistics, dtype=dtype, ground_truth_split=ground_truth_split
@@ -288,8 +293,11 @@ def load_training_stats_for_viz(load_type, model_file_statistics, dtype=int, gro
 def convert_to_list(item):
     """If item is not list class instance or None put inside a list.
 
-    :param item: object to be checked and converted
-    :return: original item if it is a list instance or list containing the item.
+    Args:
+        item: Object to be checked and converted.
+
+    Returns:
+        Original item if it is a list instance or list containing the item.
     """
     return item if item is None or isinstance(item, list) else [item]
 
@@ -297,9 +305,12 @@ def convert_to_list(item):
 def _validate_output_feature_name_from_train_stats(output_feature_name, train_stats_per_model):
     """Validate prediction output_feature_name from model train stats and return it as list.
 
-    :param output_feature_name: output_feature_name containing ground truth
-    :param train_stats_per_model: list of per model train stats
-    :return output_feature_names: list of output_feature_name(s) containing ground truth
+    Args:
+        output_feature_name: Output feature name containing ground truth.
+        train_stats_per_model: List of per model train stats.
+
+    Returns:
+        List of output_feature_name(s) containing ground truth.
     """
     output_feature_names_set = set()
     for train_stats in train_stats_per_model:
@@ -318,9 +329,12 @@ def _validate_output_feature_name_from_train_stats(output_feature_name, train_st
 def _validate_output_feature_name_from_test_stats(output_feature_name, test_stats_per_model):
     """Validate prediction output_feature_name from model test stats and return it as list.
 
-    :param output_feature_name: output_feature_name containing ground truth
-    :param test_stats_per_model: list of per model test stats
-    :return output_feature_names: list of output_feature_name(s) containing ground truth
+    Args:
+        output_feature_name: Output feature name containing ground truth.
+        test_stats_per_model: List of per model test stats.
+
+    Returns:
+        List of output_feature_name(s) containing ground truth.
     """
     output_feature_names_set = set()
     for ls in test_stats_per_model:
@@ -340,10 +354,14 @@ def _validate_output_feature_name_from_test_stats(output_feature_name, test_stat
 def generate_filename_template_path(output_dir, filename_template):
     """Ensure path to template file can be constructed given an output dir.
 
-    Create output directory if yet does exist.
-    :param output_dir: Directory that will contain the filename_template file
-    :param filename_template: name of the file template to be appended to the filename template path
-    :return: path to filename template inside the output dir or None if the output dir is None
+    Create output directory if it does not yet exist.
+
+    Args:
+        output_dir: Directory that will contain the filename_template file.
+        filename_template: Name of the file template to be appended to the filename template path.
+
+    Returns:
+        Path to filename template inside the output dir or None if the output dir is None.
     """
     if output_dir:
         os.makedirs(output_dir, exist_ok=True)

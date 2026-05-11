@@ -60,36 +60,28 @@ class NoneTrainer(BaseTrainer):
         **kwargs,
     ):
         """
-        :param config: `ludwig.schema.trainer.NoneTrainerConfig` instance that specifies training hyperparameters
-        (default: `ludwig.schema.trainer.NoneTrainerConfig()`).
-        :param model: Underlying Ludwig model
-        :type model: `ludwig.models.llm.LLM`
-        :param resume: Resume training a model that was being trained. (default: False).
-        :type resume: Boolean
-        :param skip_save_model: Disables saving model weights and hyperparameters each time the model improves. By
-                default Ludwig saves model weights after each round of evaluation the validation metric (improves, but
+        Args:
+            config: `ludwig.schema.trainer.NoneTrainerConfig` instance that specifies training hyperparameters
+                (default: `ludwig.schema.trainer.NoneTrainerConfig()`).
+            model: Underlying Ludwig model (`ludwig.models.llm.LLM`).
+            resume: Resume training a model that was being trained. (default: False).
+            skip_save_model: Disables saving model weights and hyperparameters each time the model improves. By
+                default Ludwig saves model weights after each round of evaluation the validation metric improves, but
                 if the model is really big that can be time consuming. If you do not want to keep the weights and just
                 find out what performance a model can get with a set of hyperparameters, use this parameter to skip it,
                 but the model will not be loadable later on. (default: False).
-        :type skip_save_model: Boolean
-        :param skip_save_progress: Disables saving progress each round of evaluation. By default Ludwig saves weights
+            skip_save_progress: Disables saving progress each round of evaluation. By default Ludwig saves weights
                 and stats after each round of evaluation for enabling resuming of training, but if the model is really
                 big that can be time consuming and will uses twice as much space, use this parameter to skip it, but
                 training cannot be resumed later on. (default: False).
-        :type skip_save_progress: Boolean
-        :param skip_save_log: Disables saving TensorBoard logs. By default Ludwig saves logs for the TensorBoard, but if
+            skip_save_log: Disables saving TensorBoard logs. By default Ludwig saves logs for the TensorBoard, but if
                 it is not needed turning it off can slightly increase the overall speed. (default: False).
-        :type skip_save_log: Boolean
-        :param callbacks: List of `ludwig.callbacks.Callback` objects that provide hooks into the Ludwig pipeline.
+            callbacks: List of `ludwig.callbacks.Callback` objects that provide hooks into the Ludwig pipeline.
                 (default: None).
-        :type callbacks: list
-        :param report_tqdm_to_ray: Enables using the ray based tqdm Callback for progress bar reporting
-        :param random_seed: Default initialization for the random seeds (default: 42).
-        :type random_seed: Float
-        :param distributed: Distributed strategy (default: None).
-        :type distributed: `DistributedStrategy`
-        :param device: Device to load the model on from a saved checkpoint (default: None).
-        :type device: str
+            report_tqdm_to_ray: Enables using the ray based tqdm Callback for progress bar reporting.
+            random_seed: Default initialization for the random seeds (default: 42).
+            distributed: Distributed strategy (default: None).
+            device: Device to load the model on from a saved checkpoint (default: None).
         """
 
         super().__init__()

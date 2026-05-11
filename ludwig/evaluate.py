@@ -52,55 +52,32 @@ def evaluate_cli(
 ) -> None:
     """Loads pre-trained model and evaluates its performance by comparing the predictions against ground truth.
 
-     # Inputs
-
-     :param model_path: (str) filepath to pre-trained model.
-     :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
-         source containing the entire dataset to be used in the evaluation.
-     :param data_format: (str, default: `None`) format to interpret data
-         sources. Will be inferred automatically if not specified.  Valid
-         formats are `'auto'`, `'csv'`, `'excel'`, `'feather'`,
-         `'fwf'`, `'hdf5'` (cache file produced during previous training),
-         `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
-         `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
-         `'stata'`, `'tsv'`.
-     :param split: (str, default: `full`) split on which
-         to perform predictions. Valid values are `'training'`, `'validation'`,
-         `'test'` and `'full'`.
-     :param batch_size: (int, default `128`) size of batches for processing.
-     :param skip_save_unprocessed_output: (bool, default: `False`) by default
-         predictions and their probabilities are saved in both raw
-         unprocessed numpy files containing tensors and as postprocessed
-         CSV files (one for each output feature). If this parameter is True,
-         only the CSV ones are saved and the numpy ones are skipped.
-     :param skip_save_predictions: (bool, default: `False`) skips saving test
-         predictions CSV files
-     :param skip_save_eval_stats: (bool, default: `False`) skips saving test
-         statistics JSON file
-    :param skip_collect_predictions: (bool, default: `False`) skips
-         collecting post-processed predictions during eval.
-     :param skip_collect_overall_stats: (bool, default: `False`) skips
-         collecting overall stats during eval.
-     :param output_directory: (str, default: `'results'`) the directory that
-         will contain the training statistics, TensorBoard logs, the saved
-         model and the training progress files.
-     :param gpus: (list, default: `None`) list of GPUs that are available
-         for training.
-     :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
-            [0, 1] allowed to allocate per GPU device.
-     :param allow_parallel_threads: (bool, default: `True`) allow PyTorch
-         to use multithreading parallelism to improve performance at
-         the cost of determinism.
-     :param callbacks: (list, default: `None`) a list of
-         `ludwig.callbacks.Callback` objects that provide hooks into the
-         Ludwig pipeline.
-     :param backend: (Union[Backend, str]) `Backend` or string name
-         of backend to use to execute preprocessing / training steps.
-     :param logging_level: (int) Log level that will be sent to stderr.
-
-     # Returns
-
-     :return: (`None`)
+    Args:
+        model_path: Filepath to pre-trained model.
+        dataset: Source containing the entire dataset to be used in the evaluation.
+        data_format: Format to interpret data sources. Will be inferred automatically if not specified.
+            Valid formats are 'auto', 'csv', 'excel', 'feather', 'fwf', 'hdf5' (cache file produced
+            during previous training), 'html' (file containing a single HTML table), 'json', 'jsonl',
+            'parquet', 'pickle' (pickled Pandas DataFrame), 'sas', 'spss', 'stata', 'tsv'.
+        split: Split on which to perform predictions. Valid values are 'training', 'validation',
+            'test' and 'full'.
+        batch_size: Size of batches for processing.
+        skip_save_unprocessed_output: By default predictions and their probabilities are saved in both
+            raw unprocessed numpy files containing tensors and as postprocessed CSV files (one for each
+            output feature). If True, only the CSV ones are saved and the numpy ones are skipped.
+        skip_save_predictions: Skips saving test predictions CSV files.
+        skip_save_eval_stats: Skips saving test statistics JSON file.
+        skip_collect_predictions: Skips collecting post-processed predictions during eval.
+        skip_collect_overall_stats: Skips collecting overall stats during eval.
+        output_directory: The directory that will contain the training statistics, TensorBoard logs,
+            the saved model and the training progress files.
+        gpus: List of GPUs that are available for training.
+        gpu_memory_limit: Maximum memory fraction [0, 1] allowed to allocate per GPU device.
+        allow_parallel_threads: Allow PyTorch to use multithreading parallelism to improve performance
+            at the cost of determinism.
+        callbacks: A list of `ludwig.callbacks.Callback` objects that provide hooks into the Ludwig pipeline.
+        backend: Backend or string name of backend to use to execute preprocessing / training steps.
+        logging_level: Log level that will be sent to stderr.
     """
     model = LudwigModel.load(
         model_path,

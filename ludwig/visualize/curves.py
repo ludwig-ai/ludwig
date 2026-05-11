@@ -55,25 +55,16 @@ def precision_recall_curves_cli(
 ) -> None:
     """Load model data from files to be shown by precision_recall_curves_cli.
 
-    Args
-
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
-    :param ground_truth: (str) path to ground truth file.
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
-    :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
-    :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    Return
-
-    :return None:
+    Args:
+        probabilities: List of prediction results file names to extract probabilities from.
+        ground_truth: Path to ground truth file.
+        ground_truth_split: Type of ground truth split - `0` for training split,
+            `1` for validation split or `2` for test split.
+        split_file: File path to csv file containing split values.
+        ground_truth_metadata: File path to feature metadata json file created during training.
+        output_feature_name: Name of the output feature to visualize.
+        output_directory: Name of output directory containing training results.
+        kwargs: Parameters for the requested visualizations.
     """
     # retrieve feature metadata to convert raw predictions to encoded value
     metadata = load_json(ground_truth_metadata)
@@ -108,27 +99,17 @@ def precision_recall_curves(
 ) -> None:
     """Show the precision recall curves for output features in the specified models.
 
-    # Inputs
-
-    :param probabilities_per_model: (List[numpy.array]) list of model
-        probabilities.
-    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
-    :param metadata: (dict) feature metadata dictionary
-    :param output_feature_name: (str) output feature name
-    :param positive_label: (int, default: `1`) numeric encoded value for the
-        positive class.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
-        list of the model names to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
-        metadata['str2idx'] in np.vectorize
-
-    # Return
-
-    :return: (None)
+    Args:
+        probabilities_per_model: List of model probabilities.
+        ground_truth: Ground truth values.
+        metadata: Feature metadata dictionary.
+        output_feature_name: Output feature name.
+        positive_label: Numeric encoded value for the positive class.
+        model_names: Model name or list of the model names to use as labels.
+        output_directory: Directory where to save plots. If not specified, plots
+            will be displayed in a window.
+        file_format: File format of output plots - `'pdf'` or `'png'`.
+        ground_truth_apply_idx: Whether to use metadata['str2idx'] in np.vectorize.
     """
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
@@ -162,14 +143,8 @@ def precision_recall_curves_from_test_statistics_cli(test_statistics: "str | lis
     """Load model data from files to be shown by precision_recall_curves_from_test_statistics_cli.
 
     Args:
-
-    :param test_statistics: (Union[str, List[str]]) path to experiment test
-        statistics file.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    Return:
-
-    :return None:
+        test_statistics: Path to experiment test statistics file.
+        kwargs: Parameters for the requested visualizations.
     """
     test_stats_per_model = load_data_for_viz("load_json", test_statistics)
     precision_recall_curves_from_test_statistics(test_stats_per_model, **kwargs)
@@ -187,21 +162,12 @@ def precision_recall_curves_from_test_statistics(
     """Show the PR curves for the specified models output binary `output_feature_name`.
 
     Args:
-
-    :param test_stats_per_model: (List[dict]) dictionary containing evaluation
-        performance statistics.
-    :param output_feature_name: (str) name of the output feature to use
-        for the visualization.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
-        list of the model names to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-
-    Return
-
-    :return: (None)
+        test_stats_per_model: Dictionary containing evaluation performance statistics.
+        output_feature_name: Name of the output feature to use for the visualization.
+        model_names: Model name or list of the model names to use as labels.
+        output_directory: Directory where to save plots. If not specified, plots
+            will be displayed in a window.
+        file_format: File format of output plots - `'pdf'` or `'png'`.
     """
     model_names_list = convert_to_list(model_names)
     filename_template = "precision_recall_curves_from_prediction_statistics." + file_format
@@ -230,25 +196,16 @@ def roc_curves_cli(
 ) -> None:
     """Load model data from files to be shown by roc_curves_cli.
 
-    # Inputs
-
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
-    :param ground_truth: (str) path to ground truth file.
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
-    :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
-    :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
-    :return None:
+    Args:
+        probabilities: List of prediction results file names to extract probabilities from.
+        ground_truth: Path to ground truth file.
+        ground_truth_split: Type of ground truth split - `0` for training split,
+            `1` for validation split or `2` for test split.
+        split_file: File path to csv file containing split values.
+        ground_truth_metadata: File path to feature metadata json file created during training.
+        output_feature_name: Name of the output feature to visualize.
+        output_directory: Name of output directory containing training results.
+        kwargs: Parameters for the requested visualizations.
     """
 
     # retrieve feature metadata to convert raw predictions to encoded value
@@ -284,27 +241,17 @@ def roc_curves(
 ) -> None:
     """Show the roc curves for output features in the specified models.
 
-    # Inputs
-
-    :param probabilities_per_model: (List[numpy.array]) list of model
-        probabilities.
-    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
-    :param metadata: (dict) feature metadata dictionary
-    :param output_feature_name: (str) output feature name
-    :param positive_label: (int, default: `1`) numeric encoded value for the
-        positive class.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
-        list of the model names to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
-        metadata['str2idx'] in np.vectorize
-
-    # Return
-
-    :return: (None)
+    Args:
+        probabilities_per_model: List of model probabilities.
+        ground_truth: Ground truth values.
+        metadata: Feature metadata dictionary.
+        output_feature_name: Output feature name.
+        positive_label: Numeric encoded value for the positive class.
+        model_names: Model name or list of the model names to use as labels.
+        output_directory: Directory where to save plots. If not specified, plots
+            will be displayed in a window.
+        file_format: File format of output plots - `'pdf'` or `'png'`.
+        ground_truth_apply_idx: Whether to use metadata['str2idx'] in np.vectorize.
     """
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
@@ -335,10 +282,9 @@ def roc_curves(
 def roc_curves_from_test_statistics_cli(test_statistics: "str | list[str]", **kwargs: dict) -> None:
     """Load model data from files to be shown by roc_curves_from_test_statistics_cli.
 
-    # Inputs
-    :param test_statistics: (Union[str, List[str]]) path to experiment test statistics file.
-    :param kwargs: (dict) parameters for the requested visualizations.  # Return
-    :return None:
+    Args:
+        test_statistics: Path to experiment test statistics file.
+        kwargs: Parameters for the requested visualizations.
     """
     test_stats_per_model = load_data_for_viz("load_json", test_statistics)
     roc_curves_from_test_statistics(test_stats_per_model, **kwargs)
@@ -355,22 +301,13 @@ def roc_curves_from_test_statistics(
 ) -> None:
     """Show the roc curves for the specified models output binary `output_feature_name`.
 
-    # Inputs
-
-    :param test_stats_per_model: (List[dict]) dictionary containing evaluation
-        performance statistics.
-    :param output_feature_name: (str) name of the output feature to use
-        for the visualization.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
-        list of the model names to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-
-    # Return
-
-    :return: (None)
+    Args:
+        test_stats_per_model: Dictionary containing evaluation performance statistics.
+        output_feature_name: Name of the output feature to use for the visualization.
+        model_names: Model name or list of the model names to use as labels.
+        output_directory: Directory where to save plots. If not specified, plots
+            will be displayed in a window.
+        file_format: File format of output plots - `'pdf'` or `'png'`.
     """
     model_names_list = convert_to_list(model_names)
     filename_template = "roc_curves_from_prediction_statistics." + file_format
@@ -399,29 +336,19 @@ def calibration_1_vs_all_cli(
 ) -> None:
     """Load model data from files to be shown by calibration_1_vs_all_cli.
 
-    # Inputs
-
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
-    :param ground_truth: (str) path to ground truth file
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
-    :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
-    :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param output_feature_proc_name: (str) name of the output feature column in ground_truth. If ground_truth is a
-        preprocessed parquet or hdf5 file, the column name will be <output_feature>_<hash>
-    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
-        metadata['str2idx'] in np.vectorize
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
-    :return None:
+    Args:
+        probabilities: List of prediction results file names to extract probabilities from.
+        ground_truth: Path to ground truth file.
+        ground_truth_split: Type of ground truth split - `0` for training split,
+            `1` for validation split or `2` for test split.
+        split_file: File path to csv file containing split values.
+        ground_truth_metadata: File path to feature metadata json file created during training.
+        output_feature_name: Name of the output feature to visualize.
+        output_directory: Name of output directory containing training results.
+        output_feature_proc_name: Name of the output feature column in ground_truth. If ground_truth
+            is a preprocessed parquet or hdf5 file, the column name will be <output_feature>_<hash>.
+        ground_truth_apply_idx: Whether to use metadata['str2idx'] in np.vectorize.
+        kwargs: Parameters for the requested visualizations.
     """
 
     # retrieve feature metadata to convert raw predictions to encoded value
@@ -462,29 +389,20 @@ def calibration_1_vs_all(
 ) -> None:
     """Show models probability of predictions for the specified output_feature_name.
 
-    # Inputs
-
-    :param probabilities_per_model: (List[numpy.array]) list of model
-        probabilities.
-    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
-    :param metadata: (dict) feature metadata dictionary
-    :param output_feature_name: (str) output feature name
-    :param top_n_classes: (list) List containing the number of classes to plot.
-    :param labels_limit: (int) upper limit on the numeric encoded label value.
-        Encoded numeric label values in dataset that are higher than
-        `labels_limit` are considered to be "rare" labels.
-    :param model_names: (List[str], default: `None`) list of the names of the
-        models to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
-        metadata['str2idx'] in np.vectorize
-
-    # String
-
-    :return: (None)
+    Args:
+        probabilities_per_model: List of model probabilities.
+        ground_truth: Ground truth values.
+        metadata: Feature metadata dictionary.
+        output_feature_name: Output feature name.
+        top_n_classes: List containing the number of classes to plot.
+        labels_limit: Upper limit on the numeric encoded label value. Encoded
+            numeric label values in dataset that are higher than `labels_limit`
+            are considered to be "rare" labels.
+        model_names: List of the names of the models to use as labels.
+        output_directory: Directory where to save plots. If not specified, plots
+            will be displayed in a window.
+        file_format: File format of output plots - `'pdf'` or `'png'`.
+        ground_truth_apply_idx: Whether to use metadata['str2idx'] in np.vectorize.
     """
     feature_metadata = metadata[output_feature_name]
     if not isinstance(ground_truth, np.ndarray):
@@ -580,25 +498,16 @@ def calibration_multiclass_cli(
 ) -> None:
     """Load model data from files to be shown by calibration_multiclass_cli.
 
-    # Inputs
-
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
-        to extract probabilities from.
-    :param ground_truth: (str) path to ground truth file
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
-    :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) file path to feature metadata json file
-        created during training.
-    :param output_feature_name: (str) name of the output feature to visualize.
-    :param output_directory: (str) name of output directory containing training
-         results.
-    :param kwargs: (dict) parameters for the requested visualizations.
-
-    # Return
-
-    :return None:
+    Args:
+        probabilities: List of prediction results file names to extract probabilities from.
+        ground_truth: Path to ground truth file.
+        ground_truth_split: Type of ground truth split - `0` for training split,
+            `1` for validation split or `2` for test split.
+        split_file: File path to csv file containing split values.
+        ground_truth_metadata: File path to feature metadata json file created during training.
+        output_feature_name: Name of the output feature to visualize.
+        output_directory: Name of output directory containing training results.
+        kwargs: Parameters for the requested visualizations.
     """
 
     # retrieve feature metadata to convert raw predictions to encoded value
@@ -634,28 +543,19 @@ def calibration_multiclass(
 ) -> None:
     """Show models probability of predictions for each class of the specified output_feature_name.
 
-    # Inputs
-
-    :param probabilities_per_model: (List[numpy.array]) list of model
-        probabilities.
-    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
-    :param metadata: (dict) feature metadata dictionary
-    :param output_feature_name: (str) output feature name
-    :param labels_limit: (int) upper limit on the numeric encoded label value.
-        Encoded numeric label values in dataset that are higher than
-        `labels_limit` are considered to be "rare" labels.
-    :param model_names: (List[str], default: `None`) list of the names of the
-        models to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
-        metadata['str2idx'] in np.vectorize
-
-    # Return
-
-    :return: (None)
+    Args:
+        probabilities_per_model: List of model probabilities.
+        ground_truth: Ground truth values.
+        metadata: Feature metadata dictionary.
+        output_feature_name: Output feature name.
+        labels_limit: Upper limit on the numeric encoded label value. Encoded
+            numeric label values in dataset that are higher than `labels_limit`
+            are considered to be "rare" labels.
+        model_names: List of the names of the models to use as labels.
+        output_directory: Directory where to save plots. If not specified, plots
+            will be displayed in a window.
+        file_format: File format of output plots - `'pdf'` or `'png'`.
+        ground_truth_apply_idx: Whether to use metadata['str2idx'] in np.vectorize.
     """
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value

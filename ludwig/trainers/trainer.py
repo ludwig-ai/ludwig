@@ -125,35 +125,27 @@ class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin,
     ):
         """Trains a model with a set of options and hyperparameters listed below. Customizable.
 
-        :param model: Underlying Ludwig model
-        :type model: `ludwig.models.ecd.ECD`
-        :param resume: Resume training a model that was being trained. (default: False).
-        :type resume: Boolean
-        :param skip_save_model: Disables saving model weights and hyperparameters each time the model improves. By
-                default Ludwig saves model weights after each round of evaluation the validation metric (improves, but
+        Args:
+            model: Underlying Ludwig model (`ludwig.models.ecd.ECD`).
+            resume: Resume training a model that was being trained. (default: False).
+            skip_save_model: Disables saving model weights and hyperparameters each time the model improves. By
+                default Ludwig saves model weights after each round of evaluation the validation metric improves, but
                 if the model is really big that can be time consuming. If you do not want to keep the weights and just
                 find out what performance a model can get with a set of hyperparameters, use this parameter to skip it,
                 but the model will not be loadable later on. (default: False).
-        :type skip_save_model: Boolean
-        :param skip_save_progress: Disables saving progress each round of evaluation. By default Ludwig saves weights
+            skip_save_progress: Disables saving progress each round of evaluation. By default Ludwig saves weights
                 and stats after each round of evaluation for enabling resuming of training, but if the model is really
                 big that can be time consuming and will uses twice as much space, use this parameter to skip it, but
                 training cannot be resumed later on. (default: False).
-        :type skip_save_progress: Boolean
-        :param skip_save_log: Disables saving TensorBoard logs. By default Ludwig saves logs for the TensorBoard, but if
+            skip_save_log: Disables saving TensorBoard logs. By default Ludwig saves logs for the TensorBoard, but if
                 it is not needed turning it off can slightly increase the overall speed. (default: False).
-        :type skip_save_log: Boolean
-        :param callbacks: List of `ludwig.callbacks.Callback` objects that provide hooks into the Ludwig pipeline.
+            callbacks: List of `ludwig.callbacks.Callback` objects that provide hooks into the Ludwig pipeline.
                 (default: None).
-        :type callbacks: list
-        :param report_tqdm_to_ray: Enables using the ray based tqdm Callback for progress bar reporting
-        :param random_seed: Default initialization for the random seeds (default: 42).
-        :type random_seed: Float
-        :param distributed: Distributed strategy (default: None).
-        :type distributed: `DistributedStrategy`
-        :param device: Device to load the model on from a saved checkpoint (default: None).
-        :type device: str
-        :param config: `ludwig.schema.trainer.BaseTrainerConfig` instance that specifies training hyperparameters
+            report_tqdm_to_ray: Enables using the ray based tqdm Callback for progress bar reporting.
+            random_seed: Default initialization for the random seeds (default: 42).
+            distributed: Distributed strategy (default: None).
+            device: Device to load the model on from a saved checkpoint (default: None).
+            config: `ludwig.schema.trainer.BaseTrainerConfig` instance that specifies training hyperparameters
                 (default: `ludwig.schema.trainer.ECDTrainerConfig()`).
         """
         self.distributed = distributed if distributed is not None else LocalStrategy()
@@ -847,11 +839,12 @@ class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin,
     ):
         """Trains a model with a set of hyperparameters listed below. Customizable.
 
-        :param training_set: The training set
-        :param validation_set: The validation dataset
-        :param test_set: The test dataset
-        :param save_path: The directory that will contain the saved model
-        :param return_state_dict: Whether to return the state dict of the model instead of the model itself
+        Args:
+            training_set: The training set.
+            validation_set: The validation dataset.
+            test_set: The test dataset.
+            save_path: The directory that will contain the saved model.
+            return_state_dict: Whether to return the state dict of the model instead of the model itself.
         """
         # ====== General setup =======
         output_features = self.model.output_features

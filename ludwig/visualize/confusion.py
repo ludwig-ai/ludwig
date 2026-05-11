@@ -37,12 +37,10 @@ logger = logging.getLogger(__name__)
 def confusion_matrix_cli(test_statistics: "str | list[str]", ground_truth_metadata: str, **kwargs: dict) -> None:
     """Load model data from files to be shown by confusion_matrix.
 
-    # Inputs
-
-    :param test_statistics: (Union[str, List[str]]) path to experiment test statistics file.
-    :param ground_truth_metadata: (str) path to ground truth metadata file.
-    :param kwargs: (dict) parameters for the requested visualizations.  # Return
-    :return None:
+    Args:
+        test_statistics: Path to experiment test statistics file.
+        ground_truth_metadata: Path to ground truth metadata file.
+        **kwargs: Parameters for the requested visualizations.
     """
     test_stats_per_model = load_data_for_viz("load_json", test_statistics)
     metadata = load_json(ground_truth_metadata)
@@ -64,32 +62,24 @@ def confusion_matrix(
     """Show confusion matrix in the models predictions for each `output_feature_name`.
 
     For each model (in the aligned lists of test_statistics and model_names)
-    it  produces a heatmap of the confusion matrix in the predictions for
-    each  output_feature_name that has a confusion matrix in test_statistics.
+    it produces a heatmap of the confusion matrix in the predictions for
+    each output_feature_name that has a confusion matrix in test_statistics.
     The value of `top_n_classes` limits the heatmap to the n most frequent
     classes.
 
-    # Inputs
-
-    :param test_stats_per_model: (List[dict]) dictionary containing evaluation
-      performance statistics.
-    :param metadata: (dict) intermediate preprocess structure created during
-        training containing the mappings of the input dataset.
-    :param output_feature_name: (Union[str, `None`]) name of the output feature
-        to use for the visualization.  If `None`, use all output features.
-    :param top_n_classes: (List[int]) number of top classes or list
-        containing the number of top classes to plot.
-    :param normalize: (bool) flag to normalize rows in confusion matrix.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
-        list of the model names to use as labels.
-    :param output_directory: (str, default: `None`) directory where to save
-        plots. If not specified, plots will be displayed in a window
-    :param file_format: (str, default: `'pdf'`) file format of output plots -
-        `'pdf'` or `'png'`.
-
-    # Return
-
-    :return: (None)
+    Args:
+        test_stats_per_model: Dictionary containing evaluation performance statistics.
+        metadata: Intermediate preprocess structure created during training containing
+            the mappings of the input dataset.
+        output_feature_name: Name of the output feature to use for the visualization.
+            If None, use all output features.
+        top_n_classes: Number of top classes or list containing the number of top
+            classes to plot.
+        normalize: Flag to normalize rows in confusion matrix.
+        model_names: Model name or list of the model names to use as labels.
+        output_directory: Directory where to save plots. If not specified, plots will
+            be displayed in a window.
+        file_format: File format of output plots — 'pdf' or 'png'.
     """
     test_stats_per_model_list = test_stats_per_model
     model_names_list = convert_to_list(model_names)
