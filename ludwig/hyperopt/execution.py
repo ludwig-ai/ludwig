@@ -758,7 +758,11 @@ class RayTuneExecutor:
         if thread_error[0] is not None:
             raise RuntimeError(f"Experiment failed: {thread_error[0]}") from thread_error[0]
         if not stats:
-            raise RuntimeError("Experiment did not complete.")
+            raise RuntimeError(
+                "Hyperopt trial did not produce any results — the experiment did not complete.\n"
+                "Check the trial logs for errors. This can happen if the trial was killed by the scheduler "
+                "or ran out of time before reporting any metrics."
+            )
         train_stats, eval_stats = stats.pop()
 
         metric_score = self.get_metric_score(train_stats)
