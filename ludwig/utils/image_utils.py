@@ -423,13 +423,19 @@ def get_class_mask_from_image(
         mask[(img == value).all(-1)] = nclass
 
     if torch.any(mask.ge(num_classes)):
-        raise ValueError(
-            f"Image channel could not be mapped to a class because an unknown channel value was detected. "
-            f"{num_classes} classes were inferred from the first set of images. This image has a channel "
-            f"value that was not previously seen in the first set of images. Check preprocessing parameters "
-            f"for image resizing, num channels, num classes and num samples. Image resizing may affect "
-            f"channel values. "
+        # Map any unseen colors to class 0 (background). This can happen when the color sample
+        # used to build the class map (infer_image_sample_size) missed rare colors present in
+        # other split images. Silently remapping avoids crashing at the cost of minor label noise.
+        import warnings
+
+        warnings.warn(
+            f"Image channel could not be mapped to a class for {torch.sum(mask.ge(num_classes)).item()} pixels. "
+            f"{num_classes} classes were inferred from the initial sample. Remapping unseen colors to class 0. "
+            f"To avoid this, increase infer_image_sample_size in preprocessing.",
+            UserWarning,
+            stacklevel=2,
         )
+        mask[mask.ge(num_classes)] = 0
 
     return mask
 
