@@ -46,13 +46,12 @@ class TqdmUpTo(tqdm):
     """
 
     def update_to(self, b=1, bsize=1, tsize=None):
-        """
-        b  : int, optional
-            Number of blocks transferred so far [default: 1].
-        bsize  : int, optional
-            Size of each block (in tqdm units) [default: 1].
-        tsize  : int, optional
-            Total size (in tqdm units). If [default: None] remains unchanged.
+        """Update progress bar.
+
+        Args:
+            b: Number of blocks transferred so far.
+            bsize: Size of each block (in tqdm units).
+            tsize: Total size (in tqdm units). If None, remains unchanged.
         """
         if tsize is not None:
             self.total = tsize
@@ -293,10 +292,11 @@ class DatasetLoader:
         Note: This method is also responsible for splitting the data, returning a single dataframe if split=False, and a
         3-tuple of train, val, test if split=True.
 
-        :param kaggle_username: (str) username on Kaggle platform
-        :param kaggle_key: (str) dataset key on Kaggle platform
-        :param split: (bool) splits dataset along 'split' column if present. The split column should always have values
-            0: train, 1: validation, 2: test.
+        Args:
+            kaggle_username: Username on Kaggle platform.
+            kaggle_key: Dataset key on Kaggle platform.
+            split: Splits dataset along 'split' column if present. The split column should always have values
+                0: train, 1: validation, 2: test.
         """
         self._download_and_process(kaggle_username=kaggle_username, kaggle_key=kaggle_key)
         if self.state == DatasetState.TRANSFORMED:

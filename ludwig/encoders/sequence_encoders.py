@@ -81,16 +81,16 @@ class SequencePassthroughEncoder(SequenceEncoder):
         encoder_config=None,
         **kwargs,
     ):
-        """
-        :param reduce_output: defines how to reduce the output tensor along
-               the `s` sequence length dimension if the rank of the tensor
-               is greater than 2. Available values are: `sum`,
-               `mean` or `avg`, `max`, `concat` (concatenates along
-               the first dimension), `last` (returns the last vector of the
-               first dimension) and `None` or `null` (which does not reduce
-               and returns the full tensor).
-        :param max_sequence_length: The maximum sequence length.
-        :param encoding_size: The size of the encoding vector, or None if sequence elements are scalars.
+        """Initializes SequencePassthroughEncoder.
+
+        Args:
+            reduce_output: Defines how to reduce the output tensor along the `s` sequence length
+                dimension if the rank of the tensor is greater than 2. Available values are: `sum`,
+                `mean` or `avg`, `max`, `concat` (concatenates along the first dimension), `last`
+                (returns the last vector of the first dimension) and `None` or `null` (which does
+                not reduce and returns the full tensor).
+            max_sequence_length: The maximum sequence length.
+            encoding_size: The size of the encoding vector, or None if sequence elements are scalars.
         """
         super().__init__()
         self.config = encoder_config
@@ -106,14 +106,13 @@ class SequencePassthroughEncoder(SequenceEncoder):
             self.supports_masking = True
 
     def forward(self, input_sequence: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
-        """
-        :param input_sequence: The input sequence fed into the encoder.
-               Shape: [batch x sequence length], type torch.int32 or
-                      [batch x sequence length x encoding size], type torch.float32
-        :type input_sequence: Tensor
-        :param mask: Sequence mask (not yet implemented).
-               Shape: [batch x sequence length]
-        :type mask: Tensor
+        """Encodes the input sequence by casting to float and optionally reducing.
+
+        Args:
+            input_sequence: The input sequence fed into the encoder.
+                Shape: [batch x sequence length], type torch.int32 or
+                [batch x sequence length x encoding size], type torch.float32.
+            mask: Sequence mask (not yet implemented). Shape: [batch x sequence length].
         """
         input_sequence = input_sequence.type(torch.float32)
         while len(input_sequence.shape) < 3:
@@ -170,72 +169,34 @@ class SequenceEmbedEncoder(SequenceEncoder):
         encoder_config=None,
         **kwargs,
     ):
-        """
-        :param vocab: Vocabulary of the input feature to encode
-        :type vocab: List
-        :param max_sequence_length: The maximum sequence length.
-        :type max_sequence_length: int
-        :param representation: the possible values are `dense` and `sparse`.
-               `dense` means the embeddings are initialized randomly,
-               `sparse` means they are initialized to be one-hot encodings.
-        :type representation: str (one of 'dense' or 'sparse')
-        :param embedding_size: it is the maximum embedding size, the actual
-               size will be `min(vocabulary_size, embedding_size)`
-               for `dense` representations and exactly `vocabulary_size`
-               for the `sparse` encoding, where `vocabulary_size` is
-               the number of different strings appearing in the training set
-               in the column the feature is named after (plus 1 for `<UNK>`).
-        :type embedding_size: Integer
-        :param embeddings_trainable: If `True` embeddings are trained during
-               the training process, if `False` embeddings are fixed.
-               It may be useful when loading pretrained embeddings
-               for avoiding finetuning them. This parameter has effect only
-               for `representation` is `dense` as `sparse` one-hot encodings
-                are not trainable.
-        :type embeddings_trainable: Boolean
-        :param pretrained_embeddings: by default `dense` embeddings
-               are initialized randomly, but this parameter allows to specify
-               a path to a file containing embeddings in the GloVe format.
-               When the file containing the embeddings is loaded, only the
-               embeddings with labels present in the vocabulary are kept,
-               the others are discarded. If the vocabulary contains strings
-               that have no match in the embeddings file, their embeddings
-               are initialized with the average of all other embedding plus
-               some random noise to make them different from each other.
-               This parameter has effect only if `representation` is `dense`.
-        :type pretrained_embeddings: str (filepath)
-        :param embeddings_on_cpu: by default embeddings matrices are stored
-               on GPU memory if a GPU is used, as it allows
-               for faster access, but in some cases the embedding matrix
-               may be really big and this parameter forces the placement
-               of the embedding matrix in regular memory and the CPU is used
-               to resolve them, slightly slowing down the process
-               as a result of data transfer between CPU and GPU memory.
-        :type embeddings_on_cpu: Boolean
-        :param weights_initializer: the initializer to use. If `None`, the default
-               initialized of each variable is used (`xavier_uniform`
-               in most cases). Options are: `constant`, `identity`, `zeros`,
-                `ones`, `orthogonal`, `normal`, `uniform`,
-                `truncated_normal`, `variance_scaling`, `xavier_normal`,
-                `xavier_uniform`, `xavier_normal`,
-                `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
-                Alternatively it is possible to specify a dictionary with
-                a key `type` that identifies the type of initializer and
-                other keys for its parameters, e.g.
-                `{type: normal, mean: 0, stddev: 0}`.
-                To know the parameters of each initializer, please refer to
-                PyTorch's documentation.
-        :type weights_initializer: str
-        :param dropout: Tensor (torch.float) The dropout probability.
-        :type dropout: Tensor
-        :param reduce_output: defines how to reduce the output tensor along
-               the `s` sequence length dimension if the rank of the tensor
-               is greater than 2. Available values are: `sum`,
-               `mean` or `avg`, `max`, `concat` (concatenates along
-               the first dimension), `last` (returns the last vector of the
-               first dimension) and `None` or `null` (which does not reduce
-               and returns the full tensor).
-        :type reduce_output: str
+        """Initializes SequenceEmbedEncoder.
+
+        Args:
+            vocab: Vocabulary of the input feature to encode.
+            max_sequence_length: The maximum sequence length.
+            representation: The possible values are `dense` and `sparse`. `dense` means the
+                embeddings are initialized randomly, `sparse` means they are initialized to be
+                one-hot encodings.
+            embedding_size: The maximum embedding size; the actual size will be
+                `min(vocabulary_size, embedding_size)` for `dense` representations and exactly
+                `vocabulary_size` for the `sparse` encoding.
+            embeddings_trainable: If `True` embeddings are trained during the training process,
+                if `False` embeddings are fixed. Only applies when `representation` is `dense`.
+            pretrained_embeddings: Path to a file containing embeddings in the GloVe format.
+                Only applies when `representation` is `dense`.
+            embeddings_on_cpu: If True, forces the embedding matrix to be stored in CPU memory
+                rather than GPU memory, slightly slowing down access.
+            weights_initializer: The initializer to use. If `None`, uses `xavier_uniform`.
+                Options include: `constant`, `identity`, `zeros`, `ones`, `orthogonal`, `normal`,
+                `uniform`, `truncated_normal`, `variance_scaling`, `xavier_normal`,
+                `xavier_uniform`, `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
+                Can also be a dict with a `type` key and initializer parameters.
+            dropout: The dropout probability.
+            reduce_output: Defines how to reduce the output tensor along the `s` sequence length
+                dimension if the rank of the tensor is greater than 2. Available values are:
+                `sum`, `mean` or `avg`, `max`, `concat` (concatenates along the first dimension),
+                `last` (returns the last vector of the first dimension) and `None` or `null`
+                (which does not reduce and returns the full tensor).
         """
         super().__init__()
         self.config = encoder_config
@@ -268,10 +229,12 @@ class SequenceEmbedEncoder(SequenceEncoder):
         )
 
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
-        """
-        :param inputs: The input sequence fed into the encoder.
-               Shape: [batch x sequence length], type torch.int32
-        :param mask: Input mask (unused, not yet implemented in EmbedSequence)
+        """Encodes the input sequence by embedding tokens and reducing the sequence.
+
+        Args:
+            inputs: The input sequence fed into the encoder.
+                Shape: [batch x sequence length], type torch.int32.
+            mask: Input mask (unused, not yet implemented in EmbedSequence).
         """
         embedded_sequence = self.embed_sequence(inputs, mask=mask)
         hidden = self.reduce_sequence(embedded_sequence)
@@ -346,136 +309,47 @@ class ParallelCNN(SequenceEncoder):
         encoder_config=None,
         **kwargs,
     ):
-        # todo: revise docstring
-        """
-        :param should_embed: If True the input sequence is expected
-               to be made of integers and will be mapped into embeddings
-        :type should_embed: Boolean
-        :param vocab: Vocabulary of the input feature to encode
-        :type vocab: List
-        :param representation: the possible values are `dense` and `sparse`.
-               `dense` means the embeddings are initialized randomly,
-               `sparse` means they are initialized to be one-hot encodings.
-        :type representation: Str (one of 'dense' or 'sparse')
-        :param embedding_size: it is the maximum embedding size, the actual
-               size will be `min(vocabulary_size, embedding_size)`
-               for `dense` representations and exactly `vocabulary_size`
-               for the `sparse` encoding, where `vocabulary_size` is
-               the number of different strings appearing in the training set
-               in the column the feature is named after (plus 1 for `<UNK>`).
-        :type embedding_size: Integer
-        :param embeddings_trainable: If `True` embeddings are trained during
-               the training process, if `False` embeddings are fixed.
-               It may be useful when loading pretrained embeddings
-               for avoiding finetuning them. This parameter has effect only
-               for `representation` is `dense` as `sparse` one-hot encodings
-                are not trainable.
-        :type embeddings_trainable: Boolean
-        :param pretrained_embeddings: by default `dense` embeddings
-               are initialized randomly, but this parameter allows to specify
-               a path to a file containing embeddings in the GloVe format.
-               When the file containing the embeddings is loaded, only the
-               embeddings with labels present in the vocabulary are kept,
-               the others are discarded. If the vocabulary contains strings
-               that have no match in the embeddings file, their embeddings
-               are initialized with the average of all other embedding plus
-               some random noise to make them different from each other.
-               This parameter has effect only if `representation` is `dense`.
-        :type pretrained_embeddings: str (filepath)
-        :param embeddings_on_cpu: by default embeddings matrices are stored
-               on GPU memory if a GPU is used, as it allows
-               for faster access, but in some cases the embedding matrix
-               may be really big and this parameter forces the placement
-               of the embedding matrix in regular memroy and the CPU is used
-               to resolve them, slightly slowing down the process
-               as a result of data transfer between CPU and GPU memory.
-        :param conv_layers: it is a list of dictionaries containing
-               the parameters of all the convolutional layers. The length
-               of the list determines the number of parallel convolutional
-               layers and the content of each dictionary determines
-               the parameters for a specific layer. The available parameters
-               for each layer are: `filter_size`, `num_filters`, `pool`,
-               `norm`, and `activation`. If any of those values
-               is missing from the dictionary, the default one specified
-               as a parameter of the encoder will be used instead. If both
-               `conv_layers` and `num_conv_layers` are `None`, a default
-               list will be assigned to `conv_layers` with the value
-               `[{filter_size: 2}, {filter_size: 3}, {filter_size: 4},
-               {filter_size: 5}]`.
-        :type conv_layers: List
-        :param num_conv_layers: if `conv_layers` is `None`, this is
-               the number of parallel convolutional layers.
-        :type num_conv_layers: Integer
-        :param filter_size:  if a `filter_size` is not already specified in
-               `conv_layers` this is the default `filter_size` that
-               will be used for each layer. It indicates how wide is
-               the 1d convolutional filter.
-        :type filter_size: Integer
-        :param num_filters: if a `num_filters` is not already specified in
-               `conv_layers` this is the default `num_filters` that
-               will be used for each layer. It indicates the number
-               of filters, and by consequence the output channels of
-               the 1d convolution.
-        :type num_filters: Integer
-        :param pool_size: if a `pool_size` is not already specified
-              in `conv_layers` this is the default `pool_size` that
-              will be used for each layer. It indicates the size of
-              the max pooling that will be performed along the `s` sequence
-              dimension after the convolution operation.
-        :type pool_size: Integer
-        :param fc_layers: it is a list of dictionaries containing
-               the parameters of all the fully connected layers. The length
-               of the list determines the number of stacked fully connected
-               layers and the content of each dictionary determines
-               the parameters for a specific layer. The available parameters
-               for each layer are: `output_size`, `norm` and `activation`.
-               If any of those values is missing from
-               the dictionary, the default one specified as a parameter of
-               the encoder will be used instead. If both `fc_layers` and
-               `num_fc_layers` are `None`, a default list will be assigned
-               to `fc_layers` with the value
-               `[{output_size: 512}, {output_size: 256}]`
-               (only applies if `reduce_output` is not `None`).
-        :type fc_layers: List
-        :param num_fc_layers: if `fc_layers` is `None`, this is the number
-               of stacked fully connected layers (only applies if
-               `reduce_output` is not `None`).
-        :type num_fc_layers: Integer
-        :param output_size: if a `output_size` is not already specified in
-               `fc_layers` this is the default `output_size` that will be used
-               for each layer. It indicates the size of the output
-               of a fully connected layer.
-        :type output_size: Integer
-        :param norm: if a `norm` is not already specified in `conv_layers`
-               or `fc_layers` this is the default `norm` that will be used
-               for each layer. It indicates the norm of the output.
-        :type norm: str
-        :param activation: Default activation function to use
-        :type activation: Str
-        :param dropout: determines if there should be a dropout layer before
-               returning the encoder output.
-        :type dropout: Boolean
-        :param initializer: the initializer to use. If `None` it uses
-               `xavier_uniform`. Options are: `constant`, `identity`,
-               `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,
-               `truncated_normal`, `variance_scaling`, `xavier_normal`,
-               `xavier_uniform`, `xavier_normal`,
-               `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
-               Alternatively it is possible to specify a dictionary with
-               a key `type` that identifies the type of initializer and
-               other keys for its parameters,
-               e.g. `{type: normal, mean: 0, stddev: 0}`.
-               To know the parameters of each initializer, please refer
-               to PyTorch's documentation.
-        :type initializer: str
-        :param reduce_output: defines how to reduce the output tensor of
-               the convolutional layers along the `s` sequence length
-               dimension if the rank of the tensor is greater than 2.
-               Available values are: `sum`, `mean` or `avg`, `max`, `concat`
-               (concatenates along the first dimension), `last` (returns
-               the last vector of the first dimension) and `None` or `null`
-               (which does not reduce and returns the full tensor).
-        :type reduce_output: str
+        """Initializes ParallelCNN.
+
+        Args:
+            should_embed: If True, the input sequence is expected to be made of integers and will
+                be mapped into embeddings.
+            vocab: Vocabulary of the input feature to encode.
+            representation: The possible values are `dense` and `sparse`. `dense` means the
+                embeddings are initialized randomly, `sparse` means they are initialized to be
+                one-hot encodings.
+            embedding_size: The maximum embedding size; the actual size will be
+                `min(vocabulary_size, embedding_size)` for `dense` representations and exactly
+                `vocabulary_size` for the `sparse` encoding.
+            embeddings_trainable: If `True` embeddings are trained during the training process,
+                if `False` embeddings are fixed. Only applies when `representation` is `dense`.
+            pretrained_embeddings: Path to a file containing embeddings in the GloVe format.
+                Only applies when `representation` is `dense`.
+            embeddings_on_cpu: If True, forces the embedding matrix to be stored in CPU memory
+                rather than GPU memory, slightly slowing down access.
+            conv_layers: A list of dicts containing the parameters of the parallel convolutional
+                layers. Keys per dict: `filter_size`, `num_filters`, `pool`, `norm`, `activation`.
+                Missing values fall back to encoder-level defaults. If both `conv_layers` and
+                `num_conv_layers` are `None`, defaults to
+                `[{filter_size: 2}, {filter_size: 3}, {filter_size: 4}, {filter_size: 5}]`.
+            num_conv_layers: If `conv_layers` is `None`, the number of parallel convolutional layers.
+            filter_size: Default filter size for convolutional layers (width of 1D filter).
+            num_filters: Default number of filters (output channels) for convolutional layers.
+            pool_size: Default pool size for max pooling along the sequence dimension after convolution.
+            fc_layers: A list of dicts containing the parameters of the fully connected layers.
+                Keys per dict: `output_size`, `norm`, `activation`. Missing values fall back to
+                encoder-level defaults. Defaults to `[{output_size: 512}, {output_size: 256}]`
+                when `reduce_output` is not `None`.
+            num_fc_layers: If `fc_layers` is `None`, the number of stacked fully connected layers.
+            output_size: Default output size for fully connected layers.
+            norm: Default norm to use for convolutional and fully connected layers.
+            activation: Default activation function to use.
+            dropout: Dropout probability.
+            weights_initializer: The initializer to use. If `None`, uses `xavier_uniform`.
+            bias_initializer: The bias initializer to use.
+            reduce_output: Defines how to reduce the output tensor along the `s` sequence length
+                dimension. Available values: `sum`, `mean` or `avg`, `max`, `concat`, `last`,
+                `None` or `null`.
         """
         super().__init__()
         self.config = encoder_config
@@ -569,10 +443,12 @@ class ParallelCNN(SequenceEncoder):
             )
 
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
-        """
-        :param inputs: The input sequence fed into the encoder.
-               Shape: [batch x sequence length], type torch.int32
-        :param mask: Input mask (unused, not yet implemented)
+        """Encodes the input sequence through parallel convolutions and optional FC layers.
+
+        Args:
+            inputs: The input sequence fed into the encoder.
+                Shape: [batch x sequence length], type torch.int32.
+            mask: Input mask (unused, not yet implemented).
         """
         # ================ Embeddings ================
         if self.should_embed:
@@ -677,136 +553,46 @@ class StackedCNN(SequenceEncoder):
         encoder_config=None,
         **kwargs,
     ):
-        # todo: fixup docstring
-        """
-        :param should_embed: If True the input sequence is expected
-               to be made of integers and will be mapped into embeddings
-        :type should_embed: Boolean
-        :param vocab: Vocabulary of the input feature to encode
-        :type vocab: List
-        :param representation: the possible values are `dense` and `sparse`.
-               `dense` means the embeddings are initialized randomly,
-               `sparse` means they are initialized to be one-hot encodings.
-        :type representation: Str (one of 'dense' or 'sparse')
-        :param embedding_size: it is the maximum embedding size, the actual
-               size will be `min(vocabulary_size, embedding_size)`
-               for `dense` representations and exactly `vocabulary_size`
-               for the `sparse` encoding, where `vocabulary_size` is
-               the number of different strings appearing in the training set
-               in the column the feature is named after (plus 1 for `<UNK>`).
-        :type embedding_size: Integer
-        :param embeddings_trainable: If `True` embeddings are trained during
-               the training process, if `False` embeddings are fixed.
-               It may be useful when loading pretrained embeddings
-               for avoiding finetuning them. This parameter has effect only
-               for `representation` is `dense` as `sparse` one-hot encodings
-                are not trainable.
-        :type embeddings_trainable: Boolean
-        :param pretrained_embeddings: by default `dense` embeddings
-               are initialized randomly, but this parameter allows to specify
-               a path to a file containing embeddings in the GloVe format.
-               When the file containing the embeddings is loaded, only the
-               embeddings with labels present in the vocabulary are kept,
-               the others are discarded. If the vocabulary contains strings
-               that have no match in the embeddings file, their embeddings
-               are initialized with the average of all other embedding plus
-               some random noise to make them different from each other.
-               This parameter has effect only if `representation` is `dense`.
-        :type pretrained_embeddings: str (filepath)
-        :param embeddings_on_cpu: by default embeddings matrices are stored
-               on GPU memory if a GPU is used, as it allows
-               for faster access, but in some cases the embedding matrix
-               may be really big and this parameter forces the placement
-               of the embedding matrix in regular memroy and the CPU is used
-               to resolve them, slightly slowing down the process
-               as a result of data transfer between CPU and GPU memory.
-        :param conv_layers: it is a list of dictionaries containing
-               the parameters of all the convolutional layers. The length
-               of the list determines the number of parallel convolutional
-               layers and the content of each dictionary determines
-               the parameters for a specific layer. The available parameters
-               for each layer are: `filter_size`, `num_filters`, `pool`,
-               `norm` and `activation`. If any of those values
-               is missing from the dictionary, the default one specified
-               as a parameter of the encoder will be used instead. If both
-               `conv_layers` and `num_conv_layers` are `None`, a default
-               list will be assigned to `conv_layers` with the value
-               `[{filter_size: 2}, {filter_size: 3}, {filter_size: 4},
-               {filter_size: 5}]`.
-        :type conv_layers: List
-        :param num_conv_layers: if `conv_layers` is `None`, this is
-               the number of stacked convolutional layers.
-        :type num_conv_layers: Integer
-        :param filter_size:  if a `filter_size` is not already specified in
-               `conv_layers` this is the default `filter_size` that
-               will be used for each layer. It indicates how wide is
-               the 1d convolutional filter.
-        :type filter_size: Integer
-        :param num_filters: if a `num_filters` is not already specified in
-               `conv_layers` this is the default `num_filters` that
-               will be used for each layer. It indicates the number
-               of filters, and by consequence the output channels of
-               the 1d convolution.
-        :type num_filters: Integer
-        :param pool_size: if a `pool_size` is not already specified
-              in `conv_layers` this is the default `pool_size` that
-              will be used for each layer. It indicates the size of
-              the max pooling that will be performed along the `s` sequence
-              dimension after the convolution operation.
-        :type pool_size: Integer
-        :param fc_layers: it is a list of dictionaries containing
-               the parameters of all the fully connected layers. The length
-               of the list determines the number of stacked fully connected
-               layers and the content of each dictionary determines
-               the parameters for a specific layer. The available parameters
-               for each layer are: `output_size`, `norm` and `activation`.
-               If any of those values is missing from
-               the dictionary, the default one specified as a parameter of
-               the encoder will be used instead. If both `fc_layers` and
-               `num_fc_layers` are `None`, a default list will be assigned
-               to `fc_layers` with the value
-               `[{output_size: 512}, {output_size: 256}]`
-               (only applies if `reduce_output` is not `None`).
-        :type fc_layers: List
-        :param num_fc_layers: if `fc_layers` is `None`, this is the number
-               of stacked fully connected layers (only applies if
-               `reduce_output` is not `None`).
-        :type num_fc_layers: Integer
-        :param output_size: if a `output_size` is not already specified in
-               `fc_layers` this is the default `output_size` that will be used
-               for each layer. It indicates the size of the output
-               of a fully connected layer.
-        :type output_size: Integer
-        :param norm: if a `norm` is not already specified in `conv_layers`
-               or `fc_layers` this is the default `norm` that will be used
-               for each layer. It indicates the norm of the output.
-        :type norm: str
-        :param activation: Default activation function to use
-        :type activation: Str
-        :param dropout: determines if there should be a dropout layer before
-               returning the encoder output.
-        :type dropout: Boolean
-        :param initializer: the initializer to use. If `None` it uses
-               `xavier_uniform`. Options are: `constant`, `identity`,
-               `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,
-               `truncated_normal`, `variance_scaling`, `xavier_normal`,
-               `xavier_uniform`, `xavier_normal`,
-               `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
-               Alternatively it is possible to specify a dictionary with
-               a key `type` that identifies the type of initializer and
-               other keys for its parameters,
-               e.g. `{type: normal, mean: 0, stddev: 0}`.
-               To know the parameters of each initializer, please refer
-               to PyTorch's documentation.
-        :type initializer: str
-        :param reduce_output: defines how to reduce the output tensor of
-               the convolutional layers along the `s` sequence length
-               dimension if the rank of the tensor is greater than 2.
-               Available values are: `sum`, `mean` or `avg`, `max`, `concat`
-               (concatenates along the first dimension), `last` (returns
-               the last vector of the first dimension) and `None` or `null`
-               (which does not reduce and returns the full tensor).
-        :type reduce_output: str
+        """Initializes StackedCNN.
+
+        Args:
+            should_embed: If True, the input sequence is expected to be made of integers and will
+                be mapped into embeddings.
+            vocab: Vocabulary of the input feature to encode.
+            representation: The possible values are `dense` and `sparse`. `dense` means the
+                embeddings are initialized randomly, `sparse` means they are initialized to be
+                one-hot encodings.
+            embedding_size: The maximum embedding size; the actual size will be
+                `min(vocabulary_size, embedding_size)` for `dense` representations and exactly
+                `vocabulary_size` for the `sparse` encoding.
+            embeddings_trainable: If `True` embeddings are trained during the training process,
+                if `False` embeddings are fixed. Only applies when `representation` is `dense`.
+            pretrained_embeddings: Path to a file containing embeddings in the GloVe format.
+                Only applies when `representation` is `dense`.
+            embeddings_on_cpu: If True, forces the embedding matrix to be stored in CPU memory
+                rather than GPU memory, slightly slowing down access.
+            conv_layers: A list of dicts containing the parameters of the stacked convolutional
+                layers. Keys per dict: `filter_size`, `num_filters`, `pool`, `norm`, `activation`.
+                Missing values fall back to encoder-level defaults. If both `conv_layers` and
+                `num_conv_layers` are `None`, a default 6-layer architecture is used.
+            num_conv_layers: If `conv_layers` is `None`, the number of stacked convolutional layers.
+            filter_size: Default filter size for convolutional layers (width of 1D filter).
+            num_filters: Default number of filters (output channels) for convolutional layers.
+            pool_size: Default pool size for max pooling along the sequence dimension after convolution.
+            fc_layers: A list of dicts containing the parameters of the fully connected layers.
+                Keys per dict: `output_size`, `norm`, `activation`. Missing values fall back to
+                encoder-level defaults. Defaults to `[{output_size: 512}, {output_size: 256}]`
+                when `reduce_output` is not `None`.
+            num_fc_layers: If `fc_layers` is `None`, the number of stacked fully connected layers.
+            output_size: Default output size for fully connected layers.
+            norm: Default norm to use for convolutional and fully connected layers.
+            activation: Default activation function to use.
+            dropout: Dropout probability.
+            weights_initializer: The initializer to use. If `None`, uses `xavier_uniform`.
+            bias_initializer: The bias initializer to use.
+            reduce_output: Defines how to reduce the output tensor along the `s` sequence length
+                dimension. Available values: `sum`, `mean` or `avg`, `max`, `concat`, `last`,
+                `None` or `null`.
         """
         super().__init__()
         self.config = encoder_config
@@ -943,10 +729,12 @@ class StackedCNN(SequenceEncoder):
         return self.fc_stack.output_shape
 
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
-        """
-        :param inputs: The input sequence fed into the encoder.
-               Shape: [batch x sequence length], type torch.int32
-        :param mask: Input mask (unused, not yet implemented)
+        """Encodes the input sequence through stacked convolutions and optional FC layers.
+
+        Args:
+            inputs: The input sequence fed into the encoder.
+                Shape: [batch x sequence length], type torch.int32.
+            mask: Input mask (unused, not yet implemented).
         """
         # ================ Embeddings ================
         if self.should_embed:
@@ -1030,143 +818,48 @@ class StackedParallelCNN(SequenceEncoder):
         encoder_config=None,
         **kwargs,
     ):
-        # todo: review docstring
-        """
-        :param should_embed: If True the input sequence is expected
-               to be made of integers and will be mapped into embeddings
-        :type should_embed: Boolean
-        :param vocab: Vocabulary of the input feature to encode
-        :type vocab: List
-        :param representation: the possible values are `dense` and `sparse`.
-               `dense` means the embeddings are initialized randomly,
-               `sparse` means they are initialized to be one-hot encodings.
-        :type representation: Str (one of 'dense' or 'sparse')
-        :param embedding_size: it is the maximum embedding size, the actual
-               size will be `min(vocabulary_size, embedding_size)`
-               for `dense` representations and exactly `vocabulary_size`
-               for the `sparse` encoding, where `vocabulary_size` is
-               the number of different strings appearing in the training set
-               in the column the feature is named after (plus 1 for `<UNK>`).
-        :type embedding_size: Integer
-        :param embeddings_trainable: If `True` embeddings are trained during
-               the training process, if `False` embeddings are fixed.
-               It may be useful when loading pretrained embeddings
-               for avoiding finetuning them. This parameter has effect only
-               for `representation` is `dense` as `sparse` one-hot encodings
-                are not trainable.
-        :type embeddings_trainable: Boolean
-        :param pretrained_embeddings: by default `dense` embeddings
-               are initialized randomly, but this parameter allows to specify
-               a path to a file containing embeddings in the GloVe format.
-               When the file containing the embeddings is loaded, only the
-               embeddings with labels present in the vocabulary are kept,
-               the others are discarded. If the vocabulary contains strings
-               that have no match in the embeddings file, their embeddings
-               are initialized with the average of all other embedding plus
-               some random noise to make them different from each other.
-               This parameter has effect only if `representation` is `dense`.
-        :type pretrained_embeddings: str (filepath)
-        :param embeddings_on_cpu: by default embeddings matrices are stored
-               on GPU memory if a GPU is used, as it allows
-               for faster access, but in some cases the embedding matrix
-               may be really big and this parameter forces the placement
-               of the embedding matrix in regular memroy and the CPU is used
-               to resolve them, slightly slowing down the process
-               as a result of data transfer between CPU and GPU memory.
-        :param stacked_layers: it is a of lists of list of dictionaries
-               containing the parameters of the stack of
-               parallel convolutional layers. The length of the list
-               determines the number of stacked parallel
-               convolutional layers, length of the sub-lists determines
-               the number of parallel conv layers and the content
-               of each dictionary determines the parameters for
-               a specific layer. The available parameters for each layer are:
-               `filter_size`, `num_filters`, `pool_size`, `norm` and
-               `activation`. If any of those values
-               is missing from the dictionary, the default one specified
-               as a parameter of the encoder will be used instead. If both
-               `stacked_layers` and `num_stacked_layers` are `None`,
-               a default list will be assigned to `stacked_layers` with
-               the value `[[{filter_size: 2}, {filter_size: 3},
-               {filter_size: 4}, {filter_size: 5}], [{filter_size: 2},
-               {filter_size: 3}, {filter_size: 4}, {filter_size: 5}],
-               [{filter_size: 2}, {filter_size: 3}, {filter_size: 4},
-               {filter_size: 5}]]`.
-        :type stacked_layers: List
-        :param num_stacked_layers: if `stacked_layers` is `None`, this is
-               the number of elements in the stack of
-               parallel convolutional layers.
-        :type num_stacked_layers: Integer
-        :param filter_size:  if a `filter_size` is not already specified in
-               `conv_layers` this is the default `filter_size` that
-               will be used for each layer. It indicates how wide is
-               the 1d convolutional filter.
-        :type filter_size: Integer
-        :param num_filters: if a `num_filters` is not already specified in
-               `conv_layers` this is the default `num_filters` that
-               will be used for each layer. It indicates the number
-               of filters, and by consequence the output channels of
-               the 1d convolution.
-        :type num_filters: Integer
-        :param pool_size: if a `pool_size` is not already specified
-              in `conv_layers` this is the default `pool_size` that
-              will be used for each layer. It indicates the size of
-              the max pooling that will be performed along the `s` sequence
-              dimension after the convolution operation.
-        :type pool_size: Integer
-        :param fc_layers: it is a list of dictionaries containing
-               the parameters of all the fully connected layers. The length
-               of the list determines the number of stacked fully connected
-               layers and the content of each dictionary determines
-               the parameters for a specific layer. The available parameters
-               for each layer are: `output_size`, `norm` and `activation`.
-               If any of those values is missing from
-               the dictionary, the default one specified as a parameter of
-               the encoder will be used instead. If both `fc_layers` and
-               `num_fc_layers` are `None`, a default list will be assigned
-               to `fc_layers` with the value
-               `[{output_size: 512}, {output_size: 256}]`
-               (only applies if `reduce_output` is not `None`).
-        :type fc_layers: List
-        :param num_fc_layers: if `fc_layers` is `None`, this is the number
-               of stacked fully connected layers (only applies if
-               `reduce_output` is not `None`).
-        :type num_fc_layers: Integer
-        :param output_size: if a `output_size` is not already specified in
-               `fc_layers` this is the default `output_size` that will be used
-               for each layer. It indicates the size of the output
-               of a fully connected layer.
-        :type output_size: Integer
-        :param norm: if a `norm` is not already specified in `conv_layers`
-               or `fc_layers` this is the default `norm` that will be used
-               for each layer. It indicates the norm of the output.
-        :type norm: str
-        :param activation: Default activation function to use
-        :type activation: Str
-        :param dropout: determines if there should be a dropout layer before
-               returning the encoder output.
-        :type dropout: Boolean
-        :param initializer: the initializer to use. If `None` it uses
-               `xavier_uniform`. Options are: `constant`, `identity`,
-               `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,
-               `truncated_normal`, `variance_scaling`, `xavier_normal`,
-               `xavier_uniform`, `xavier_normal`,
-               `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
-               Alternatively it is possible to specify a dictionary with
-               a key `type` that identifies the type of initializer and
-               other keys for its parameters,
-               e.g. `{type: normal, mean: 0, stddev: 0}`.
-               To know the parameters of each initializer, please refer
-               to PyTorch's documentation.
-        :type initializer: str
-        :param reduce_output: defines how to reduce the output tensor of
-               the convolutional layers along the `s` sequence length
-               dimension if the rank of the tensor is greater than 2.
-               Available values are: `sum`, `mean` or `avg`, `max`, `concat`
-               (concatenates along the first dimension), `last` (returns
-               the last vector of the first dimension) and `None` or `null`
-               (which does not reduce and returns the full tensor).
-        :type reduce_output: str
+        """Initializes StackedParallelCNN.
+
+        Args:
+            should_embed: If True, the input sequence is expected to be made of integers and will
+                be mapped into embeddings.
+            vocab: Vocabulary of the input feature to encode.
+            representation: The possible values are `dense` and `sparse`. `dense` means the
+                embeddings are initialized randomly, `sparse` means they are initialized to be
+                one-hot encodings.
+            embedding_size: The maximum embedding size; the actual size will be
+                `min(vocabulary_size, embedding_size)` for `dense` representations and exactly
+                `vocabulary_size` for the `sparse` encoding.
+            embeddings_trainable: If `True` embeddings are trained during the training process,
+                if `False` embeddings are fixed. Only applies when `representation` is `dense`.
+            pretrained_embeddings: Path to a file containing embeddings in the GloVe format.
+                Only applies when `representation` is `dense`.
+            embeddings_on_cpu: If True, forces the embedding matrix to be stored in CPU memory
+                rather than GPU memory, slightly slowing down access.
+            stacked_layers: A list of lists of dicts specifying the stacked parallel convolutional
+                layers. The outer list length is the number of stacked levels; each inner list
+                specifies the parallel conv layers at that level. Keys per dict: `filter_size`,
+                `num_filters`, `pool_size`, `norm`, `activation`. If both `stacked_layers` and
+                `num_stacked_layers` are `None`, defaults to 3 stacked levels each with filter
+                sizes [2, 3, 4, 5].
+            num_stacked_layers: If `stacked_layers` is `None`, the number of stacked parallel
+                convolutional levels.
+            filter_size: Default filter size for convolutional layers (width of 1D filter).
+            num_filters: Default number of filters (output channels) for convolutional layers.
+            pool_size: Default pool size for max pooling along the sequence dimension after convolution.
+            fc_layers: A list of dicts containing the parameters of the fully connected layers.
+                Keys per dict: `output_size`, `norm`, `activation`. Defaults to
+                `[{output_size: 512}, {output_size: 256}]` when `reduce_output` is not `None`.
+            num_fc_layers: If `fc_layers` is `None`, the number of stacked fully connected layers.
+            output_size: Default output size for fully connected layers.
+            norm: Default norm to use for convolutional and fully connected layers.
+            activation: Default activation function to use.
+            dropout: Dropout probability.
+            weights_initializer: The initializer to use. If `None`, uses `xavier_uniform`.
+            bias_initializer: The bias initializer to use.
+            reduce_output: Defines how to reduce the output tensor along the `s` sequence length
+                dimension. Available values: `sum`, `mean` or `avg`, `max`, `concat`, `last`,
+                `None` or `null`.
         """
         super().__init__()
         self.config = encoder_config
@@ -1278,10 +971,12 @@ class StackedParallelCNN(SequenceEncoder):
         return self.parallel_conv1d_stack.output_shape
 
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
-        """
-        :param inputs: The input sequence fed into the encoder.
-               Shape: [batch x sequence length], type torch.int32
-        :param mask: Input mask (unused, not yet implemented)
+        """Encodes the input sequence through stacked parallel convolutions and optional FC layers.
+
+        Args:
+            inputs: The input sequence fed into the encoder.
+                Shape: [batch x sequence length], type torch.int32.
+            mask: Input mask (unused, not yet implemented).
         """
         # ================ Embeddings ================
         if self.should_embed:
@@ -1368,122 +1063,35 @@ class StackedRNN(SequenceEncoder):
         encoder_config=None,
         **kwargs,
     ):
-        # todo: fix up docstring
-        """
-        :param should_embed: If True the input sequence is expected
-               to be made of integers and will be mapped into embeddings
-        :type should_embed: Boolean
-        :param vocab: Vocabulary of the input feature to encode
-        :type vocab: List
-        :param representation: the possible values are `dense` and `sparse`.
-               `dense` means the embeddings are initialized randomly,
-               `sparse` means they are initialized to be one-hot encodings.
-        :type representation: Str (one of 'dense' or 'sparse')
-        :param embedding_size: it is the maximum embedding size, the actual
-               size will be `min(vocabulary_size, embedding_size)`
-               for `dense` representations and exactly `vocabulary_size`
-               for the `sparse` encoding, where `vocabulary_size` is
-               the number of different strings appearing in the training set
-               in the column the feature is named after (plus 1 for `<UNK>`).
-        :type embedding_size: Integer
-        :param embeddings_trainable: If `True` embeddings are trained during
-               the training process, if `False` embeddings are fixed.
-               It may be useful when loading pretrained embeddings
-               for avoiding finetuning them. This parameter has effect only
-               for `representation` is `dense` as `sparse` one-hot encodings
-                are not trainable.
-        :type embeddings_trainable: Boolean
-        :param pretrained_embeddings: by default `dense` embeddings
-               are initialized randomly, but this parameter allows to specify
-               a path to a file containing embeddings in the GloVe format.
-               When the file containing the embeddings is loaded, only the
-               embeddings with labels present in the vocabulary are kept,
-               the others are discarded. If the vocabulary contains strings
-               that have no match in the embeddings file, their embeddings
-               are initialized with the average of all other embedding plus
-               some random noise to make them different from each other.
-               This parameter has effect only if `representation` is `dense`.
-        :type pretrained_embeddings: str (filepath)
-        :param embeddings_on_cpu: by default embeddings matrices are stored
-               on GPU memory if a GPU is used, as it allows
-               for faster access, but in some cases the embedding matrix
-               may be really big and this parameter forces the placement
-               of the embedding matrix in regular memroy and the CPU is used
-               to resolve them, slightly slowing down the process
-               as a result of data transfer between CPU and GPU memory.
-        :param conv_layers: it is a list of dictionaries containing
-               the parameters of all the convolutional layers. The length
-               of the list determines the number of parallel convolutional
-               layers and the content of each dictionary determines
-               the parameters for a specific layer. The available parameters
-               for each layer are: `filter_size`, `num_filters`, `pool`,
-               `norm`, `activation` and `regularize`. If any of those values
-               is missing from the dictionary, the default one specified
-               as a parameter of the encoder will be used instead. If both
-               `conv_layers` and `num_conv_layers` are `None`, a default
-               list will be assigned to `conv_layers` with the value
-               `[{filter_size: 2}, {filter_size: 3}, {filter_size: 4},
-               {filter_size: 5}]`.
-        :type conv_layers: List
-        :param num_conv_layers: if `conv_layers` is `None`, this is
-               the number of stacked convolutional layers.
-        :type num_conv_layers: Integer
-        :param filter_size:  if a `filter_size` is not already specified in
-               `conv_layers` this is the default `filter_size` that
-               will be used for each layer. It indicates how wide is
-               the 1d convolutional filter.
-        :type filter_size: Integer
-        :param num_filters: if a `num_filters` is not already specified in
-               `conv_layers` this is the default `num_filters` that
-               will be used for each layer. It indicates the number
-               of filters, and by consequence the output channels of
-               the 1d convolution.
-        :type num_filters: Integer
-        :param pool_size: if a `pool_size` is not already specified
-              in `conv_layers` this is the default `pool_size` that
-              will be used for each layer. It indicates the size of
-              the max pooling that will be performed along the `s` sequence
-              dimension after the convolution operation.
-        :type pool_size: Integer
-        :param num_rec_layers: the number of stacked recurrent layers.
-        :type num_rec_layers: Integer
-        :param cell_type: the type of recurrent cell to use.
-               Available values are: `rnn`, `lstm`, `gru`.
-               For reference about the differences between the cells please
-               refer to PyTorch's documentation.
-        :type cell_type: str
-        :param state_size: the size of the state of the rnn.
-        :type state_size: Integer
-        :param bidirectional: if `True` two recurrent networks will perform
-               encoding in the forward and backward direction and
-               their outputs will be concatenated.
-        :type bidirectional: Boolean
-        :param dropout: determines if there should be a dropout layer before
-               returning the encoder output.
-        :type dropout: Boolean
-        :param recurrent_dropout: Dropout rate for the recurrent stack.
-        :type recurrent_dropout: float
-        :param initializer: the initializer to use. If `None` it uses
-               `xavier_uniform`. Options are: `constant`, `identity`,
-               `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,
-               `truncated_normal`, `variance_scaling`, `xavier_normal`,
-               `xavier_uniform`, `xavier_normal`,
-               `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
-               Alternatively it is possible to specify a dictionary with
-               a key `type` that identifies the type of initializer and
-               other keys for its parameters,
-               e.g. `{type: normal, mean: 0, stddev: 0}`.
-               To know the parameters of each initializer, please refer
-               to PyTorch's documentation.
-        :type initializer: str
-        :param reduce_output: defines how to reduce the output tensor of
-               the convolutional layers along the `s` sequence length
-               dimension if the rank of the tensor is greater than 2.
-               Available values are: `sum`, `mean` or `avg`, `max`, `concat`
-               (concatenates along the first dimension), `last` (returns
-               the last vector of the first dimension) and `None` or `null`
-               (which does not reduce and returns the full tensor).
-        :type reduce_output: str
+        """Initializes StackedRNN.
+
+        Args:
+            should_embed: If True, the input sequence is expected to be made of integers and will
+                be mapped into embeddings.
+            vocab: Vocabulary of the input feature to encode.
+            representation: The possible values are `dense` and `sparse`. `dense` means the
+                embeddings are initialized randomly, `sparse` means they are initialized to be
+                one-hot encodings.
+            embedding_size: The maximum embedding size; the actual size will be
+                `min(vocabulary_size, embedding_size)` for `dense` representations and exactly
+                `vocabulary_size` for the `sparse` encoding.
+            embeddings_trainable: If `True` embeddings are trained during the training process,
+                if `False` embeddings are fixed. Only applies when `representation` is `dense`.
+            pretrained_embeddings: Path to a file containing embeddings in the GloVe format.
+                Only applies when `representation` is `dense`.
+            embeddings_on_cpu: If True, forces the embedding matrix to be stored in CPU memory
+                rather than GPU memory, slightly slowing down access.
+            num_layers: The number of stacked recurrent layers.
+            cell_type: The type of recurrent cell to use. Available values: `rnn`, `lstm`, `gru`.
+            state_size: The size of the recurrent state.
+            bidirectional: If `True`, two recurrent networks encode in forward and backward
+                directions and their outputs are concatenated.
+            dropout: Dropout probability.
+            recurrent_dropout: Dropout rate for the recurrent stack.
+            weights_initializer: The initializer to use. If `None`, uses `xavier_uniform`.
+            reduce_output: Defines how to reduce the output tensor along the `s` sequence length
+                dimension. Available values: `sum`, `mean` or `avg`, `max`, `concat`, `last`,
+                `None` or `null`.
         """
         super().__init__()
         self.config = encoder_config
@@ -1572,10 +1180,12 @@ class StackedRNN(SequenceEncoder):
         return torch.int32
 
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
-        """
-        :param inputs: The input sequence fed into the encoder.
-               Shape: [batch x sequence length], type torch.int32
-        :param mask: Input mask (unused, not yet implemented)
+        """Encodes the input sequence through stacked recurrent layers and optional FC layers.
+
+        Args:
+            inputs: The input sequence fed into the encoder.
+                Shape: [batch x sequence length], type torch.int32.
+            mask: Input mask (unused, not yet implemented).
         """
         # ================ Embeddings ================
         if self.should_embed:
@@ -1675,88 +1285,35 @@ class StackedCNNRNN(SequenceEncoder):
         encoder_config=None,
         **kwargs,
     ):
-        # todo: fix up docstring
-        """
-        :param should_embed: If True the input sequence is expected
-               to be made of integers and will be mapped into embeddings
-        :type should_embed: Boolean
-        :param vocab: Vocabulary of the input feature to encode
-        :type vocab: List
-        :param representation: the possible values are `dense` and `sparse`.
-               `dense` means the embeddings are initialized randomly,
-               `sparse` means they are initialized to be one-hot encodings.
-        :type representation: Str (one of 'dense' or 'sparse')
-        :param embedding_size: it is the maximum embedding size, the actual
-               size will be `min(vocabulary_size, embedding_size)`
-               for `dense` representations and exactly `vocabulary_size`
-               for the `sparse` encoding, where `vocabulary_size` is
-               the number of different strings appearing in the training set
-               in the column the feature is named after (plus 1 for `<UNK>`).
-        :type embedding_size: Integer
-        :param embeddings_trainable: If `True` embeddings are trained during
-               the training process, if `False` embeddings are fixed.
-               It may be useful when loading pretrained embeddings
-               for avoiding finetuning them. This parameter has effect only
-               for `representation` is `dense` as `sparse` one-hot encodings
-                are not trainable.
-        :type embeddings_trainable: Boolean
-        :param pretrained_embeddings: by default `dense` embeddings
-               are initialized randomly, but this parameter allows to specify
-               a path to a file containing embeddings in the GloVe format.
-               When the file containing the embeddings is loaded, only the
-               embeddings with labels present in the vocabulary are kept,
-               the others are discarded. If the vocabulary contains strings
-               that have no match in the embeddings file, their embeddings
-               are initialized with the average of all other embedding plus
-               some random noise to make them different from each other.
-               This parameter has effect only if `representation` is `dense`.
-        :type pretrained_embeddings: str (filepath)
-        :param embeddings_on_cpu: by default embeddings matrices are stored
-               on GPU memory if a GPU is used, as it allows
-               for faster access, but in some cases the embedding matrix
-               may be really big and this parameter forces the placement
-               of the embedding matrix in regular memroy and the CPU is used
-               to resolve them, slightly slowing down the process
-               as a result of data transfer between CPU and GPU memory.
-        :param num_layers: the number of stacked recurrent layers.
-        :type num_layers: Integer
-        :param cell_type: the type of recurrent cell to use.
-               Available values are: `rnn`, `lstm`, `gru`.
-               For reference about the differences between the cells please
-               refer to PyTorch's documentation.
-        :type cell_type: str
-        :param state_size: the size of the state of the rnn.
-        :type state_size: Integer
-        :param bidirectional: if `True` two recurrent networks will perform
-               encoding in the forward and backward direction and
-               their outputs will be concatenated.
-        :type bidirectional: Boolean
-        :param dropout: determines if there should be a dropout layer before
-               returning the encoder output.
-        :type dropout: Boolean
-        :param recurrent_dropout: Dropout rate for the recurrent stack.
-        :type recurrent_dropout: float
-        :param initializer: the initializer to use. If `None` it uses
-               `xavier_uniform`. Options are: `constant`, `identity`,
-               `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,
-               `truncated_normal`, `variance_scaling`, `xavier_normal`,
-               `xavier_uniform`, `xavier_normal`,
-               `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
-               Alternatively it is possible to specify a dictionary with
-               a key `type` that identifies the type of initializer and
-               other keys for its parameters,
-               e.g. `{type: normal, mean: 0, stddev: 0}`.
-               To know the parameters of each initializer, please refer
-               to PyTorch's documentation.
-        :type initializer: str
-        :param reduce_output: defines how to reduce the output tensor of
-               the convolutional layers along the `s` sequence length
-               dimension if the rank of the tensor is greater than 2.
-               Available values are: `sum`, `mean` or `avg`, `max`, `concat`
-               (concatenates along the first dimension), `last` (returns
-               the last vector of the first dimension) and `None` or `null`
-               (which does not reduce and returns the full tensor).
-        :type reduce_output: str
+        """Initializes StackedCNNRNN.
+
+        Args:
+            should_embed: If True, the input sequence is expected to be made of integers and will
+                be mapped into embeddings.
+            vocab: Vocabulary of the input feature to encode.
+            representation: The possible values are `dense` and `sparse`. `dense` means the
+                embeddings are initialized randomly, `sparse` means they are initialized to be
+                one-hot encodings.
+            embedding_size: The maximum embedding size; the actual size will be
+                `min(vocabulary_size, embedding_size)` for `dense` representations and exactly
+                `vocabulary_size` for the `sparse` encoding.
+            embeddings_trainable: If `True` embeddings are trained during the training process,
+                if `False` embeddings are fixed. Only applies when `representation` is `dense`.
+            pretrained_embeddings: Path to a file containing embeddings in the GloVe format.
+                Only applies when `representation` is `dense`.
+            embeddings_on_cpu: If True, forces the embedding matrix to be stored in CPU memory
+                rather than GPU memory, slightly slowing down access.
+            num_rec_layers: The number of stacked recurrent layers.
+            cell_type: The type of recurrent cell to use. Available values: `rnn`, `lstm`, `gru`.
+            state_size: The size of the recurrent state.
+            bidirectional: If `True`, two recurrent networks encode in forward and backward
+                directions and their outputs are concatenated.
+            dropout: Dropout probability.
+            recurrent_dropout: Dropout rate for the recurrent stack.
+            weights_initializer: The initializer to use. If `None`, uses `xavier_uniform`.
+            reduce_output: Defines how to reduce the output tensor along the `s` sequence length
+                dimension. Available values: `sum`, `mean` or `avg`, `max`, `concat`, `last`,
+                `None` or `null`.
         """
         super().__init__()
         self.config = encoder_config
@@ -1875,10 +1432,12 @@ class StackedCNNRNN(SequenceEncoder):
         return self.recurrent_stack.output_shape
 
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
-        """
-        :param inputs: The input sequence fed into the encoder.
-               Shape: [batch x sequence length], type torch.int32
-        :param mask: Input mask (unused, not yet implemented)
+        """Encodes the input sequence through CNN layers then recurrent layers.
+
+        Args:
+            inputs: The input sequence fed into the encoder.
+                Shape: [batch x sequence length], type torch.int32.
+            mask: Input mask (unused, not yet implemented).
         """
         # ================ Embeddings ================
         if self.should_embed:
@@ -1968,123 +1527,36 @@ class StackedTransformer(SequenceEncoder):
         encoder_config=None,
         **kwargs,
     ):
-        # todo: update docstring as needed
-        """
-        :param should_embed: If True the input sequence is expected
-               to be made of integers and will be mapped into embeddings
-        :type should_embed: Boolean
-        :param vocab: Vocabulary of the input feature to encode
-        :type vocab: List
-        :param representation: the possible values are `dense` and `sparse`.
-               `dense` means the embeddings are initialized randomly,
-               `sparse` means they are initialized to be one-hot encodings.
-        :type representation: Str (one of 'dense' or 'sparse')
-        :param embedding_size: it is the maximum embedding size, the actual
-               size will be `min(vocabulary_size, embedding_size)`
-               for `dense` representations and exactly `vocabulary_size`
-               for the `sparse` encoding, where `vocabulary_size` is
-               the number of different strings appearing in the training set
-               in the column the feature is named after (plus 1 for `<UNK>`).
-        :type embedding_size: Integer
-        :param embeddings_trainable: If `True` embeddings are trained during
-               the training process, if `False` embeddings are fixed.
-               It may be useful when loading pretrained embeddings
-               for avoiding finetuning them. This parameter has effect only
-               for `representation` is `dense` as `sparse` one-hot encodings
-                are not trainable.
-        :type embeddings_trainable: Boolean
-        :param pretrained_embeddings: by default `dense` embeddings
-               are initialized randomly, but this parameter allows to specify
-               a path to a file containing embeddings in the GloVe format.
-               When the file containing the embeddings is loaded, only the
-               embeddings with labels present in the vocabulary are kept,
-               the others are discarded. If the vocabulary contains strings
-               that have no match in the embeddings file, their embeddings
-               are initialized with the average of all other embedding plus
-               some random noise to make them different from each other.
-               This parameter has effect only if `representation` is `dense`.
-        :type pretrained_embeddings: str (filepath)
-        :param embeddings_on_cpu: by default embeddings matrices are stored
-               on GPU memory if a GPU is used, as it allows
-               for faster access, but in some cases the embedding matrix
-               may be really big and this parameter forces the placement
-               of the embedding matrix in regular memroy and the CPU is used
-               to resolve them, slightly slowing down the process
-               as a result of data transfer between CPU and GPU memory.
-        :param conv_layers: it is a list of dictionaries containing
-               the parameters of all the convolutional layers. The length
-               of the list determines the number of parallel convolutional
-               layers and the content of each dictionary determines
-               the parameters for a specific layer. The available parameters
-               for each layer are: `filter_size`, `num_filters`, `pool`,
-               `norm`, `activation` and `regularize`. If any of those values
-               is missing from the dictionary, the default one specified
-               as a parameter of the encoder will be used instead. If both
-               `conv_layers` and `num_conv_layers` are `None`, a default
-               list will be assigned to `conv_layers` with the value
-               `[{filter_size: 2}, {filter_size: 3}, {filter_size: 4},
-               {filter_size: 5}]`.
-        :type conv_layers: List
-        :param num_conv_layers: if `conv_layers` is `None`, this is
-               the number of stacked convolutional layers.
-        :type num_conv_layers: Integer
-        :param filter_size:  if a `filter_size` is not already specified in
-               `conv_layers` this is the default `filter_size` that
-               will be used for each layer. It indicates how wide is
-               the 1d convolutional filter.
-        :type filter_size: Integer
-        :param num_filters: if a `num_filters` is not already specified in
-               `conv_layers` this is the default `num_filters` that
-               will be used for each layer. It indicates the number
-               of filters, and by consequence the output channels of
-               the 1d convolution.
-        :type num_filters: Integer
-        :param pool_size: if a `pool_size` is not already specified
-              in `conv_layers` this is the default `pool_size` that
-              will be used for each layer. It indicates the size of
-              the max pooling that will be performed along the `s` sequence
-              dimension after the convolution operation.
-        :type pool_size: Integer
-        :param num_rec_layers: the number of stacked recurrent layers.
-        :type num_rec_layers: Integer
-        :param cell_type: the type of recurrent cell to use.
-               Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`,
-               `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`.
-               For reference about the differences between the cells please
-               refer to PyTorch's documentation. We suggest to use the
-               `block` variants on CPU and the `cudnn` variants on GPU
-               because of their increased speed.
-        :type cell_type: str
-        :param state_size: the size of the state of the rnn.
-        :type state_size: Integer
-        :param bidirectional: if `True` two recurrent networks will perform
-               encoding in the forward and backward direction and
-               their outputs will be concatenated.
-        :type bidirectional: Boolean
-        :param dropout: determines if there should be a dropout layer before
-               returning the encoder output.
-        :type dropout: Boolean
-        :param initializer: the initializer to use. If `None` it uses
-               `xavier_uniform`. Options are: `constant`, `identity`,
-               `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,
-               `truncated_normal`, `variance_scaling`, `xavier_normal`,
-               `xavier_uniform`, `xavier_normal`,
-               `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
-               Alternatively it is possible to specify a dictionary with
-               a key `type` that identifies the type of initializer and
-               other keys for its parameters,
-               e.g. `{type: normal, mean: 0, stddev: 0}`.
-               To know the parameters of each initializer, please refer
-               to PyTorch's documentation.
-        :type initializer: str
-        :param reduce_output: defines how to reduce the output tensor of
-               the convolutional layers along the `s` sequence length
-               dimension if the rank of the tensor is greater than 2.
-               Available values are: `sum`, `mean` or `avg`, `max`, `concat`
-               (concatenates along the first dimension), `last` (returns
-               the last vector of the first dimension) and `None` or `null`
-               (which does not reduce and returns the full tensor).
-        :type reduce_output: str
+        """Initializes StackedTransformer.
+
+        Args:
+            max_sequence_length: Maximum sequence length.
+            should_embed: If True, the input sequence is expected to be made of integers and will
+                be mapped into embeddings.
+            vocab: Vocabulary of the input feature to encode.
+            representation: The possible values are `dense` and `sparse`. `dense` means the
+                embeddings are initialized randomly, `sparse` means they are initialized to be
+                one-hot encodings.
+            embedding_size: The maximum embedding size; the actual size will be
+                `min(vocabulary_size, embedding_size)` for `dense` representations and exactly
+                `vocabulary_size` for the `sparse` encoding.
+            embeddings_trainable: If `True` embeddings are trained during the training process,
+                if `False` embeddings are fixed. Only applies when `representation` is `dense`.
+            pretrained_embeddings: Path to a file containing embeddings in the GloVe format.
+                Only applies when `representation` is `dense`.
+            embeddings_on_cpu: If True, forces the embedding matrix to be stored in CPU memory
+                rather than GPU memory, slightly slowing down access.
+            num_layers: Number of Transformer blocks to stack.
+            hidden_size: Hidden dimension of the Transformer.
+            num_heads: Number of self-attention heads.
+            transformer_output_size: Output size of the feedforward layer inside each Transformer block.
+            dropout: Dropout probability.
+            use_rope: If True, use Rotary Position Embeddings (RoPE) instead of learned positional
+                embeddings.
+            weights_initializer: The initializer to use. If `None`, uses `xavier_uniform`.
+            reduce_output: Defines how to reduce the output tensor along the `s` sequence length
+                dimension. Available values: `sum`, `mean` or `avg`, `max`, `concat`, `last`,
+                `None` or `null`.
         """
         super().__init__()
         self.config = encoder_config
@@ -2187,10 +1659,12 @@ class StackedTransformer(SequenceEncoder):
         return self.transformer_stack.output_shape
 
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
-        """
-        :param inputs: The input sequence fed into the encoder.
-               Shape: [batch x sequence length], type torch.int32
-        :param mask: Input mask (unused, not yet implemented)
+        """Encodes the input sequence through Transformer blocks and optional FC layers.
+
+        Args:
+            inputs: The input sequence fed into the encoder.
+                Shape: [batch x sequence length], type torch.int32.
+            mask: Input mask (unused, not yet implemented).
         """
         # ================ Embeddings ================
         if self.should_embed:
@@ -2329,19 +1803,21 @@ class MambaEncoder(SequenceEncoder):
         encoder_config=None,
         **kwargs,
     ):
-        """
-        :param max_sequence_length: Maximum sequence length.
-        :param should_embed: If True, input tokens (integers) are mapped to embeddings.
-        :param vocab: Vocabulary of the input feature.
-        :param representation: 'dense' for learned embeddings, 'sparse' for one-hot.
-        :param embedding_size: Size of token embeddings.
-        :param d_model: Hidden dimension of the SSM layers.
-        :param n_layers: Number of stacked SSM layers.
-        :param d_state: State dimension (unused in gated-conv fallback, reserved for full Mamba).
-        :param d_conv: Kernel size of the depthwise convolution in each SSM layer.
-        :param expand_factor: Expansion factor for the inner dimension of SSM layers.
-        :param dropout: Dropout rate.
-        :param reduce_output: How to reduce the sequence dimension. Default 'mean'.
+        """Initializes MambaEncoder.
+
+        Args:
+            max_sequence_length: Maximum sequence length.
+            should_embed: If True, input tokens (integers) are mapped to embeddings.
+            vocab: Vocabulary of the input feature.
+            representation: 'dense' for learned embeddings, 'sparse' for one-hot.
+            embedding_size: Size of token embeddings.
+            d_model: Hidden dimension of the SSM layers.
+            n_layers: Number of stacked SSM layers.
+            d_state: State dimension (unused in gated-conv fallback, reserved for full Mamba).
+            d_conv: Kernel size of the depthwise convolution in each SSM layer.
+            expand_factor: Expansion factor for the inner dimension of SSM layers.
+            dropout: Dropout rate.
+            reduce_output: How to reduce the sequence dimension. Default 'mean'.
         """
         super().__init__()
         self.config = encoder_config
@@ -2431,10 +1907,12 @@ class MambaEncoder(SequenceEncoder):
         return torch.Size([self.max_sequence_length, self.d_model])
 
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
-        """
-        :param inputs: The input sequence fed into the encoder.
-               Shape: [batch x sequence length], type torch.int32
-        :param mask: Input mask (unused in current SSM implementation)
+        """Encodes the input sequence through SSM layers and optional FC layers.
+
+        Args:
+            inputs: The input sequence fed into the encoder.
+                Shape: [batch x sequence length], type torch.int32.
+            mask: Input mask (unused in current SSM implementation).
         """
         # ================ Embeddings ================
         if self.should_embed:

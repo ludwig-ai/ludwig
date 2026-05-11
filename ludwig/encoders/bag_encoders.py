@@ -101,11 +101,13 @@ class BagEmbedWeightedEncoder(Encoder):
         return self.fc_stack.output_shape
 
     def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
-        """
-        :param inputs: The inputs fed into the encoder.
-               Shape: [batch x vocab size], type torch.int32
+        """Forward pass through the encoder.
 
-        :param return: embeddings of shape [batch x embed size], type torch.float32
+        Args:
+            inputs: The inputs fed into the encoder. Shape: [batch x vocab size].
+
+        Returns:
+            Embeddings of shape [batch x embed size].
         """
         hidden = self.embed_weighted(inputs)
         hidden = self.fc_stack(hidden)

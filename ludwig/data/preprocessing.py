@@ -2105,17 +2105,20 @@ def _preprocess_file_for_training(
 ):
     """Method to pre-process csv data.
 
-    :param features: list of all features (input + output)
-    :param dataset: path to the data
-    :param training_set: training data
-    :param validation_set: validation data
-    :param test_set: test data
-    :param training_set_metadata: train set metadata
-    :param skip_save_processed_input: if False, the pre-processed data is saved as .hdf5 files in the same location as
-        the csv files with the same names.
-    :param preprocessing_params: preprocessing parameters
-    :param random_seed: random seed
-    :return: training, test, validation datasets, training metadata
+    Args:
+        features: list of all features (input + output).
+        dataset: path to the data.
+        training_set: training data.
+        validation_set: validation data.
+        test_set: test data.
+        training_set_metadata: train set metadata.
+        skip_save_processed_input: if False, the pre-processed data is saved as .hdf5 files in the same location
+            as the csv files with the same names.
+        preprocessing_params: preprocessing parameters.
+        random_seed: random seed.
+
+    Returns:
+        training, test, validation datasets, training metadata.
     """
     if dataset:
         # Use data and ignore _train, _validation and _test.

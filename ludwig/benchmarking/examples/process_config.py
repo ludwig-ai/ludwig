@@ -9,10 +9,12 @@ def process_config(ludwig_config: dict, experiment_dict: dict) -> dict:
      attributes of `experiment_dict` (e.g. dataset_name) removing the need to manually apply
      small changes to configs on many datasets.
 
-    :param ludwig_config: a Ludwig config.
-    :param experiment_dict: a benchmarking config experiment dictionary.
+    Args:
+        ludwig_config: A Ludwig config.
+        experiment_dict: A benchmarking config experiment dictionary.
 
-    Returns: a modified Ludwig config.
+    Returns:
+        A modified Ludwig config.
     """
 
     # only keep input_features and output_features
