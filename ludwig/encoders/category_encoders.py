@@ -50,8 +50,8 @@ class CategoricalPassthroughEncoder(Encoder):
 
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         """
-        :param inputs: The inputs fed into the encoder.
-               Shape: [batch x 1]
+        Args:
+            inputs: The inputs fed into the encoder. Shape: [batch x 1]
         """
         return {"encoder_output": self.identity(inputs.float())}
 
@@ -106,10 +106,11 @@ class CategoricalEmbedEncoder(Encoder):
 
     def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
         """
-        :param inputs: The inputs fed into the encoder.
-               Shape: [batch x 1], type torch.int32
+        Args:
+            inputs: The inputs fed into the encoder. Shape: [batch x 1], type torch.int32.
 
-        :param return: embeddings of shape [batch x embed size], type torch.float32
+        Returns:
+            embeddings of shape [batch x embed size], type torch.float32.
         """
         embedded = self.embed(inputs)
         return {ENCODER_OUTPUT: embedded}
@@ -161,10 +162,11 @@ class CategoricalSparseEncoder(Encoder):
 
     def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
         """
-        :param inputs: The inputs fed into the encoder.
-               Shape: [batch x 1], type torch.int32
+        Args:
+            inputs: The inputs fed into the encoder. Shape: [batch x 1], type torch.int32.
 
-        :param return: embeddings of shape [batch x embed size], type torch.float32
+        Returns:
+            embeddings of shape [batch x embed size], type torch.float32.
         """
         embedded = self.embed(inputs)
         return {ENCODER_OUTPUT: embedded}
@@ -200,8 +202,8 @@ class CategoricalOneHotEncoder(Encoder):
 
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         """
-        :param inputs: The inputs fed into the encoder.
-               Shape: [batch, 1] or [batch]
+        Args:
+            inputs: The inputs fed into the encoder. Shape: [batch, 1] or [batch]
         """
         t = inputs.reshape(-1).long()
         # the output of this must be a float so that it can be concatenated with other
@@ -250,8 +252,8 @@ class CategoricalTargetEncoder(Encoder):
 
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         """
-        :param inputs: The inputs fed into the encoder.
-               Shape: [batch x 1], type torch.int32
+        Args:
+            inputs: The inputs fed into the encoder. Shape: [batch x 1], type torch.int32.
         """
         return {ENCODER_OUTPUT: self.target_values(inputs.long().squeeze(-1))}
 
@@ -297,8 +299,8 @@ class CategoricalHashEncoder(Encoder):
 
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor | None = None) -> EncoderOutputDict:
         """
-        :param inputs: The inputs fed into the encoder.
-               Shape: [batch x 1], type torch.int32
+        Args:
+            inputs: The inputs fed into the encoder. Shape: [batch x 1], type torch.int32.
         """
         # Hash input indices to bucket range
         hashed = inputs.long().squeeze(-1) % self.num_hash_buckets

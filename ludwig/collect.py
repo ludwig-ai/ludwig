@@ -53,44 +53,28 @@ def collect_activations(
     """Uses the pretrained model to collect the tensors corresponding to a datapoint in the dataset. Saves the
     tensors to the experiment directory.
 
-    # Inputs
+    Args:
+        model_path: Filepath to pre-trained model.
+        layers: List of strings for layer names in the model to collect activations.
+        dataset: Source containing the data to make predictions.
+        data_format: Format to interpret data sources. Will be inferred automatically if not specified.
+            Valid formats are 'auto', 'csv', 'excel', 'feather', 'fwf', 'hdf5' (cache file produced
+            during previous training), 'html' (file containing a single HTML table), 'json', 'jsonl',
+            'parquet', 'pickle' (pickled Pandas DataFrame), 'sas', 'spss', 'stata', 'tsv'.
+        split: Split on which to perform predictions. Valid values are 'training', 'validation',
+            'test' and 'full'.
+        batch_size: Size of batches for processing.
+        output_directory: The directory that will contain the training statistics, TensorBoard logs,
+            the saved model and the training progress files.
+        gpus: List of GPUs that are available for training.
+        gpu_memory_limit: Maximum memory fraction [0, 1] allowed to allocate per GPU device.
+        allow_parallel_threads: Allow PyTorch to use multithreading parallelism to improve performance
+            at the cost of determinism.
+        callbacks: A list of `ludwig.callbacks.Callback` objects that provide hooks into the Ludwig pipeline.
+        backend: Backend or string name of backend to use to execute preprocessing / training steps.
 
-    :param model_path: (str) filepath to pre-trained model.
-    :param layers: (List[str]) list of strings for layer names in the model
-        to collect activations.
-    :param dataset: (str) source
-        containing the data to make predictions.
-    :param data_format: (str, default: `None`) format to interpret data
-        sources. Will be inferred automatically if not specified.  Valid
-        formats are `'auto'`, `'csv'`, `'excel'`, `'feather'`,
-        `'fwf'`, `'hdf5'` (cache file produced during previous training),
-        `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
-        `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
-        `'stata'`, `'tsv'`.
-    :param split: (str, default: `full`) split on which
-        to perform predictions. Valid values are `'training'`, `'validation'`,
-        `'test'` and `'full'`.
-    :param batch_size: (int, default `128`) size of batches for processing.
-    :param output_directory: (str, default: `'results'`) the directory that
-        will contain the training statistics, TensorBoard logs, the saved
-        model and the training progress files.
-    :param gpus: (list, default: `None`) list of GPUs that are available
-        for training.
-    :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
-        [0, 1] allowed to allocate per GPU device.
-    :param allow_parallel_threads: (bool, default: `True`) allow PyTorch
-        to use multithreading parallelism to improve performance at
-        the cost of determinism.
-    :param callbacks: (list, default: `None`) a list of
-        `ludwig.callbacks.Callback` objects that provide hooks into the
-        Ludwig pipeline.
-    :param backend: (Union[Backend, str]) `Backend` or string name
-        of backend to use to execute preprocessing / training steps.
-
-    # Return
-
-    :return: (List[str]) list of filepath to `*.npy` files containing
-        the activations.
+    Returns:
+        List of filepath to *.npy files containing the activations.
     """
     logger.info(f"Dataset path: {dataset}")
     logger.info(f"Model path: {model_path}")
@@ -123,17 +107,13 @@ def collect_activations(
 def collect_weights(model_path: str, tensors: list[str], output_directory: str = "results", **kwargs) -> list[str]:
     """Loads a pretrained model and collects weights.
 
-    # Inputs
-    :param model_path: (str) filepath to pre-trained model.
-    :param tensors: (list, default: `None`) List of tensor names to collect
-        weights
-    :param output_directory: (str, default: `'results'`) the directory where
-        collected weights will be stored.
+    Args:
+        model_path: Filepath to pre-trained model.
+        tensors: List of tensor names to collect weights.
+        output_directory: The directory where collected weights will be stored.
 
-    # Return
-
-    :return: (List[str]) list of filepath to `*.npy` files containing
-        the weights.
+    Returns:
+        List of filepath to *.npy files containing the weights.
     """
     logger.info(f"Model path: {model_path}")
     logger.info(f"Output path: {output_directory}")
@@ -167,11 +147,8 @@ def save_tensors(collected_tensors, output_directory):
 def print_model_summary(model_path: str, **kwargs) -> None:
     """Loads a pretrained model and prints names of weights and layers activations.
 
-    # Inputs
-    :param model_path: (str) filepath to pre-trained model.
-
-    # Return
-    :return: (`None`)
+    Args:
+        model_path: Filepath to pre-trained model.
     """
     model = LudwigModel.load(model_path)
     # Move model to CPU for torchinfo summary to avoid device mismatch issues.
@@ -190,11 +167,8 @@ def print_model_summary(model_path: str, **kwargs) -> None:
 def pretrained_summary(pretrained_model: str, **kwargs) -> None:
     """Loads a pretrained model from Huggingface or Torchvision models and prints names of layers.
 
-    # Inputs
-    :param pretrained_model: (str) name of model to load (case sensitive).
-
-    # Return
-    :return: (`None`)
+    Args:
+        pretrained_model: Name of model to load (case sensitive).
     """
     from transformers import AutoConfig, AutoModel
 
