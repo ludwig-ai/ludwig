@@ -220,6 +220,22 @@ def validate_config_for_dataset(
             )
 
     # ------------------------------------------------------------------
+    # Combiner optional-dependency check
+    # ------------------------------------------------------------------
+    combiner_type = _get_combiner_type(config_dict)
+    _COMBINER_OPTIONAL_DEPS: dict[str, str] = {
+        "tabpfn_v2": "tabpfn",
+    }
+    if combiner_type in _COMBINER_OPTIONAL_DEPS:
+        dep = _COMBINER_OPTIONAL_DEPS[combiner_type]
+        try:
+            __import__(dep)
+        except ImportError:
+            failures.append(
+                f"Combiner '{combiner_type}' requires the '{dep}' package which is not installed (pip install {dep})."
+            )
+
+    # ------------------------------------------------------------------
     # Combiner compatible with input feature set
     # ------------------------------------------------------------------
     combiner_type = _get_combiner_type(config_dict)
