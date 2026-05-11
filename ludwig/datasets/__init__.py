@@ -239,11 +239,14 @@ def get_datasets_output_features(
     Because Hugging Face Datasets are loaded dynamically through a shared connector, they don't have fixed output
     features. As such, we exclude Hugging Face datasets here.
 
-    :param dataset: (str) name of the dataset
-    :param include_competitions: (bool) whether to include the output features from kaggle competition datasets
-    :param include_data_modalities: (bool) whether to include the data modalities associated with the prediction task
-    :return: (dict) dictionary with the output features for each dataset or a dictionary with the output features for
-        the specified dataset
+    Args:
+        dataset: Name of the dataset.
+        include_competitions: Whether to include the output features from kaggle competition datasets.
+        include_data_modalities: Whether to include the data modalities associated with the prediction task.
+
+    Returns:
+        Dictionary with the output features for each dataset, or a dictionary with the output features for
+        the specified dataset.
     """
     ordered_configs = OrderedDict(sorted(_get_dataset_configs().items()))
     competition_datasets = []
