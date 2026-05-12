@@ -364,6 +364,7 @@ def configs_from_dataframe(
             trainer=TrainerSpec(
                 learning_rate_values=base.trainer.learning_rate_values,
                 batch_size_values=batch_sizes,
+                default_epochs=max_epochs,
             ),
         )
 
