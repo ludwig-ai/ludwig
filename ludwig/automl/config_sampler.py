@@ -342,10 +342,36 @@ def configs_from_dataframe(
         f"output='{output_feature.name}' (type={output_feature.type})."
     )
 
+    # Scale down epochs and cap batch sizes for large datasets to avoid OOM and timeouts.
+    # These thresholds are conservative; they keep wall time and VRAM use manageable on
+    # a single consumer GPU (10–24 GiB) without sacrificing benchmark coverage.
+    n_rows = len(df)
+    max_epochs = 50
+    if search_space is None and n_rows > 100_000:
+        from ludwig.automl.search_space import _DEFAULT_SEARCH_SPACE_DIR, load_search_space, SearchSpace, TrainerSpec
+
+        base = load_search_space(_DEFAULT_SEARCH_SPACE_DIR)
+        if n_rows > 500_000:
+            max_epochs = 5
+            batch_sizes = [256, 512, 1024]
+        else:
+            max_epochs = 10
+            batch_sizes = [128, 256, 512]
+        search_space = SearchSpace(
+            encoders=base.encoders,
+            combiners=base.combiners,
+            decoders=base.decoders,
+            trainer=TrainerSpec(
+                learning_rate_values=base.trainer.learning_rate_values,
+                batch_size_values=batch_sizes,
+            ),
+        )
+
     return sample_configs(
         input_features=input_features,
         output_feature=output_feature,
         n=n,
         seed=seed,
+        max_epochs=max_epochs,
         search_space=search_space,
     )
