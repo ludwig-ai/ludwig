@@ -348,9 +348,9 @@ def configs_from_dataframe(
     n_rows = len(df)
     max_epochs = 50
     if search_space is None and n_rows > 100_000:
-        from ludwig.automl.search_space import _DEFAULT_SEARCH_SPACE_DIR, load_search_space, SearchSpace, TrainerSpec
+        from ludwig.automl.search_space import _build_default_search_space, SearchSpace, TrainerSpec
 
-        base = load_search_space(_DEFAULT_SEARCH_SPACE_DIR)
+        base = _build_default_search_space()
         if n_rows > 500_000:
             max_epochs = 5
             batch_sizes = [256, 512, 1024]
