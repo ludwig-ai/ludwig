@@ -357,7 +357,7 @@ def configs_from_dataframe(
         else:
             max_epochs = 10
             batch_sizes = [128, 256, 512]
-        search_space = SearchSpace(
+        search_space = SearchSpace._from_specs(
             encoders=base.encoders,
             combiners=base.combiners,
             decoders=base.decoders,
