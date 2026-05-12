@@ -53,6 +53,9 @@ class CombinerSpec:
     # Attention/transformer combiners require lower LRs to stay numerically stable.
     # When set, the sampler will only draw from trainer LR values <= this threshold.
     max_learning_rate: float | None = None
+    # Attention combiners with many input features can OOM at large batch sizes.
+    # When set, the sampler will only draw from trainer batch_size values <= this threshold.
+    max_batch_size: int | None = None
 
 
 @dataclass
@@ -214,6 +217,15 @@ _DEFAULT_COMBINER_MAX_LR: dict[str, float] = {
     "hypernetwork": _TRANSFORMER_COMBINER_MAX_LR,
 }
 
+# cross_attention and perceiver scale quadratically with n_input_features and OOM at
+# batch_size=512 on consumer GPUs (10-24 GiB) when there are many features.
+# Cap these at 256 to keep VRAM use manageable.
+_ATTENTION_COMBINER_MAX_BATCH_SIZE: int = 256
+_DEFAULT_COMBINER_MAX_BATCH_SIZE: dict[str, int] = {
+    "cross_attention": _ATTENTION_COMBINER_MAX_BATCH_SIZE,
+    "perceiver": _ATTENTION_COMBINER_MAX_BATCH_SIZE,
+}
+
 _DEFAULT_TRAINER_SPEC = TrainerSpec(
     learning_rate_values=[1e-4, 3e-4, 1e-3, 3e-3, 1e-2],
     batch_size_values=[64, 128, 256, 512],
@@ -237,6 +249,7 @@ def _build_default_search_space() -> SearchSpace:
             constraints=_DEFAULT_COMBINER_CONSTRAINTS.get(name, {}),
             hyperparameters=_DEFAULT_COMBINER_HYPERPARAMS.get(name, {}),
             max_learning_rate=_DEFAULT_COMBINER_MAX_LR.get(name),
+            max_batch_size=_DEFAULT_COMBINER_MAX_BATCH_SIZE.get(name),
         )
         for name in _DEFAULT_ALL_COMBINERS
     }
@@ -301,6 +314,7 @@ def _load_combiners_from_dir(comb_dir: Path) -> dict[str, CombinerSpec]:
             constraints=dict(data.get("constraints", {})),
             hyperparameters=_extract_hyperparameters(data.get("hyperparameters", {})),
             max_learning_rate=data.get("max_learning_rate"),
+            max_batch_size=data.get("max_batch_size"),
         )
         for _, data in _iter_yaml_dir(comb_dir)
     }

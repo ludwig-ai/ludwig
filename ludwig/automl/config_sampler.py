@@ -131,6 +131,7 @@ def _sample_trainer_params(
     time_limit_s: int | None,
     search_space: SearchSpace | None = None,
     max_learning_rate: float | None = None,
+    max_batch_size: int | None = None,
 ) -> dict:
     """Samples a single set of trainer hyperparameters from the search space grids."""
     ss = search_space or _default_search_space()
@@ -139,9 +140,14 @@ def _sample_trainer_params(
         lr_candidates = [lr for lr in lr_candidates if lr <= max_learning_rate]
     if not lr_candidates:
         lr_candidates = ss.trainer.learning_rate_values
+    bs_candidates = ss.trainer.batch_size_values
+    if max_batch_size is not None:
+        bs_candidates = [bs for bs in bs_candidates if bs <= max_batch_size]
+    if not bs_candidates:
+        bs_candidates = ss.trainer.batch_size_values
     params: dict = {
         LEARNING_RATE: rng.choice(lr_candidates),
-        BATCH_SIZE: rng.choice(ss.trainer.batch_size_values),
+        BATCH_SIZE: rng.choice(bs_candidates),
         "epochs": max_epochs,
     }
     if time_limit_s is not None:
@@ -250,7 +256,10 @@ def sample_configs(
 
             decoder = rng.choice(valid_decoders)
             max_lr = combiner_spec.max_learning_rate if combiner_spec is not None else None
-            trainer_params = _sample_trainer_params(rng, max_epochs, time_limit_s, ss, max_learning_rate=max_lr)
+            max_bs = combiner_spec.max_batch_size if combiner_spec is not None else None
+            trainer_params = _sample_trainer_params(
+                rng, max_epochs, time_limit_s, ss, max_learning_rate=max_lr, max_batch_size=max_bs
+            )
 
             # Sample combiner hyperparams via the SearchSpace.
             if combiner_spec is not None:
