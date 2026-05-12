@@ -50,6 +50,9 @@ class CombinerSpec:
     name: str
     constraints: dict = field(default_factory=dict)
     hyperparameters: dict[str, list] = field(default_factory=dict)
+    # Attention/transformer combiners require lower LRs to stay numerically stable.
+    # When set, the sampler will only draw from trainer LR values <= this threshold.
+    max_learning_rate: float | None = None
 
 
 @dataclass
@@ -199,6 +202,18 @@ _DEFAULT_COMBINER_HYPERPARAMS: dict[str, dict[str, list]] = {
     "transformer": {"num_heads": [2, 4, 8], "num_layers": [1, 2, 3], "dropout": [0.0, 0.1, 0.3]},
 }
 
+# Attention/transformer combiners require lower learning rates to avoid NaN loss.
+# Any combiner listed here will restrict LR sampling to values <= this threshold.
+_TRANSFORMER_COMBINER_MAX_LR: float = 3e-3
+_DEFAULT_COMBINER_MAX_LR: dict[str, float] = {
+    "transformer": _TRANSFORMER_COMBINER_MAX_LR,
+    "tabtransformer": _TRANSFORMER_COMBINER_MAX_LR,
+    "ft_transformer": _TRANSFORMER_COMBINER_MAX_LR,
+    "cross_attention": _TRANSFORMER_COMBINER_MAX_LR,
+    "perceiver": _TRANSFORMER_COMBINER_MAX_LR,
+    "hypernetwork": _TRANSFORMER_COMBINER_MAX_LR,
+}
+
 _DEFAULT_TRAINER_SPEC = TrainerSpec(
     learning_rate_values=[1e-4, 3e-4, 1e-3, 3e-3, 1e-2],
     batch_size_values=[64, 128, 256, 512],
@@ -221,6 +236,7 @@ def _build_default_search_space() -> SearchSpace:
             name=name,
             constraints=_DEFAULT_COMBINER_CONSTRAINTS.get(name, {}),
             hyperparameters=_DEFAULT_COMBINER_HYPERPARAMS.get(name, {}),
+            max_learning_rate=_DEFAULT_COMBINER_MAX_LR.get(name),
         )
         for name in _DEFAULT_ALL_COMBINERS
     }
@@ -284,6 +300,7 @@ def _load_combiners_from_dir(comb_dir: Path) -> dict[str, CombinerSpec]:
             name=data["name"],
             constraints=dict(data.get("constraints", {})),
             hyperparameters=_extract_hyperparameters(data.get("hyperparameters", {})),
+            max_learning_rate=data.get("max_learning_rate"),
         )
         for _, data in _iter_yaml_dir(comb_dir)
     }

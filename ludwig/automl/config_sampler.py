@@ -130,11 +130,17 @@ def _sample_trainer_params(
     max_epochs: int,
     time_limit_s: int | None,
     search_space: SearchSpace | None = None,
+    max_learning_rate: float | None = None,
 ) -> dict:
     """Samples a single set of trainer hyperparameters from the search space grids."""
     ss = search_space or _default_search_space()
+    lr_candidates = ss.trainer.learning_rate_values
+    if max_learning_rate is not None:
+        lr_candidates = [lr for lr in lr_candidates if lr <= max_learning_rate]
+    if not lr_candidates:
+        lr_candidates = ss.trainer.learning_rate_values
     params: dict = {
-        LEARNING_RATE: rng.choice(ss.trainer.learning_rate_values),
+        LEARNING_RATE: rng.choice(lr_candidates),
         BATCH_SIZE: rng.choice(ss.trainer.batch_size_values),
         "epochs": max_epochs,
     }
@@ -243,7 +249,8 @@ def sample_configs(
                     encoder_hyperparams[feat.name] = ss.sample_hyperparams(enc_spec, rng)
 
             decoder = rng.choice(valid_decoders)
-            trainer_params = _sample_trainer_params(rng, max_epochs, time_limit_s, ss)
+            max_lr = combiner_spec.max_learning_rate if combiner_spec is not None else None
+            trainer_params = _sample_trainer_params(rng, max_epochs, time_limit_s, ss, max_learning_rate=max_lr)
 
             # Sample combiner hyperparams via the SearchSpace.
             if combiner_spec is not None:
