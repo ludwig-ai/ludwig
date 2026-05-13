@@ -1,0 +1,31 @@
+version: 1.0
+name: esc50
+download_urls:
+  - https://github.com/karoldvl/ESC-50/archive/master.zip
+archive_filenames: master.zip
+dataset_filenames: ESC-50-master/meta/esc50.csv
+preserve_paths: ESC-50-master/audio
+loader: esc50.ESC50Loader
+description: |
+  ESC-50: Environmental Sound Classification
+
+  A labeled collection of 2,000 environmental audio recordings for benchmarking
+  methods of environmental sound classification.  The dataset consists of 5-second
+  clips (44.1 kHz, mono WAV) organized into 50 semantical classes grouped in 5
+  major categories (animals, natural soundscapes, human non-speech sounds,
+  interior/domestic, and exterior/urban).
+
+  Reference:
+      ESC: Dataset for Environmental Sound Classification
+      Karol J. Piczak, Proceedings of the 23rd ACM International Conference
+      on Multimedia, MM '15.
+
+  License: CC BY-NC (ESC-50); CC BY (ESC-10 subset, esc10=True).
+columns:
+  - name: audio_path
+    type: audio
+  - name: target
+    type: category
+output_features:
+  - name: target
+    type: category

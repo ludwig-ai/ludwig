@@ -1,0 +1,31 @@
+version: 1.0
+name: go_emotions
+huggingface_dataset_id: google-research-datasets/go_emotions
+huggingface_subsample: simplified
+loader: go_emotions.GoEmotionsLoader
+description: |
+  GoEmotions: Multi-label Emotion Classification
+
+  54,263 human-labelled Reddit comments annotated with 28 emotion categories
+  (plus neutral).  Each comment may carry one or more emotions, making this a
+  multi-label classification task.  This dataset exercises Ludwig's *set* output
+  feature: the model receives a plain text comment and must predict the set of
+  emotion labels that apply.
+
+  Emotion labels (28):
+      admiration, amusement, anger, annoyance, approval, caring, confusion,
+      curiosity, desire, disappointment, disapproval, disgust, embarrassment,
+      excitement, fear, gratitude, grief, joy, love, nervousness, optimism,
+      pride, realization, relief, remorse, sadness, surprise, neutral
+
+  Reference:
+      GoEmotions: A Dataset of Fine-Grained Emotions (Demszky et al., ACL 2020)
+  License: Apache 2.0
+columns:
+  - name: text
+    type: text
+  - name: labels
+    type: set
+output_features:
+  - name: labels
+    type: set

@@ -1,0 +1,28 @@
+version: 1.0
+name: wikiann
+huggingface_dataset_id: wikiann
+huggingface_subsample: en
+loader: wikiann.WikiANNLoader
+description: |
+  WikiANN (PAN-X) Named Entity Recognition — English
+
+  A multilingual NER dataset constructed from Wikipedia annotations.
+  Each sentence is represented as a list of tokens with corresponding IOB2
+  NER tags: O (outside), B-PER/I-PER (person), B-ORG/I-ORG (organisation),
+  B-LOC/I-LOC (location).
+
+  This dataset exercises Ludwig's sequence output feature: the model receives
+  a plain text sentence and must produce a space-separated sequence of NER
+  tag strings that aligns with the whitespace-tokenised input.
+
+  Reference:
+      Massively Multilingual Transfer for NER (Pan et al., ACL 2019)
+  License: CC BY-SA 4.0
+columns:
+  - name: sentence
+    type: text
+  - name: ner_tags
+    type: sequence
+output_features:
+  - name: ner_tags
+    type: sequence

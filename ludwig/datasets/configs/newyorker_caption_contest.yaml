@@ -1,0 +1,31 @@
+version: 1.0
+name: newyorker_caption_contest
+huggingface_dataset_id: jmhessel/newyorker_caption_contest
+huggingface_subsample: matching
+loader: newyorker_caption_contest.NewYorkerCaptionContestLoader
+description: |
+  New Yorker Caption Contest — Multimodal Image+Text Classification
+
+  ~9,800 New Yorker cartoon panels, each paired with five candidate captions
+  (A–E).  The task is to identify the winning caption from the set.  This
+  dataset exercises Ludwig's multimodal input (image + text) with a
+  categorical output feature.
+
+  Features:
+    image             — cartoon panel (saved as JPEG by this loader)
+    image_description — brief text description of the cartoon (~173 chars)
+    label             — winning caption letter (A / B / C / D / E)
+
+  Reference:
+      Do Androids Laugh at Electric Sheep? (Hessel et al., ACL 2023)
+  License: CC BY 4.0
+columns:
+  - name: image_path
+    type: image
+  - name: image_description
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category
