@@ -1,0 +1,30 @@
+version: 1.0
+name: voxpopuli
+huggingface_dataset_id: facebook/voxpopuli
+huggingface_subsample: en
+loader: hugging_face.HFLoader
+description: 'VoxPopuli; European Parliament speech ASR; 23 languages
+
+  '
+columns:
+- name: audio_id
+  type: text
+- name: language
+  type: category
+- name: audio
+  type: audio
+- name: raw_text
+  type: text
+- name: normalized_text
+  type: text
+- name: gender
+  type: text
+- name: speaker_id
+  type: text
+- name: is_gold_transcript
+  type: binary
+- name: accent
+  type: text
+output_features:
+- name: normalized_text
+  type: text

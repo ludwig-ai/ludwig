@@ -1,0 +1,14 @@
+version: 1.0
+name: eurosat
+huggingface_dataset_id: tanganke/eurosat
+loader: hugging_face.HFLoader
+description: |
+  EuroSAT; land use/cover classification from satellite imagery; 10 classes
+columns:
+  - name: image
+    type: image
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

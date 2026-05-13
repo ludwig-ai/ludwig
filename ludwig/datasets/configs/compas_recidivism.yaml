@@ -1,0 +1,53 @@
+version: 1.0
+name: compas_recidivism
+huggingface_dataset_id: imodels/compas-recidivism
+loader: hugging_face.HFLoader
+description: 'COMPAS recidivism risk prediction; criminal justice fairness benchmark
+
+  '
+columns:
+- name: age
+  type: number
+- name: priors_count
+  type: number
+- name: days_b_screening_arrest
+  type: number
+- name: c_jail_time
+  type: number
+- name: juv_fel_count
+  type: number
+- name: juv_other_count
+  type: number
+- name: juv_misd_count
+  type: number
+- name: c_charge_degree:F
+  type: number
+- name: c_charge_degree:M
+  type: number
+- name: race:African-American
+  type: number
+- name: race:Asian
+  type: number
+- name: race:Caucasian
+  type: number
+- name: race:Hispanic
+  type: number
+- name: race:Native_American
+  type: number
+- name: race:Other
+  type: number
+- name: age_cat:25_-_45
+  type: number
+- name: age_cat:Greater_than_45
+  type: number
+- name: age_cat:Less_than_25
+  type: number
+- name: sex:Female
+  type: number
+- name: sex:Male
+  type: number
+- name: is_recid
+  type: category
+output_features:
+- name: is_recid
+  type: binary

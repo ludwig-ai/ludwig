@@ -1,0 +1,14 @@
+version: 1.0
+name: yelp_review_full
+huggingface_dataset_id: Yelp/yelp_review_full
+loader: hugging_face.HFLoader
+description: |
+  Yelp review 5-star rating classification
+columns:
+  - name: label
+    type: category
+  - name: text
+    type: text
+output_features:
+  - name: label
+    type: category

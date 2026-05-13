@@ -1,0 +1,25 @@
+version: 1.0
+name: winograd_schema
+huggingface_dataset_id: aps/super_glue
+huggingface_subsample: wsc.fixed
+loader: hugging_face.HFLoader
+description: |
+  Winograd Schema Challenge; pronoun coreference resolution
+columns:
+  - name: text
+    type: text
+  - name: span1_index
+    type: category
+  - name: span2_index
+    type: category
+  - name: span1_text
+    type: text
+  - name: span2_text
+    type: text
+  - name: idx
+    type: category
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

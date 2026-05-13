@@ -1,0 +1,24 @@
+version: 1.0
+name: enron_spam
+huggingface_dataset_id: SetFit/enron_spam
+loader: hugging_face.HFLoader
+description: |
+  Enron Spam; email spam/ham classification
+columns:
+  - name: message_id
+    type: category
+  - name: text
+    type: text
+  - name: label
+    type: category
+  - name: label_text
+    type: text
+  - name: subject
+    type: text
+  - name: message
+    type: text
+  - name: date
+    type: text
+output_features:
+  - name: label
+    type: category

@@ -1,0 +1,15 @@
+version: 1.0
+name: cnn_dailymail
+huggingface_dataset_id: abisee/cnn_dailymail
+huggingface_subsample: 3.0.0
+loader: hugging_face.HFLoader
+description: |
+  CNN/DailyMail news summarization. Article -> highlights. ~300K examples.
+columns:
+  - name: article
+    type: text
+  - name: highlights
+    type: text
+output_features:
+  - name: highlights
+    type: text

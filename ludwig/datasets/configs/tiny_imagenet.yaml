@@ -1,0 +1,14 @@
+version: 1.0
+name: tiny_imagenet
+huggingface_dataset_id: zh-plus/tiny-imagenet
+loader: hugging_face.HFLoader
+description: |
+  Tiny ImageNet; 200-class 64x64 subset of ImageNet
+columns:
+  - name: image
+    type: image
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

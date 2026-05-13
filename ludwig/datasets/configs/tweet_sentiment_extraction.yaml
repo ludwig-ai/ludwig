@@ -1,0 +1,18 @@
+version: 1.0
+name: tweet_sentiment_extraction
+huggingface_dataset_id: mteb/tweet_sentiment_extraction
+loader: hugging_face.HFLoader
+description: |
+  Tweet sentiment extraction; positive/negative/neutral
+columns:
+  - name: id
+    type: text
+  - name: text
+    type: text
+  - name: label
+    type: category
+  - name: label_text
+    type: text
+output_features:
+  - name: label
+    type: category

@@ -1,0 +1,18 @@
+version: 1.0
+name: oxford_pets
+huggingface_dataset_id: timm/oxford-iiit-pet
+loader: hugging_face.HFLoader
+description: |
+  Oxford-IIIT Pet; 37 pet breed classification
+columns:
+  - name: image
+    type: image
+  - name: label
+    type: category
+  - name: image_id
+    type: text
+  - name: label_cat_dog
+    type: category
+output_features:
+  - name: label
+    type: category

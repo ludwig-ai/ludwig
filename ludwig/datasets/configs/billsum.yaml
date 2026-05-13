@@ -1,0 +1,16 @@
+version: 1.0
+name: billsum
+huggingface_dataset_id: FiscalNote/billsum
+loader: hugging_face.HFLoader
+description: |
+  BillSum; US congressional and California bill summarization
+columns:
+  - name: text
+    type: text
+  - name: summary
+    type: text
+  - name: title
+    type: text
+output_features:
+  - name: text
+    type: text

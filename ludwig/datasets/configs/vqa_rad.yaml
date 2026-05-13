@@ -1,0 +1,16 @@
+version: 1.0
+name: vqa_rad
+huggingface_dataset_id: flaviagiammarino/vqa-rad
+loader: hugging_face.HFLoader
+description: |
+  VQA-RAD; radiology visual question answering
+columns:
+  - name: image
+    type: image
+  - name: question
+    type: text
+  - name: answer
+    type: text
+output_features:
+  - name: answer
+    type: text

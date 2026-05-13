@@ -1,0 +1,14 @@
+version: 1.0
+name: rendered_sst2
+huggingface_dataset_id: nateraw/rendered-sst2
+loader: hugging_face.HFLoader
+description: |
+  Rendered SST2; sentiment classification from rendered text images
+columns:
+  - name: image
+    type: image
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

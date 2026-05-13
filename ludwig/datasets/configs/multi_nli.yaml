@@ -1,0 +1,30 @@
+version: 1.0
+name: multi_nli
+huggingface_dataset_id: nyu-mll/multi_nli
+loader: hugging_face.HFLoader
+description: |
+  Multi-Genre NLI; 10 diverse genres, 3-way NLI
+columns:
+  - name: promptID
+    type: category
+  - name: pairID
+    type: text
+  - name: premise
+    type: text
+  - name: premise_binary_parse
+    type: text
+  - name: premise_parse
+    type: text
+  - name: hypothesis
+    type: text
+  - name: hypothesis_binary_parse
+    type: text
+  - name: hypothesis_parse
+    type: text
+  - name: genre
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

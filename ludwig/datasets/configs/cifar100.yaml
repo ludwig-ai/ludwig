@@ -1,0 +1,16 @@
+version: 1.0
+name: cifar100
+huggingface_dataset_id: uoft-cs/cifar100
+loader: hugging_face.HFLoader
+description: |
+  CIFAR-100; 100-class 32x32 image classification
+columns:
+  - name: img
+    type: image
+  - name: fine_label
+    type: category
+  - name: coarse_label
+    type: category
+output_features:
+  - name: fine_label
+    type: category

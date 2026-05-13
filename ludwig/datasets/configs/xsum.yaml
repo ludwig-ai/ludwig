@@ -1,0 +1,14 @@
+version: 1.0
+name: xsum
+huggingface_dataset_id: EdinburghNLP/xsum
+loader: hugging_face.HFLoader
+description: |
+  XSum BBC news summarization. Document -> one-sentence summary. ~200K examples.
+columns:
+  - name: document
+    type: text
+  - name: summary
+    type: text
+output_features:
+  - name: summary
+    type: text

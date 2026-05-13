@@ -1,0 +1,19 @@
+version: 1.0
+name: boolq
+huggingface_dataset_id: aps/super_glue
+huggingface_subsample: boolq
+loader: hugging_face.HFLoader
+description: |
+  Boolean Questions; reading comprehension yes/no questions from Google
+columns:
+  - name: question
+    type: text
+  - name: passage
+    type: text
+  - name: idx
+    type: category
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

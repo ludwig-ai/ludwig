@@ -1,0 +1,14 @@
+version: 1.0
+name: fashion_mnist
+huggingface_dataset_id: zalando-datasets/fashion_mnist
+loader: hugging_face.HFLoader
+description: |
+  Fashion MNIST; 10-class clothing item classification
+columns:
+  - name: image
+    type: image
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

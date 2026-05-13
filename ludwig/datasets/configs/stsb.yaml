@@ -1,0 +1,19 @@
+version: 1.0
+name: stsb
+huggingface_dataset_id: nyu-mll/glue
+huggingface_subsample: stsb
+loader: hugging_face.HFLoader
+description: |
+  Semantic Textual Similarity Benchmark; similarity score 0-5
+columns:
+  - name: sentence1
+    type: text
+  - name: sentence2
+    type: text
+  - name: label
+    type: number
+  - name: idx
+    type: category
+output_features:
+  - name: label
+    type: number

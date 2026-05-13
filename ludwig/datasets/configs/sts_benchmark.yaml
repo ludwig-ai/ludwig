@@ -1,0 +1,24 @@
+version: 1.0
+name: sts_benchmark
+huggingface_dataset_id: mteb/stsbenchmark-sts
+loader: hugging_face.HFLoader
+description: |
+  STS Benchmark; sentence pair semantic similarity scoring
+columns:
+  - name: genre
+    type: text
+  - name: dataset
+    type: text
+  - name: year
+    type: text
+  - name: sid
+    type: text
+  - name: score
+    type: number
+  - name: sentence1
+    type: text
+  - name: sentence2
+    type: text
+output_features:
+  - name: score
+    type: number

@@ -1,0 +1,19 @@
+version: 1.0
+name: qnli
+huggingface_dataset_id: nyu-mll/glue
+huggingface_subsample: qnli
+loader: hugging_face.HFLoader
+description: |
+  Question-answering NLI; whether context sentence contains answer to question
+columns:
+  - name: question
+    type: text
+  - name: sentence
+    type: text
+  - name: label
+    type: category
+  - name: idx
+    type: category
+output_features:
+  - name: label
+    type: category

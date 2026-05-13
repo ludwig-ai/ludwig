@@ -1,0 +1,79 @@
+version: 1.0
+name: credit_card_default
+huggingface_dataset_id: imodels/credit-card
+loader: hugging_face.HFLoader
+description: 'Credit card default prediction from payment history
+
+  '
+columns:
+- name: limit_bal
+  type: number
+- name: age
+  type: number
+- name: pay_0
+  type: number
+- name: pay_2
+  type: number
+- name: pay_3
+  type: number
+- name: pay_4
+  type: number
+- name: pay_5
+  type: number
+- name: pay_6
+  type: number
+- name: bill_amt1
+  type: number
+- name: bill_amt2
+  type: number
+- name: bill_amt3
+  type: number
+- name: bill_amt4
+  type: number
+- name: bill_amt5
+  type: number
+- name: bill_amt6
+  type: number
+- name: pay_amt1
+  type: number
+- name: pay_amt2
+  type: number
+- name: pay_amt3
+  type: number
+- name: pay_amt4
+  type: number
+- name: pay_amt5
+  type: number
+- name: pay_amt6
+  type: number
+- name: sex:1
+  type: number
+- name: sex:2
+  type: number
+- name: education:0
+  type: number
+- name: education:1
+  type: number
+- name: education:2
+  type: number
+- name: education:3
+  type: number
+- name: education:4
+  type: number
+- name: education:5
+  type: number
+- name: education:6
+  type: number
+- name: marriage:0
+  type: number
+- name: marriage:1
+  type: number
+- name: marriage:2
+  type: number
+- name: marriage:3
+  type: number
+- name: default.payment.next.month
+  type: category
+output_features:
+- name: default.payment.next.month
+  type: binary

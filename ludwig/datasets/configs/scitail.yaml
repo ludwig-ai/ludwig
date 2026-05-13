@@ -1,0 +1,19 @@
+version: 1.0
+name: scitail
+huggingface_dataset_id: allenai/scitail
+huggingface_subsample: dgem_format
+loader: hugging_face.HFLoader
+description: |
+  SciTail; science textual entailment from multiple-choice questions
+columns:
+  - name: premise
+    type: text
+  - name: hypothesis
+    type: text
+  - name: label
+    type: text
+  - name: hypothesis_graph_structure
+    type: text
+output_features:
+  - name: label
+    type: text

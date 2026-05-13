@@ -1,0 +1,16 @@
+version: 1.0
+name: amazon_polarity
+huggingface_dataset_id: fancyzhx/amazon_polarity
+loader: hugging_face.HFLoader
+description: |
+  Amazon product review polarity; positive/negative
+columns:
+  - name: label
+    type: category
+  - name: title
+    type: text
+  - name: content
+    type: text
+output_features:
+  - name: label
+    type: category

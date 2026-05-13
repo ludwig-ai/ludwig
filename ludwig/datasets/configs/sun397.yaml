@@ -1,0 +1,14 @@
+version: 1.0
+name: sun397
+huggingface_dataset_id: tanganke/sun397
+loader: hugging_face.HFLoader
+description: |
+  SUN397; scene understanding; 397 scene categories
+columns:
+  - name: image
+    type: image
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

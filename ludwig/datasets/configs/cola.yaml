@@ -1,0 +1,17 @@
+version: 1.0
+name: cola
+huggingface_dataset_id: nyu-mll/glue
+huggingface_subsample: cola
+loader: hugging_face.HFLoader
+description: |
+  Corpus of Linguistic Acceptability; grammatically acceptable or not
+columns:
+  - name: sentence
+    type: text
+  - name: label
+    type: category
+  - name: idx
+    type: category
+output_features:
+  - name: label
+    type: category

@@ -1,0 +1,21 @@
+version: 1.0
+name: klue_topic
+huggingface_dataset_id: klue/klue
+huggingface_subsample: ynat
+loader: hugging_face.HFLoader
+description: |
+  KLUE YNAT; Korean news topic classification; 7 categories
+columns:
+  - name: guid
+    type: text
+  - name: title
+    type: text
+  - name: label
+    type: category
+  - name: url
+    type: text
+  - name: date
+    type: text
+output_features:
+  - name: label
+    type: category

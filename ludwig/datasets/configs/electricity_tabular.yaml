@@ -1,0 +1,29 @@
+version: 1.0
+name: electricity_tabular
+huggingface_dataset_id: mstz/electricity
+loader: hugging_face.HFLoader
+description: 'Electricity market price direction classification
+
+  '
+columns:
+- name: date
+  type: number
+- name: day
+  type: category
+- name: period
+  type: number
+- name: nswprice
+  type: number
+- name: nswdemand
+  type: number
+- name: vicprice
+  type: number
+- name: vicdemand
+  type: number
+- name: transfer
+  type: number
+- name: is_up
+  type: category
+output_features:
+- name: is_up
+  type: binary

@@ -1,0 +1,34 @@
+version: 1.0
+name: belebele_fr
+huggingface_dataset_id: facebook/belebele
+huggingface_subsample: fra_Latn
+loader: hugging_face.HFLoader
+description: 'Belebele French; multilingual reading comprehension
+
+  '
+columns:
+- name: link
+  type: text
+- name: question_number
+  type: category
+- name: flores_passage
+  type: text
+- name: question
+  type: text
+- name: mc_answer1
+  type: text
+- name: mc_answer2
+  type: text
+- name: mc_answer3
+  type: text
+- name: mc_answer4
+  type: text
+- name: correct_answer_num
+  type: text
+- name: dialect
+  type: text
+- name: ds
+  type: text
+output_features:
+- name: correct_answer_num
+  type: category

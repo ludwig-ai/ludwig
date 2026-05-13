@@ -1,0 +1,17 @@
+version: 1.0
+name: xnli
+huggingface_dataset_id: facebook/xnli
+huggingface_subsample: en
+loader: hugging_face.HFLoader
+description: |
+  XNLI cross-lingual NLI. Premise+hypothesis -> entailment/neutral/contradiction.
+columns:
+  - name: sentence1
+    type: text
+  - name: sentence2
+    type: text
+  - name: gold_label
+    type: category
+output_features:
+  - name: gold_label
+    type: category

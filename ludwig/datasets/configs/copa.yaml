@@ -1,0 +1,23 @@
+version: 1.0
+name: copa
+huggingface_dataset_id: aps/super_glue
+huggingface_subsample: copa
+loader: hugging_face.HFLoader
+description: |
+  Choice Of Plausible Alternatives; causal commonsense reasoning
+columns:
+  - name: premise
+    type: text
+  - name: choice1
+    type: text
+  - name: choice2
+    type: text
+  - name: question
+    type: text
+  - name: idx
+    type: category
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

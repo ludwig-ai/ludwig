@@ -1,0 +1,16 @@
+version: 1.0
+name: snli
+huggingface_dataset_id: stanfordnlp/snli
+loader: hugging_face.HFLoader
+description: |
+  Stanford NLI; premise/hypothesis pairs -> entailment/neutral/contradiction
+columns:
+  - name: premise
+    type: text
+  - name: hypothesis
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

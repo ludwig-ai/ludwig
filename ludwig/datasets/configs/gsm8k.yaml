@@ -1,0 +1,15 @@
+version: 1.0
+name: gsm8k
+huggingface_dataset_id: openai/gsm8k
+huggingface_subsample: main
+loader: hugging_face.HFLoader
+description: |
+  GSM8K; grade school math word problems with step-by-step solutions
+columns:
+  - name: question
+    type: text
+  - name: answer
+    type: text
+output_features:
+  - name: answer
+    type: text

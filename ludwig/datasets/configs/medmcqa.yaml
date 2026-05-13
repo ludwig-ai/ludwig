@@ -1,0 +1,32 @@
+version: 1.0
+name: medmcqa
+huggingface_dataset_id: openlifescienceai/medmcqa
+loader: hugging_face.HFLoader
+description: |
+  Medical entrance exam QA; 4-choice medical questions
+columns:
+  - name: id
+    type: text
+  - name: question
+    type: text
+  - name: opa
+    type: text
+  - name: opb
+    type: text
+  - name: opc
+    type: text
+  - name: opd
+    type: text
+  - name: cop
+    type: category
+  - name: choice_type
+    type: text
+  - name: exp
+    type: text
+  - name: subject_name
+    type: text
+  - name: topic_name
+    type: text
+output_features:
+  - name: cop
+    type: category

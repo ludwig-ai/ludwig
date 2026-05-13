@@ -1,0 +1,19 @@
+version: 1.0
+name: peoples_speech
+huggingface_dataset_id: MLCommons/peoples_speech
+huggingface_subsample: clean
+loader: hugging_face.HFLoader
+description: |
+  People's Speech; 30K-hour diverse English ASR
+columns:
+  - name: id
+    type: text
+  - name: audio
+    type: audio
+  - name: duration_ms
+    type: category
+  - name: text
+    type: text
+output_features:
+  - name: text
+    type: text

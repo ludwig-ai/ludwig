@@ -1,0 +1,19 @@
+version: 1.0
+name: wnli
+huggingface_dataset_id: nyu-mll/glue
+huggingface_subsample: wnli
+loader: hugging_face.HFLoader
+description: |
+  Winograd NLI; pronoun reference coreference classification
+columns:
+  - name: sentence1
+    type: text
+  - name: sentence2
+    type: text
+  - name: label
+    type: category
+  - name: idx
+    type: category
+output_features:
+  - name: label
+    type: category

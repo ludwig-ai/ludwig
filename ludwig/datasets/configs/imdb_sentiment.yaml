@@ -1,0 +1,14 @@
+version: 1.0
+name: imdb_sentiment
+huggingface_dataset_id: stanfordnlp/imdb
+loader: hugging_face.HFLoader
+description: |
+  IMDB movie review sentiment; positive/negative binary classification
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

@@ -1,0 +1,16 @@
+version: 1.0
+name: sst5_setfit
+huggingface_dataset_id: SetFit/sst5
+loader: hugging_face.HFLoader
+description: |
+  SST-5 fine-grained sentiment (SetFit version); 5 classes
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+  - name: label_text
+    type: text
+output_features:
+  - name: label
+    type: category

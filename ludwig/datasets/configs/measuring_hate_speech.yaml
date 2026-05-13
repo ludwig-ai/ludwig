@@ -1,0 +1,296 @@
+version: 1.0
+name: measuring_hate_speech
+huggingface_dataset_id: ucberkeley-dlab/measuring-hate-speech
+loader: hugging_face.HFLoader
+description: |
+  Measuring Hate Speech; continuous hate speech score regression
+columns:
+  - name: comment_id
+    type: category
+  - name: annotator_id
+    type: category
+  - name: platform
+    type: category
+  - name: sentiment
+    type: number
+  - name: respect
+    type: number
+  - name: insult
+    type: number
+  - name: humiliate
+    type: number
+  - name: status
+    type: number
+  - name: dehumanize
+    type: number
+  - name: violence
+    type: number
+  - name: genocide
+    type: number
+  - name: attack_defend
+    type: number
+  - name: hatespeech
+    type: number
+  - name: hate_speech_score
+    type: number
+  - name: text
+    type: text
+  - name: infitms
+    type: number
+  - name: outfitms
+    type: number
+  - name: annotator_severity
+    type: number
+  - name: std_err
+    type: number
+  - name: annotator_infitms
+    type: number
+  - name: annotator_outfitms
+    type: number
+  - name: hypothesis
+    type: number
+  - name: target_race_asian
+    type: binary
+  - name: target_race_black
+    type: binary
+  - name: target_race_latinx
+    type: binary
+  - name: target_race_middle_eastern
+    type: binary
+  - name: target_race_native_american
+    type: binary
+  - name: target_race_pacific_islander
+    type: binary
+  - name: target_race_white
+    type: binary
+  - name: target_race_other
+    type: binary
+  - name: target_race
+    type: binary
+  - name: target_religion_atheist
+    type: binary
+  - name: target_religion_buddhist
+    type: binary
+  - name: target_religion_christian
+    type: binary
+  - name: target_religion_hindu
+    type: binary
+  - name: target_religion_jewish
+    type: binary
+  - name: target_religion_mormon
+    type: binary
+  - name: target_religion_muslim
+    type: binary
+  - name: target_religion_other
+    type: binary
+  - name: target_religion
+    type: binary
+  - name: target_origin_immigrant
+    type: binary
+  - name: target_origin_migrant_worker
+    type: binary
+  - name: target_origin_specific_country
+    type: binary
+  - name: target_origin_undocumented
+    type: binary
+  - name: target_origin_other
+    type: binary
+  - name: target_origin
+    type: binary
+  - name: target_gender_men
+    type: binary
+  - name: target_gender_non_binary
+    type: binary
+  - name: target_gender_transgender_men
+    type: binary
+  - name: target_gender_transgender_unspecified
+    type: binary
+  - name: target_gender_transgender_women
+    type: binary
+  - name: target_gender_women
+    type: binary
+  - name: target_gender_other
+    type: binary
+  - name: target_gender
+    type: binary
+  - name: target_sexuality_bisexual
+    type: binary
+  - name: target_sexuality_gay
+    type: binary
+  - name: target_sexuality_lesbian
+    type: binary
+  - name: target_sexuality_straight
+    type: binary
+  - name: target_sexuality_other
+    type: binary
+  - name: target_sexuality
+    type: binary
+  - name: target_age_children
+    type: binary
+  - name: target_age_teenagers
+    type: binary
+  - name: target_age_young_adults
+    type: binary
+  - name: target_age_middle_aged
+    type: binary
+  - name: target_age_seniors
+    type: binary
+  - name: target_age_other
+    type: binary
+  - name: target_age
+    type: binary
+  - name: target_disability_physical
+    type: binary
+  - name: target_disability_cognitive
+    type: binary
+  - name: target_disability_neurological
+    type: binary
+  - name: target_disability_visually_impaired
+    type: binary
+  - name: target_disability_hearing_impaired
+    type: binary
+  - name: target_disability_unspecific
+    type: binary
+  - name: target_disability_other
+    type: binary
+  - name: target_disability
+    type: binary
+  - name: target_politics_alt_right
+    type: binary
+  - name: target_politics_communist
+    type: binary
+  - name: target_politics_conservative
+    type: binary
+  - name: target_politics_democrat
+    type: binary
+  - name: target_politics_green_party
+    type: binary
+  - name: target_politics_leftist
+    type: binary
+  - name: target_politics_liberal
+    type: binary
+  - name: target_politics_libertarian
+    type: binary
+  - name: target_politics_republican
+    type: binary
+  - name: target_politics_socialist
+    type: binary
+  - name: target_politics_other
+    type: binary
+  - name: target_politics
+    type: binary
+  - name: annotator_gender
+    type: text
+  - name: annotator_trans
+    type: text
+  - name: annotator_educ
+    type: text
+  - name: annotator_income
+    type: text
+  - name: annotator_ideology
+    type: text
+  - name: annotator_gender_men
+    type: binary
+  - name: annotator_gender_women
+    type: binary
+  - name: annotator_gender_non_binary
+    type: binary
+  - name: annotator_gender_prefer_not_to_say
+    type: binary
+  - name: annotator_gender_self_describe
+    type: binary
+  - name: annotator_transgender
+    type: binary
+  - name: annotator_cisgender
+    type: binary
+  - name: annotator_transgender_prefer_not_to_say
+    type: binary
+  - name: annotator_education_some_high_school
+    type: binary
+  - name: annotator_education_high_school_grad
+    type: binary
+  - name: annotator_education_some_college
+    type: binary
+  - name: annotator_education_college_grad_aa
+    type: binary
+  - name: annotator_education_college_grad_ba
+    type: binary
+  - name: annotator_education_professional_degree
+    type: binary
+  - name: annotator_education_masters
+    type: binary
+  - name: annotator_education_phd
+    type: binary
+  - name: annotator_income_<10k
+    type: binary
+  - name: annotator_income_10k-50k
+    type: binary
+  - name: annotator_income_50k-100k
+    type: binary
+  - name: annotator_income_100k-200k
+    type: binary
+  - name: annotator_income_>200k
+    type: binary
+  - name: annotator_ideology_extremeley_conservative
+    type: binary
+  - name: annotator_ideology_conservative
+    type: binary
+  - name: annotator_ideology_slightly_conservative
+    type: binary
+  - name: annotator_ideology_neutral
+    type: binary
+  - name: annotator_ideology_slightly_liberal
+    type: binary
+  - name: annotator_ideology_liberal
+    type: binary
+  - name: annotator_ideology_extremeley_liberal
+    type: binary
+  - name: annotator_ideology_no_opinion
+    type: binary
+  - name: annotator_race_asian
+    type: binary
+  - name: annotator_race_black
+    type: binary
+  - name: annotator_race_latinx
+    type: binary
+  - name: annotator_race_middle_eastern
+    type: binary
+  - name: annotator_race_native_american
+    type: binary
+  - name: annotator_race_pacific_islander
+    type: binary
+  - name: annotator_race_white
+    type: binary
+  - name: annotator_race_other
+    type: binary
+  - name: annotator_age
+    type: number
+  - name: annotator_religion_atheist
+    type: binary
+  - name: annotator_religion_buddhist
+    type: binary
+  - name: annotator_religion_christian
+    type: binary
+  - name: annotator_religion_hindu
+    type: binary
+  - name: annotator_religion_jewish
+    type: binary
+  - name: annotator_religion_mormon
+    type: binary
+  - name: annotator_religion_muslim
+    type: binary
+  - name: annotator_religion_nothing
+    type: binary
+  - name: annotator_religion_other
+    type: binary
+  - name: annotator_sexuality_bisexual
+    type: binary
+  - name: annotator_sexuality_gay
+    type: binary
+  - name: annotator_sexuality_straight
+    type: binary
+  - name: annotator_sexuality_other
+    type: binary
+output_features:
+  - name: sentiment
+    type: number

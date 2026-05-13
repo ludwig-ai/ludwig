@@ -1,0 +1,20 @@
+version: 1.0
+name: anli
+huggingface_dataset_id: facebook/anli
+loader: hugging_face.HFLoader
+description: |
+  Adversarial NLI; iteratively adversarial NLI benchmark
+columns:
+  - name: uid
+    type: text
+  - name: premise
+    type: text
+  - name: hypothesis
+    type: text
+  - name: label
+    type: category
+  - name: reason
+    type: text
+output_features:
+  - name: label
+    type: category

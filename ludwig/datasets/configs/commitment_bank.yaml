@@ -1,0 +1,19 @@
+version: 1.0
+name: commitment_bank
+huggingface_dataset_id: aps/super_glue
+huggingface_subsample: cb
+loader: hugging_face.HFLoader
+description: |
+  CommitmentBank; textual entailment with 3-way classification
+columns:
+  - name: premise
+    type: text
+  - name: hypothesis
+    type: text
+  - name: idx
+    type: category
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

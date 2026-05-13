@@ -1,0 +1,29 @@
+version: 1.0
+name: wic
+huggingface_dataset_id: aps/super_glue
+huggingface_subsample: wic
+loader: hugging_face.HFLoader
+description: |
+  Word-in-Context; word sense disambiguation as binary classification
+columns:
+  - name: word
+    type: text
+  - name: sentence1
+    type: text
+  - name: sentence2
+    type: text
+  - name: start1
+    type: category
+  - name: start2
+    type: category
+  - name: end1
+    type: category
+  - name: end2
+    type: category
+  - name: idx
+    type: category
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

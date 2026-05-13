@@ -1,0 +1,16 @@
+version: 1.0
+name: msmarco_passage
+huggingface_dataset_id: mteb/msmarco
+loader: hugging_face.HFLoader
+description: |
+  MS MARCO passage retrieval; query-passage relevance scoring
+columns:
+  - name: query-id
+    type: text
+  - name: corpus-id
+    type: text
+  - name: score
+    type: number
+output_features:
+  - name: score
+    type: number

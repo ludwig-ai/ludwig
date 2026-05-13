@@ -1,0 +1,15 @@
+version: 1.0
+name: svhn
+huggingface_dataset_id: ufldl-stanford/svhn
+huggingface_subsample: cropped_digits
+loader: hugging_face.HFLoader
+description: |
+  SVHN; Street View House Numbers digit classification
+columns:
+  - name: image
+    type: image
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

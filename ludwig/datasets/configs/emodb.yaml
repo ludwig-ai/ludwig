@@ -1,0 +1,18 @@
+version: 1.0
+name: emodb
+huggingface_dataset_id: renumics/emodb
+loader: hugging_face.HFLoader
+description: |
+  EMo-DB; Berlin Database of Emotional Speech; 7 emotion classes
+columns:
+  - name: age
+    type: number
+  - name: gender
+    type: category
+  - name: emotion
+    type: category
+  - name: audio
+    type: audio
+output_features:
+  - name: emotion
+    type: category

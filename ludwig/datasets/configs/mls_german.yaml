@@ -1,0 +1,32 @@
+version: 1.0
+name: mls_german
+huggingface_dataset_id: facebook/multilingual_librispeech
+huggingface_subsample: german
+loader: hugging_face.HFLoader
+description: 'Multilingual LibriSpeech German ASR
+
+  '
+columns:
+- name: audio
+  type: audio
+- name: original_path
+  type: text
+- name: begin_time
+  type: number
+- name: end_time
+  type: number
+- name: transcript
+  type: text
+- name: audio_duration
+  type: number
+- name: speaker_id
+  type: text
+- name: chapter_id
+  type: text
+- name: file
+  type: text
+- name: id
+  type: text
+output_features:
+- name: transcript
+  type: text

@@ -1,0 +1,27 @@
+version: 1.0
+name: student_performance
+huggingface_dataset_id: mstz/student_performance
+loader: hugging_face.HFLoader
+description: 'Student performance regression; predict final grade from demographics
+
+  '
+columns:
+- name: is_male
+  type: binary
+- name: ethnicity
+  type: text
+- name: parental_level_of_education
+  type: category
+- name: has_standard_lunch
+  type: binary
+- name: has_completed_preparation_test
+  type: binary
+- name: reading_score
+  type: category
+- name: writing_score
+  type: category
+- name: has_passed_math_exam
+  type: category
+output_features:
+- name: has_passed_math_exam
+  type: binary

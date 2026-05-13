@@ -1,0 +1,19 @@
+version: 1.0
+name: superglue_rte
+huggingface_dataset_id: aps/super_glue
+huggingface_subsample: rte
+loader: hugging_face.HFLoader
+description: |
+  SuperGLUE version of Recognizing Textual Entailment
+columns:
+  - name: premise
+    type: text
+  - name: hypothesis
+    type: text
+  - name: idx
+    type: category
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

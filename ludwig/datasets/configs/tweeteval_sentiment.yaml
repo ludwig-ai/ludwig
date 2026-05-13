@@ -1,0 +1,15 @@
+version: 1.0
+name: tweeteval_sentiment
+huggingface_dataset_id: cardiffnlp/tweet_eval
+huggingface_subsample: sentiment
+loader: hugging_face.HFLoader
+description: |
+  TweetEval sentiment; positive/negative/neutral tweet classification
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

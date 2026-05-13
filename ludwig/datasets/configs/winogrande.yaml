@@ -1,0 +1,19 @@
+version: 1.0
+name: winogrande
+huggingface_dataset_id: allenai/winogrande
+huggingface_subsample: winogrande_xl
+loader: hugging_face.HFLoader
+description: |
+  WinoGrande; large-scale Winograd schema challenge
+columns:
+  - name: sentence
+    type: text
+  - name: option1
+    type: text
+  - name: option2
+    type: text
+  - name: answer
+    type: text
+output_features:
+  - name: answer
+    type: text

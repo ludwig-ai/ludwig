@@ -1,0 +1,19 @@
+version: 1.0
+name: paws
+huggingface_dataset_id: google-research-datasets/paws
+huggingface_subsample: labeled_final
+loader: hugging_face.HFLoader
+description: |
+  Paraphrase Adversaries from Word Scrambling; challenging paraphrase detection
+columns:
+  - name: id
+    type: category
+  - name: sentence1
+    type: text
+  - name: sentence2
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

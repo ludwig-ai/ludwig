@@ -1,0 +1,19 @@
+version: 1.0
+name: glue_diagnostic
+huggingface_dataset_id: nyu-mll/glue
+huggingface_subsample: ax
+loader: hugging_face.HFLoader
+description: |
+  GLUE Diagnostic; adversarial NLI examples testing linguistic phenomena
+columns:
+  - name: premise
+    type: text
+  - name: hypothesis
+    type: text
+  - name: label
+    type: category
+  - name: idx
+    type: category
+output_features:
+  - name: label
+    type: category

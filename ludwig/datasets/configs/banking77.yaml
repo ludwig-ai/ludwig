@@ -1,0 +1,16 @@
+version: 1.0
+name: banking77
+huggingface_dataset_id: mteb/banking77
+loader: hugging_face.HFLoader
+description: |
+  Banking77; 77-class banking customer intent classification
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+  - name: label_text
+    type: text
+output_features:
+  - name: label
+    type: category

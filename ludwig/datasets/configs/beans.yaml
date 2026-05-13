@@ -1,0 +1,16 @@
+version: 1.0
+name: beans
+huggingface_dataset_id: AI-Lab-Makerere/beans
+loader: hugging_face.HFLoader
+description: |
+  Beans leaf disease classification; 3 classes: angular leaf spot, bean rust, healthy
+columns:
+  - name: image_file_path
+    type: text
+  - name: image
+    type: image
+  - name: labels
+    type: category
+output_features:
+  - name: labels
+    type: category

@@ -1,0 +1,16 @@
+version: 1.0
+name: dbpedia_14
+huggingface_dataset_id: fancyzhx/dbpedia_14
+loader: hugging_face.HFLoader
+description: |
+  DBpedia 14 ontology text classification; 14 categories
+columns:
+  - name: label
+    type: category
+  - name: title
+    type: text
+  - name: content
+    type: text
+output_features:
+  - name: label
+    type: category

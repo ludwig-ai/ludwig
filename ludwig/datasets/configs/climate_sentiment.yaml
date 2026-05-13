@@ -1,0 +1,14 @@
+version: 1.0
+name: climate_sentiment
+huggingface_dataset_id: climatebert/climate_sentiment
+loader: hugging_face.HFLoader
+description: |
+  ClimateBERT climate-related text sentiment analysis
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

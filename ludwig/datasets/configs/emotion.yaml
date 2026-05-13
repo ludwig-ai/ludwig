@@ -1,0 +1,14 @@
+version: 1.0
+name: emotion
+huggingface_dataset_id: dair-ai/emotion
+loader: hugging_face.HFLoader
+description: |
+  Twitter emotion classification; 6 classes: joy, sadness, anger, fear, surprise, love
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

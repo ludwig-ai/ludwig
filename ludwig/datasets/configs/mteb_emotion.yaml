@@ -1,0 +1,16 @@
+version: 1.0
+name: mteb_emotion
+huggingface_dataset_id: mteb/emotion
+loader: hugging_face.HFLoader
+description: |
+  MTEB emotion task; 6-class emotion from tweets
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+  - name: label_text
+    type: text
+output_features:
+  - name: label
+    type: category

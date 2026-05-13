@@ -1,0 +1,14 @@
+version: 1.0
+name: ag_news_hf
+huggingface_dataset_id: fancyzhx/ag_news
+loader: hugging_face.HFLoader
+description: |
+  AG News 4-class topic classification (HF version)
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

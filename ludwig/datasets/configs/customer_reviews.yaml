@@ -1,0 +1,16 @@
+version: 1.0
+name: customer_reviews
+huggingface_dataset_id: SetFit/CR
+loader: hugging_face.HFLoader
+description: |
+  Customer Reviews; product review sentiment binary classification
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+  - name: label_text
+    type: text
+output_features:
+  - name: label
+    type: category

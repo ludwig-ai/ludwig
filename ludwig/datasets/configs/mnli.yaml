@@ -1,0 +1,19 @@
+version: 1.0
+name: mnli
+huggingface_dataset_id: nyu-mll/glue
+huggingface_subsample: mnli
+loader: hugging_face.HFLoader
+description: |
+  Multi-Genre Natural Language Inference; premise + hypothesis -> entailment/neutral/contradiction
+columns:
+  - name: premise
+    type: text
+  - name: hypothesis
+    type: text
+  - name: label
+    type: category
+  - name: idx
+    type: category
+output_features:
+  - name: label
+    type: category

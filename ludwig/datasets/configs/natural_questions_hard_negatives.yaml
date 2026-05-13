@@ -1,0 +1,14 @@
+version: 1.0
+name: natural_questions_hard_negatives
+huggingface_dataset_id: sentence-transformers/natural-questions
+loader: hugging_face.HFLoader
+description: |
+  Natural Questions hard negatives for retrieval/ranking
+columns:
+  - name: query
+    type: text
+  - name: answer
+    type: text
+output_features:
+  - name: answer
+    type: text

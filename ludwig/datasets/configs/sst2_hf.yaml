@@ -1,0 +1,16 @@
+version: 1.0
+name: sst2_hf
+huggingface_dataset_id: stanfordnlp/sst2
+loader: hugging_face.HFLoader
+description: |
+  Stanford Sentiment Treebank 2-class (HF canonical version)
+columns:
+  - name: idx
+    type: category
+  - name: sentence
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

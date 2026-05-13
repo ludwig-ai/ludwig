@@ -1,0 +1,18 @@
+version: 1.0
+name: wikiart
+huggingface_dataset_id: huggan/wikiart
+loader: hugging_face.HFLoader
+description: |
+  WikiArt; artwork style classification across 27 art styles
+columns:
+  - name: image
+    type: image
+  - name: artist
+    type: category
+  - name: genre
+    type: category
+  - name: style
+    type: category
+output_features:
+  - name: artist
+    type: category

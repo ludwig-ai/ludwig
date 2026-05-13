@@ -1,0 +1,21 @@
+version: 1.0
+name: cantonese_asr
+huggingface_dataset_id: CanCLID/zoengjyutgaai
+loader: hugging_face.HFLoader
+description: 'Cantonese speech recognition dataset
+
+  '
+columns:
+- name: id
+  type: text
+- name: episode_id
+  type: category
+- name: audio
+  type: audio
+- name: audio_duration
+  type: number
+- name: transcription
+  type: text
+output_features:
+- name: transcription
+  type: text

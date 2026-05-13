@@ -1,0 +1,15 @@
+version: 1.0
+name: tweeteval_stance
+huggingface_dataset_id: cardiffnlp/tweet_eval
+huggingface_subsample: stance_abortion
+loader: hugging_face.HFLoader
+description: |
+  TweetEval stance detection; against/in favor/neutral
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

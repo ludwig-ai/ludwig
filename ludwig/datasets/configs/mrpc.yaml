@@ -1,0 +1,19 @@
+version: 1.0
+name: mrpc
+huggingface_dataset_id: nyu-mll/glue
+huggingface_subsample: mrpc
+loader: hugging_face.HFLoader
+description: |
+  Microsoft Research Paraphrase Corpus; paraphrase detection
+columns:
+  - name: sentence1
+    type: text
+  - name: sentence2
+    type: text
+  - name: label
+    type: category
+  - name: idx
+    type: category
+output_features:
+  - name: label
+    type: category

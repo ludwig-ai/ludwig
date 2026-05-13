@@ -1,0 +1,24 @@
+version: 1.0
+name: naver_news_summary
+huggingface_dataset_id: daekeun-ml/naver-news-summarization-ko
+loader: hugging_face.HFLoader
+description: |
+  Naver News Korean summarization dataset
+columns:
+  - name: date
+    type: text
+  - name: category
+    type: text
+  - name: press
+    type: text
+  - name: title
+    type: text
+  - name: document
+    type: text
+  - name: link
+    type: text
+  - name: summary
+    type: text
+output_features:
+  - name: category
+    type: text

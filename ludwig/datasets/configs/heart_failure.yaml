@@ -1,0 +1,37 @@
+version: 1.0
+name: heart_failure
+huggingface_dataset_id: mstz/heart_failure
+loader: hugging_face.HFLoader
+description: 'Heart failure clinical records; death event prediction
+
+  '
+columns:
+- name: age
+  type: category
+- name: has_anaemia
+  type: binary
+- name: creatinine_phosphokinase_concentration_in_blood
+  type: number
+- name: has_diabetes
+  type: binary
+- name: heart_ejection_fraction
+  type: number
+- name: has_high_blood_pressure
+  type: binary
+- name: platelets_concentration_in_blood
+  type: number
+- name: serum_creatinine_concentration_in_blood
+  type: number
+- name: serum_sodium_concentration_in_blood
+  type: number
+- name: is_male
+  type: binary
+- name: is_smoker
+  type: binary
+- name: days_in_study
+  type: category
+- name: is_dead
+  type: category
+output_features:
+- name: is_dead
+  type: binary

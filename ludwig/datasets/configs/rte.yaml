@@ -1,0 +1,19 @@
+version: 1.0
+name: rte
+huggingface_dataset_id: nyu-mll/glue
+huggingface_subsample: rte
+loader: hugging_face.HFLoader
+description: |
+  Recognizing Textual Entailment; entailment vs not-entailment
+columns:
+  - name: sentence1
+    type: text
+  - name: sentence2
+    type: text
+  - name: label
+    type: category
+  - name: idx
+    type: category
+output_features:
+  - name: label
+    type: category

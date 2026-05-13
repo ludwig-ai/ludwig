@@ -1,0 +1,16 @@
+version: 1.0
+name: fake_news_detection
+huggingface_dataset_id: GonzaloA/fake_news
+loader: hugging_face.HFLoader
+description: |
+  Fake news detection; real vs fake news articles
+columns:
+  - name: title
+    type: text
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

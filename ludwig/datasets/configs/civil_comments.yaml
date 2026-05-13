@@ -1,0 +1,26 @@
+version: 1.0
+name: civil_comments
+huggingface_dataset_id: google/civil_comments
+loader: hugging_face.HFLoader
+description: |
+  Civil Comments toxicity classification; multi-attribute toxicity labels
+columns:
+  - name: text
+    type: text
+  - name: toxicity
+    type: number
+  - name: severe_toxicity
+    type: number
+  - name: obscene
+    type: number
+  - name: threat
+    type: number
+  - name: insult
+    type: number
+  - name: identity_attack
+    type: number
+  - name: sexual_explicit
+    type: number
+output_features:
+  - name: toxicity
+    type: number

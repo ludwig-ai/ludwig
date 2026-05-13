@@ -1,0 +1,39 @@
+version: 1.0
+name: adult_income_hf
+huggingface_dataset_id: mstz/adult
+loader: hugging_face.HFLoader
+description: 'Adult/Census Income dataset for income >50K classification
+
+  '
+columns:
+- name: age
+  type: category
+- name: capital_gain
+  type: number
+- name: capital_loss
+  type: number
+- name: education
+  type: category
+- name: final_weight
+  type: category
+- name: hours_worked_per_week
+  type: category
+- name: marital_status
+  type: text
+- name: native_country
+  type: text
+- name: occupation
+  type: text
+- name: race
+  type: text
+- name: relationship
+  type: text
+- name: is_male
+  type: binary
+- name: workclass
+  type: text
+- name: over_threshold
+  type: category
+output_features:
+- name: over_threshold
+  type: binary

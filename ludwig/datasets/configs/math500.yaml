@@ -1,0 +1,22 @@
+version: 1.0
+name: math500
+huggingface_dataset_id: HuggingFaceH4/MATH-500
+loader: hugging_face.HFLoader
+description: |
+  MATH-500 test subset; competition math with step-by-step solutions
+columns:
+  - name: problem
+    type: text
+  - name: solution
+    type: text
+  - name: answer
+    type: text
+  - name: subject
+    type: text
+  - name: level
+    type: category
+  - name: unique_id
+    type: text
+output_features:
+  - name: answer
+    type: text

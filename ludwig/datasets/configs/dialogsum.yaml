@@ -1,0 +1,14 @@
+version: 1.0
+name: dialogsum
+huggingface_dataset_id: knkarthick/dialogsum
+loader: hugging_face.HFLoader
+description: |
+  DialogSum dialogue summarization. Dialogue -> summary. ~13K examples.
+columns:
+  - name: dialogue
+    type: text
+  - name: summary
+    type: text
+output_features:
+  - name: summary
+    type: text

@@ -1,0 +1,16 @@
+version: 1.0
+name: boolq_standalone
+huggingface_dataset_id: google/boolq
+loader: hugging_face.HFLoader
+description: |
+  BoolQ standalone; naturally occurring yes/no questions with passage
+columns:
+  - name: question
+    type: text
+  - name: answer
+    type: binary
+  - name: passage
+    type: text
+output_features:
+  - name: answer
+    type: binary

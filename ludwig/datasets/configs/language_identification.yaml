@@ -1,0 +1,14 @@
+version: 1.0
+name: language_identification
+huggingface_dataset_id: papluca/language-identification
+loader: hugging_face.HFLoader
+description: |
+  Language identification; 20 languages from Twitter data
+columns:
+  - name: labels
+    type: text
+  - name: text
+    type: text
+output_features:
+  - name: labels
+    type: text

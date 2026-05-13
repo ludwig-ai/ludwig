@@ -1,0 +1,23 @@
+version: 1.0
+name: librispeech
+huggingface_dataset_id: openslr/librispeech_asr
+huggingface_subsample: clean
+loader: hugging_face.HFLoader
+description: |
+  LibriSpeech; English speech recognition from audiobooks; clean 100h split
+columns:
+  - name: file
+    type: text
+  - name: audio
+    type: audio
+  - name: text
+    type: text
+  - name: speaker_id
+    type: category
+  - name: chapter_id
+    type: category
+  - name: id
+    type: text
+output_features:
+  - name: text
+    type: text
