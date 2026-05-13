@@ -1,0 +1,15 @@
+version: 1.0
+name: lex_glue_eurlex
+huggingface_dataset_id: coastalcph/lex_glue
+huggingface_subsample: eurlex
+loader: multilabel_loader.LexGlueEURLexLoader
+description: |
+  LexGLUE EuroLex EU documents → EuroVoc concept labels (multi-label). Set output.
+columns:
+  - name: text
+    type: text
+  - name: labels
+    type: set
+output_features:
+  - name: labels
+    type: set

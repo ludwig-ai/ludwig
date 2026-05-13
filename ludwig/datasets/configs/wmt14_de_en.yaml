@@ -1,0 +1,15 @@
+version: 1.0
+name: wmt14_de_en
+huggingface_dataset_id: wmt/wmt14
+huggingface_subsample: de-en
+loader: translation_loader.Wmt14DeEnLoader
+description: |
+  WMT14 German-English news translation. ~4.5M sentence pairs.
+columns:
+  - name: de
+    type: text
+  - name: en
+    type: text
+output_features:
+  - name: en
+    type: text

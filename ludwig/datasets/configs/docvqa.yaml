@@ -1,0 +1,17 @@
+version: 1.0
+name: docvqa
+huggingface_dataset_id: HuggingFaceM4/the_cauldron
+huggingface_subsample: docvqa
+loader: vqa_loader.DocVQALoader
+description: |
+  DocVQA: document image + question → answer from the document.
+columns:
+  - name: image_path
+    type: image
+  - name: question
+    type: text
+  - name: answer
+    type: text
+output_features:
+  - name: answer
+    type: text

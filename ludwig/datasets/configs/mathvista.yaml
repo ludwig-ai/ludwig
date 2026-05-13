@@ -1,0 +1,14 @@
+version: 1.0
+name: mathvista
+huggingface_dataset_id: AI4Math/MathVista
+loader: vqa_loader.MathVistaLoader
+description: |
+  MathVista: math reasoning over images. Question → answer.
+columns:
+  - name: question
+    type: text
+  - name: answer
+    type: text
+output_features:
+  - name: answer
+    type: text

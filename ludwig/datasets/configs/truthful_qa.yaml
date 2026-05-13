@@ -1,0 +1,17 @@
+version: 1.0
+name: truthful_qa
+huggingface_dataset_id: truthfulqa/truthful_qa
+huggingface_subsample: multiple_choice
+loader: misc_loaders.TruthfulQALoader
+description: |
+  TruthfulQA: question → best truthful answer. 817 questions.
+columns:
+  - name: question
+    type: text
+  - name: best_answer
+    type: text
+  - name: category
+    type: category
+output_features:
+  - name: best_answer
+    type: text

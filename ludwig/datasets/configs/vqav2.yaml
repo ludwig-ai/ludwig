@@ -1,0 +1,17 @@
+version: 1.0
+name: vqav2
+huggingface_dataset_id: HuggingFaceM4/the_cauldron
+huggingface_subsample: vqav2
+loader: vqa_loader.VQAv2Loader
+description: |
+  VQAv2: image + question → free-form answer.
+columns:
+  - name: image_path
+    type: image
+  - name: question
+    type: text
+  - name: answer
+    type: text
+output_features:
+  - name: answer
+    type: text

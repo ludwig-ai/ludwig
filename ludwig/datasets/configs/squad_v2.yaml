@@ -1,0 +1,16 @@
+version: 1.0
+name: squad_v2
+huggingface_dataset_id: rajpurkar/squad_v2
+loader: qa_loader.SquadV2Loader
+description: |
+  SQuAD v2 extractive QA with unanswerable questions. 130K examples.
+columns:
+  - name: context
+    type: text
+  - name: question
+    type: text
+  - name: answer
+    type: text
+output_features:
+  - name: answer
+    type: text

@@ -1,0 +1,15 @@
+version: 1.0
+name: hotpot_qa
+huggingface_dataset_id: hotpotqa/hotpot_qa
+huggingface_subsample: distractor
+loader: qa_loader.HotpotQALoader
+description: |
+  HotpotQA multi-hop reasoning QA. Question → answer.
+columns:
+  - name: question
+    type: text
+  - name: answer
+    type: text
+output_features:
+  - name: answer
+    type: text

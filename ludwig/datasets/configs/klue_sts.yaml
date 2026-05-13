@@ -1,0 +1,17 @@
+version: 1.0
+name: klue_sts
+huggingface_dataset_id: klue/klue
+huggingface_subsample: sts
+loader: misc_loaders.KlueStsLoader
+description: |
+  KLUE STS Korean sentence similarity. Sentence pair → score (0-5 regression).
+columns:
+  - name: sentence1
+    type: text
+  - name: sentence2
+    type: text
+  - name: score
+    type: number
+output_features:
+  - name: score
+    type: number

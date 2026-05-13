@@ -1,0 +1,16 @@
+version: 1.0
+name: sciq
+huggingface_dataset_id: allenai/sciq
+loader: misc_loaders.SciqLoader
+description: |
+  SciQ science QA with support text. Support + question → correct_answer (text).
+columns:
+  - name: support
+    type: text
+  - name: question
+    type: text
+  - name: correct_answer
+    type: text
+output_features:
+  - name: correct_answer
+    type: text

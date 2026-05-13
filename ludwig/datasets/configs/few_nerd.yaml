@@ -1,0 +1,15 @@
+version: 1.0
+name: few_nerd
+huggingface_dataset_id: DFKI-SLT/few-nerd
+huggingface_subsample: supervised
+loader: ner_loader.FewNERDLoader
+description: |
+  Few-NERD fine-grained NER with 8 coarse and 66 fine entity types.
+columns:
+  - name: sentence
+    type: text
+  - name: ner_tags
+    type: sequence
+output_features:
+  - name: ner_tags
+    type: sequence

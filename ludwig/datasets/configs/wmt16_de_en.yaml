@@ -1,0 +1,15 @@
+version: 1.0
+name: wmt16_de_en
+huggingface_dataset_id: wmt/wmt16
+huggingface_subsample: de-en
+loader: translation_loader.Wmt16DeEnLoader
+description: |
+  WMT16 German-English news translation.
+columns:
+  - name: de
+    type: text
+  - name: en
+    type: text
+output_features:
+  - name: en
+    type: text

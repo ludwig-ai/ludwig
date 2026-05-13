@@ -1,0 +1,15 @@
+version: 1.0
+name: wikiann_zh
+huggingface_dataset_id: unimelb-nlp/wikiann
+huggingface_subsample: zh
+loader: ner_loader.WikiannZhLoader
+description: |
+  WikiANN Chinese NER. IOB2 tags: O, B-PER, I-PER, B-ORG, I-ORG, B-LOC, I-LOC.
+columns:
+  - name: sentence
+    type: text
+  - name: ner_tags
+    type: sequence
+output_features:
+  - name: ner_tags
+    type: sequence

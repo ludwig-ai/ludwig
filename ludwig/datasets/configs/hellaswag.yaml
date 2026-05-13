@@ -1,0 +1,18 @@
+version: 1.0
+name: hellaswag
+huggingface_dataset_id: Rowan/hellaswag
+loader: multiple_choice_loader.HellaSwagLoader
+description: |
+  HellaSwag commonsense NLI. Activity + context → correct ending. A/B/C/D.
+columns:
+  - name: activity_label
+    type: text
+  - name: ctx
+    type: text
+  - name: choices_text
+    type: text
+  - name: answer_label
+    type: category
+output_features:
+  - name: answer_label
+    type: category

@@ -1,0 +1,18 @@
+version: 1.0
+name: mmlu_pro
+huggingface_dataset_id: TIGER-Lab/MMLU-Pro
+loader: multiple_choice_loader.MmluProLoader
+description: |
+  MMLU-Pro harder multitask benchmark. 10-way multiple choice.
+columns:
+  - name: cot_content
+    type: text
+  - name: question
+    type: text
+  - name: choices_text
+    type: text
+  - name: answer_label
+    type: category
+output_features:
+  - name: answer_label
+    type: category

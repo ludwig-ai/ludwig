@@ -1,0 +1,17 @@
+version: 1.0
+name: duorc
+huggingface_dataset_id: ibm/duorc
+huggingface_subsample: SelfRC
+loader: qa_loader.DuoRCLoader
+description: |
+  DuoRC SelfRC: movie plot + question → answer text.
+columns:
+  - name: plot
+    type: text
+  - name: question
+    type: text
+  - name: answer
+    type: text
+output_features:
+  - name: answer
+    type: text

@@ -1,0 +1,17 @@
+version: 1.0
+name: textvqa
+huggingface_dataset_id: HuggingFaceM4/the_cauldron
+huggingface_subsample: textvqa
+loader: vqa_loader.TextVQALoader
+description: |
+  TextVQA: image with text + question → answer requiring reading the text.
+columns:
+  - name: image_path
+    type: image
+  - name: question
+    type: text
+  - name: answer
+    type: text
+output_features:
+  - name: answer
+    type: text

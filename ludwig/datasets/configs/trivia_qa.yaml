@@ -1,0 +1,15 @@
+version: 1.0
+name: trivia_qa
+huggingface_dataset_id: mandarjoshi/trivia_qa
+huggingface_subsample: rc
+loader: qa_loader.TriviaQALoader
+description: |
+  TriviaQA reading comprehension. Question → answer.
+columns:
+  - name: question
+    type: text
+  - name: answer_text
+    type: text
+output_features:
+  - name: answer_text
+    type: text

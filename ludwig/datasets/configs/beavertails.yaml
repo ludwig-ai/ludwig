@@ -1,0 +1,18 @@
+version: 1.0
+name: beavertails
+huggingface_dataset_id: PKU-Alignment/BeaverTails
+loader: multilabel_loader.BeaverTailsLoader
+description: |
+  BeaverTails LLM safety: prompt+response → is_safe binary + category.
+columns:
+  - name: prompt
+    type: text
+  - name: response
+    type: text
+  - name: is_safe
+    type: binary
+  - name: category_labels
+    type: set
+output_features:
+  - name: is_safe
+    type: binary

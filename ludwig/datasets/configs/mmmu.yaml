@@ -1,0 +1,17 @@
+version: 1.0
+name: mmmu
+huggingface_dataset_id: MMMU/MMMU
+huggingface_subsample: Accounting
+loader: vqa_loader.MmmuLoader
+description: |
+  MMMU multimodal multitask benchmark. Image + question → answer.
+columns:
+  - name: question
+    type: text
+  - name: options
+    type: text
+  - name: answer
+    type: category
+output_features:
+  - name: answer
+    type: category

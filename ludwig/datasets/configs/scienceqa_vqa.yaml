@@ -1,0 +1,16 @@
+version: 1.0
+name: scienceqa_vqa
+huggingface_dataset_id: derek-thomas/ScienceQA
+loader: vqa_loader.ScienceQAImageLoader
+description: |
+  ScienceQA: science question + optional lecture → multiple choice answer.
+columns:
+  - name: question
+    type: text
+  - name: choices_text
+    type: text
+  - name: answer_label
+    type: category
+output_features:
+  - name: answer_label
+    type: category

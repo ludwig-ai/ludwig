@@ -1,0 +1,14 @@
+version: 1.0
+name: acronym_identification
+huggingface_dataset_id: amirveyseh/acronym_identification
+loader: ner_loader.AcronymIdentificationLoader
+description: |
+  Acronym identification: tokens → B-long/I-long/B-short/I-short/O tags.
+columns:
+  - name: sentence
+    type: text
+  - name: labels
+    type: sequence
+output_features:
+  - name: labels
+    type: sequence

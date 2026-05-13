@@ -1,0 +1,15 @@
+version: 1.0
+name: bbh
+huggingface_dataset_id: lukaemon/bbh
+huggingface_subsample: boolean_expressions
+loader: multiple_choice_loader.BbhLoader
+description: |
+  Big-Bench Hard boolean expressions. Input → target.
+columns:
+  - name: input
+    type: text
+  - name: target
+    type: text
+output_features:
+  - name: target
+    type: text

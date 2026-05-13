@@ -1,0 +1,15 @@
+version: 1.0
+name: natural_questions
+huggingface_dataset_id: google-research-datasets/natural_questions
+loader: qa_loader.NaturalQuestionsLoader
+description: |
+  Natural Questions: real Google search questions with Wikipedia answers.
+  ~307K training examples. Question -> short answer text.
+columns:
+  - name: question_text
+    type: text
+  - name: answer_text
+    type: text
+output_features:
+  - name: answer_text
+    type: text

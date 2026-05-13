@@ -1,0 +1,17 @@
+version: 1.0
+name: arc_easy
+huggingface_dataset_id: allenai/ai2_arc
+huggingface_subsample: ARC-Easy
+loader: multiple_choice_loader.ArcLoader
+description: |
+  AI2 ARC-Easy science QA. 4-way multiple choice. A/B/C/D.
+columns:
+  - name: question
+    type: text
+  - name: choices_text
+    type: text
+  - name: answer_label
+    type: category
+output_features:
+  - name: answer_label
+    type: category

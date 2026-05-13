@@ -1,0 +1,14 @@
+version: 1.0
+name: multinerd
+huggingface_dataset_id: Babelscape/multinerd
+loader: ner_loader.MultiNERDLoader
+description: |
+  MultiNERD multilingual NER. 31 fine-grained entity types. CC BY 4.0.
+columns:
+  - name: sentence
+    type: text
+  - name: ner_tags
+    type: sequence
+output_features:
+  - name: ner_tags
+    type: sequence

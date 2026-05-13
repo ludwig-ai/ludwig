@@ -1,0 +1,15 @@
+version: 1.0
+name: cord_v2
+huggingface_dataset_id: naver-clova-ix/cord-v2
+loader: hugging_face.HFLoader
+description: |
+  CORD v2 receipt understanding: receipt image -> JSON ground truth (text generation).
+  Korean/English receipts for document AI tasks.
+columns:
+  - name: image
+    type: image
+  - name: ground_truth
+    type: text
+output_features:
+  - name: ground_truth
+    type: text

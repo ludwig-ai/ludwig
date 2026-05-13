@@ -1,0 +1,15 @@
+version: 1.0
+name: lex_glue_ecthr
+huggingface_dataset_id: coastalcph/lex_glue
+huggingface_subsample: ecthr_a
+loader: multilabel_loader.LexGlueECtHRLoader
+description: |
+  LexGLUE ECtHR case text → violated ECHR articles (multi-label). Set output.
+columns:
+  - name: text_joined
+    type: text
+  - name: labels
+    type: set
+output_features:
+  - name: labels
+    type: set

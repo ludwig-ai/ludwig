@@ -1,0 +1,15 @@
+version: 1.0
+name: opus100_en_fr
+huggingface_dataset_id: Helsinki-NLP/opus-100
+huggingface_subsample: en-fr
+loader: translation_loader.Opus100EnFrLoader
+description: |
+  OPUS-100 English-French parallel corpus. ~1M sentence pairs.
+columns:
+  - name: en
+    type: text
+  - name: fr
+    type: text
+output_features:
+  - name: fr
+    type: text

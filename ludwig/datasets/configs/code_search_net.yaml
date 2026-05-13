@@ -1,0 +1,17 @@
+version: 1.0
+name: code_search_net
+huggingface_dataset_id: code-search-net/code_search_net
+huggingface_subsample: python
+loader: code_loader.CodeSearchNetLoader
+description: |
+  CodeSearchNet Python: function code → docstring (text generation).
+columns:
+  - name: func_code_string
+    type: text
+  - name: func_documentation_string
+    type: text
+  - name: language
+    type: category
+output_features:
+  - name: func_documentation_string
+    type: text

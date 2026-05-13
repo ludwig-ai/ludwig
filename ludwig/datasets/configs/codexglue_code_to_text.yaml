@@ -1,0 +1,15 @@
+version: 1.0
+name: codexglue_code_to_text
+huggingface_dataset_id: google/code_x_glue_ct_code_to_text
+huggingface_subsample: python
+loader: code_loader.CodeXGlueLoader
+description: |
+  CodeXGlue Python code → docstring generation.
+columns:
+  - name: code
+    type: text
+  - name: docstring
+    type: text
+output_features:
+  - name: docstring
+    type: text

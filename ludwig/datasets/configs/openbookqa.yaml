@@ -1,0 +1,19 @@
+version: 1.0
+name: openbookqa
+huggingface_dataset_id: allenai/openbookqa
+huggingface_subsample: main
+loader: multiple_choice_loader.OpenBookQALoader
+description: |
+  OpenBookQA elementary science 4-way multiple choice.
+columns:
+  - name: fact1
+    type: text
+  - name: question_stem
+    type: text
+  - name: choices_text
+    type: text
+  - name: answer_label
+    type: category
+output_features:
+  - name: answer_label
+    type: category

@@ -1,0 +1,14 @@
+version: 1.0
+name: mbpp
+huggingface_dataset_id: google-research-datasets/mbpp
+loader: code_loader.MBPPLoader
+description: |
+  MBPP Python problem description → solution code generation. 500 problems.
+columns:
+  - name: text
+    type: text
+  - name: code
+    type: text
+output_features:
+  - name: code
+    type: text

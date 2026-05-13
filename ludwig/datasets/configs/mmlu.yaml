@@ -1,0 +1,17 @@
+version: 1.0
+name: mmlu
+huggingface_dataset_id: cais/mmlu
+huggingface_subsample: all
+loader: multiple_choice_loader.MmluLoader
+description: |
+  MMLU massive multitask benchmark. 57 tasks, 4-way multiple choice.
+columns:
+  - name: question
+    type: text
+  - name: choices_text
+    type: text
+  - name: answer_label
+    type: category
+output_features:
+  - name: answer_label
+    type: category

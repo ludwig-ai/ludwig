@@ -1,0 +1,14 @@
+version: 1.0
+name: fever_gold
+huggingface_dataset_id: copenlu/fever_gold_evidence
+loader: qa_loader.FeverGoldLoader
+description: |
+  FEVER fact verification gold evidence. Claim → SUPPORTS/REFUTES/NOT_ENOUGH_INFO.
+columns:
+  - name: claim
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

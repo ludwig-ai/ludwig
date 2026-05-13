@@ -1,0 +1,17 @@
+version: 1.0
+name: pubmed_qa
+huggingface_dataset_id: qiaojin/PubMedQA
+huggingface_subsample: pqa_labeled
+loader: qa_loader.PubMedQALoader
+description: |
+  PubMedQA biomedical QA. Context + question → yes/no/maybe.
+columns:
+  - name: context_text
+    type: text
+  - name: question
+    type: text
+  - name: final_decision
+    type: category
+output_features:
+  - name: final_decision
+    type: category

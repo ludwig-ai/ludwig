@@ -1,0 +1,15 @@
+version: 1.0
+name: opus_books_en_fr
+huggingface_dataset_id: Helsinki-NLP/opus_books
+huggingface_subsample: en-fr
+loader: translation_loader.OpusBooksEnFrLoader
+description: |
+  OPUS Books English-French literary translations.
+columns:
+  - name: en
+    type: text
+  - name: fr
+    type: text
+output_features:
+  - name: fr
+    type: text

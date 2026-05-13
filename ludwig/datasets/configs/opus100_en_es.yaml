@@ -1,0 +1,15 @@
+version: 1.0
+name: opus100_en_es
+huggingface_dataset_id: Helsinki-NLP/opus-100
+huggingface_subsample: en-es
+loader: translation_loader.Opus100EnEsLoader
+description: |
+  OPUS-100 English-Spanish parallel corpus. ~1M sentence pairs.
+columns:
+  - name: en
+    type: text
+  - name: es
+    type: text
+output_features:
+  - name: es
+    type: text

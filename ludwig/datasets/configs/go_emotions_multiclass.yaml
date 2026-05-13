@@ -1,0 +1,15 @@
+version: 1.0
+name: go_emotions_multiclass
+huggingface_dataset_id: google-research-datasets/go_emotions
+huggingface_subsample: simplified
+loader: go_emotions.GoEmotionsLoader
+description: |
+  GoEmotions multi-label emotion (28 classes). Set output. Same as go_emotions but listed separately.
+columns:
+  - name: text
+    type: text
+  - name: labels
+    type: set
+output_features:
+  - name: labels
+    type: set

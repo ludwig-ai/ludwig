@@ -1,0 +1,15 @@
+version: 1.0
+name: wikiann_de
+huggingface_dataset_id: unimelb-nlp/wikiann
+huggingface_subsample: de
+loader: ner_loader.WikiannDeLoader
+description: |
+  WikiANN German NER. IOB2 tags: O, B-PER, I-PER, B-ORG, I-ORG, B-LOC, I-LOC.
+columns:
+  - name: sentence
+    type: text
+  - name: ner_tags
+    type: sequence
+output_features:
+  - name: ner_tags
+    type: sequence

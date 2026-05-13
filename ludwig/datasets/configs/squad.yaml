@@ -1,0 +1,16 @@
+version: 1.0
+name: squad
+huggingface_dataset_id: rajpurkar/squad
+loader: qa_loader.SquadLoader
+description: |
+  SQuAD v1.1 extractive QA. Context + question → answer text. 87K examples.
+columns:
+  - name: context
+    type: text
+  - name: question
+    type: text
+  - name: answer
+    type: text
+output_features:
+  - name: answer
+    type: text

@@ -1,0 +1,17 @@
+version: 1.0
+name: ai2d_diagrams
+huggingface_dataset_id: HuggingFaceM4/the_cauldron
+huggingface_subsample: ai2d
+loader: vqa_loader.AI2DiagramsLoader
+description: |
+  AI2 Diagrams VQA: diagram image + question → answer.
+columns:
+  - name: image_path
+    type: image
+  - name: question
+    type: text
+  - name: answer
+    type: text
+output_features:
+  - name: answer
+    type: text

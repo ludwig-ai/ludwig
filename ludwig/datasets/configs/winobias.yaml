@@ -1,0 +1,15 @@
+version: 1.0
+name: winobias
+huggingface_dataset_id: uclanlp/wino_bias
+huggingface_subsample: type1_anti
+loader: ner_loader.WinobiasLoader
+description: |
+  WinoBias coreference gender bias. Sentence → label.
+columns:
+  - name: sentence
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

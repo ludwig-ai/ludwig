@@ -1,0 +1,19 @@
+version: 1.0
+name: multirc
+huggingface_dataset_id: aps/super_glue
+huggingface_subsample: multirc
+loader: misc_loaders.MultiRCLoader
+description: |
+  SuperGLUE MultiRC: paragraph + question + answer → binary (answer correct?).
+columns:
+  - name: paragraph
+    type: text
+  - name: question
+    type: text
+  - name: answer
+    type: text
+  - name: label
+    type: binary
+output_features:
+  - name: label
+    type: binary

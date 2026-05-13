@@ -1,0 +1,16 @@
+version: 1.0
+name: gift_eval
+huggingface_dataset_id: Salesforce/GiftEvalPretrain
+loader: misc_loaders.GiftEvalLoader
+description: |
+  GiftEval Pretrain time-series. freq + item_id → target_mean (regression).
+columns:
+  - name: freq
+    type: category
+  - name: item_id
+    type: text
+  - name: target_mean
+    type: number
+output_features:
+  - name: target_mean
+    type: number

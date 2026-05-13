@@ -1,0 +1,16 @@
+version: 1.0
+name: commonsense_qa
+huggingface_dataset_id: tau/commonsense_qa
+loader: multiple_choice_loader.CommonsenseQALoader
+description: |
+  CommonsenseQA 5-way multiple choice. Question → A/B/C/D/E.
+columns:
+  - name: question
+    type: text
+  - name: choices_text
+    type: text
+  - name: answer_label
+    type: category
+output_features:
+  - name: answer_label
+    type: category

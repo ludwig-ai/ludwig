@@ -1,0 +1,14 @@
+version: 1.0
+name: pii_masking
+huggingface_dataset_id: ai4privacy/pii-masking-300k
+loader: ner_loader.PIIMaskingLoader
+description: |
+  PII masking: source text → BIO labels for PII tokens.
+columns:
+  - name: source_text
+    type: text
+  - name: bio_labels
+    type: sequence
+output_features:
+  - name: bio_labels
+    type: sequence

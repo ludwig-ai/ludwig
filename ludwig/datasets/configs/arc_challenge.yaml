@@ -1,0 +1,17 @@
+version: 1.0
+name: arc_challenge
+huggingface_dataset_id: allenai/ai2_arc
+huggingface_subsample: ARC-Challenge
+loader: multiple_choice_loader.ArcLoader
+description: |
+  AI2 ARC-Challenge harder science QA. 4-way multiple choice.
+columns:
+  - name: question
+    type: text
+  - name: choices_text
+    type: text
+  - name: answer_label
+    type: category
+output_features:
+  - name: answer_label
+    type: category
