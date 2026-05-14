@@ -11,7 +11,7 @@ columns:
   - name: audio
     type: audio
   - name: duration_ms
-    type: category
+    type: number
   - name: text
     type: text
 output_features:
