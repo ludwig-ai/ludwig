@@ -263,9 +263,19 @@ def run_smoke_test(name: str) -> dict[str, Any]:
     # 1. Stream 1000 rows — use small shuffle buffer for media datasets to avoid
     #    streaming 100k large files; text datasets can afford the large buffer
     #    to ensure label diversity in sorted datasets (e.g. dbpedia_14, imdb).
+    #    Only category/binary outputs need large buffers (text/number outputs have no
+    #    "at least 2 distinct values" requirement). Media datasets use small buffers
+    #    to avoid streaming hundreds of thousands of large files into RAM.
     col_types = {col["type"] for col in cfg.get("columns", [])}
+    out_feature_types = {f["type"] for f in cfg.get("output_features", [])}
     has_media = bool(col_types & {"audio", "image"})
-    shuffle_buf = 5000 if has_media else 100000
+    needs_diversity = bool(out_feature_types & {"category", "binary"})
+    if has_media:
+        shuffle_buf = 5000
+    elif needs_diversity:
+        shuffle_buf = 100000
+    else:
+        shuffle_buf = 10000
     try:
         df = stream_sample(hf_id, hf_sub, SAMPLE_ROWS, shuffle_buffer=shuffle_buf)
     except Exception as e:
