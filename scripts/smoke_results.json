@@ -1,0 +1,1448 @@
+[
+  {
+    "name": "acronym_identification",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "adult_census_income",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "adult_income_hf",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "ae_price_prediction",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "ag_news_hf",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "agnews",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "ai2d_diagrams",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "allstate_claims_severity",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "alpaca",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "amazon_employee_access_challenge",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "amazon_polarity",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "amazon_review_polarity",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "amazon_reviews",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "ames_housing",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "anli",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "arc_challenge",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "arc_easy",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "banking77",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "bbcnews",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "bbh",
+    "status": "pass",
+    "error": null,
+    "rows": 250
+  },
+  {
+    "name": "beans",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "beavertails",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "belebele",
+    "status": "pass",
+    "error": null,
+    "rows": 900
+  },
+  {
+    "name": "belebele_fr",
+    "status": "pass",
+    "error": null,
+    "rows": 900
+  },
+  {
+    "name": "billsum",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "bnp_claims_management",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "bookprice_prediction",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "boolq",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "boolq_standalone",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "california_house_price",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "california_housing",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "camseq",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "cantonese_asr",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "cifar10",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "cifar100",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "civil_comments",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "climate_sentiment",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "cnn_dailymail",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "code_alpaca",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "code_search_net",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "codexglue_code_to_text",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "cola",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "commitment_bank",
+    "status": "pass",
+    "error": null,
+    "rows": 250
+  },
+  {
+    "name": "commonsense_qa",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "compas_recidivism",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "connect4",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "consumer_complaints",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "copa",
+    "status": "pass",
+    "error": null,
+    "rows": 400
+  },
+  {
+    "name": "cord_v2",
+    "status": "pass",
+    "error": null,
+    "rows": 800
+  },
+  {
+    "name": "credit_card_default",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "creditcard_fraud",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "customer_churn_prediction",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "customer_reviews",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "data_scientist_salary",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "dbpedia",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "dbpedia_14",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "diabetes_readmission",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "dialogsum",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "docvqa",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "duorc",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "electricity",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "electricity_tabular",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "emodb",
+    "status": "pass",
+    "error": null,
+    "rows": 535
+  },
+  {
+    "name": "emotion",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "enron_spam",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "esc50",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "ethos_binary",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "eurosat",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "fake_job_postings2",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "fake_news_detection",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "fashion_mnist",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "fever",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "fever_gold",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "few_nerd",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "flickr8k",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "food101",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "forest_cover",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "fsd50k",
+    "status": "skipped",
+    "error": "Config deleted \u2014 label always null in streaming mode",
+    "rows": 0
+  },
+  {
+    "name": "gift_eval",
+    "status": "skipped",
+    "error": "Config deleted \u2014 streaming schema incompatible (list<float> vs List(List(float32)))",
+    "rows": 0
+  },
+  {
+    "name": "glue_diagnostic",
+    "status": "skipped",
+    "error": "Config deleted \u2014 only test split with all labels hidden (-1)",
+    "rows": 0
+  },
+  {
+    "name": "go_emotions",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "go_emotions_multiclass",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "goemotions",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "goodbooks_books",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "google_qa_answer_type_reason_explanation",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "google_qa_question_type_reason_explanation",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "google_quest_qa",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "gsm8k",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "gtsrb",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "heart_failure",
+    "status": "pass",
+    "error": null,
+    "rows": 299
+  },
+  {
+    "name": "hellaswag",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "higgs",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "hotpot_qa",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "hugging_face",
+    "status": "skipped",
+    "error": null,
+    "rows": 0
+  },
+  {
+    "name": "ieee_fraud",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "imbalanced_insurance",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "imdb",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "imdb_genre_prediction",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "imdb_sentiment",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "insurance_lite",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "invoice_data",
+    "status": "pass",
+    "error": null,
+    "rows": 425
+  },
+  {
+    "name": "iris",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "irony",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "jc_penney_products",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "jigsaw_unintended_bias",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "jigsaw_unintended_bias100k",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "kdd_appetency",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "kdd_churn",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "kdd_upselling",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "kick_starter_funding",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "klue_sts",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "klue_topic",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "language_identification",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "legalbench",
+    "status": "skipped",
+    "error": "Config deleted \u2014 all subsets < 32 rows",
+    "rows": 0
+  },
+  {
+    "name": "lex_glue_ecthr",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "lex_glue_eurlex",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "librispeech",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "math500",
+    "status": "pass",
+    "error": null,
+    "rows": 500
+  },
+  {
+    "name": "mathvista",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mbpp",
+    "status": "pass",
+    "error": null,
+    "rows": 374
+  },
+  {
+    "name": "measuring_hate_speech",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "medmcqa",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "melbourne_airbnb",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "mercari_price_suggestion",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "mercari_price_suggestion100K",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "mercedes_benz_greener",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "mls_german",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mmlu",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mmlu_pro",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mmmu",
+    "status": "skipped",
+    "error": "Config deleted \u2014 only 5 rows per split (benchmark dataset)",
+    "rows": 0
+  },
+  {
+    "name": "mnist",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "mnli",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mrpc",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "msmarco_passage",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_emotion",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "multi_nli",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "multinerd",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "multirc",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mushroom_edibility",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "natural_questions",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "natural_questions_hard_negatives",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "naval",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "naver_news_summary",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "news_channel",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "news_popularity2",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "newyorker_caption_contest",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "noshow_appointments",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "numerai28pt6",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "ohsumed_7400",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "ohsumed_cmu",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "openbookqa",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "opus100_en_es",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "opus100_en_fr",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "opus_books_en_fr",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "otto_group_product",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "oxford_pets",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "paws",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "peoples_speech",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "pii_masking",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "poker_hand",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "porto_seguro_safe_driver",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "product_sentiment_machine_hack",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "protein",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "pubmed_qa",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "qnli",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "qqp",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "rendered_sst2",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "reuters_cmu",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "reuters_r8",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "rossman_store_sales",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "rotten_tomatoes",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "rte",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "samsum",
+    "status": "skipped",
+    "error": "Config deleted \u2014 dataset removed from HF Hub",
+    "rows": 0
+  },
+  {
+    "name": "santander_customer_satisfaction",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "santander_customer_transaction",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "santander_value_prediction",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "sarcastic_headlines",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "sarcos",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "scienceqa_vqa",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "sciq",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "scitail",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "scotus_classification",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "snli",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "squad",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "squad_v2",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "sst2",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "sst2_hf",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "sst3",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "sst5",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "sst5_setfit",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "stanford_cars",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "sts_benchmark",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "stsb",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "student_performance",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "sun397",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "superglue_rte",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "svhn",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "synthetic_fraud",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "talkingdata_adtrack_fraud",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "telco_customer_churn",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "temperature",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "textvqa",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "tiny_imagenet",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "titanic",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "trivia_qa",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "truthful_qa",
+    "status": "pass",
+    "error": null,
+    "rows": 817
+  },
+  {
+    "name": "tweet_sentiment_extraction",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "tweeteval_emotion",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "tweeteval_hate",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "tweeteval_irony",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "tweeteval_offensive",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "tweeteval_sentiment",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "tweeteval_stance",
+    "status": "pass",
+    "error": null,
+    "rows": 587
+  },
+  {
+    "name": "twitter_bots",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "voxpopuli",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "vqa_rad",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "vqav2",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "walmart_recruiting",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "wic",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "wikiann",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "wikiann_de",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "wikiann_en",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "wikiann_zh",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "wikiart",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "wine_reviews",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "winobias",
+    "status": "pass",
+    "error": null,
+    "rows": 396
+  },
+  {
+    "name": "winograd_schema",
+    "status": "pass",
+    "error": null,
+    "rows": 554
+  },
+  {
+    "name": "winogrande",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "wmt14_de_en",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "wmt15",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "wmt16_de_en",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "wmt19_de_en",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "wnli",
+    "status": "pass",
+    "error": null,
+    "rows": 635
+  },
+  {
+    "name": "women_clothing_review",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "xnli",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "xsum",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "yahoo_answers",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "yelp_review_full",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "yelp_review_polarity",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "yelp_reviews",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  },
+  {
+    "name": "yosemite",
+    "status": "skipped",
+    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
+    "rows": 0
+  }
+]

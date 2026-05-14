@@ -327,7 +327,8 @@ def run_smoke_test(name: str) -> dict[str, Any]:
         # is likely sorted. Retry by skipping 40k rows to sample from a different region.
         if out_types.get(oc) in ("category", "binary") and df[oc].dropna().nunique() < 2:
             try:
-                df2 = stream_sample(hf_id, hf_sub, SAMPLE_ROWS // 2, shuffle_buffer=shuffle_buf, skip=40000)
+                # Use buffer=1 for skip-sampled data to avoid OOM on large image datasets
+                df2 = stream_sample(hf_id, hf_sub, SAMPLE_ROWS // 2, shuffle_buffer=1, skip=40000)
                 if df2 is not None:
                     df2 = apply_custom_loader(name, df2)
                     df2 = _materialize_media_columns(df2, _img_tmp)
