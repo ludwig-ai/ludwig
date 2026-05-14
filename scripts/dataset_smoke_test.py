@@ -275,7 +275,9 @@ def run_smoke_test(name: str) -> dict[str, Any]:
     elif needs_diversity:
         shuffle_buf = 100000
     else:
-        shuffle_buf = 10000
+        # Text/number outputs: no diversity requirement; small buffer avoids
+        # loading large rows (e.g. Natural Questions has ~1MB per row).
+        shuffle_buf = 2000
     try:
         df = stream_sample(hf_id, hf_sub, SAMPLE_ROWS, shuffle_buffer=shuffle_buf)
     except Exception as e:
