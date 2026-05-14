@@ -8,8 +8,8 @@ description: |
 columns:
   - name: sentence
     type: text
-  - name: label
-    type: category
+  - name: ner_tags
+    type: sequence
 output_features:
-  - name: label
-    type: category
+  - name: ner_tags
+    type: sequence

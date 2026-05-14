@@ -21,8 +21,6 @@ columns:
   type: text
 - name: speaker_id
   type: text
-- name: is_gold_transcript
-  type: binary
 - name: accent
   type: text
 output_features:

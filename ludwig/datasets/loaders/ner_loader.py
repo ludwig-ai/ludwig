@@ -165,10 +165,11 @@ class PIIMaskingLoader(HFLoader):
 
 
 class WinobiasLoader(NERLoader):
-    """WinoBias coref — keep just the sentence (joined tokens) + gender label."""
+    """WinoBias — tokens → sentence + ner_tags (space-joined int tags)."""
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
         df["sentence"] = df["tokens"].apply(lambda v: " ".join(_to_str_list(v)))
-        keep = ["sentence", "label"] + (["split"] if "split" in df.columns else [])
+        df["ner_tags"] = df["ner_tags"].apply(lambda v: " ".join(str(t) for t in _to_int_list(v)))
+        keep = ["sentence", "ner_tags"] + (["split"] if "split" in df.columns else [])
         return df[[c for c in keep if c in df.columns]]

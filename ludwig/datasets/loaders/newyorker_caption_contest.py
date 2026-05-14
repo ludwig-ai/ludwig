@@ -37,7 +37,7 @@ class NewYorkerCaptionContestLoader(HFLoader):
             paths.append(img_path)
         return pd.Series(paths, index=df.index)
 
-    def _transform(self, df: pd.DataFrame, split_name: str) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame, split_name: str = "train") -> pd.DataFrame:
         df = df.copy().reset_index(drop=True)
         df["image_path"] = self._save_images(df, split_name)
         keep = ["image_path", "image_description", "label"]

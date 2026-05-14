@@ -6,12 +6,12 @@ loader: hugging_face.HFLoader
 description: |
   XNLI cross-lingual NLI. Premise+hypothesis -> entailment/neutral/contradiction.
 columns:
-  - name: sentence1
+  - name: premise
     type: text
-  - name: sentence2
+  - name: hypothesis
     type: text
-  - name: gold_label
+  - name: label
     type: category
 output_features:
-  - name: gold_label
+  - name: label
     type: category

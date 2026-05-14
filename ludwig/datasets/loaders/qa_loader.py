@@ -145,9 +145,20 @@ class NaturalQuestionsLoader(HFLoader):
             df["question_text"] = df.get("question", df.iloc[:, 0]).astype(str)
 
         if "annotations" in df.columns:
-            df["answer_text"] = df["annotations"].apply(
-                lambda a: (a.get("short_answers", [{}])[0] or {}).get("text", [""])[0] if isinstance(a, dict) else ""
-            )
+
+            def _nq_answer(a):
+                if not isinstance(a, dict):
+                    return ""
+                short = a.get("short_answers", [])
+                if not short:
+                    return ""
+                first = short[0]
+                if not first:
+                    return ""
+                texts = first.get("text", []) if isinstance(first, dict) else []
+                return texts[0] if texts else ""
+
+            df["answer_text"] = df["annotations"].apply(_nq_answer)
         else:
             df["answer_text"] = ""
 

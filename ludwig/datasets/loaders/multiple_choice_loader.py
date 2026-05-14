@@ -129,7 +129,7 @@ class OpenBookQALoader(MultipleChoiceLoader):
     question_col = "question_stem"
     choices_col = "choices"
     answer_col = "answerKey"
-    context_col = "fact1"
+    context_col = None
 
 
 class MmluLoader(MultipleChoiceLoader):

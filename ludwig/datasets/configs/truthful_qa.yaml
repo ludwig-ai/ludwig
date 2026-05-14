@@ -1,7 +1,7 @@
 version: 1.0
 name: truthful_qa
 huggingface_dataset_id: truthfulqa/truthful_qa
-huggingface_subsample: multiple_choice
+huggingface_subsample: generation
 loader: misc_loaders.TruthfulQALoader
 description: |
   TruthfulQA: question → best truthful answer. 817 questions.

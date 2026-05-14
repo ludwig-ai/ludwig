@@ -61,7 +61,7 @@ class CauldronVQALoader(HFLoader):
             return question, answer
         return str(texts), ""
 
-    def _transform(self, df: pd.DataFrame, split_name: str) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame, split_name: str = "train") -> pd.DataFrame:
         df = df.copy().reset_index(drop=True)
         df["image_path"] = self._save_images(df, split_name)
         qa = df["texts"].apply(self._extract_qa)
