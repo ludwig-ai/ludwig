@@ -54,7 +54,9 @@ def load_dataset_config(name: str) -> dict:
         return yaml.safe_load(f)
 
 
-def stream_sample(hf_id: str, hf_sub: str | None, n: int = SAMPLE_ROWS) -> pd.DataFrame | None:
+def stream_sample(
+    hf_id: str, hf_sub: str | None, n: int = SAMPLE_ROWS, shuffle_buffer: int = 100000
+) -> pd.DataFrame | None:
     """Stream up to n rows from HF without downloading the full dataset."""
     try:
         ds_stream = hf_datasets.load_dataset(
@@ -65,9 +67,9 @@ def stream_sample(hf_id: str, hf_sub: str | None, n: int = SAMPLE_ROWS) -> pd.Da
         )
         split_name = "train" if "train" in ds_stream else list(ds_stream.keys())[0]
         ds = ds_stream[split_name]
-        # Large shuffle buffer to ensure label diversity in sorted datasets (e.g. dbpedia, imdb).
-        # 100k covers >2 classes even for dbpedia_14 (40k rows/class).
-        ds = ds.shuffle(seed=42, buffer_size=min(n * 100, 100000))
+        # Shuffle to ensure label diversity in sorted datasets (e.g. dbpedia, imdb).
+        # Use a smaller buffer for media datasets to avoid streaming 100k large files.
+        ds = ds.shuffle(seed=42, buffer_size=min(n * 100, shuffle_buffer))
         rows = list(ds.take(n))
         if len(rows) < MIN_ROWS:
             return None
@@ -256,9 +258,14 @@ def run_smoke_test(name: str) -> dict[str, Any]:
         result["error"] = "Not an HF dataset (pre-existing Ludwig dataset)"
         return result
 
-    # 1. Stream 1000 rows
+    # 1. Stream 1000 rows — use small shuffle buffer for media datasets to avoid
+    #    streaming 100k large files; text datasets can afford the large buffer
+    #    to ensure label diversity in sorted datasets (e.g. dbpedia_14, imdb).
+    col_types = {col["type"] for col in cfg.get("columns", [])}
+    has_media = bool(col_types & {"audio", "image"})
+    shuffle_buf = 5000 if has_media else 100000
     try:
-        df = stream_sample(hf_id, hf_sub, SAMPLE_ROWS)
+        df = stream_sample(hf_id, hf_sub, SAMPLE_ROWS, shuffle_buffer=shuffle_buf)
     except Exception as e:
         result["status"] = "error"
         result["error"] = str(e)[:200]
