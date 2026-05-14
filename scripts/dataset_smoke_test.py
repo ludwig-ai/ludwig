@@ -55,7 +55,7 @@ def load_dataset_config(name: str) -> dict:
 
 
 def stream_sample(
-    hf_id: str, hf_sub: str | None, n: int = SAMPLE_ROWS, shuffle_buffer: int = 100000
+    hf_id: str, hf_sub: str | None, n: int = SAMPLE_ROWS, shuffle_buffer: int = 100000, skip: int = 0
 ) -> pd.DataFrame | None:
     """Stream up to n rows from HF without downloading the full dataset."""
     try:
@@ -67,6 +67,8 @@ def stream_sample(
         )
         split_name = "train" if "train" in ds_stream else list(ds_stream.keys())[0]
         ds = ds_stream[split_name]
+        if skip:
+            ds = ds.skip(skip)
         # Shuffle to ensure label diversity in sorted datasets (e.g. dbpedia, imdb).
         # Use a smaller buffer for media datasets to avoid streaming 100k large files.
         ds = ds.shuffle(seed=42, buffer_size=min(n * 100, shuffle_buffer))
@@ -297,8 +299,9 @@ def run_smoke_test(name: str) -> dict[str, Any]:
     cfg_cols = {f["name"] for f in cfg.get("columns", [])}
     df = df[[c for c in df.columns if c in cfg_cols or c == "split"]]
 
-    # 5. Verify output columns exist and have values
+    # 5. Verify output columns exist and have values; retry with skip for sorted datasets
     out_names = [f["name"] for f in cfg.get("output_features", [])]
+    out_types = {f["name"]: f["type"] for f in cfg.get("output_features", [])}
     for oc in out_names:
         if oc not in df.columns:
             result["status"] = "error"
@@ -308,6 +311,18 @@ def run_smoke_test(name: str) -> dict[str, Any]:
             result["status"] = "error"
             result["error"] = f"Output column '{oc}' is all-null"
             return result
+        # For category/binary outputs: if only 1 distinct non-null value, the dataset
+        # is likely sorted. Retry by skipping 40k rows to sample from a different region.
+        if out_types.get(oc) in ("category", "binary") and df[oc].dropna().nunique() < 2:
+            try:
+                df2 = stream_sample(hf_id, hf_sub, SAMPLE_ROWS // 2, shuffle_buffer=shuffle_buf, skip=40000)
+                if df2 is not None:
+                    df2 = apply_custom_loader(name, df2)
+                    df2 = _materialize_media_columns(df2, _img_tmp)
+                    df2 = df2[[c for c in df2.columns if c in cfg_cols or c == "split"]]
+                    df = pd.concat([df[: SAMPLE_ROWS // 2], df2], ignore_index=True)
+            except Exception:
+                pass  # keep original df
 
     # 6. Build Ludwig config and train
     ludwig_cfg = build_ludwig_config(cfg)
