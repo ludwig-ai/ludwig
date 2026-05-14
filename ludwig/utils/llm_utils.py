@@ -38,7 +38,7 @@ FALLBACK_CONTEXT_LEN = 2048
 _MODELS_WITH_DEVICE_MAP_AUTO_EXCLUSION = set()
 
 
-@default_retry(tries=8)
+@default_retry(tries=8, exceptions=OSError)
 def load_pretrained_from_config(
     config_obj: LLMModelConfig | LLMEncoderConfig,
     model_config: AutoConfig | None = None,
