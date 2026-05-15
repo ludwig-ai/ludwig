@@ -732,7 +732,7 @@ def test_ray_image_modin(tmpdir, ray_cluster_2cpu):
     )
 
 
-@pytest.mark.integration_tests_a2
+@pytest.mark.integration_tests_a5
 @pytest.mark.distributed
 def test_ray_image_multiple_features(tmpdir, ray_cluster_2cpu):
     input_features = [
