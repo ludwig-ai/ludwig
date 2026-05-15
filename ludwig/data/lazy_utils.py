@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import os
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from typing import Callable
 
 import numpy as np
@@ -99,3 +100,57 @@ class LazyColumn:
 def is_lazy_column(col) -> bool:
     """Return True if *col* is a ``LazyColumn`` instance."""
     return isinstance(col, LazyColumn)
+
+
+def get_default_lazy_cache_dir() -> Path:
+    """Return the root directory used for lazy media caches.
+
+    Creates ``~/.cache/ludwig/lazy_media/`` on first call if it does not
+    already exist.  All per-feature subdirectories are nested inside this root.
+
+    Returns
+    -------
+    Path
+        Absolute path to the root cache directory.
+    """
+    cache_root = Path.home() / ".cache" / "ludwig" / "lazy_media"
+    cache_root.mkdir(parents=True, exist_ok=True)
+    return cache_root
+
+
+def resolve_lazy_cache_dir(cache_dir_param: str | None, feature_name: str) -> Path:
+    """Resolve and create the per-feature lazy cache directory.
+
+    If *cache_dir_param* is given, it is used as the parent directory and
+    *feature_name* is appended as a subdirectory.  When *cache_dir_param* is
+    ``None``, the default root returned by :func:`get_default_lazy_cache_dir`
+    is used instead.
+
+    Parameters
+    ----------
+    cache_dir_param:
+        Explicit cache directory string from the preprocessing config, or
+        ``None`` to use the default location.
+    feature_name:
+        Name of the Ludwig feature (e.g. ``"audio"`` or ``"image"``).  Used as
+        the leaf directory name so that multiple features do not share a cache.
+
+    Returns
+    -------
+    Path
+        Absolute path to the per-feature cache directory.  The directory is
+        guaranteed to exist after this call.
+
+    Examples
+    --------
+    >>> resolve_lazy_cache_dir(None, "my_audio")
+    PosixPath('/home/user/.cache/ludwig/lazy_media/my_audio')
+    >>> resolve_lazy_cache_dir("/tmp/my_cache", "my_image")
+    PosixPath('/tmp/my_cache/my_image')
+    """
+    if cache_dir_param is not None:
+        feature_cache_dir = Path(cache_dir_param) / feature_name
+    else:
+        feature_cache_dir = get_default_lazy_cache_dir() / feature_name
+    feature_cache_dir.mkdir(parents=True, exist_ok=True)
+    return feature_cache_dir
