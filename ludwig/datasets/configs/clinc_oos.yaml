@@ -1,0 +1,15 @@
+version: 1.0
+name: clinc_oos
+huggingface_dataset_id: clinc/clinc_oos
+huggingface_subsample: plus
+loader: hugging_face.HFLoader
+description: |
+  CLINC OOS: 150-class intent classification with out-of-scope detection. 10K train examples.
+columns:
+  - name: text
+    type: text
+  - name: intent
+    type: category
+output_features:
+  - name: intent
+    type: category

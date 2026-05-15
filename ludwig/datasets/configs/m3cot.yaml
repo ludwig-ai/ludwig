@@ -1,0 +1,16 @@
+version: 1.0
+name: m3cot
+huggingface_dataset_id: LightChen2333/M3CoT
+loader: hugging_face.HFLoader
+description: |
+  M3CoT: multimodal multi-domain QA category classification. 7K examples.
+columns:
+  - name: question
+    type: text
+  - name: choices
+    type: text
+  - name: category
+    type: category
+output_features:
+  - name: category
+    type: category

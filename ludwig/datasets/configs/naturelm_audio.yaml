@@ -1,0 +1,17 @@
+version: 1.0
+name: naturelm_audio
+huggingface_dataset_id: EarthSpeciesProject/NatureLM-audio-training
+huggingface_subsample: NatureLM-audio-training
+loader: hugging_face.HFLoader
+description: |
+  NatureLM Audio: wildlife/nature audio instruction following. 26M train examples.
+columns:
+  - name: audio
+    type: audio
+  - name: instruction_text
+    type: text
+  - name: source_dataset
+    type: category
+output_features:
+  - name: source_dataset
+    type: category

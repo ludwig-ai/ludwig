@@ -1,0 +1,17 @@
+version: 1.0
+name: mteb_sts17_en
+huggingface_dataset_id: mteb/sts17-crosslingual-sts
+huggingface_subsample: en-en
+loader: hugging_face.HFLoader
+description: |
+  MTEB STS17 (English-English): semantic textual similarity regression.
+columns:
+  - name: sentence1
+    type: text
+  - name: sentence2
+    type: text
+  - name: score
+    type: number
+output_features:
+  - name: score
+    type: number

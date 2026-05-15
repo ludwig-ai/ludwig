@@ -1,0 +1,14 @@
+version: 1.0
+name: handwritten_crossouts
+huggingface_dataset_id: wahlinski/handwritten_cross-outs
+loader: hugging_face.HFLoader
+description: |
+  Handwritten cross-outs: classify handwriting correction styles. 22K examples.
+columns:
+  - name: image
+    type: image
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

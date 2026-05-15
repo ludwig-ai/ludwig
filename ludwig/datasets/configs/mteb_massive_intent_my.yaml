@@ -1,0 +1,15 @@
+version: 1.0
+name: mteb_massive_intent_my
+huggingface_dataset_id: mteb/massive_intent
+huggingface_subsample: "my"
+loader: hugging_face.HFLoader
+description: |
+  MTEB MASSIVE Intent Classification (Burmese): task-oriented dialog intent prediction.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

@@ -1,0 +1,16 @@
+version: 1.0
+name: wiki_qa
+huggingface_dataset_id: microsoft/wiki_qa
+loader: hugging_face.HFLoader
+description: |
+  WikiQA: answer sentence selection (relevant/not-relevant). 20K train examples.
+columns:
+  - name: question
+    type: text
+  - name: answer
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

@@ -1,0 +1,15 @@
+version: 1.0
+name: mteb_amazon_reviews_class_zh
+huggingface_dataset_id: mteb/AmazonReviewsClassification
+huggingface_subsample: zh
+loader: hugging_face.HFLoader
+description: |
+  MTEB Amazon Reviews Classification (Chinese): 5-class star rating classification.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

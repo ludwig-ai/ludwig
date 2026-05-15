@@ -1,0 +1,39 @@
+version: 1.0
+name: repid
+huggingface_dataset_id: vsevolodpl/REPID
+loader: hugging_face.HFLoader
+description: |
+  REPID: Retinal Perceptual Image Dataset — tabular perceptual quality metrics
+  (MOS, MSE, color/chroma/lightness stats) for image pairs.
+columns:
+  - name: mos
+    type: number
+  - name: mse
+    type: number
+  - name: hue_left
+    type: number
+  - name: hue_right
+    type: number
+  - name: std_left
+    type: number
+  - name: std_right
+    type: number
+  - name: chroma_u_left
+    type: number
+  - name: chroma_u_right
+    type: number
+  - name: chroma_v_left
+    type: number
+  - name: chroma_v_right
+    type: number
+  - name: lightness_left
+    type: number
+  - name: lightness_right
+    type: number
+  - name: saturation_left
+    type: number
+  - name: saturation_right
+    type: number
+output_features:
+  - name: mos
+    type: number

@@ -1,0 +1,18 @@
+version: 1.0
+name: graid_bdd
+huggingface_dataset_id: kd7/graid-bdd
+loader: hugging_face.HFLoader
+description: |
+  GrAID-BDD: grounded autonomous driving image QA. 4.6M train examples.
+columns:
+  - name: image
+    type: image
+  - name: question
+    type: text
+  - name: answer
+    type: category
+  - name: question_type
+    type: category
+output_features:
+  - name: answer
+    type: category

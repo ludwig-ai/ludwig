@@ -1,0 +1,14 @@
+version: 1.0
+name: mteb_greek_legal
+huggingface_dataset_id: mteb/GreekLegalCodeClassification
+loader: hugging_face.HFLoader
+description: |
+  MTEB Greek Legal Code Classification: Greek legal code topic classification.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

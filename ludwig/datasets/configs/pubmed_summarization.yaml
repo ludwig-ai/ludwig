@@ -1,0 +1,14 @@
+version: 1.0
+name: pubmed_summarization
+huggingface_dataset_id: ccdv/pubmed-summarization
+loader: hugging_face.HFLoader
+description: |
+  PubMed biomedical document summarization. 120K train examples.
+columns:
+  - name: article
+    type: text
+  - name: abstract
+    type: text
+output_features:
+  - name: abstract
+    type: text

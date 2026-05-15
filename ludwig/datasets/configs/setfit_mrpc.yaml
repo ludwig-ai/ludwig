@@ -1,0 +1,16 @@
+version: 1.0
+name: setfit_mrpc
+huggingface_dataset_id: SetFit/mrpc
+loader: hugging_face.HFLoader
+description: |
+  SetFit MRPC: Microsoft Research Paraphrase Corpus, binary paraphrase detection.
+columns:
+  - name: text1
+    type: text
+  - name: text2
+    type: text
+  - name: label
+    type: binary
+output_features:
+  - name: label
+    type: binary

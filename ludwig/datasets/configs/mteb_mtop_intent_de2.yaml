@@ -1,0 +1,15 @@
+version: 1.0
+name: mteb_mtop_intent_de2
+huggingface_dataset_id: mteb/MTOPIntentClassification
+huggingface_subsample: de
+loader: hugging_face.HFLoader
+description: |
+  MTEB MTOP Intent Classification (German): task-oriented dialog intent prediction.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

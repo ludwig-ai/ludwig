@@ -1,0 +1,16 @@
+version: 1.0
+name: amazon_massive_scenario
+huggingface_dataset_id: mteb/amazon_massive_scenario
+loader: hugging_face.HFLoader
+description: |
+  Amazon MASSIVE multilingual scenario classification (18 scenarios, 60 languages). 587K train.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+  - name: lang
+    type: category
+output_features:
+  - name: label
+    type: category

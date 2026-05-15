@@ -1,0 +1,15 @@
+version: 1.0
+name: tofu
+huggingface_dataset_id: locuslab/TOFU
+huggingface_subsample: full
+loader: hugging_face.HFLoader
+description: |
+  TOFU: Fictitious Unlearning. Fictional author QA dataset for LLM unlearning research. 4K train examples.
+columns:
+  - name: question
+    type: text
+  - name: answer
+    type: text
+output_features:
+  - name: answer
+    type: text

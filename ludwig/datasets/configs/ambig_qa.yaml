@@ -1,0 +1,14 @@
+version: 1.0
+name: ambig_qa
+huggingface_dataset_id: ambig_qa
+loader: hugging_face.HFLoader
+description: |
+  AmbigQA: open-domain QA with ambiguous questions. Text-in text-out task.
+columns:
+  - name: question
+    type: text
+  - name: annotations
+    type: text
+output_features:
+  - name: annotations
+    type: text

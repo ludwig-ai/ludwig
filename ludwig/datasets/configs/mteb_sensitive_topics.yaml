@@ -1,0 +1,14 @@
+version: 1.0
+name: mteb_sensitive_topics
+huggingface_dataset_id: mteb/SensitiveTopicsClassification
+loader: hugging_face.HFLoader
+description: |
+  MTEB Sensitive Topics Classification: sensitive topic detection in text.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

@@ -1,0 +1,15 @@
+version: 1.0
+name: mteb_naija_senti_pcm
+huggingface_dataset_id: mteb/NaijaSenti
+huggingface_subsample: pcm
+loader: hugging_face.HFLoader
+description: |
+  MTEB NaijaSenti (Nigerian Pidgin): Nigerian language sentiment classification.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

@@ -1,0 +1,15 @@
+version: 1.0
+name: universal_dependencies
+huggingface_dataset_id: commul/universal_dependencies
+huggingface_subsample: en_ewt
+loader: hugging_face.HFLoader
+description: |
+  Universal Dependencies English EWT: POS tagging with UPOS tags. 12K train sentences.
+columns:
+  - name: text
+    type: text
+  - name: upos
+    type: sequence
+output_features:
+  - name: upos
+    type: sequence

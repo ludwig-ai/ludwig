@@ -1,0 +1,15 @@
+version: 1.0
+name: mteb_massive_intent_cy
+huggingface_dataset_id: mteb/massive_intent
+huggingface_subsample: "cy"
+loader: hugging_face.HFLoader
+description: |
+  MTEB MASSIVE Intent Classification (Welsh): task-oriented dialog intent prediction.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

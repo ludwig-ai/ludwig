@@ -1,0 +1,14 @@
+version: 1.0
+name: mteb_ita_casehold
+huggingface_dataset_id: mteb/ItaCaseholdClassification
+loader: hugging_face.HFLoader
+description: |
+  MTEB ItaCasehold Classification: Italian legal case holding classification.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

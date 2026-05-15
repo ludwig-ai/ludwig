@@ -1,0 +1,16 @@
+version: 1.0
+name: persuasion
+huggingface_dataset_id: Anthropic/persuasion
+loader: hugging_face.HFLoader
+description: |
+  Anthropic Persuasion: rate how persuasive arguments are for various claims.
+columns:
+  - name: claim
+    type: text
+  - name: argument
+    type: text
+  - name: persuasiveness_metric
+    type: number
+output_features:
+  - name: persuasiveness_metric
+    type: number

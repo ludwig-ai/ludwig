@@ -1,0 +1,14 @@
+version: 1.0
+name: twitter_financial_news_topic
+huggingface_dataset_id: zeroshot/twitter-financial-news-topic
+loader: hugging_face.HFLoader
+description: |
+  Twitter financial news 20-class topic classification. 17K train examples.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

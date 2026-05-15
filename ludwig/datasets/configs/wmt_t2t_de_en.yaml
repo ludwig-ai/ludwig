@@ -1,0 +1,15 @@
+version: 1.0
+name: wmt_t2t_de_en
+huggingface_dataset_id: wmt/wmt_t2t
+huggingface_subsample: de-en
+loader: translation_loader.Wmt14DeEnLoader
+description: |
+  WMT T2T German-English news translation. 4.6M train sentence pairs.
+columns:
+  - name: de
+    type: text
+  - name: en
+    type: text
+output_features:
+  - name: en
+    type: text

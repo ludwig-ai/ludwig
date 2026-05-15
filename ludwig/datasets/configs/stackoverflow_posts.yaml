@@ -1,0 +1,16 @@
+version: 1.0
+name: stackoverflow_posts
+huggingface_dataset_id: mikex86/stackoverflow-posts
+loader: hugging_face.HFLoader
+description: |
+  Stack Overflow posts: predict question score from title and body. 58M train examples.
+columns:
+  - name: Title
+    type: text
+  - name: Body
+    type: text
+  - name: Score
+    type: number
+output_features:
+  - name: Score
+    type: number

@@ -78,6 +78,53 @@ class GiftEvalLoader(HFLoader):
         return self._transform(super().load(split=False))
 
 
+class HC3Loader(HFLoader):
+    """HC3 — expand each (question, human_answers, chatgpt_answers) row into two rows
+    for binary classification: detect if an answer is human-written (0) or ChatGPT (1).
+    Takes the first element from each answer list.
+    """
+
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        df = df.copy()
+
+        def first(lst):
+            if isinstance(lst, list) and lst:
+                return str(lst[0])
+            return ""
+
+        human = pd.DataFrame(
+            {
+                "question": df["question"],
+                "answer": df["human_answers"].apply(first),
+                "is_chatgpt": 0,
+            }
+        )
+        chatgpt = pd.DataFrame(
+            {
+                "question": df["question"],
+                "answer": df["chatgpt_answers"].apply(first),
+                "is_chatgpt": 1,
+            }
+        )
+        return pd.concat([human, chatgpt], ignore_index=True)
+
+
+class BlimpLoader(HFLoader):
+    """BLiMP — reshape minimal pairs into binary grammaticality classification.
+
+    Each source row has (sentence_good, sentence_bad). We expand to two rows
+    each with a single `sentence` column and a binary `is_grammatical` label.
+    """
+
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        df = df.copy()
+        good = df[["sentence_good"]].rename(columns={"sentence_good": "sentence"})
+        good["is_grammatical"] = 1
+        bad = df[["sentence_bad"]].rename(columns={"sentence_bad": "sentence"})
+        bad["is_grammatical"] = 0
+        return pd.concat([good, bad], ignore_index=True)
+
+
 class SciqLoader(HFLoader):
     """SciQ — support + question + distractor/correct_answer → correct answer (text)."""
 

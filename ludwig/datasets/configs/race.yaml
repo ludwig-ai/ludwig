@@ -1,0 +1,19 @@
+version: 1.0
+name: race
+huggingface_dataset_id: ehovy/race
+huggingface_subsample: all
+loader: hugging_face.HFLoader
+description: |
+  RACE: large-scale reading comprehension from Chinese English exams. 87K train examples. 4-way MC.
+columns:
+  - name: article
+    type: text
+  - name: question
+    type: text
+  - name: options
+    type: text
+  - name: answer
+    type: category
+output_features:
+  - name: answer
+    type: category

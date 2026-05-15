@@ -1,0 +1,16 @@
+version: 1.0
+name: wildchat
+huggingface_dataset_id: allenai/WildChat
+loader: hugging_face.HFLoader
+description: |
+  WildChat: 570K real ChatGPT user interactions; language + toxicity classification.
+columns:
+  - name: model
+    type: text
+  - name: language
+    type: category
+  - name: toxic
+    type: binary
+output_features:
+  - name: language
+    type: category

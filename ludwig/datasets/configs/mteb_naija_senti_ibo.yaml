@@ -1,0 +1,15 @@
+version: 1.0
+name: mteb_naija_senti_ibo
+huggingface_dataset_id: mteb/NaijaSenti
+huggingface_subsample: ibo
+loader: hugging_face.HFLoader
+description: |
+  MTEB NaijaSenti (Igbo): Nigerian language sentiment classification.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

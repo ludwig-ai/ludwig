@@ -1,0 +1,14 @@
+version: 1.0
+name: no_robots
+huggingface_dataset_id: HuggingFaceH4/no_robots
+loader: hugging_face.HFLoader
+description: |
+  No Robots: 10K high-quality instruction-following conversations with category labels.
+columns:
+  - name: prompt
+    type: text
+  - name: category
+    type: category
+output_features:
+  - name: category
+    type: category

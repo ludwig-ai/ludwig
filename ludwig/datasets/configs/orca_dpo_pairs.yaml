@@ -1,0 +1,16 @@
+version: 1.0
+name: orca_dpo_pairs
+huggingface_dataset_id: Intel/orca_dpo_pairs
+loader: hugging_face.HFLoader
+description: |
+  Intel Orca DPO Pairs: preference dataset for direct preference optimization.
+columns:
+  - name: question
+    type: text
+  - name: chosen
+    type: text
+  - name: rejected
+    type: text
+output_features:
+  - name: chosen
+    type: text

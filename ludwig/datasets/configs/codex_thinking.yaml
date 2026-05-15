@@ -1,0 +1,14 @@
+version: 1.0
+name: codex_thinking
+huggingface_dataset_id: Modotte/CodeX-2M-Thinking
+loader: hugging_face.HFLoader
+description: |
+  CodeX 2M: code generation with chain-of-thought reasoning. 2.2M examples.
+columns:
+  - name: input
+    type: text
+  - name: output
+    type: text
+output_features:
+  - name: output
+    type: text

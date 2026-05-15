@@ -1,0 +1,15 @@
+version: 1.0
+name: merit
+huggingface_dataset_id: de-Rodrigo/merit
+huggingface_subsample: en-digital-line-degradation-seq
+loader: hugging_face.HFLoader
+description: |
+  MERIT: historical document image recognition. 7K train examples.
+columns:
+  - name: image
+    type: image
+  - name: ground_truth
+    type: text
+output_features:
+  - name: ground_truth
+    type: text

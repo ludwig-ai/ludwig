@@ -1,0 +1,14 @@
+version: 1.0
+name: mteb_cyrillic_turkic
+huggingface_dataset_id: mteb/CyrillicTurkicLangClassification
+loader: hugging_face.HFLoader
+description: |
+  MTEB Cyrillic Turkic Language Classification: language identification for Cyrillic-script Turkic languages.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

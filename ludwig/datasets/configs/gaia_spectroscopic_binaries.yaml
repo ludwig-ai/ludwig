@@ -1,0 +1,18 @@
+version: 1.0
+name: gaia_spectroscopic_binaries
+huggingface_dataset_id: juliensimon/gaia-dr3-spectroscopic-binaries
+loader: hugging_face.HFLoader
+description: |
+  Gaia DR3 Spectroscopic Binaries: predict orbital period. 186K examples.
+columns:
+  - name: period_days
+    type: number
+  - name: period_days_err
+    type: number
+  - name: ra_deg
+    type: number
+  - name: dec_deg
+    type: number
+output_features:
+  - name: period_days
+    type: number

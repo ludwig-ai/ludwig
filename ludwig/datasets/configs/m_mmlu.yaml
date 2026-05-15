@@ -1,0 +1,23 @@
+version: 1.0
+name: m_mmlu
+huggingface_dataset_id: alexandrainst/m_mmlu
+huggingface_subsample: ar
+loader: hugging_face.HFLoader
+description: |
+  Multilingual MMLU (Arabic): 4-way multiple choice academic questions. 274 train examples.
+columns:
+  - name: instruction
+    type: text
+  - name: option_a
+    type: text
+  - name: option_b
+    type: text
+  - name: option_c
+    type: text
+  - name: option_d
+    type: text
+  - name: answer
+    type: category
+output_features:
+  - name: answer
+    type: category

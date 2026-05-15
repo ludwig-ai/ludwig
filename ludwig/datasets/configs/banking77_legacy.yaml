@@ -1,0 +1,14 @@
+version: 1.0
+name: banking77_legacy
+huggingface_dataset_id: legacy-datasets/banking77
+loader: hugging_face.HFLoader
+description: |
+  Banking77 (legacy) 77-class banking intent classification. 10K train examples.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

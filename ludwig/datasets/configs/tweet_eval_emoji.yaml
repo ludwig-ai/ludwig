@@ -1,0 +1,15 @@
+version: 1.0
+name: tweet_eval_emoji
+huggingface_dataset_id: cardiffnlp/tweet_eval
+huggingface_subsample: emoji
+loader: hugging_face.HFLoader
+description: |
+  TweetEval emoji: predict emoji from tweet text. 20-class classification.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

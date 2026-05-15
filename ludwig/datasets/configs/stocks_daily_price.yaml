@@ -1,0 +1,22 @@
+version: 1.0
+name: stocks_daily_price
+huggingface_dataset_id: paperswithbacktest/Stocks-Daily-Price
+loader: hugging_face.HFLoader
+description: |
+  Daily stock OHLCV: predict close price from symbol and features. 25M examples.
+columns:
+  - name: symbol
+    type: category
+  - name: open
+    type: number
+  - name: high
+    type: number
+  - name: low
+    type: number
+  - name: volume
+    type: number
+  - name: close
+    type: number
+output_features:
+  - name: close
+    type: number

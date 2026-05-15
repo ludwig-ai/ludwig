@@ -1,0 +1,17 @@
+version: 1.0
+name: xnli_zh
+huggingface_dataset_id: xnli
+huggingface_subsample: zh
+loader: hugging_face.HFLoader
+description: |
+  XNLI Chinese: cross-lingual natural language inference, Chinese split.
+columns:
+  - name: premise
+    type: text
+  - name: hypothesis
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

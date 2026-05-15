@@ -1,0 +1,17 @@
+version: 1.0
+name: ami_asr
+huggingface_dataset_id: edinburghcstr/ami
+huggingface_subsample: ihm
+loader: hugging_face.HFLoader
+description: |
+  AMI corpus: meeting audio transcription. 108K train examples.
+columns:
+  - name: text
+    type: text
+  - name: audio
+    type: audio
+  - name: speaker_id
+    type: category
+output_features:
+  - name: text
+    type: text

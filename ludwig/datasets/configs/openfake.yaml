@@ -1,0 +1,15 @@
+version: 1.0
+name: openfake
+huggingface_dataset_id: ComplexDataLab/OpenFake
+huggingface_subsample: core
+loader: hugging_face.HFLoader
+description: |
+  OpenFake: AI-generated vs real image binary classification.
+columns:
+  - name: image
+    type: image
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

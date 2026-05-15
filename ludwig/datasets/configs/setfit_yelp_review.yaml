@@ -1,0 +1,14 @@
+version: 1.0
+name: setfit_yelp_review
+huggingface_dataset_id: SetFit/yelp_review_full
+loader: hugging_face.HFLoader
+description: |
+  SetFit Yelp Review Full: 5-class star rating classification from Yelp reviews.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

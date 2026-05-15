@@ -1,0 +1,16 @@
+version: 1.0
+name: cmrc2018
+huggingface_dataset_id: hfl/cmrc2018
+loader: hugging_face.HFLoader
+description: |
+  CMRC 2018: Chinese machine reading comprehension (SQuAD-style). 10K train examples.
+columns:
+  - name: context
+    type: text
+  - name: question
+    type: text
+  - name: answers
+    type: text
+output_features:
+  - name: answers
+    type: text

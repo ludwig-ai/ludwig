@@ -1,0 +1,17 @@
+version: 1.0
+name: xnli_es
+huggingface_dataset_id: xnli
+huggingface_subsample: es
+loader: hugging_face.HFLoader
+description: |
+  XNLI Spanish: cross-lingual natural language inference, Spanish split.
+columns:
+  - name: premise
+    type: text
+  - name: hypothesis
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

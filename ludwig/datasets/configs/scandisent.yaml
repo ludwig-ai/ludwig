@@ -1,0 +1,16 @@
+version: 1.0
+name: scandisent
+huggingface_dataset_id: timpal0l/scandisent
+loader: hugging_face.HFLoader
+description: |
+  ScandiSent: Nordic language sentiment classification. 50K train examples.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: number
+  - name: language
+    type: category
+output_features:
+  - name: label
+    type: number

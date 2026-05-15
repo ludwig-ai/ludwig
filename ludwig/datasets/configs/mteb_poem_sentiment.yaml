@@ -1,0 +1,14 @@
+version: 1.0
+name: mteb_poem_sentiment
+huggingface_dataset_id: mteb/PoemSentimentClassification
+loader: hugging_face.HFLoader
+description: |
+  MTEB Poem Sentiment Classification: sentiment classification of poem verses.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

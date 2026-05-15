@@ -1,0 +1,16 @@
+version: 1.0
+name: mteb_stsbenchmark
+huggingface_dataset_id: mteb/stsbenchmark-sts
+loader: hugging_face.HFLoader
+description: |
+  MTEB STSBenchmark: STS Benchmark semantic similarity (8K sentence pairs, scores 0-5).
+columns:
+  - name: sentence1
+    type: text
+  - name: sentence2
+    type: text
+  - name: score
+    type: number
+output_features:
+  - name: score
+    type: number

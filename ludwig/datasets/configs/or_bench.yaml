@@ -1,0 +1,15 @@
+version: 1.0
+name: or_bench
+huggingface_dataset_id: bench-llm/or-bench
+huggingface_subsample: or-bench-80k
+loader: hugging_face.HFLoader
+description: |
+  OR-Bench: over-refusal benchmark prompt classification. 80K examples.
+columns:
+  - name: prompt
+    type: text
+  - name: category
+    type: category
+output_features:
+  - name: category
+    type: category

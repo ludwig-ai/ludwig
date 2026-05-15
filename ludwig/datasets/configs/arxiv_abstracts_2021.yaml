@@ -1,0 +1,14 @@
+version: 1.0
+name: arxiv_abstracts_2021
+huggingface_dataset_id: gfissore/arxiv-abstracts-2021
+loader: hugging_face.HFLoader
+description: |
+  ArXiv abstracts 2021: predict abstract from title. 2M train examples.
+columns:
+  - name: title
+    type: text
+  - name: abstract
+    type: text
+output_features:
+  - name: abstract
+    type: text

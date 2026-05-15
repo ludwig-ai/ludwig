@@ -1,0 +1,18 @@
+version: 1.0
+name: sts22
+huggingface_dataset_id: mteb/sts22-crosslingual-sts
+loader: hugging_face.HFLoader
+description: |
+  STS 2022: cross-lingual semantic textual similarity. 4.6K train examples.
+columns:
+  - name: sentence1
+    type: text
+  - name: sentence2
+    type: text
+  - name: score
+    type: number
+  - name: lang
+    type: category
+output_features:
+  - name: score
+    type: number

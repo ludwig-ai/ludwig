@@ -1,0 +1,14 @@
+version: 1.0
+name: germeval18
+huggingface_dataset_id: philschmid/germeval18
+loader: hugging_face.HFLoader
+description: |
+  GermEval 2018: German offensive language detection. Binary and multi-class labels.
+columns:
+  - name: text
+    type: text
+  - name: binary
+    type: binary
+output_features:
+  - name: binary
+    type: binary

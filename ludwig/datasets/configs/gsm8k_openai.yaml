@@ -1,0 +1,15 @@
+version: 1.0
+name: gsm8k_openai
+huggingface_dataset_id: openai/gsm8k
+huggingface_subsample: main
+loader: hugging_face.HFLoader
+description: |
+  GSM8K (OpenAI): grade school math word problems (8.5K problems).
+columns:
+  - name: question
+    type: text
+  - name: answer
+    type: text
+output_features:
+  - name: answer
+    type: text

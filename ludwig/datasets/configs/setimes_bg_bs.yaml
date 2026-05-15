@@ -1,0 +1,15 @@
+version: 1.0
+name: setimes_bg_bs
+huggingface_dataset_id: community-datasets/setimes
+huggingface_subsample: bg-bs
+loader: translation_loader.SetimesBgBsLoader
+description: |
+  SETimes: South-East European Times Bulgarian-Bosnian translation. 136K train pairs.
+columns:
+  - name: bg
+    type: text
+  - name: bs
+    type: text
+output_features:
+  - name: bs
+    type: text

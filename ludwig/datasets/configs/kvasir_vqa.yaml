@@ -1,0 +1,18 @@
+version: 1.0
+name: kvasir_vqa
+huggingface_dataset_id: SimulaMet/Kvasir-VQA-x1
+loader: hugging_face.HFLoader
+description: |
+  Kvasir-VQA: gastrointestinal endoscopy visual QA. 143K train examples.
+columns:
+  - name: image
+    type: image
+  - name: question
+    type: text
+  - name: answer
+    type: category
+  - name: question_class
+    type: category
+output_features:
+  - name: answer
+    type: category

@@ -1,0 +1,22 @@
+version: 1.0
+name: amazon_science_massive
+huggingface_dataset_id: AmazonScience/massive
+huggingface_revision: refs/convert/parquet
+huggingface_data_files:
+  train: all/train/0000.parquet
+loader: hugging_face.HFLoader
+description: |
+  Amazon MASSIVE multilingual intent classification dataset (51 languages, 60 intents).
+  Predict intent category from utterance text.
+columns:
+  - name: utt
+    type: text
+  - name: locale
+    type: category
+  - name: intent
+    type: category
+  - name: scenario
+    type: category
+output_features:
+  - name: intent
+    type: category

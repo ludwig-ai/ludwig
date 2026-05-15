@@ -1,0 +1,14 @@
+version: 1.0
+name: hate_speech18
+huggingface_dataset_id: SetFit/hate_speech18
+loader: hugging_face.HFLoader
+description: |
+  Hate Speech 18 (SetFit): binary hate speech detection on online forum data.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

@@ -1,0 +1,14 @@
+version: 1.0
+name: mteb_frenk_hr
+huggingface_dataset_id: mteb/FrenkHrClassification
+loader: hugging_face.HFLoader
+description: |
+  MTEB Frenk Croatian Classification: hate speech detection in Croatian.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

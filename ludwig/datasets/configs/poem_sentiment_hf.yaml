@@ -1,0 +1,14 @@
+version: 1.0
+name: poem_sentiment_hf
+huggingface_dataset_id: google-research-datasets/poem_sentiment
+loader: hugging_face.HFLoader
+description: |
+  Poem Sentiment (Google Research): verse-level sentiment from English poetry.
+columns:
+  - name: verse_text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

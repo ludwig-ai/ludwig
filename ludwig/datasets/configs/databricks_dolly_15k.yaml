@@ -1,0 +1,18 @@
+version: 1.0
+name: databricks_dolly_15k
+huggingface_dataset_id: databricks/databricks-dolly-15k
+loader: hugging_face.HFLoader
+description: |
+  Databricks Dolly 15K instruction-response pairs with 8 task categories (QA, summarization, etc.).
+columns:
+  - name: instruction
+    type: text
+  - name: context
+    type: text
+  - name: response
+    type: text
+  - name: category
+    type: category
+output_features:
+  - name: category
+    type: category

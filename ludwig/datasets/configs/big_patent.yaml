@@ -1,0 +1,15 @@
+version: 1.0
+name: big_patent
+huggingface_dataset_id: NortheasternUniversity/big_patent
+huggingface_subsample: a
+loader: hugging_face.HFLoader
+description: |
+  BigPatent: patent claim summarization (category A). 1.2M train examples.
+columns:
+  - name: description
+    type: text
+  - name: abstract
+    type: text
+output_features:
+  - name: abstract
+    type: text

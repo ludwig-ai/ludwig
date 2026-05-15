@@ -1,0 +1,14 @@
+version: 1.0
+name: setfit_sst2
+huggingface_dataset_id: SetFit/sst2
+loader: hugging_face.HFLoader
+description: |
+  SetFit SST-2: Stanford Sentiment Treebank binary sentiment (SetFit format).
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: binary
+output_features:
+  - name: label
+    type: binary

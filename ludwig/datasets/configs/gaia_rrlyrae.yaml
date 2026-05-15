@@ -1,0 +1,16 @@
+version: 1.0
+name: gaia_rrlyrae
+huggingface_dataset_id: juliensimon/gaia-dr3-rrlyrae
+loader: hugging_face.HFLoader
+description: |
+  Gaia DR3 RR Lyrae: predict fundamental period. 271K examples.
+columns:
+  - name: source_id
+    type: number
+  - name: PF
+    type: number
+  - name: e_PF
+    type: number
+output_features:
+  - name: PF
+    type: number

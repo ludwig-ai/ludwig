@@ -1,0 +1,16 @@
+version: 1.0
+name: tadabur
+huggingface_dataset_id: FaisaI/tadabur
+loader: hugging_face.HFLoader
+description: |
+  Tadabur: Arabic Quran audio with reciter, surah, and ayah classification. 409K examples.
+columns:
+  - name: audio
+    type: audio
+  - name: reciter_id
+    type: category
+  - name: surah_id
+    type: category
+output_features:
+  - name: reciter_id
+    type: category

@@ -1,0 +1,14 @@
+version: 1.0
+name: intuitive_physics
+huggingface_dataset_id: worldbenchmark/IntuitivePhysics
+loader: hugging_face.HFLoader
+description: |
+  Intuitive Physics: image-based physical intuition classification. 280K train.
+columns:
+  - name: image
+    type: image
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

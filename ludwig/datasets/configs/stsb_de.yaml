@@ -1,0 +1,17 @@
+version: 1.0
+name: stsb_de
+huggingface_dataset_id: PhilipMay/stsb_multi_mt
+huggingface_subsample: de
+loader: hugging_face.HFLoader
+description: |
+  STS Benchmark German (machine translated). 5749 train examples.
+columns:
+  - name: sentence1
+    type: text
+  - name: sentence2
+    type: text
+  - name: similarity_score
+    type: number
+output_features:
+  - name: similarity_score
+    type: number

@@ -1,0 +1,16 @@
+version: 1.0
+name: news_category
+huggingface_dataset_id: heegyu/news-category-dataset
+loader: hugging_face.HFLoader
+description: |
+  News Category Dataset: 210K Huffington Post headlines with 42 categories.
+columns:
+  - name: headline
+    type: text
+  - name: short_description
+    type: text
+  - name: category
+    type: category
+output_features:
+  - name: category
+    type: category

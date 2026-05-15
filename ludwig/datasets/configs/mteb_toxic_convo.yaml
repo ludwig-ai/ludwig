@@ -1,0 +1,14 @@
+version: 1.0
+name: mteb_toxic_convo
+huggingface_dataset_id: mteb/toxic_conversations_50k
+loader: hugging_face.HFLoader
+description: |
+  MTEB Toxic Conversations 50K: binary toxicity classification.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: binary
+output_features:
+  - name: label
+    type: binary

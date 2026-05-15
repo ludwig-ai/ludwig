@@ -1,0 +1,16 @@
+version: 1.0
+name: sickr
+huggingface_dataset_id: mteb/sickr-sts
+loader: hugging_face.HFLoader
+description: |
+  SICK-R: sentences involving compositional knowledge. 9927 test examples.
+columns:
+  - name: sentence1
+    type: text
+  - name: sentence2
+    type: text
+  - name: score
+    type: number
+output_features:
+  - name: score
+    type: number

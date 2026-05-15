@@ -1,0 +1,16 @@
+version: 1.0
+name: alpaca_gpt4_zh
+huggingface_dataset_id: llamafactory/alpaca_gpt4_zh
+loader: hugging_face.HFLoader
+description: |
+  Alpaca GPT-4 Chinese: 42K Chinese instruction-following examples.
+columns:
+  - name: instruction
+    type: text
+  - name: input
+    type: text
+  - name: output
+    type: text
+output_features:
+  - name: output
+    type: text

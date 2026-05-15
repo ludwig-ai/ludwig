@@ -1,0 +1,14 @@
+version: 1.0
+name: mteb_tnews
+huggingface_dataset_id: mteb/TNews
+loader: hugging_face.HFLoader
+description: |
+  MTEB TNews: Chinese news topic classification dataset.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

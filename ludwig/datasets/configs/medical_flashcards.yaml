@@ -1,0 +1,16 @@
+version: 1.0
+name: medical_flashcards
+huggingface_dataset_id: medalpaca/medical_meadow_medical_flashcards
+loader: hugging_face.HFLoader
+description: |
+  Medical flashcards: Q&A for medical topics. 34K examples.
+columns:
+  - name: input
+    type: text
+  - name: instruction
+    type: text
+  - name: output
+    type: text
+output_features:
+  - name: output
+    type: text

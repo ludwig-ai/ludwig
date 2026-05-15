@@ -1,0 +1,19 @@
+version: 1.0
+name: mmlu_lighteval
+huggingface_dataset_id: lighteval/mmlu
+huggingface_subsample: abstract_algebra
+loader: hugging_face.HFLoader
+description: |
+  MMLU: Massive Multitask Language Understanding, 57 academic subjects, 4-way MC. 99K auxiliary train.
+columns:
+  - name: question
+    type: text
+  - name: subject
+    type: category
+  - name: choices
+    type: text
+  - name: answer
+    type: category
+output_features:
+  - name: answer
+    type: category

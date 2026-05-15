@@ -1,0 +1,14 @@
+version: 1.0
+name: mteb_frenk_sl
+huggingface_dataset_id: mteb/FrenkSlClassification
+loader: hugging_face.HFLoader
+description: |
+  MTEB Frenk Slovenian Classification: hate speech detection in Slovenian.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

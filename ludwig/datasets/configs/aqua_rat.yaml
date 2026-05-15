@@ -1,0 +1,17 @@
+version: 1.0
+name: aqua_rat
+huggingface_dataset_id: deepmind/aqua_rat
+huggingface_subsample: raw
+loader: hugging_face.HFLoader
+description: |
+  AQuA-RAT: algebraic word problems 5-way MC with rationales. 97K train examples.
+columns:
+  - name: question
+    type: text
+  - name: rationale
+    type: text
+  - name: correct
+    type: category
+output_features:
+  - name: correct
+    type: category

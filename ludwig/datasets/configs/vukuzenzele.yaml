@@ -1,0 +1,15 @@
+version: 1.0
+name: vukuzenzele
+huggingface_dataset_id: dsfsi/vukuzenzele-sentence-aligned
+huggingface_subsample: afr-eng
+loader: hugging_face.HFLoader
+description: |
+  Vukuzenzele: Afrikaans-English sentence pairs. 2.7K train examples.
+columns:
+  - name: afr
+    type: text
+  - name: eng
+    type: text
+output_features:
+  - name: eng
+    type: text

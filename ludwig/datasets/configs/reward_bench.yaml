@@ -1,0 +1,18 @@
+version: 1.0
+name: reward_bench
+huggingface_dataset_id: allenai/reward-bench
+loader: hugging_face.HFLoader
+description: |
+  RewardBench: preference evaluation - predict which model response is chosen/preferred.
+columns:
+  - name: prompt
+    type: text
+  - name: chosen
+    type: text
+  - name: rejected
+    type: text
+  - name: subset
+    type: category
+output_features:
+  - name: subset
+    type: category

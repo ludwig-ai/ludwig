@@ -1,0 +1,15 @@
+version: 1.0
+name: flashrag_2wikimultihop
+huggingface_dataset_id: RUC-NLPIR/FlashRAG_datasets
+huggingface_subsample: 2wikimultihopqa
+loader: hugging_face.HFLoader
+description: |
+  FlashRAG 2WikiMultiHopQA: multi-hop QA. 15K train examples.
+columns:
+  - name: question
+    type: text
+  - name: golden_answers
+    type: text
+output_features:
+  - name: golden_answers
+    type: text

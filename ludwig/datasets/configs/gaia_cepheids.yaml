@@ -1,0 +1,16 @@
+version: 1.0
+name: gaia_cepheids
+huggingface_dataset_id: juliensimon/gaia-dr3-cepheids
+loader: hugging_face.HFLoader
+description: |
+  Gaia DR3 Cepheids: predict stellar period from photometry. 15K examples.
+columns:
+  - name: period_fundamental_days
+    type: number
+  - name: period_1st_overtone_days
+    type: number
+  - name: solution_id
+    type: number
+output_features:
+  - name: period_fundamental_days
+    type: number

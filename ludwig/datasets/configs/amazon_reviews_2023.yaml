@@ -1,0 +1,16 @@
+version: 1.0
+name: amazon_reviews_2023
+huggingface_dataset_id: bagadbilla/amazon-reviews-2023-trimmed
+loader: hugging_face.HFLoader
+description: |
+  Amazon Reviews 2023: predict star rating from review title and text. 571M train examples.
+columns:
+  - name: title
+    type: text
+  - name: text
+    type: text
+  - name: rating
+    type: number
+output_features:
+  - name: rating
+    type: number

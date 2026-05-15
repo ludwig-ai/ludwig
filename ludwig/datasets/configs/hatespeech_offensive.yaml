@@ -1,0 +1,15 @@
+version: 1.0
+name: hatespeech_offensive
+huggingface_dataset_id: tdavidson/hate_speech_offensive
+loader: hugging_face.HFLoader
+description: |
+  Hate Speech and Offensive Language: 25K tweets with 3-class labels
+  (hate speech, offensive but not hate speech, neither).
+columns:
+  - name: tweet
+    type: text
+  - name: class
+    type: category
+output_features:
+  - name: class
+    type: category

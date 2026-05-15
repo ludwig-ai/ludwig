@@ -1,0 +1,14 @@
+version: 1.0
+name: govreport_summarization
+huggingface_dataset_id: ccdv/govreport-summarization
+loader: hugging_face.HFLoader
+description: |
+  GovReport: long government report summarization. 17K train examples.
+columns:
+  - name: report
+    type: text
+  - name: summary
+    type: text
+output_features:
+  - name: summary
+    type: text

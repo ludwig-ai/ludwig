@@ -1,0 +1,14 @@
+version: 1.0
+name: app_reviews
+huggingface_dataset_id: app_reviews
+loader: hugging_face.HFLoader
+description: |
+  App Reviews: 288K mobile app reviews with 1-5 star ratings.
+columns:
+  - name: review
+    type: text
+  - name: star
+    type: number
+output_features:
+  - name: star
+    type: number

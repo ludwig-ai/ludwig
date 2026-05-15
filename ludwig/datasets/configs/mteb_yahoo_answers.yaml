@@ -1,0 +1,14 @@
+version: 1.0
+name: mteb_yahoo_answers
+huggingface_dataset_id: mteb/YahooAnswersTopicsClassification
+loader: hugging_face.HFLoader
+description: |
+  MTEB Yahoo Answers Topics Classification: topic classification of Yahoo Answers questions.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

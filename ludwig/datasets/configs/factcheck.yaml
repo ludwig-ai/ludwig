@@ -1,0 +1,20 @@
+version: 1.0
+name: factcheck
+huggingface_dataset_id: FactCheck-AI/FactCheck
+loader: hugging_face.HFLoader
+description: |
+  FactCheck: multilingual fact-checking question ranking dataset. 2M train examples.
+columns:
+  - name: question
+    type: text
+  - name: title
+    type: text
+  - name: dataset
+    type: category
+  - name: language
+    type: category
+  - name: rank
+    type: number
+output_features:
+  - name: rank
+    type: number

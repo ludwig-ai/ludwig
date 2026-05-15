@@ -1,0 +1,14 @@
+version: 1.0
+name: setfit_ag_news
+huggingface_dataset_id: SetFit/ag_news
+loader: hugging_face.HFLoader
+description: |
+  SetFit AG News: 4-class news topic classification (World, Sports, Business, Sci/Tech).
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

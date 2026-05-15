@@ -1,0 +1,14 @@
+version: 1.0
+name: mini_imagenet
+huggingface_dataset_id: timm/mini-imagenet
+loader: hugging_face.HFLoader
+description: |
+  Mini-ImageNet: 100-class image classification subset of ImageNet. 50K train examples.
+columns:
+  - name: image
+    type: image
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

@@ -1,0 +1,16 @@
+version: 1.0
+name: sib200
+huggingface_dataset_id: mteb/sib200
+loader: hugging_face.HFLoader
+description: |
+  SIB-200: multilingual 7-class topic classification in 205 languages. 143K train examples.
+columns:
+  - name: text
+    type: text
+  - name: category
+    type: category
+  - name: lang
+    type: category
+output_features:
+  - name: category
+    type: category

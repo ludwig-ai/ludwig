@@ -1,0 +1,15 @@
+version: 1.0
+name: arxiv_summarization
+huggingface_dataset_id: ccdv/arxiv-summarization
+huggingface_subsample: document
+loader: hugging_face.HFLoader
+description: |
+  ArXiv document summarization: predict abstract from full paper text. 203K train examples.
+columns:
+  - name: article
+    type: text
+  - name: abstract
+    type: text
+output_features:
+  - name: abstract
+    type: text

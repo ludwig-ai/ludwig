@@ -1,0 +1,20 @@
+version: 1.0
+name: nli_zh_all
+huggingface_dataset_id: shibing624/nli-zh-all
+huggingface_revision: refs/convert/parquet
+huggingface_data_files:
+  train: plain_text/train/0000.parquet
+loader: hugging_face.HFLoader
+description: |
+  NLI-ZH: Chinese Natural Language Inference dataset merging multiple Chinese
+  NLI corpora. Sentence pair classification (entailment/neutral/contradiction).
+columns:
+  - name: text1
+    type: text
+  - name: text2
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

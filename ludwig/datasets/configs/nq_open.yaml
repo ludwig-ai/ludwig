@@ -1,0 +1,15 @@
+version: 1.0
+name: nq_open
+huggingface_dataset_id: google-research-datasets/nq_open
+huggingface_subsample: nq_open
+loader: hugging_face.HFLoader
+description: |
+  Natural Questions Open: open-domain QA with Wikipedia answers. 88K train examples.
+columns:
+  - name: question
+    type: text
+  - name: answer
+    type: sequence
+output_features:
+  - name: answer
+    type: sequence

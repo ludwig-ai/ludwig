@@ -1,0 +1,22 @@
+version: 1.0
+name: moral_stories
+huggingface_dataset_id: demelin/moral_stories
+huggingface_revision: refs/convert/parquet
+huggingface_data_files:
+  train: cls-action+context+consequence-lexical_bias/train/0000.parquet
+loader: hugging_face.HFLoader
+description: |
+  Moral Stories: binary classification of moral vs immoral actions given a norm,
+  situation, and intention. Label 1 = moral, 0 = immoral.
+columns:
+  - name: norm
+    type: text
+  - name: situation
+    type: text
+  - name: intention
+    type: text
+  - name: label
+    type: binary
+output_features:
+  - name: label
+    type: binary

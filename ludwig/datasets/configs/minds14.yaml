@@ -1,0 +1,17 @@
+version: 1.0
+name: minds14
+huggingface_dataset_id: PolyAI/minds14
+huggingface_subsample: en-US
+loader: hugging_face.HFLoader
+description: |
+  MINDS-14: multilingual banking intent classification from audio. 8K train examples.
+columns:
+  - name: audio
+    type: audio
+  - name: intent_class
+    type: category
+  - name: transcription
+    type: text
+output_features:
+  - name: intent_class
+    type: category
