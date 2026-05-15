@@ -1038,12 +1038,6 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
             proc_df[feature_config[PROC_COLUMN]] = proc_col
 
-        if num_failed_image_reads > 0:
-            logger.warning(
-                f"Failed to read {num_failed_image_reads} images while preprocessing feature `{name}`. "
-                "Using default image for these rows in the dataset."
-            )
-
         return proc_df
 
 
