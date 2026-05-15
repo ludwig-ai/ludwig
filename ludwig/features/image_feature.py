@@ -214,10 +214,24 @@ def _cache_image_column_to_disk(
                     "neither a usable 'path' nor 'bytes' key."
                 )
         else:
-            raise ValueError(
-                f"Image entry [{idx}] in feature '{feature_name}' has unrecognised "
-                f"type {type(entry).__name__!r}.  Expected PIL.Image, bytes, numpy.ndarray, or dict."
-            )
+            # Try torch.Tensor as a last resort (optional dependency)
+            try:
+                import torch
+
+                if isinstance(entry, torch.Tensor):
+                    arr = entry.detach().cpu().numpy()
+                    # Handle (C, H, W) → (H, W, C) for colour tensors
+                    if arr.ndim == 3 and arr.shape[0] in (1, 3, 4):
+                        arr = np.transpose(arr, (1, 2, 0))
+                    pil_img = PILImage.fromarray(arr.astype(np.uint8))
+                else:
+                    raise TypeError
+            except (ImportError, TypeError):
+                raise ValueError(
+                    f"Image entry [{idx}] in feature '{feature_name}' has unrecognised "
+                    f"type {type(entry).__name__!r}.  "
+                    "Expected PIL.Image, bytes, numpy.ndarray, torch.Tensor, or dict."
+                )
 
         dest_path = str(cache_dir / f"{feature_name}_{idx:08d}.png")
         if not os.path.isfile(dest_path):
@@ -1128,8 +1142,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
             # decode happens per-batch inside PandasDataset via LazyColumn.
             # This bounds peak memory to batch_size × image_size instead of N × image_size.
             if isinstance(sample_entry, str):
-                # Input is already a local/remote path — use it directly.
-                path_list = abs_path_column.tolist() if hasattr(abs_path_column, "tolist") else list(abs_path_column)
+                # Input is already a local/remote path — use abs_path_column directly so
+                # that the DataFrame index is preserved after sampling/filtering operations.
+                proc_df[feature_config[PROC_COLUMN]] = abs_path_column
             else:
                 # In-memory data (HF PIL Images, raw bytes, numpy arrays) — cache to disk first.
                 cache_dir = resolve_lazy_cache_dir(
@@ -1139,8 +1154,15 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 logger.info(f"Image feature '{name}': caching in-memory images to {cache_dir} for lazy decoding.")
                 raw_column = abs_path_column.tolist() if hasattr(abs_path_column, "tolist") else list(abs_path_column)
                 path_list = _cache_image_column_to_disk(raw_column, cache_dir, name)
-
-            proc_df[feature_config[PROC_COLUMN]] = pd.Series(path_list, dtype=object)
+                # Reconstruct a Series using the original index so that it aligns
+                # correctly with proc_df (which may have a non-0-based index after sampling).
+                if hasattr(abs_path_column, "compute"):  # Dask Series
+                    orig_index = abs_path_column.index.compute()
+                else:
+                    orig_index = abs_path_column.index
+                proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.from_pandas(
+                    pd.Series(path_list, dtype=object, index=orig_index)
+                )
             metadata[name]["lazy"] = True
             metadata[name]["reshape"] = None  # paths are 1-D strings — no reshape needed
             # Persist decode params so PandasDataset can reconstruct the decode fn

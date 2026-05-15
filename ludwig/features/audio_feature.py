@@ -548,8 +548,9 @@ class AudioFeatureMixin(BaseFeatureMixin):
             # reshape is overridden to None so preprocessing.py skips the flatten step
             # for path columns, and PandasDataset skips the reshape-restore step.
             if isinstance(first_audio_entry, str):
-                # Input is already a local/remote path — use it directly.
-                path_list = abs_path_column.tolist() if hasattr(abs_path_column, "tolist") else list(abs_path_column)
+                # Input is already a local/remote path — use abs_path_column directly so
+                # that the DataFrame index is preserved after sampling/filtering operations.
+                proc_df[feature_config[PROC_COLUMN]] = abs_path_column
             else:
                 # In-memory data (HF audio dicts, bare Tensors) — cache to disk first.
                 cache_dir = resolve_lazy_cache_dir(
@@ -564,8 +565,15 @@ class AudioFeatureMixin(BaseFeatureMixin):
                     name,
                     sampling_rate=metadata[name].get("sampling_rate_in_hz", 16_000),
                 )
-
-            proc_df[feature_config[PROC_COLUMN]] = pd.Series(path_list, dtype=object)
+                # Reconstruct a Series using the original index so that it aligns
+                # correctly with proc_df (which may have a non-0-based index after sampling).
+                if hasattr(abs_path_column, "compute"):  # Dask Series
+                    orig_index = abs_path_column.index.compute()
+                else:
+                    orig_index = abs_path_column.index
+                proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.from_pandas(
+                    pd.Series(path_list, dtype=object, index=orig_index)
+                )
             metadata[name]["lazy"] = True
             metadata[name]["reshape"] = None  # paths are 1-D strings — no reshape needed
             # Persist decode params in metadata so PandasDataset can reconstruct the fn
