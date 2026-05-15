@@ -558,7 +558,12 @@ class AudioFeatureMixin(BaseFeatureMixin):
                 )
                 logger.info(f"Audio feature '{name}': caching in-memory audio to {cache_dir} for lazy decoding.")
                 raw_column = abs_path_column.tolist() if hasattr(abs_path_column, "tolist") else list(abs_path_column)
-                path_list = _cache_audio_column_to_disk(raw_column, cache_dir, name)
+                path_list = _cache_audio_column_to_disk(
+                    raw_column,
+                    cache_dir,
+                    name,
+                    sampling_rate=metadata[name].get("sampling_rate_in_hz", 16_000),
+                )
 
             proc_df[feature_config[PROC_COLUMN]] = pd.Series(path_list, dtype=object)
             metadata[name]["lazy"] = True
