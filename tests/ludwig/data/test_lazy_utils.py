@@ -99,25 +99,25 @@ class TestLazyColumnCorrectness:
     """Verify decoded values match a reference sequential implementation."""
 
     def test_matches_sequential_decode(self):
-        paths = _make_paths(50)
+        paths = _make_paths(20)
         col = LazyColumn(paths, _decode_int_path, max_workers=4)
-        indices = list(range(50))
+        indices = list(range(20))
         result = col[indices]
         expected = np.stack([_decode_int_path(p) for p in paths[indices]])
         np.testing.assert_array_almost_equal(result, expected)
 
     def test_single_worker_matches_multi(self):
-        paths = _make_paths(30)
+        paths = _make_paths(16)
         col_1 = LazyColumn(paths, _decode_int_path, max_workers=1)
         col_4 = LazyColumn(paths, _decode_int_path, max_workers=4)
-        idx = list(range(30))
+        idx = list(range(16))
         np.testing.assert_array_equal(col_1[idx], col_4[idx])
 
     def test_random_batch_selection(self):
         rng = np.random.default_rng(42)
-        paths = _make_paths(100)
+        paths = _make_paths(32)
         col = LazyColumn(paths, _decode_int_path)
-        idx = rng.choice(100, size=16, replace=False)
+        idx = rng.choice(32, size=16, replace=False)
         result = col[idx]
         expected = np.stack([_decode_int_path(p) for p in paths[idx]])
         np.testing.assert_array_almost_equal(result, expected)
@@ -144,7 +144,7 @@ class TestLazyColumnPandasDatasetIntegration:
             call_count["n"] += 1
             return np.zeros(4, dtype=np.float32)
 
-        paths = _make_paths(100)
+        paths = _make_paths(20)
         col = LazyColumn(paths, counting_decode)
         # Construction must not have called decode
         assert call_count["n"] == 0

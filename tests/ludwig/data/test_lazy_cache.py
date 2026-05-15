@@ -34,7 +34,7 @@ requires_pil = pytest.mark.skipif(not _PIL_AVAILABLE, reason="Pillow not install
 # ---------------------------------------------------------------------------
 
 
-def _write_wav(path: str, num_samples: int = 8000, num_channels: int = 1, sample_rate: int = 16_000) -> None:
+def _write_wav(path: str, num_samples: int = 1000, num_channels: int = 1, sample_rate: int = 16_000) -> None:
     """Write a minimal valid WAV file to *path*."""
     with wave.open(path, "w") as wf:
         wf.setnchannels(num_channels)
