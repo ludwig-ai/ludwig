@@ -17,6 +17,7 @@ import logging
 import os
 
 import numpy as np
+import pandas as pd
 import torch
 import torchaudio
 from packaging import version
@@ -282,6 +283,38 @@ class AudioFeatureMixin(BaseFeatureMixin):
         merged_stats["cropped"] += audio_stats["cropped"]
 
     @staticmethod
+    def _make_lazy_decode_fn(
+        audio_feature_dict: dict,
+        feature_dim: int,
+        max_length: int,
+        padding_value: float,
+        normalization_type: str | None,
+    ):
+        """Return a per-path decode function suitable for use in ``LazyColumn``.
+
+        The returned callable is stateless (captures only plain values) so it
+        is safe to share across DataLoader worker threads.
+        """
+
+        def decode(path: str) -> np.ndarray:
+            audio, sr = read_audio_from_path(path)
+            if not is_torch_audio_tuple((audio, sr)):
+                default_audio, default_sr = get_default_audio([(audio, sr)])
+                audio, sr = default_audio, default_sr
+            return AudioFeatureMixin._transform_to_feature(
+                audio=audio,
+                sampling_rate_in_hz=sr,
+                audio_feature_dict=audio_feature_dict,
+                feature_dim=feature_dim,
+                max_length=max_length,
+                padding_value=padding_value,
+                normalization_type=normalization_type,
+            ).numpy()
+
+        decode.__name__ = "audio_lazy_decode"
+        return decode
+
+    @staticmethod
     def _get_2D_feature(
         audio: torch.Tensor,
         feature_type: str,
@@ -394,19 +427,37 @@ class AudioFeatureMixin(BaseFeatureMixin):
         if num_audio_utterances == 0:
             raise ValueError("There are no audio files in the dataset provided.")
 
-        # Always process audio in-memory. The legacy out-of-memory HDF5 path has been removed;
-        # the Parquet cache handles persistence.
-        audio_features = AudioFeatureMixin._process_in_memory(
-            abs_path_column,
-            audio_feature_dict,
-            feature_dim,
-            max_length,
-            padding_value,
-            normalization_type,
-            audio_file_length_limit_in_s,
-            backend,
-        )
-        proc_df[feature_config[PROC_COLUMN]] = audio_features
+        if preprocessing_parameters.get("lazy", True) and isinstance(first_audio_entry, str):
+            # Lazy path: store file paths as a string Series.  The actual audio
+            # decode happens per-batch inside PandasDataset via LazyColumn.
+            # This bounds peak memory to batch_size × clip_size instead of N × clip_size.
+            # reshape is overridden to None so preprocessing.py skips the flatten step
+            # for path columns, and PandasDataset skips the reshape-restore step.
+            path_list = abs_path_column.tolist() if hasattr(abs_path_column, "tolist") else list(abs_path_column)
+            proc_df[feature_config[PROC_COLUMN]] = pd.Series(path_list, dtype=object)
+            metadata[name]["lazy"] = True
+            metadata[name]["reshape"] = None  # paths are 1-D strings — no reshape needed
+            # Persist decode params in metadata so PandasDataset can reconstruct the fn
+            metadata[name]["lazy_audio_params"] = {
+                "audio_feature_dict": audio_feature_dict,
+                "feature_dim": feature_dim,
+                "max_length": max_length,
+                "padding_value": padding_value,
+                "normalization_type": normalization_type,
+            }
+        else:
+            # Eager path (legacy): decode all files upfront into a numpy array.
+            audio_features = AudioFeatureMixin._process_in_memory(
+                abs_path_column,
+                audio_feature_dict,
+                feature_dim,
+                max_length,
+                padding_value,
+                normalization_type,
+                audio_file_length_limit_in_s,
+                backend,
+            )
+            proc_df[feature_config[PROC_COLUMN]] = audio_features
 
         return proc_df
 

@@ -581,6 +581,44 @@ class ImageFeatureMixin(BaseFeatureMixin):
         return img.numpy()
 
     @staticmethod
+    def _make_lazy_decode_fn(
+        img_width: int,
+        img_height: int,
+        should_resize: bool,
+        num_channels: int,
+        resize_method: str,
+        user_specified_num_channels: bool,
+        standardize_image: str,
+        channel_class_map,
+        default_image: np.ndarray,
+    ):
+        """Return a per-path decode function suitable for use in ``LazyColumn``.
+
+        The returned callable is stateless (captures only plain values / arrays)
+        so it is safe to share across DataLoader worker threads.
+        """
+        _resize_fn = partial(
+            ImageFeatureMixin._read_image_if_bytes_obj_and_resize,
+            img_width=img_width,
+            img_height=img_height,
+            should_resize=should_resize,
+            num_channels=num_channels,
+            resize_method=resize_method,
+            user_specified_num_channels=user_specified_num_channels,
+            standardize_image=standardize_image,
+            channel_class_map=channel_class_map,
+        )
+
+        def decode(path_or_bytes) -> np.ndarray:
+            result = _resize_fn(path_or_bytes)
+            if not isinstance(result, np.ndarray):
+                return default_image
+            return result
+
+        decode.__name__ = "image_lazy_decode"
+        return decode
+
+    @staticmethod
     def _set_image_and_height_equal_for_encoder(
         width: int, height: int, preprocessing_parameters: dict, encoder_type: str
     ) -> tuple[int, int]:
@@ -955,21 +993,50 @@ class ImageFeatureMixin(BaseFeatureMixin):
             default_image = get_gray_default_image(num_channels, height, width)
             metadata[name]["reshape"] = (num_channels, height, width)
 
-        # Always process images in-memory. The legacy HDF5-based out-of-memory path
-        # has been removed; the Parquet cache handles persistence.
-        proc_col = backend.read_binary_files(
-            abs_path_column, map_fn=read_image_if_bytes_obj_and_resize, file_size=average_file_size
-        )
+        sample_entry = abs_path_column.iloc[0] if hasattr(abs_path_column, "iloc") else next(iter(abs_path_column))
+        if preprocessing_parameters.get("lazy", True) and isinstance(sample_entry, str) and not torchvision_parameters:
+            # Lazy path: store file paths as a string Series.  The actual image
+            # decode happens per-batch inside PandasDataset via LazyColumn.
+            # This bounds peak memory to batch_size × image_size instead of N × image_size.
+            path_list = abs_path_column.tolist() if hasattr(abs_path_column, "tolist") else list(abs_path_column)
+            import pandas as pd
 
-        num_failed_image_reads = (
-            proc_col.isna().sum().compute() if is_dask_series_or_df(proc_col, backend) else proc_col.isna().sum()
-        )
+            proc_df[feature_config[PROC_COLUMN]] = pd.Series(path_list, dtype=object)
+            metadata[name]["lazy"] = True
+            metadata[name]["reshape"] = None  # paths are 1-D strings — no reshape needed
+            # Persist decode params so PandasDataset can reconstruct the decode fn
+            metadata[name]["lazy_image_params"] = {
+                "img_width": width,
+                "img_height": height,
+                "should_resize": should_resize,
+                "num_channels": num_channels,
+                "resize_method": preprocessing_parameters["resize_method"],
+                "user_specified_num_channels": user_specified_num_channels,
+                "standardize_image": standardize_image,
+                "channel_class_map": channel_class_map.tolist(),
+                "default_image_shape": list(default_image.shape),
+            }
+        else:
+            # Eager path (legacy): decode all images upfront into numpy arrays.
+            proc_col = backend.read_binary_files(
+                abs_path_column, map_fn=read_image_if_bytes_obj_and_resize, file_size=average_file_size
+            )
 
-        proc_col = backend.df_engine.map_objects(
-            proc_col, lambda row: default_image if not isinstance(row, np.ndarray) else row
-        )
+            num_failed_image_reads = (
+                proc_col.isna().sum().compute() if is_dask_series_or_df(proc_col, backend) else proc_col.isna().sum()
+            )
 
-        proc_df[feature_config[PROC_COLUMN]] = proc_col
+            proc_col = backend.df_engine.map_objects(
+                proc_col, lambda row: default_image if not isinstance(row, np.ndarray) else row
+            )
+
+            if num_failed_image_reads > 0:
+                logger.warning(
+                    f"Failed to read {num_failed_image_reads} images while preprocessing feature `{name}`. "
+                    "Using default image for these rows in the dataset."
+                )
+
+            proc_df[feature_config[PROC_COLUMN]] = proc_col
 
         if num_failed_image_reads > 0:
             logger.warning(

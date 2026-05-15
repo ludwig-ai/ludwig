@@ -1,5 +1,5 @@
 version: 1.0
-name: talkingdata_adtrack_fraud_detection
+name: talkingdata_adtrack_fraud
 kaggle_competition: talkingdata-adtracking-fraud-detection
 archive_filenames: talkingdata-adtracking-fraud-detection.zip
 sha256:
