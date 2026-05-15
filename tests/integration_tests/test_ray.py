@@ -840,7 +840,7 @@ def test_ray_lazy_load_image_works(tmpdir, ray_cluster_2cpu):
 #     run_test_with_features(input_features, output_features, run_fn=_run_train_gpu_load_cpu, num_gpus=1)
 
 
-@pytest.mark.integration_tests_a2
+@pytest.mark.integration_tests_a4
 @pytest.mark.distributed
 @pytest.mark.parametrize(
     "method, balance",
@@ -891,7 +891,7 @@ def _run_train_gpu_load_cpu(config, data_parquet):
 # TODO(geoffrey): add a GPU test for batch size tuning
 
 
-@pytest.mark.integration_tests_a2
+@pytest.mark.integration_tests_a4
 @pytest.mark.distributed
 @pytest.mark.parametrize(
     ("max_batch_size", "expected_final_learning_rate"),
@@ -964,7 +964,7 @@ def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu, max_batch_size, expect
     assert model.config[TRAINER]["learning_rate"] == expected_final_learning_rate
 
 
-@pytest.mark.integration_tests_a2
+@pytest.mark.integration_tests_a4
 @pytest.mark.distributed
 def test_tune_batch_size_ray_non_mean_metric_output(tmpdir, ray_cluster_2cpu):
     """Regression: tune_batch_size_fn must call init_dist_strategy("local") before running.

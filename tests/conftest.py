@@ -42,6 +42,7 @@ explicit_int_markers = {
     "integration_tests_a",
     "integration_tests_a2",
     "integration_tests_a3",
+    "integration_tests_a4",
     "integration_tests_b",
     "integration_tests_c",
     "integration_tests_d",
