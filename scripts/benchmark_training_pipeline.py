@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Benchmark the training data pipeline to measure GPU utilization and bottlenecks.
 
-Measures per-step timing for 5 pipeline configurations:
+Measures per-step timing for 7 pipeline configurations:
 
-  eager_local       — pre-decoded numpy arrays in memory (zero fetch overhead)
-  lazy_local_sync   — LazyColumn decode per batch, synchronous on main thread
-  lazy_local_pre2   — LazyColumn with prefetch_size=2 background thread
-  lazy_local_pre4   — LazyColumn with prefetch_size=4 background thread
-  lazy_ray          — RayDataset + _with_lazy_decode (distributed backend)
+  eager_local          — pre-decoded numpy arrays in memory (zero fetch overhead)
+  lazy_local_sync      — LazyColumn decode per batch, synchronous on main thread
+  lazy_local_pre2      — LazyColumn with prefetch_size=2 background thread
+  lazy_local_pre4      — LazyColumn with prefetch_size=4 background thread
+  lazy_cached_ep1      — CachedLazyColumn: epoch 1 (decode + write to memmap)
+  lazy_cached_ep2plus  — CachedLazyColumn: epoch 2+ (read from memmap, no decode)
+  lazy_ray             — RayDataset + _with_lazy_decode (distributed backend)
 
 Per step, records:
   t_fetch  — time next_batch() blocks  (= GPU idle time without prefetch)
@@ -62,9 +64,10 @@ def _write_wav_files(dest_dir: str, n: int) -> list[str]:
     return paths
 
 
-def _lazy_audio_metadata(feature_dim: int = 8, max_length: int = 23) -> dict:
+def _lazy_audio_metadata(feature_dim: int = 8, max_length: int = 23, mode: str = "lazy") -> dict:
     return {
         "lazy": True,
+        "mode": mode,
         "reshape": None,
         "lazy_audio_params": {
             "audio_feature_dict": {
@@ -213,6 +216,77 @@ def bench_lazy_local(paths, batch_size, epochs, feature_dim, max_length, gpu_wor
     )
     with ds.initialize_batcher(batch_size=batch_size, should_shuffle=False, prefetch_size=prefetch_size) as batcher:
         return _run_timing_loop(batcher, epochs, gpu_work_s, n_warmup)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Mode: lazy_cached (CachedLazyColumn — decode+cache on ep1, memmap on ep2+)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def bench_lazy_cached(
+    paths, batch_size, epochs, feature_dim, max_length, gpu_work_s, n_warmup
+) -> tuple[list[StepTiming], list[StepTiming]]:
+    """Run ``lazy_cached`` mode and return (ep1_timings, ep2plus_timings).
+
+    Epoch 0 is a mandatory cache-fill pass (not counted in either result set).
+    ``ep1_timings`` covers the first measured epoch (decode + memmap write).
+    ``ep2plus_timings`` covers all subsequent epochs (pure memmap reads).
+    """
+    import tempfile
+
+    from ludwig.data.dataset.pandas import PandasDataset
+
+    proc_col = "audio_proc"
+    feature_name = "audio_0"
+    features = {proc_col: {"name": feature_name, "column": feature_name, "type": "audio"}}
+    training_set_metadata = {feature_name: _lazy_audio_metadata(feature_dim, max_length, mode="lazy_cached")}
+
+    with tempfile.TemporaryDirectory() as cache_dir:
+        # Place a fake data_cache_fp so _decoded_cache_path uses this directory.
+        fake_cache_fp = os.path.join(cache_dir, "train.parquet")
+
+        ds = PandasDataset(
+            {proc_col: np.array(paths, dtype=object)},
+            features,
+            data_cache_fp=fake_cache_fp,
+            training_set_metadata=training_set_metadata,
+        )
+
+        # Run (1 + epochs) epochs total; epoch 0 fills the cache, remaining epochs
+        # are measured.  n_warmup applies within the measured epochs only.
+        total_epochs = 1 + epochs
+        all_timings: list[StepTiming] = []
+        global_step = 0
+
+        with ds.initialize_batcher(batch_size=batch_size, should_shuffle=False) as batcher:
+            for epoch in range(total_epochs):
+                batcher.set_epoch(epoch, batcher.batch_size)
+                step_in_epoch = 0
+                while not batcher.last_batch():
+                    t0 = time.perf_counter()
+                    _batch = batcher.next_batch()
+                    t1 = time.perf_counter()
+                    time.sleep(gpu_work_s)
+                    t2 = time.perf_counter()
+
+                    measured_epoch = epoch - 1  # epoch 0 is cache-fill, not measured
+                    if epoch >= 1:
+                        warmup_step = global_step - (batcher.steps_per_epoch)  # steps since cache-fill ended
+                        if warmup_step >= n_warmup:
+                            all_timings.append(
+                                {
+                                    "t_fetch": t1 - t0,
+                                    "t_gpu": t2 - t1,
+                                    "epoch": measured_epoch,
+                                    "step": global_step,
+                                }
+                            )
+                    global_step += 1
+                    step_in_epoch += 1
+
+        ep1_timings = [t for t in all_timings if t["epoch"] == 0]
+        ep2plus_timings = [t for t in all_timings if t["epoch"] >= 1]
+        return ep1_timings, ep2plus_timings
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -385,6 +459,29 @@ def main():
                 results[name] = None
                 print(f"  FAILED: {e}")
                 traceback.print_exc()
+
+        # lazy_cached is run once; ep1 and ep2+ timings are split and reported separately.
+        print("Running lazy_cached (ep1 + ep2+) ...", flush=True)
+        try:
+            ep1_timings, ep2plus_timings = bench_lazy_cached(**kw)
+            results["lazy_cached_ep1"] = _analyze(ep1_timings, args.n_samples, 1) if ep1_timings else {}
+            results["lazy_cached_ep2plus"] = (
+                _analyze(ep2plus_timings, args.n_samples, max(1, args.epochs - 1)) if ep2plus_timings else {}
+            )
+            for suffix in ("ep1", "ep2plus"):
+                r = results[f"lazy_cached_{suffix}"]
+                if r:
+                    print(
+                        f"  lazy_cached_{suffix}: fetch {r['fetch_ms']['mean']:.1f}ms  "
+                        f"gpu {r['gpu_ms']['mean']:.1f}ms  util {r['util_pct']['mean']:.1f}%  {r['sps']:,.0f} sps"
+                    )
+        except Exception as e:
+            import traceback
+
+            results["lazy_cached_ep1"] = None
+            results["lazy_cached_ep2plus"] = None
+            print(f"  FAILED: {e}")
+            traceback.print_exc()
 
         _print_report(results, args.n_samples, args.epochs, args.gpu_work_ms)
 

@@ -1137,7 +1137,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         import pandas as pd
 
         sample_entry = abs_path_column.iloc[0] if hasattr(abs_path_column, "iloc") else next(iter(abs_path_column))
-        if preprocessing_parameters.get("lazy", True) and not torchvision_parameters:
+        if preprocessing_parameters.get("mode", "lazy") != "eager" and not torchvision_parameters:
             # Lazy path: store file paths as a string Series.  The actual image
             # decode happens per-batch inside PandasDataset via LazyColumn.
             # This bounds peak memory to batch_size × image_size instead of N × image_size.
@@ -1163,7 +1163,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.from_pandas(
                     pd.Series(path_list, dtype=object, index=orig_index)
                 )
-            metadata[name]["lazy"] = True
+            metadata[name]["lazy"] = True  # backward compat for ray.py
+            metadata[name]["mode"] = preprocessing_parameters.get("mode", "lazy")
+            metadata[name]["prefetch_size"] = preprocessing_parameters.get("prefetch_size")
             metadata[name]["reshape"] = None  # paths are 1-D strings — no reshape needed
             # Persist decode params so PandasDataset can reconstruct the decode fn
             metadata[name]["lazy_image_params"] = {

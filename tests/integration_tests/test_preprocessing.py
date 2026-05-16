@@ -452,9 +452,9 @@ def test_read_image_failure_default_image(monkeypatch, tmpdir, csv_filename):
 
     monkeypatch.setattr(ludwig.backend.base.LocalPreprocessingMixin, "read_binary_files", mock_read_binary_files)
 
-    # lazy=False forces the eager path so that the monkeypatched read_binary_files is exercised.
-    # With lazy=True (the default), read_binary_files is never called and this test has no meaning.
-    image_feature_config = image_feature(os.path.join(tmpdir, "generated_output"), preprocessing={"lazy": False})
+    # mode="eager" forces the eager path so that the monkeypatched read_binary_files is exercised.
+    # With mode="lazy" (the default), read_binary_files is never called and this test has no meaning.
+    image_feature_config = image_feature(os.path.join(tmpdir, "generated_output"), preprocessing={"mode": "eager"})
     input_features = [image_feature_config]
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
 

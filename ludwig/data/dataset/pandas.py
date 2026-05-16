@@ -160,14 +160,31 @@ class PandasDataset(Dataset):
         # During preprocessing, lazy features stored file paths as strings.  Here
         # we wrap those path arrays with the appropriate per-sample decode function
         # so that batches are decoded on demand rather than all at once.
+        self._auto_prefetch_size = 0
         if training_set_metadata is not None:
             self._init_lazy_columns(features, training_set_metadata)
 
         self.size = len(list(self.dataset.values())[0])
 
+    def _decoded_cache_path(self, proc_col: str, n: int, sample_shape: tuple) -> str:
+        """Return the path for the decoded numpy memmap file for a given column.
+
+        Placed next to the Parquet cache when ``data_cache_fp`` is set, otherwise
+        falls back to ``~/.cache/ludwig/lazy_media/``.
+        """
+        flat_shape = "_".join(str(d) for d in sample_shape)
+        fname = f"{proc_col}_decoded_n{n}_{flat_shape}_f32.npy"
+        if self.data_cache_fp:
+            return os.path.join(os.path.dirname(self.data_cache_fp), fname)
+        from ludwig.data.lazy_utils import get_default_lazy_cache_dir
+
+        return str(get_default_lazy_cache_dir() / fname)
+
     def _init_lazy_columns(self, features: dict, training_set_metadata: dict) -> None:
-        """Replace string-path arrays for lazy features with LazyColumn objects."""
-        from ludwig.data.lazy_utils import LazyColumn
+        """Replace string-path arrays for lazy features with LazyColumn or CachedLazyColumn objects."""
+        from ludwig.data.lazy_utils import CachedLazyColumn, LazyColumn
+
+        max_prefetch = 0
 
         for proc_col, feat_cfg in features.items():
             if proc_col not in self.dataset:
@@ -179,6 +196,11 @@ class PandasDataset(Dataset):
 
             paths = self.dataset[proc_col]
             feat_type = feat_cfg.get("type", "")
+            mode = feat_meta.get("mode", "lazy")
+            # Per-feature prefetch override (None means auto → 4 for lazy modes)
+            feat_prefetch = feat_meta.get("prefetch_size")
+            effective_prefetch = feat_prefetch if feat_prefetch is not None else 4
+            max_prefetch = max(max_prefetch, effective_prefetch)
 
             if feat_type == "audio" and "lazy_audio_params" in feat_meta:
                 from ludwig.features.audio_feature import AudioFeatureMixin
@@ -198,7 +220,16 @@ class PandasDataset(Dataset):
                 import torch as _torch
 
                 _audio_workers = max(1, (os.cpu_count() or 4) // max(1, _torch.get_num_threads()))
-                self.dataset[proc_col] = LazyColumn(paths, decode_fn, max_workers=_audio_workers)
+
+                if mode == "lazy_cached":
+                    # decode_fn returns (max_length, feature_dim) — match that order.
+                    sample_shape = (p["max_length"], p["feature_dim"])
+                    cache_path = self._decoded_cache_path(proc_col, len(paths), sample_shape)
+                    self.dataset[proc_col] = CachedLazyColumn(
+                        paths, decode_fn, cache_path, sample_shape, max_workers=_audio_workers
+                    )
+                else:
+                    self.dataset[proc_col] = LazyColumn(paths, decode_fn, max_workers=_audio_workers)
 
             elif feat_type == "image" and "lazy_image_params" in feat_meta:
                 import torch
@@ -220,7 +251,15 @@ class PandasDataset(Dataset):
                     channel_class_map=channel_class_map,
                     default_image=default_image,
                 )
-                self.dataset[proc_col] = LazyColumn(paths, decode_fn)
+
+                if mode == "lazy_cached":
+                    sample_shape = tuple(p["default_image_shape"])
+                    cache_path = self._decoded_cache_path(proc_col, len(paths), sample_shape)
+                    self.dataset[proc_col] = CachedLazyColumn(paths, decode_fn, cache_path, sample_shape)
+                else:
+                    self.dataset[proc_col] = LazyColumn(paths, decode_fn)
+
+        self._auto_prefetch_size = max_prefetch
 
     def to_df(self, features: Iterable[BaseFeature] | None = None) -> DataFrame:
         """Convert the dataset to a Pandas DataFrame.
@@ -271,6 +310,19 @@ class PandasDataset(Dataset):
 
         return any(is_lazy_column(v) for v in self.dataset.values())
 
+    def is_fully_cached(self) -> bool:
+        """Return ``True`` when every ``CachedLazyColumn`` in this dataset has finished its first-pass decode.
+
+        Returns ``False`` if there are no ``CachedLazyColumn`` instances (i.e. the dataset
+        uses plain ``LazyColumn`` or eager mode).
+        """
+        from ludwig.data.lazy_utils import is_cached_lazy_column
+
+        cached_cols = [v for v in self.dataset.values() if is_cached_lazy_column(v)]
+        if not cached_cols:
+            return False
+        return all(col.is_fully_cached() for col in cached_cols)
+
     @contextlib.contextmanager
     def initialize_batcher(
         self,
@@ -282,12 +334,29 @@ class PandasDataset(Dataset):
         augmentation_pipeline=None,
         prefetch_size: int | None = None,
     ) -> Batcher:
+        """Yield a :class:`RandomAccessBatcher` configured for this dataset.
+
+        Parameters
+        ----------
+        prefetch_size:
+            Number of batches to pipeline in a background thread while the GPU
+            processes the current batch.  ``None`` (default) uses
+            ``self._auto_prefetch_size``, which is derived from the
+            ``prefetch_size`` field in each feature's preprocessing config
+            (``None`` → 4 for ``lazy``/``lazy_cached`` features, 0 for
+            ``eager``).  Pass ``0`` to disable prefetch entirely.
+
+            For ``lazy_cached`` mode, ``RandomAccessBatcher.set_epoch`` will
+            automatically reset ``prefetch_size`` to 0 after epoch 1 once
+            ``dataset.is_fully_cached()`` returns ``True`` — memmap reads are
+            fast enough that background pipelining adds no measurable benefit.
+        """
         # When the dataset contains lazy columns (audio / image file paths that
         # are decoded per-batch), automatically enable prefetch so the GPU is
         # not idle during decode.  Callers can override by passing prefetch_size
         # explicitly (0 to disable, N to set a specific depth).
         if prefetch_size is None:
-            prefetch_size = 4 if self._has_lazy_columns() else 0
+            prefetch_size = self._auto_prefetch_size if self._has_lazy_columns() else 0
 
         sampler = DistributedSampler(
             len(self), shuffle=should_shuffle, random_seed=random_seed, distributed=distributed

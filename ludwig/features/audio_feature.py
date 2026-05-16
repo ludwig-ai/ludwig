@@ -541,7 +541,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
         if num_audio_utterances == 0:
             raise ValueError("There are no audio files in the dataset provided.")
 
-        if preprocessing_parameters.get("lazy", True):
+        if preprocessing_parameters.get("mode", "lazy") != "eager":
             # Lazy path: store file paths as a string Series.  The actual audio
             # decode happens per-batch inside PandasDataset via LazyColumn.
             # This bounds peak memory to batch_size × clip_size instead of N × clip_size.
@@ -574,7 +574,9 @@ class AudioFeatureMixin(BaseFeatureMixin):
                 proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.from_pandas(
                     pd.Series(path_list, dtype=object, index=orig_index)
                 )
-            metadata[name]["lazy"] = True
+            metadata[name]["lazy"] = True  # backward compat for ray.py
+            metadata[name]["mode"] = preprocessing_parameters.get("mode", "lazy")
+            metadata[name]["prefetch_size"] = preprocessing_parameters.get("prefetch_size")
             metadata[name]["reshape"] = None  # paths are 1-D strings — no reshape needed
             # Persist decode params in metadata so PandasDataset can reconstruct the fn
             metadata[name]["lazy_audio_params"] = {

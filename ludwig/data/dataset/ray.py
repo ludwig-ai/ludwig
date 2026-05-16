@@ -133,7 +133,9 @@ class RayDataset(Dataset):
         for proc_col, feat_cfg in self.features.items():
             feature_name = feat_cfg.get("name") or feat_cfg.get("column") or proc_col
             feat_meta = self.training_set_metadata.get(feature_name, {})
-            if not isinstance(feat_meta, dict) or not feat_meta.get("lazy"):
+            if not isinstance(feat_meta, dict) or (
+                not feat_meta.get("lazy") and feat_meta.get("mode", "eager") == "eager"
+            ):
                 continue
 
             feat_type = feat_cfg.get("type", "")

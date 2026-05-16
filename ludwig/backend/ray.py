@@ -714,7 +714,11 @@ class RayPredictor(BasePredictor):
         from ludwig.data.dataframe.dask import tensor_extension_casting
 
         with tensor_extension_casting(False):
-            predictions = dataset.ds.map_batches(to_tensors, batch_format="pandas").map_batches(
+            # Apply lazy-decode transforms before casting to tensors.  Without this,
+            # lazy audio/image columns still contain file-path strings at predict time,
+            # causing cast_as_tensor_dtype to raise a TypeError.
+            ds = dataset._with_lazy_decode(dataset.ds)
+            predictions = ds.map_batches(to_tensors, batch_format="pandas").map_batches(
                 batch_predictor,
                 batch_size=self.batch_size,
                 compute=ray.data.ActorPoolStrategy(),

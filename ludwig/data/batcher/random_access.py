@@ -41,8 +41,15 @@ class RandomAccessBatcher(Batcher):
     is a cheap numpy slice.
 
     ``PandasDataset.initialize_batcher`` automatically sets ``prefetch_size``
-    to a non-zero value when any lazy column (audio/image path arrays) is
-    present, so callers don't need to set this manually.
+    from each feature's preprocessing config (``None`` → 4 for ``lazy`` /
+    ``lazy_cached`` features, 0 for ``eager``).  Users can override this via
+    the ``prefetch_size`` field in the feature's preprocessing config, or by
+    passing ``prefetch_size`` directly to ``initialize_batcher``.
+
+    After the first epoch completes in ``lazy_cached`` mode, ``set_epoch``
+    checks ``dataset.is_fully_cached()`` and resets ``prefetch_size`` to 0 —
+    memmap reads (~0.1 ms/batch) are fast enough that background pipelining
+    adds no measurable benefit and avoids unnecessary thread overhead.
     """
 
     def __init__(
@@ -234,6 +241,13 @@ class RandomAccessBatcher(Batcher):
         return False
 
     def set_epoch(self, epoch: int, batch_size: int) -> None:
+        """Reset state for a new epoch; disables prefetch when the dataset is fully cached.
+
+        If the dataset exposes ``is_fully_cached()`` and it returns ``True``
+        (i.e. all ``lazy_cached`` columns have finished their first-pass decode),
+        ``prefetch_size`` is set to 0 so subsequent epochs read directly from
+        the memmap without spinning up a producer thread.
+        """
         if self._prefetch_size > 0:
             self._stop_async()
 
@@ -243,6 +257,12 @@ class RandomAccessBatcher(Batcher):
         self.step = 0
         self.sampler.set_epoch(epoch)
         self.sample_it = iter(self.sampler)
+
+        # After epoch 1, if all lazy columns are decoded and cached in memmaps,
+        # disable prefetch — memmap reads are fast enough that pipelining adds
+        # no measurable benefit and avoids unnecessary thread overhead.
+        if self._prefetch_size > 0 and hasattr(self.dataset, "is_fully_cached") and self.dataset.is_fully_cached():
+            self._prefetch_size = 0
 
         if self._prefetch_size > 0:
             self._start_async_epoch()
