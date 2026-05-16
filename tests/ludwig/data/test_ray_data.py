@@ -2,6 +2,7 @@ import os
 import shutil
 from unittest import mock
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -9,7 +10,7 @@ import pytest
 ray = pytest.importorskip("ray")
 dask = pytest.importorskip("dask")
 
-from ludwig.data.dataset.ray import RayDatasetBatcher, RayDatasetShardBatcher, read_remote_parquet  # noqa
+from ludwig.data.dataset.ray import RayDataset, RayDatasetBatcher, RayDatasetShardBatcher, read_remote_parquet  # noqa
 
 # Mark the entire module as distributed
 pytestmark = [pytest.mark.distributed, pytest.mark.distributed_d]
@@ -161,3 +162,147 @@ def test_read_remote_parquet(parquet_filepath: str):
         2) Not passing a filesystem object
     """
     read_remote_parquet(parquet_filepath)
+
+
+# ---------------------------------------------------------------------------
+# Lazy decode tests
+# ---------------------------------------------------------------------------
+
+
+def _make_ray_dataset(df: pd.DataFrame, features: dict, training_set_metadata: dict) -> RayDataset:
+    """Construct a RayDataset directly from a pandas DataFrame for testing."""
+    ds = RayDataset.__new__(RayDataset)
+    ds.ds = ray.data.from_pandas(df)
+    ds.features = features
+    ds.training_set_metadata = training_set_metadata
+    ds.data_cache_fp = None
+    ds.data_parquet_fp = None
+    return ds
+
+
+def test_with_lazy_decode_audio(ray_cluster_2cpu, tmp_path):
+    """_with_lazy_decode must replace path strings with decoded numpy arrays for audio features.
+
+    Before the fix, the Ray backend passed raw path strings to workers; the batcher then tried
+    to np.stack strings which either hung or produced garbage.  After the fix, map_batches
+    decode transforms run inside each worker and return proper numpy arrays.
+
+    The decode function is mocked here so the test has no soundfile dependency.
+    The real audio decode pipeline is exercised by test_ray_audio_basic (integration test).
+    """
+    from unittest.mock import patch
+
+    proc_col = "audio_proc_col"
+    feature_name = "audio_0"
+    feature_dim = 8
+    max_length = 5
+
+    dummy_array = np.zeros((feature_dim, max_length), dtype=np.float32)
+
+    def _mock_make_lazy_decode_fn(**kwargs):
+        def decode(path):
+            return dummy_array
+
+        decode.__name__ = "audio_lazy_decode"
+        return decode
+
+    features = {proc_col: {"name": feature_name, "column": feature_name, "type": "audio"}}
+    training_set_metadata = {
+        feature_name: {
+            "lazy": True,
+            "reshape": None,
+            "lazy_audio_params": {
+                "audio_feature_dict": {"type": "fbank"},
+                "feature_dim": feature_dim,
+                "max_length": max_length,
+                "padding_value": 0.0,
+                "normalization_type": None,
+            },
+        }
+    }
+
+    df = pd.DataFrame({proc_col: ["/fake/path/a.wav", "/fake/path/b.wav"]})
+    ray_ds = _make_ray_dataset(df, features, training_set_metadata)
+
+    # Before: raw dataset has path strings, not arrays.
+    raw_batch = ray_ds.ds.take_batch(batch_size=2, batch_format="pandas")
+    assert isinstance(raw_batch[proc_col].iloc[0], str), "Expected path string in raw dataset"
+
+    # After: _with_lazy_decode adds a map_batches transform that decodes paths to arrays.
+    with patch("ludwig.features.audio_feature.AudioFeatureMixin._make_lazy_decode_fn", _mock_make_lazy_decode_fn):
+        decoded_ds = ray_ds._with_lazy_decode(ray_ds.ds)
+
+    decoded_batch = decoded_ds.take_batch(batch_size=2, batch_format="pandas")
+    first = decoded_batch[proc_col].iloc[0]
+    assert isinstance(first, np.ndarray), f"Expected numpy array after decode, got {type(first)}"
+    assert first.shape == (feature_dim, max_length), f"Expected shape ({feature_dim}, {max_length}), got {first.shape}"
+
+
+def test_with_lazy_decode_image(ray_cluster_2cpu, tmp_path):
+    """_with_lazy_decode must replace path strings with decoded numpy arrays for image features.
+
+    Same root cause as audio: without decode transforms, workers receive file paths instead
+    of tensors, causing hangs or crashes in the batcher.
+    """
+    PIL = pytest.importorskip("PIL.Image")
+
+    # Write a tiny PNG (12×12 RGB).
+    img_path = str(tmp_path / "test.png")
+    img = PIL.fromarray(np.zeros((12, 12, 3), dtype=np.uint8))
+    img.save(img_path)
+
+    proc_col = "image_proc_col"
+    feature_name = "image_0"
+    h, w, c = 12, 12, 3
+
+    features = {proc_col: {"name": feature_name, "column": feature_name, "type": "image"}}
+    training_set_metadata = {
+        feature_name: {
+            "lazy": True,
+            "reshape": None,
+            "lazy_image_params": {
+                "img_width": w,
+                "img_height": h,
+                "should_resize": False,
+                "num_channels": c,
+                "resize_method": "interpolate",
+                "user_specified_num_channels": True,
+                "standardize_image": "pixel_normalization",
+                "channel_class_map": [],
+                "default_image_shape": [c, h, w],
+            },
+        }
+    }
+
+    df = pd.DataFrame({proc_col: [img_path, img_path]})
+    ray_ds = _make_ray_dataset(df, features, training_set_metadata)
+
+    # Before: raw dataset has path strings.
+    raw_batch = ray_ds.ds.take_batch(batch_size=2, batch_format="pandas")
+    assert isinstance(raw_batch[proc_col].iloc[0], str), "Expected path string in raw dataset"
+
+    # After: _with_lazy_decode adds a map_batches transform that decodes paths to arrays.
+    decoded_ds = ray_ds._with_lazy_decode(ray_ds.ds)
+    decoded_batch = decoded_ds.take_batch(batch_size=2, batch_format="pandas")
+    first = decoded_batch[proc_col].iloc[0]
+    assert isinstance(first, np.ndarray), f"Expected numpy array after decode, got {type(first)}"
+    assert first.ndim == 3, f"Expected 3-D image array (C × H × W), got shape {first.shape}"
+    assert first.shape == (c, h, w), f"Expected shape {(c, h, w)}, got {first.shape}"
+
+
+def test_with_lazy_decode_non_lazy_passthrough(ray_cluster_2cpu):
+    """_with_lazy_decode must not touch features that are not lazy."""
+    proc_col = "num_col"
+    feature_name = "num_0"
+
+    features = {proc_col: {"name": feature_name, "column": feature_name, "type": "number"}}
+    training_set_metadata = {feature_name: {"lazy": False}}
+
+    df = pd.DataFrame({proc_col: [1.0, 2.0, 3.0]})
+    ray_ds = _make_ray_dataset(df, features, training_set_metadata)
+
+    decoded_ds = ray_ds._with_lazy_decode(ray_ds.ds)
+
+    # Dataset should be identical — no transforms added.
+    batch = decoded_ds.take_batch(batch_size=3, batch_format="pandas")
+    assert list(batch[proc_col]) == [1.0, 2.0, 3.0]

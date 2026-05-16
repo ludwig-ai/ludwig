@@ -15,8 +15,10 @@
 # ==============================================================================
 import contextlib
 import math
+import os
 import queue
 import threading
+from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
 from typing import Any
 
@@ -39,9 +41,35 @@ from ludwig.utils.types import DataFrame, Series
 
 _SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 
+_LAZY_DECODE_MAX_WORKERS = min(16, (os.cpu_count() or 4) + 4)
+
 
 def cast_as_tensor_dtype(series: Series) -> Series:
     return TensorArray(series)
+
+
+def _make_lazy_decode_batch_fn(col: str, decode_fn):
+    """Return a map_batches-compatible function that decodes a path-string column to numpy arrays.
+
+    Using a factory avoids the late-binding closure problem (col and decode_fn are captured
+    correctly per call). The returned function must be picklable so Ray can serialize it
+    for distribution to remote workers.
+
+    decode_fn must be thread-safe and stateless (see AudioFeatureMixin._make_lazy_decode_fn
+    and ImageFeatureMixin._make_lazy_decode_fn).
+    """
+
+    def decode_batch(batch: pd.DataFrame) -> pd.DataFrame:
+        paths = batch[col].tolist()
+        n = len(paths)
+        max_workers = min(_LAZY_DECODE_MAX_WORKERS, n) if n > 0 else 1
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            decoded = list(executor.map(decode_fn, paths))
+        batch[col] = decoded
+        return batch
+
+    decode_batch.__name__ = f"lazy_decode_{col}"
+    return decode_batch
 
 
 def read_remote_parquet(path: str):
@@ -73,14 +101,75 @@ class RayDataset(Dataset):
         shuffle: bool = True,
         shuffle_seed: int = default_random_seed,
     ) -> RayNativeDataset:
-        """Returns a ray.data.Dataset, optionally shuffled.
+        """Returns a ray.data.Dataset, optionally shuffled, with lazy decode transforms attached.
 
-        In modern Ray (2.5+), datasets use lazy execution by default, so there's no need for explicit windowing or
-        pipelining.
+        Lazy media features (audio/image) stored as file paths are decoded per-batch inside
+        each Ray worker via map_batches transforms. This means workers receive decoded tensors
+        while only decoding batch_size samples at a time — no full materialization in memory.
+
+        In modern Ray (2.5+), datasets use lazy execution by default, so there's no need for
+        explicit windowing or pipelining.
         """
         ds = self.ds
         if shuffle:
             ds = ds.random_shuffle(seed=shuffle_seed)
+        ds = self._with_lazy_decode(ds)
+        return ds
+
+    def _with_lazy_decode(self, ds: RayNativeDataset) -> RayNativeDataset:
+        """Attach map_batches decode stages for lazy media features (audio/image).
+
+        For each feature with ``lazy=True`` in training_set_metadata, the file-path column
+        is wrapped with a map_batches transform that decodes paths to numpy arrays.
+        The transform runs inside the worker (or task) that calls iter_batches, so decoding
+        is distributed and memory-bounded to batch_size × media_size per worker.
+
+        This is the Ray equivalent of PandasDataset._init_lazy_columns(), which wraps path
+        arrays with LazyColumn objects for local (non-distributed) training.
+        """
+        for proc_col, feat_cfg in self.features.items():
+            feature_name = feat_cfg.get("name") or feat_cfg.get("column") or proc_col
+            feat_meta = self.training_set_metadata.get(feature_name, {})
+            if not isinstance(feat_meta, dict) or not feat_meta.get("lazy"):
+                continue
+
+            feat_type = feat_cfg.get("type", "")
+
+            if feat_type == "audio" and "lazy_audio_params" in feat_meta:
+                from ludwig.features.audio_feature import AudioFeatureMixin
+
+                p = feat_meta["lazy_audio_params"]
+                decode_fn = AudioFeatureMixin._make_lazy_decode_fn(
+                    audio_feature_dict=p["audio_feature_dict"],
+                    feature_dim=p["feature_dim"],
+                    max_length=p["max_length"],
+                    padding_value=p["padding_value"],
+                    normalization_type=p["normalization_type"],
+                )
+                ds = ds.map_batches(_make_lazy_decode_batch_fn(proc_col, decode_fn), batch_format="pandas")
+
+            elif feat_type == "image" and "lazy_image_params" in feat_meta:
+                import torch as _torch
+
+                from ludwig.features.image_feature import ImageFeatureMixin
+
+                p = feat_meta["lazy_image_params"]
+                channel_class_map = _torch.tensor(p["channel_class_map"])
+                shape = p["default_image_shape"]
+                default_image = np.zeros(shape, dtype=np.float32)
+                decode_fn = ImageFeatureMixin._make_lazy_decode_fn(
+                    img_width=p["img_width"],
+                    img_height=p["img_height"],
+                    should_resize=p["should_resize"],
+                    num_channels=p["num_channels"],
+                    resize_method=p["resize_method"],
+                    user_specified_num_channels=p["user_specified_num_channels"],
+                    standardize_image=p["standardize_image"],
+                    channel_class_map=channel_class_map,
+                    default_image=default_image,
+                )
+                ds = ds.map_batches(_make_lazy_decode_batch_fn(proc_col, decode_fn), batch_format="pandas")
+
         return ds
 
     @contextlib.contextmanager
@@ -88,8 +177,11 @@ class RayDataset(Dataset):
         ds = self.ds
         if should_shuffle:
             ds = ds.random_shuffle(seed=random_seed)
-        # Materialize the dataset to avoid re-reading Parquet on every epoch.
+        # Materialize path strings (small) to avoid re-reading Parquet on every epoch.
+        # Lazy decode transforms are added AFTER materialize so each epoch decodes from
+        # cached path strings rather than re-running Parquet I/O.
         ds = ds.materialize()
+        ds = self._with_lazy_decode(ds)
         yield RayDatasetBatcher(
             ds,
             self.features,
