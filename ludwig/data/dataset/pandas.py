@@ -134,6 +134,8 @@ class PandasDataset(Dataset):
 
         # Restore N-D shapes for columns that were flattened for Parquet compatibility
         # (e.g. images [H,W,C] stored as flat 1-D arrays).
+        # Lazy columns (audio/image stored as path strings) are skipped here because
+        # their reshape is set to None in the metadata.
         if training_set_metadata is not None:
             for feature_name, feature_meta in training_set_metadata.items():
                 if not isinstance(feature_meta, dict):
@@ -146,18 +148,91 @@ class PandasDataset(Dataset):
                     if feat_cfg.get("name") == feature_name or feat_cfg.get("column") == feature_name:
                         if proc_col in self.dataset:
                             arr = self.dataset[proc_col]
+                            # Skip object-dtype columns (path strings for lazy features)
+                            if arr.dtype == object:
+                                break
                             expected_shape = (arr.shape[0], *reshape)
                             if arr.shape != expected_shape and np.prod(arr.shape[1:]) == np.prod(reshape):
                                 self.dataset[proc_col] = arr.reshape(expected_shape)
                         break
 
+        # Reconstruct LazyColumn objects for lazy media features (audio / image).
+        # During preprocessing, lazy features stored file paths as strings.  Here
+        # we wrap those path arrays with the appropriate per-sample decode function
+        # so that batches are decoded on demand rather than all at once.
+        if training_set_metadata is not None:
+            self._init_lazy_columns(features, training_set_metadata)
+
         self.size = len(list(self.dataset.values())[0])
 
+    def _init_lazy_columns(self, features: dict, training_set_metadata: dict) -> None:
+        """Replace string-path arrays for lazy features with LazyColumn objects."""
+        from ludwig.data.lazy_utils import LazyColumn
+
+        for proc_col, feat_cfg in features.items():
+            if proc_col not in self.dataset:
+                continue
+            feature_name = feat_cfg.get("name") or feat_cfg.get("column") or proc_col
+            feat_meta = training_set_metadata.get(feature_name, {})
+            if not isinstance(feat_meta, dict) or not feat_meta.get("lazy"):
+                continue
+
+            paths = self.dataset[proc_col]
+            feat_type = feat_cfg.get("type", "")
+
+            if feat_type == "audio" and "lazy_audio_params" in feat_meta:
+                from ludwig.features.audio_feature import AudioFeatureMixin
+
+                p = feat_meta["lazy_audio_params"]
+                decode_fn = AudioFeatureMixin._make_lazy_decode_fn(
+                    audio_feature_dict=p["audio_feature_dict"],
+                    feature_dim=p["feature_dim"],
+                    max_length=p["max_length"],
+                    padding_value=p["padding_value"],
+                    normalization_type=p["normalization_type"],
+                )
+                self.dataset[proc_col] = LazyColumn(paths, decode_fn)
+
+            elif feat_type == "image" and "lazy_image_params" in feat_meta:
+                import torch
+
+                from ludwig.features.image_feature import ImageFeatureMixin
+
+                p = feat_meta["lazy_image_params"]
+                channel_class_map = torch.tensor(p["channel_class_map"])
+                shape = p["default_image_shape"]
+                default_image = np.zeros(shape, dtype=np.float32)
+                decode_fn = ImageFeatureMixin._make_lazy_decode_fn(
+                    img_width=p["img_width"],
+                    img_height=p["img_height"],
+                    should_resize=p["should_resize"],
+                    num_channels=p["num_channels"],
+                    resize_method=p["resize_method"],
+                    user_specified_num_channels=p["user_specified_num_channels"],
+                    standardize_image=p["standardize_image"],
+                    channel_class_map=channel_class_map,
+                    default_image=default_image,
+                )
+                self.dataset[proc_col] = LazyColumn(paths, decode_fn)
+
     def to_df(self, features: Iterable[BaseFeature] | None = None) -> DataFrame:
-        """Convert the dataset to a Pandas DataFrame."""
+        """Convert the dataset to a Pandas DataFrame.
+
+        Lazy columns (audio / image path arrays) are excluded because they
+        contain file-path strings, not decoded tensors.  These features are
+        always input features and are never needed for postprocessing.
+        """
+        from ludwig.data.lazy_utils import is_lazy_column
+
         if features:
-            return from_numpy_dataset({feature.feature_name: self.dataset[feature.proc_column] for feature in features})
-        return from_numpy_dataset(self.dataset)
+            subset = {}
+            for feature in features:
+                col = self.dataset.get(feature.proc_column)
+                if col is not None and not is_lazy_column(col):
+                    subset[feature.feature_name] = col
+            return from_numpy_dataset(subset)
+        non_lazy = {k: v for k, v in self.dataset.items() if not is_lazy_column(v)}
+        return from_numpy_dataset(non_lazy)
 
     def to_scalar_df(self, features: Iterable[BaseFeature] | None = None) -> DataFrame:
         return to_scalar_df(self.to_df(features))
@@ -179,6 +254,7 @@ class PandasDataset(Dataset):
 
     @property
     def in_memory_size_bytes(self) -> int:
+        # to_df() already excludes lazy columns (path strings, not arrays).
         df = self.to_df()
         return df.memory_usage(deep=True).sum() if df is not None else 0
 

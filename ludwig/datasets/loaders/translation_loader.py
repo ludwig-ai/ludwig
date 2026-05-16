@@ -77,3 +77,83 @@ class Wmt19DeEnLoader(TranslationLoader):
 class OpusBooksEnFrLoader(TranslationLoader):
     source_lang = "en"
     target_lang = "fr"
+
+
+class MultiUNArEnLoader(TranslationLoader):
+    source_lang = "ar"
+    target_lang = "en"
+
+
+class EuroparlBgCsLoader(TranslationLoader):
+    source_lang = "bg"
+    target_lang = "cs"
+
+
+class EuroparlBgEnLoader(TranslationLoader):
+    source_lang = "bg"
+    target_lang = "en"
+
+
+class EuroparlCsEnLoader(TranslationLoader):
+    source_lang = "cs"
+    target_lang = "en"
+
+
+class EuroparlDaEnLoader(TranslationLoader):
+    source_lang = "da"
+    target_lang = "en"
+
+
+class EuroparlDeEnLoader(TranslationLoader):
+    source_lang = "de"
+    target_lang = "en"
+
+
+class EuroparlElEnLoader(TranslationLoader):
+    source_lang = "el"
+    target_lang = "en"
+
+
+class EuroparlEnEsLoader(TranslationLoader):
+    source_lang = "en"
+    target_lang = "es"
+
+
+class EuroparlEnFrLoader(TranslationLoader):
+    source_lang = "en"
+    target_lang = "fr"
+
+
+class EuroparlEnItLoader(TranslationLoader):
+    source_lang = "en"
+    target_lang = "it"
+
+
+class EuroparlEnNlLoader(TranslationLoader):
+    source_lang = "en"
+    target_lang = "nl"
+
+
+class EuroparlEnPlLoader(TranslationLoader):
+    source_lang = "en"
+    target_lang = "pl"
+
+
+class EuroparlEnPtLoader(TranslationLoader):
+    source_lang = "en"
+    target_lang = "pt"
+
+
+class EuroparlEnRoLoader(TranslationLoader):
+    source_lang = "en"
+    target_lang = "ro"
+
+
+class EuroparlEnSvLoader(TranslationLoader):
+    source_lang = "en"
+    target_lang = "sv"
+
+
+class SetimesBgBsLoader(TranslationLoader):
+    source_lang = "bg"
+    target_lang = "bs"

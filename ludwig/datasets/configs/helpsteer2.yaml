@@ -1,0 +1,16 @@
+version: 1.0
+name: helpsteer2
+huggingface_dataset_id: nvidia/HelpSteer2
+loader: hugging_face.HFLoader
+description: |
+  HelpSteer2: 21K prompt-response pairs with 5 quality attributes rated 0-4.
+columns:
+  - name: prompt
+    type: text
+  - name: response
+    type: text
+  - name: helpfulness
+    type: number
+output_features:
+  - name: helpfulness
+    type: number

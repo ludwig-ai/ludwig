@@ -1,0 +1,19 @@
+version: 1.0
+name: ravnursson_asr
+huggingface_dataset_id: carlosdanielhernandezmena/ravnursson_asr
+huggingface_subsample: ravnursson_asr
+loader: hugging_face.HFLoader
+description: |
+  Ravnursson: Faroese audio speech recognition dataset. 65K train examples.
+columns:
+  - name: audio
+    type: audio
+  - name: normalized_text
+    type: text
+  - name: gender
+    type: category
+  - name: dialect
+    type: category
+output_features:
+  - name: normalized_text
+    type: text

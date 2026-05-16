@@ -1,0 +1,17 @@
+version: 1.0
+name: audioset_balanced
+huggingface_dataset_id: agkphysics/AudioSet
+huggingface_subsample: balanced
+loader: hugging_face.HFLoader
+description: |
+  AudioSet balanced: audio event classification with 527 sound classes from YouTube. 18K train examples.
+columns:
+  - name: audio
+    type: audio
+  - name: labels
+    type: sequence
+  - name: human_labels
+    type: sequence
+output_features:
+  - name: labels
+    type: sequence

@@ -1,0 +1,16 @@
+version: 1.0
+name: bitext_customer_intent
+huggingface_dataset_id: bitext/Bitext-customer-support-llm-chatbot-training-dataset
+loader: hugging_face.HFLoader
+description: |
+  Bitext customer support intent detection (26K train, 27 intents)
+columns:
+  - name: instruction
+    type: text
+  - name: intent
+    type: category
+  - name: response
+    type: text
+output_features:
+  - name: intent
+    type: category

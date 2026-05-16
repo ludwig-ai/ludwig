@@ -1,0 +1,18 @@
+version: 1.0
+name: xnli_de
+huggingface_dataset_id: xnli
+huggingface_subsample: de
+loader: hugging_face.HFLoader
+description: |
+  XNLI German: cross-lingual natural language inference, German split.
+  Labels: entailment, neutral, contradiction.
+columns:
+  - name: premise
+    type: text
+  - name: hypothesis
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

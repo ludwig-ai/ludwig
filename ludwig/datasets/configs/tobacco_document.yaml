@@ -1,0 +1,16 @@
+version: 1.0
+name: tobacco_document
+huggingface_dataset_id: anirudh1112/corrected-tobacco-dataset-with-ocr
+loader: hugging_face.HFLoader
+description: |
+  Tobacco document image classification with OCR text. 2.2K examples.
+columns:
+  - name: image
+    type: image
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

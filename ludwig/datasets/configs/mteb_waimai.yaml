@@ -1,0 +1,14 @@
+version: 1.0
+name: mteb_waimai
+huggingface_dataset_id: mteb/Waimai
+loader: hugging_face.HFLoader
+description: |
+  MTEB Waimai: Chinese food delivery review sentiment classification.
+columns:
+  - name: label
+    type: category
+  - name: text
+    type: text
+output_features:
+  - name: label
+    type: category

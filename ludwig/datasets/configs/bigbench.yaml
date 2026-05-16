@@ -1,0 +1,15 @@
+version: 1.0
+name: bigbench
+huggingface_dataset_id: tasksource/bigbench
+huggingface_subsample: abstract_narrative_understanding
+loader: hugging_face.HFLoader
+description: |
+  BigBench: abstract narrative understanding task. 2400 train examples.
+columns:
+  - name: inputs
+    type: text
+  - name: targets
+    type: text
+output_features:
+  - name: targets
+    type: text

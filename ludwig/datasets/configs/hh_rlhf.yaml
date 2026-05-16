@@ -1,0 +1,14 @@
+version: 1.0
+name: hh_rlhf
+huggingface_dataset_id: Anthropic/hh-rlhf
+loader: hugging_face.HFLoader
+description: |
+  Anthropic HH-RLHF: 170K human feedback pairs for helpful/harmless RLHF training.
+columns:
+  - name: chosen
+    type: text
+  - name: rejected
+    type: text
+output_features:
+  - name: chosen
+    type: text

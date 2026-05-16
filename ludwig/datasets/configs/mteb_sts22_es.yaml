@@ -1,0 +1,17 @@
+version: 1.0
+name: mteb_sts22_es
+huggingface_dataset_id: mteb/sts22-crosslingual-sts
+huggingface_subsample: es
+loader: hugging_face.HFLoader
+description: |
+  MTEB STS22 (Spanish): semantic textual similarity regression.
+columns:
+  - name: sentence1
+    type: text
+  - name: sentence2
+    type: text
+  - name: score
+    type: number
+output_features:
+  - name: score
+    type: number

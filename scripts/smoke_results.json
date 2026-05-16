@@ -396,12 +396,6 @@
     "rows": 0
   },
   {
-    "name": "ethos_binary",
-    "status": "skipped",
-    "error": "Not an HF dataset (pre-existing Ludwig dataset)",
-    "rows": 0
-  },
-  {
     "name": "eurosat",
     "status": "pass",
     "error": null,
@@ -459,24 +453,6 @@
     "name": "forest_cover",
     "status": "skipped",
     "error": "Not an HF dataset (pre-existing Ludwig dataset)",
-    "rows": 0
-  },
-  {
-    "name": "fsd50k",
-    "status": "skipped",
-    "error": "Config deleted \u2014 label always null in streaming mode",
-    "rows": 0
-  },
-  {
-    "name": "gift_eval",
-    "status": "skipped",
-    "error": "Config deleted \u2014 streaming schema incompatible (list<float> vs List(List(float32)))",
-    "rows": 0
-  },
-  {
-    "name": "glue_diagnostic",
-    "status": "skipped",
-    "error": "Config deleted \u2014 only test split with all labels hidden (-1)",
     "rows": 0
   },
   {
@@ -678,12 +654,6 @@
     "rows": 1000
   },
   {
-    "name": "legalbench",
-    "status": "skipped",
-    "error": "Config deleted \u2014 all subsets < 32 rows",
-    "rows": 0
-  },
-  {
     "name": "lex_glue_ecthr",
     "status": "pass",
     "error": null,
@@ -772,12 +742,6 @@
     "status": "pass",
     "error": null,
     "rows": 1000
-  },
-  {
-    "name": "mmmu",
-    "status": "skipped",
-    "error": "Config deleted \u2014 only 5 rows per split (benchmark dataset)",
-    "rows": 0
   },
   {
     "name": "mnist",
@@ -1033,9 +997,9 @@
   },
   {
     "name": "samsum",
-    "status": "skipped",
-    "error": "Config deleted \u2014 dataset removed from HF Hub",
-    "rows": 0
+    "status": "pass",
+    "error": null,
+    "rows": 1000
   },
   {
     "name": "santander_customer_satisfaction",
@@ -1444,5 +1408,2135 @@
     "status": "skipped",
     "error": "Not an HF dataset (pre-existing Ludwig dataset)",
     "rows": 0
+  },
+  {
+    "name": "aqua_rat",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "numinamath",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "bitext_customer_support",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "phinc",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "nemotron_safety",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "orca_math",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "python_code_instructions",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "race",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "ami_asr",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "flashrag_2wikimultihop",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "indic_glue",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "big_patent",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "multi30k",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "codex_thinking",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "qasc",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mnist_ylecun",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "naturelm_audio",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "gaia_rrlyrae",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "paws_x",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "imagenet_100",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "medical_flashcards",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "farstail_nli",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "hermes_function_calling",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mmsulab",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "gaia_cepheids",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "gaiasky_qa",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "amazon_massive_intent",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "brazilian_toxic_tweets",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "kmmlu",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "factcheck",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "abjad_kids",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "nq_open",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "drop",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mini_imagenet",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "amazon_science_massive",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "minds14",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "m3cot",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "nli_zh_all",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "blimp",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "cmrc2018",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "alpaca_gpt4_zh",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "handwritten_crossouts",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mobile_mold",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "intuitive_physics",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "nemotron_pii",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "merit",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "graid_bdd",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "aegis_safety",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "clue_afqmc",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "code_defect_detection",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "bigbench",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "banking77_legacy",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "code_contests",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "arxiv_abstracts_2021",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "bornholm_bitext",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "gaia_spectroscopic_binaries",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "kvasir_vqa",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "gaia_young_stellar_objects",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "ccnews",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "europarl_bg_cs",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "pubmed_summarization",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "map_trace",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "hc3_chinese",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "flores_101",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "m_mmlu",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "govreport_summarization",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "amazon_massive_scenario",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "eurosat_rgb",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "bitext_customer_intent",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "alpaca_gpt4",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "moral_stories",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "ai_generated_ecommerce",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "databricks_dolly_15k",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "databench_qa",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "audioset_balanced",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "kilt_nq",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "imdb_mteb",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "multiun_ar_en",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "arxiv_summarization",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "hc3",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "amazon_reviews_2023",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mmlu_lighteval",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "clinc_oos",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "coig_cqia",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "openfake",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "or_bench",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "path_vqa",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "ravnursson_asr",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "repid",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "reward_bench",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "scandisent",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "setimes_bg_bs",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "sib200",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "sickr",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "sms_spam",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "speech_massive",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "spotify_tracks",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "stackoverflow_posts",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "stocks_daily_price",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "sts12",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "sts13",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "sts14",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "sts15",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "sts16",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "sts17",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "sts22",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "stsb_de",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "stsb_sentencetransformers",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "synthia",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "tadabur",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "taix_ray",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "tobacco_document",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "tofu",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "toxic_chat",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "twitter_financial_news_topic",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "universal_dependencies",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "vukuzenzele",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "web_questions",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "wiki_qa",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "wmt_t2t_de_en",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "world_speech_asr",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "yahoo_answers_topics",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "yelp_polarity",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "aeslc",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "allocine",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "ambig_qa",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "app_reviews",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "climate_fever",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "financial_phrasebank",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "germeval18",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "hate_speech18",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "hatespeech_offensive",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_amazon_polarity",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_imdb",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "alpaca_cleaned",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "cnn_dm_hf",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "dair_emotion",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "dolly_15k",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "europarl_bg_en",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "europarl_cs_en",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "europarl_da_en",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "europarl_de_en",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "europarl_el_en",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "europarl_en_es",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "europarl_en_fr",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "europarl_en_it",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "europarl_en_nl",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "europarl_en_pl",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "europarl_en_pt",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "europarl_en_ro",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "europarl_en_sv",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "fineweb_edu",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "gsm8k_openai",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "helpsteer2",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "hh_rlhf",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "iris_sklearn",
+    "status": "pass",
+    "error": null,
+    "rows": 150
+  },
+  {
+    "name": "lmsys_arena",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_sts17_ar",
+    "status": "pass",
+    "error": null,
+    "rows": 250
+  },
+  {
+    "name": "mteb_sts17_de",
+    "status": "pass",
+    "error": null,
+    "rows": 250
+  },
+  {
+    "name": "mteb_sts17_en",
+    "status": "pass",
+    "error": null,
+    "rows": 250
+  },
+  {
+    "name": "mteb_sts17_es",
+    "status": "pass",
+    "error": null,
+    "rows": 250
+  },
+  {
+    "name": "mteb_sts17_fr",
+    "status": "pass",
+    "error": null,
+    "rows": 250
+  },
+  {
+    "name": "mteb_toxic_convo",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_tweet_sentiment",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "news_category",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "no_robots",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "oasst1",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "orca_dpo_pairs",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "persuasion",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "poem_sentiment",
+    "status": "pass",
+    "error": null,
+    "rows": 892
+  },
+  {
+    "name": "poem_sentiment_hf",
+    "status": "pass",
+    "error": null,
+    "rows": 892
+  },
+  {
+    "name": "setfit_ag_news",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "setfit_amazon_polarity",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "setfit_emotion",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "setfit_mrpc",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "setfit_sst2",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "setfit_subj",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "setfit_yelp_review",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "tweet_eval_emoji",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "wildchat",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "winogrande_hf",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "xnli_de",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "xnli_en",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "xnli_es",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "xnli_fr",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "xnli_zh",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "xsum_hf",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_amazon_reviews_class_de",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_amazon_reviews_class_en",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_amazon_reviews_class_es",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_amazon_reviews_class_fr",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_amazon_reviews_class_ja",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_amazon_reviews_class_zh",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_biosses",
+    "status": "pass",
+    "error": null,
+    "rows": 100
+  },
+  {
+    "name": "mteb_massive_intent_ar",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_de",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_en",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_es",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_fr",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_de",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_en",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_es",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_fr",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_zh_cn",
+    "status": "pass",
+    "error": null,
+    "rows": 105
+  },
+  {
+    "name": "mteb_sts22_ar",
+    "status": "pass",
+    "error": null,
+    "rows": 262
+  },
+  {
+    "name": "mteb_sts22_de",
+    "status": "pass",
+    "error": null,
+    "rows": 756
+  },
+  {
+    "name": "mteb_sts22_de_en",
+    "status": "pass",
+    "error": null,
+    "rows": 535
+  },
+  {
+    "name": "mteb_sts22_de_fr",
+    "status": "pass",
+    "error": null,
+    "rows": 74
+  },
+  {
+    "name": "mteb_sts22_en",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_sts22_es",
+    "status": "pass",
+    "error": null,
+    "rows": 561
+  },
+  {
+    "name": "mteb_sts22_es_en",
+    "status": "pass",
+    "error": null,
+    "rows": 365
+  },
+  {
+    "name": "mteb_sts22_es_it",
+    "status": "pass",
+    "error": null,
+    "rows": 212
+  },
+  {
+    "name": "mteb_sts22_fr",
+    "status": "pass",
+    "error": null,
+    "rows": 72
+  },
+  {
+    "name": "mteb_sts22_it",
+    "status": "pass",
+    "error": null,
+    "rows": 407
+  },
+  {
+    "name": "mteb_sts22_pl",
+    "status": "pass",
+    "error": null,
+    "rows": 309
+  },
+  {
+    "name": "mteb_sts22_pl_en",
+    "status": "pass",
+    "error": null,
+    "rows": 48
+  },
+  {
+    "name": "mteb_sts22_ru",
+    "status": "pass",
+    "error": null,
+    "rows": 265
+  },
+  {
+    "name": "mteb_sts22_tr",
+    "status": "pass",
+    "error": null,
+    "rows": 390
+  },
+  {
+    "name": "mteb_sts22_zh",
+    "status": "pass",
+    "error": null,
+    "rows": 637
+  },
+  {
+    "name": "mteb_sts22_zh_en",
+    "status": "pass",
+    "error": null,
+    "rows": 161
+  },
+  {
+    "name": "mteb_stsbenchmark",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_financial_phrasebank",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_jd_review",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_mtop_domain_de",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_mtop_domain_en",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_mtop_domain_es",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_mtop_domain_fr",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_mtop_domain_hi",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_mtop_domain_th",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_mtop_intent_de2",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_mtop_intent_en",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_mtop_intent_es2",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_mtop_intent_fr2",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_mtop_intent_hi2",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_mtop_intent_th2",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_online_shopping",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_poem_sentiment",
+    "status": "pass",
+    "error": null,
+    "rows": 892
+  },
+  {
+    "name": "mteb_sentiment_hindi",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_tnews",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_tweet_topic",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_waimai",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_yahoo_answers",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_af",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_am",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_az",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_bn",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_cy",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_da",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_el",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_fa",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_fi",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_he",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_hi",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_hu",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_hy",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_id",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_is",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_it",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_ja",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_jv",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_ka",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_km",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_kn",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_ko",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_lv",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_ml",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_mn",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_ms",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_my",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_nb",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_nl",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_pl",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_pt",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_ro",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_ru",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_sl",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_sq",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_sv",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_sw",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_ta",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_te",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_th",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_tl",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_tr",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_ur",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_vi",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_zh_cn",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_intent_zh_tw",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_af",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_am",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_ar",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_az",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_bn",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_cy",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_da",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_el",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_fa",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_fi",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_he",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_hi",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_hu",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_hy",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_id",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_is",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_it",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_ja",
+    "status": "pass",
+    "error": null,
+    "rows": 527
+  },
+  {
+    "name": "mteb_massive_scenario_jv",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_ka",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_km",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_kn",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_ko",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_lv",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_ml",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_mn",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_ms",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_my",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_nb",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_nl",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_pl",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_pt",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_ro",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_ru",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_sl",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_sq",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_sv",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_sw",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_ta",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_te",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_th",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_tl",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_tr",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_ur",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_vi",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_massive_scenario_zh_tw",
+    "status": "pass",
+    "error": null,
+    "rows": 581
+  },
+  {
+    "name": "mteb_cyrillic_turkic",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_frenk_en",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_frenk_hr",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_frenk_sl",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_georeview",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_greek_legal",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_ita_casehold",
+    "status": "pass",
+    "error": null,
+    "rows": 792
+  },
+  {
+    "name": "mteb_kor_sarcasm",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_language_class",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_multilingual_sentiment",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_naija_senti_hau",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_naija_senti_ibo",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_naija_senti_pcm",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_naija_senti_yor",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_nepali_news",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_nordic_lang",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_sensitive_topics",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_swiss_judgement_de",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_swiss_judgement_fr",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_swiss_judgement_it",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
+  },
+  {
+    "name": "mteb_turkish_product",
+    "status": "pass",
+    "error": null,
+    "rows": 1000
   }
 ]

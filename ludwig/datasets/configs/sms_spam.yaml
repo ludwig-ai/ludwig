@@ -1,0 +1,14 @@
+version: 1.0
+name: sms_spam
+huggingface_dataset_id: ucirvine/sms_spam
+loader: hugging_face.HFLoader
+description: |
+  SMS spam detection: ham or spam binary classification. 5574 examples.
+columns:
+  - name: sms
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

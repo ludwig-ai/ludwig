@@ -1,0 +1,14 @@
+version: 1.0
+name: gaiasky_qa
+huggingface_dataset_id: Langurmonkey/gaiasky-training-dataset
+loader: hugging_face.HFLoader
+description: |
+  Gaiasky astronomy Q&A dataset. 3.8K examples.
+columns:
+  - name: instruction
+    type: text
+  - name: output
+    type: text
+output_features:
+  - name: output
+    type: text

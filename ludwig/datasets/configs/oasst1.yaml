@@ -1,0 +1,16 @@
+version: 1.0
+name: oasst1
+huggingface_dataset_id: OpenAssistant/oasst1
+loader: hugging_face.HFLoader
+description: |
+  OpenAssistant OASST1: 161K messages from 35K conversation trees; role classification.
+columns:
+  - name: text
+    type: text
+  - name: role
+    type: category
+  - name: lang
+    type: category
+output_features:
+  - name: role
+    type: category

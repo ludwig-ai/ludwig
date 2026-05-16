@@ -1,0 +1,18 @@
+version: 1.0
+name: code_contests
+huggingface_dataset_id: deepmind/code_contests
+loader: hugging_face.HFLoader
+description: |
+  DeepMind code contests: competitive programming problems with difficulty classification. 3.7K train examples.
+columns:
+  - name: name
+    type: text
+  - name: description
+    type: text
+  - name: source
+    type: category
+  - name: difficulty
+    type: category
+output_features:
+  - name: difficulty
+    type: category

@@ -1,0 +1,16 @@
+version: 1.0
+name: drop
+huggingface_dataset_id: ucinlp/drop
+loader: hugging_face.HFLoader
+description: |
+  DROP: Discrete Reasoning Over Paragraphs reading comprehension. 77K train examples.
+columns:
+  - name: passage
+    type: text
+  - name: question
+    type: text
+  - name: answers_spans
+    type: text
+output_features:
+  - name: answers_spans
+    type: text

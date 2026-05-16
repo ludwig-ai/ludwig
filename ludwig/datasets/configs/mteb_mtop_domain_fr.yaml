@@ -1,0 +1,15 @@
+version: 1.0
+name: mteb_mtop_domain_fr
+huggingface_dataset_id: mteb/MTOPDomainClassification
+huggingface_subsample: fr
+loader: hugging_face.HFLoader
+description: |
+  MTEB MTOP Domain Classification (French): task-oriented dialog domain prediction.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

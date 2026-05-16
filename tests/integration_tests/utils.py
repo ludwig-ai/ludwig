@@ -406,6 +406,9 @@ def image_feature(folder, **kwargs):
 
 
 def audio_feature(folder, **kwargs):
+    # Default params are intentionally small for fast test execution.
+    # With 0.5s audio and window_shift=0.02s → ~23 frames; filter_size=8 fits safely.
+    # Tests that need specific preprocessing (e.g. fbank-80, 3s files) pass their own overrides.
     feature = {
         "name": f"{AUDIO}_{random_string()}",
         "type": AUDIO,
@@ -413,17 +416,16 @@ def audio_feature(folder, **kwargs):
             "type": "fbank",
             "window_length_in_s": 0.04,
             "window_shift_in_s": 0.02,
-            "num_filter_bands": 80,
-            "audio_file_length_limit_in_s": 3.0,
+            "num_filter_bands": 8,
+            "audio_file_length_limit_in_s": 0.5,
         },
         ENCODER: {
             "type": "stacked_cnn",
             "should_embed": False,
             "conv_layers": [
-                {"filter_size": 400, "pool_size": 16, "num_filters": 32},
-                {"filter_size": 40, "pool_size": 10, "num_filters": 64},
+                {"filter_size": 8, "pool_size": 2, "num_filters": 8},
             ],
-            "output_size": 16,
+            "output_size": 8,
         },
         "destination_folder": folder,
     }

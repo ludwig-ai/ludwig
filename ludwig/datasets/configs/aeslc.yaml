@@ -1,0 +1,14 @@
+version: 1.0
+name: aeslc
+huggingface_dataset_id: aeslc
+loader: hugging_face.HFLoader
+description: |
+  AESLC: annotated email subject line corpus for email body → subject summarization.
+columns:
+  - name: email_body
+    type: text
+  - name: subject_line
+    type: text
+output_features:
+  - name: subject_line
+    type: text

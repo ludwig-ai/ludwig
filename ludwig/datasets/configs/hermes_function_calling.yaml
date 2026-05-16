@@ -1,0 +1,17 @@
+version: 1.0
+name: hermes_function_calling
+huggingface_dataset_id: NousResearch/hermes-function-calling-v1
+huggingface_subsample: func_calling_singleturn
+loader: hugging_face.HFLoader
+description: |
+  Hermes function calling: tool-use conversations with category labels. 1893 train examples.
+columns:
+  - name: category
+    type: category
+  - name: subcategory
+    type: category
+  - name: task
+    type: category
+output_features:
+  - name: category
+    type: category

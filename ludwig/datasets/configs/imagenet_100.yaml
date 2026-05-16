@@ -1,0 +1,14 @@
+version: 1.0
+name: imagenet_100
+huggingface_dataset_id: clane9/imagenet-100
+loader: hugging_face.HFLoader
+description: |
+  ImageNet-100: 100-class subset of ImageNet. 126K train examples.
+columns:
+  - name: image
+    type: image
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

@@ -1,0 +1,14 @@
+version: 1.0
+name: mteb_amazon_polarity
+huggingface_dataset_id: mteb/amazon_polarity
+loader: hugging_face.HFLoader
+description: |
+  MTEB Amazon Polarity: binary positive/negative sentiment from Amazon reviews (4M reviews).
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: binary
+output_features:
+  - name: label
+    type: binary

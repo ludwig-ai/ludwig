@@ -1,0 +1,18 @@
+version: 1.0
+name: yahoo_answers_topics
+huggingface_dataset_id: community-datasets/yahoo_answers_topics
+loader: hugging_face.HFLoader
+description: |
+  Yahoo Answers 10-class topic classification. 1.4M train examples.
+columns:
+  - name: question_title
+    type: text
+  - name: question_content
+    type: text
+  - name: best_answer
+    type: text
+  - name: topic
+    type: category
+output_features:
+  - name: topic
+    type: category

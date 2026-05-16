@@ -1,0 +1,14 @@
+version: 1.0
+name: phinc
+huggingface_dataset_id: LingoIITGN/PHINC
+loader: hugging_face.HFLoader
+description: |
+  PHINC: Hindi-English parallel corpus. 13K train pairs.
+columns:
+  - name: Sentence
+    type: text
+  - name: English_Translation
+    type: text
+output_features:
+  - name: English_Translation
+    type: text

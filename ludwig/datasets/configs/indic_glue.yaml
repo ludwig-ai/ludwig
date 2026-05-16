@@ -1,0 +1,15 @@
+version: 1.0
+name: indic_glue
+huggingface_dataset_id: ai4bharat/indic_glue
+huggingface_subsample: actsa-sc.te
+loader: hugging_face.HFLoader
+description: |
+  IndicGLUE Telugu sentiment classification (actsa-sc). 4328 train examples.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

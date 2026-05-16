@@ -1,0 +1,17 @@
+version: 1.0
+name: databench_qa
+huggingface_dataset_id: cardiffnlp/databench
+huggingface_subsample: qa
+loader: hugging_face.HFLoader
+description: |
+  DataBench: data analysis question-answer type classification. 1830 train examples.
+columns:
+  - name: question
+    type: text
+  - name: type
+    type: category
+  - name: answer
+    type: text
+output_features:
+  - name: type
+    type: category

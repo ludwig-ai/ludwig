@@ -20,6 +20,7 @@ from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -50,6 +51,7 @@ from ludwig.constants import (
     TYPE,
     WIDTH,
 )
+from ludwig.data.lazy_utils import resolve_lazy_cache_dir
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.image.torchvision import TVModelVariant
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
@@ -98,6 +100,145 @@ IMAGENET1K_STD = [0.229, 0.224, 0.225]
 
 
 logger = logging.getLogger(__name__)
+
+
+def _extract_image_path(entry: object) -> str | None:
+    """Return a usable on-disk path from a PIL Image or dict entry, or ``None``.
+
+    PIL Images opened from disk retain their source path in the ``.filename``
+    attribute.  HuggingFace ``Image`` columns may deliver dicts that contain a
+    ``"path"`` key pointing to the cached file.
+
+    Parameters
+    ----------
+    entry:
+        A single image entry from a dataset column.  May be a ``PIL.Image.Image``
+        with a ``.filename`` attribute, a dict with a ``"path"`` key, or any
+        other type.
+
+    Returns
+    -------
+    str | None
+        The existing on-disk path when one is found and the file is present on
+        disk; ``None`` otherwise.
+    """
+    # PIL Image opened from a file retains its filename
+    filename = getattr(entry, "filename", None)
+    if filename and isinstance(filename, str) and os.path.isfile(filename):
+        return filename
+
+    # HuggingFace-style dict with a "path" key
+    if isinstance(entry, dict):
+        path = entry.get("path")
+        if path and isinstance(path, str) and os.path.isfile(path):
+            return path
+
+    return None
+
+
+def _cache_image_column_to_disk(
+    column,
+    cache_dir: Path,
+    feature_name: str,
+) -> list[str]:
+    """Write every image entry in *column* to PNG files in *cache_dir*.
+
+    Entries that already have an accessible on-disk path (PIL ``.filename`` or
+    dict ``"path"``) are reused without copying.  All other entries (in-memory
+    PIL Images, raw bytes, or numpy arrays) are saved as PNG files.  Files
+    that already exist in *cache_dir* are not overwritten (idempotent
+    behaviour), which makes re-runs after a crash safe.
+
+    Parameters
+    ----------
+    column:
+        An iterable of image entries.  Each entry may be:
+
+        * a ``PIL.Image.Image`` — with or without a ``.filename`` attribute;
+        * ``bytes`` containing a valid encoded image;
+        * a ``numpy.ndarray`` with shape ``(H, W)``, ``(H, W, C)``, or
+          ``(C, H, W)`` and dtype ``uint8``;
+        * a dict with at least a ``"bytes"`` or ``"path"`` key (HuggingFace
+          ``Image`` column format).
+    cache_dir:
+        Directory in which to write PNG files.  Must already exist.
+    feature_name:
+        Used as a filename prefix so that files are recognisable during
+        debugging.
+
+    Returns
+    -------
+    list[str]
+        Ordered list of absolute paths (one per entry), suitable for direct
+        use as a ``LazyColumn`` path list.
+
+    Raises
+    ------
+    ValueError
+        If an entry has an unrecognised type that cannot be converted to a PIL
+        Image for saving.
+    """
+    # Lazy import — PIL is an optional dependency; fail loudly only when used.
+    from PIL import Image as PILImage
+
+    paths: list[str] = []
+    for idx, entry in enumerate(column):
+        # --- Try to reuse an existing on-disk path ---
+        existing = _extract_image_path(entry)
+        if existing is not None:
+            paths.append(existing)
+            continue
+
+        # --- Convert entry to a PIL Image ---
+        if isinstance(entry, PILImage.Image):
+            pil_img = entry
+        elif isinstance(entry, bytes):
+            import io
+
+            pil_img = PILImage.open(io.BytesIO(entry)).copy()
+        elif isinstance(entry, np.ndarray):
+            # Handle (C, H, W) → (H, W, C) for RGB
+            if entry.ndim == 3 and entry.shape[0] in (1, 3, 4):
+                entry = np.transpose(entry, (1, 2, 0))
+            pil_img = PILImage.fromarray(entry.astype(np.uint8))
+        elif isinstance(entry, dict):
+            # HuggingFace Image column format: {"bytes": <bytes>, "path": <str|None>}
+            raw_bytes = entry.get("bytes")
+            if raw_bytes:
+                import io
+
+                pil_img = PILImage.open(io.BytesIO(raw_bytes)).copy()
+            else:
+                raise ValueError(
+                    f"Image entry [{idx}] in feature '{feature_name}' is a dict but contains "
+                    "neither a usable 'path' nor 'bytes' key."
+                )
+        else:
+            # Try torch.Tensor as a last resort (optional dependency)
+            try:
+                import torch
+
+                if isinstance(entry, torch.Tensor):
+                    arr = entry.detach().cpu().numpy()
+                    # Handle (C, H, W) → (H, W, C) for colour tensors
+                    if arr.ndim == 3 and arr.shape[0] in (1, 3, 4):
+                        arr = np.transpose(arr, (1, 2, 0))
+                    pil_img = PILImage.fromarray(arr.astype(np.uint8))
+                else:
+                    raise TypeError
+            except (ImportError, TypeError):
+                raise ValueError(
+                    f"Image entry [{idx}] in feature '{feature_name}' has unrecognised "
+                    f"type {type(entry).__name__!r}.  "
+                    "Expected PIL.Image, bytes, numpy.ndarray, torch.Tensor, or dict."
+                )
+
+        dest_path = str(cache_dir / f"{feature_name}_{idx:08d}.png")
+        if not os.path.isfile(dest_path):
+            pil_img.save(dest_path, format="PNG")
+        paths.append(dest_path)
+
+    return paths
 
 
 ###
@@ -581,6 +722,44 @@ class ImageFeatureMixin(BaseFeatureMixin):
         return img.numpy()
 
     @staticmethod
+    def _make_lazy_decode_fn(
+        img_width: int,
+        img_height: int,
+        should_resize: bool,
+        num_channels: int,
+        resize_method: str,
+        user_specified_num_channels: bool,
+        standardize_image: str,
+        channel_class_map,
+        default_image: np.ndarray,
+    ):
+        """Return a per-path decode function suitable for use in ``LazyColumn``.
+
+        The returned callable is stateless (captures only plain values / arrays)
+        so it is safe to share across DataLoader worker threads.
+        """
+        _resize_fn = partial(
+            ImageFeatureMixin._read_image_if_bytes_obj_and_resize,
+            img_width=img_width,
+            img_height=img_height,
+            should_resize=should_resize,
+            num_channels=num_channels,
+            resize_method=resize_method,
+            user_specified_num_channels=user_specified_num_channels,
+            standardize_image=standardize_image,
+            channel_class_map=channel_class_map,
+        )
+
+        def decode(path_or_bytes) -> np.ndarray:
+            result = _resize_fn(path_or_bytes)
+            if not isinstance(result, np.ndarray):
+                return default_image
+            return result
+
+        decode.__name__ = "image_lazy_decode"
+        return decode
+
+    @staticmethod
     def _set_image_and_height_equal_for_encoder(
         width: int, height: int, preprocessing_parameters: dict, encoder_type: str
     ) -> tuple[int, int]:
@@ -955,27 +1134,70 @@ class ImageFeatureMixin(BaseFeatureMixin):
             default_image = get_gray_default_image(num_channels, height, width)
             metadata[name]["reshape"] = (num_channels, height, width)
 
-        # Always process images in-memory. The legacy HDF5-based out-of-memory path
-        # has been removed; the Parquet cache handles persistence.
-        proc_col = backend.read_binary_files(
-            abs_path_column, map_fn=read_image_if_bytes_obj_and_resize, file_size=average_file_size
-        )
+        import pandas as pd
 
-        num_failed_image_reads = (
-            proc_col.isna().sum().compute() if is_dask_series_or_df(proc_col, backend) else proc_col.isna().sum()
-        )
-
-        proc_col = backend.df_engine.map_objects(
-            proc_col, lambda row: default_image if not isinstance(row, np.ndarray) else row
-        )
-
-        proc_df[feature_config[PROC_COLUMN]] = proc_col
-
-        if num_failed_image_reads > 0:
-            logger.warning(
-                f"Failed to read {num_failed_image_reads} images while preprocessing feature `{name}`. "
-                "Using default image for these rows in the dataset."
+        sample_entry = abs_path_column.iloc[0] if hasattr(abs_path_column, "iloc") else next(iter(abs_path_column))
+        if preprocessing_parameters.get("lazy", True) and not torchvision_parameters:
+            # Lazy path: store file paths as a string Series.  The actual image
+            # decode happens per-batch inside PandasDataset via LazyColumn.
+            # This bounds peak memory to batch_size × image_size instead of N × image_size.
+            if isinstance(sample_entry, str):
+                # Input is already a local/remote path — use abs_path_column directly so
+                # that the DataFrame index is preserved after sampling/filtering operations.
+                proc_df[feature_config[PROC_COLUMN]] = abs_path_column
+            else:
+                # In-memory data (HF PIL Images, raw bytes, numpy arrays) — cache to disk first.
+                cache_dir = resolve_lazy_cache_dir(
+                    preprocessing_parameters.get("lazy_cache_dir"),
+                    name,
+                )
+                logger.info(f"Image feature '{name}': caching in-memory images to {cache_dir} for lazy decoding.")
+                raw_column = abs_path_column.tolist() if hasattr(abs_path_column, "tolist") else list(abs_path_column)
+                path_list = _cache_image_column_to_disk(raw_column, cache_dir, name)
+                # Reconstruct a Series using the original index so that it aligns
+                # correctly with proc_df (which may have a non-0-based index after sampling).
+                if hasattr(abs_path_column, "compute"):  # Dask Series
+                    orig_index = abs_path_column.index.compute()
+                else:
+                    orig_index = abs_path_column.index
+                proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.from_pandas(
+                    pd.Series(path_list, dtype=object, index=orig_index)
+                )
+            metadata[name]["lazy"] = True
+            metadata[name]["reshape"] = None  # paths are 1-D strings — no reshape needed
+            # Persist decode params so PandasDataset can reconstruct the decode fn
+            metadata[name]["lazy_image_params"] = {
+                "img_width": width,
+                "img_height": height,
+                "should_resize": should_resize,
+                "num_channels": num_channels,
+                "resize_method": preprocessing_parameters["resize_method"],
+                "user_specified_num_channels": user_specified_num_channels,
+                "standardize_image": standardize_image,
+                "channel_class_map": channel_class_map.tolist(),
+                "default_image_shape": list(default_image.shape),
+            }
+        else:
+            # Eager path (legacy): decode all images upfront into numpy arrays.
+            proc_col = backend.read_binary_files(
+                abs_path_column, map_fn=read_image_if_bytes_obj_and_resize, file_size=average_file_size
             )
+
+            num_failed_image_reads = (
+                proc_col.isna().sum().compute() if is_dask_series_or_df(proc_col, backend) else proc_col.isna().sum()
+            )
+
+            proc_col = backend.df_engine.map_objects(
+                proc_col, lambda row: default_image if not isinstance(row, np.ndarray) else row
+            )
+
+            if num_failed_image_reads > 0:
+                logger.warning(
+                    f"Failed to read {num_failed_image_reads} images while preprocessing feature `{name}`. "
+                    "Using default image for these rows in the dataset."
+                )
+
+            proc_df[feature_config[PROC_COLUMN]] = proc_col
 
         return proc_df
 

@@ -1,0 +1,16 @@
+version: 1.0
+name: path_vqa
+huggingface_dataset_id: flaviagiammarino/path-vqa
+loader: hugging_face.HFLoader
+description: |
+  PathVQA: pathology visual QA (yes/no + open). 20K train examples.
+columns:
+  - name: image
+    type: image
+  - name: question
+    type: text
+  - name: answer
+    type: category
+output_features:
+  - name: answer
+    type: category

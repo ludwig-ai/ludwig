@@ -1,0 +1,14 @@
+version: 1.0
+name: setfit_amazon_polarity
+huggingface_dataset_id: SetFit/amazon_polarity
+loader: hugging_face.HFLoader
+description: |
+  SetFit Amazon Polarity: binary positive/negative sentiment from Amazon reviews.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: binary
+output_features:
+  - name: label
+    type: binary

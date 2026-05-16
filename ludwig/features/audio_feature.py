@@ -15,13 +15,16 @@
 # ==============================================================================
 import logging
 import os
+from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import torch
 import torchaudio
 from packaging import version
 
 from ludwig.constants import AUDIO, AUDIO_FEATURE_KEYS, COLUMN, NAME, PROC_COLUMN, SRC, TYPE
+from ludwig.data.lazy_utils import resolve_lazy_cache_dir
 from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.schema.features.audio_feature import AudioInputFeatureConfig
@@ -49,6 +52,118 @@ from ludwig.utils.types import PreprocessingInput
 logger = logging.getLogger(__name__)
 
 _TORCH_200 = version.parse(torch.__version__) >= version.parse("2.0.0")
+
+
+def _extract_audio_path(entry: dict) -> str | None:
+    """Return a usable on-disk path from a HuggingFace-style audio dict, or ``None``.
+
+    HuggingFace ``Audio`` columns deliver dicts with at least ``"array"`` and
+    ``"sampling_rate"`` keys.  When the underlying file is still cached on disk
+    the dict also contains a ``"path"`` key whose value is the absolute path.
+
+    Parameters
+    ----------
+    entry:
+        A dict-like object representing one audio sample.
+
+    Returns
+    -------
+    str | None
+        The existing on-disk path when ``entry["path"]`` exists and the file is
+        present on disk; ``None`` otherwise.
+    """
+    path = entry.get("path") if isinstance(entry, dict) else None
+    if path and isinstance(path, str) and os.path.isfile(path):
+        return path
+    return None
+
+
+def _cache_audio_column_to_disk(
+    column,
+    cache_dir: Path,
+    feature_name: str,
+    sampling_rate: int = 16_000,
+) -> list[str]:
+    """Write every audio entry in *column* to WAV files in *cache_dir*.
+
+    Entries that are dicts with an existing on-disk ``"path"`` are reused
+    without copying.  All other entries (dicts with only ``"array"`` /
+    ``"sampling_rate"``, or bare ``torch.Tensor`` objects) are saved as
+    16-bit WAV files.  Files that already exist in *cache_dir* are not
+    overwritten (idempotent behaviour), which makes re-runs after a crash
+    safe.
+
+    Parameters
+    ----------
+    column:
+        An iterable of audio entries.  Each entry may be:
+
+        * a ``dict`` with at least ``"array"`` (numpy or Tensor) and
+          ``"sampling_rate"`` (int) keys, and optionally ``"path"``;
+        * a bare ``torch.Tensor`` with shape ``(channels, samples)`` or
+          ``(samples,)`` (uses *sampling_rate* as the sample rate).
+    cache_dir:
+        Directory in which to write WAV files.  Must already exist.
+    feature_name:
+        Used as a filename prefix so that files are recognisable during
+        debugging.
+    sampling_rate:
+        Fallback sample rate used when an entry is a bare Tensor and does
+        not carry its own sampling-rate information.
+
+    Returns
+    -------
+    list[str]
+        Ordered list of absolute paths (one per entry), suitable for direct
+        use as a ``LazyColumn`` path list.
+
+    Raises
+    ------
+    ValueError
+        If an entry has an unrecognised type that cannot be converted to a
+        waveform tensor.
+    """
+    paths: list[str] = []
+    for idx, entry in enumerate(column):
+        # --- Try to reuse an existing on-disk path ---
+        if isinstance(entry, dict):
+            existing = _extract_audio_path(entry)
+            if existing is not None:
+                paths.append(existing)
+                continue
+
+        # --- Build (waveform, sr) tuple from the entry ---
+        if isinstance(entry, dict):
+            array = entry["array"]
+            sr = int(entry.get("sampling_rate", sampling_rate))
+            if isinstance(array, np.ndarray):
+                waveform = torch.from_numpy(array).float()
+            elif isinstance(array, torch.Tensor):
+                waveform = array.float()
+            else:
+                raise ValueError(
+                    f"Audio entry [{idx}] in feature '{feature_name}' has unrecognised "
+                    f"array type {type(array).__name__!r}.  Expected numpy.ndarray or torch.Tensor."
+                )
+        elif isinstance(entry, torch.Tensor):
+            waveform = entry.float()
+            sr = sampling_rate
+        else:
+            raise ValueError(
+                f"Audio entry [{idx}] in feature '{feature_name}' has unrecognised "
+                f"type {type(entry).__name__!r}.  Expected dict or torch.Tensor."
+            )
+
+        # Ensure shape is (channels, samples)
+        if waveform.ndim == 1:
+            waveform = waveform.unsqueeze(0)
+
+        dest_path = str(cache_dir / f"{feature_name}_{idx:08d}.wav")
+        if not os.path.isfile(dest_path):
+            torchaudio.save(dest_path, waveform, sr)
+        paths.append(dest_path)
+
+    return paths
 
 
 class _AudioPreprocessing(torch.nn.Module):
@@ -102,8 +217,14 @@ class AudioFeatureMixin(BaseFeatureMixin):
         backend,
         is_input_feature: bool,
     ) -> FeatureMetadataDict:
-        first_audio_file_path = column.head(1).iloc[0]
-        _, sampling_rate_in_hz = torchaudio.load(first_audio_file_path)
+        first_audio_entry = column.head(1).iloc[0]
+        if isinstance(first_audio_entry, dict):
+            sampling_rate_in_hz = int(first_audio_entry.get("sampling_rate", 16_000))
+        elif isinstance(first_audio_entry, torch.Tensor):
+            # Bare tensor — cannot infer sample rate; fall back to 16 kHz default.
+            sampling_rate_in_hz = 16_000
+        else:
+            _, sampling_rate_in_hz = torchaudio.load(first_audio_entry)
 
         feature_dim = AudioFeatureMixin._get_feature_dim(preprocessing_parameters, sampling_rate_in_hz)
         audio_file_length_limit_in_s = preprocessing_parameters["audio_file_length_limit_in_s"]
@@ -282,6 +403,38 @@ class AudioFeatureMixin(BaseFeatureMixin):
         merged_stats["cropped"] += audio_stats["cropped"]
 
     @staticmethod
+    def _make_lazy_decode_fn(
+        audio_feature_dict: dict,
+        feature_dim: int,
+        max_length: int,
+        padding_value: float,
+        normalization_type: str | None,
+    ):
+        """Return a per-path decode function suitable for use in ``LazyColumn``.
+
+        The returned callable is stateless (captures only plain values) so it
+        is safe to share across DataLoader worker threads.
+        """
+
+        def decode(path: str) -> np.ndarray:
+            audio, sr = read_audio_from_path(path)
+            if not is_torch_audio_tuple((audio, sr)):
+                default_audio, default_sr = get_default_audio([(audio, sr)])
+                audio, sr = default_audio, default_sr
+            return AudioFeatureMixin._transform_to_feature(
+                audio=audio,
+                sampling_rate_in_hz=sr,
+                audio_feature_dict=audio_feature_dict,
+                feature_dim=feature_dim,
+                max_length=max_length,
+                padding_value=padding_value,
+                normalization_type=normalization_type,
+            ).numpy()
+
+        decode.__name__ = "audio_lazy_decode"
+        return decode
+
+    @staticmethod
     def _get_2D_feature(
         audio: torch.Tensor,
         feature_type: str,
@@ -364,12 +517,6 @@ class AudioFeatureMixin(BaseFeatureMixin):
         first_audio_entry = next(iter(column))
         logger.debug(f"Detected audio feature type is {type(first_audio_entry)}")
 
-        if not isinstance(first_audio_entry, str) and not isinstance(first_audio_entry, torch.Tensor):
-            raise ValueError(
-                f"Invalid audio feature data type.  Detected type is {type(first_audio_entry)}, "
-                "expected either string for local/remote file path or Torch Tensor."
-            )
-
         src_path = None
         if SRC in metadata:
             if isinstance(first_audio_entry, str) and not has_remote_protocol(first_audio_entry):
@@ -394,19 +541,62 @@ class AudioFeatureMixin(BaseFeatureMixin):
         if num_audio_utterances == 0:
             raise ValueError("There are no audio files in the dataset provided.")
 
-        # Always process audio in-memory. The legacy out-of-memory HDF5 path has been removed;
-        # the Parquet cache handles persistence.
-        audio_features = AudioFeatureMixin._process_in_memory(
-            abs_path_column,
-            audio_feature_dict,
-            feature_dim,
-            max_length,
-            padding_value,
-            normalization_type,
-            audio_file_length_limit_in_s,
-            backend,
-        )
-        proc_df[feature_config[PROC_COLUMN]] = audio_features
+        if preprocessing_parameters.get("lazy", True):
+            # Lazy path: store file paths as a string Series.  The actual audio
+            # decode happens per-batch inside PandasDataset via LazyColumn.
+            # This bounds peak memory to batch_size × clip_size instead of N × clip_size.
+            # reshape is overridden to None so preprocessing.py skips the flatten step
+            # for path columns, and PandasDataset skips the reshape-restore step.
+            if isinstance(first_audio_entry, str):
+                # Input is already a local/remote path — use abs_path_column directly so
+                # that the DataFrame index is preserved after sampling/filtering operations.
+                proc_df[feature_config[PROC_COLUMN]] = abs_path_column
+            else:
+                # In-memory data (HF audio dicts, bare Tensors) — cache to disk first.
+                cache_dir = resolve_lazy_cache_dir(
+                    preprocessing_parameters.get("lazy_cache_dir"),
+                    name,
+                )
+                logger.info(f"Audio feature '{name}': caching in-memory audio to {cache_dir} for lazy decoding.")
+                raw_column = abs_path_column.tolist() if hasattr(abs_path_column, "tolist") else list(abs_path_column)
+                path_list = _cache_audio_column_to_disk(
+                    raw_column,
+                    cache_dir,
+                    name,
+                    sampling_rate=metadata[name].get("sampling_rate_in_hz", 16_000),
+                )
+                # Reconstruct a Series using the original index so that it aligns
+                # correctly with proc_df (which may have a non-0-based index after sampling).
+                if hasattr(abs_path_column, "compute"):  # Dask Series
+                    orig_index = abs_path_column.index.compute()
+                else:
+                    orig_index = abs_path_column.index
+                proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.from_pandas(
+                    pd.Series(path_list, dtype=object, index=orig_index)
+                )
+            metadata[name]["lazy"] = True
+            metadata[name]["reshape"] = None  # paths are 1-D strings — no reshape needed
+            # Persist decode params in metadata so PandasDataset can reconstruct the fn
+            metadata[name]["lazy_audio_params"] = {
+                "audio_feature_dict": audio_feature_dict,
+                "feature_dim": feature_dim,
+                "max_length": max_length,
+                "padding_value": padding_value,
+                "normalization_type": normalization_type,
+            }
+        else:
+            # Eager path (legacy): decode all files upfront into a numpy array.
+            audio_features = AudioFeatureMixin._process_in_memory(
+                abs_path_column,
+                audio_feature_dict,
+                feature_dim,
+                max_length,
+                padding_value,
+                normalization_type,
+                audio_file_length_limit_in_s,
+                backend,
+            )
+            proc_df[feature_config[PROC_COLUMN]] = audio_features
 
         return proc_df
 

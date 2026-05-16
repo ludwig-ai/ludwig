@@ -1,0 +1,17 @@
+version: 1.0
+name: mteb_sts17_fr
+huggingface_dataset_id: mteb/sts17-crosslingual-sts
+huggingface_subsample: fr-en
+loader: hugging_face.HFLoader
+description: |
+  MTEB STS17 (French-English): cross-lingual semantic textual similarity.
+columns:
+  - name: sentence1
+    type: text
+  - name: sentence2
+    type: text
+  - name: score
+    type: number
+output_features:
+  - name: score
+    type: number

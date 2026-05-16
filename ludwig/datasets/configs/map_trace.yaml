@@ -1,0 +1,16 @@
+version: 1.0
+name: map_trace
+huggingface_dataset_id: google/MapTrace
+loader: hugging_face.HFLoader
+description: |
+  MapTrace: map-type image classification (7 categories). 20K examples.
+columns:
+  - name: image
+    type: image
+  - name: input
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

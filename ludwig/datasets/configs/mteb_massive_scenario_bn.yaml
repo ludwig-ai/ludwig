@@ -1,0 +1,15 @@
+version: 1.0
+name: mteb_massive_scenario_bn
+huggingface_dataset_id: mteb/massive_scenario
+huggingface_subsample: "bn"
+loader: hugging_face.HFLoader
+description: |
+  MTEB MASSIVE Scenario Classification (Bengali): task-oriented dialog scenario prediction.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

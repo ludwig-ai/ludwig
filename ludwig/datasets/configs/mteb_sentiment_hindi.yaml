@@ -1,0 +1,14 @@
+version: 1.0
+name: mteb_sentiment_hindi
+huggingface_dataset_id: mteb/SentimentAnalysisHindi
+loader: hugging_face.HFLoader
+description: |
+  MTEB Sentiment Analysis Hindi: sentiment classification of Hindi text.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

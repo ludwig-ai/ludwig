@@ -1,0 +1,16 @@
+version: 1.0
+name: nemotron_pii
+huggingface_dataset_id: nvidia/Nemotron-PII
+loader: hugging_face.HFLoader
+description: |
+  Nemotron PII: document classification by domain type. 100K examples.
+columns:
+  - name: text
+    type: text
+  - name: domain
+    type: category
+  - name: document_type
+    type: category
+output_features:
+  - name: domain
+    type: category

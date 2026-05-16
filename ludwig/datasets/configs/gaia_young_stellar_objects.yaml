@@ -1,0 +1,16 @@
+version: 1.0
+name: gaia_young_stellar_objects
+huggingface_dataset_id: juliensimon/gaia-dr3-young-stellar-objects
+loader: hugging_face.HFLoader
+description: |
+  Gaia DR3 Young Stellar Objects: class prediction from photometry. 79K examples.
+columns:
+  - name: ra
+    type: number
+  - name: dec
+    type: number
+  - name: best_class_score
+    type: number
+output_features:
+  - name: best_class_score
+    type: number

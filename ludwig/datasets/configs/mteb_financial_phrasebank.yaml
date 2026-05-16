@@ -1,0 +1,14 @@
+version: 1.0
+name: mteb_financial_phrasebank
+huggingface_dataset_id: mteb/FinancialPhrasebankClassification
+loader: hugging_face.HFLoader
+description: |
+  MTEB Financial Phrasebank Classification: financial news sentiment classification.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

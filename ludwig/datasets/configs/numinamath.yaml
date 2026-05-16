@@ -1,0 +1,18 @@
+version: 1.0
+name: numinamath
+huggingface_dataset_id: nlile/NuminaMath-1.5-RL-Verifiable
+loader: hugging_face.HFLoader
+description: |
+  NuminaMath: competition math problems with verified answers. 131K train examples.
+columns:
+  - name: problem
+    type: text
+  - name: solution
+    type: text
+  - name: problem_type
+    type: category
+  - name: answer
+    type: text
+output_features:
+  - name: problem_type
+    type: category

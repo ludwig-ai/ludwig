@@ -1,0 +1,15 @@
+version: 1.0
+name: financial_phrasebank
+huggingface_dataset_id: nickmuchi/financial-classification
+loader: hugging_face.HFLoader
+description: |
+  Financial classification: sentiment analysis of financial text.
+  Labels: Bearish, Bullish, Neutral.
+columns:
+  - name: text
+    type: text
+  - name: labels
+    type: category
+output_features:
+  - name: labels
+    type: category

@@ -1,0 +1,17 @@
+version: 1.0
+name: world_speech_asr
+huggingface_dataset_id: disco-eth/WorldSpeech
+huggingface_subsample: ca_fr
+loader: hugging_face.HFLoader
+description: |
+  WorldSpeech: multilingual audio quality with CER measurement. 1.2M train examples.
+columns:
+  - name: audio
+    type: audio
+  - name: human_transcript
+    type: text
+  - name: cer
+    type: number
+output_features:
+  - name: cer
+    type: number

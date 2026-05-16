@@ -1,0 +1,19 @@
+version: 1.0
+name: coig_cqia
+huggingface_dataset_id: m-a-p/COIG-CQIA
+huggingface_subsample: coig_pc
+loader: hugging_face.HFLoader
+description: |
+  COIG-CQIA: Chinese instruction dataset with domain/task type. 1111 examples.
+columns:
+  - name: instruction
+    type: text
+  - name: output
+    type: text
+  - name: task_type
+    type: category
+  - name: domain
+    type: category
+output_features:
+  - name: task_type
+    type: category

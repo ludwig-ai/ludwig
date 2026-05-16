@@ -1,0 +1,15 @@
+version: 1.0
+name: climate_fever
+huggingface_dataset_id: climate_fever
+loader: hugging_face.HFLoader
+description: |
+  ClimateFEVER: climate change claim verification dataset.
+  Labels: SUPPORTS, REFUTES, NOT ENOUGH INFO, DISPUTED.
+columns:
+  - name: claim
+    type: text
+  - name: claim_label
+    type: category
+output_features:
+  - name: claim_label
+    type: category

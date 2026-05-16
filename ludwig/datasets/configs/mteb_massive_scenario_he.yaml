@@ -1,0 +1,15 @@
+version: 1.0
+name: mteb_massive_scenario_he
+huggingface_dataset_id: mteb/massive_scenario
+huggingface_subsample: "he"
+loader: hugging_face.HFLoader
+description: |
+  MTEB MASSIVE Scenario Classification (Hebrew): task-oriented dialog scenario prediction.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

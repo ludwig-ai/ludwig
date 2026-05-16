@@ -1,0 +1,15 @@
+version: 1.0
+name: kilt_nq
+huggingface_dataset_id: facebook/kilt_tasks
+huggingface_subsample: nq
+loader: hugging_face.HFLoader
+description: |
+  KILT NQ: Natural Questions in the KILT knowledge-intensive framework. 87K train examples.
+columns:
+  - name: input
+    type: text
+  - name: output
+    type: text
+output_features:
+  - name: output
+    type: text

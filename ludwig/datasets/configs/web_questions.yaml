@@ -1,0 +1,14 @@
+version: 1.0
+name: web_questions
+huggingface_dataset_id: stanfordnlp/web_questions
+loader: hugging_face.HFLoader
+description: |
+  WebQuestions: Freebase-grounded factoid QA. 3.8K train examples.
+columns:
+  - name: question
+    type: text
+  - name: answers
+    type: text
+output_features:
+  - name: answers
+    type: text

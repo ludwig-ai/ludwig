@@ -1,0 +1,16 @@
+version: 1.0
+name: python_code_instructions
+huggingface_dataset_id: iamtarun/python_code_instructions_18k_alpaca
+loader: hugging_face.HFLoader
+description: |
+  Python code generation from instructions. 18K examples.
+columns:
+  - name: instruction
+    type: text
+  - name: input
+    type: text
+  - name: output
+    type: text
+output_features:
+  - name: output
+    type: text

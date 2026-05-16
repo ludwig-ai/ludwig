@@ -1,0 +1,24 @@
+version: 1.0
+name: spotify_tracks
+huggingface_dataset_id: maharshipandya/spotify-tracks-dataset
+loader: hugging_face.HFLoader
+description: |
+  Spotify tracks: predict genre from audio features. 114K examples.
+columns:
+  - name: track_name
+    type: text
+  - name: artists
+    type: text
+  - name: popularity
+    type: number
+  - name: danceability
+    type: number
+  - name: energy
+    type: number
+  - name: valence
+    type: number
+  - name: track_genre
+    type: category
+output_features:
+  - name: track_genre
+    type: category

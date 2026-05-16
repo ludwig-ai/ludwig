@@ -1,0 +1,14 @@
+version: 1.0
+name: taix_ray
+huggingface_dataset_id: TLAIM/TAIX-Ray
+loader: hugging_face.HFLoader
+description: |
+  TAIX-Ray: thoracic X-ray study - predict patient sex from age and other metadata. 137K train examples.
+columns:
+  - name: Age
+    type: number
+  - name: Sex
+    type: category
+output_features:
+  - name: Sex
+    type: category

@@ -1,0 +1,14 @@
+version: 1.0
+name: mteb_imdb
+huggingface_dataset_id: mteb/imdb
+loader: hugging_face.HFLoader
+description: |
+  MTEB IMDB: binary movie review sentiment classification.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: binary
+output_features:
+  - name: label
+    type: binary

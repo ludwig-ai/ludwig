@@ -1,0 +1,20 @@
+version: 1.0
+name: iris_sklearn
+huggingface_dataset_id: scikit-learn/iris
+loader: hugging_face.HFLoader
+description: |
+  Iris dataset: classic 3-class flower classification by petal/sepal measurements.
+columns:
+  - name: SepalLengthCm
+    type: number
+  - name: SepalWidthCm
+    type: number
+  - name: PetalLengthCm
+    type: number
+  - name: PetalWidthCm
+    type: number
+  - name: Species
+    type: category
+output_features:
+  - name: Species
+    type: category

@@ -1,0 +1,16 @@
+version: 1.0
+name: alpaca_cleaned
+huggingface_dataset_id: yahma/alpaca-cleaned
+loader: hugging_face.HFLoader
+description: |
+  Alpaca Cleaned: 52K instruction-following samples, cleaned version of Stanford Alpaca.
+columns:
+  - name: instruction
+    type: text
+  - name: input
+    type: text
+  - name: output
+    type: text
+output_features:
+  - name: output
+    type: text

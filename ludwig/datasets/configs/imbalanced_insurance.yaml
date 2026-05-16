@@ -1,5 +1,5 @@
 version: 1.0
-name: imbalaced_insurance
+name: imbalanced_insurance
 kaggle_dataset_id: arashnic/imbalanced-data-practice
 archive_filenames: imbalanced-data-practice.zip
 sha256:

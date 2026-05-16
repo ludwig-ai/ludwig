@@ -1,0 +1,16 @@
+version: 1.0
+name: fineweb_edu
+huggingface_dataset_id: HuggingFaceFW/fineweb-edu
+huggingface_subsample: sample-10BT
+loader: hugging_face.HFLoader
+description: |
+  FineWeb-Edu: 1.3T token high-quality educational web text; 10BT sample subset.
+  int_score is 0-5 educational quality score.
+columns:
+  - name: text
+    type: text
+  - name: int_score
+    type: number
+output_features:
+  - name: int_score
+    type: number

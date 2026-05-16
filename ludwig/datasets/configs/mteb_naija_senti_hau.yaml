@@ -1,0 +1,15 @@
+version: 1.0
+name: mteb_naija_senti_hau
+huggingface_dataset_id: mteb/NaijaSenti
+huggingface_subsample: hau
+loader: hugging_face.HFLoader
+description: |
+  MTEB NaijaSenti (Hausa): Nigerian language sentiment classification.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

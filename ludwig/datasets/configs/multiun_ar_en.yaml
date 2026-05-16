@@ -1,0 +1,15 @@
+version: 1.0
+name: multiun_ar_en
+huggingface_dataset_id: Helsinki-NLP/multiun
+huggingface_subsample: ar-en
+loader: translation_loader.MultiUNArEnLoader
+description: |
+  MultiUN Arabic-English United Nations document translation. 9.8M train pairs.
+columns:
+  - name: ar
+    type: text
+  - name: en
+    type: text
+output_features:
+  - name: en
+    type: text

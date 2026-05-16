@@ -1,0 +1,16 @@
+version: 1.0
+name: bitext_customer_support
+huggingface_dataset_id: bitext/Bitext-customer-support-llm-chatbot-training-dataset
+loader: hugging_face.HFLoader
+description: |
+  Bitext customer support: 27 intents, 10 categories. 26K train examples.
+columns:
+  - name: instruction
+    type: text
+  - name: category
+    type: category
+  - name: intent
+    type: category
+output_features:
+  - name: intent
+    type: category

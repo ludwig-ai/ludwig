@@ -1,0 +1,17 @@
+version: 1.0
+name: clue_afqmc
+huggingface_dataset_id: clue/clue
+huggingface_subsample: afqmc
+loader: hugging_face.HFLoader
+description: |
+  CLUE AFQMC: Chinese short text similarity for financial domain. 34K train examples.
+columns:
+  - name: sentence1
+    type: text
+  - name: sentence2
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

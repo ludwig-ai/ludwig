@@ -1,0 +1,16 @@
+version: 1.0
+name: synthia
+huggingface_dataset_id: agicommies/synthia
+loader: hugging_face.HFLoader
+description: |
+  SYNTHIA: synthetic instructional examples across 20 academic fields. 1.2M examples.
+columns:
+  - name: field
+    type: category
+  - name: subject
+    type: text
+  - name: explanation
+    type: text
+output_features:
+  - name: field
+    type: category

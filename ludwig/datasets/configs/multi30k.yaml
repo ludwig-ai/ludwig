@@ -1,0 +1,14 @@
+version: 1.0
+name: multi30k
+huggingface_dataset_id: bentrevett/multi30k
+loader: hugging_face.HFLoader
+description: |
+  Multi30k: English-German image caption translation. 29K train pairs.
+columns:
+  - name: en
+    type: text
+  - name: de
+    type: text
+output_features:
+  - name: de
+    type: text

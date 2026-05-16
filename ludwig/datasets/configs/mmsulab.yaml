@@ -1,0 +1,14 @@
+version: 1.0
+name: mmsulab
+huggingface_dataset_id: coml/mmsulab
+loader: hugging_face.HFLoader
+description: |
+  MMSuLab: multilingual audio speech laboratory data. 1.9M train examples.
+columns:
+  - name: audio
+    type: audio
+  - name: iso3
+    type: category
+output_features:
+  - name: iso3
+    type: category

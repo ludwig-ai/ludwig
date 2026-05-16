@@ -1,0 +1,15 @@
+version: 1.0
+name: europarl_bg_en
+huggingface_dataset_id: Helsinki-NLP/europarl
+huggingface_subsample: bg-en
+loader: translation_loader.EuroparlBgEnLoader
+description: |
+  Europarl: European Parliament proceedings Bulgarian-English translation.
+columns:
+  - name: bg
+    type: text
+  - name: en
+    type: text
+output_features:
+  - name: en
+    type: text

@@ -1,0 +1,18 @@
+version: 1.0
+name: lmsys_arena
+huggingface_dataset_id: lmsys/lmsys-arena-human-preference-55k
+loader: hugging_face.HFLoader
+description: |
+  LMSYS Arena: 55K human preference comparisons between LLM responses.
+columns:
+  - name: prompt
+    type: text
+  - name: model_a
+    type: text
+  - name: model_b
+    type: text
+  - name: winner_model_a
+    type: binary
+output_features:
+  - name: winner_model_a
+    type: binary

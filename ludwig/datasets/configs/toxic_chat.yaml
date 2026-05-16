@@ -1,0 +1,17 @@
+version: 1.0
+name: toxic_chat
+huggingface_dataset_id: lmsys/toxic-chat
+huggingface_subsample: toxicchat0124
+loader: hugging_face.HFLoader
+description: |
+  LMSys ToxicChat: human toxicity annotation for LLM conversations.
+columns:
+  - name: user_input
+    type: text
+  - name: model_output
+    type: text
+  - name: toxicity
+    type: binary
+output_features:
+  - name: toxicity
+    type: binary

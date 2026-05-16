@@ -1,0 +1,16 @@
+version: 1.0
+name: aegis_safety
+huggingface_dataset_id: nvidia/Aegis-AI-Content-Safety-Dataset-2.0
+loader: hugging_face.HFLoader
+description: |
+  NVIDIA Aegis 2.0: AI content safety classification. 30K train examples.
+columns:
+  - name: prompt
+    type: text
+  - name: response
+    type: text
+  - name: prompt_label
+    type: category
+output_features:
+  - name: prompt_label
+    type: category

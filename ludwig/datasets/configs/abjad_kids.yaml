@@ -1,0 +1,14 @@
+version: 1.0
+name: abjad_kids
+huggingface_dataset_id: Aziz-snoubra/Abjad-Kids
+loader: hugging_face.HFLoader
+description: |
+  Abjad-Kids: Arabic letter audio classification (28 classes). 40K examples.
+columns:
+  - name: audio
+    type: audio
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

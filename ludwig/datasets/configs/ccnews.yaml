@@ -1,0 +1,16 @@
+version: 1.0
+name: ccnews
+huggingface_dataset_id: stanford-oval/ccnews
+loader: hugging_face.HFLoader
+description: |
+  CC-News: multilingual web news articles from Common Crawl. 1.9M train examples.
+columns:
+  - name: title
+    type: text
+  - name: plain_text
+    type: text
+  - name: sitename
+    type: category
+output_features:
+  - name: sitename
+    type: category

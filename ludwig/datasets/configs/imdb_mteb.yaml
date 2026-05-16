@@ -1,0 +1,14 @@
+version: 1.0
+name: imdb_mteb
+huggingface_dataset_id: mteb/imdb
+loader: hugging_face.HFLoader
+description: |
+  IMDB movie review sentiment binary classification (positive/negative). 24K train examples.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: binary
+output_features:
+  - name: label
+    type: binary

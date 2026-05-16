@@ -1,0 +1,14 @@
+version: 1.0
+name: ai_generated_ecommerce
+huggingface_dataset_id: JoyCN/ai-generated-ecommerce-images
+loader: hugging_face.HFLoader
+description: |
+  AI-generated vs real e-commerce product images. 6K examples.
+columns:
+  - name: image
+    type: image
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

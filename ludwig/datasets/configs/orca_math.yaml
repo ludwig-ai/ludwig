@@ -1,0 +1,14 @@
+version: 1.0
+name: orca_math
+huggingface_dataset_id: microsoft/orca-math-word-problems-200k
+loader: hugging_face.HFLoader
+description: |
+  OrcaMath: 200K math word problems with solutions.
+columns:
+  - name: question
+    type: text
+  - name: answer
+    type: text
+output_features:
+  - name: answer
+    type: text

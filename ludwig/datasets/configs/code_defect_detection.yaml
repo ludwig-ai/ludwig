@@ -1,0 +1,14 @@
+version: 1.0
+name: code_defect_detection
+huggingface_dataset_id: google/code_x_glue_cc_defect_detection
+loader: hugging_face.HFLoader
+description: |
+  CodeXGLUE: binary defect detection in code functions. 21K train examples.
+columns:
+  - name: func
+    type: text
+  - name: target
+    type: binary
+output_features:
+  - name: target
+    type: binary

@@ -1,0 +1,14 @@
+version: 1.0
+name: mobile_mold
+huggingface_dataset_id: nphamdinh/mobilemold
+loader: hugging_face.HFLoader
+description: |
+  MobileMold: smartphone food mold binary image classification. 3.5K examples.
+columns:
+  - name: image
+    type: image
+  - name: mold
+    type: binary
+output_features:
+  - name: mold
+    type: binary

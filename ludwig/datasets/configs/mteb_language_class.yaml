@@ -1,0 +1,14 @@
+version: 1.0
+name: mteb_language_class
+huggingface_dataset_id: mteb/LanguageClassification
+loader: hugging_face.HFLoader
+description: |
+  MTEB Language Classification: language identification from short text.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

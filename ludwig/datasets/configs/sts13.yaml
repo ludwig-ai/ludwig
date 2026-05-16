@@ -1,0 +1,16 @@
+version: 1.0
+name: sts13
+huggingface_dataset_id: mteb/sts13-sts
+loader: hugging_face.HFLoader
+description: |
+  STS 2013: semantic textual similarity. 1500 test examples.
+columns:
+  - name: sentence1
+    type: text
+  - name: sentence2
+    type: text
+  - name: score
+    type: number
+output_features:
+  - name: score
+    type: number

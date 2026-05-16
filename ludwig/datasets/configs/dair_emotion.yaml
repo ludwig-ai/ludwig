@@ -1,0 +1,14 @@
+version: 1.0
+name: dair_emotion
+huggingface_dataset_id: dair-ai/emotion
+loader: hugging_face.HFLoader
+description: |
+  DAIR.AI Emotion: 6-class emotion classification from English Twitter messages.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

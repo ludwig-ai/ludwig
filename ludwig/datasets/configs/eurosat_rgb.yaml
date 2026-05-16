@@ -1,0 +1,14 @@
+version: 1.0
+name: eurosat_rgb
+huggingface_dataset_id: blanchon/EuroSAT_RGB
+loader: hugging_face.HFLoader
+description: |
+  EuroSAT RGB: Sentinel-2 satellite image classification (10 land use classes). 16K train examples.
+columns:
+  - name: image
+    type: image
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

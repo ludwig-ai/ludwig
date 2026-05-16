@@ -315,9 +315,11 @@ def get_input_tensors(
             f"This is an internal error — please report it."
         )
 
-    # Convert dataset into a dict of tensors, and split each tensor into batches to control GPU memory usage
+    # Convert dataset into a dict of tensors, and split each tensor into batches to control GPU memory usage.
+    # Use dataset.get() rather than dataset.dataset[] directly so that LazyColumn values (audio/image
+    # stored as file-path arrays) are decoded into numpy arrays before torch conversion.
     inputs = {
-        name: torch.from_numpy(dataset.dataset[feature.proc_column]).split(run_config.batch_size)
+        name: torch.from_numpy(np.array(dataset.get(feature.proc_column))).split(run_config.batch_size)
         for name, feature in model.model.input_features.items()
     }
 

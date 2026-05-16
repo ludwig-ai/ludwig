@@ -1,0 +1,17 @@
+version: 1.0
+name: blimp
+huggingface_dataset_id: nyu-mll/blimp
+huggingface_subsample: adjunct_island
+loader: misc_loaders.BlimpLoader
+description: |
+  BLiMP: Benchmark of Linguistic Minimal Pairs. Binary grammaticality
+  classification — given a sentence, predict if it is grammatically acceptable.
+  Each source row is expanded into two rows (good/bad sentence).
+columns:
+  - name: sentence
+    type: text
+  - name: is_grammatical
+    type: binary
+output_features:
+  - name: is_grammatical
+    type: binary

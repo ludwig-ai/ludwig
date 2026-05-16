@@ -1,0 +1,20 @@
+version: 1.0
+name: qasc
+huggingface_dataset_id: allenai/qasc
+loader: hugging_face.HFLoader
+description: |
+  QASC: 8-way MC QA with science facts. 8134 train examples.
+columns:
+  - name: question
+    type: text
+  - name: fact1
+    type: text
+  - name: fact2
+    type: text
+  - name: formatted_question
+    type: text
+  - name: answerKey
+    type: category
+output_features:
+  - name: answerKey
+    type: category

@@ -1,0 +1,15 @@
+version: 1.0
+name: mteb_swiss_judgement_it
+huggingface_dataset_id: mteb/SwissJudgementClassification
+huggingface_subsample: it
+loader: hugging_face.HFLoader
+description: |
+  MTEB Swiss Judgement Classification (Italian): Swiss Federal Supreme Court judgement prediction.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

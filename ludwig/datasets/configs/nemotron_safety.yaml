@@ -1,0 +1,18 @@
+version: 1.0
+name: nemotron_safety
+huggingface_dataset_id: nvidia/Nemotron-Safety-Guard-Dataset-v3
+loader: hugging_face.HFLoader
+description: |
+  Nemotron Safety Guard v3: prompt/response safety classification. 451K examples.
+columns:
+  - name: prompt
+    type: text
+  - name: response
+    type: text
+  - name: prompt_label
+    type: category
+  - name: response_label
+    type: category
+output_features:
+  - name: prompt_label
+    type: category

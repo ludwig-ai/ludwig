@@ -1,0 +1,15 @@
+version: 1.0
+name: europarl_en_nl
+huggingface_dataset_id: Helsinki-NLP/europarl
+huggingface_subsample: en-nl
+loader: translation_loader.EuroparlEnNlLoader
+description: |
+  Europarl: European Parliament proceedings English-Dutch translation.
+columns:
+  - name: en
+    type: text
+  - name: nl
+    type: text
+output_features:
+  - name: nl
+    type: text

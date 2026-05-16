@@ -1,0 +1,14 @@
+version: 1.0
+name: mteb_multilingual_sentiment
+huggingface_dataset_id: mteb/MultilingualSentiment
+loader: hugging_face.HFLoader
+description: |
+  MTEB Multilingual Sentiment Classification: multilingual product review sentiment.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

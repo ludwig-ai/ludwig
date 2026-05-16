@@ -1,0 +1,15 @@
+version: 1.0
+name: mteb_amazon_reviews_class_ja
+huggingface_dataset_id: mteb/AmazonReviewsClassification
+huggingface_subsample: ja
+loader: hugging_face.HFLoader
+description: |
+  MTEB Amazon Reviews Classification (Japanese): 5-class star rating classification.
+columns:
+  - name: text
+    type: text
+  - name: label
+    type: category
+output_features:
+  - name: label
+    type: category

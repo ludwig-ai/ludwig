@@ -1,0 +1,20 @@
+version: 1.0
+name: flores_101
+huggingface_dataset_id: gsarti/flores_101
+huggingface_revision: refs/convert/parquet
+huggingface_data_files:
+  train: eng/devtest/0000.parquet
+loader: hugging_face.HFLoader
+description: |
+  FLoRes-101 English evaluation sentences. Topic classification: predict
+  the domain (wikinews, wikibooks, wikivoyage) from the sentence text.
+columns:
+  - name: sentence
+    type: text
+  - name: topic
+    type: text
+  - name: domain
+    type: category
+output_features:
+  - name: domain
+    type: category
