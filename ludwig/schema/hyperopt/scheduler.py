@@ -3,6 +3,8 @@ from collections.abc import Callable
 from dataclasses import field
 from importlib import import_module
 
+import pydantic
+
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
@@ -538,7 +540,7 @@ def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt sche
         load_default = lambda: opt.model_validate(default)
         try:
             dump_default = opt.model_validate(default).to_dict()
-        except Exception:
+        except pydantic.ValidationError:
             dump_default = default if isinstance(default, dict) else {}
 
         return field(

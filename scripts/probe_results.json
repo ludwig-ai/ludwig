@@ -1,0 +1,5592 @@
+[
+  {
+    "name": "mnli",
+    "hf_id": "nyu-mll/glue",
+    "hf_subsample": "mnli",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "premise": "text",
+      "hypothesis": "text",
+      "label": "category",
+      "idx": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation_matched",
+      "validation_mismatched",
+      "test_matched",
+      "test_mismatched"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "qqp",
+    "hf_id": "nyu-mll/glue",
+    "hf_subsample": "qqp",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "question1": "text",
+      "question2": "text",
+      "label": "category",
+      "idx": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "qnli",
+    "hf_id": "nyu-mll/glue",
+    "hf_subsample": "qnli",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "question": "text",
+      "sentence": "text",
+      "label": "category",
+      "idx": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "cola",
+    "hf_id": "nyu-mll/glue",
+    "hf_subsample": "cola",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "sentence": "text",
+      "label": "category",
+      "idx": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "rte",
+    "hf_id": "nyu-mll/glue",
+    "hf_subsample": "rte",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "sentence1": "text",
+      "sentence2": "text",
+      "label": "category",
+      "idx": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "mrpc",
+    "hf_id": "nyu-mll/glue",
+    "hf_subsample": "mrpc",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "sentence1": "text",
+      "sentence2": "text",
+      "label": "category",
+      "idx": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "stsb",
+    "hf_id": "nyu-mll/glue",
+    "hf_subsample": "stsb",
+    "task": "regression",
+    "status": "auto_generated",
+    "columns": {
+      "sentence1": "text",
+      "sentence2": "text",
+      "label": "number",
+      "idx": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "wnli",
+    "hf_id": "nyu-mll/glue",
+    "hf_subsample": "wnli",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "sentence1": "text",
+      "sentence2": "text",
+      "label": "category",
+      "idx": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "boolq",
+    "hf_id": "aps/super_glue",
+    "hf_subsample": "boolq",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "question": "text",
+      "passage": "text",
+      "idx": "category",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "commitment_bank",
+    "hf_id": "aps/super_glue",
+    "hf_subsample": "cb",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "premise": "text",
+      "hypothesis": "text",
+      "idx": "category",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "copa",
+    "hf_id": "aps/super_glue",
+    "hf_subsample": "copa",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "premise": "text",
+      "choice1": "text",
+      "choice2": "text",
+      "question": "text",
+      "idx": "category",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "multirc",
+    "hf_id": "aps/super_glue",
+    "hf_subsample": "multirc",
+    "task": "text_classification",
+    "status": "needs_custom_loader",
+    "columns": {
+      "paragraph": "text",
+      "question": "text",
+      "answer": "text",
+      "idx": "_dict",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "superglue_rte",
+    "hf_id": "aps/super_glue",
+    "hf_subsample": "rte",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "premise": "text",
+      "hypothesis": "text",
+      "idx": "category",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "wic",
+    "hf_id": "aps/super_glue",
+    "hf_subsample": "wic",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "word": "text",
+      "sentence1": "text",
+      "sentence2": "text",
+      "start1": "category",
+      "start2": "category",
+      "end1": "category",
+      "end2": "category",
+      "idx": "category",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "winograd_schema",
+    "hf_id": "aps/super_glue",
+    "hf_subsample": "wsc.fixed",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "text": "text",
+      "span1_index": "category",
+      "span2_index": "category",
+      "span1_text": "text",
+      "span2_text": "text",
+      "idx": "category",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "imdb_sentiment",
+    "hf_id": "stanfordnlp/imdb",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "text": "text",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test",
+      "unsupervised"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "emotion",
+    "hf_id": "dair-ai/emotion",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "text": "text",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "tweeteval_sentiment",
+    "hf_id": "cardiffnlp/tweet_eval",
+    "hf_subsample": "sentiment",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "text": "text",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test",
+      "validation"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "tweeteval_hate",
+    "hf_id": "cardiffnlp/tweet_eval",
+    "hf_subsample": "hate",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "text": "text",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test",
+      "validation"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "tweeteval_offensive",
+    "hf_id": "cardiffnlp/tweet_eval",
+    "hf_subsample": "offensive",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "text": "text",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test",
+      "validation"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "tweeteval_irony",
+    "hf_id": "cardiffnlp/tweet_eval",
+    "hf_subsample": "irony",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "text": "text",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test",
+      "validation"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "tweeteval_emotion",
+    "hf_id": "cardiffnlp/tweet_eval",
+    "hf_subsample": "emotion",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "text": "text",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test",
+      "validation"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "financial_phrasebank",
+    "hf_id": "takala/financial_phrasebank",
+    "hf_subsample": "sentences_allagree",
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found financial_phrasebank.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "go_emotions_multiclass",
+    "hf_id": "google-research-datasets/go_emotions",
+    "hf_subsample": "simplified",
+    "task": "text_classification",
+    "status": "needs_custom_loader",
+    "columns": {
+      "text": "text",
+      "labels": "_list",
+      "id": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "ag_news_hf",
+    "hf_id": "fancyzhx/ag_news",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "text": "text",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "dbpedia_14",
+    "hf_id": "fancyzhx/dbpedia_14",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "label": "category",
+      "title": "text",
+      "content": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "yelp_review_full",
+    "hf_id": "Yelp/yelp_review_full",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "label": "category",
+      "text": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "amazon_polarity",
+    "hf_id": "fancyzhx/amazon_polarity",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "label": "category",
+      "title": "text",
+      "content": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "rotten_tomatoes",
+    "hf_id": "cornell-movie-review-data/rotten_tomatoes",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "text": "text",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "snli",
+    "hf_id": "stanfordnlp/snli",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "premise": "text",
+      "hypothesis": "text",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "test",
+      "validation",
+      "train"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "multi_nli",
+    "hf_id": "nyu-mll/multi_nli",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "promptID": "category",
+      "pairID": "text",
+      "premise": "text",
+      "premise_binary_parse": "text",
+      "premise_parse": "text",
+      "hypothesis": "text",
+      "hypothesis_binary_parse": "text",
+      "hypothesis_parse": "text",
+      "genre": "text",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation_matched",
+      "validation_mismatched"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "paws",
+    "hf_id": "google-research-datasets/paws",
+    "hf_subsample": "labeled_final",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "id": "category",
+      "sentence1": "text",
+      "sentence2": "text",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test",
+      "validation"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "anli",
+    "hf_id": "facebook/anli",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "uid": "text",
+      "premise": "text",
+      "hypothesis": "text",
+      "label": "category",
+      "reason": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train_r1",
+      "dev_r1",
+      "test_r1",
+      "train_r2",
+      "dev_r2",
+      "test_r2",
+      "train_r3",
+      "dev_r3",
+      "test_r3"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "trec",
+    "hf_id": "CogComp/trec",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found trec.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "sst2_hf",
+    "hf_id": "stanfordnlp/sst2",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "idx": "category",
+      "sentence": "text",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "boolq_standalone",
+    "hf_id": "google/boolq",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "question": "text",
+      "answer": "binary",
+      "passage": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "answer"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "belebele",
+    "hf_id": "facebook/belebele",
+    "hf_subsample": "eng_Latn",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "link": "text",
+      "question_number": "category",
+      "flores_passage": "text",
+      "question": "text",
+      "mc_answer1": "text",
+      "mc_answer2": "text",
+      "mc_answer3": "text",
+      "mc_answer4": "text",
+      "correct_answer_num": "text",
+      "dialect": "text",
+      "ds": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "question_number"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "beavertails",
+    "hf_id": "PKU-Alignment/BeaverTails",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "needs_custom_loader",
+    "columns": {
+      "prompt": "text",
+      "response": "text",
+      "category": "_dict",
+      "is_safe": "binary"
+    },
+    "rows": -1,
+    "splits": [
+      "330k_train",
+      "330k_test",
+      "30k_train",
+      "30k_test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "hellaswag",
+    "hf_id": "Rowan/hellaswag",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "needs_custom_loader",
+    "columns": {
+      "ind": "category",
+      "activity_label": "text",
+      "ctx_a": "text",
+      "ctx_b": "text",
+      "ctx": "text",
+      "endings": "_list",
+      "source_id": "text",
+      "split_type": "text",
+      "label": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test",
+      "validation"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "winogrande",
+    "hf_id": "allenai/winogrande",
+    "hf_subsample": "winogrande_xl",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "sentence": "text",
+      "option1": "text",
+      "option2": "text",
+      "answer": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test",
+      "validation"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "answer"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "piqa",
+    "hf_id": "ybisk/piqa",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found piqa.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "commonsense_qa",
+    "hf_id": "tau/commonsense_qa",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "needs_custom_loader",
+    "columns": {
+      "id": "text",
+      "question": "text",
+      "question_concept": "text",
+      "choices": "_dict",
+      "answerKey": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "arc_easy",
+    "hf_id": "allenai/ai2_arc",
+    "hf_subsample": "ARC-Easy",
+    "task": "text_classification",
+    "status": "needs_custom_loader",
+    "columns": {
+      "id": "text",
+      "question": "text",
+      "choices": "_dict",
+      "answerKey": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test",
+      "validation"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "arc_challenge",
+    "hf_id": "allenai/ai2_arc",
+    "hf_subsample": "ARC-Challenge",
+    "task": "text_classification",
+    "status": "needs_custom_loader",
+    "columns": {
+      "id": "text",
+      "question": "text",
+      "choices": "_dict",
+      "answerKey": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test",
+      "validation"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "openbookqa",
+    "hf_id": "allenai/openbookqa",
+    "hf_subsample": "main",
+    "task": "text_classification",
+    "status": "needs_custom_loader",
+    "columns": {
+      "id": "text",
+      "question_stem": "text",
+      "choices": "_dict",
+      "answerKey": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "sciq",
+    "hf_id": "allenai/sciq",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "needs_custom_loader",
+    "columns": {
+      "question": "text",
+      "distractor3": "text",
+      "distractor1": "text",
+      "distractor2": "text",
+      "correct_answer": "text",
+      "support": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "squad",
+    "hf_id": "rajpurkar/squad",
+    "hf_subsample": null,
+    "task": "extractive_qa",
+    "status": "needs_custom_loader",
+    "columns": {
+      "id": "text",
+      "title": "text",
+      "context": "text",
+      "question": "text",
+      "answers": "_dict"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "squad_v2",
+    "hf_id": "rajpurkar/squad_v2",
+    "hf_subsample": null,
+    "task": "extractive_qa",
+    "status": "needs_custom_loader",
+    "columns": {
+      "id": "text",
+      "title": "text",
+      "context": "text",
+      "question": "text",
+      "answers": "_dict"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "trivia_qa",
+    "hf_id": "mandarjoshi/trivia_qa",
+    "hf_subsample": "rc",
+    "task": "text_generation",
+    "status": "needs_custom_loader",
+    "columns": {
+      "question": "text",
+      "question_id": "text",
+      "question_source": "text",
+      "entity_pages": "_dict",
+      "search_results": "_dict",
+      "answer": "_dict"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "natural_questions",
+    "hf_id": "google-research-datasets/natural_questions",
+    "hf_subsample": null,
+    "task": "extractive_qa",
+    "status": "needs_custom_loader",
+    "columns": {
+      "id": "text",
+      "document": "_dict",
+      "question": "_dict",
+      "long_answer_candidates": "_dict",
+      "annotations": "_dict"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "hotpot_qa",
+    "hf_id": "hotpotqa/hotpot_qa",
+    "hf_subsample": "distractor",
+    "task": "extractive_qa",
+    "status": "needs_custom_loader",
+    "columns": {
+      "id": "text",
+      "question": "text",
+      "answer": "text",
+      "type": "text",
+      "level": "text",
+      "supporting_facts": "_dict",
+      "context": "_dict"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "pubmed_qa",
+    "hf_id": "qiaojin/PubMedQA",
+    "hf_subsample": "pqa_labeled",
+    "task": "text_classification",
+    "status": "needs_custom_loader",
+    "columns": {
+      "pubid": "category",
+      "question": "text",
+      "context": "_dict",
+      "long_answer": "text",
+      "final_decision": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "medmcqa",
+    "hf_id": "openlifescienceai/medmcqa",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "id": "text",
+      "question": "text",
+      "opa": "text",
+      "opb": "text",
+      "opc": "text",
+      "opd": "text",
+      "cop": "category",
+      "choice_type": "text",
+      "exp": "text",
+      "subject_name": "text",
+      "topic_name": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test",
+      "validation"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "cop"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "truthful_qa",
+    "hf_id": "truthfulqa/truthful_qa",
+    "hf_subsample": "multiple_choice",
+    "task": "text_classification",
+    "status": "needs_custom_loader",
+    "columns": {
+      "question": "text",
+      "mc1_targets": "_dict",
+      "mc2_targets": "_dict"
+    },
+    "rows": -1,
+    "splits": [
+      "validation"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "mmlu",
+    "hf_id": "cais/mmlu",
+    "hf_subsample": "all",
+    "task": "text_classification",
+    "status": "needs_custom_loader",
+    "columns": {
+      "question": "text",
+      "subject": "text",
+      "choices": "_list",
+      "answer": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "test",
+      "validation",
+      "dev",
+      "auxiliary_train"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "mmlu_pro",
+    "hf_id": "TIGER-Lab/MMLU-Pro",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "needs_custom_loader",
+    "columns": {
+      "question_id": "category",
+      "question": "text",
+      "options": "_list",
+      "answer": "text",
+      "answer_index": "category",
+      "cot_content": "text",
+      "category": "text",
+      "src": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "test",
+      "validation"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "conll2003",
+    "hf_id": "eriktks/conll2003",
+    "hf_subsample": null,
+    "task": "ner",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found conll2003.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "wikiann_en",
+    "hf_id": "unimelb-nlp/wikiann",
+    "hf_subsample": "en",
+    "task": "ner",
+    "status": "needs_custom_loader",
+    "columns": {
+      "tokens": "_list",
+      "ner_tags": "_list",
+      "langs": "_list",
+      "spans": "_list"
+    },
+    "rows": -1,
+    "splits": [
+      "validation",
+      "test",
+      "train"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "wnut17",
+    "hf_id": "leondz/wnut_17",
+    "hf_subsample": null,
+    "task": "ner",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found wnut_17.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "ncbi_disease",
+    "hf_id": "ncbi/ncbi_disease",
+    "hf_subsample": null,
+    "task": "ner",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found ncbi_disease.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "wikineural",
+    "hf_id": "Babelscape/wikineural",
+    "hf_subsample": "en",
+    "task": "ner",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "ValueError: BuilderConfig 'en' not found. Available: ['default']",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "multinerd",
+    "hf_id": "Babelscape/multinerd",
+    "hf_subsample": null,
+    "task": "ner",
+    "status": "needs_custom_loader",
+    "columns": {
+      "tokens": "_list",
+      "ner_tags": "_list",
+      "lang": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "few_nerd",
+    "hf_id": "DFKI-SLT/few-nerd",
+    "hf_subsample": "supervised",
+    "task": "ner",
+    "status": "needs_custom_loader",
+    "columns": {
+      "id": "text",
+      "tokens": "_list",
+      "ner_tags": "_list",
+      "fine_ner_tags": "_list"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "masakhaner2",
+    "hf_id": "masakhane/masakhaner2",
+    "hf_subsample": "eng",
+    "task": "ner",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found masakhaner2.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "universal_dependencies",
+    "hf_id": "universal-dependencies/universal_dependencies",
+    "hf_subsample": "en_ewt",
+    "task": "sequence_labeling",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found universal_dependencies.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "pii_masking",
+    "hf_id": "ai4privacy/pii-masking-300k",
+    "hf_subsample": null,
+    "task": "ner",
+    "status": "needs_custom_loader",
+    "columns": {
+      "source_text": "text",
+      "target_text": "text",
+      "privacy_mask": "_list",
+      "span_labels": "text",
+      "mbert_text_tokens": "_list",
+      "mbert_bio_labels": "_list",
+      "id": "text",
+      "language": "text",
+      "set": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "cnn_dailymail",
+    "hf_id": "abisee/cnn_dailymail",
+    "hf_subsample": "3.0.0",
+    "task": "summarization",
+    "status": "skipped_no_yaml",
+    "columns": {
+      "article": "text",
+      "highlights": "text",
+      "id": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": false,
+    "debug_output_cols": null
+  },
+  {
+    "name": "xsum",
+    "hf_id": "EdinburghNLP/xsum",
+    "hf_subsample": null,
+    "task": "summarization",
+    "status": "skipped_no_yaml",
+    "columns": {
+      "document": "text",
+      "summary": "text",
+      "id": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": false,
+    "debug_output_cols": null
+  },
+  {
+    "name": "dialogsum",
+    "hf_id": "knkarthick/dialogsum",
+    "hf_subsample": null,
+    "task": "summarization",
+    "status": "skipped_no_yaml",
+    "columns": {
+      "id": "text",
+      "dialogue": "text",
+      "summary": "text",
+      "topic": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": false,
+    "debug_output_cols": null
+  },
+  {
+    "name": "samsum",
+    "hf_id": "knkarthick/samsum",
+    "hf_subsample": null,
+    "task": "summarization",
+    "status": "skipped_no_yaml",
+    "columns": {
+      "id": "text",
+      "dialogue": "text",
+      "summary": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": false,
+    "debug_output_cols": null
+  },
+  {
+    "name": "billsum",
+    "hf_id": "FiscalNote/billsum",
+    "hf_subsample": null,
+    "task": "summarization",
+    "status": "already_exists",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "arxiv_summarization",
+    "hf_id": "ccdv/arxiv-summarization",
+    "hf_subsample": null,
+    "task": "summarization",
+    "status": "skipped_no_yaml",
+    "columns": {
+      "article": "text",
+      "abstract": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": false,
+    "debug_output_cols": null
+  },
+  {
+    "name": "pubmed_summarization",
+    "hf_id": "ccdv/pubmed-summarization",
+    "hf_subsample": null,
+    "task": "summarization",
+    "status": "skipped_no_yaml",
+    "columns": {
+      "article": "text",
+      "abstract": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": false,
+    "debug_output_cols": null
+  },
+  {
+    "name": "multi_news",
+    "hf_id": "alexfabbri/multi_news",
+    "hf_subsample": null,
+    "task": "summarization",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found multi_news.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "xlsum",
+    "hf_id": "csebuetnlp/xlsum",
+    "hf_subsample": "english",
+    "task": "summarization",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found xlsum.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "big_patent",
+    "hf_id": "NortheasternUniversity/big_patent",
+    "hf_subsample": "a",
+    "task": "summarization",
+    "status": "skipped_no_yaml",
+    "columns": {
+      "description": "text",
+      "abstract": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": false,
+    "debug_output_cols": null
+  },
+  {
+    "name": "govreport_summarization",
+    "hf_id": "ccdv/govreport-summarization",
+    "hf_subsample": null,
+    "task": "summarization",
+    "status": "skipped_no_yaml",
+    "columns": {
+      "report": "text",
+      "summary": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": false,
+    "debug_output_cols": null
+  },
+  {
+    "name": "opus100_en_de",
+    "hf_id": "Helsinki-NLP/opus-100",
+    "hf_subsample": "en-de",
+    "task": "translation",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "ValueError: BuilderConfig 'en-de' not found. Available: ['af-en', 'am-en', 'an-en', 'ar-de', 'ar-en', 'ar-fr', 'ar-nl', 'ar-ru', 'ar-zh', 'as-en', 'az-en', 'be-en', 'bg-en', 'bn-en', 'br-en', 'bs-en', 'ca-en', 'cs-en', 'cy-en', 'da-en', 'de-en', 'de-fr', 'de-nl', 'de-ru', 'de-zh', 'dz-en', 'el-en', 'en-eo', 'en-es', 'en-et', 'en-eu', 'en-fa', 'en-fi', 'en-fr', 'en-fy', 'en-ga', 'en-gd', 'en-gl', 'en-gu', 'en-ha', 'en-he', 'en-hi', 'en-hr', 'en-hu', 'en-hy', 'en-id', 'en-ig', 'en-is', 'en-it', 'en-ja', 'en-ka', 'en-kk', 'en-km', 'en-kn', 'en-ko', 'en-ku', 'en-ky', 'en-li', 'en-lt', 'en-lv', 'en-mg', 'en-mk', 'en-ml', 'en-mn', 'en-mr', 'en-ms', 'en-mt', 'en-my', 'en-nb', 'en-ne', 'en-nl', 'en-nn', 'en-no', 'en-oc', 'en-or', 'en-pa', 'en-pl', 'en-ps', 'en-pt', 'en-ro', 'en-ru', 'en-rw', 'en-se', 'en-sh', 'en-si', 'en-sk', 'en-sl', 'en-sq', 'en-sr', 'en-sv', 'en-ta', 'en-te', 'en-tg', 'en-th', 'en-tk', 'en-tr', 'en-tt', 'en-ug', 'en-uk', 'en-ur', 'en-uz', 'en-vi', 'en-wa', 'en-xh', 'en-yi', 'en-yo', 'en-zh', 'en-zu', 'fr-nl', 'fr-ru', 'fr-zh', 'nl-ru', 'nl-zh', 'ru-zh']",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "opus100_en_fr",
+    "hf_id": "Helsinki-NLP/opus-100",
+    "hf_subsample": "en-fr",
+    "task": "translation",
+    "status": "needs_custom_loader",
+    "columns": {
+      "translation": "_translation"
+    },
+    "rows": -1,
+    "splits": [
+      "test",
+      "train",
+      "validation"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "opus100_en_es",
+    "hf_id": "Helsinki-NLP/opus-100",
+    "hf_subsample": "en-es",
+    "task": "translation",
+    "status": "needs_custom_loader",
+    "columns": {
+      "translation": "_translation"
+    },
+    "rows": -1,
+    "splits": [
+      "test",
+      "train",
+      "validation"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "wmt14_de_en",
+    "hf_id": "wmt/wmt14",
+    "hf_subsample": "de-en",
+    "task": "translation",
+    "status": "needs_custom_loader",
+    "columns": {
+      "translation": "_translation"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "wmt16_de_en",
+    "hf_id": "wmt/wmt16",
+    "hf_subsample": "de-en",
+    "task": "translation",
+    "status": "needs_custom_loader",
+    "columns": {
+      "translation": "_translation"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "wmt19_de_en",
+    "hf_id": "wmt/wmt19",
+    "hf_subsample": "de-en",
+    "task": "translation",
+    "status": "needs_custom_loader",
+    "columns": {
+      "translation": "_translation"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "opus_books_en_fr",
+    "hf_id": "Helsinki-NLP/opus_books",
+    "hf_subsample": "en-fr",
+    "task": "translation",
+    "status": "needs_custom_loader",
+    "columns": {
+      "id": "text",
+      "translation": "_translation"
+    },
+    "rows": -1,
+    "splits": [
+      "train"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "flores_en_de",
+    "hf_id": "facebook/flores",
+    "hf_subsample": "eng_Latn-deu_Latn",
+    "task": "translation",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found flores.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "iwslt2017_en_de",
+    "hf_id": "IWSLT/iwslt2017",
+    "hf_subsample": "iwslt2017-en-de",
+    "task": "translation",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found iwslt2017.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "europarl_en_de",
+    "hf_id": "Helsinki-NLP/europarl",
+    "hf_subsample": "en-de",
+    "task": "translation",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "ValueError: BuilderConfig 'en-de' not found. Available: ['bg-cs', 'bg-da', 'bg-de', 'bg-el', 'bg-en', 'bg-es', 'bg-et', 'bg-fi', 'bg-fr', 'bg-hu', 'bg-it', 'bg-lt', 'bg-lv', 'bg-nl', 'bg-pl', 'bg-pt', 'bg-ro', 'bg-sk', 'bg-sl', 'bg-sv', 'cs-da', 'cs-de', 'cs-el', 'cs-en', 'cs-es', 'cs-et', 'cs-fi', 'cs-fr', 'cs-hu', 'cs-it', 'cs-lt', 'cs-lv', 'cs-nl', 'cs-pl', 'cs-pt', 'cs-ro', 'cs-sk', 'cs-sl', 'cs-sv', 'da-de', 'da-el', 'da-en', 'da-es', 'da-et', 'da-fi', 'da-fr', 'da-hu', 'da-it', 'da-lt', 'da-lv', 'da-nl', 'da-pl', 'da-pt', 'da-ro', 'da-sk', 'da-sl', 'da-sv', 'de-el', 'de-en', 'de-es', 'de-et', 'de-fi', 'de-fr', 'de-hu', 'de-it', 'de-lt', 'de-lv', 'de-nl', 'de-pl', 'de-pt', 'de-ro', 'de-sk', 'de-sl', 'de-sv', 'el-en', 'el-es', 'el-et', 'el-fi', 'el-fr', 'el-hu', 'el-it', 'el-lt', 'el-lv', 'el-nl', 'el-pl', 'el-pt', 'el-ro', 'el-sk', 'el-sl', 'el-sv', 'en-es', 'en-et', 'en-fi', 'en-fr', 'en-hu', 'en-it', 'en-lt', 'en-lv', 'en-nl', 'en-pl', 'en-pt', 'en-ro', 'en-sk', 'en-sl', 'en-sv', 'es-et', 'es-fi', 'es-fr', 'es-hu', 'es-it', 'es-lt', 'es-lv', 'es-nl', 'es-pl', 'es-pt', 'es-ro', 'es-sk', 'es-sl', 'es-sv', 'et-fi', 'et-fr', 'et-hu', 'et-it', 'et-lt', 'et-lv', 'et-nl', 'et-pl', 'et-pt', 'et-ro', 'et-sk', 'et-sl', 'et-sv', 'fi-fr', 'fi-hu', 'fi-it', 'fi-lt', 'fi-lv', 'fi-nl', 'fi-pl', 'fi-pt', 'fi-ro', 'fi-sk', 'fi-sl', 'fi-sv', 'fr-hu', 'fr-it', 'fr-lt', 'fr-lv', 'fr-nl', 'fr-pl', 'fr-pt', 'fr-ro', 'fr-sk', 'fr-sl', 'fr-sv', 'hu-it', 'hu-lt', 'hu-lv', 'hu-nl', 'hu-pl', 'hu-pt', 'hu-ro', 'hu-sk', 'hu-sl', 'hu-sv', 'it-lt', 'it-lv', 'it-nl', 'it-pl', 'it-pt', 'it-ro', 'it-sk', 'it-sl', 'it-sv', 'lt-lv', 'lt-nl', 'lt-pl', 'lt-pt', 'lt-ro', 'lt-sk', 'lt-sl', 'lt-sv', 'lv-nl', 'lv-pl', 'lv-pt', 'lv-ro', 'lv-sk', 'lv-sl', 'lv-sv', 'nl-pl', 'nl-pt', 'nl-ro', 'nl-sk', 'nl-sl', 'nl-sv', 'pl-pt', 'pl-ro', 'pl-sk', 'pl-sl', 'pl-sv', 'pt-ro', 'pt-sk', 'pt-sl', 'pt-sv', 'ro-sk', 'ro-sl', 'ro-sv', 'sk-sl', 'sk-sv', 'sl-sv']",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "cifar10",
+    "hf_id": "uoft-cs/cifar10",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "auto_generated",
+    "columns": {
+      "img": "image",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "cifar100",
+    "hf_id": "uoft-cs/cifar100",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "auto_generated",
+    "columns": {
+      "img": "image",
+      "fine_label": "category",
+      "coarse_label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "fine_label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "mnist",
+    "hf_id": "ylecun/mnist",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "already_exists",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "fashion_mnist",
+    "hf_id": "zalando-datasets/fashion_mnist",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "auto_generated",
+    "columns": {
+      "image": "image",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "food101",
+    "hf_id": "ethz/food101",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "auto_generated",
+    "columns": {
+      "image": "image",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "stanford_cars",
+    "hf_id": "tanganke/stanford_cars",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "auto_generated",
+    "columns": {
+      "image": "image",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test",
+      "contrast",
+      "gaussian_noise",
+      "impulse_noise",
+      "jpeg_compression",
+      "motion_blur",
+      "pixelate",
+      "spatter"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "oxford_pets",
+    "hf_id": "timm/oxford-iiit-pet",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "auto_generated",
+    "columns": {
+      "image": "image",
+      "label": "category",
+      "image_id": "text",
+      "label_cat_dog": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "eurosat",
+    "hf_id": "tanganke/eurosat",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "auto_generated",
+    "columns": {
+      "image": "image",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test",
+      "contrast",
+      "gaussian_noise",
+      "impulse_noise",
+      "jpeg_compression",
+      "motion_blur",
+      "pixelate",
+      "spatter"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "gtsrb",
+    "hf_id": "tanganke/gtsrb",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "auto_generated",
+    "columns": {
+      "image": "image",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test",
+      "contrast",
+      "gaussian_noise",
+      "impulse_noise",
+      "jpeg_compression",
+      "motion_blur",
+      "pixelate",
+      "spatter"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "svhn",
+    "hf_id": "ufldl-stanford/svhn",
+    "hf_subsample": "cropped_digits",
+    "task": "image_classification",
+    "status": "auto_generated",
+    "columns": {
+      "image": "image",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test",
+      "extra"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "tiny_imagenet",
+    "hf_id": "zh-plus/tiny-imagenet",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "auto_generated",
+    "columns": {
+      "image": "image",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "valid"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "sun397",
+    "hf_id": "tanganke/sun397",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "auto_generated",
+    "columns": {
+      "image": "image",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "beans",
+    "hf_id": "AI-Lab-Makerere/beans",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "auto_generated",
+    "columns": {
+      "image_file_path": "text",
+      "image": "image",
+      "labels": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "labels"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "wikiart",
+    "hf_id": "huggan/wikiart",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "auto_generated",
+    "columns": {
+      "image": "image",
+      "artist": "category",
+      "genre": "category",
+      "style": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "artist"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "imagenet1k",
+    "hf_id": "ILSVRC/imagenet-1k",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'ILSVRC/imagenet-1k' is a gated dataset on the Hub. You must be authenticated to access it.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "mvtec_ad",
+    "hf_id": "Voxel51/mvtec-ad",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "skipped_no_yaml",
+    "columns": {
+      "image": "image"
+    },
+    "rows": -1,
+    "splits": [
+      "train"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": false,
+    "debug_output_cols": null
+  },
+  {
+    "name": "librispeech",
+    "hf_id": "openslr/librispeech_asr",
+    "hf_subsample": "clean",
+    "task": "automatic_speech_recognition",
+    "status": "already_exists",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "fleurs_en",
+    "hf_id": "google/fleurs",
+    "hf_subsample": "en_us",
+    "task": "automatic_speech_recognition",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found fleurs.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "multilingual_librispeech",
+    "hf_id": "facebook/multilingual_librispeech",
+    "hf_subsample": "english",
+    "task": "automatic_speech_recognition",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "ValueError: BuilderConfig 'english' not found. Available: ['dutch', 'french', 'german', 'italian', 'polish', 'portuguese', 'spanish']",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "voxpopuli",
+    "hf_id": "facebook/voxpopuli",
+    "hf_subsample": "en",
+    "task": "automatic_speech_recognition",
+    "status": "auto_generated",
+    "columns": {
+      "audio_id": "text",
+      "language": "category",
+      "audio": "audio",
+      "raw_text": "text",
+      "normalized_text": "text",
+      "gender": "text",
+      "speaker_id": "text",
+      "is_gold_transcript": "binary",
+      "accent": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "language"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "gigaspeech",
+    "hf_id": "speechcolab/gigaspeech",
+    "hf_subsample": "xs",
+    "task": "automatic_speech_recognition",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'speechcolab/gigaspeech' is a gated dataset on the Hub. You must be authenticated to access it.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "audioset",
+    "hf_id": "agkphysics/AudioSet",
+    "hf_subsample": "unbalanced_train",
+    "task": "audio_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "ValueError: BuilderConfig 'unbalanced_train' not found. Available: ['balanced', 'unbalanced', 'full']",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "fsd50k",
+    "hf_id": "Fhrozen/FSD50k",
+    "hf_subsample": null,
+    "task": "audio_classification",
+    "status": "auto_generated",
+    "columns": {
+      "audio": "audio",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "peoples_speech",
+    "hf_id": "MLCommons/peoples_speech",
+    "hf_subsample": "clean",
+    "task": "automatic_speech_recognition",
+    "status": "auto_generated",
+    "columns": {
+      "id": "text",
+      "audio": "audio",
+      "duration_ms": "category",
+      "text": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "text"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "voxceleb",
+    "hf_id": "ProgramComputer/voxceleb",
+    "hf_subsample": null,
+    "task": "audio_classification",
+    "status": "skipped_no_yaml",
+    "columns": {
+      "text": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": false,
+    "debug_output_cols": null
+  },
+  {
+    "name": "birdset",
+    "hf_id": "DBD-research-group/BirdSet",
+    "hf_subsample": "HSN",
+    "task": "audio_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found BirdSet.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "vggsound",
+    "hf_id": "Loie/VGGSound",
+    "hf_subsample": null,
+    "task": "audio_classification",
+    "status": "skipped_no_yaml",
+    "columns": {
+      "image": "image"
+    },
+    "rows": -1,
+    "splits": [
+      "train"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": false,
+    "debug_output_cols": null
+  },
+  {
+    "name": "mmmu",
+    "hf_id": "MMMU/MMMU",
+    "hf_subsample": "Accounting",
+    "task": "visual_question_answering",
+    "status": "needs_custom_loader",
+    "columns": {
+      "id": "text",
+      "question": "text",
+      "options": "text",
+      "explanation": "text",
+      "image_1": "image",
+      "image_2": "image",
+      "image_3": "image",
+      "image_4": "image",
+      "image_5": "image",
+      "image_6": "image",
+      "image_7": "image",
+      "img_type": "text",
+      "answer": "text",
+      "topic_difficulty": "text",
+      "question_type": "text",
+      "subfield": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "dev",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "scienceqa",
+    "hf_id": "derek-thomas/ScienceQA",
+    "hf_subsample": null,
+    "task": "visual_question_answering",
+    "status": "needs_custom_loader",
+    "columns": {
+      "image": "image",
+      "question": "text",
+      "choices": "_list",
+      "answer": "category",
+      "hint": "text",
+      "task": "text",
+      "grade": "text",
+      "subject": "text",
+      "topic": "text",
+      "category": "text",
+      "skill": "text",
+      "lecture": "text",
+      "solution": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "vqa_rad",
+    "hf_id": "flaviagiammarino/vqa-rad",
+    "hf_subsample": null,
+    "task": "visual_question_answering",
+    "status": "auto_generated",
+    "columns": {
+      "image": "image",
+      "question": "text",
+      "answer": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "answer"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "mathvista",
+    "hf_id": "AI4Math/MathVista",
+    "hf_subsample": null,
+    "task": "visual_question_answering",
+    "status": "needs_custom_loader",
+    "columns": {
+      "pid": "text",
+      "question": "text",
+      "image": "text",
+      "decoded_image": "image",
+      "choices": "_list",
+      "unit": "text",
+      "precision": "number",
+      "answer": "text",
+      "question_type": "text",
+      "answer_type": "text",
+      "metadata": "_dict",
+      "query": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "testmini",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "satellite_building_segmentation",
+    "hf_id": "keremberke/satellite-building-segmentation",
+    "hf_subsample": null,
+    "task": "image_segmentation",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found satellite-building-segmentation.py",
+    "needs_custom_loader": true
+  },
+  {
+    "name": "tabular_benchmark_clf",
+    "hf_id": "inria-soda/tabular-benchmark",
+    "hf_subsample": "clf_cat",
+    "task": "tabular_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "ValueError: BuilderConfig 'clf_cat' not found. Available: ['clf_cat_albert', 'clf_cat_compas-two-years', 'clf_cat_covertype', 'clf_cat_default-of-credit-card-clients', 'clf_cat_electricity', 'clf_cat_eye_movements', 'clf_cat_road-safety', 'clf_num_Bioresponse', 'clf_num_Diabetes130US', 'clf_num_Higgs', 'clf_num_MagicTelescope', 'clf_num_MiniBooNE', 'clf_num_bank-marketing', 'clf_num_california', 'clf_num_covertype', 'clf_num_credit', 'clf_num_default-of-credit-card-clients', 'clf_num_electricity', 'clf_num_eye_movements', 'clf_num_heloc', 'clf_num_house_16H', 'clf_num_jannis', 'clf_num_pol', 'reg_cat_Airlines_DepDelay_1M', 'reg_cat_Allstate_Claims_Severity', 'reg_cat_Bike_Sharing_Demand', 'reg_cat_Brazilian_houses', 'reg_cat_Mercedes_Benz_Greener_Manufacturing', 'reg_cat_SGEMM_GPU_kernel_performance', 'reg_cat_abalone', 'reg_cat_analcatdata_supreme', 'reg_cat_delays_zurich_transport', 'reg_cat_diamonds', 'reg_cat_house_sales', 'reg_cat_medical_charges', 'reg_cat_nyc-taxi-green-dec-2016', 'reg_cat_particulate-matter-ukair-2017', 'reg_cat_seattlecrime6', 'reg_cat_topo_2_1', 'reg_cat_visualizing_soil', 'reg_num_Ailerons', 'reg_num_Bike_Sharing_Demand', 'reg_num_Brazilian_houses', 'reg_num_MiamiHousing2016', 'reg_num_abalone', 'reg_num_cpu_act', 'reg_num_delays_zurich_transport', 'reg_num_diamonds', 'reg_num_elevators', 'reg_num_house_16H', 'reg_num_house_sales', 'reg_num_houses', 'reg_num_medical_charges', 'reg_num_nyc-taxi-green-dec-2016', 'reg_num_pol', 'reg_num_sulfur', 'reg_num_superconduct', 'reg_num_wine_quality', 'reg_num_yprop_4_1']",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "adult_income_hf",
+    "hf_id": "mstz/adult",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "auto_generated",
+    "columns": {
+      "age": "category",
+      "capital_gain": "number",
+      "capital_loss": "number",
+      "education": "category",
+      "final_weight": "category",
+      "hours_worked_per_week": "category",
+      "marital_status": "text",
+      "native_country": "text",
+      "occupation": "text",
+      "race": "text",
+      "relationship": "text",
+      "is_male": "binary",
+      "workclass": "text",
+      "over_threshold": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "age"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "diabetes_regression",
+    "hf_id": "scikit-learn/diabetes",
+    "hf_subsample": null,
+    "task": "regression",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'scikit-learn/diabetes' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "heart_failure",
+    "hf_id": "mstz/heart_failure",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "auto_generated",
+    "columns": {
+      "age": "category",
+      "has_anaemia": "binary",
+      "creatinine_phosphokinase_concentration_in_blood": "number",
+      "has_diabetes": "binary",
+      "heart_ejection_fraction": "number",
+      "has_high_blood_pressure": "binary",
+      "platelets_concentration_in_blood": "number",
+      "serum_creatinine_concentration_in_blood": "number",
+      "serum_sodium_concentration_in_blood": "number",
+      "is_male": "binary",
+      "is_smoker": "binary",
+      "days_in_study": "category",
+      "is_dead": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "age"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "breast_cancer",
+    "hf_id": "mstz/breast_cancer",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'mstz/breast_cancer' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "tabular_benchmark_reg",
+    "hf_id": "inria-soda/tabular-benchmark",
+    "hf_subsample": "reg_num",
+    "task": "regression",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "ValueError: BuilderConfig 'reg_num' not found. Available: ['clf_cat_albert', 'clf_cat_compas-two-years', 'clf_cat_covertype', 'clf_cat_default-of-credit-card-clients', 'clf_cat_electricity', 'clf_cat_eye_movements', 'clf_cat_road-safety', 'clf_num_Bioresponse', 'clf_num_Diabetes130US', 'clf_num_Higgs', 'clf_num_MagicTelescope', 'clf_num_MiniBooNE', 'clf_num_bank-marketing', 'clf_num_california', 'clf_num_covertype', 'clf_num_credit', 'clf_num_default-of-credit-card-clients', 'clf_num_electricity', 'clf_num_eye_movements', 'clf_num_heloc', 'clf_num_house_16H', 'clf_num_jannis', 'clf_num_pol', 'reg_cat_Airlines_DepDelay_1M', 'reg_cat_Allstate_Claims_Severity', 'reg_cat_Bike_Sharing_Demand', 'reg_cat_Brazilian_houses', 'reg_cat_Mercedes_Benz_Greener_Manufacturing', 'reg_cat_SGEMM_GPU_kernel_performance', 'reg_cat_abalone', 'reg_cat_analcatdata_supreme', 'reg_cat_delays_zurich_transport', 'reg_cat_diamonds', 'reg_cat_house_sales', 'reg_cat_medical_charges', 'reg_cat_nyc-taxi-green-dec-2016', 'reg_cat_particulate-matter-ukair-2017', 'reg_cat_seattlecrime6', 'reg_cat_topo_2_1', 'reg_cat_visualizing_soil', 'reg_num_Ailerons', 'reg_num_Bike_Sharing_Demand', 'reg_num_Brazilian_houses', 'reg_num_MiamiHousing2016', 'reg_num_abalone', 'reg_num_cpu_act', 'reg_num_delays_zurich_transport', 'reg_num_diamonds', 'reg_num_elevators', 'reg_num_house_16H', 'reg_num_house_sales', 'reg_num_houses', 'reg_num_medical_charges', 'reg_num_nyc-taxi-green-dec-2016', 'reg_num_pol', 'reg_num_sulfur', 'reg_num_superconduct', 'reg_num_wine_quality', 'reg_num_yprop_4_1']",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "wine_quality",
+    "hf_id": "scikit-learn/wine-quality",
+    "hf_subsample": null,
+    "task": "regression",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'scikit-learn/wine-quality' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "boston_housing",
+    "hf_id": "scikit-learn/boston",
+    "hf_subsample": null,
+    "task": "regression",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'scikit-learn/boston' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "diffusiondb",
+    "hf_id": "poloclub/diffusiondb",
+    "hf_subsample": "2m_random_1k",
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found diffusiondb.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "bank_marketing",
+    "hf_id": "mstz/bank_marketing",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'mstz/bank_marketing' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "covertype",
+    "hf_id": "mstz/covertype",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found covertype.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "magic_telescope",
+    "hf_id": "mstz/magic_telescope",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'mstz/magic_telescope' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "electricity_tabular",
+    "hf_id": "mstz/electricity",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "auto_generated",
+    "columns": {
+      "date": "number",
+      "day": "category",
+      "period": "number",
+      "nswprice": "number",
+      "nswdemand": "number",
+      "vicprice": "number",
+      "vicdemand": "number",
+      "transfer": "number",
+      "is_up": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "date"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "jannis",
+    "hf_id": "mstz/jannis",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'mstz/jannis' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "higgs_tabular",
+    "hf_id": "mstz/higgs",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found higgs.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "amazon_reviews_multi",
+    "hf_id": "mteb/amazon_reviews_multi",
+    "hf_subsample": "en",
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found amazon_reviews_multi.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "tweet_sentiment_extraction",
+    "hf_id": "mteb/tweet_sentiment_extraction",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "id": "text",
+      "text": "text",
+      "label": "category",
+      "label_text": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "climate_sentiment",
+    "hf_id": "climatebert/climate_sentiment",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "text": "text",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "sst_spans",
+    "hf_id": "sst/sst",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'sst/sst' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "sts_benchmark",
+    "hf_id": "mteb/stsbenchmark-sts",
+    "hf_subsample": null,
+    "task": "regression",
+    "status": "auto_generated",
+    "columns": {
+      "genre": "text",
+      "dataset": "text",
+      "year": "text",
+      "sid": "text",
+      "score": "number",
+      "sentence1": "text",
+      "sentence2": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "score"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "bc5cdr",
+    "hf_id": "bigbio/bc5cdr",
+    "hf_subsample": "bc5cdr_bigbio_kb",
+    "task": "ner",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found bc5cdr.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "lex_glue_ecthr",
+    "hf_id": "coastalcph/lex_glue",
+    "hf_subsample": "ecthr_a",
+    "task": "text_classification",
+    "status": "needs_custom_loader",
+    "columns": {
+      "text": "_list",
+      "labels": "_list"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test",
+      "validation"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "lex_glue_eurlex",
+    "hf_id": "coastalcph/lex_glue",
+    "hf_subsample": "eurlex",
+    "task": "text_classification",
+    "status": "needs_custom_loader",
+    "columns": {
+      "text": "text",
+      "labels": "_list"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test",
+      "validation"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "legalbench",
+    "hf_id": "nguha/legalbench",
+    "hf_subsample": "contract_nli_confidentiality_of_agreement",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "index": "category",
+      "answer": "text",
+      "text": "text",
+      "document_name": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "answer"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "sourcedata_ner",
+    "hf_id": "EMBO/SourceData",
+    "hf_subsample": "NER",
+    "task": "ner",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found SourceData.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "mbpp",
+    "hf_id": "google-research-datasets/mbpp",
+    "hf_subsample": null,
+    "task": "text_generation",
+    "status": "needs_custom_loader",
+    "columns": {
+      "task_id": "category",
+      "text": "text",
+      "code": "text",
+      "test_list": "_list",
+      "test_setup_code": "text",
+      "challenge_test_list": "_list"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test",
+      "validation",
+      "prompt"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "humaneval",
+    "hf_id": "openai/openai_humaneval",
+    "hf_subsample": null,
+    "task": "text_generation",
+    "status": "skipped_no_yaml",
+    "columns": {
+      "task_id": "text",
+      "prompt": "text",
+      "canonical_solution": "text",
+      "test": "text",
+      "entry_point": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": false,
+    "debug_output_cols": null
+  },
+  {
+    "name": "codexglue_code_to_text",
+    "hf_id": "google/code_x_glue_ct_code_to_text",
+    "hf_subsample": "python",
+    "task": "text_generation",
+    "status": "needs_custom_loader",
+    "columns": {
+      "id": "category",
+      "repo": "text",
+      "path": "text",
+      "func_name": "text",
+      "original_string": "text",
+      "language": "text",
+      "code": "text",
+      "code_tokens": "_list",
+      "docstring": "text",
+      "docstring_tokens": "_list",
+      "sha": "text",
+      "url": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "code_search_net",
+    "hf_id": "code-search-net/code_search_net",
+    "hf_subsample": "python",
+    "task": "text_classification",
+    "status": "needs_custom_loader",
+    "columns": {
+      "repository_name": "text",
+      "func_path_in_repository": "text",
+      "func_name": "text",
+      "whole_func_string": "text",
+      "language": "text",
+      "func_code_string": "text",
+      "func_code_tokens": "_list",
+      "func_documentation_string": "text",
+      "func_documentation_tokens": "_list",
+      "split_name": "text",
+      "func_code_url": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test",
+      "validation"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "liar",
+    "hf_id": "liar/liar",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'liar/liar' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "fake_news_detection",
+    "hf_id": "GonzaloA/fake_news",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "Unnamed: 0": "category",
+      "title": "text",
+      "text": "text",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "climate_fever",
+    "hf_id": "climate_fever/climate_fever",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'climate_fever/climate_fever' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "hate_speech18",
+    "hf_id": "HateSpeechMLResearch/hate_speech_18",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'HateSpeechMLResearch/hate_speech_18' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "measuring_hate_speech",
+    "hf_id": "ucberkeley-dlab/measuring-hate-speech",
+    "hf_subsample": null,
+    "task": "regression",
+    "status": "auto_generated",
+    "columns": {
+      "comment_id": "category",
+      "annotator_id": "category",
+      "platform": "category",
+      "sentiment": "number",
+      "respect": "number",
+      "insult": "number",
+      "humiliate": "number",
+      "status": "number",
+      "dehumanize": "number",
+      "violence": "number",
+      "genocide": "number",
+      "attack_defend": "number",
+      "hatespeech": "number",
+      "hate_speech_score": "number",
+      "text": "text",
+      "infitms": "number",
+      "outfitms": "number",
+      "annotator_severity": "number",
+      "std_err": "number",
+      "annotator_infitms": "number",
+      "annotator_outfitms": "number",
+      "hypothesis": "number",
+      "target_race_asian": "binary",
+      "target_race_black": "binary",
+      "target_race_latinx": "binary",
+      "target_race_middle_eastern": "binary",
+      "target_race_native_american": "binary",
+      "target_race_pacific_islander": "binary",
+      "target_race_white": "binary",
+      "target_race_other": "binary",
+      "target_race": "binary",
+      "target_religion_atheist": "binary",
+      "target_religion_buddhist": "binary",
+      "target_religion_christian": "binary",
+      "target_religion_hindu": "binary",
+      "target_religion_jewish": "binary",
+      "target_religion_mormon": "binary",
+      "target_religion_muslim": "binary",
+      "target_religion_other": "binary",
+      "target_religion": "binary",
+      "target_origin_immigrant": "binary",
+      "target_origin_migrant_worker": "binary",
+      "target_origin_specific_country": "binary",
+      "target_origin_undocumented": "binary",
+      "target_origin_other": "binary",
+      "target_origin": "binary",
+      "target_gender_men": "binary",
+      "target_gender_non_binary": "binary",
+      "target_gender_transgender_men": "binary",
+      "target_gender_transgender_unspecified": "binary",
+      "target_gender_transgender_women": "binary",
+      "target_gender_women": "binary",
+      "target_gender_other": "binary",
+      "target_gender": "binary",
+      "target_sexuality_bisexual": "binary",
+      "target_sexuality_gay": "binary",
+      "target_sexuality_lesbian": "binary",
+      "target_sexuality_straight": "binary",
+      "target_sexuality_other": "binary",
+      "target_sexuality": "binary",
+      "target_age_children": "binary",
+      "target_age_teenagers": "binary",
+      "target_age_young_adults": "binary",
+      "target_age_middle_aged": "binary",
+      "target_age_seniors": "binary",
+      "target_age_other": "binary",
+      "target_age": "binary",
+      "target_disability_physical": "binary",
+      "target_disability_cognitive": "binary",
+      "target_disability_neurological": "binary",
+      "target_disability_visually_impaired": "binary",
+      "target_disability_hearing_impaired": "binary",
+      "target_disability_unspecific": "binary",
+      "target_disability_other": "binary",
+      "target_disability": "binary",
+      "target_politics_alt_right": "binary",
+      "target_politics_communist": "binary",
+      "target_politics_conservative": "binary",
+      "target_politics_democrat": "binary",
+      "target_politics_green_party": "binary",
+      "target_politics_leftist": "binary",
+      "target_politics_liberal": "binary",
+      "target_politics_libertarian": "binary",
+      "target_politics_republican": "binary",
+      "target_politics_socialist": "binary",
+      "target_politics_other": "binary",
+      "target_politics": "binary",
+      "annotator_gender": "text",
+      "annotator_trans": "text",
+      "annotator_educ": "text",
+      "annotator_income": "text",
+      "annotator_ideology": "text",
+      "annotator_gender_men": "binary",
+      "annotator_gender_women": "binary",
+      "annotator_gender_non_binary": "binary",
+      "annotator_gender_prefer_not_to_say": "binary",
+      "annotator_gender_self_describe": "binary",
+      "annotator_transgender": "binary",
+      "annotator_cisgender": "binary",
+      "annotator_transgender_prefer_not_to_say": "binary",
+      "annotator_education_some_high_school": "binary",
+      "annotator_education_high_school_grad": "binary",
+      "annotator_education_some_college": "binary",
+      "annotator_education_college_grad_aa": "binary",
+      "annotator_education_college_grad_ba": "binary",
+      "annotator_education_professional_degree": "binary",
+      "annotator_education_masters": "binary",
+      "annotator_education_phd": "binary",
+      "annotator_income_<10k": "binary",
+      "annotator_income_10k-50k": "binary",
+      "annotator_income_50k-100k": "binary",
+      "annotator_income_100k-200k": "binary",
+      "annotator_income_>200k": "binary",
+      "annotator_ideology_extremeley_conservative": "binary",
+      "annotator_ideology_conservative": "binary",
+      "annotator_ideology_slightly_conservative": "binary",
+      "annotator_ideology_neutral": "binary",
+      "annotator_ideology_slightly_liberal": "binary",
+      "annotator_ideology_liberal": "binary",
+      "annotator_ideology_extremeley_liberal": "binary",
+      "annotator_ideology_no_opinion": "binary",
+      "annotator_race_asian": "binary",
+      "annotator_race_black": "binary",
+      "annotator_race_latinx": "binary",
+      "annotator_race_middle_eastern": "binary",
+      "annotator_race_native_american": "binary",
+      "annotator_race_pacific_islander": "binary",
+      "annotator_race_white": "binary",
+      "annotator_race_other": "binary",
+      "annotator_age": "number",
+      "annotator_religion_atheist": "binary",
+      "annotator_religion_buddhist": "binary",
+      "annotator_religion_christian": "binary",
+      "annotator_religion_hindu": "binary",
+      "annotator_religion_jewish": "binary",
+      "annotator_religion_mormon": "binary",
+      "annotator_religion_muslim": "binary",
+      "annotator_religion_nothing": "binary",
+      "annotator_religion_other": "binary",
+      "annotator_sexuality_bisexual": "binary",
+      "annotator_sexuality_gay": "binary",
+      "annotator_sexuality_straight": "binary",
+      "annotator_sexuality_other": "binary"
+    },
+    "rows": -1,
+    "splits": [
+      "train"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "sentiment"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "civil_comments",
+    "hf_id": "google/civil_comments",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "text": "text",
+      "toxicity": "number",
+      "severe_toxicity": "number",
+      "obscene": "number",
+      "threat": "number",
+      "insult": "number",
+      "identity_attack": "number",
+      "sexual_explicit": "number"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "toxicity"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "sredfm",
+    "hf_id": "Babelscape/SREDFM",
+    "hf_subsample": "en",
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found SREDFM.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "docred",
+    "hf_id": "docred/docred",
+    "hf_subsample": null,
+    "task": "relation_extraction",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'docred/docred' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": true
+  },
+  {
+    "name": "ontonotes5",
+    "hf_id": "conll2012_ontonotesv5/english_v4",
+    "hf_subsample": null,
+    "task": "ner",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'conll2012_ontonotesv5/english_v4' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "language_identification",
+    "hf_id": "papluca/language-identification",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "labels": "text",
+      "text": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "labels"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "glotlid",
+    "hf_id": "cis-lmu/glotlid",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'cis-lmu/glotlid' is a gated dataset on the Hub. You must be authenticated to access it.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "blog_authorship",
+    "hf_id": "blog-authorship-corpus/blog-authorship-corpus",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'blog-authorship-corpus/blog-authorship-corpus' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "gsm8k",
+    "hf_id": "openai/gsm8k",
+    "hf_subsample": "main",
+    "task": "text_generation",
+    "status": "auto_generated",
+    "columns": {
+      "question": "text",
+      "answer": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "answer"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "hendrycks_math",
+    "hf_id": "EleutherAI/hendrycks_math",
+    "hf_subsample": "algebra",
+    "task": "text_generation",
+    "status": "skipped_no_yaml",
+    "columns": {
+      "problem": "text",
+      "level": "text",
+      "type": "text",
+      "solution": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": false,
+    "debug_output_cols": null
+  },
+  {
+    "name": "daily_dialog",
+    "hf_id": "daily_dialog/daily_dialog",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'daily_dialog/daily_dialog' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "multiwoz",
+    "hf_id": "pfb30/multi_woz_v22",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found multi_woz_v22.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "msmarco_passage",
+    "hf_id": "mteb/msmarco",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "query-id": "text",
+      "corpus-id": "text",
+      "score": "number"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "dev",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "score"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "natural_questions_hard_negatives",
+    "hf_id": "sentence-transformers/natural-questions",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "query": "text",
+      "answer": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "answer"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "winobias",
+    "hf_id": "uclanlp/wino_bias",
+    "hf_subsample": "type1_anti",
+    "task": "text_classification",
+    "status": "needs_custom_loader",
+    "columns": {
+      "document_id": "text",
+      "part_number": "text",
+      "word_number": "_list",
+      "tokens": "_list",
+      "pos_tags": "_list",
+      "parse_bit": "_list",
+      "predicate_lemma": "_list",
+      "predicate_framenet_id": "_list",
+      "word_sense": "_list",
+      "speaker": "_list",
+      "ner_tags": "_list",
+      "verbal_predicates": "_list",
+      "coreference_clusters": "_list"
+    },
+    "rows": -1,
+    "splits": [
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "klue_topic",
+    "hf_id": "klue/klue",
+    "hf_subsample": "ynat",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "guid": "text",
+      "title": "text",
+      "label": "category",
+      "url": "text",
+      "date": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "klue_sts",
+    "hf_id": "klue/klue",
+    "hf_subsample": "sts",
+    "task": "regression",
+    "status": "needs_custom_loader",
+    "columns": {
+      "guid": "text",
+      "source": "text",
+      "sentence1": "text",
+      "sentence2": "text",
+      "labels": "_dict"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "indic_glue",
+    "hf_id": "ai4bharat/indic_glue",
+    "hf_subsample": "wnli-en",
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "ValueError: BuilderConfig 'wnli-en' not found. Available: ['actsa-sc.te', 'bbca.hi', 'copa.en', 'copa.gu', 'copa.hi', 'copa.mr', 'csqa.as', 'csqa.bn', 'csqa.gu', 'csqa.hi', 'csqa.kn', 'csqa.ml', 'csqa.mr', 'csqa.or', 'csqa.pa', 'csqa.ta', 'csqa.te', 'cvit-mkb-clsr.en-bn', 'cvit-mkb-clsr.en-gu', 'cvit-mkb-clsr.en-hi', 'cvit-mkb-clsr.en-ml', 'cvit-mkb-clsr.en-mr', 'cvit-mkb-clsr.en-or', 'cvit-mkb-clsr.en-ta', 'cvit-mkb-clsr.en-te', 'cvit-mkb-clsr.en-ur', 'iitp-mr.hi', 'iitp-pr.hi', 'inltkh.gu', 'inltkh.ml', 'inltkh.mr', 'inltkh.ta', 'inltkh.te', 'md.hi', 'sna.bn', 'wiki-ner.as', 'wiki-ner.bn', 'wiki-ner.gu', 'wiki-ner.hi', 'wiki-ner.kn', 'wiki-ner.ml', 'wiki-ner.mr', 'wiki-ner.or', 'wiki-ner.pa', 'wiki-ner.ta', 'wiki-ner.te', 'wnli.en', 'wnli.gu', 'wnli.hi', 'wnli.mr', 'wstp.as', 'wstp.bn', 'wstp.gu', 'wstp.hi', 'wstp.kn', 'wstp.ml', 'wstp.mr', 'wstp.or', 'wstp.pa', 'wstp.ta', 'wstp.te']",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "xnli",
+    "hf_id": "google/xtreme",
+    "hf_subsample": "XNLI",
+    "task": "text_classification",
+    "status": "skipped_no_yaml",
+    "columns": {
+      "language": "text",
+      "sentence1": "text",
+      "sentence2": "text",
+      "gold_label": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "test",
+      "validation"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": false,
+    "debug_output_cols": null
+  },
+  {
+    "name": "multi_eurlex",
+    "hf_id": "Muennighoff/multi_eurlex",
+    "hf_subsample": "en",
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found multi_eurlex.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "blimp",
+    "hf_id": "nyu-mll/blimp",
+    "hf_subsample": "anaphor_agreement",
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "ValueError: BuilderConfig 'anaphor_agreement' not found. Available: ['adjunct_island', 'anaphor_gender_agreement', 'anaphor_number_agreement', 'animate_subject_passive', 'animate_subject_trans', 'causative', 'complex_NP_island', 'coordinate_structure_constraint_complex_left_branch', 'coordinate_structure_constraint_object_extraction', 'determiner_noun_agreement_1', 'determiner_noun_agreement_2', 'determiner_noun_agreement_irregular_1', 'determiner_noun_agreement_irregular_2', 'determiner_noun_agreement_with_adj_2', 'determiner_noun_agreement_with_adj_irregular_1', 'determiner_noun_agreement_with_adj_irregular_2', 'determiner_noun_agreement_with_adjective_1', 'distractor_agreement_relational_noun', 'distractor_agreement_relative_clause', 'drop_argument', 'ellipsis_n_bar_1', 'ellipsis_n_bar_2', 'existential_there_object_raising', 'existential_there_quantifiers_1', 'existential_there_quantifiers_2', 'existential_there_subject_raising', 'expletive_it_object_raising', 'inchoative', 'intransitive', 'irregular_past_participle_adjectives', 'irregular_past_participle_verbs', 'irregular_plural_subject_verb_agreement_1', 'irregular_plural_subject_verb_agreement_2', 'left_branch_island_echo_question', 'left_branch_island_simple_question', 'matrix_question_npi_licensor_present', 'npi_present_1', 'npi_present_2', 'only_npi_licensor_present', 'only_npi_scope', 'passive_1', 'passive_2', 'principle_A_c_command', 'principle_A_case_1', 'principle_A_case_2', 'principle_A_domain_1', 'principle_A_domain_2', 'principle_A_domain_3', 'principle_A_reconstruction', 'regular_plural_subject_verb_agreement_1', 'regular_plural_subject_verb_agreement_2', 'sentential_negation_npi_licensor_present', 'sentential_negation_npi_scope', 'sentential_subject_island', 'superlative_quantifiers_1', 'superlative_quantifiers_2', 'tough_vs_raising_1', 'tough_vs_raising_2', 'transitive', 'wh_island', 'wh_questions_object_gap', 'wh_questions_subject_gap', 'wh_questions_subject_gap_long_distance', 'wh_vs_that_no_gap', 'wh_vs_that_no_gap_long_distance', 'wh_vs_that_with_gap', 'wh_vs_that_with_gap_long_distance']",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "ceval",
+    "hf_id": "ceval/ceval-exam",
+    "hf_subsample": "computer_science",
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "ValueError: BuilderConfig 'computer_science' not found. Available: ['accountant', 'advanced_mathematics', 'art_studies', 'basic_medicine', 'business_administration', 'chinese_language_and_literature', 'civil_servant', 'clinical_medicine', 'college_chemistry', 'college_economics', 'college_physics', 'college_programming', 'computer_architecture', 'computer_network', 'discrete_mathematics', 'education_science', 'electrical_engineer', 'environmental_impact_assessment_engineer', 'fire_engineer', 'high_school_biology', 'high_school_chemistry', 'high_school_chinese', 'high_school_geography', 'high_school_history', 'high_school_mathematics', 'high_school_physics', 'high_school_politics', 'ideological_and_moral_cultivation', 'law', 'legal_professional', 'logic', 'mao_zedong_thought', 'marxism', 'metrology_engineer', 'middle_school_biology', 'middle_school_chemistry', 'middle_school_geography', 'middle_school_history', 'middle_school_mathematics', 'middle_school_physics', 'middle_school_politics', 'modern_chinese_history', 'operating_system', 'physician', 'plant_protection', 'probability_and_statistics', 'professional_tour_guide', 'sports_science', 'tax_accountant', 'teacher_qualification', 'urban_and_rural_planner', 'veterinary_medicine']",
+    "needs_custom_loader": true
+  },
+  {
+    "name": "mmmlu",
+    "hf_id": "openai/MMMLU",
+    "hf_subsample": "EN_US",
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "ValueError: BuilderConfig 'EN_US' not found. Available: ['default', 'AR_XY', 'BN_BD', 'DE_DE', 'ES_LA', 'FR_FR', 'HI_IN', 'ID_ID', 'IT_IT', 'JA_JP', 'KO_KR', 'PT_BR', 'SW_KE', 'YO_NG', 'ZH_CN']",
+    "needs_custom_loader": true
+  },
+  {
+    "name": "gpqa",
+    "hf_id": "Idavidrein/gpqa",
+    "hf_subsample": "gpqa_main",
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'Idavidrein/gpqa' is a gated dataset on the Hub. You must be authenticated to access it.",
+    "needs_custom_loader": true
+  },
+  {
+    "name": "scotus_classification",
+    "hf_id": "coastalcph/lex_glue",
+    "hf_subsample": "scotus",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "text": "text",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test",
+      "validation"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "scitail",
+    "hf_id": "allenai/scitail",
+    "hf_subsample": "dgem_format",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "premise": "text",
+      "hypothesis": "text",
+      "label": "text",
+      "hypothesis_graph_structure": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test",
+      "validation"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "qasper",
+    "hf_id": "allenai/qasper",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found qasper.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "customer_support_audio",
+    "hf_id": "HumynLabs/e-commerce-customersupport-english-audio",
+    "hf_subsample": null,
+    "task": "audio_classification",
+    "status": "skipped_no_yaml",
+    "columns": {
+      "audio": "audio"
+    },
+    "rows": -1,
+    "splits": [
+      "train"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": false,
+    "debug_output_cols": null
+  },
+  {
+    "name": "gift_eval_pretrain",
+    "hf_id": "Salesforce/GiftEvalPretrain",
+    "hf_subsample": null,
+    "task": "time_series_forecasting",
+    "status": "needs_custom_loader",
+    "columns": {
+      "item_id": "text",
+      "start": "text",
+      "freq": "text",
+      "target": "_list",
+      "past_feat_dynamic_real": "_list"
+    },
+    "rows": -1,
+    "splits": [
+      "train"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "chronos_electricity",
+    "hf_id": "autogluon/chronos_datasets",
+    "hf_subsample": "electricity_hourly",
+    "task": "time_series_forecasting",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "ValueError: BuilderConfig 'electricity_hourly' not found. Available: ['dominick', 'electricity_15min', 'ercot', 'exchange_rate', 'm4_daily', 'm4_hourly', 'm4_monthly', 'm4_quarterly', 'm4_weekly', 'm4_yearly', 'm5', 'mexico_city_bikes', 'monash_australian_electricity', 'monash_car_parts', 'monash_cif_2016', 'monash_covid_deaths', 'monash_electricity_hourly', 'monash_electricity_weekly', 'monash_fred_md', 'monash_hospital', 'monash_kdd_cup_2018', 'monash_london_smart_meters', 'monash_m1_monthly', 'monash_m1_quarterly', 'monash_m1_yearly', 'monash_m3_monthly', 'monash_m3_quarterly', 'monash_m3_yearly', 'monash_nn5_weekly', 'monash_pedestrian_counts', 'monash_rideshare', 'monash_saugeenday', 'monash_temperature_rain', 'monash_tourism_monthly', 'monash_tourism_quarterly', 'monash_tourism_yearly', 'monash_traffic', 'monash_weather', 'nn5', 'solar', 'solar_1h', 'taxi_1h', 'taxi_30min', 'training_corpus_kernel_synth_1m', 'training_corpus_tsmixup_10m', 'uber_tlc_daily', 'uber_tlc_hourly', 'ushcn_daily', 'weatherbench_daily', 'weatherbench_hourly_10m_u_component_of_wind', 'weatherbench_hourly_10m_v_component_of_wind', 'weatherbench_hourly_2m_temperature', 'weatherbench_hourly_geopotential', 'weatherbench_hourly_potential_vorticity', 'weatherbench_hourly_relative_humidity', 'weatherbench_hourly_specific_humidity', 'weatherbench_hourly_temperature', 'weatherbench_hourly_toa_incident_solar_radiation', 'weatherbench_hourly_total_cloud_cover', 'weatherbench_hourly_total_precipitation', 'weatherbench_hourly_u_component_of_wind', 'weatherbench_hourly_v_component_of_wind', 'weatherbench_hourly_vorticity', 'weatherbench_weekly', 'wiki_daily_100k', 'wind_farms_daily', 'wind_farms_hourly']",
+    "needs_custom_loader": true
+  },
+  {
+    "name": "tox21",
+    "hf_id": "DeepChem/tox21",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'DeepChem/tox21' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "bbbp",
+    "hf_id": "DeepChem/bbbp",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'DeepChem/bbbp' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "esol",
+    "hf_id": "DeepChem/esol",
+    "hf_subsample": null,
+    "task": "regression",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'DeepChem/esol' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "lipophilicity",
+    "hf_id": "DeepChem/lipo",
+    "hf_subsample": null,
+    "task": "regression",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'DeepChem/lipo' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "jigsaw_toxic_multi",
+    "hf_id": "jigsaw-toxic-comment-classification-challenge/jigsaw_toxic_comments",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'jigsaw-toxic-comment-classification-challenge/jigsaw_toxic_comments' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "semeval2018_emotion",
+    "hf_id": "sem_eval_2018_task_1/sem_eval_2018_task_1",
+    "hf_subsample": "subtask5.english",
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'sem_eval_2018_task_1/sem_eval_2018_task_1' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "reuters21578",
+    "hf_id": "rceborg/reuters-21578",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'rceborg/reuters-21578' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "rvl_cdip",
+    "hf_id": "rvl-cdip/rvl_cdip",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'rvl-cdip/rvl_cdip' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "rendered_sst2",
+    "hf_id": "nateraw/rendered-sst2",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "auto_generated",
+    "columns": {
+      "image": "image",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "invoice_data",
+    "hf_id": "katanaml-org/invoices-donut-data-v1",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "needs_custom_loader",
+    "columns": {
+      "image": "image",
+      "ground_truth": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "tabular_benchmark_num_clf",
+    "hf_id": "inria-soda/tabular-benchmark",
+    "hf_subsample": "clf_num",
+    "task": "tabular_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "ValueError: BuilderConfig 'clf_num' not found. Available: ['clf_cat_albert', 'clf_cat_compas-two-years', 'clf_cat_covertype', 'clf_cat_default-of-credit-card-clients', 'clf_cat_electricity', 'clf_cat_eye_movements', 'clf_cat_road-safety', 'clf_num_Bioresponse', 'clf_num_Diabetes130US', 'clf_num_Higgs', 'clf_num_MagicTelescope', 'clf_num_MiniBooNE', 'clf_num_bank-marketing', 'clf_num_california', 'clf_num_covertype', 'clf_num_credit', 'clf_num_default-of-credit-card-clients', 'clf_num_electricity', 'clf_num_eye_movements', 'clf_num_heloc', 'clf_num_house_16H', 'clf_num_jannis', 'clf_num_pol', 'reg_cat_Airlines_DepDelay_1M', 'reg_cat_Allstate_Claims_Severity', 'reg_cat_Bike_Sharing_Demand', 'reg_cat_Brazilian_houses', 'reg_cat_Mercedes_Benz_Greener_Manufacturing', 'reg_cat_SGEMM_GPU_kernel_performance', 'reg_cat_abalone', 'reg_cat_analcatdata_supreme', 'reg_cat_delays_zurich_transport', 'reg_cat_diamonds', 'reg_cat_house_sales', 'reg_cat_medical_charges', 'reg_cat_nyc-taxi-green-dec-2016', 'reg_cat_particulate-matter-ukair-2017', 'reg_cat_seattlecrime6', 'reg_cat_topo_2_1', 'reg_cat_visualizing_soil', 'reg_num_Ailerons', 'reg_num_Bike_Sharing_Demand', 'reg_num_Brazilian_houses', 'reg_num_MiamiHousing2016', 'reg_num_abalone', 'reg_num_cpu_act', 'reg_num_delays_zurich_transport', 'reg_num_diamonds', 'reg_num_elevators', 'reg_num_house_16H', 'reg_num_house_sales', 'reg_num_houses', 'reg_num_medical_charges', 'reg_num_nyc-taxi-green-dec-2016', 'reg_num_pol', 'reg_num_sulfur', 'reg_num_superconduct', 'reg_num_wine_quality', 'reg_num_yprop_4_1']",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "california_housing_sklearn",
+    "hf_id": "scikit-learn/california-housing",
+    "hf_subsample": null,
+    "task": "regression",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'scikit-learn/california-housing' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "diabetes_readmission",
+    "hf_id": "imodels/diabetes-readmission",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "auto_generated",
+    "columns": {
+      "time_in_hospital": "number",
+      "num_lab_procedures": "number",
+      "num_procedures": "number",
+      "num_medications": "number",
+      "number_outpatient": "number",
+      "number_emergency": "number",
+      "number_inpatient": "number",
+      "number_diagnoses": "number",
+      "change": "number",
+      "diabetesMed": "number",
+      "race:AfricanAmerican": "number",
+      "race:Asian": "number",
+      "race:Caucasian": "number",
+      "race:Hispanic": "number",
+      "race:Other": "number",
+      "gender:Female": "number",
+      "gender:Male": "number",
+      "age:70+": "number",
+      "age:[0-10)": "number",
+      "age:[10-20)": "number",
+      "age:[20-50)": "number",
+      "age:[50-70)": "number",
+      "admission_type_id:Elective": "number",
+      "admission_type_id:Emergency": "number",
+      "admission_type_id:New Born": "number",
+      "admission_type_id:Trauma Center": "number",
+      "discharge_disposition_id:Discharged to Home": "number",
+      "discharge_disposition_id:Other": "number",
+      "admission_source_id:Emergency": "number",
+      "admission_source_id:Other": "number",
+      "admission_source_id:Referral": "number",
+      "admission_source_id:Transfer": "number",
+      "medical_specialty:Cardiology": "number",
+      "medical_specialty:Emergency/Trauma": "number",
+      "medical_specialty:Family/GeneralPractice": "number",
+      "medical_specialty:Gastroenterology": "number",
+      "medical_specialty:Hematology/Oncology": "number",
+      "medical_specialty:InternalMedicine": "number",
+      "medical_specialty:Nephrology": "number",
+      "medical_specialty:ObstetricsandGynecology": "number",
+      "medical_specialty:Orthopedics": "number",
+      "medical_specialty:Other": "number",
+      "medical_specialty:Psychiatry": "number",
+      "medical_specialty:Pulmonology": "number",
+      "medical_specialty:Radiology": "number",
+      "medical_specialty:Surgery-Cardiovascular/Thoracic": "number",
+      "medical_specialty:Surgery-General": "number",
+      "medical_specialty:Urology": "number",
+      "diag_1:Circulatory": "number",
+      "diag_1:Diabetes": "number",
+      "diag_1:Digestive": "number",
+      "diag_1:Genitourinary": "number",
+      "diag_1:Infectious": "number",
+      "diag_1:Injury": "number",
+      "diag_1:Mental": "number",
+      "diag_1:Musculoskeletal": "number",
+      "diag_1:Neoplasms": "number",
+      "diag_1:Non-diabetes endocrine/metabolic": "number",
+      "diag_1:Other": "number",
+      "diag_1:Respiratory": "number",
+      "diag_1:Skin": "number",
+      "diag_2:Circulatory": "number",
+      "diag_2:Diabetes": "number",
+      "diag_2:Digestive": "number",
+      "diag_2:Genitourinary": "number",
+      "diag_2:Infectious": "number",
+      "diag_2:Injury": "number",
+      "diag_2:Mental": "number",
+      "diag_2:Musculoskeletal": "number",
+      "diag_2:Neoplasms": "number",
+      "diag_2:Non-diabetes endocrine/metabolic": "number",
+      "diag_2:Other": "number",
+      "diag_2:Respiratory": "number",
+      "diag_2:Skin": "number",
+      "diag_3:Circulatory": "number",
+      "diag_3:Diabetes": "number",
+      "diag_3:Digestive": "number",
+      "diag_3:Genitourinary": "number",
+      "diag_3:Infectious": "number",
+      "diag_3:Injury": "number",
+      "diag_3:Mental": "number",
+      "diag_3:Musculoskeletal": "number",
+      "diag_3:Neoplasms": "number",
+      "diag_3:Non-diabetes endocrine/metabolic": "number",
+      "diag_3:Other": "number",
+      "diag_3:Respiratory": "number",
+      "diag_3:Skin": "number",
+      "metformin:Down": "number",
+      "metformin:No": "number",
+      "metformin:Steady": "number",
+      "metformin:Up": "number",
+      "repaglinide:Down": "number",
+      "repaglinide:No": "number",
+      "repaglinide:Steady": "number",
+      "repaglinide:Up": "number",
+      "nateglinide:Down": "number",
+      "nateglinide:No": "number",
+      "nateglinide:Steady": "number",
+      "nateglinide:Up": "number",
+      "chlorpropamide:Down": "number",
+      "chlorpropamide:No": "number",
+      "chlorpropamide:Steady": "number",
+      "chlorpropamide:Up": "number",
+      "glimepiride:Down": "number",
+      "glimepiride:No": "number",
+      "glimepiride:Steady": "number",
+      "glimepiride:Up": "number",
+      "glipizide:Down": "number",
+      "glipizide:No": "number",
+      "glipizide:Steady": "number",
+      "glipizide:Up": "number",
+      "glyburide:Down": "number",
+      "glyburide:No": "number",
+      "glyburide:Steady": "number",
+      "glyburide:Up": "number",
+      "pioglitazone:Down": "number",
+      "pioglitazone:No": "number",
+      "pioglitazone:Steady": "number",
+      "pioglitazone:Up": "number",
+      "rosiglitazone:Down": "number",
+      "rosiglitazone:No": "number",
+      "rosiglitazone:Steady": "number",
+      "rosiglitazone:Up": "number",
+      "acarbose:Down": "number",
+      "acarbose:No": "number",
+      "acarbose:Steady": "number",
+      "acarbose:Up": "number",
+      "miglitol:Down": "number",
+      "miglitol:No": "number",
+      "miglitol:Steady": "number",
+      "miglitol:Up": "number",
+      "tolazamide:No": "number",
+      "tolazamide:Steady": "number",
+      "tolazamide:Up": "number",
+      "insulin:Down": "number",
+      "insulin:No": "number",
+      "insulin:Steady": "number",
+      "insulin:Up": "number",
+      "glyburide-metformin:Down": "number",
+      "glyburide-metformin:No": "number",
+      "glyburide-metformin:Steady": "number",
+      "glyburide-metformin:Up": "number",
+      "A1Cresult:>7": "number",
+      "A1Cresult:>8": "number",
+      "A1Cresult:None": "number",
+      "A1Cresult:Norm": "number",
+      "max_glu_serum:>200": "number",
+      "max_glu_serum:>300": "number",
+      "max_glu_serum:None": "number",
+      "max_glu_serum:Norm": "number",
+      "readmitted": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "time_in_hospital"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "compas_recidivism",
+    "hf_id": "imodels/compas-recidivism",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "auto_generated",
+    "columns": {
+      "age": "number",
+      "priors_count": "number",
+      "days_b_screening_arrest": "number",
+      "c_jail_time": "number",
+      "juv_fel_count": "number",
+      "juv_other_count": "number",
+      "juv_misd_count": "number",
+      "c_charge_degree:F": "number",
+      "c_charge_degree:M": "number",
+      "race:African-American": "number",
+      "race:Asian": "number",
+      "race:Caucasian": "number",
+      "race:Hispanic": "number",
+      "race:Native_American": "number",
+      "race:Other": "number",
+      "age_cat:25_-_45": "number",
+      "age_cat:Greater_than_45": "number",
+      "age_cat:Less_than_25": "number",
+      "sex:Female": "number",
+      "sex:Male": "number",
+      "is_recid": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "age"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "credit_card_default",
+    "hf_id": "imodels/credit-card",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "auto_generated",
+    "columns": {
+      "limit_bal": "number",
+      "age": "number",
+      "pay_0": "number",
+      "pay_2": "number",
+      "pay_3": "number",
+      "pay_4": "number",
+      "pay_5": "number",
+      "pay_6": "number",
+      "bill_amt1": "number",
+      "bill_amt2": "number",
+      "bill_amt3": "number",
+      "bill_amt4": "number",
+      "bill_amt5": "number",
+      "bill_amt6": "number",
+      "pay_amt1": "number",
+      "pay_amt2": "number",
+      "pay_amt3": "number",
+      "pay_amt4": "number",
+      "pay_amt5": "number",
+      "pay_amt6": "number",
+      "sex:1": "number",
+      "sex:2": "number",
+      "education:0": "number",
+      "education:1": "number",
+      "education:2": "number",
+      "education:3": "number",
+      "education:4": "number",
+      "education:5": "number",
+      "education:6": "number",
+      "marriage:0": "number",
+      "marriage:1": "number",
+      "marriage:2": "number",
+      "marriage:3": "number",
+      "default.payment.next.month": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "limit_bal"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "bbh",
+    "hf_id": "lukaemon/bbh",
+    "hf_subsample": "boolean_expressions",
+    "task": "text_classification",
+    "status": "needs_custom_loader",
+    "columns": {
+      "input": "text",
+      "target": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "winogender",
+    "hf_id": "lighteval/winogender_schemas",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'lighteval/winogender_schemas' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "social_iqa",
+    "hf_id": "keirp/social_i_qa",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'keirp/social_i_qa' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": true
+  },
+  {
+    "name": "math500",
+    "hf_id": "HuggingFaceH4/MATH-500",
+    "hf_subsample": null,
+    "task": "text_generation",
+    "status": "auto_generated",
+    "columns": {
+      "problem": "text",
+      "solution": "text",
+      "answer": "text",
+      "subject": "text",
+      "level": "category",
+      "unique_id": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "answer"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "conll2012",
+    "hf_id": "di-mi/conll2012_ontonotesv5",
+    "hf_subsample": "english_v12",
+    "task": "ner",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'di-mi/conll2012_ontonotesv5' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "docmatix",
+    "hf_id": "HuggingFaceM4/Docmatix",
+    "hf_subsample": null,
+    "task": "visual_question_answering",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "ValueError: Config name is missing.\nPlease pick one among the available configs: ['images', 'pdf', 'zero-shot-exp']\nExample of usage:\n\t`load_dataset('HuggingFaceM4/Docmatix', 'images')`",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "amazon_reviews_2023",
+    "hf_id": "McAuley-Lab/Amazon-Reviews-2023",
+    "hf_subsample": "raw_review_All_Beauty",
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found Amazon-Reviews-2023.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "amazon_counterfactual",
+    "hf_id": "mteb/amazon_counterfactual_classification",
+    "hf_subsample": "en",
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'mteb/amazon_counterfactual_classification' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "banking77",
+    "hf_id": "mteb/banking77",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "text": "text",
+      "label": "category",
+      "label_text": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "mteb_emotion",
+    "hf_id": "mteb/emotion",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "text": "text",
+      "label": "category",
+      "label_text": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "sst5_setfit",
+    "hf_id": "SetFit/sst5",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "text": "text",
+      "label": "category",
+      "label_text": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "enron_spam",
+    "hf_id": "SetFit/enron_spam",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "message_id": "category",
+      "text": "text",
+      "label": "category",
+      "label_text": "text",
+      "subject": "text",
+      "message": "text",
+      "date": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "customer_reviews",
+    "hf_id": "SetFit/CR",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "text": "text",
+      "label": "category",
+      "label_text": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "clinc150",
+    "hf_id": "mteb/clinc150",
+    "hf_subsample": "small",
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'mteb/clinc150' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "cord_v2",
+    "hf_id": "naver-clova-ix/cord-v2",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "needs_custom_loader",
+    "columns": {
+      "image": "image",
+      "ground_truth": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "tabular_benchmark_cat_reg",
+    "hf_id": "inria-soda/tabular-benchmark",
+    "hf_subsample": "reg_cat",
+    "task": "regression",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "ValueError: BuilderConfig 'reg_cat' not found. Available: ['clf_cat_albert', 'clf_cat_compas-two-years', 'clf_cat_covertype', 'clf_cat_default-of-credit-card-clients', 'clf_cat_electricity', 'clf_cat_eye_movements', 'clf_cat_road-safety', 'clf_num_Bioresponse', 'clf_num_Diabetes130US', 'clf_num_Higgs', 'clf_num_MagicTelescope', 'clf_num_MiniBooNE', 'clf_num_bank-marketing', 'clf_num_california', 'clf_num_covertype', 'clf_num_credit', 'clf_num_default-of-credit-card-clients', 'clf_num_electricity', 'clf_num_eye_movements', 'clf_num_heloc', 'clf_num_house_16H', 'clf_num_jannis', 'clf_num_pol', 'reg_cat_Airlines_DepDelay_1M', 'reg_cat_Allstate_Claims_Severity', 'reg_cat_Bike_Sharing_Demand', 'reg_cat_Brazilian_houses', 'reg_cat_Mercedes_Benz_Greener_Manufacturing', 'reg_cat_SGEMM_GPU_kernel_performance', 'reg_cat_abalone', 'reg_cat_analcatdata_supreme', 'reg_cat_delays_zurich_transport', 'reg_cat_diamonds', 'reg_cat_house_sales', 'reg_cat_medical_charges', 'reg_cat_nyc-taxi-green-dec-2016', 'reg_cat_particulate-matter-ukair-2017', 'reg_cat_seattlecrime6', 'reg_cat_topo_2_1', 'reg_cat_visualizing_soil', 'reg_num_Ailerons', 'reg_num_Bike_Sharing_Demand', 'reg_num_Brazilian_houses', 'reg_num_MiamiHousing2016', 'reg_num_abalone', 'reg_num_cpu_act', 'reg_num_delays_zurich_transport', 'reg_num_diamonds', 'reg_num_elevators', 'reg_num_house_16H', 'reg_num_house_sales', 'reg_num_houses', 'reg_num_medical_charges', 'reg_num_nyc-taxi-green-dec-2016', 'reg_num_pol', 'reg_num_sulfur', 'reg_num_superconduct', 'reg_num_wine_quality', 'reg_num_yprop_4_1']",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "mice_protein",
+    "hf_id": "openml/miceprotein",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'openml/miceprotein' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "anneal",
+    "hf_id": "openml/anneal",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'openml/anneal' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "vehicle_silhouettes",
+    "hf_id": "openml/vehicle",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'openml/vehicle' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "pokemon_classification",
+    "hf_id": "keremberke/pokemon-classification",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found pokemon-classification.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "flowers102",
+    "hf_id": "dcdmllm/Flowers102",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'dcdmllm/Flowers102' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "snacks",
+    "hf_id": "Matthijs/snacks",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found snacks.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "chest_xray",
+    "hf_id": "mrm8488/chest-xrays-indiana-university",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'mrm8488/chest-xrays-indiana-university' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "imagenette",
+    "hf_id": "fastai/imagenette",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'fastai/imagenette' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "tomato_disease",
+    "hf_id": "fcakyon/tomato-disease",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'fcakyon/tomato-disease' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "isic2019",
+    "hf_id": "andrewmvd/isic-2019",
+    "hf_subsample": null,
+    "task": "image_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'andrewmvd/isic-2019' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "speech_commands",
+    "hf_id": "speech_commands/speech_commands",
+    "hf_subsample": "v0.02",
+    "task": "audio_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'speech_commands/speech_commands' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "urbansound8k",
+    "hf_id": "UrbanSound8K/UrbanSound8K",
+    "hf_subsample": null,
+    "task": "audio_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'UrbanSound8K/UrbanSound8K' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "ravdess",
+    "hf_id": "narad/RAVDESS",
+    "hf_subsample": null,
+    "task": "audio_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DataFilesNotFoundError: No (supported) data files found in narad/RAVDESS",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "emodb",
+    "hf_id": "renumics/emodb",
+    "hf_subsample": null,
+    "task": "audio_classification",
+    "status": "auto_generated",
+    "columns": {
+      "age": "number",
+      "gender": "category",
+      "emotion": "category",
+      "audio": "audio"
+    },
+    "rows": -1,
+    "splits": [
+      "train"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "emotion"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "mls_german",
+    "hf_id": "facebook/multilingual_librispeech",
+    "hf_subsample": "german",
+    "task": "automatic_speech_recognition",
+    "status": "auto_generated",
+    "columns": {
+      "audio": "audio",
+      "original_path": "text",
+      "begin_time": "number",
+      "end_time": "number",
+      "transcript": "text",
+      "audio_duration": "number",
+      "speaker_id": "text",
+      "chapter_id": "text",
+      "file": "text",
+      "id": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "dev",
+      "test",
+      "train",
+      "9_hours",
+      "1_hours"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "begin_time"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "common_voice_11",
+    "hf_id": "mozilla-foundation/common_voice_11_0",
+    "hf_subsample": "en",
+    "task": "automatic_speech_recognition",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'mozilla-foundation/common_voice_11_0' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "speech_massive",
+    "hf_id": "FBK-MT/Speech-MASSIVE",
+    "hf_subsample": "en-US",
+    "task": "audio_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "ValueError: BuilderConfig 'en-US' not found. Available: ['all', 'ar-SA', 'de-DE', 'es-ES', 'fr-FR', 'hu-HU', 'ko-KR', 'nl-NL', 'pl-PL', 'pt-PT', 'ru-RU', 'tr-TR', 'vi-VN']",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "cantonese_asr",
+    "hf_id": "CanCLID/zoengjyutgaai",
+    "hf_subsample": null,
+    "task": "automatic_speech_recognition",
+    "status": "auto_generated",
+    "columns": {
+      "id": "text",
+      "episode_id": "category",
+      "audio": "audio",
+      "audio_duration": "number",
+      "transcription": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "saamgwokjinji",
+      "seoiwuzyun",
+      "mouzaakdung",
+      "lukdinggei"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "episode_id"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "naver_news_summary",
+    "hf_id": "daekeun-ml/naver-news-summarization-ko",
+    "hf_subsample": null,
+    "task": "summarization",
+    "status": "auto_generated",
+    "columns": {
+      "date": "text",
+      "category": "text",
+      "press": "text",
+      "title": "text",
+      "document": "text",
+      "link": "text",
+      "summary": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "category"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "cnn_dailymail_ccdv",
+    "hf_id": "ccdv/cnn_dailymail",
+    "hf_subsample": "3.0.0",
+    "task": "summarization",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "RuntimeError: Dataset scripts are no longer supported, but found cnn_dailymail.py",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "glue_diagnostic",
+    "hf_id": "nyu-mll/glue",
+    "hf_subsample": "ax",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "premise": "text",
+      "hypothesis": "text",
+      "label": "category",
+      "idx": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "fever_gold",
+    "hf_id": "copenlu/fever_gold_evidence",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "needs_custom_loader",
+    "columns": {
+      "claim": "text",
+      "label": "text",
+      "evidence": "_list",
+      "id": "text",
+      "verifiable": "text",
+      "original_id": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "dyda_dialog_acts",
+    "hf_id": "silicone/silicone",
+    "hf_subsample": "dyda_da",
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'silicone/silicone' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "ai2d_diagrams",
+    "hf_id": "HuggingFaceM4/the_cauldron",
+    "hf_subsample": "ai2d",
+    "task": "visual_question_answering",
+    "status": "needs_custom_loader",
+    "columns": {
+      "images": "_list",
+      "texts": "_list"
+    },
+    "rows": -1,
+    "splits": [
+      "train"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "textvqa",
+    "hf_id": "HuggingFaceM4/the_cauldron",
+    "hf_subsample": "textvqa",
+    "task": "visual_question_answering",
+    "status": "needs_custom_loader",
+    "columns": {
+      "images": "_list",
+      "texts": "_list"
+    },
+    "rows": -1,
+    "splits": [
+      "train"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "vqav2",
+    "hf_id": "HuggingFaceM4/the_cauldron",
+    "hf_subsample": "vqav2",
+    "task": "visual_question_answering",
+    "status": "needs_custom_loader",
+    "columns": {
+      "images": "_list",
+      "texts": "_list"
+    },
+    "rows": -1,
+    "splits": [
+      "train"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "docvqa",
+    "hf_id": "HuggingFaceM4/the_cauldron",
+    "hf_subsample": "docvqa",
+    "task": "visual_question_answering",
+    "status": "needs_custom_loader",
+    "columns": {
+      "images": "_list",
+      "texts": "_list"
+    },
+    "rows": -1,
+    "splits": [
+      "train"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "winoground",
+    "hf_id": "facebook/winoground",
+    "hf_subsample": null,
+    "task": "visual_question_answering",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'facebook/winoground' is a gated dataset on the Hub. You must be authenticated to access it.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "acronym_identification",
+    "hf_id": "amirveyseh/acronym_identification",
+    "hf_subsample": null,
+    "task": "ner",
+    "status": "needs_custom_loader",
+    "columns": {
+      "id": "text",
+      "tokens": "_list",
+      "labels": "_list"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "wikiann_de",
+    "hf_id": "unimelb-nlp/wikiann",
+    "hf_subsample": "de",
+    "task": "ner",
+    "status": "needs_custom_loader",
+    "columns": {
+      "tokens": "_list",
+      "ner_tags": "_list",
+      "langs": "_list",
+      "spans": "_list"
+    },
+    "rows": -1,
+    "splits": [
+      "validation",
+      "test",
+      "train"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "wikiann_zh",
+    "hf_id": "unimelb-nlp/wikiann",
+    "hf_subsample": "zh",
+    "task": "ner",
+    "status": "needs_custom_loader",
+    "columns": {
+      "tokens": "_list",
+      "ner_tags": "_list",
+      "langs": "_list",
+      "spans": "_list"
+    },
+    "rows": -1,
+    "splits": [
+      "validation",
+      "test",
+      "train"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "admet_benchmark",
+    "hf_id": "datamol-io/polaris-admet-benchmark",
+    "hf_subsample": null,
+    "task": "regression",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'datamol-io/polaris-admet-benchmark' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "obesity_prediction",
+    "hf_id": "mstz/obesity",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'mstz/obesity' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "dry_bean",
+    "hf_id": "mstz/dry_bean",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'mstz/dry_bean' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "rice_classification",
+    "hf_id": "mstz/rice",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'mstz/rice' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "water_quality",
+    "hf_id": "mstz/water_quality",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'mstz/water_quality' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "room_occupancy",
+    "hf_id": "mstz/room_occupancy",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'mstz/room_occupancy' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "online_shoppers",
+    "hf_id": "mstz/online_shoppers",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'mstz/online_shoppers' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "airline_satisfaction",
+    "hf_id": "mstz/airline_passenger_satisfaction",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'mstz/airline_passenger_satisfaction' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "spaceship_titanic",
+    "hf_id": "mstz/spaceship_titanic",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'mstz/spaceship_titanic' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "stroke_prediction",
+    "hf_id": "mstz/stroke_prediction",
+    "hf_subsample": null,
+    "task": "tabular_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'mstz/stroke_prediction' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "student_performance",
+    "hf_id": "mstz/student_performance",
+    "hf_subsample": null,
+    "task": "regression",
+    "status": "auto_generated",
+    "columns": {
+      "is_male": "binary",
+      "ethnicity": "text",
+      "parental_level_of_education": "category",
+      "has_standard_lunch": "binary",
+      "has_completed_preparation_test": "binary",
+      "reading_score": "category",
+      "writing_score": "category",
+      "has_passed_math_exam": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "is_male"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "used_cars_price",
+    "hf_id": "mstz/used_cars",
+    "hf_subsample": null,
+    "task": "regression",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'mstz/used_cars' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "belebele_fr",
+    "hf_id": "facebook/belebele",
+    "hf_subsample": "fra_Latn",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "link": "text",
+      "question_number": "category",
+      "flores_passage": "text",
+      "question": "text",
+      "mc_answer1": "text",
+      "mc_answer2": "text",
+      "mc_answer3": "text",
+      "mc_answer4": "text",
+      "correct_answer_num": "text",
+      "dialect": "text",
+      "ds": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "test"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "question_number"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "duorc",
+    "hf_id": "ibm/duorc",
+    "hf_subsample": "SelfRC",
+    "task": "extractive_qa",
+    "status": "needs_custom_loader",
+    "columns": {
+      "plot_id": "text",
+      "plot": "text",
+      "title": "text",
+      "question_id": "text",
+      "question": "text",
+      "answers": "_list",
+      "no_answer": "binary"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": true
+  },
+  {
+    "name": "nq_open",
+    "hf_id": "nq_open/nq_open",
+    "hf_subsample": null,
+    "task": "text_generation",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'nq_open/nq_open' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "web_questions",
+    "hf_id": "web_questions/web_questions",
+    "hf_subsample": null,
+    "task": "text_generation",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "DatasetNotFoundError: Dataset 'web_questions/web_questions' doesn't exist on the Hub or cannot be accessed.",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "tweeteval_stance",
+    "hf_id": "cardiffnlp/tweet_eval",
+    "hf_subsample": "stance_abortion",
+    "task": "text_classification",
+    "status": "auto_generated",
+    "columns": {
+      "text": "text",
+      "label": "category"
+    },
+    "rows": -1,
+    "splits": [
+      "train",
+      "test",
+      "validation"
+    ],
+    "yaml_written": true,
+    "output_cols": [
+      "label"
+    ],
+    "error": null,
+    "needs_custom_loader": false
+  },
+  {
+    "name": "claim_stance",
+    "hf_id": "ibm/claim_stance",
+    "hf_subsample": null,
+    "task": "text_classification",
+    "status": "error",
+    "columns": {},
+    "rows": -1,
+    "splits": [],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": "ValueError: Config name is missing.\nPlease pick one among the available configs: ['claim_stance', 'claim_stance_topic']\nExample of usage:\n\t`load_dataset('ibm/claim_stance', 'claim_stance')`",
+    "needs_custom_loader": false
+  },
+  {
+    "name": "chartnet",
+    "hf_id": "ibm-granite/ChartNet",
+    "hf_subsample": null,
+    "task": "visual_question_answering",
+    "status": "skipped_no_yaml",
+    "columns": {
+      "id": "text",
+      "image": "image",
+      "code": "text",
+      "csv": "text",
+      "summary": "text",
+      "chart_type": "text",
+      "library": "text"
+    },
+    "rows": -1,
+    "splits": [
+      "train"
+    ],
+    "yaml_written": false,
+    "output_cols": [],
+    "error": null,
+    "needs_custom_loader": false,
+    "debug_output_cols": null
+  }
+]

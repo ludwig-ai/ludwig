@@ -2,6 +2,8 @@ import copy
 from dataclasses import field
 from typing import Any
 
+import pydantic
+
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TYPE
 from ludwig.error import ConfigValidationError
@@ -116,7 +118,7 @@ def AugmentationDataclassField(
                 load_augmentation_list.append(pre.model_validate(augmentation))
                 try:
                     dump_augmentation_list.append(pre.model_validate(augmentation).to_dict())
-                except Exception:
+                except pydantic.ValidationError:
                     dump_augmentation_list.append(augmentation if isinstance(augmentation, dict) else {})
             except (TypeError, ConfigValidationError) as error:
                 raise ConfigValidationError(

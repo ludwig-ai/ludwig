@@ -1,5 +1,7 @@
 from dataclasses import field
 
+import pydantic
+
 import ludwig.schema.utils as schema_utils
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
@@ -44,7 +46,7 @@ def DefaultsDataclassField(feature_type: str, defaults_registry: Registry = ecd_
         defaults_cls = defaults_registry[feature_type]
         try:
             dump_default = defaults_cls.model_validate({}).to_dict()
-        except Exception:
+        except pydantic.ValidationError:
             dump_default = {}
         load_default = lambda: defaults_cls.model_validate({})
 

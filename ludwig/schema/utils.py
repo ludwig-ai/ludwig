@@ -202,7 +202,7 @@ class _LudwigModelMeta(type(BaseModel)):
                 import annotationlib
 
                 annotations = dict(namespace["__annotate_func__"](annotationlib.Format.VALUE))
-            except Exception:
+            except ImportError:
                 annotations = {}
         else:
             annotations = namespace.get("__annotations__", {})
@@ -387,7 +387,7 @@ class LudwigBaseConfig(BaseModel, metaclass=_LudwigModelMeta):
                     if isinstance(value, dict):
                         try:
                             data[fname] = meta.cls.model_validate(value)
-                        except Exception as e:
+                        except PydanticValidationError as e:
                             raise ConfigValidationError(
                                 f"Invalid params: {value}, see `{meta.cls}` definition. Error: {e}"
                             )

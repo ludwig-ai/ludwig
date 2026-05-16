@@ -3,28 +3,29 @@ from abc import ABC
 from dataclasses import field
 from typing import ClassVar
 
+import pydantic
 import torch
 
 try:
     import bitsandbytes as bnb
-except Exception:
+except ImportError:
     bnb = None
 
 try:
     from transformers.optimization import Adafactor as _TransformersAdafactor
-except Exception:
+except ImportError:
     _TransformersAdafactor = None
 
 try:
     from schedulefree import AdamWScheduleFree as _AdamWScheduleFree
-except Exception:
+except ImportError:
     _AdamWScheduleFree = None
 
 try:
     import soap as _soap_module
 
     _SOAPOptimizer = getattr(_soap_module, "SOAP", None)
-except Exception:
+except ImportError:
     _SOAPOptimizer = None
 
 import ludwig.schema.utils as schema_utils
@@ -1337,7 +1338,7 @@ def GradientClippingDataclassField(description: str, default: dict = {}):
 
     try:
         dump_default = GradientClippingConfig.model_validate(default).to_dict()
-    except Exception:
+    except pydantic.ValidationError:
         dump_default = default if isinstance(default, dict) else {}
 
     return field(
