@@ -32,6 +32,17 @@ _DEFAULT_MAX_WORKERS = min(16, (os.cpu_count() or 4) + 4)
 class LazyColumn:
     """Array-like wrapper that decodes file paths on demand per batch.
 
+    Decoding runs in a ``ThreadPoolExecutor`` at batch-slice time, keeping peak
+    memory bounded to ``batch_size`` samples at any one time.  The thread pool
+    overlaps with the GPU forward pass when ``RandomAccessBatcher`` prefetch is
+    enabled.
+
+    .. warning::
+        For audio FBANK features, each ``decode_fn`` call already spawns PyTorch's
+        internal thread pool.  Creating many ``LazyColumn`` workers in parallel will
+        over-subscribe CPUs (up to 5× slowdown).  ``PandasDataset._init_lazy_columns``
+        caps ``max_workers`` at ``cpu_count // torch_num_threads`` for this case.
+
     Parameters
     ----------
     paths:
@@ -99,12 +110,7 @@ class LazyColumn:
 
 
 def _select(paths: np.ndarray, indices) -> tuple[list, list, bool]:
-    """Normalise any index type to (paths_list, int_indices_list, is_scalar).
-
-    Accepts int, np.integer, list, np.ndarray, slice, and bool mask.
-    Returns a flat list of paths, a flat list of integer indices, and a flag
-    indicating whether the original index was scalar (so callers can unwrap).
-    """
+    """Normalise any index type to ``(paths_list, int_indices_list, is_scalar)``."""
     scalar = isinstance(indices, (int, np.integer))
     if not scalar and isinstance(indices, np.ndarray) and indices.ndim == 0:
         scalar = True
@@ -126,12 +132,21 @@ def _select(paths: np.ndarray, indices) -> tuple[list, list, bool]:
 
 
 class CachedLazyColumn:
-    """Like :class:`LazyColumn`, but writes decoded arrays to a numpy memmap.
+    """Like :class:`LazyColumn`, but writes decoded arrays to a numpy memmap for reuse.
 
-    On the first pass through the dataset every decoded batch is written to a
-    ``np.memmap`` file alongside the Parquet cache.  Once every sample has been
-    written (tracked by a bool array + a ``.done`` sentinel file), subsequent
-    epochs read directly from the memmap — no decode, no thread pool.
+    **First pass (epoch 1):** behaves identically to :class:`LazyColumn` — decodes via
+    ``ThreadPoolExecutor`` — but also writes each decoded sample to a ``np.memmap`` file.
+    A per-sample boolean array tracks which indices have been written.  When every sample
+    has been written, the memmap is flushed and an empty ``.done`` sentinel file is created
+    next to the memmap.
+
+    **Subsequent passes (epoch 2+):** ``is_fully_cached()`` returns ``True`` and
+    ``__getitem__`` reads directly from the memmap (~0.1 ms/batch), bypassing the thread
+    pool entirely.  ``RandomAccessBatcher.set_epoch`` detects this via
+    ``dataset.is_fully_cached()`` and automatically disables prefetch.
+
+    If the ``.done`` file already exists when the object is constructed (e.g. a resumed
+    run), the memmap is opened in read-only mode immediately — no decode occurs at all.
 
     Parameters
     ----------
@@ -142,7 +157,7 @@ class CachedLazyColumn:
     cache_path:
         Full path for the memmap file (e.g. ``/data/audio_proc_decoded_n1000_8_23_f32.npy``).
     sample_shape:
-        Shape of a single decoded sample, e.g. ``(feature_dim, max_length)``.
+        Shape of a single decoded sample, e.g. ``(max_length, feature_dim)``.
     dtype:
         Element dtype for the memmap. Default ``np.float32``.
     max_workers:

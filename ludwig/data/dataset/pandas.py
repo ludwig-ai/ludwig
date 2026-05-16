@@ -167,7 +167,11 @@ class PandasDataset(Dataset):
         self.size = len(list(self.dataset.values())[0])
 
     def _decoded_cache_path(self, proc_col: str, n: int, sample_shape: tuple) -> str:
-        """Compute path for the decoded numpy memmap cache file."""
+        """Return the path for the decoded numpy memmap file for a given column.
+
+        Placed next to the Parquet cache when ``data_cache_fp`` is set, otherwise
+        falls back to ``~/.cache/ludwig/lazy_media/``.
+        """
         flat_shape = "_".join(str(d) for d in sample_shape)
         fname = f"{proc_col}_decoded_n{n}_{flat_shape}_f32.npy"
         if self.data_cache_fp:
@@ -307,7 +311,11 @@ class PandasDataset(Dataset):
         return any(is_lazy_column(v) for v in self.dataset.values())
 
     def is_fully_cached(self) -> bool:
-        """Return True if all CachedLazyColumns have been fully decoded and written to their memmaps."""
+        """Return ``True`` when every ``CachedLazyColumn`` in this dataset has finished its first-pass decode.
+
+        Returns ``False`` if there are no ``CachedLazyColumn`` instances (i.e. the dataset
+        uses plain ``LazyColumn`` or eager mode).
+        """
         from ludwig.data.lazy_utils import is_cached_lazy_column
 
         cached_cols = [v for v in self.dataset.values() if is_cached_lazy_column(v)]
@@ -326,6 +334,23 @@ class PandasDataset(Dataset):
         augmentation_pipeline=None,
         prefetch_size: int | None = None,
     ) -> Batcher:
+        """Yield a :class:`RandomAccessBatcher` configured for this dataset.
+
+        Parameters
+        ----------
+        prefetch_size:
+            Number of batches to pipeline in a background thread while the GPU
+            processes the current batch.  ``None`` (default) uses
+            ``self._auto_prefetch_size``, which is derived from the
+            ``prefetch_size`` field in each feature's preprocessing config
+            (``None`` → 4 for ``lazy``/``lazy_cached`` features, 0 for
+            ``eager``).  Pass ``0`` to disable prefetch entirely.
+
+            For ``lazy_cached`` mode, ``RandomAccessBatcher.set_epoch`` will
+            automatically reset ``prefetch_size`` to 0 after epoch 1 once
+            ``dataset.is_fully_cached()`` returns ``True`` — memmap reads are
+            fast enough that background pipelining adds no measurable benefit.
+        """
         # When the dataset contains lazy columns (audio / image file paths that
         # are decoded per-batch), automatically enable prefetch so the GPU is
         # not idle during decode.  Callers can override by passing prefetch_size

@@ -131,7 +131,10 @@ class AudioPreprocessingConfig(BasePreprocessingConfig):
         default=None,
         allow_none=True,
         description="Directory in which to cache audio files when the source data is in-memory (e.g. a "
-        "HuggingFace dataset). Only used when lazy=True and the input entries are not already "
-        "paths to existing files. When None, defaults to ~/.cache/ludwig/lazy_media/<feature_name>/. "
-        "Has no effect when the input column already contains local file paths.",
+        "HuggingFace dataset). Only used when mode is 'lazy' or 'lazy_cached' and the input entries "
+        "are not already paths to existing files. When None, defaults to "
+        "~/.cache/ludwig/lazy_media/<feature_name>/. "
+        "Has no effect when the input column already contains local file paths. "
+        "Note: this controls the file cache for in-memory sources; the decoded memmap for "
+        "'lazy_cached' mode is placed next to the Parquet cache instead.",
     )
