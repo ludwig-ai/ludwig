@@ -814,6 +814,60 @@ def _run_no_evaluate(config, dataset, backend_config, **kwargs):
 
 @pytest.mark.integration_tests_b
 @pytest.mark.distributed_b
+@pytest.mark.distributed
+@pytest.mark.parametrize("lazy", [True, False], ids=["lazy_true", "lazy_false"])
+def test_ray_audio_lazy_modes(tmpdir, lazy, ray_cluster_2cpu):
+    """Training must succeed with both lazy=True (decode in worker) and lazy=False (decode upfront).
+
+    lazy=True is the default and exercises the _with_lazy_decode map_batches path.
+    lazy=False verifies that the eager (pre-decoded) path still works correctly in Ray.
+    """
+    audio_dest_folder = os.path.join(tmpdir, "generated_audio")
+    input_features = [
+        audio_feature(
+            folder=audio_dest_folder,
+            preprocessing={
+                "type": "fbank",
+                "window_length_in_s": 0.04,
+                "window_shift_in_s": 0.02,
+                "num_filter_bands": 8,
+                "audio_file_length_limit_in_s": 0.5,
+                "missing_value_strategy": "bfill",
+                "in_memory": True,
+                "padding_value": 0.0,
+                "norm": None,
+                "lazy": lazy,
+            },
+        )
+    ]
+    output_features = [binary_feature()]
+    run_test_with_features(input_features, output_features, num_examples=8, expect_error=False, run_fn=_run_no_evaluate)
+
+
+@pytest.mark.integration_tests_b
+@pytest.mark.distributed_b
+@pytest.mark.distributed
+@pytest.mark.parametrize("lazy", [True, False], ids=["lazy_true", "lazy_false"])
+def test_ray_image_lazy_modes(tmpdir, lazy, ray_cluster_2cpu):
+    """Image training must succeed with both lazy=True (decode in worker) and lazy=False (decode upfront).
+
+    lazy=True exercises the _with_lazy_decode map_batches path for images.
+    lazy=False verifies that the eager (pre-decoded) path still works correctly in Ray.
+    """
+    image_dest_folder = os.path.join(tmpdir, "generated_images")
+    input_features = [
+        image_feature(
+            folder=image_dest_folder,
+            preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "lazy": lazy},
+            encoder={"type": "stacked_cnn", "output_size": 16, "num_filters": 8},
+        )
+    ]
+    output_features = [binary_feature()]
+    run_test_with_features(input_features, output_features, num_examples=8, expect_error=False, run_fn=_run_no_evaluate)
+
+
+@pytest.mark.integration_tests_b
+@pytest.mark.distributed_b
 @pytest.mark.slow
 @pytest.mark.distributed
 def test_ray_lazy_load_image_works(tmpdir, ray_cluster_2cpu):

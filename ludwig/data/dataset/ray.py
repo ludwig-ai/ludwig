@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import contextlib
+import logging
 import math
 import os
 import queue
@@ -38,6 +39,8 @@ from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_proc_features
 from ludwig.utils.types import DataFrame, Series
+
+logger = logging.getLogger(__name__)
 
 _SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 
@@ -135,7 +138,14 @@ class RayDataset(Dataset):
 
             feat_type = feat_cfg.get("type", "")
 
-            if feat_type == "audio" and "lazy_audio_params" in feat_meta:
+            if feat_type == "audio":
+                if "lazy_audio_params" not in feat_meta:
+                    logger.warning(
+                        f"Feature '{feature_name}' has lazy=True but 'lazy_audio_params' is missing from "
+                        "training_set_metadata. Decode transform will not be added — workers will receive "
+                        "raw file paths instead of tensors. Re-run preprocessing to fix this."
+                    )
+                    continue
                 from ludwig.features.audio_feature import AudioFeatureMixin
 
                 p = feat_meta["lazy_audio_params"]
@@ -148,7 +158,14 @@ class RayDataset(Dataset):
                 )
                 ds = ds.map_batches(_make_lazy_decode_batch_fn(proc_col, decode_fn), batch_format="pandas")
 
-            elif feat_type == "image" and "lazy_image_params" in feat_meta:
+            elif feat_type == "image":
+                if "lazy_image_params" not in feat_meta:
+                    logger.warning(
+                        f"Feature '{feature_name}' has lazy=True but 'lazy_image_params' is missing from "
+                        "training_set_metadata. Decode transform will not be added — workers will receive "
+                        "raw file paths instead of tensors. Re-run preprocessing to fix this."
+                    )
+                    continue
                 import torch as _torch
 
                 from ludwig.features.image_feature import ImageFeatureMixin

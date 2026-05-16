@@ -306,3 +306,90 @@ def test_with_lazy_decode_non_lazy_passthrough(ray_cluster_2cpu):
     # Dataset should be identical — no transforms added.
     batch = decoded_ds.take_batch(batch_size=3, batch_format="pandas")
     assert list(batch[proc_col]) == [1.0, 2.0, 3.0]
+
+
+def test_with_lazy_decode_missing_params_warns(ray_cluster_2cpu, caplog):
+    """_with_lazy_decode must warn when lazy=True but lazy_audio_params is absent.
+
+    If training_set_metadata has lazy=True but the decode params were not saved
+    (e.g. stale cache from an older Ludwig version), the feature should be skipped
+    with a clear warning rather than silently passing path strings to workers.
+    """
+    import logging
+
+    proc_col = "audio_proc"
+    feature_name = "audio_0"
+
+    features = {proc_col: {"name": feature_name, "column": feature_name, "type": "audio"}}
+    # lazy=True but no lazy_audio_params — simulates a stale / manually-crafted metadata dict
+    training_set_metadata = {feature_name: {"lazy": True}}
+
+    df = pd.DataFrame({proc_col: ["/fake/a.wav", "/fake/b.wav"]})
+    ray_ds = _make_ray_dataset(df, features, training_set_metadata)
+
+    with caplog.at_level(logging.WARNING, logger="ludwig.data.dataset.ray"):
+        decoded_ds = ray_ds._with_lazy_decode(ray_ds.ds)
+
+    assert any("lazy_audio_params" in msg for msg in caplog.messages), (
+        "_with_lazy_decode should warn about missing lazy_audio_params, but no warning was logged"
+    )
+    # Dataset unchanged — still path strings (no transform added)
+    batch = decoded_ds.take_batch(batch_size=2, batch_format="pandas")
+    assert isinstance(batch[proc_col].iloc[0], str)
+
+
+def test_lazy_decode_batcher_produces_tensors(ray_cluster_2cpu, tmp_path):
+    """End-to-end: RayDatasetBatcher with lazy audio must produce numpy arrays, not path strings.
+
+    Exercises the full pipeline: _with_lazy_decode → materialize → iter_batches →
+    cast_as_tensor_dtype → _prepare_batch.  Verifies that the decoded arrays have the
+    correct shape so the model would receive valid tensors.
+    """
+    from unittest.mock import patch
+
+    proc_col = "audio_proc"
+    feature_name = "audio_0"
+    feature_dim = 8
+    max_length = 5
+
+    dummy_array = np.zeros((feature_dim, max_length), dtype=np.float32)
+
+    def _mock_make_lazy_decode_fn(**kwargs):
+        def decode(path):
+            return dummy_array
+
+        decode.__name__ = "audio_lazy_decode"
+        return decode
+
+    features = {proc_col: {"name": feature_name, "column": feature_name, "type": "audio"}}
+    training_set_metadata = {
+        feature_name: {
+            "lazy": True,
+            "reshape": None,
+            "lazy_audio_params": {
+                "audio_feature_dict": {"type": "fbank"},
+                "feature_dim": feature_dim,
+                "max_length": max_length,
+                "padding_value": 0.0,
+                "normalization_type": None,
+            },
+        }
+    }
+
+    n_samples = 10
+    df = pd.DataFrame({proc_col: [f"/fake/path_{i}.wav" for i in range(n_samples)]})
+    ray_ds = _make_ray_dataset(df, features, training_set_metadata)
+
+    with patch("ludwig.features.audio_feature.AudioFeatureMixin._make_lazy_decode_fn", _mock_make_lazy_decode_fn):
+        with ray_ds.initialize_batcher(batch_size=4, should_shuffle=False) as batcher:
+            batches = []
+            while not batcher.last_batch():
+                batches.append(batcher.next_batch())
+
+    assert len(batches) > 0, "No batches produced"
+    for batch in batches:
+        arr = batch[proc_col]
+        assert isinstance(arr, np.ndarray), f"Expected numpy array, got {type(arr)}"
+        assert arr.ndim == 3, f"Expected (batch, feature_dim, max_length), got shape {arr.shape}"
+        assert arr.shape[1] == feature_dim
+        assert arr.shape[2] == max_length
