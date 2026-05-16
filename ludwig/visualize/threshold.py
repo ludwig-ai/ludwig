@@ -655,7 +655,7 @@ def confidence_thresholding_2thresholds_2d_cli(
 def confidence_thresholding_2thresholds_2d(
     probabilities_per_model: "list[np.array]",
     ground_truths: "list[np.array] | list[pd.Series]",
-    metadata,
+    metadata: dict,
     threshold_output_feature_names: "list[str]",
     labels_limit: int,
     model_names: "str | list[str] | None" = None,
@@ -877,7 +877,7 @@ def confidence_thresholding_2thresholds_3d_cli(
 def confidence_thresholding_2thresholds_3d(
     probabilities_per_model: "list[np.array]",
     ground_truths: "list[np.array] | list[pd.Series]",
-    metadata,
+    metadata: dict,
     threshold_output_feature_names: "list[str]",
     labels_limit: int,
     output_directory: "str | None" = None,

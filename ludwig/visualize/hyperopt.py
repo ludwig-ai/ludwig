@@ -71,7 +71,7 @@ def hyperopt_report(
 
 
 @DeveloperAPI
-def hyperopt_hiplot_cli(hyperopt_stats_path, output_directory=None, **kwargs):
+def hyperopt_hiplot_cli(hyperopt_stats_path: str, output_directory: str | None = None, **kwargs) -> None:
     """Produces a parallel coordinate plot about hyperparameter optimization creating one HTML file and optionally
     a CSV file to be read by hiplot.
 
@@ -84,7 +84,7 @@ def hyperopt_hiplot_cli(hyperopt_stats_path, output_directory=None, **kwargs):
 
 
 @DeveloperAPI
-def hyperopt_hiplot(hyperopt_stats_path, output_directory=None, **kwargs):
+def hyperopt_hiplot(hyperopt_stats_path: str, output_directory: str | None = None, **kwargs) -> None:
     """Produces a parallel coordinate plot about hyperparameter optimization creating one HTML file and optionally
     a CSV file to be read by hiplot.
 

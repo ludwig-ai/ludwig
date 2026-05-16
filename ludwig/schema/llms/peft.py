@@ -771,6 +771,14 @@ class VeraAdapterConfig(BaseAdapterConfig):
             task_type=task_type,
         )
 
+    @classmethod
+    def name(cls) -> str:
+        return "VeRA"
+
+    @classmethod
+    def description(cls) -> str:
+        return "Vector-based Random Matrix Adaptation. Shares frozen random matrices across layers; only small scaling vectors are trained, giving 10× fewer parameters than LoRA at the same rank."
+
 
 @DeveloperAPI
 @register_adapter(name="loha")
@@ -796,6 +804,14 @@ class LoHaAdapterConfig(BaseAdapterConfig):
 
         return _LoHaConfig(r=self.r, alpha=self.alpha, target_modules=self.target_modules, task_type=task_type)
 
+    @classmethod
+    def name(cls) -> str:
+        return "LoHa"
+
+    @classmethod
+    def description(cls) -> str:
+        return "Low-Rank Hadamard Product Adaptation. Uses a Hadamard product of two low-rank matrices to capture more complex weight updates than LoRA at the same rank."
+
 
 @DeveloperAPI
 @register_adapter(name="lokr")
@@ -819,6 +835,14 @@ class LoKrAdapterConfig(BaseAdapterConfig):
         from peft import LoKrConfig as _LoKrConfig
 
         return _LoKrConfig(r=self.r, alpha=self.alpha, target_modules=self.target_modules, task_type=task_type)
+
+    @classmethod
+    def name(cls) -> str:
+        return "LoKr"
+
+    @classmethod
+    def description(cls) -> str:
+        return "Low-Rank Kronecker Product Adaptation. Uses Kronecker product decomposition for efficient weight updates with a different inductive bias than LoRA."
 
 
 @DeveloperAPI
@@ -849,6 +873,14 @@ class FourierFTAdapterConfig(BaseAdapterConfig):
             target_modules=self.target_modules,
             task_type=task_type,
         )
+
+    @classmethod
+    def name(cls) -> str:
+        return "FourierFT"
+
+    @classmethod
+    def description(cls) -> str:
+        return "Frequency-domain fine-tuning. Learns weight updates in the Fourier frequency domain, providing a complementary inductive bias to spatial methods like LoRA."
 
 
 @DeveloperAPI
@@ -884,6 +916,14 @@ class BOFTAdapterConfig(BaseAdapterConfig):
             target_modules=self.target_modules,
             task_type=task_type,
         )
+
+    @classmethod
+    def name(cls) -> str:
+        return "BOFT"
+
+    @classmethod
+    def description(cls) -> str:
+        return "Butterfly Orthogonal Fine-Tuning. Learns orthogonal transformations via butterfly factorization, preserving the pre-trained model's geometry while adapting to new tasks."
 
 
 @DeveloperAPI

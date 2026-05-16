@@ -363,7 +363,7 @@ class LudwigModel:
         skip_save_processed_input: bool = False,
         output_directory: str | None = "results",
         random_seed: int = default_random_seed,
-        **kwargs,
+        **kwargs: Any,
     ) -> TrainingResults:
         """Train the model on the provided dataset.
 
@@ -1058,7 +1058,7 @@ class LudwigModel:
         output_directory: str = "results",
         return_type: type = pd.DataFrame,
         callbacks: list[Callback] | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> tuple[dict | pd.DataFrame, str]:
         """Make predictions from a trained model on the provided dataset.
 
@@ -1150,7 +1150,7 @@ class LudwigModel:
         collect_overall_stats: bool = False,
         output_directory: str = "results",
         return_type: type = pd.DataFrame,
-        **kwargs,
+        **kwargs: Any,
     ) -> tuple[dict, dict | pd.DataFrame, str]:
         """Evaluate a trained model and compute performance statistics.
 
@@ -1428,7 +1428,7 @@ class LudwigModel:
         skip_collect_overall_stats: bool = False,
         output_directory: str = "results",
         random_seed: int = default_random_seed,
-        **kwargs,
+        **kwargs: Any,
     ) -> tuple[dict | None, TrainingStats, PreprocessedDataset, str]:
         """Train a model and immediately evaluate it on a held-out split.
 
@@ -1543,7 +1543,7 @@ class LudwigModel:
 
         return eval_stats, train_stats, preprocessed_data, output_directory
 
-    def collect_weights(self, tensor_names: list[str] | None = None, **kwargs) -> list:
+    def collect_weights(self, tensor_names: list[str] | None = None, **kwargs: Any) -> list:
         """Return the named tensors (weight matrices) from the trained model.
 
         Args:
@@ -1565,7 +1565,7 @@ class LudwigModel:
         data_format: str | None = None,
         split: str = FULL,
         batch_size: int = 128,
-        **kwargs,
+        **kwargs: Any,
     ) -> list:
         """Collect intermediate-layer activations for the given dataset.
 
@@ -1611,7 +1611,7 @@ class LudwigModel:
         data_format: str | None = None,
         skip_save_processed_input: bool = True,
         random_seed: int = default_random_seed,
-        **kwargs,
+        **kwargs: Any,
     ) -> PreprocessedDataset:
         """Preprocess a dataset and return it split into training / validation / test sets.
 
@@ -2004,7 +2004,7 @@ def kfold_cross_validate(
     allow_parallel_threads: bool = True,
     backend: Backend | str | None = None,
     logging_level: int = logging.INFO,
-    **kwargs,
+    **kwargs: Any,
 ) -> tuple[dict, dict]:
     """Perform k-fold cross-validation and return aggregated metrics.
 
