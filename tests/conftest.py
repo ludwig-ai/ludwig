@@ -40,14 +40,14 @@ TEST_SUITE_TIMEOUT_S = int(os.environ.get("LUDWIG_TEST_SUITE_TIMEOUT_S", 3600))
 
 explicit_int_markers = {
     "integration_tests_a",
-    "integration_tests_a2",
-    "integration_tests_a3",
-    "integration_tests_a4",
-    "integration_tests_a5",
     "integration_tests_b",
     "integration_tests_c",
     "integration_tests_d",
     "integration_tests_e",
+    "integration_tests_f",
+    "integration_tests_g",
+    "integration_tests_h",
+    "integration_tests_i",
 }
 
 
@@ -58,7 +58,7 @@ def pytest_sessionstart(session):
 def pytest_collection_modifyitems(config, items):
     for item in items:
         if all(False for x in item.iter_markers() if x.name in explicit_int_markers):
-            item.add_marker("integration_tests_f")
+            item.add_marker("integration_tests_j")
 
 
 @pytest.fixture(autouse=True)

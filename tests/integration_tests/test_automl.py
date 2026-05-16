@@ -32,7 +32,7 @@ from ludwig.automl import auto_train, create_auto_config, train_with_config  # n
 from ludwig.automl.automl import OUTPUT_DIR  # noqa E402
 from ludwig.hyperopt.execution import RayTuneExecutor  # noqa E402
 
-pytestmark = [pytest.mark.distributed, pytest.mark.integration_tests_c]
+pytestmark = [pytest.mark.distributed, pytest.mark.distributed_e, pytest.mark.integration_tests_g]
 
 
 def to_name_set(features: list[FeatureConfigDict]) -> set[str]:

@@ -7,6 +7,7 @@ except ImportError:
 
 
 @pytest.mark.distributed
+@pytest.mark.distributed_c
 def test_reduce_text_model_mem_99ptile():
     config = {"input_features": [{"name": "description", "column": "description", "type": "text", "encoder": "bert"}]}
     training_set_metadata = {"description": {"max_sequence_length_99ptile": 117.0}}
@@ -19,6 +20,7 @@ def test_reduce_text_model_mem_99ptile():
 
 
 @pytest.mark.distributed
+@pytest.mark.distributed_c
 def test_reduce_text_model_mem_128():
     config = {"input_features": [{"name": "description", "column": "description", "type": "text", "encoder": "bert"}]}
     training_set_metadata = {"description": {"max_sequence_length_99ptile": 512.0}}
@@ -31,6 +33,7 @@ def test_reduce_text_model_mem_128():
 
 
 @pytest.mark.distributed
+@pytest.mark.distributed_c
 def test_reduce_text_model_mem_override():
     config = {
         "input_features": [{"name": "description", "column": "description", "type": "text", "encoder": "bert"}],
@@ -46,6 +49,7 @@ def test_reduce_text_model_mem_override():
 
 
 @pytest.mark.distributed
+@pytest.mark.distributed_c
 def test_reduce_text_model_mem_respect():
     config = {
         "input_features": [{"name": "description", "column": "description", "type": "text", "encoder": "bert"}],

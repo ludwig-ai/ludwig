@@ -41,7 +41,7 @@ def test_make_divisions_ensure_minimum_rows():
     ("df_engine",),
     [
         pytest.param(PandasEngine(), id="pandas"),
-        pytest.param(DaskEngine(_use_ray=False), id="dask", marks=pytest.mark.distributed),
+        pytest.param(DaskEngine(_use_ray=False), id="dask", marks=[pytest.mark.distributed, pytest.mark.distributed_d]),
     ],
 )
 def test_random_split(df_engine, ray_cluster_2cpu):
@@ -89,7 +89,7 @@ def test_random_split(df_engine, ray_cluster_2cpu):
     ("df_engine",),
     [
         pytest.param(PandasEngine(), id="pandas"),
-        pytest.param(DaskEngine(_use_ray=False), id="dask", marks=pytest.mark.distributed),
+        pytest.param(DaskEngine(_use_ray=False), id="dask", marks=[pytest.mark.distributed, pytest.mark.distributed_d]),
     ],
 )
 def test_random_split_zero_probability_for_test_produces_no_zombie(df_engine, ray_cluster_2cpu):
@@ -118,7 +118,7 @@ def test_random_split_zero_probability_for_test_produces_no_zombie(df_engine, ra
     ("df_engine",),
     [
         pytest.param(PandasEngine(), id="pandas"),
-        pytest.param(DaskEngine(_use_ray=False), id="dask", marks=pytest.mark.distributed),
+        pytest.param(DaskEngine(_use_ray=False), id="dask", marks=[pytest.mark.distributed, pytest.mark.distributed_d]),
     ],
 )
 def test_fixed_split(df_engine, ray_cluster_2cpu):
@@ -167,7 +167,9 @@ def test_fixed_split(df_engine, ray_cluster_2cpu):
     [
         pytest.param(PandasEngine(), 100, 1, id="pandas"),
         # Splitting with a distributed engine becomes more accurate with more rows.
-        pytest.param(DaskEngine(_use_ray=False), 10000, 10, id="dask", marks=pytest.mark.distributed),
+        pytest.param(
+            DaskEngine(_use_ray=False), 10000, 10, id="dask", marks=[pytest.mark.distributed, pytest.mark.distributed_d]
+        ),
     ],
 )
 @pytest.mark.parametrize(
@@ -237,7 +239,9 @@ def test_stratify_split(df_engine, nrows, atol, class_probs, ray_cluster_2cpu):
     ("df_engine", "atol"),
     [
         pytest.param(PandasEngine(), 1, id="pandas"),
-        pytest.param(DaskEngine(_use_ray=False), 10, id="dask", marks=pytest.mark.distributed),
+        pytest.param(
+            DaskEngine(_use_ray=False), 10, id="dask", marks=[pytest.mark.distributed, pytest.mark.distributed_d]
+        ),
     ],
 )
 def test_single_occurrence_stratified_split(df_engine, atol, ray_cluster_2cpu):
@@ -276,7 +280,7 @@ def test_single_occurrence_stratified_split(df_engine, atol, ray_cluster_2cpu):
     ("df_engine",),
     [
         pytest.param(PandasEngine(), id="pandas"),
-        pytest.param(DaskEngine(_use_ray=False), id="dask", marks=pytest.mark.distributed),
+        pytest.param(DaskEngine(_use_ray=False), id="dask", marks=[pytest.mark.distributed, pytest.mark.distributed_d]),
     ],
 )
 @pytest.mark.parametrize("format", ["str", "datetime"])
@@ -334,7 +338,7 @@ def test_datetime_split(format, df_engine, ray_cluster_2cpu):
     ("df_engine",),
     [
         pytest.param(PandasEngine(), id="pandas"),
-        pytest.param(DaskEngine(_use_ray=False), id="dask", marks=pytest.mark.distributed),
+        pytest.param(DaskEngine(_use_ray=False), id="dask", marks=[pytest.mark.distributed, pytest.mark.distributed_d]),
     ],
 )
 def test_hash_split(df_engine, ray_cluster_2cpu):

@@ -377,6 +377,7 @@ def run_test_with_features(
 
 
 @pytest.mark.integration_tests_a
+@pytest.mark.distributed_a
 @pytest.mark.parametrize("df_engine", ["pandas", "dask"])
 @pytest.mark.distributed
 def test_ray_read_binary_files(tmpdir, df_engine, ray_cluster_2cpu):
@@ -424,6 +425,7 @@ def test_ray_read_binary_files(tmpdir, df_engine, ray_cluster_2cpu):
 
 
 @pytest.mark.integration_tests_a
+@pytest.mark.distributed_a
 @pytest.mark.slow
 @pytest.mark.parametrize(
     "trainer_strategy",
@@ -465,6 +467,7 @@ def test_ray_outputs(trainer_strategy, ray_cluster_2cpu):
 
 
 @pytest.mark.integration_tests_a
+@pytest.mark.distributed_a
 @pytest.mark.skip(reason="Occasional metadata mismatch error: https://github.com/ludwig-ai/ludwig/issues/2889")
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.distributed
@@ -498,6 +501,7 @@ def test_ray_set_and_vector_outputs(dataset_type, ray_cluster_2cpu):
 
 
 @pytest.mark.integration_tests_a
+@pytest.mark.distributed_a
 @pytest.mark.distributed
 @pytest.mark.parametrize(
     "df_engine",
@@ -536,6 +540,7 @@ def test_ray_tabular(tmpdir, df_engine, ray_cluster_2cpu):
 
 
 @pytest.mark.integration_tests_a
+@pytest.mark.distributed_a
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.distributed
 def test_ray_tabular_save_inputs(tmpdir, dataset_type, ray_cluster_2cpu):
@@ -565,6 +570,7 @@ def test_ray_tabular_save_inputs(tmpdir, dataset_type, ray_cluster_2cpu):
 
 
 @pytest.mark.integration_tests_a
+@pytest.mark.distributed_a
 @pytest.mark.distributed
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 def test_ray_text_sequence_timeseries(tmpdir, dataset_type, ray_cluster_2cpu):
@@ -587,6 +593,7 @@ def test_ray_text_sequence_timeseries(tmpdir, dataset_type, ray_cluster_2cpu):
 
 
 @pytest.mark.integration_tests_a
+@pytest.mark.distributed_a
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.distributed
 def test_ray_vector(tmpdir, dataset_type, ray_cluster_2cpu):
@@ -607,6 +614,7 @@ def test_ray_vector(tmpdir, dataset_type, ray_cluster_2cpu):
 
 
 @pytest.mark.integration_tests_a
+@pytest.mark.distributed_a
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.distributed
 def test_ray_audio(tmp_path, dataset_type, ray_cluster_2cpu):
@@ -637,6 +645,7 @@ def test_ray_audio(tmp_path, dataset_type, ray_cluster_2cpu):
 
 
 @pytest.mark.integration_tests_a
+@pytest.mark.distributed_a
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet", "pandas+numpy_images"])
 @pytest.mark.distributed
 def test_ray_image(tmpdir, dataset_type, ray_cluster_2cpu):
@@ -662,6 +671,7 @@ def test_ray_image(tmpdir, dataset_type, ray_cluster_2cpu):
 
 
 @pytest.mark.integration_tests_a
+@pytest.mark.distributed_a
 @pytest.mark.parametrize(
     "settings",
     [(True, False, "ffill"), (False, True, "bfill"), (True, True, "bfill"), (True, True, "ffill")],
@@ -703,7 +713,8 @@ def test_ray_image_with_fill_strategy_edge_cases(tmpdir, settings, ray_cluster_2
 # TODO(geoffrey): Fold modin tests into test_ray_image as @pytest.mark.parametrized once tests are optimized
 
 
-@pytest.mark.integration_tests_a2
+@pytest.mark.integration_tests_b
+@pytest.mark.distributed_b
 @pytest.mark.distributed
 @pytest.mark.skipif(modin is None, reason="modin not installed")
 @pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/2643")
@@ -732,7 +743,8 @@ def test_ray_image_modin(tmpdir, ray_cluster_2cpu):
     )
 
 
-@pytest.mark.integration_tests_a5
+@pytest.mark.integration_tests_e
+@pytest.mark.distributed_e
 @pytest.mark.distributed
 def test_ray_image_multiple_features(tmpdir, ray_cluster_2cpu):
     input_features = [
@@ -760,7 +772,8 @@ def test_ray_image_multiple_features(tmpdir, ray_cluster_2cpu):
     )
 
 
-@pytest.mark.integration_tests_a2
+@pytest.mark.integration_tests_b
+@pytest.mark.distributed_b
 @pytest.mark.skip(reason="flaky: ray is running out of resources")
 @pytest.mark.distributed
 def test_ray_split(ray_cluster_2cpu):
@@ -777,7 +790,8 @@ def test_ray_split(ray_cluster_2cpu):
     )
 
 
-@pytest.mark.integration_tests_a2
+@pytest.mark.integration_tests_b
+@pytest.mark.distributed_b
 @pytest.mark.distributed
 def test_ray_audio_basic(tmpdir, ray_cluster_2cpu):
     # in_memory=False lazy loading was removed (everything is in-memory now,
@@ -798,7 +812,8 @@ def _run_no_evaluate(config, dataset, backend_config, **kwargs):
     return train_with_backend(backend_config, config, dataset=dataset, evaluate=False, predict=False, **kwargs)
 
 
-@pytest.mark.integration_tests_a2
+@pytest.mark.integration_tests_b
+@pytest.mark.distributed_b
 @pytest.mark.slow
 @pytest.mark.distributed
 def test_ray_lazy_load_image_works(tmpdir, ray_cluster_2cpu):
@@ -834,7 +849,8 @@ def test_ray_lazy_load_image_works(tmpdir, ray_cluster_2cpu):
 #     run_test_with_features(input_features, output_features, run_fn=_run_train_gpu_load_cpu, num_gpus=1)
 
 
-@pytest.mark.integration_tests_a4
+@pytest.mark.integration_tests_d
+@pytest.mark.distributed_d
 @pytest.mark.distributed
 @pytest.mark.parametrize(
     "method, balance",
@@ -885,7 +901,8 @@ def _run_train_gpu_load_cpu(config, data_parquet):
 # TODO(geoffrey): add a GPU test for batch size tuning
 
 
-@pytest.mark.integration_tests_a4
+@pytest.mark.integration_tests_d
+@pytest.mark.distributed_d
 @pytest.mark.distributed
 @pytest.mark.parametrize(
     ("max_batch_size", "expected_final_learning_rate"),
@@ -958,7 +975,8 @@ def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu, max_batch_size, expect
     assert model.config[TRAINER]["learning_rate"] == expected_final_learning_rate
 
 
-@pytest.mark.integration_tests_a4
+@pytest.mark.integration_tests_d
+@pytest.mark.distributed_d
 @pytest.mark.distributed
 def test_tune_batch_size_ray_non_mean_metric_output(tmpdir, ray_cluster_2cpu):
     """Regression: tune_batch_size_fn must call init_dist_strategy("local") before running.
@@ -990,7 +1008,8 @@ def test_tune_batch_size_ray_non_mean_metric_output(tmpdir, ray_cluster_2cpu):
     run_api_experiment(config, dataset=dataset_parquet, backend_config=RAY_BACKEND_CONFIG, evaluate=False)
 
 
-@pytest.mark.integration_tests_a2
+@pytest.mark.integration_tests_b
+@pytest.mark.distributed_b
 @pytest.mark.slow
 @pytest.mark.parametrize("calibration", [True, False])
 @pytest.mark.distributed
@@ -1007,7 +1026,8 @@ def test_ray_calibration(calibration, ray_cluster_2cpu):
     run_test_with_features(input_features, output_features)
 
 
-@pytest.mark.integration_tests_a2
+@pytest.mark.integration_tests_b
+@pytest.mark.distributed_b
 @pytest.mark.slow
 @pytest.mark.distributed
 @pytest.mark.parametrize("use_placement_group", [False, True], ids=["default", "placement_group"])

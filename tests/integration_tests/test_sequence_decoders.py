@@ -22,13 +22,14 @@ from tests.integration_tests.utils import (
     train_with_backend,
 )
 
-pytestmark = pytest.mark.integration_tests_c
+pytestmark = pytest.mark.integration_tests_g
 
 
 @pytest.mark.slow
 @pytest.mark.parametrize("feature_type,feature_gen", [(TEXT, text_feature), (SEQUENCE, sequence_feature)])
 @pytest.mark.parametrize("decoder_type", ["generator", "tagger"])
 @pytest.mark.distributed
+@pytest.mark.distributed_f
 def test_sequence_decoder_predictions(tmpdir, csv_filename, ray_cluster_2cpu, feature_type, feature_gen, decoder_type):
     """Test that sequence decoders return the correct successfully predict."""
     input_feature = feature_gen()

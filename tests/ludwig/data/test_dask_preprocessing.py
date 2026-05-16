@@ -19,7 +19,7 @@ import pytest
 ray = pytest.importorskip("ray")
 dask = pytest.importorskip("dask")
 
-pytestmark = pytest.mark.distributed
+pytestmark = [pytest.mark.distributed, pytest.mark.distributed_e]
 
 # ---------------------------------------------------------------------------
 # Helpers

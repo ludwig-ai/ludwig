@@ -39,7 +39,7 @@ from ludwig.types import FeatureConfigDict
 from ludwig.utils.data_utils import load_yaml
 from tests.integration_tests.utils import category_feature, generate_data, number_feature, sequence_feature
 
-pytestmark = pytest.mark.integration_tests_b
+pytestmark = pytest.mark.integration_tests_f
 
 
 def _run_commands(commands, **ludwig_kwargs):
@@ -200,6 +200,7 @@ def test_evaluate_cli(tmpdir, csv_filename):
 
 
 @pytest.mark.distributed
+@pytest.mark.distributed_f
 def test_hyperopt_cli(tmpdir, csv_filename):
     """Test hyperopt cli."""
     config_filename = os.path.join(tmpdir, "config.yaml")
@@ -362,6 +363,7 @@ def test_reproducible_cli_runs(
 
 
 @pytest.mark.distributed
+@pytest.mark.distributed_f
 def test_init_config(tmpdir):
     """Test initializing a config from a dataset and a target."""
     input_features = [

@@ -12,7 +12,7 @@ dask = pytest.importorskip("dask")
 from ludwig.data.dataset.ray import RayDatasetBatcher, RayDatasetShardBatcher, read_remote_parquet  # noqa
 
 # Mark the entire module as distributed
-pytestmark = pytest.mark.distributed
+pytestmark = [pytest.mark.distributed, pytest.mark.distributed_d]
 
 
 def test_prefetch_batches_value():

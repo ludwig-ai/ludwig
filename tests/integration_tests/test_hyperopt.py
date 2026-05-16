@@ -53,7 +53,7 @@ ray = pytest.importorskip("ray")
 
 from ludwig.hyperopt.execution import get_build_hyperopt_executor, RayTuneExecutor  # noqa
 
-pytestmark = [pytest.mark.distributed, pytest.mark.integration_tests_a3]
+pytestmark = [pytest.mark.distributed, pytest.mark.distributed_c, pytest.mark.integration_tests_c]
 
 RANDOM_SEARCH_SIZE = 2
 

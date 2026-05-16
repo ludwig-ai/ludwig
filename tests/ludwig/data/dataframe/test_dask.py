@@ -50,6 +50,7 @@ def test_dask_image_bytes_no_unicode_error():
 
 
 @pytest.mark.distributed
+@pytest.mark.distributed_f
 def test_from_ray_dataset_empty(tmpdir, ray_cluster_2cpu):
     import dask.dataframe as dd
 

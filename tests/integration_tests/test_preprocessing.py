@@ -329,6 +329,7 @@ def test_with_split(backend, csv_filename, tmpdir, ray_cluster_2cpu):
 
 
 @pytest.mark.distributed
+@pytest.mark.distributed_f
 @pytest.mark.parametrize("feature_fn", [image_feature, audio_feature])
 def test_dask_known_divisions(feature_fn, csv_filename, tmpdir, ray_cluster_2cpu):
     import dask.dataframe as dd
@@ -356,6 +357,7 @@ def test_dask_known_divisions(feature_fn, csv_filename, tmpdir, ray_cluster_2cpu
 
 
 @pytest.mark.distributed
+@pytest.mark.distributed_f
 def test_drop_empty_partitions(csv_filename, tmpdir, ray_cluster_2cpu):
     import dask.dataframe as dd
 
@@ -672,6 +674,7 @@ def test_empty_training_set_error(backend, tmpdir, ray_cluster_2cpu):
 
 
 @pytest.mark.distributed
+@pytest.mark.distributed_f
 @pytest.mark.parametrize(
     "backend",
     [

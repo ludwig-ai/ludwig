@@ -230,6 +230,7 @@ def test_local_model_training_with_augmentation_pipeline(
 # and focus on interaction of Ludwig encoder with image preprocessing and augmentation
 @pytest.mark.slow
 @pytest.mark.distributed
+@pytest.mark.distributed_f
 @pytest.mark.parametrize("augmentation_pipeline_ops", AUGMENTATION_PIPELINE_OPS)
 @pytest.mark.parametrize("preprocessing", IMAGE_PREPROCESSING)
 def test_ray_model_training_with_augmentation_pipeline(

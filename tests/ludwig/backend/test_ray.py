@@ -13,7 +13,7 @@ from ludwig.backend.ray import get_trainer_kwargs  # noqa
 from ludwig.constants import AUTO, EXECUTOR, MAX_CONCURRENT_TRIALS, RAY  # noqa
 
 # Mark the entire module as distributed
-pytestmark = pytest.mark.distributed
+pytestmark = [pytest.mark.distributed, pytest.mark.distributed_d]
 
 
 @pytest.mark.parametrize(

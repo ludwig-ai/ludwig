@@ -44,7 +44,7 @@ except ImportError:
     Trial = None
     TuneCallback = object  # needed to set up HyperoptTestCallback when not distributed
 
-pytestmark = pytest.mark.integration_tests_d
+pytestmark = pytest.mark.integration_tests_h
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -206,6 +206,7 @@ def run_hyperopt_executor(
 
 @pytest.mark.slow
 @pytest.mark.distributed
+@pytest.mark.distributed_c
 @pytest.mark.parametrize("scenario", SCENARIOS)
 def test_hyperopt_executor(scenario, csv_filename, tmpdir, ray_cluster_4cpu):
     search_alg = scenario["search_alg"]
@@ -221,6 +222,7 @@ def test_hyperopt_executor(scenario, csv_filename, tmpdir, ray_cluster_4cpu):
 
 @pytest.mark.slow
 @pytest.mark.distributed
+@pytest.mark.distributed_c
 @pytest.mark.parametrize("use_split", [True, False], ids=["split", "no_split"])
 def test_hyperopt_executor_with_metric(use_split, csv_filename, tmpdir, ray_cluster_4cpu):
     run_hyperopt_executor(
@@ -236,6 +238,7 @@ def test_hyperopt_executor_with_metric(use_split, csv_filename, tmpdir, ray_clus
 
 
 @pytest.mark.distributed
+@pytest.mark.distributed_c
 @pytest.mark.parametrize(
     "backend",
     [
@@ -315,6 +318,7 @@ def test_hyperopt_run_hyperopt(csv_filename, backend, tmpdir, ray_cluster_4cpu):
 
 @pytest.mark.slow
 @pytest.mark.distributed
+@pytest.mark.distributed_c
 def test_hyperopt_ray_mlflow(csv_filename, tmpdir, ray_cluster_4cpu):
     mlflow_uri = f"file://{tmpdir}/mlruns"
     mlflow.set_tracking_uri(mlflow_uri)

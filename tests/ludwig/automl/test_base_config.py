@@ -24,7 +24,7 @@ from ludwig.data.dataframe.pandas import PandasEngine  # noqa
 from ludwig.schema.model_types.base import ModelConfig  # noqa
 from ludwig.utils.automl.data_source import DataframeSource, wrap_data_source  # noqa
 
-pytestmark = pytest.mark.distributed
+pytestmark = [pytest.mark.distributed, pytest.mark.distributed_c]
 
 
 @pytest.fixture(scope="module")

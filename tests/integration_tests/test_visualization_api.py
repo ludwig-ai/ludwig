@@ -38,7 +38,7 @@ from tests.integration_tests.utils import (
     text_feature,
 )
 
-pytestmark = pytest.mark.integration_tests_c
+pytestmark = pytest.mark.integration_tests_g
 
 
 def run_api_experiment(input_features, output_features):
@@ -875,6 +875,7 @@ def test_frequency_vs_f1_vis_api(experiment_to_use):
 
 
 @pytest.mark.distributed
+@pytest.mark.distributed_f
 def test_hyperopt_report_vis_api(hyperopt_results_multiple_parameters, tmpdir):
     vis_dir = os.path.join(tmpdir, "visualizations")
 
@@ -895,6 +896,7 @@ def test_hyperopt_report_vis_api(hyperopt_results_multiple_parameters, tmpdir):
 
 
 @pytest.mark.distributed
+@pytest.mark.distributed_f
 def test_hyperopt_hiplot_vis_api(hyperopt_results_multiple_parameters, tmpdir):
     vis_dir = os.path.join(tmpdir, "visualizations")
 
@@ -915,6 +917,7 @@ def test_hyperopt_hiplot_vis_api(hyperopt_results_multiple_parameters, tmpdir):
 
 
 @pytest.mark.distributed
+@pytest.mark.distributed_f
 def test_hyperopt_report_vis_api_no_pairplot(hyperopt_results_single_parameter, tmpdir):
     vis_dir = os.path.join(tmpdir, "visualizations")
 

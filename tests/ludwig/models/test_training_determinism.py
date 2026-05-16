@@ -50,6 +50,7 @@ from tests.integration_tests.utils import (  # noqa: E402
 
 
 @pytest.mark.distributed
+@pytest.mark.distributed_f
 @pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/2686")
 def test_training_determinism_ray_backend(csv_filename, tmpdir, ray_cluster_4cpu):
     experiment_output_1, experiment_output_2 = train_twice("ray", csv_filename, tmpdir)
