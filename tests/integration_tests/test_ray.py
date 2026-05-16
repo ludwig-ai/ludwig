@@ -784,30 +784,9 @@ def test_ray_audio_basic(tmpdir, ray_cluster_2cpu):
     # Parquet caching handles persistence). This test verifies audio works
     # normally with Ray without the determinism check (tiny audio datasets
     # produce non-deterministic roc_auc between Ray and local backends).
-    # Use minimal audio params to keep CI runtime under 30 min:
-    # 0.5s files → ~23 frames; 8-band fbank; tiny single conv layer.
     audio_dest_folder = os.path.join(tmpdir, "generated_audio")
-    input_features = [
-        audio_feature(
-            folder=audio_dest_folder,
-            preprocessing={
-                "audio_file_length_limit_in_s": 0.5,
-                "type": "fbank",
-                "window_length_in_s": 0.04,
-                "window_shift_in_s": 0.02,
-                "num_filter_bands": 8,
-            },
-            encoder={
-                "type": "stacked_cnn",
-                "should_embed": False,
-                "conv_layers": [{"filter_size": 8, "pool_size": 2, "num_filters": 8}],
-                "output_size": 8,
-            },
-        )
-    ]
-    output_features = [
-        binary_feature(),
-    ]
+    input_features = [audio_feature(folder=audio_dest_folder)]
+    output_features = [binary_feature()]
     run_test_with_features(input_features, output_features, num_examples=8, expect_error=False, run_fn=_run_no_evaluate)
 
 
