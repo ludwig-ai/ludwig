@@ -142,10 +142,14 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         return total_size
 
     @property
-    def input_shape(self):
-        """Returns the shape of the model's input."""
-        # TODO(justin): Remove dummy implementation. Make input_shape and output_shape functions.
-        return torch.Size([1, 1])
+    def input_shape(self) -> torch.Size:
+        """Returns the shape of a single model input (excluding batch dimension).
+
+        Subclasses should override this to return a meaningful shape.
+        The default is a (1,) scalar — sufficient for models that don't rely
+        on input_shape for decoder sizing.
+        """
+        return torch.Size([1])
 
     @abstractmethod
     def forward(

@@ -686,7 +686,7 @@ class PicklePreprocessor(DataFormatPreprocessor):
         return dataset, training_set_metadata, None
 
 
-class FatherPreprocessor(DataFormatPreprocessor):
+class FeatherPreprocessor(DataFormatPreprocessor):
     @staticmethod
     def preprocess_for_training(
         config,
@@ -1146,7 +1146,7 @@ data_format_preprocessor_registry = {
     **dict.fromkeys(PARQUET_FORMATS, ParquetPreprocessor),
     **dict.fromkeys(PICKLE_FORMATS, PicklePreprocessor),
     **dict.fromkeys(FWF_FORMATS, FWFPreprocessor),
-    **dict.fromkeys(FEATHER_FORMATS, FatherPreprocessor),
+    **dict.fromkeys(FEATHER_FORMATS, FeatherPreprocessor),
     **dict.fromkeys(HTML_FORMATS, HTMLPreprocessor),
     **dict.fromkeys(ORC_FORMATS, ORCPreprocessor),
     **dict.fromkeys(SAS_FORMATS, SASPreprocessor),

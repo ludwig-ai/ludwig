@@ -147,9 +147,6 @@ class TrainingStats:
     test: dict[str, Any]
     evaluation_frequency: EvaluationFrequency = dataclasses.field(default_factory=EvaluationFrequency)
 
-    def keys(self) -> list[str]:
-        return [TRAINING, VALIDATION, TEST]
-
     def __contains__(self, key: object) -> bool:
         return (
             (key == TRAINING and self.training)
@@ -165,7 +162,7 @@ class TrainingStats:
     # rather than falling back to integer-index iteration (KeyError(0)).
     _KEYS = (TRAINING, VALIDATION, TEST)
 
-    def keys(self):  # noqa: F811
+    def keys(self) -> tuple[str, ...]:
         return self._KEYS
 
     def __iter__(self):

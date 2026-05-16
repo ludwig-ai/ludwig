@@ -207,7 +207,7 @@ class LocalPreprocessingMixin:
                 result = column.values
 
             if map_fn is not None and map_fn is not read_audio_from_path:
-                result = executor.map(map_fn, result)
+                result = executor.map(lambda x: map_fn(x) if x is not None else None, result)
 
         return pd.Series(result, index=column.index, name=column.name)
 
