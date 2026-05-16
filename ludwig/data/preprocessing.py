@@ -16,7 +16,7 @@
 import contextlib
 import logging
 import warnings
-from abc import ABC, abstractmethod
+from collections.abc import Callable
 
 import numpy as np
 import pandas as pd
@@ -140,10 +140,15 @@ def _get_config_dict(config: ModelConfig | ModelConfigDict) -> ModelConfigDict:
     return config
 
 
-class DataFormatPreprocessor(ABC):
-    @staticmethod
-    @abstractmethod
+class DataFormatPreprocessor:
+    """Dispatches preprocessing for a single data format.
+
+    Subclasses implement `preprocess_for_training` and `preprocess_for_prediction`.
+    `prepare_processed_data` is only needed for cacheable formats (Parquet, HDF5).
+    """
+
     def preprocess_for_training(
+        self,
         config,
         features,
         dataset=None,
@@ -157,18 +162,15 @@ class DataFormatPreprocessor(ABC):
         random_seed=default_random_seed,
         callbacks=None,
     ):
-        pass
+        raise NotImplementedError
 
-    @staticmethod
-    @abstractmethod
     def preprocess_for_prediction(
-        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+        self, config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
     ):
-        pass
+        raise NotImplementedError
 
-    @staticmethod
-    @abstractmethod
     def prepare_processed_data(
+        self,
         features,
         dataset=None,
         training_set=None,
@@ -180,12 +182,108 @@ class DataFormatPreprocessor(ABC):
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
     ):
-        pass
+        raise NotImplementedError
+
+
+class FileBasedPreprocessor(DataFormatPreprocessor):
+    """Preprocessor for tabular file formats, parameterized by a reader function.
+
+    All tabular file formats (CSV, TSV, JSON, Parquet, etc.) share identical
+    training and prediction logic; only the reader function differs. Use this
+    class via the `data_format_preprocessor_registry` rather than directly.
+    """
+
+    def __init__(self, read_fn: Callable):
+        self._read_fn = read_fn
+
+    def preprocess_for_training(
+        self,
+        config,
+        features,
+        dataset=None,
+        training_set=None,
+        validation_set=None,
+        test_set=None,
+        training_set_metadata=None,
+        skip_save_processed_input=False,
+        preprocessing_params=default_training_preprocessing_parameters,
+        backend=LOCAL_BACKEND,
+        random_seed=default_random_seed,
+        callbacks=None,
+    ):
+        return _preprocess_file_for_training(
+            config,
+            features,
+            dataset,
+            training_set,
+            validation_set,
+            test_set,
+            read_fn=self._read_fn,
+            training_set_metadata=training_set_metadata,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            backend=backend,
+            random_seed=random_seed,
+            callbacks=callbacks,
+        )
+
+    def preprocess_for_prediction(
+        self, config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+    ):
+        dataset_df = self._read_fn(dataset, backend.df_engine.df_lib)
+        training_set_metadata[SRC] = dataset
+        dataset, training_set_metadata = build_dataset(
+            config,
+            dataset_df,
+            features,
+            preprocessing_params,
+            mode="prediction",
+            metadata=training_set_metadata,
+            backend=backend,
+            callbacks=callbacks,
+        )
+        return dataset, training_set_metadata, None
+
+
+class ParquetPreprocessor(FileBasedPreprocessor):
+    """Parquet-specific preprocessor with cache-path bookkeeping in prepare_processed_data."""
+
+    def __init__(self):
+        super().__init__(read_parquet)
+
+    def prepare_processed_data(
+        self,
+        features,
+        dataset=None,
+        training_set=None,
+        validation_set=None,
+        test_set=None,
+        training_set_metadata=None,
+        skip_save_processed_input=False,
+        preprocessing_params=default_training_preprocessing_parameters,
+        backend=LOCAL_BACKEND,
+        random_seed=default_random_seed,
+    ):
+        test_set = test_set if test_set and path_exists(test_set) else None
+        if test_set and isinstance(test_set, str) and DATA_TEST_PARQUET_FP not in training_set_metadata:
+            training_set_metadata[DATA_TEST_PARQUET_FP] = test_set
+
+        validation_set = validation_set if validation_set and path_exists(validation_set) else None
+        if (
+            validation_set
+            and isinstance(validation_set, str)
+            and DATA_VALIDATION_PARQUET_FP not in training_set_metadata
+        ):
+            training_set_metadata[DATA_VALIDATION_PARQUET_FP] = validation_set
+
+        if training_set and isinstance(training_set, str) and DATA_TRAIN_PARQUET_FP not in training_set_metadata:
+            training_set_metadata[DATA_TRAIN_PARQUET_FP] = training_set
+        return training_set, test_set, validation_set, training_set_metadata
 
 
 class DictPreprocessor(DataFormatPreprocessor):
-    @staticmethod
     def preprocess_for_training(
+        self,
         config,
         features,
         dataset=None,
@@ -226,9 +324,8 @@ class DictPreprocessor(DataFormatPreprocessor):
             random_seed=random_seed,
         )
 
-    @staticmethod
     def preprocess_for_prediction(
-        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+        self, config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
     ):
         dataset, training_set_metadata = build_dataset(
             config,
@@ -244,8 +341,8 @@ class DictPreprocessor(DataFormatPreprocessor):
 
 
 class DataFramePreprocessor(DataFormatPreprocessor):
-    @staticmethod
     def preprocess_for_training(
+        self,
         config,
         features,
         dataset=None,
@@ -280,9 +377,8 @@ class DataFramePreprocessor(DataFormatPreprocessor):
             callbacks=callbacks,
         )
 
-    @staticmethod
     def preprocess_for_prediction(
-        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+        self, config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
     ):
         if isinstance(dataset, pd.DataFrame):
             dataset = backend.df_engine.from_pandas(dataset)
@@ -300,752 +396,9 @@ class DataFramePreprocessor(DataFormatPreprocessor):
         return dataset, training_set_metadata, None
 
 
-class CSVPreprocessor(DataFormatPreprocessor):
-    @staticmethod
-    def preprocess_for_training(
-        config,
-        features,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        training_set_metadata=None,
-        skip_save_processed_input=False,
-        preprocessing_params=default_training_preprocessing_parameters,
-        backend=LOCAL_BACKEND,
-        random_seed=default_random_seed,
-        callbacks=None,
-    ):
-        return _preprocess_file_for_training(
-            config,
-            features,
-            dataset,
-            training_set,
-            validation_set,
-            test_set,
-            read_fn=read_csv,
-            training_set_metadata=training_set_metadata,
-            skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=preprocessing_params,
-            backend=backend,
-            random_seed=random_seed,
-            callbacks=callbacks,
-        )
-
-    @staticmethod
-    def preprocess_for_prediction(
-        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
-    ):
-        dataset_df = read_csv(dataset, df_lib=backend.df_engine.df_lib)
-        training_set_metadata[SRC] = dataset
-        dataset, training_set_metadata = build_dataset(
-            config,
-            dataset_df,
-            features,
-            preprocessing_params,
-            mode="prediction",
-            metadata=training_set_metadata,
-            backend=backend,
-            callbacks=callbacks,
-        )
-        return dataset, training_set_metadata, None
-
-
-class TSVPreprocessor(DataFormatPreprocessor):
-    @staticmethod
-    def preprocess_for_training(
-        config,
-        features,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        training_set_metadata=None,
-        skip_save_processed_input=False,
-        preprocessing_params=default_training_preprocessing_parameters,
-        backend=LOCAL_BACKEND,
-        random_seed=default_random_seed,
-        callbacks=None,
-    ):
-        return _preprocess_file_for_training(
-            config,
-            features,
-            dataset,
-            training_set,
-            validation_set,
-            test_set,
-            read_fn=read_tsv,
-            training_set_metadata=training_set_metadata,
-            skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=preprocessing_params,
-            backend=backend,
-            random_seed=random_seed,
-            callbacks=callbacks,
-        )
-
-    @staticmethod
-    def preprocess_for_prediction(
-        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
-    ):
-        dataset_df = read_tsv(dataset, df_lib=backend.df_engine.df_lib)
-        training_set_metadata[SRC] = dataset
-        dataset, training_set_metadata = build_dataset(
-            config,
-            dataset_df,
-            features,
-            preprocessing_params,
-            mode="prediction",
-            metadata=training_set_metadata,
-            backend=backend,
-            callbacks=callbacks,
-        )
-        return dataset, training_set_metadata, None
-
-
-class JSONPreprocessor(DataFormatPreprocessor):
-    @staticmethod
-    def preprocess_for_training(
-        config,
-        features,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        training_set_metadata=None,
-        skip_save_processed_input=False,
-        preprocessing_params=default_training_preprocessing_parameters,
-        backend=LOCAL_BACKEND,
-        random_seed=default_random_seed,
-        callbacks=None,
-    ):
-        return _preprocess_file_for_training(
-            config,
-            features,
-            dataset,
-            training_set,
-            validation_set,
-            test_set,
-            read_fn=read_json,
-            training_set_metadata=training_set_metadata,
-            skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=preprocessing_params,
-            backend=backend,
-            random_seed=random_seed,
-            callbacks=callbacks,
-        )
-
-    @staticmethod
-    def preprocess_for_prediction(
-        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
-    ):
-        dataset_df = read_json(dataset, backend.df_engine.df_lib)
-        training_set_metadata[SRC] = dataset
-        dataset, training_set_metadata = build_dataset(
-            config,
-            dataset_df,
-            features,
-            preprocessing_params,
-            mode="prediction",
-            metadata=training_set_metadata,
-            backend=backend,
-            callbacks=callbacks,
-        )
-        return dataset, training_set_metadata, None
-
-
-class JSONLPreprocessor(DataFormatPreprocessor):
-    @staticmethod
-    def preprocess_for_training(
-        config,
-        features,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        training_set_metadata=None,
-        skip_save_processed_input=False,
-        preprocessing_params=default_training_preprocessing_parameters,
-        backend=LOCAL_BACKEND,
-        random_seed=default_random_seed,
-        callbacks=None,
-    ):
-        return _preprocess_file_for_training(
-            config,
-            features,
-            dataset,
-            training_set,
-            validation_set,
-            test_set,
-            read_fn=read_jsonl,
-            training_set_metadata=training_set_metadata,
-            skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=preprocessing_params,
-            backend=backend,
-            random_seed=random_seed,
-            callbacks=callbacks,
-        )
-
-    @staticmethod
-    def preprocess_for_prediction(
-        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
-    ):
-        dataset_df = read_jsonl(dataset, backend.df_engine.df_lib)
-        training_set_metadata[SRC] = dataset
-        dataset, training_set_metadata = build_dataset(
-            config,
-            dataset_df,
-            features,
-            preprocessing_params,
-            mode="prediction",
-            metadata=training_set_metadata,
-            backend=backend,
-            callbacks=callbacks,
-        )
-        return dataset, training_set_metadata, None
-
-
-class ExcelPreprocessor(DataFormatPreprocessor):
-    @staticmethod
-    def preprocess_for_training(
-        config,
-        features,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        training_set_metadata=None,
-        skip_save_processed_input=False,
-        preprocessing_params=default_training_preprocessing_parameters,
-        backend=LOCAL_BACKEND,
-        random_seed=default_random_seed,
-        callbacks=None,
-    ):
-        return _preprocess_file_for_training(
-            config,
-            features,
-            dataset,
-            training_set,
-            validation_set,
-            test_set,
-            read_fn=read_excel,
-            training_set_metadata=training_set_metadata,
-            skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=preprocessing_params,
-            backend=backend,
-            random_seed=random_seed,
-            callbacks=callbacks,
-        )
-
-    @staticmethod
-    def preprocess_for_prediction(
-        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
-    ):
-        dataset_df = read_excel(dataset, backend.df_engine.df_lib)
-        training_set_metadata[SRC] = dataset
-        dataset, training_set_metadata = build_dataset(
-            config,
-            dataset_df,
-            features,
-            preprocessing_params,
-            mode="prediction",
-            metadata=training_set_metadata,
-            backend=backend,
-            callbacks=callbacks,
-        )
-        return dataset, training_set_metadata, None
-
-
-class ParquetPreprocessor(DataFormatPreprocessor):
-    @staticmethod
-    def preprocess_for_training(
-        config,
-        features,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        training_set_metadata=None,
-        skip_save_processed_input=False,
-        preprocessing_params=default_training_preprocessing_parameters,
-        backend=LOCAL_BACKEND,
-        random_seed=default_random_seed,
-        callbacks=None,
-    ):
-        return _preprocess_file_for_training(
-            config,
-            features,
-            dataset,
-            training_set,
-            validation_set,
-            test_set,
-            read_fn=read_parquet,
-            training_set_metadata=training_set_metadata,
-            skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=preprocessing_params,
-            backend=backend,
-            random_seed=random_seed,
-            callbacks=callbacks,
-        )
-
-    @staticmethod
-    def preprocess_for_prediction(
-        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
-    ):
-        dataset_df = read_parquet(dataset, backend.df_engine.df_lib)
-        training_set_metadata[SRC] = dataset
-        dataset, training_set_metadata = build_dataset(
-            config,
-            dataset_df,
-            features,
-            preprocessing_params,
-            mode="prediction",
-            metadata=training_set_metadata,
-            backend=backend,
-            callbacks=callbacks,
-        )
-        return dataset, training_set_metadata, None
-
-    @staticmethod
-    def prepare_processed_data(
-        features,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        training_set_metadata=None,
-        skip_save_processed_input=False,
-        preprocessing_params=default_training_preprocessing_parameters,
-        backend=LOCAL_BACKEND,
-        random_seed=default_random_seed,
-    ):
-        test_set = test_set if test_set and path_exists(test_set) else None
-        if test_set and isinstance(test_set, str) and DATA_TEST_PARQUET_FP not in training_set_metadata:
-            training_set_metadata[DATA_TEST_PARQUET_FP] = test_set
-
-        validation_set = validation_set if validation_set and path_exists(validation_set) else None
-        if (
-            validation_set
-            and isinstance(validation_set, str)
-            and DATA_VALIDATION_PARQUET_FP not in training_set_metadata
-        ):
-            training_set_metadata[DATA_VALIDATION_PARQUET_FP] = validation_set
-
-        if training_set and isinstance(training_set, str) and DATA_TRAIN_PARQUET_FP not in training_set_metadata:
-            training_set_metadata[DATA_TRAIN_PARQUET_FP] = training_set
-        return training_set, test_set, validation_set, training_set_metadata
-
-
-class PicklePreprocessor(DataFormatPreprocessor):
-    @staticmethod
-    def preprocess_for_training(
-        config,
-        features,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        training_set_metadata=None,
-        skip_save_processed_input=False,
-        preprocessing_params=default_training_preprocessing_parameters,
-        backend=LOCAL_BACKEND,
-        random_seed=default_random_seed,
-        callbacks=None,
-    ):
-        return _preprocess_file_for_training(
-            config,
-            features,
-            dataset,
-            training_set,
-            validation_set,
-            test_set,
-            read_fn=read_pickle,
-            training_set_metadata=training_set_metadata,
-            skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=preprocessing_params,
-            backend=backend,
-            random_seed=random_seed,
-            callbacks=callbacks,
-        )
-
-    @staticmethod
-    def preprocess_for_prediction(
-        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
-    ):
-        dataset_df = read_pickle(dataset, backend.df_engine.df_lib)
-        training_set_metadata[SRC] = dataset
-        dataset, training_set_metadata = build_dataset(
-            config,
-            dataset_df,
-            features,
-            preprocessing_params,
-            mode="prediction",
-            metadata=training_set_metadata,
-            backend=backend,
-            callbacks=callbacks,
-        )
-        return dataset, training_set_metadata, None
-
-
-class FeatherPreprocessor(DataFormatPreprocessor):
-    @staticmethod
-    def preprocess_for_training(
-        config,
-        features,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        training_set_metadata=None,
-        skip_save_processed_input=False,
-        preprocessing_params=default_training_preprocessing_parameters,
-        backend=LOCAL_BACKEND,
-        random_seed=default_random_seed,
-        callbacks=None,
-    ):
-        return _preprocess_file_for_training(
-            config,
-            features,
-            dataset,
-            training_set,
-            validation_set,
-            test_set,
-            read_fn=read_feather,
-            training_set_metadata=training_set_metadata,
-            skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=preprocessing_params,
-            backend=backend,
-            random_seed=random_seed,
-            callbacks=callbacks,
-        )
-
-    @staticmethod
-    def preprocess_for_prediction(
-        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
-    ):
-        dataset_df = read_feather(dataset, backend.df_engine.df_lib)
-        training_set_metadata[SRC] = dataset
-        dataset, training_set_metadata = build_dataset(
-            config,
-            dataset_df,
-            features,
-            preprocessing_params,
-            mode="prediction",
-            metadata=training_set_metadata,
-            backend=backend,
-            callbacks=callbacks,
-        )
-        return dataset, training_set_metadata, None
-
-
-class FWFPreprocessor(DataFormatPreprocessor):
-    @staticmethod
-    def preprocess_for_training(
-        config,
-        features,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        training_set_metadata=None,
-        skip_save_processed_input=False,
-        preprocessing_params=default_training_preprocessing_parameters,
-        backend=LOCAL_BACKEND,
-        random_seed=default_random_seed,
-        callbacks=None,
-    ):
-        return _preprocess_file_for_training(
-            config,
-            features,
-            dataset,
-            training_set,
-            validation_set,
-            test_set,
-            read_fn=read_fwf,
-            training_set_metadata=training_set_metadata,
-            skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=preprocessing_params,
-            backend=backend,
-            random_seed=random_seed,
-            callbacks=callbacks,
-        )
-
-    @staticmethod
-    def preprocess_for_prediction(
-        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
-    ):
-        dataset_df = read_fwf(dataset, backend.df_engine.df_lib)
-        training_set_metadata[SRC] = dataset
-        dataset, training_set_metadata = build_dataset(
-            config,
-            dataset_df,
-            features,
-            preprocessing_params,
-            mode="prediction",
-            metadata=training_set_metadata,
-            backend=backend,
-            callbacks=callbacks,
-        )
-        return dataset, training_set_metadata, None
-
-
-class HTMLPreprocessor(DataFormatPreprocessor):
-    @staticmethod
-    def preprocess_for_training(
-        config,
-        features,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        training_set_metadata=None,
-        skip_save_processed_input=False,
-        preprocessing_params=default_training_preprocessing_parameters,
-        backend=LOCAL_BACKEND,
-        random_seed=default_random_seed,
-        callbacks=None,
-    ):
-        return _preprocess_file_for_training(
-            config,
-            features,
-            dataset,
-            training_set,
-            validation_set,
-            test_set,
-            read_fn=read_html,
-            training_set_metadata=training_set_metadata,
-            skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=preprocessing_params,
-            backend=backend,
-            random_seed=random_seed,
-            callbacks=callbacks,
-        )
-
-    @staticmethod
-    def preprocess_for_prediction(
-        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
-    ):
-        dataset_df = read_html(dataset, backend.df_engine.df_lib)
-        training_set_metadata[SRC] = dataset
-        dataset, training_set_metadata = build_dataset(
-            config,
-            dataset_df,
-            features,
-            preprocessing_params,
-            mode="prediction",
-            metadata=training_set_metadata,
-            backend=backend,
-            callbacks=callbacks,
-        )
-        return dataset, training_set_metadata, None
-
-
-class ORCPreprocessor(DataFormatPreprocessor):
-    @staticmethod
-    def preprocess_for_training(
-        config,
-        features,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        training_set_metadata=None,
-        skip_save_processed_input=False,
-        preprocessing_params=default_training_preprocessing_parameters,
-        backend=LOCAL_BACKEND,
-        random_seed=default_random_seed,
-        callbacks=None,
-    ):
-        return _preprocess_file_for_training(
-            config,
-            features,
-            dataset,
-            training_set,
-            validation_set,
-            test_set,
-            read_fn=read_orc,
-            training_set_metadata=training_set_metadata,
-            skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=preprocessing_params,
-            backend=backend,
-            random_seed=random_seed,
-            callbacks=callbacks,
-        )
-
-    @staticmethod
-    def preprocess_for_prediction(
-        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
-    ):
-        dataset_df = read_orc(dataset, backend.df_engine.df_lib)
-        training_set_metadata[SRC] = dataset
-        dataset, training_set_metadata = build_dataset(
-            config,
-            dataset_df,
-            features,
-            preprocessing_params,
-            mode="prediction",
-            metadata=training_set_metadata,
-            backend=backend,
-            callbacks=callbacks,
-        )
-        return dataset, training_set_metadata, None
-
-
-class SASPreprocessor(DataFormatPreprocessor):
-    @staticmethod
-    def preprocess_for_training(
-        config,
-        features,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        training_set_metadata=None,
-        skip_save_processed_input=False,
-        preprocessing_params=default_training_preprocessing_parameters,
-        backend=LOCAL_BACKEND,
-        random_seed=default_random_seed,
-        callbacks=None,
-    ):
-        return _preprocess_file_for_training(
-            config,
-            features,
-            dataset,
-            training_set,
-            validation_set,
-            test_set,
-            read_fn=read_sas,
-            training_set_metadata=training_set_metadata,
-            skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=preprocessing_params,
-            backend=backend,
-            random_seed=random_seed,
-            callbacks=callbacks,
-        )
-
-    @staticmethod
-    def preprocess_for_prediction(
-        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
-    ):
-        dataset_df = read_sas(dataset, backend.df_engine.df_lib)
-        training_set_metadata[SRC] = dataset
-        dataset, training_set_metadata = build_dataset(
-            config,
-            dataset_df,
-            features,
-            preprocessing_params,
-            mode="prediction",
-            metadata=training_set_metadata,
-            backend=backend,
-            callbacks=callbacks,
-        )
-        return dataset, training_set_metadata, None
-
-
-class SPSSPreprocessor(DataFormatPreprocessor):
-    @staticmethod
-    def preprocess_for_training(
-        config,
-        features,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        training_set_metadata=None,
-        skip_save_processed_input=False,
-        preprocessing_params=default_training_preprocessing_parameters,
-        backend=LOCAL_BACKEND,
-        random_seed=default_random_seed,
-        callbacks=None,
-    ):
-        return _preprocess_file_for_training(
-            config,
-            features,
-            dataset,
-            training_set,
-            validation_set,
-            test_set,
-            read_fn=read_spss,
-            training_set_metadata=training_set_metadata,
-            skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=preprocessing_params,
-            backend=backend,
-            random_seed=random_seed,
-            callbacks=callbacks,
-        )
-
-    @staticmethod
-    def preprocess_for_prediction(
-        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
-    ):
-        dataset_df = read_spss(dataset, backend.df_engine.df_lib)
-        training_set_metadata[SRC] = dataset
-        dataset, training_set_metadata = build_dataset(
-            config,
-            dataset_df,
-            features,
-            preprocessing_params,
-            mode="prediction",
-            metadata=training_set_metadata,
-            backend=backend,
-            callbacks=callbacks,
-        )
-        return dataset, training_set_metadata, None
-
-
-class StataPreprocessor(DataFormatPreprocessor):
-    @staticmethod
-    def preprocess_for_training(
-        config,
-        features,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        training_set_metadata=None,
-        skip_save_processed_input=False,
-        preprocessing_params=default_training_preprocessing_parameters,
-        backend=LOCAL_BACKEND,
-        random_seed=default_random_seed,
-        callbacks=None,
-    ):
-        return _preprocess_file_for_training(
-            config,
-            features,
-            dataset,
-            training_set,
-            validation_set,
-            test_set,
-            read_fn=read_stata,
-            training_set_metadata=training_set_metadata,
-            skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=preprocessing_params,
-            backend=backend,
-            random_seed=random_seed,
-            callbacks=callbacks,
-        )
-
-    @staticmethod
-    def preprocess_for_prediction(
-        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
-    ):
-        dataset_df = read_stata(dataset, backend.df_engine.df_lib)
-        training_set_metadata[SRC] = dataset
-        dataset, training_set_metadata = build_dataset(
-            config,
-            dataset_df,
-            features,
-            preprocessing_params,
-            mode="prediction",
-            metadata=training_set_metadata,
-            backend=backend,
-            callbacks=callbacks,
-        )
-        return dataset, training_set_metadata, None
-
-
 class HDF5Preprocessor(DataFormatPreprocessor):
-    @staticmethod
     def preprocess_for_training(
+        self,
         config,
         features,
         dataset=None,
@@ -1059,7 +412,7 @@ class HDF5Preprocessor(DataFormatPreprocessor):
         random_seed=default_random_seed,
         callbacks=None,
     ):
-        return HDF5Preprocessor.prepare_processed_data(
+        return self.prepare_processed_data(
             features,
             dataset,
             training_set,
@@ -1072,16 +425,15 @@ class HDF5Preprocessor(DataFormatPreprocessor):
             random_seed,
         )
 
-    @staticmethod
     def preprocess_for_prediction(
-        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+        self, config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
     ):
         hdf5_fp = dataset
         dataset = load_hdf5(dataset, preprocessing_params, backend, split_data=False, shuffle_training=False)
         return dataset, training_set_metadata, hdf5_fp
 
-    @staticmethod
     def prepare_processed_data(
+        self,
         features,
         dataset=None,
         training_set=None,
@@ -1136,23 +488,23 @@ class HDF5Preprocessor(DataFormatPreprocessor):
 
 
 data_format_preprocessor_registry = {
-    **dict.fromkeys(DICT_FORMATS, DictPreprocessor),
-    **dict.fromkeys(DATAFRAME_FORMATS, DataFramePreprocessor),
-    **dict.fromkeys(CSV_FORMATS, CSVPreprocessor),
-    **dict.fromkeys(TSV_FORMATS, TSVPreprocessor),
-    **dict.fromkeys(JSON_FORMATS, JSONPreprocessor),
-    **dict.fromkeys(JSONL_FORMATS, JSONLPreprocessor),
-    **dict.fromkeys(EXCEL_FORMATS, ExcelPreprocessor),
-    **dict.fromkeys(PARQUET_FORMATS, ParquetPreprocessor),
-    **dict.fromkeys(PICKLE_FORMATS, PicklePreprocessor),
-    **dict.fromkeys(FWF_FORMATS, FWFPreprocessor),
-    **dict.fromkeys(FEATHER_FORMATS, FeatherPreprocessor),
-    **dict.fromkeys(HTML_FORMATS, HTMLPreprocessor),
-    **dict.fromkeys(ORC_FORMATS, ORCPreprocessor),
-    **dict.fromkeys(SAS_FORMATS, SASPreprocessor),
-    **dict.fromkeys(SPSS_FORMATS, SPSSPreprocessor),
-    **dict.fromkeys(STATA_FORMATS, StataPreprocessor),
-    **dict.fromkeys(HDF5_FORMATS, HDF5Preprocessor),
+    **dict.fromkeys(DICT_FORMATS, DictPreprocessor()),
+    **dict.fromkeys(DATAFRAME_FORMATS, DataFramePreprocessor()),
+    **dict.fromkeys(CSV_FORMATS, FileBasedPreprocessor(read_csv)),
+    **dict.fromkeys(TSV_FORMATS, FileBasedPreprocessor(read_tsv)),
+    **dict.fromkeys(JSON_FORMATS, FileBasedPreprocessor(read_json)),
+    **dict.fromkeys(JSONL_FORMATS, FileBasedPreprocessor(read_jsonl)),
+    **dict.fromkeys(EXCEL_FORMATS, FileBasedPreprocessor(read_excel)),
+    **dict.fromkeys(PARQUET_FORMATS, ParquetPreprocessor()),
+    **dict.fromkeys(PICKLE_FORMATS, FileBasedPreprocessor(read_pickle)),
+    **dict.fromkeys(FWF_FORMATS, FileBasedPreprocessor(read_fwf)),
+    **dict.fromkeys(FEATHER_FORMATS, FileBasedPreprocessor(read_feather)),
+    **dict.fromkeys(HTML_FORMATS, FileBasedPreprocessor(read_html)),
+    **dict.fromkeys(ORC_FORMATS, FileBasedPreprocessor(read_orc)),
+    **dict.fromkeys(SAS_FORMATS, FileBasedPreprocessor(read_sas)),
+    **dict.fromkeys(SPSS_FORMATS, FileBasedPreprocessor(read_spss)),
+    **dict.fromkeys(STATA_FORMATS, FileBasedPreprocessor(read_stata)),
+    **dict.fromkeys(HDF5_FORMATS, HDF5Preprocessor()),
 }
 
 
