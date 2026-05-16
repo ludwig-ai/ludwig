@@ -20,6 +20,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Generator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+from dataclasses import dataclass
 from typing import Any, TYPE_CHECKING
 
 import numpy as np
@@ -54,6 +55,29 @@ if TYPE_CHECKING:
 
 
 @DeveloperAPI
+@dataclass(frozen=True)
+class BackendCapabilities:
+    """Named feature flags that a :class:`Backend` can advertise.
+
+    Use this instead of a raw ``dict[str, Any]`` so that callers get IDE
+    completion and type-safe access::
+
+        if backend.capabilities.distributed:
+            ...
+
+    All flags default to ``False``; subclasses set them in the class body::
+
+        class RayBackend(Backend):
+            capabilities = BackendCapabilities(distributed=True, hyperopt=True)
+    """
+
+    distributed: bool = False
+    hyperopt: bool = False
+    async_execution: bool = False
+    cache_preprocessing: bool = True
+
+
+@DeveloperAPI
 class Backend(ABC):
     """Abstract base class for Ludwig execution backends.
 
@@ -68,15 +92,13 @@ class Backend(ABC):
         supports_batch_size_tuning() — returns True; set to False for
         backends that cannot tune batch sizes (e.g. remote inference only).
 
-    Use the ``capabilities`` class attribute to expose named feature flags so
-    callers can check support without catching NotImplementedError::
+    Set the ``capabilities`` class attribute to advertise named feature flags::
 
         class MyBackend(Backend):
-            capabilities = {"distributed": False, "hyperopt": False}
+            capabilities = BackendCapabilities(distributed=False)
     """
 
-    # Subclasses may override this dict to advertise capabilities.
-    capabilities: dict[str, Any] = {}
+    capabilities: BackendCapabilities = BackendCapabilities()
 
     def __init__(
         self,

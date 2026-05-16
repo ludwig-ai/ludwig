@@ -41,7 +41,7 @@ from ray.util.placement_group import placement_group, remove_placement_group
 if TYPE_CHECKING:
     from ludwig.api import LudwigModel
 
-from ludwig.backend.base import Backend, RemoteTrainingMixin
+from ludwig.backend.base import Backend, BackendCapabilities, RemoteTrainingMixin
 from ludwig.backend.datasource import read_binary_files_with_index
 from ludwig.constants import MODEL_ECD, MODEL_LLM, NAME, PREPROCESSING, PROC_COLUMN, TYPE
 from ludwig.data.dataframe.base import DataFrameEngine
@@ -862,6 +862,7 @@ class RayPredictor(BasePredictor):
 
 class RayBackend(RemoteTrainingMixin, Backend):
     BACKEND_TYPE = "ray"
+    capabilities = BackendCapabilities(distributed=True, hyperopt=True, cache_preprocessing=True)
 
     def __init__(self, processor=None, trainer=None, loader=None, preprocessor_kwargs=None, **kwargs):
         super().__init__(dataset_manager=RayDatasetManager(self), **kwargs)
