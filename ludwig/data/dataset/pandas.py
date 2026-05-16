@@ -191,7 +191,14 @@ class PandasDataset(Dataset):
                     padding_value=p["padding_value"],
                     normalization_type=p["normalization_type"],
                 )
-                self.dataset[proc_col] = LazyColumn(paths, decode_fn)
+                # Audio FBANK is CPU-bound: each decode() already uses PyTorch's
+                # internal thread pool.  Over-subscribing CPUs by running many
+                # workers in parallel causes severe slowdowns (up to 5×).  Cap at
+                # cpu_count // torch_threads so total threads ≈ cpu_count.
+                import torch as _torch
+
+                _audio_workers = max(1, (os.cpu_count() or 4) // max(1, _torch.get_num_threads()))
+                self.dataset[proc_col] = LazyColumn(paths, decode_fn, max_workers=_audio_workers)
 
             elif feat_type == "image" and "lazy_image_params" in feat_meta:
                 import torch
@@ -258,6 +265,12 @@ class PandasDataset(Dataset):
         df = self.to_df()
         return df.memory_usage(deep=True).sum() if df is not None else 0
 
+    def _has_lazy_columns(self) -> bool:
+        """Return True if any column in this dataset is a LazyColumn (path-array needing decode)."""
+        from ludwig.data.lazy_utils import is_lazy_column
+
+        return any(is_lazy_column(v) for v in self.dataset.values())
+
     @contextlib.contextmanager
     def initialize_batcher(
         self,
@@ -267,7 +280,15 @@ class PandasDataset(Dataset):
         ignore_last: bool = False,
         distributed: DistributedStrategy = None,
         augmentation_pipeline=None,
+        prefetch_size: int | None = None,
     ) -> Batcher:
+        # When the dataset contains lazy columns (audio / image file paths that
+        # are decoded per-batch), automatically enable prefetch so the GPU is
+        # not idle during decode.  Callers can override by passing prefetch_size
+        # explicitly (0 to disable, N to set a specific depth).
+        if prefetch_size is None:
+            prefetch_size = 4 if self._has_lazy_columns() else 0
+
         sampler = DistributedSampler(
             len(self), shuffle=should_shuffle, random_seed=random_seed, distributed=distributed
         )
@@ -277,6 +298,7 @@ class PandasDataset(Dataset):
             batch_size=batch_size,
             ignore_last=ignore_last,
             augmentation_pipeline=augmentation_pipeline,
+            prefetch_size=prefetch_size,
         )
         yield batcher
 
