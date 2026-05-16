@@ -312,7 +312,8 @@ class Predictor(BasePredictor):
                 }
                 progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, self.is_coordinator())
 
-                collected_tensors = []
+                # Accumulate outputs per output name, offloading to CPU immediately to avoid OOM.
+                accumulated: dict[str, list[torch.Tensor]] = {}
                 while not batcher.last_batch():
                     batch = batcher.next_batch()
 
@@ -323,13 +324,23 @@ class Predictor(BasePredictor):
                         for i_feat in self.model.input_features.values()
                     }
                     outputs = self._predict_on_inputs(inputs)
-                    collected_tensors = [(concat_name, tensor) for concat_name, tensor in outputs.items()]
+                    for name, tensor in outputs.items():
+                        if name not in accumulated:
+                            accumulated[name] = []
+                        if isinstance(tensor, torch.Tensor):
+                            accumulated[name].append(tensor.detach().cpu())
+                        else:
+                            accumulated[name].append(tensor)
                     progress_bar.update(1)
 
                 progress_bar.close()
 
         self.dist_model.train(prev_model_training_mode)  # Restores previous model training mode.
 
+        collected_tensors = [
+            (name, torch.cat(tensors) if tensors and isinstance(tensors[0], torch.Tensor) else tensors)
+            for name, tensors in accumulated.items()
+        ]
         return collected_tensors
 
     def _predict_on_inputs(self, inputs: dict) -> dict:

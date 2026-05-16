@@ -645,57 +645,61 @@ class PassthroughPreprocModule(torch.nn.Module):
         return self.encoder(preproc_v)
 
 
-def create_passthrough_input_feature(feature: InputFeature, config: BaseFeatureConfig) -> InputFeature:
-    """Creates a shim input feature that acts as a transparent identifiy function on the input data.
+class PassthroughInputFeature(InputFeature):
+    """A transparent identity-function wrapper around an input feature whose encoder was pre-cached.
 
-    Used when the feature's encoder embeddings were cached in preprocessing. This way, we don't need to make any changes
-    to the underlying interface in such cases other than to swap the feature that would normally do the encoding with
-    this one.
+    Used when encoder embeddings were computed during preprocessing (embed mode). The passthrough
+    delegates shape/type queries to the wrapped feature's encoder so the rest of the model sees a
+    consistent interface, while `forward()` simply returns the already-embedded tensor unchanged.
+
+    Use `create_passthrough_input_feature()` to construct one.
     """
 
-    class _InputPassthroughFeature(InputFeature):
-        def __init__(self, config: BaseFeatureConfig):
-            super().__init__(config)
+    def __init__(self, config: BaseFeatureConfig, wrapped: InputFeature):
+        super().__init__(config)
+        self._wrapped = wrapped
 
-        def forward(self, inputs, mask=None):
-            if not isinstance(inputs, torch.Tensor):
-                raise TypeError(f"PassthroughPreproc forward expects a torch.Tensor, got {type(inputs).__name__}.")
-            return {ENCODER_OUTPUT: inputs}
+    def forward(self, inputs, mask=None):
+        if not isinstance(inputs, torch.Tensor):
+            raise TypeError(f"PassthroughInputFeature forward expects a torch.Tensor, got {type(inputs).__name__}.")
+        return {ENCODER_OUTPUT: inputs}
 
-        @property
-        def input_dtype(self):
-            # Doesn't matter as combiner will need to cast them to float32 anyway
-            return torch.float32
+    @property
+    def input_dtype(self):
+        return torch.float32
 
-        @property
-        def input_shape(self):
-            return feature.encoder_obj.output_shape
+    @property
+    def input_shape(self):
+        return self._wrapped.encoder_obj.output_shape
 
-        @property
-        def output_shape(self) -> torch.Size:
-            return feature.encoder_obj.output_shape
+    @property
+    def output_shape(self) -> torch.Size:
+        return self._wrapped.encoder_obj.output_shape
 
-        @staticmethod
-        def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
-            return feature.update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs)
+    def update_config_with_metadata(self, feature_config, feature_metadata, *args, **kwargs):
+        return self._wrapped.update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs)
 
-        @staticmethod
-        def get_schema_cls():
-            return feature.get_schema_cls()
+    def get_schema_cls(self):
+        return self._wrapped.get_schema_cls()
 
-        @staticmethod
-        def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
-            return PassthroughPreprocModule(feature.create_preproc_module(metadata), feature)
+    def create_preproc_module(self, metadata: TrainingSetMetadataDict) -> torch.nn.Module:
+        return PassthroughPreprocModule(self._wrapped.create_preproc_module(metadata), self._wrapped)
 
-        @staticmethod
-        def type():
-            return feature.type()
+    def type(self):
+        return self._wrapped.type()
 
-        def unskip(self) -> InputFeature:
-            return feature
+    def unskip(self) -> InputFeature:
+        return self._wrapped
 
-        @property
-        def encoder_obj(self) -> torch.nn.Module:
-            return feature.encoder_obj
+    @property
+    def encoder_obj(self) -> torch.nn.Module:
+        return self._wrapped.encoder_obj
 
-    return _InputPassthroughFeature(config)
+
+def create_passthrough_input_feature(feature: InputFeature, config: BaseFeatureConfig) -> PassthroughInputFeature:
+    """Wraps *feature* in a :class:`PassthroughInputFeature` shim.
+
+    The shim acts as a transparent identity function — useful when encoder embeddings
+    were cached during preprocessing and the model should skip re-encoding.
+    """
+    return PassthroughInputFeature(config, wrapped=feature)
