@@ -815,12 +815,12 @@ def _run_no_evaluate(config, dataset, backend_config, **kwargs):
 @pytest.mark.integration_tests_b
 @pytest.mark.distributed_b
 @pytest.mark.distributed
-@pytest.mark.parametrize("lazy", [True, False], ids=["lazy_true", "lazy_false"])
-def test_ray_audio_lazy_modes(tmpdir, lazy, ray_cluster_2cpu):
-    """Training must succeed with both lazy=True (decode in worker) and lazy=False (decode upfront).
+@pytest.mark.parametrize("mode", ["lazy", "eager"], ids=["lazy", "eager"])
+def test_ray_audio_lazy_modes(tmpdir, mode, ray_cluster_2cpu):
+    """Training must succeed with both mode='lazy' (decode in worker) and mode='eager' (decode upfront).
 
-    lazy=True is the default and exercises the _with_lazy_decode map_batches path.
-    lazy=False verifies that the eager (pre-decoded) path still works correctly in Ray.
+    mode='lazy' is the default and exercises the _with_lazy_decode map_batches path.
+    mode='eager' verifies that the eager (pre-decoded) path still works correctly in Ray.
     """
     audio_dest_folder = os.path.join(tmpdir, "generated_audio")
     input_features = [
@@ -836,7 +836,7 @@ def test_ray_audio_lazy_modes(tmpdir, lazy, ray_cluster_2cpu):
                 "in_memory": True,
                 "padding_value": 0.0,
                 "norm": None,
-                "lazy": lazy,
+                "mode": mode,
             },
         )
     ]
@@ -847,18 +847,18 @@ def test_ray_audio_lazy_modes(tmpdir, lazy, ray_cluster_2cpu):
 @pytest.mark.integration_tests_b
 @pytest.mark.distributed_b
 @pytest.mark.distributed
-@pytest.mark.parametrize("lazy", [True, False], ids=["lazy_true", "lazy_false"])
-def test_ray_image_lazy_modes(tmpdir, lazy, ray_cluster_2cpu):
-    """Image training must succeed with both lazy=True (decode in worker) and lazy=False (decode upfront).
+@pytest.mark.parametrize("mode", ["lazy", "eager"], ids=["lazy", "eager"])
+def test_ray_image_lazy_modes(tmpdir, mode, ray_cluster_2cpu):
+    """Image training must succeed with both mode='lazy' (decode in worker) and mode='eager' (decode upfront).
 
-    lazy=True exercises the _with_lazy_decode map_batches path for images.
-    lazy=False verifies that the eager (pre-decoded) path still works correctly in Ray.
+    mode='lazy' exercises the _with_lazy_decode map_batches path for images.
+    mode='eager' verifies that the eager (pre-decoded) path still works correctly in Ray.
     """
     image_dest_folder = os.path.join(tmpdir, "generated_images")
     input_features = [
         image_feature(
             folder=image_dest_folder,
-            preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "lazy": lazy},
+            preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "mode": mode},
             encoder={"type": "stacked_cnn", "output_size": 16, "num_filters": 8},
         )
     ]
