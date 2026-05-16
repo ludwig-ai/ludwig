@@ -151,23 +151,36 @@ class ImagePreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["infer_image_num_classes"],
     )
 
-    lazy: bool = schema_utils.Boolean(
-        default=True,
-        description="If true, images are not decoded during preprocessing. Instead, file paths are stored in the "
-        "processed dataset and images are decoded on-the-fly per batch during training. This bounds peak "
-        "memory to batch_size × image_size instead of N × image_size. For in-memory data sources "
-        "(e.g. HuggingFace datasets delivering PIL Images), images are first cached to local disk in "
-        "lazy_cache_dir and then decoded lazily from there. Lazy mode is disabled automatically when a "
-        "torchvision pretrained encoder is used.",
+    mode: str = schema_utils.StringOptions(
+        ["eager", "lazy", "lazy_cached"],
+        default="lazy",
+        allow_none=False,
+        description="Preprocessing mode for image features. 'eager' decodes all files during preprocessing "
+        "and stores tensors in the Parquet cache. 'lazy' stores file paths and decodes per batch during "
+        "training, keeping peak memory bounded to batch_size × image_size. 'lazy_cached' behaves like "
+        "'lazy' on the first training epoch but writes decoded tensors to a numpy memmap alongside the "
+        "Parquet cache; subsequent epochs read from the memmap directly, eliminating decode overhead. "
+        "Lazy mode is disabled automatically when a torchvision pretrained encoder is used.",
+    )
+
+    prefetch_size: int | None = schema_utils.NonNegativeInteger(
+        default=None,
+        allow_none=True,
+        description="Number of batches to prefetch in a background thread while the GPU processes the current "
+        "batch. None (default) selects automatically: 0 for 'eager' mode, 4 for 'lazy' and "
+        "'lazy_cached' (epoch 1). After the first epoch in 'lazy_cached' mode, prefetch is "
+        "automatically disabled since memmap reads are fast enough. Set to 0 to disable prefetch "
+        "entirely, or to a positive integer to override the automatic selection.",
     )
 
     lazy_cache_dir: str | None = schema_utils.String(
         default=None,
         allow_none=True,
         description="Directory in which to cache image files when the source data is in-memory (e.g. a "
-        "HuggingFace dataset). Only used when lazy=True and the input entries are not already paths to "
-        "existing files. When None, defaults to ~/.cache/ludwig/lazy_media/<feature_name>/. Has no "
-        "effect when the input column already contains local file paths.",
+        "HuggingFace dataset). Only used when mode is 'lazy' or 'lazy_cached' and the input entries "
+        "are not already paths to existing files. When None, defaults to "
+        "~/.cache/ludwig/lazy_media/<feature_name>/. Has no effect when the input column already "
+        "contains local file paths.",
     )
 
 

@@ -244,6 +244,12 @@ class RandomAccessBatcher(Batcher):
         self.sampler.set_epoch(epoch)
         self.sample_it = iter(self.sampler)
 
+        # After epoch 1, if all lazy columns are decoded and cached in memmaps,
+        # disable prefetch — memmap reads are fast enough that pipelining adds
+        # no measurable benefit and avoids unnecessary thread overhead.
+        if self._prefetch_size > 0 and hasattr(self.dataset, "is_fully_cached") and self.dataset.is_fully_cached():
+            self._prefetch_size = 0
+
         if self._prefetch_size > 0:
             self._start_async_epoch()
 

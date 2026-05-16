@@ -106,13 +106,25 @@ class AudioPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[AUDIO][PREPROCESSING]["num_filter_bands"],
     )
 
-    lazy: bool = schema_utils.Boolean(
-        default=True,
-        description="If true, audio files are not decoded during preprocessing. Instead, file paths are stored "
-        "in the processed dataset and audio is decoded on-the-fly per batch during training. This "
-        "bounds peak memory to batch_size × clip_size instead of N × clip_size. For in-memory "
-        "data sources (e.g. HuggingFace datasets delivering audio dicts), audio is first cached to "
-        "local disk in lazy_cache_dir and then decoded lazily from there.",
+    mode: str = schema_utils.StringOptions(
+        ["eager", "lazy", "lazy_cached"],
+        default="lazy",
+        allow_none=False,
+        description="Preprocessing mode for audio features. 'eager' decodes all files during preprocessing "
+        "and stores tensors in the Parquet cache. 'lazy' stores file paths and decodes per batch during "
+        "training, keeping peak memory bounded to batch_size × clip_size. 'lazy_cached' behaves like "
+        "'lazy' on the first training epoch but writes decoded tensors to a numpy memmap alongside the "
+        "Parquet cache; subsequent epochs read from the memmap directly, eliminating decode overhead.",
+    )
+
+    prefetch_size: int | None = schema_utils.NonNegativeInteger(
+        default=None,
+        allow_none=True,
+        description="Number of batches to prefetch in a background thread while the GPU processes the current "
+        "batch. None (default) selects automatically: 0 for 'eager' mode, 4 for 'lazy' and "
+        "'lazy_cached' (epoch 1). After the first epoch in 'lazy_cached' mode, prefetch is "
+        "automatically disabled since memmap reads are fast enough. Set to 0 to disable prefetch "
+        "entirely, or to a positive integer to override the automatic selection.",
     )
 
     lazy_cache_dir: str | None = schema_utils.String(
