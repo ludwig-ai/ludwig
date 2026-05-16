@@ -282,7 +282,7 @@ class LudwigModel:
             self.config_fp = config
         else:
             config_dict = copy.deepcopy(config)
-            self.config_fp = None  # type: ignore [assignment]
+            self.config_fp = None
 
         self._user_config = upgrade_config_dict_to_latest_version(config_dict)
 

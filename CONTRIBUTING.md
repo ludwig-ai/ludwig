@@ -125,10 +125,90 @@ Work on your self-assigned issue and eventually create a Pull Request.
 1. Once you are satisfied, go the webpage of your fork on GitHub. Click on "Pull request" to send
    your contribution to the project maintainers for review.
 
-## Other tips
+## Running Tests
+
+Ludwig's test suite lives in `tests/`. The main categories are:
+
+| Directory                  | What it covers                                          |
+| -------------------------- | ------------------------------------------------------- |
+| `tests/ludwig/`            | Unit tests for individual modules (fast, no GPU needed) |
+| `tests/integration_tests/` | End-to-end training/prediction pipelines                |
+| `tests/regression_tests/`  | Accuracy regression checks                              |
+
+**Run the full unit test suite:**
+
+```bash
+pytest tests/ludwig/
+```
+
+**Run a single test file:**
+
+```bash
+pytest tests/ludwig/encoders/test_image_encoder.py -v
+```
+
+**Run integration tests (slow, uses GPUs if available):**
+
+```bash
+pytest tests/integration_tests/ -v
+```
+
+**Run tests matching a keyword:**
+
+```bash
+pytest tests/ -k "test_binary_feature" -v
+```
+
+Tests that require GPUs, Ray, or heavy optional dependencies are marked with pytest marks
+(`@pytest.mark.slow`, `@pytest.mark.distributed`, etc.) and are automatically skipped in CI
+unless the appropriate resources are available.
+
+## Codebase Overview
+
+A quick map of the most important modules:
+
+| Path                           | Purpose                                                                     |
+| ------------------------------ | --------------------------------------------------------------------------- |
+| `ludwig/api.py`                | `LudwigModel` — the main public API (train, predict, evaluate)              |
+| `ludwig/schema/`               | Pydantic v2 config schema — `ModelConfig`, feature configs, trainer configs |
+| `ludwig/features/`             | Feature types: preprocessing, encoding, decoding, metrics                   |
+| `ludwig/encoders/`             | Encoder implementations (text, image, audio, tabular, …)                    |
+| `ludwig/decoders/`             | Decoder implementations                                                     |
+| `ludwig/models/`               | `ECD` (encoder–combiner–decoder) and `LLM` model classes                    |
+| `ludwig/trainers/`             | Trainer implementations (ECD, LLM fine-tune, inference-only)                |
+| `ludwig/data/preprocessing.py` | Tabular data loading and preprocessing pipeline                             |
+| `ludwig/backend/`              | Execution backends (`LocalBackend`, `RayBackend`)                           |
+| `ludwig/utils/data_utils.py`   | File format readers (CSV, Parquet, JSON, …)                                 |
+| `ludwig/collect.py`            | CLI tools: collect activations, weights                                     |
+
+**Key abstractions:**
+
+- `BaseFeature` → `InputFeature` / `OutputFeature` — every feature type inherits from one of these.
+- `Encoder` / `Decoder` — registered via `@register_encoder` / `@register_decoder`; looked up by
+  `encoder.type` / `decoder.type` from config.
+- `DataFormatPreprocessor` — dispatches file loading per format via a strategy (reader function).
+  `FileBasedPreprocessor(read_fn)` covers all tabular file types; `HDF5Preprocessor` and the
+  in-memory `DictPreprocessor` / `DataFramePreprocessor` are separate.
+- `BackendCapabilities` — frozen dataclass of feature flags advertised by each backend.
+- `InferenceOnlyTrainer` (config type `"none"`) — runs evaluation without training; used for
+  zero-shot / few-shot LLM inference.
+
+**Adding a new feature type:**
+
+1. Create `ludwig/features/<name>_feature.py` with `<Name>FeatureMixin`, `<Name>InputFeature`,
+   and/or `<Name>OutputFeature`.
+1. Create `ludwig/schema/features/<name>_feature.py` with the Pydantic config classes.
+1. Register them with `@register_input_feature("<name>")` / `@register_output_feature("<name>")`.
+1. Add a preprocessing config class to `ludwig/schema/features/preprocessing/`.
+1. Add tests in `tests/ludwig/features/test_<name>_feature.py`.
+
+## Other Tips
 
 - Add unit tests for any new code you write.
 - Make sure tests pass. See the [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/latest/developer_guide/style_guidelines_and_tests/) for more details.
+- Keep `except Exception:` blocks narrow: use `except ImportError:` for optional imports and
+  `except pydantic.ValidationError:` for schema fallbacks. Broad exception swallowing makes
+  production bugs invisible.
 
 ## Attribution
 
