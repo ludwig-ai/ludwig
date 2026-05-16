@@ -334,7 +334,7 @@ class LudwigModel:
         self.model = LudwigModel.create_model(cfg, random_seed=random_seed)
 
     def _initialize_llm_for_zero_shot(self, random_seed: int = default_random_seed):
-        """Initialize the LLM for zero-shot (NoneTrainer) inference only."""
+        """Initialize the LLM for zero-shot (InferenceOnlyTrainer) inference only."""
         self._get_or_create_model(random_seed=random_seed)
 
         if self.model.model.device.type == "cpu" and torch.cuda.is_available():

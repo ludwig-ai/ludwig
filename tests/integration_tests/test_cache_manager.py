@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 
 from ludwig.constants import CHECKSUM, META, TEST, TRAINING, VALIDATION
-from ludwig.data.cache.manager import alphanum, CacheManager
+from ludwig.data.cache.manager import alphanum, PreprocessedDataCache
 from ludwig.data.cache.types import CacheableDataframe, wrap
 from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.globals import TRAINING_PREPROC_FILE_NAME
@@ -24,7 +24,7 @@ def change_test_dir(tmpdir, monkeypatch):
 def test_cache_dataset(use_cache_dir, use_split, use_df, tmpdir, change_test_dir):
     dataset_manager = PandasDatasetManager(backend=LocalTestBackend())
     cache_dir = os.path.join(tmpdir, "cache") if use_cache_dir else None
-    manager = CacheManager(dataset_manager, cache_dir=cache_dir)
+    manager = PreprocessedDataCache(dataset_manager, cache_dir=cache_dir)
 
     config = {
         "input_features": [sequence_feature(encoder={"reduce_output": "sum"})],

@@ -98,7 +98,7 @@ class DatasetCache:
         return self.cache_map.get(cached_obj_name)
 
 
-class CacheManager:
+class PreprocessedDataCache:
     def __init__(
         self,
         dataset_manager: DatasetManager,

@@ -15,7 +15,7 @@ from ludwig.models.llm import LLM
 from ludwig.models.predictor import LlmFineTunePredictor, LlmPredictor
 from ludwig.modules.metric_modules import get_initial_validation_value
 from ludwig.schema.model_types.base import ModelConfig
-from ludwig.schema.trainer import BaseTrainerConfig, FineTuneTrainerConfig, NoneTrainerConfig
+from ludwig.schema.trainer import BaseTrainerConfig, FineTuneTrainerConfig, InferenceOnlyTrainerConfig
 from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_llm_ray_trainer, register_llm_trainer
 from ludwig.trainers.trainer import Trainer
@@ -41,12 +41,12 @@ MAX_EVALUATION_EXAMPLES_SHOWN = 5
 
 @register_llm_trainer("none")
 @register_llm_ray_trainer("none")
-class NoneTrainer(BaseTrainer):
-    """NoneTrainer is a trainer that does not train a model, only runs evaluation."""
+class InferenceOnlyTrainer(BaseTrainer):
+    """InferenceOnlyTrainer is a trainer that does not train a model, only runs evaluation."""
 
     def __init__(
         self,
-        config: NoneTrainerConfig,
+        config: InferenceOnlyTrainerConfig,
         model: LLM,
         resume: float = False,
         skip_save_model: bool = False,
@@ -61,8 +61,8 @@ class NoneTrainer(BaseTrainer):
     ):
         """
         Args:
-            config: `ludwig.schema.trainer.NoneTrainerConfig` instance that specifies training hyperparameters
-                (default: `ludwig.schema.trainer.NoneTrainerConfig()`).
+            config: `ludwig.schema.trainer.InferenceOnlyTrainerConfig` instance that specifies training hyperparameters
+                (default: `ludwig.schema.trainer.InferenceOnlyTrainerConfig()`).
             model: Underlying Ludwig model (`ludwig.models.llm.LLM`).
             resume: Resume training a model that was being trained. (default: False).
             skip_save_model: Disables saving model weights and hyperparameters each time the model improves. By
@@ -87,7 +87,7 @@ class NoneTrainer(BaseTrainer):
         super().__init__()
 
         # Ensure distributed strategy is initialized for metric sync_context.
-        # NoneTrainer may run on the head node (not in a Ray Train worker),
+        # InferenceOnlyTrainer may run on the head node (not in a Ray Train worker),
         # so init_dist_strategy may not have been called yet.
         from ludwig.distributed import init_dist_strategy
 
@@ -269,7 +269,7 @@ class NoneTrainer(BaseTrainer):
 
     @staticmethod
     def get_schema_cls() -> BaseTrainerConfig:
-        return NoneTrainerConfig
+        return InferenceOnlyTrainerConfig
 
     def is_coordinator(self) -> bool:
         return self.distributed.rank() == 0
@@ -512,7 +512,7 @@ class FineTuneTrainer(Trainer):
         return LLMFinetunePredictBatchSizeEvaluator(self)
 
 
-class RemoteLLMTrainer(NoneTrainer):
+class RemoteLLMTrainer(InferenceOnlyTrainer):
     def __init__(self, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
         super().__init__(**kwargs)
 

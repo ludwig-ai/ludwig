@@ -32,7 +32,7 @@ from tqdm import tqdm
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.utils.storage import StorageManager
 from ludwig.constants import MODEL_LLM
-from ludwig.data.cache.manager import CacheManager
+from ludwig.data.cache.manager import PreprocessedDataCache
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.data.dataset.base import DatasetManager
@@ -109,14 +109,14 @@ class Backend(ABC):
         credentials = credentials or {}
         self._dataset_manager = dataset_manager
         self._storage_manager = StorageManager(**credentials)
-        self._cache_manager = CacheManager(self._dataset_manager, cache_dir)
+        self._cache_manager = PreprocessedDataCache(self._dataset_manager, cache_dir)
 
     @property
     def storage(self) -> StorageManager:
         return self._storage_manager
 
     @property
-    def cache(self) -> CacheManager:
+    def cache(self) -> PreprocessedDataCache:
         return self._cache_manager
 
     @property
@@ -200,7 +200,7 @@ class Backend(ABC):
         return True
 
 
-class LocalPreprocessingMixin:
+class LocalDataProcessingMixin:
     @property
     def df_engine(self):
         return PANDAS
@@ -289,7 +289,7 @@ class RemoteTrainingMixin:
 
 
 @DeveloperAPI
-class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
+class LocalBackend(LocalDataProcessingMixin, LocalTrainingMixin, Backend):
     BACKEND_TYPE = "local"
 
     _shared_instance: LocalBackend
