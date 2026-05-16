@@ -27,6 +27,7 @@ ray = pytest.importorskip("ray")
 
 pytestmark = [
     pytest.mark.distributed,
+    pytest.mark.distributed_f,
 ]
 
 

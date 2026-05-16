@@ -418,6 +418,11 @@ def audio_feature(folder, **kwargs):
             "window_shift_in_s": 0.02,
             "num_filter_bands": 8,
             "audio_file_length_limit_in_s": 0.5,
+            "missing_value_strategy": "bfill",
+            "in_memory": True,
+            "padding_value": 0.0,
+            "norm": None,
+            "lazy": False,
         },
         ENCODER: {
             "type": "stacked_cnn",

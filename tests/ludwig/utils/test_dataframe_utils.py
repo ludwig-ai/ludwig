@@ -12,6 +12,7 @@ except ImportError:
 
 
 @pytest.mark.distributed
+@pytest.mark.distributed_f
 def test_to_numpy_dataset_with_dask(ray_cluster_2cpu):
     dd_df = dd.from_pandas(pd.DataFrame([[1, 2, 3]], columns=["col1", "col2", "col3"]), npartitions=1)
     ray_backend = create_backend("ray")
@@ -22,6 +23,7 @@ def test_to_numpy_dataset_with_dask(ray_cluster_2cpu):
 
 
 @pytest.mark.distributed
+@pytest.mark.distributed_f
 def test_to_numpy_dataset_with_dask_backend_mismatch():
     dd_df = dd.from_pandas(pd.DataFrame([[1, 2, 3]], columns=["col1", "col2", "col3"]), npartitions=1)
 
@@ -54,6 +56,7 @@ def test_to_numpy_dataset_empty():
 
 
 @pytest.mark.distributed
+@pytest.mark.distributed_f
 def test_to_numpy_dataset_with_pandas_backend_mismatch(ray_cluster_2cpu):
     pd_df = pd.DataFrame([[1, 2, 3]], columns=["col1", "col2", "col3"])
     ray_backend = create_backend("ray")

@@ -46,7 +46,7 @@ def get_test_data(backend: str) -> tuple[DataFrame, DataFrame]:
     "backend",
     [
         pytest.param("local", id="local"),
-        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
+        pytest.param("ray", id="ray", marks=[pytest.mark.distributed, pytest.mark.distributed_f]),
     ],
 )
 def test_norm(backend, ray_cluster_2cpu):
@@ -108,7 +108,7 @@ def test_norm(backend, ray_cluster_2cpu):
     "backend",
     [
         pytest.param("local", id="local"),
-        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
+        pytest.param("ray", id="ray", marks=[pytest.mark.distributed, pytest.mark.distributed_f]),
     ],
 )
 def test_numeric_transformation_registry(transformation, backend, ray_cluster_2cpu):

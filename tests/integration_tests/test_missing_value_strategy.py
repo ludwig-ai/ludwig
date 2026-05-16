@@ -69,7 +69,7 @@ def test_missing_value_prediction(tmpdir, csv_filename):
     "backend",
     [
         pytest.param("local", id="local"),
-        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
+        pytest.param("ray", id="ray", marks=[pytest.mark.distributed, pytest.mark.distributed_f]),
     ],
 )
 def test_missing_values_fill_with_mean(backend, csv_filename, tmpdir, ray_cluster_2cpu):
@@ -134,7 +134,9 @@ def test_missing_values_drop_rows(csv_filename, tmpdir):
         pytest.param("local", None, 3.0, id="local_none"),
         pytest.param("local", "fill_with_mean", 1.0, id="local_mean_strict"),
         pytest.param("local", "fill_with_const", 3.0, id="local_const_relaxed"),
-        pytest.param("ray", "fill_with_mean", 3.0, id="ray_mean", marks=pytest.mark.distributed),
+        pytest.param(
+            "ray", "fill_with_mean", 3.0, id="ray_mean", marks=[pytest.mark.distributed, pytest.mark.distributed_f]
+        ),
     ],
 )
 def test_outlier_strategy(outlier_strategy, outlier_threshold, backend, tmpdir, ray_cluster_2cpu):

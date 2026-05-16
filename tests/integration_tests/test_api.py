@@ -757,7 +757,7 @@ def test_constant_metadata(tmpdir):
     assert metadata1 == metadata2
 
 
-@pytest.mark.integration_tests_e
+@pytest.mark.integration_tests_i
 @pytest.mark.parametrize(
     "input_max_sequence_length, global_max_sequence_length, expect_raise",
     [

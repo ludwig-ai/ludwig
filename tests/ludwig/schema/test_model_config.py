@@ -972,6 +972,7 @@ class TestTorchaoQuantizationUtil:
     reason="TODO(geoffrey, arnav): re-enable this when we have reconciled the config with the backend kwarg in api.py"
 )
 @pytest.mark.distributed
+@pytest.mark.distributed_f
 def test_llm_quantization_backend_compatibility():
     config = {
         MODEL_TYPE: MODEL_LLM,

@@ -30,6 +30,7 @@ def get_test_df():
 
 
 @pytest.mark.distributed
+@pytest.mark.distributed_c
 def test_mixed_csv_data_source(ray_cluster_2cpu):
     config = create_auto_config(dataset=get_test_df(), target=[], time_limit_s=3600)
 

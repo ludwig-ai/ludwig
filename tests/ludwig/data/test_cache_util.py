@@ -111,6 +111,7 @@ def test_proc_col_checksum_consistency_same_preprocessing_different_types():
 
 
 @pytest.mark.distributed
+@pytest.mark.distributed_e
 def test_checksum_determinism(ray_cluster_2cpu):
     """Tests that checksums are deterministic across different processes (no unordered hash maps)."""
     import ray

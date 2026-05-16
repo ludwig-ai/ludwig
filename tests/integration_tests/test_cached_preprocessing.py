@@ -35,6 +35,7 @@ def test_onehot_encoding(tmpdir):
 
 @pytest.mark.slow
 @pytest.mark.distributed
+@pytest.mark.distributed_f
 def test_onehot_encoding_ray(tmpdir, ray_cluster_2cpu):
     config, dataset = _onehot_encoding_config(tmpdir)
     run_test_suite(config, dataset, "ray")
@@ -66,6 +67,7 @@ def test_hf_text_embedding(tmpdir):
 
 @pytest.mark.slow
 @pytest.mark.distributed
+@pytest.mark.distributed_f
 def test_hf_text_embedding_ray(tmpdir, ray_cluster_2cpu):
     config, dataset = _hf_text_embedding_config(tmpdir)
     run_test_suite(config, dataset, "ray")

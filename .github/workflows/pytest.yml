@@ -71,15 +71,15 @@ jobs:
       matrix:
         test-markers:
           - "integration_tests_a"
-          - "integration_tests_a2"
-          - "integration_tests_a3"
-          - "integration_tests_a4"
-          - "integration_tests_a5"
           - "integration_tests_b"
           - "integration_tests_c"
           - "integration_tests_d"
           - "integration_tests_e"
           - "integration_tests_f"
+          - "integration_tests_g"
+          - "integration_tests_h"
+          - "integration_tests_i"
+          - "integration_tests_j"
 
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
@@ -149,15 +149,27 @@ jobs:
 
   distributed-tests:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        distributed-group:
+          - "distributed_a"
+          - "distributed_b"
+          - "distributed_c"
+          - "distributed_d"
+          - "distributed_e"
+          - "distributed_f"
+
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
       KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
       KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
       IS_NOT_FORK: ${{ !(github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && github.event.pull_request.head.repo.fork) }}
+      DIST_GROUP: ${{ matrix.distributed-group }}
       UV_SYSTEM_PYTHON: "1"
 
-    name: Distributed Tests
+    name: Distributed (${{ matrix.distributed-group }})
     services:
       minio:
         image: fclairamb/minio-github-actions
@@ -167,7 +179,7 @@ jobs:
         ports:
           - 9000:9000
 
-    timeout-minutes: 120
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python 3.12
@@ -203,20 +215,16 @@ jobs:
           docker-images: true
           swap-storage: true
 
-      - name: Distributed Unit Tests
+      - name: Distributed Tests
         run: |
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "distributed and not slow and not combinatorial and not llm" --junitxml pytest-unit.xml tests/ludwig
-
-      - name: Distributed Integration Tests
-        run: |
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m "distributed and not slow and not combinatorial and not llm" --junitxml pytest-integration.xml tests/integration_tests
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "distributed and not slow and not combinatorial and not llm and $DIST_GROUP" --ignore=tests/integration_tests/test_server.py --junitxml pytest.xml tests/ludwig tests/integration_tests
 
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Distributed Test Results
-          path: pytest*.xml
+          name: Distributed Test Results (${{ matrix.distributed-group }})
+          path: pytest.xml
 
   test-minimal-install:
     name: Minimal Install

@@ -6,12 +6,12 @@ from ludwig.constants import COMBINER, EPOCHS, INPUT_FEATURES, OUTPUT_FEATURES, 
 from tests.integration_tests.utils import binary_feature, generate_data, run_test_suite, text_feature
 
 
-@pytest.mark.integration_tests_e
+@pytest.mark.integration_tests_i
 @pytest.mark.parametrize(
     "backend",
     [
         pytest.param("local", id="local"),
-        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
+        pytest.param("ray", id="ray", marks=[pytest.mark.distributed, pytest.mark.distributed_f]),
     ],
 )
 def test_text_adapter_lora(tmpdir, backend, ray_cluster_2cpu):

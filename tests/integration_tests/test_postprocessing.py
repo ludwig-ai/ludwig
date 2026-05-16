@@ -114,6 +114,7 @@ def test_binary_predictions(tmpdir, distinct_values, ray_cluster_2cpu):
 
 @pytest.mark.slow
 @pytest.mark.distributed
+@pytest.mark.distributed_f
 @pytest.mark.parametrize("distinct_values", [(False, True), ("No", "Yes")])
 def test_binary_predictions_ray(tmpdir, distinct_values, ray_cluster_2cpu):
     _run_binary_predictions(tmpdir, "ray", distinct_values, ray_cluster_2cpu)
@@ -181,6 +182,7 @@ def test_binary_predictions_with_number_dtype(tmpdir, distinct_values, ray_clust
 
 @pytest.mark.slow
 @pytest.mark.distributed
+@pytest.mark.distributed_f
 @pytest.mark.parametrize("distinct_values", [(0.0, 1.0), (0, 1)])
 def test_binary_predictions_with_number_dtype_ray(tmpdir, distinct_values, ray_cluster_2cpu):
     _run_binary_predictions_with_number_dtype(tmpdir, "ray", distinct_values, ray_cluster_2cpu)

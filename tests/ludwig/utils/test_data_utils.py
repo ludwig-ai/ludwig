@@ -94,6 +94,7 @@ def test_figure_data_format_dataset_strip(path, expected_format):
 
 
 @pytest.mark.distributed
+@pytest.mark.distributed_f
 def test_figure_data_format_dataset():
     assert figure_data_format_dataset({"a": "b"}) == dict
     assert figure_data_format_dataset(pd.DataFrame([1, 2, 3, 4, 5], columns=["x"])) == pd.DataFrame
@@ -207,7 +208,11 @@ def test_chunking(synthetic_1k_files, fmt_idx, nrows):
 
 
 @pytest.mark.parametrize(
-    "df_lib", [pytest.param(pd, id="pandas"), pytest.param(dd, marks=pytest.mark.distributed, id="dask")]
+    "df_lib",
+    [
+        pytest.param(pd, id="pandas"),
+        pytest.param(dd, marks=[pytest.mark.distributed, pytest.mark.distributed_f], id="dask"),
+    ],
 )
 @pytest.mark.parametrize("nrows", [None, 10])
 def test_read_html(df_lib, nrows):

@@ -61,7 +61,7 @@ from tests.integration_tests.utils import (
     vector_feature,
 )
 
-pytestmark = pytest.mark.integration_tests_d
+pytestmark = pytest.mark.integration_tests_h
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -574,6 +574,7 @@ def test_sequence_tagger_text(csv_filename):
 
 """
 @pytest.mark.distributed
+@pytest.mark.distributed_d
 def test_sequence_tagger_text_ray(csv_filename, ray_cluster_2cpu):
     # Define input and output features
     input_features = [text_feature(encoder={"max_len": 10, "type": "rnn", "reduce_output": None})]
@@ -780,6 +781,7 @@ def test_experiment_model_resume_missing_file(tmpdir, missing_file):
 
 @pytest.mark.slow
 @pytest.mark.distributed
+@pytest.mark.distributed_d
 def test_experiment_model_resume_before_1st_epoch_distributed(tmpdir, ray_cluster_4cpu):
     # Single sequence input, single category output
     # Tests saving a model file, loading it to rerun training and predict
@@ -830,6 +832,7 @@ def test_experiment_model_resume_before_1st_epoch_distributed(tmpdir, ray_cluste
 
 @pytest.mark.slow
 @pytest.mark.distributed
+@pytest.mark.distributed_d
 def test_tabnet_with_batch_size_1(tmpdir, ray_cluster_4cpu):
     input_features = [number_feature()]
     output_features = [category_feature(output_feature=True)]

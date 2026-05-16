@@ -45,7 +45,7 @@ from tests.integration_tests.utils import (
     text_feature,
 )
 
-pytestmark = pytest.mark.integration_tests_c
+pytestmark = pytest.mark.integration_tests_g
 
 
 def run_experiment_with_visualization(input_features, output_features, dataset):

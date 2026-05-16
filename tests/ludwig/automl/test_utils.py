@@ -4,7 +4,7 @@ ray = pytest.importorskip("ray")
 
 from ludwig.utils.automl.utils import get_model_type  # noqa
 
-pytestmark = pytest.mark.distributed
+pytestmark = [pytest.mark.distributed, pytest.mark.distributed_c]
 
 
 def _features(*in_types, out):

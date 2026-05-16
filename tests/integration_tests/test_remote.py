@@ -23,7 +23,7 @@ from tests.integration_tests.utils import (
     sequence_feature,
 )
 
-pytestmark = pytest.mark.integration_tests_b
+pytestmark = pytest.mark.integration_tests_f
 
 
 @pytest.mark.slow
@@ -31,7 +31,7 @@ pytestmark = pytest.mark.integration_tests_b
     "backend",
     [
         pytest.param("local", id="local"),
-        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
+        pytest.param("ray", id="ray", marks=[pytest.mark.distributed, pytest.mark.distributed_f]),
     ],
 )
 @pytest.mark.parametrize(

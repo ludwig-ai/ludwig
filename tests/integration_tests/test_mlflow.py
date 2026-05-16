@@ -175,6 +175,7 @@ def test_export_mlflow_local(tmpdir):
 
 
 @pytest.mark.distributed
+@pytest.mark.distributed_f
 def test_mlflow_ray(tmpdir, ray_cluster_2cpu):
     epochs = 2
     batch_size = 8

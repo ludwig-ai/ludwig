@@ -127,6 +127,7 @@ def run_test_imbalance_local(
     ["oversample_minority", "undersample_majority"],
 )
 @pytest.mark.distributed
+@pytest.mark.distributed_f
 @pytest.mark.skip(reason="Flaky")
 def test_imbalance_ray(balance):
     config = {
