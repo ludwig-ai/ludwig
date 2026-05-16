@@ -422,6 +422,7 @@ def audio_feature(folder, **kwargs):
             "in_memory": True,
             "padding_value": 0.0,
             "norm": None,
+            "lazy": False,
         },
         ENCODER: {
             "type": "stacked_cnn",
