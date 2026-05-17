@@ -211,7 +211,7 @@ def _create_tune_checkpoint(save_path):
         shutil.copytree(save_path, tmp_dst, ignore=ignore_dot_files)
         try:
             os.rename(tmp_dst, checkpoint_model)
-        except Exception:
+        except OSError:
             shutil.rmtree(tmp_dst)
 
     return tune.Checkpoint.from_directory(tmpdir)

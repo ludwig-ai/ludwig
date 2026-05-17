@@ -183,7 +183,7 @@ def load_exported_model(path: str) -> torch.nn.Module:
     if path.endswith(".pt2"):
         try:
             return torch.export.load(path)
-        except Exception:
+        except (RuntimeError, OSError):
             # Fallback for traced models saved with .pt2 extension
             return torch.jit.load(path)
     elif path.endswith(".pt"):

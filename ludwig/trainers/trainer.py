@@ -915,9 +915,10 @@ class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin,
                 self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
                 if self.is_coordinator():
                     logger.info("Resuming training from previous run.")
-            except Exception:
-                # This may happen if model training is interrupted after the progress tracker is initialized
-                # but before any real training progress is made.
+            except (FileNotFoundError, OSError, RuntimeError):
+                # Resume files may be missing or corrupt when training is interrupted before any
+                # real progress is made (e.g. crash during checkpoint write).
+                logger.warning("Could not load training checkpoint; starting fresh.", exc_info=True)
                 progress_tracker = get_new_progress_tracker(
                     batch_size=self.batch_size,
                     learning_rate=self.base_learning_rate,
