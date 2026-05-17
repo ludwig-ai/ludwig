@@ -24,14 +24,11 @@ import copy
 import dataclasses
 import logging
 import os
-import sys
 import tempfile
 import time
 import traceback
-from collections import OrderedDict
-from dataclasses import dataclass
 from pprint import pformat
-from typing import Any, ClassVar
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -39,6 +36,7 @@ import torch
 from tabulate import tabulate
 
 from ludwig.api_annotations import PublicAPI
+from ludwig.api_types import EvaluationFrequency, PreprocessedDataset, TrainingResults, TrainingStats
 from ludwig.backend import Backend, initialize_backend, provision_preprocessing_workers
 from ludwig.callbacks import Callback
 from ludwig.constants import (
@@ -62,10 +60,10 @@ from ludwig.data.dataset.base import Dataset
 from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import load_metadata, preprocess_for_prediction, preprocess_for_training
 from ludwig.datasets import load_dataset_uris
+from ludwig.experiment_utils import get_experiment_description
 from ludwig.features.feature_registries import update_config_with_metadata, update_config_with_model
 from ludwig.features.timeseries_feature import incremental_time_delay_embedding
 from ludwig.globals import (
-    LUDWIG_VERSION,
     MODEL_FILE_NAME,
     MODEL_HYPERPARAMETERS_FILE_NAME,
     model_weights_exist,
@@ -84,7 +82,7 @@ from ludwig.models.predictor import (
 )
 from ludwig.models.registry import model_type_registry
 from ludwig.schema.model_config import ModelConfig
-from ludwig.types import ModelConfigDict, TrainingSetMetadataDict
+from ludwig.types import ModelConfigDict
 from ludwig.upload import get_upload_registry
 from ludwig.utils import metric_utils
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
@@ -103,7 +101,6 @@ from ludwig.utils.fs_utils import makedirs, path_exists, upload_output_directory
 from ludwig.utils.heuristics import get_auto_learning_rate
 from ludwig.utils.llm_utils import create_text_streamer, TextStreamer
 from ludwig.utils.misc_utils import (
-    get_commit_hash,
     get_file_names,
     get_from_registry,
     get_output_directory,
@@ -116,115 +113,6 @@ from ludwig.utils.types import DataFrame
 from ludwig.utils.upload_utils import HuggingFaceHub
 
 logger = logging.getLogger(__name__)
-
-
-@PublicAPI
-@dataclass
-class EvaluationFrequency:
-    """Represents the frequency of periodic evaluation of a metric during training. For example:
-
-    "every epoch"
-    frequency: 1, period: EPOCH
-
-    "every 50 steps".
-    frequency: 50, period: STEP
-    """
-
-    frequency: float = 1.0
-    period: str = "epoch"  # One of "epoch" or "step".
-
-    EPOCH: ClassVar[str] = "epoch"  # One epoch is a single pass through the training set.
-    STEP: ClassVar[str] = "step"  # One step is training on one mini-batch.
-
-
-@PublicAPI
-@dataclass
-class TrainingStats:
-    """Training statistics for all splits (training, validation, test)."""
-
-    training: dict[str, Any]
-    validation: dict[str, Any]
-    test: dict[str, Any]
-    evaluation_frequency: EvaluationFrequency = dataclasses.field(default_factory=EvaluationFrequency)
-
-    def __contains__(self, key: object) -> bool:
-        return (
-            (key == TRAINING and self.training)
-            or (key == VALIDATION and self.validation)
-            or (key == TEST and self.test)
-        )
-
-    def __getitem__(self, key: str) -> dict[str, Any]:
-        return {TRAINING: self.training, VALIDATION: self.validation, TEST: self.test}[key]
-
-    # Make TrainingStats a proper Mapping so dict(ts) and generic helpers like
-    # ludwig.utils.numerical_test_utils.assert_all_finite treat it as a dict
-    # rather than falling back to integer-index iteration (KeyError(0)).
-    _KEYS = (TRAINING, VALIDATION, TEST)
-
-    def keys(self) -> tuple[str, ...]:
-        return self._KEYS
-
-    def __iter__(self):
-        return iter(self._KEYS)
-
-
-@PublicAPI
-@dataclass
-class PreprocessedDataset:
-    training_set: Dataset
-    validation_set: Dataset
-    test_set: Dataset
-    training_set_metadata: TrainingSetMetadataDict
-
-    def __iter__(self):
-        import warnings
-
-        warnings.warn(
-            "Tuple unpacking of PreprocessedDataset is deprecated. Use attribute access instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return iter((self.training_set, self.validation_set, self.test_set, self.training_set_metadata))
-
-    def __getitem__(self, index):
-        import warnings
-
-        warnings.warn(
-            "Indexed access of PreprocessedDataset is deprecated. Use attribute access instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return (self.training_set, self.validation_set, self.test_set, self.training_set_metadata)[index]
-
-
-@PublicAPI
-@dataclass
-class TrainingResults:
-    train_stats: TrainingStats
-    preprocessed_data: PreprocessedDataset
-    output_directory: str
-
-    def __iter__(self):
-        import warnings
-
-        warnings.warn(
-            "Tuple unpacking of TrainingResults is deprecated. "
-            "Use attribute access instead: result.train_stats, result.preprocessed_data, result.output_directory",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return iter((self.train_stats, self.preprocessed_data, self.output_directory))
-
-    def __getitem__(self, index):
-        import warnings
-
-        warnings.warn(
-            "Indexed access of TrainingResults is deprecated. Use attribute access instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return (self.train_stats, self.preprocessed_data, self.output_directory)[index]
 
 
 @PublicAPI
@@ -2158,76 +2046,3 @@ def kfold_cross_validate(
     logger.info(f"completed {num_folds:d}-fold cross validation")
 
     return kfold_cv_stats, kfold_split_indices
-
-
-def _get_compute_description(backend: Backend) -> dict:
-    """Returns the compute description for the backend."""
-    compute_description = {"num_nodes": backend.num_nodes}
-
-    if torch.cuda.is_available():
-        # Assumption: All nodes are of the same instance type.
-        # TODO: fix for Ray where workers may be of different skus
-        compute_description.update(
-            {
-                "gpus_per_node": torch.cuda.device_count(),
-                "arch_list": torch.cuda.get_arch_list(),
-                "gencode_flags": torch.cuda.get_gencode_flags(),
-                "devices": {},
-            }
-        )
-        for i in range(torch.cuda.device_count()):
-            compute_description["devices"][i] = {
-                "gpu_type": torch.cuda.get_device_name(i),
-                "device_capability": torch.cuda.get_device_capability(i),
-                "device_properties": str(torch.cuda.get_device_properties(i)),
-            }
-
-    return compute_description
-
-
-@PublicAPI
-def get_experiment_description(
-    config: ModelConfigDict,
-    dataset: str | dict | pd.DataFrame | None = None,
-    training_set: str | dict | pd.DataFrame | None = None,
-    validation_set: str | dict | pd.DataFrame | None = None,
-    test_set: str | dict | pd.DataFrame | None = None,
-    training_set_metadata: TrainingSetMetadataDict | None = None,
-    data_format: str | None = None,
-    backend: Backend | None = None,
-    random_seed: int | None = None,
-) -> dict:
-    description = OrderedDict()
-    description["ludwig_version"] = LUDWIG_VERSION
-    description["command"] = " ".join(sys.argv)
-
-    commit_hash = get_commit_hash()
-    if commit_hash is not None:
-        description["commit_hash"] = commit_hash[:12]
-
-    if random_seed is not None:
-        description["random_seed"] = random_seed
-
-    if isinstance(dataset, str):
-        description["dataset"] = dataset
-    if isinstance(training_set, str):
-        description["training_set"] = training_set
-    if isinstance(validation_set, str):
-        description["validation_set"] = validation_set
-    if isinstance(test_set, str):
-        description["test_set"] = test_set
-    if training_set_metadata is not None:
-        description["training_set_metadata"] = training_set_metadata
-
-    # determine data format if not provided or auto
-    if not data_format or data_format == "auto":
-        data_format = figure_data_format(dataset, training_set, validation_set, test_set)
-
-    if data_format:
-        description["data_format"] = str(data_format)
-
-    description["config"] = config
-    description["torch_version"] = torch.__version__
-    description["compute"] = _get_compute_description(backend)
-
-    return description
