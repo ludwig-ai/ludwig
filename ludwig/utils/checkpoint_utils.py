@@ -143,7 +143,7 @@ class MultiNodeCheckpoint(Checkpoint):
         """
         try:
             safetensors_path = self._safetensors_path(save_path)
-            state = torch.load(save_path, map_location=device)
+            state = torch.load(save_path, map_location=device, weights_only=True)
             try:
                 self.global_step = self._get_global_step(state, save_path)
 
@@ -180,7 +180,7 @@ class MultiNodeCheckpoint(Checkpoint):
             from safetensors.torch import load_file
 
             return load_file(safetensors_path, device=str(device) if device else "cpu")
-        state = torch.load(save_path, map_location=device)
+        state = torch.load(save_path, map_location=device, weights_only=True)
         return state[MODEL_WEIGHTS_FILE_NAME]
 
     def save(self, save_path: str, global_step: int):

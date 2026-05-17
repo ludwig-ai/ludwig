@@ -26,8 +26,9 @@ EXTENSION_TO_FORMAT = {
     ".sas7bdat": "sas",
     ".sav": "spss",
     ".dta": "stata",
-    ".pickle": "pickle",
-    ".pkl": "pickle",
+    # .pickle / .pkl intentionally omitted: pd.read_pickle() deserializes arbitrary
+    # Python objects via pickle, enabling RCE from attacker-controlled files.
+    # Users who need pickle must pass data_format="pickle" explicitly.
     ".hdf5": "hdf5",
     ".h5": "hdf5",
 }

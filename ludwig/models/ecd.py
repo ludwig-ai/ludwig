@@ -240,7 +240,7 @@ class ECD(BaseModel):
         elif os.path.exists(legacy_path):
             logger.info("Loading legacy pickle checkpoint (no SafeTensors file found)")
             with open_file(legacy_path, "rb") as f:
-                state_dict = torch.load(f, map_location=device)
+                state_dict = torch.load(f, map_location=device, weights_only=True)
                 self.load_state_dict(update_state_dict(state_dict))
         else:
             # Try open_file for remote paths (fsspec)
@@ -253,7 +253,7 @@ class ECD(BaseModel):
                     self.load_state_dict(update_state_dict(state_dict))
             except FileNotFoundError:
                 with open_file(legacy_path, "rb") as f:
-                    state_dict = torch.load(f, map_location=device)
+                    state_dict = torch.load(f, map_location=device, weights_only=True)
                     self.load_state_dict(update_state_dict(state_dict))
 
     def get_args(self):
