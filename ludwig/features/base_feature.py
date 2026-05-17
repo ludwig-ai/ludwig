@@ -21,7 +21,6 @@ import torch
 from torch import Tensor
 
 from ludwig.constants import (
-    ENCODER_OUTPUT,
     ENCODER_OUTPUT_STATE,
     HIDDEN,
     LENGTHS,
@@ -49,7 +48,7 @@ from ludwig.types import (
 from ludwig.utils import output_feature_utils
 from ludwig.utils.calibration import CalibrationModule
 from ludwig.utils.torch_utils import LudwigModule
-from ludwig.utils.types import DataFrame, PreprocessingInput
+from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
 
@@ -623,80 +622,3 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         feature_hidden = self.output_specific_fully_connected(feature_hidden, mask=mask)
 
         return feature_hidden
-
-
-class PassthroughPreprocModule(torch.nn.Module):
-    """Combines preprocessing and encoding into a single module for TorchScript inference.
-
-    For encoder outputs that were cached during preprocessing, the encoder is simply the identity function in the ECD
-    module. As such, we need this module to apply the encoding that would normally be done during preprocessing for
-    realtime inference.
-    """
-
-    def __init__(self, preproc: torch.nn.Module, encoder: torch.nn.Module):
-        self.preproc = preproc
-        self.encoder = encoder
-
-    def forward(self, v: PreprocessingInput) -> torch.Tensor:
-        preproc_v = self.preproc(v)
-        return self.encoder(preproc_v)
-
-
-class PassthroughInputFeature(InputFeature):
-    """A transparent identity-function wrapper around an input feature whose encoder was pre-cached.
-
-    Used when encoder embeddings were computed during preprocessing (embed mode). The passthrough
-    delegates shape/type queries to the wrapped feature's encoder so the rest of the model sees a
-    consistent interface, while `forward()` simply returns the already-embedded tensor unchanged.
-
-    Use `create_passthrough_input_feature()` to construct one.
-    """
-
-    def __init__(self, config: BaseFeatureConfig, wrapped: InputFeature):
-        super().__init__(config)
-        self._wrapped = wrapped
-
-    def forward(self, inputs, mask=None) -> dict[str, torch.Tensor]:
-        if not isinstance(inputs, torch.Tensor):
-            raise TypeError(f"PassthroughInputFeature forward expects a torch.Tensor, got {type(inputs).__name__}.")
-        return {ENCODER_OUTPUT: inputs}
-
-    @property
-    def input_dtype(self) -> torch.dtype:
-        return torch.float32
-
-    @property
-    def input_shape(self) -> torch.Size:
-        return self._wrapped.encoder_obj.output_shape
-
-    @property
-    def output_shape(self) -> torch.Size:
-        return self._wrapped.encoder_obj.output_shape
-
-    def update_config_with_metadata(self, feature_config, feature_metadata, *args, **kwargs) -> None:
-        return self._wrapped.update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs)
-
-    def get_schema_cls(self) -> type:
-        return self._wrapped.get_schema_cls()
-
-    def create_preproc_module(self, metadata: TrainingSetMetadataDict) -> torch.nn.Module:
-        return PassthroughPreprocModule(self._wrapped.create_preproc_module(metadata), self._wrapped)
-
-    def type(self) -> str:
-        return self._wrapped.type()
-
-    def unskip(self) -> InputFeature:
-        return self._wrapped
-
-    @property
-    def encoder_obj(self) -> torch.nn.Module:
-        return self._wrapped.encoder_obj
-
-
-def create_passthrough_input_feature(feature: InputFeature, config: BaseFeatureConfig) -> PassthroughInputFeature:
-    """Wraps *feature* in a :class:`PassthroughInputFeature` shim.
-
-    The shim acts as a transparent identity function — useful when encoder embeddings
-    were cached during preprocessing and the model should skip re-encoding.
-    """
-    return PassthroughInputFeature(config, wrapped=feature)
