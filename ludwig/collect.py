@@ -182,13 +182,12 @@ def pretrained_summary(pretrained_model: str, **kwargs) -> None:
     else:
         logger.info("Valid token provided. Proceeding with token access.")
 
-    # Try to load from transformers/HF. Use device_map="cpu" + low_cpu_mem_usage to avoid GPU OOM
-    # on large models (e.g. Llama 3 8B) when the only goal is to print layer names.
+    # from_config creates a random-weight model without downloading weights — fast and avoids OOM.
     try:
         config = AutoConfig.from_pretrained(pretrained_model, token=token)
-        model = AutoModel.from_config(config=config, low_cpu_mem_usage=True)
+        model = AutoModel.from_config(config=config)
         logger.info(f"Loaded {pretrained_model} from Hugging Face Transformers.")
-    except (OSError, ValueError, RuntimeError) as e:
+    except (OSError, ValueError, RuntimeError, TypeError) as e:
         logger.error(f"Failed to load {pretrained_model} from Hugging Face Transformers: {e}")
 
     # Try and load from torchvision-models
