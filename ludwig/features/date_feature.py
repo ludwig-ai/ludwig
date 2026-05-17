@@ -20,7 +20,7 @@ import numpy as np
 import torch
 
 from ludwig.constants import COLUMN, DATE, DATE_VECTOR_LENGTH, PROC_COLUMN
-from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
+from ludwig.features.base_feature import BaseFeatureMixin, BasePreprocessingModule, InputFeature
 from ludwig.schema.features.date_feature import DateInputFeatureConfig
 from ludwig.types import (
     FeatureConfigDict,
@@ -35,7 +35,7 @@ from ludwig.utils.types import DataFrame, PreprocessingInput
 logger = logging.getLogger(__name__)
 
 
-class _DatePreprocessing(torch.nn.Module):
+class _DatePreprocessing(BasePreprocessingModule):
     def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
 
@@ -163,5 +163,5 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
         return DateInputFeatureConfig
 
     @staticmethod
-    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> BasePreprocessingModule:
         return _DatePreprocessing(metadata)

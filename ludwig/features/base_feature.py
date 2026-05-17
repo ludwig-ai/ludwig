@@ -54,6 +54,33 @@ from ludwig.utils.types import DataFrame, PreprocessingInput
 logger = logging.getLogger(__name__)
 
 
+class BasePreprocessingModule(torch.nn.Module):
+    """Shared base class for all feature preprocessing modules.
+
+    All concrete preprocessing modules (``_CategoryPreprocessing``, ``_NumberPreprocessing``, etc.) must
+    inherit from this class and override ``forward``.  The base class establishes the common interface so
+    that ``create_preproc_module`` can advertise a concrete return type and callers can use
+    ``isinstance(module, BasePreprocessingModule)`` checks.
+
+    Subclasses must be TorchScript-compatible: avoid ABC ``@abstractmethod`` decorators and keep
+    all method signatures fully concrete-typed.
+    """
+
+    def forward(self, v: PreprocessingInput) -> torch.Tensor:
+        raise NotImplementedError("Subclasses must implement forward()")
+
+
+class BasePostprocessingModule(torch.nn.Module):
+    """Shared base class for all feature postprocessing modules.
+
+    All concrete postprocessing modules (``_CategoryPostprocessing``, ``_NumberPostprocessing``, etc.) must
+    inherit from this class and override ``forward``.
+    """
+
+    def forward(self, preds: dict[str, torch.Tensor], feature_name: str) -> dict[str, Any]:
+        raise NotImplementedError("Subclasses must implement forward()")
+
+
 class BaseFeatureMixin(ABC):
     """Parent class for feature mixins.
 
@@ -277,7 +304,7 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
         return "string"
 
     @staticmethod
-    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> BasePreprocessingModule:
         raise NotImplementedError("Torchscript tracing not supported for feature")
 
 
@@ -625,7 +652,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         return feature_hidden
 
 
-class PassthroughPreprocModule(torch.nn.Module):
+class PassthroughPreprocModule(BasePreprocessingModule):
     """Combines preprocessing and encoding into a single module for TorchScript inference.
 
     For encoder outputs that were cached during preprocessing, the encoder is simply the identity function in the ECD
@@ -679,7 +706,7 @@ class PassthroughInputFeature(InputFeature):
     def get_schema_cls(self) -> type:
         return self._wrapped.get_schema_cls()
 
-    def create_preproc_module(self, metadata: TrainingSetMetadataDict) -> torch.nn.Module:
+    def create_preproc_module(self, metadata: TrainingSetMetadataDict) -> BasePreprocessingModule:
         return PassthroughPreprocModule(self._wrapped.create_preproc_module(metadata), self._wrapped)
 
     def type(self) -> str:
