@@ -273,12 +273,20 @@ def read_parquet(data_fp, df_lib, nrows=None, **kwargs):
 @DeveloperAPI
 @spread
 def read_pickle(data_fp, df_lib, **kwargs):
+    # Pickle deserializes arbitrary Python objects — only load files you trust.
+    # Auto-dispatch from file extension is intentionally disabled; this function
+    # is only reachable via explicit data_format="pickle".
+    logger.warning(
+        "Loading a pickle dataset (%s). Pickle deserialization executes arbitrary Python code — "
+        "only load files from sources you trust.",
+        data_fp,
+    )
+
     # Chunking is not supported for pickle files:
     kwargs.pop("nrows", None)
 
     # https://github.com/dask/dask/issues/9055
     if is_dask_lib(df_lib):
-        logger.warning("Falling back to pd.read_pickle() since dask backend does not support it")
         return dd.from_pandas(pd.read_pickle(data_fp), npartitions=1)
     return df_lib.read_pickle(data_fp)
 
@@ -941,12 +949,12 @@ def figure_data_format_dataset(dataset):
         if fmt is not None:
             return fmt
 
-        # Legacy fallback for extensions not in registry
+        # Legacy fallback for extensions not in registry.
+        # .p / .pkl / .pickle are intentionally absent — pickle auto-dispatch is
+        # disabled (CWE-502). Pass data_format="pickle" explicitly to opt in.
         lower = dataset_str.lower()
         if lower.endswith((".xlsm", ".xlsb", ".odf", ".ods", ".odt")):
             return "excel"
-        elif lower.endswith(".p"):
-            return "pickle"
         elif lower.endswith(".sas"):
             return "sas"
         elif lower.endswith(".spss"):

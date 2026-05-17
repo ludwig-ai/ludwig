@@ -257,7 +257,11 @@ def test_kfold_cv_dataset_formats(tmpdir, data_format):
     # test kfold_cross_validate api with config in-memory
 
     # execute k-fold cross validation run
-    kfold_cv_stats, kfold_split_indices = kfold_cross_validate(3, config=config, dataset=dataset_to_use)
+    # pickle auto-dispatch by extension is disabled (CWE-502); pass explicitly.
+    explicit_format = data_format if data_format == "pickle" else None
+    kfold_cv_stats, kfold_split_indices = kfold_cross_validate(
+        3, config=config, dataset=dataset_to_use, data_format=explicit_format
+    )
 
     # correct structure for results from kfold cv
     for key in ["fold_" + str(i + 1) for i in range(num_folds)] + ["overall"]:
