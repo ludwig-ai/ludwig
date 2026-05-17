@@ -664,7 +664,7 @@ class RayTuneExecutor:
                             safe_move_file(model_path, save_path)
                         elif os.path.exists(ckpt_path):
                             safe_move_file(ckpt_path, save_path)
-                    except Exception:
+                    except OSError:
                         # Rollback from partial changes. Remove the save_path
                         # and move the original save_path back.
                         if os.path.exists(save_path):

@@ -78,7 +78,7 @@ def _get_loraplus_lr_ratio(model) -> float | None:
         if adapter is None:
             return None
         return getattr(adapter, "loraplus_lr_ratio", None)
-    except Exception:
+    except AttributeError:
         return None
 
 
