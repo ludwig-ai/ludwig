@@ -61,7 +61,7 @@ class Matcher:
         try:
             regex = re.compile(regex_pattern)
             matches = regex.findall(decoded_input)
-        except Exception:
+        except re.error:
             logger.warning(f"Regex pattern {regex_pattern} could not be compiled.")
         return len(matches) > 0
 

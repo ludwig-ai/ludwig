@@ -715,7 +715,7 @@ class AnomalyAUROCMetric(LudwigMetric):
             from torchmetrics.functional.classification import binary_auroc
 
             return binary_auroc(scores, labels.long())
-        except Exception:
+        except (ImportError, RuntimeError, ValueError):
             return torch.tensor(float("nan"))
 
     def reset(self):
@@ -761,7 +761,7 @@ class F1MaxMetric(LudwigMetric):
                     if f1 > best_f1:
                         best_f1 = f1
             return best_f1
-        except Exception:
+        except (RuntimeError, ValueError):
             return torch.tensor(float("nan"))
 
     def reset(self):

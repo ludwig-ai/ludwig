@@ -211,7 +211,7 @@ def _create_tune_checkpoint(save_path):
         shutil.copytree(save_path, tmp_dst, ignore=ignore_dot_files)
         try:
             os.rename(tmp_dst, checkpoint_model)
-        except Exception:
+        except OSError:
             shutil.rmtree(tmp_dst)
 
     return tune.Checkpoint.from_directory(tmpdir)
@@ -664,7 +664,7 @@ class RayTuneExecutor:
                             safe_move_file(model_path, save_path)
                         elif os.path.exists(ckpt_path):
                             safe_move_file(ckpt_path, save_path)
-                    except Exception:
+                    except OSError:
                         # Rollback from partial changes. Remove the save_path
                         # and move the original save_path back.
                         if os.path.exists(save_path):

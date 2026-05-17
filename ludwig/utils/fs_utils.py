@@ -94,8 +94,8 @@ def get_bytes_obj_from_path(path: str) -> bytes | None:
     if is_http(path):
         try:
             return get_bytes_obj_from_http_path(path)
-        except Exception as e:
-            logger.warning(e)
+        except Exception:
+            logger.warning(f"Failed to fetch bytes from HTTP path: {path}", exc_info=True)
             return None
     else:
         try:

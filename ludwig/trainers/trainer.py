@@ -305,57 +305,80 @@ class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin,
                 3. tokens usage tensor
         """
         if isinstance(self.optimizer, torch.optim.LBFGS):
-            # NOTE: AMP is not supported for L-BFGS yet.
-            # NOTE: gradient accumulation is not supported for L-BFGS yet.
+            return self._train_step_lbfgs(inputs, targets)
 
-            def closure():
-                # Allows L-BFGS to reevaluate the loss function
-                self.distributed.zero_grad(self.optimizer)
-                model_outputs = self.dist_model((inputs, targets))
-                loss, _ = self.model.train_loss(
-                    targets, model_outputs, self.regularization_type, self.regularization_lambda
-                )
-                loss.backward()
-                return loss
+        model_outputs, loss, all_losses = self._forward_pass(inputs, targets, should_step)
+        used_tokens = model_outputs[USED_TOKENS]
 
-            self.distributed.step(self.optimizer, closure)
+        self._backward_pass(loss)
 
-            # Obtain model predictions and loss
+        if not should_step:
+            return loss, all_losses, used_tokens
+
+        self._optimizer_step(self.dist_model.parameters())
+
+        self._update_training_metrics(model_outputs, targets)
+
+        self.distributed.zero_grad(self.optimizer)
+
+        if hasattr(self.model, "loss_balancer") and self.model.loss_balancer is not None:
+            self.model.loss_balancer.post_step(all_losses)
+
+        if profiler:
+            profiler.step()
+
+        return loss, all_losses, used_tokens
+
+    def _train_step_lbfgs(
+        self,
+        inputs: dict[str, torch.Tensor],
+        targets: dict[str, torch.Tensor],
+    ) -> tuple[torch.Tensor, dict[str, torch.Tensor], torch.Tensor]:
+        """Training step for L-BFGS optimizer (no AMP, no gradient accumulation)."""
+
+        def closure():
+            self.distributed.zero_grad(self.optimizer)
             model_outputs = self.dist_model((inputs, targets))
-            loss, all_losses = self.model.train_loss(
+            loss, _ = self.model.train_loss(
                 targets, model_outputs, self.regularization_type, self.regularization_lambda
             )
+            loss.backward()
+            return loss
 
-            if not self.evaluate_training_set:
-                # Update evaluation metrics with current model params:
-                # noisy but fast way to get metrics on the training set
-                predictions = self.model.outputs_to_predictions(model_outputs)
-                self.model.update_metrics(targets, predictions)
+        self.distributed.step(self.optimizer, closure)
 
-            return loss, all_losses, model_outputs[USED_TOKENS]
+        model_outputs = self.dist_model((inputs, targets))
+        loss, all_losses = self.model.train_loss(
+            targets, model_outputs, self.regularization_type, self.regularization_lambda
+        )
+        self._update_training_metrics(model_outputs, targets)
+        return loss, all_losses, model_outputs[USED_TOKENS]
 
+    def _forward_pass(
+        self,
+        inputs: dict[str, torch.Tensor],
+        targets: dict[str, torch.Tensor],
+        should_step: bool,
+    ) -> tuple[dict, torch.Tensor, dict[str, torch.Tensor]]:
+        """Run the forward pass and compute loss under AMP if enabled."""
         with torch.amp.autocast("cuda") if self.use_amp else contextlib.nullcontext():
             with self.distributed.prepare_model_update(self.dist_model, should_step=should_step):
-                # Obtain model predictions and loss
                 model_outputs = self.dist_model((inputs, targets))
                 loss, all_losses = self.model.train_loss(
                     targets, model_outputs, self.regularization_type, self.regularization_lambda
                 )
                 loss = loss / self.gradient_accumulation_steps
+        return model_outputs, loss, all_losses
 
-        used_tokens = model_outputs[USED_TOKENS]
-
-        # Begin the backward pass
-        variables = self.dist_model.parameters()
+    def _backward_pass(self, loss: torch.Tensor) -> None:
+        """Run the backward pass, scaling through AMP if enabled."""
         if self.use_amp:
             self.scaler.scale(loss).backward()
         else:
             self.distributed.backward(loss, self.dist_model)
 
-        if not should_step:
-            # Short-circuit the parameter updates if we are still accumulating gradients
-            return loss, all_losses, used_tokens
-
+    def _optimizer_step(self, variables) -> None:
+        """Wait for grad sync, clip gradients, and step the optimizer."""
         # Wait for gradient aggregation to complete before clipping the gradients.
         # When using AMP, we need to do this before unscaling.
         self.distributed.wait_optimizer_synced(self.optimizer)
@@ -367,37 +390,25 @@ class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin,
             self.scaler.unscale_(self.optimizer)
 
         if self.distributed.allow_clip_gradients():
-            # Clip gradients
             self.clip_grads(variables)
 
-        # Apply gradient updates
         with self.distributed.prepare_optimizer_update(self.optimizer):
-            # Because we already synchronized above, we skip doing so here
             if self.use_amp:
                 self.scaler.step(self.optimizer)
             else:
                 self.distributed.step(self.optimizer)
 
         if self.use_amp:
-            # Update scaler in case of overflow/underflow
             self.scaler.update()
 
+    def _update_training_metrics(self, model_outputs: dict, targets: dict[str, torch.Tensor]) -> None:
+        """Update training-set evaluation metrics from the current batch outputs.
+
+        Only called when evaluate_training_set is False (noisy but fast approximation).
+        """
         if not self.evaluate_training_set:
-            # Update evaluation metrics with current model params:
-            # noisy but fast way to get metrics on the training set
             predictions = self.model.outputs_to_predictions(model_outputs)
             self.model.update_metrics(targets, predictions)
-
-        self.distributed.zero_grad(self.optimizer)
-
-        # Post-step hook for loss balancing strategies (FAMO, GradNorm EMA updates)
-        if hasattr(self.model, "loss_balancer") and self.model.loss_balancer is not None:
-            self.model.loss_balancer.post_step(all_losses)
-
-        if profiler:
-            profiler.step()
-
-        return loss, all_losses, used_tokens
 
     def clip_grads(self, variables):
         """Applies gradient clipping."""
@@ -823,6 +834,51 @@ class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin,
         # Callback that the checkpoint was reached, regardless of whether the model was evaluated.
         self.callback(lambda c: c.on_checkpoint(self, progress_tracker))
 
+    def _create_summary_writers(self, tensorboard_log_dir, validation_set, test_set):
+        """Create TensorBoard SummaryWriters for train/validation/test splits."""
+        train_summary_writer = None
+        validation_summary_writer = None
+        test_summary_writer = None
+        if self.is_coordinator() and not self.skip_save_log and tensorboard_log_dir:
+            train_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, TRAINING))
+            if validation_set is not None and validation_set.size > 0:
+                validation_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, VALIDATION))
+            if test_set is not None and test_set.size > 0:
+                test_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, TEST))
+        return train_summary_writer, validation_summary_writer, test_summary_writer
+
+    def _create_or_resume_progress_tracker(
+        self, training_progress_tracker_path, training_checkpoints_path, checkpoint, output_features
+    ):
+        """Load an existing progress tracker if resuming, otherwise create a fresh one."""
+        should_resume = self.resume and self.resume_files_exist(
+            training_progress_tracker_path, training_checkpoints_path
+        )
+        should_resume = self.distributed.broadcast_object(should_resume, name="should_resume")
+
+        if should_resume:
+            try:
+                progress_tracker = self.resume_training_progress_tracker(training_progress_tracker_path)
+                self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
+                if self.is_coordinator():
+                    logger.info("Resuming training from previous run.")
+                return progress_tracker
+            except (FileNotFoundError, OSError, RuntimeError):
+                logger.warning("Could not load training checkpoint; starting fresh.", exc_info=True)
+                if self.is_coordinator():
+                    logger.info("Failed to resume training from previous run. Creating fresh model training run.")
+
+        progress_tracker = get_new_progress_tracker(
+            batch_size=self.batch_size,
+            learning_rate=self.base_learning_rate,
+            best_eval_metric_value=get_initial_validation_value(self.validation_metric),
+            best_increase_batch_size_eval_metric=get_initial_validation_value(self.increase_batch_size_eval_metric),
+            output_features=output_features,
+        )
+        if self.is_coordinator():
+            logger.info("Creating fresh model training run.")
+        return progress_tracker
+
     def create_checkpoint_handle(self):
         return self.distributed.create_checkpoint_handle(
             dist_model=self.dist_model, model=self.model, optimizer=self.optimizer, scheduler=self.scheduler
@@ -890,55 +946,15 @@ class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin,
         )
 
         # ====== Setup Tensorboard writers =======
-        train_summary_writer = None
-        validation_summary_writer = None
-        test_summary_writer = None
-        if self.is_coordinator() and not self.skip_save_log and tensorboard_log_dir:
-            train_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, TRAINING))
-            if validation_set is not None and validation_set.size > 0:
-                validation_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, VALIDATION))
-            if test_set is not None and test_set.size > 0:
-                test_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, TEST))
+        train_summary_writer, validation_summary_writer, test_summary_writer = self._create_summary_writers(
+            tensorboard_log_dir, validation_set, test_set
+        )
 
         # ================ Resume logic ================
         self.callback(lambda c: c.on_resume_training(self.is_coordinator()))
-
-        should_resume = self.resume and self.resume_files_exist(
-            training_progress_tracker_path, training_checkpoints_path
+        progress_tracker = self._create_or_resume_progress_tracker(
+            training_progress_tracker_path, training_checkpoints_path, checkpoint, output_features
         )
-        # make sure all workers are on the same page about resuming.
-        should_resume = self.distributed.broadcast_object(should_resume, name="should_resume")
-
-        if should_resume:
-            try:
-                progress_tracker = self.resume_training_progress_tracker(training_progress_tracker_path)
-                self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
-                if self.is_coordinator():
-                    logger.info("Resuming training from previous run.")
-            except Exception:
-                # This may happen if model training is interrupted after the progress tracker is initialized
-                # but before any real training progress is made.
-                progress_tracker = get_new_progress_tracker(
-                    batch_size=self.batch_size,
-                    learning_rate=self.base_learning_rate,
-                    best_eval_metric_value=get_initial_validation_value(self.validation_metric),
-                    best_increase_batch_size_eval_metric=get_initial_validation_value(
-                        self.increase_batch_size_eval_metric
-                    ),
-                    output_features=output_features,
-                )
-                if self.is_coordinator():
-                    logger.info("Failed to resume training from previous run. Creating fresh model training run.")
-        else:
-            progress_tracker = get_new_progress_tracker(
-                batch_size=self.batch_size,
-                learning_rate=self.base_learning_rate,
-                best_eval_metric_value=get_initial_validation_value(self.validation_metric),
-                best_increase_batch_size_eval_metric=get_initial_validation_value(self.increase_batch_size_eval_metric),
-                output_features=output_features,
-            )
-            if self.is_coordinator():
-                logger.info("Creating fresh model training run.")
 
         # Distributed: broadcast initial variable states from rank 0 to all other processes.
         # This is necessary to ensure consistent initialization of all workers when
@@ -1265,22 +1281,13 @@ class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin,
             should_step = should_sync_grads or is_checkpoint_step
             batch_idx += 1
 
-            # Move tensors to cuda here.
-            inputs = {
-                i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(self.device)
-                for i_feat in self.model.input_features.values()
-            }
-            targets = {
-                o_feat.feature_name: torch.from_numpy(np.array(batch[o_feat.proc_column], copy=True)).to(self.device)
-                for o_feat in self.model.output_features.values()
-            }
+            inputs, targets = self._batch_to_tensors(batch)
 
             loss, all_losses, used_tokens = self.train_step(inputs, targets, should_step=should_step, profiler=profiler)
 
-            # Update LR schduler here instead of train loop to avoid updating during batch size tuning, etc.
+            # Update LR scheduler here instead of train loop to avoid updating during batch size tuning, etc.
             self.scheduler.step()
 
-            # Update progress tracker with token information.
             progress_tracker.set_token_usage_for_this_step(used_tokens)
 
             if self.is_coordinator() and not self.skip_save_log:
@@ -1304,55 +1311,101 @@ class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin,
                     psutil.Process(os.getpid()).memory_info()[0] / 1e6,
                 )
 
-            # Executing `on_batch_end` calls before `run_evaluation` enables more accurate
-            # batch duration measurements when using timer callbacks.
+            # Executing `on_batch_end` before `run_evaluation` enables accurate batch duration measurements.
             self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path, sync_step=should_step))
 
-            # If this is the last batch in the epoch, increment before running evaluation so that metrics are reported
-            # with the correct epoch.
+            # Increment epoch before evaluation so metrics are reported with the correct epoch number.
             if batcher.last_batch():
                 progress_tracker.epoch += 1
 
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
-                # Before continuing to evaluation or skipping evaluation altogether, we should use this point to
-                # ensure that the model weights are not NaN or Inf.
-                has_nan_or_inf_tensors = self._has_nan_or_inf_weights(self.dist_model)
-                # If a nan/inf tensor is detected, we should break out of the training loop immediately and raise an #
-                # error. There is no point in running evaluation for this step as the model weights are already in
-                # a bad state. Theere is also no point in continuing to train the model since the loss will always be
-                # NaN or Inf from this point forward.
+                should_break, has_nan_or_inf_tensors = self._eval_and_checkpoint(
+                    loss=loss,
+                    all_losses=all_losses,
+                    training_set=training_set,
+                    validation_set=validation_set,
+                    test_set=test_set,
+                    progress_tracker=progress_tracker,
+                    train_summary_writer=train_summary_writer,
+                    validation_summary_writer=validation_summary_writer,
+                    test_summary_writer=test_summary_writer,
+                    model_hyperparameters_path=model_hyperparameters_path,
+                    output_features=output_features,
+                    metrics_names=metrics_names,
+                    save_path=save_path,
+                    early_stopping_steps=early_stopping_steps,
+                    checkpoint_manager=checkpoint_manager,
+                )
                 if has_nan_or_inf_tensors:
                     return True, has_nan_or_inf_tensors
 
-                if not self.skip_all_evaluation:
-                    # Publishes metrics to MLFLow if there are any MLFlow callbacks.
-                    should_break = self.run_evaluation(
-                        training_set,
-                        validation_set,
-                        test_set,
-                        progress_tracker,
-                        train_summary_writer,
-                        validation_summary_writer,
-                        test_summary_writer,
-                        model_hyperparameters_path,
-                        output_features,
-                        metrics_names,
-                        save_path,
-                        loss,
-                        all_losses,
-                        early_stopping_steps,
-                        checkpoint_manager,
-                    )
-                else:
-                    should_break = False
-
-                # Checkpoint the model after evaluation.
-                if not self.skip_save_progress:
-                    self.save_checkpoint(progress_tracker, save_path, checkpoint_manager)
-
-            # If this was the last batch, then increment the epoch counter and invoke the `on_epoch_end` callback.
             if batcher.last_batch():
                 self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
+
+        return should_break, has_nan_or_inf_tensors
+
+    def _batch_to_tensors(self, batch) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]:
+        """Convert a raw data batch to input and target tensors on the training device."""
+        inputs = {
+            i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(self.device)
+            for i_feat in self.model.input_features.values()
+        }
+        targets = {
+            o_feat.feature_name: torch.from_numpy(np.array(batch[o_feat.proc_column], copy=True)).to(self.device)
+            for o_feat in self.model.output_features.values()
+        }
+        return inputs, targets
+
+    def _eval_and_checkpoint(
+        self,
+        loss: torch.Tensor,
+        all_losses: dict[str, torch.Tensor],
+        training_set,
+        validation_set,
+        test_set,
+        progress_tracker: ProgressTracker,
+        train_summary_writer,
+        validation_summary_writer,
+        test_summary_writer,
+        model_hyperparameters_path: str,
+        output_features,
+        metrics_names,
+        save_path: str,
+        early_stopping_steps: int,
+        checkpoint_manager: CheckpointManager,
+    ) -> tuple[bool, bool]:
+        """Run evaluation and save a checkpoint at a checkpoint boundary step.
+
+        Returns:
+            (should_break, has_nan_or_inf_tensors) — both trigger training termination when True.
+        """
+        has_nan_or_inf_tensors = self._has_nan_or_inf_weights(self.dist_model)
+        if has_nan_or_inf_tensors:
+            return False, has_nan_or_inf_tensors
+
+        if not self.skip_all_evaluation:
+            should_break = self.run_evaluation(
+                training_set,
+                validation_set,
+                test_set,
+                progress_tracker,
+                train_summary_writer,
+                validation_summary_writer,
+                test_summary_writer,
+                model_hyperparameters_path,
+                output_features,
+                metrics_names,
+                save_path,
+                loss,
+                all_losses,
+                early_stopping_steps,
+                checkpoint_manager,
+            )
+        else:
+            should_break = False
+
+        if not self.skip_save_progress:
+            self.save_checkpoint(progress_tracker, save_path, checkpoint_manager)
 
         return should_break, has_nan_or_inf_tensors
 

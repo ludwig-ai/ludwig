@@ -31,7 +31,14 @@ from ludwig.constants import (
     PROC_COLUMN,
     SEQUENCE,
 )
-from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
+from ludwig.features.base_feature import (
+    BasePostprocessingModule,
+    BasePreprocessingModule,
+    FeaturePreprocessingMixin,
+    InputFeature,
+    OutputFeature,
+    PredictModule,
+)
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
 from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig, SequenceOutputFeatureConfig
 from ludwig.types import (
@@ -57,7 +64,7 @@ from ludwig.utils.types import PreprocessingInput
 logger = logging.getLogger(__name__)
 
 
-class _SequencePreprocessing(torch.nn.Module):
+class _SequencePreprocessing(BasePreprocessingModule):
     """Torchscript-enabled version of preprocessing done by SequenceFeatureMixin.add_feature_data."""
 
     def __init__(self, metadata: TrainingSetMetadataDict):
@@ -140,7 +147,7 @@ class _SequencePreprocessing(torch.nn.Module):
         return sequence_vector
 
 
-class _SequencePostprocessing(torch.nn.Module):
+class _SequencePostprocessing(BasePostprocessingModule):
     def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
         self.max_sequence_length = int(metadata["max_sequence_length"])
@@ -188,7 +195,7 @@ class _SequencePredict(PredictModule):
         return {self.predictions_key: predictions, self.probabilities_key: probabilities, self.logits_key: logits}
 
 
-class SequenceFeatureMixin(BaseFeatureMixin):
+class SequenceFeatureMixin(FeaturePreprocessingMixin):
     @staticmethod
     def type():
         return SEQUENCE
@@ -331,7 +338,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         return self.encoder_obj.output_shape
 
     @staticmethod
-    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> BasePreprocessingModule:
         return _SequencePreprocessing(metadata)
 
 

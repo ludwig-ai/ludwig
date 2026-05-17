@@ -9,7 +9,7 @@ from transformers import AutoConfig, GenerationConfig
 
 from ludwig.accounting.used_tokens import get_used_tokens_for_llm
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, MODEL_LLM, PREDICTIONS, TEXT, USED_TOKENS
-from ludwig.features.base_feature import ModuleWrapper, OutputFeature
+from ludwig.features.base_feature import NonPropertyModuleWrapper, OutputFeature
 from ludwig.features.text_feature import TextOutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
@@ -116,11 +116,17 @@ class LLM(BaseModel):
         )
 
         # Extract the decoder object for the forward pass
-        self._output_feature_decoder = ModuleWrapper(next(iter(self.output_features.values())))
+        self._output_feature_decoder = NonPropertyModuleWrapper(next(iter(self.output_features.values())))
 
         self.attention_masks = None
 
         clear_data_cache()
+
+    @property
+    def input_shape(self) -> torch.Size:
+        """Returns (context_len, hidden_size) — the shape of a single LLM input sequence's hidden states."""
+        hidden_size = getattr(self.model_config, "hidden_size", getattr(self.model_config, "d_model", 1))
+        return torch.Size([self.context_len, hidden_size])
 
     def create_feature_dict(self) -> dict:
         """Returns a plain dict instead of LudwigFeatureDict to avoid exposing input/output features as nn.Module

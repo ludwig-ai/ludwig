@@ -450,7 +450,7 @@ def test_read_image_failure_default_image(monkeypatch, tmpdir, csv_filename):
         """Mock read_binary_files to return None (failed image read) to test error handling."""
         return column.map(lambda x: None)
 
-    monkeypatch.setattr(ludwig.backend.base.LocalPreprocessingMixin, "read_binary_files", mock_read_binary_files)
+    monkeypatch.setattr(ludwig.backend.base.LocalDataProcessingMixin, "read_binary_files", mock_read_binary_files)
 
     # mode="eager" forces the eager path so that the monkeypatched read_binary_files is exercised.
     # With mode="lazy" (the default), read_binary_files is never called and this test has no meaning.

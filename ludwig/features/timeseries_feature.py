@@ -20,7 +20,12 @@ import numpy as np
 import torch
 
 from ludwig.constants import COLUMN, HIDDEN, LOGITS, NAME, PREDICTIONS, PROC_COLUMN, TIMESERIES
-from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature, PredictModule
+from ludwig.features.base_feature import (
+    BasePreprocessingModule,
+    FeaturePreprocessingMixin,
+    OutputFeature,
+    PredictModule,
+)
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.features.vector_feature import _VectorPostprocessing, _VectorPredict
 from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig, TimeseriesOutputFeatureConfig
@@ -93,7 +98,7 @@ def create_time_delay_embedding(
     return df.apply(lambda x: np.nan_to_num(np.array(x.tolist()).astype(np.float32), nan=padding_value), axis=1)
 
 
-class _TimeseriesPreprocessing(torch.nn.Module):
+class _TimeseriesPreprocessing(BasePreprocessingModule):
     """Torchscript-enabled version of preprocessing done by TimeseriesFeatureMixin.add_feature_data."""
 
     def __init__(self, metadata: TrainingSetMetadataDict):
@@ -163,7 +168,7 @@ class _TimeseriesPreprocessing(torch.nn.Module):
         raise ValueError(f"Unsupported input: {v}")
 
 
-class TimeseriesFeatureMixin(BaseFeatureMixin):
+class TimeseriesFeatureMixin(FeaturePreprocessingMixin):
     @staticmethod
     def type():
         return TIMESERIES
@@ -301,7 +306,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
         return TimeseriesInputFeatureConfig
 
     @staticmethod
-    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> BasePreprocessingModule:
         return _TimeseriesPreprocessing(metadata)
 
 

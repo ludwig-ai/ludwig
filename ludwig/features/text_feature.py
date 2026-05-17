@@ -40,7 +40,7 @@ from ludwig.constants import (
     RESPONSE,
     TEXT,
 )
-from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature
+from ludwig.features.base_feature import BasePreprocessingModule, FeaturePreprocessingMixin, OutputFeature
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
 from ludwig.features.sequence_feature import (
     _SequencePostprocessing,
@@ -121,7 +121,7 @@ def _get_metadata_reconciled_max_sequence_length(
     return vocabulary.max_sequence_length, vocabulary.sequence_length_99ptile
 
 
-class TextFeatureMixin(BaseFeatureMixin):
+class TextFeatureMixin(FeaturePreprocessingMixin):
     @staticmethod
     def type():
         return TEXT
@@ -300,7 +300,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         return self.encoder_obj.output_shape
 
     @staticmethod
-    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> BasePreprocessingModule:
         return _SequencePreprocessing(metadata)
 
 
@@ -362,8 +362,8 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                 else:
                     metric_fn = metric_fn.to(predictions[prediction_key].device)
                     metric_fn.update(predictions[prediction_key].detach(), targets)
-            except Exception as e:
-                logger.info(f"Ran into error when calculating metric {metric_name}. Skipping. The error is: {e}")
+            except Exception:
+                logger.warning(f"Ran into error when calculating metric {metric_name}. Skipping.", exc_info=True)
 
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):

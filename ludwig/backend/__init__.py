@@ -52,7 +52,7 @@ def _has_ray():
     try:
         ray.init("auto", ignore_reinit_error=True)
         return True
-    except Exception:
+    except (ConnectionError, RuntimeError):
         return False
 
 

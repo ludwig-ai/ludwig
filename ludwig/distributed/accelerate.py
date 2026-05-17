@@ -237,7 +237,7 @@ class AccelerateStrategy(DistributedStrategy):
 
             accelerator = Accelerator()
             return accelerator.unwrap_model(model)
-        except Exception:
+        except ImportError:
             return model
 
     @classmethod

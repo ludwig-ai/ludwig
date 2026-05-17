@@ -20,7 +20,14 @@ import numpy as np
 import torch
 
 from ludwig.constants import COLUMN, HIDDEN, LOGITS, NAME, PREDICTIONS, PROBABILITIES, PROC_COLUMN, SET
-from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
+from ludwig.features.base_feature import (
+    BasePostprocessingModule,
+    BasePreprocessingModule,
+    FeaturePreprocessingMixin,
+    InputFeature,
+    OutputFeature,
+    PredictModule,
+)
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.schema.features.set_feature import SetInputFeatureConfig, SetOutputFeatureConfig
 from ludwig.types import (
@@ -38,7 +45,7 @@ from ludwig.utils.types import PreprocessingInput
 logger = logging.getLogger(__name__)
 
 
-class _SetPreprocessing(torch.nn.Module):
+class _SetPreprocessing(BasePreprocessingModule):
     """Torchscript-enabled version of preprocessing done by SetFeatureMixin.add_feature_data.
 
     If is_bag is true, forward returns a vector for each sample indicating counts of each token. Else, forward returns a
@@ -92,7 +99,7 @@ class _SetPreprocessing(torch.nn.Module):
         return set_matrix
 
 
-class _SetPostprocessing(torch.nn.Module):
+class _SetPostprocessing(BasePostprocessingModule):
     """Torchscript-enabled version of postprocessing done by SetFeatureMixin.add_feature_data."""
 
     def __init__(self, metadata: TrainingSetMetadataDict):
@@ -141,7 +148,7 @@ class _SetPredict(PredictModule):
         return {self.predictions_key: predictions, self.probabilities_key: probabilities, self.logits_key: logits}
 
 
-class SetFeatureMixin(BaseFeatureMixin):
+class SetFeatureMixin(FeaturePreprocessingMixin):
     @staticmethod
     def type():
         return SET
@@ -245,7 +252,7 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
         return self.encoder_obj.output_shape
 
     @staticmethod
-    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> BasePreprocessingModule:
         return _SetPreprocessing(metadata)
 
 

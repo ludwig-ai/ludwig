@@ -20,7 +20,14 @@ import torch
 
 from ludwig.constants import BINARY, COLUMN, HIDDEN, LOGITS, NAME, PREDICTIONS, PROBABILITIES, PROBABILITY, PROC_COLUMN
 from ludwig.error import InputDataError
-from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
+from ludwig.features.base_feature import (
+    BasePostprocessingModule,
+    BasePreprocessingModule,
+    FeaturePreprocessingMixin,
+    InputFeature,
+    OutputFeature,
+    PredictModule,
+)
 from ludwig.schema.features.binary_feature import BinaryInputFeatureConfig, BinaryOutputFeatureConfig
 from ludwig.types import (
     FeatureConfigDict,
@@ -43,7 +50,7 @@ from ludwig.utils.types import DataFrame, PreprocessingInput
 logger = logging.getLogger(__name__)
 
 
-class _BinaryPreprocessing(torch.nn.Module):
+class _BinaryPreprocessing(BasePreprocessingModule):
     def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
         str2bool = metadata.get("str2bool")
@@ -67,7 +74,7 @@ class _BinaryPreprocessing(torch.nn.Module):
         return torch.tensor(indices, dtype=torch.float32)
 
 
-class _BinaryPostprocessing(torch.nn.Module):
+class _BinaryPostprocessing(BasePostprocessingModule):
     def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
         bool2str = metadata.get("bool2str")
@@ -113,7 +120,7 @@ class _BinaryPredict(PredictModule):
         }
 
 
-class BinaryFeatureMixin(BaseFeatureMixin):
+class BinaryFeatureMixin(FeaturePreprocessingMixin):
     @staticmethod
     def type():
         return BINARY
@@ -262,7 +269,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
         return "string" if metadata.get("str2bool") else "int32"
 
     @staticmethod
-    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> BasePreprocessingModule:
         return _BinaryPreprocessing(metadata)
 
 

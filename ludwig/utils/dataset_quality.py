@@ -197,7 +197,7 @@ def _check_near_duplicate_columns(df: pd.DataFrame, threshold: float) -> CheckRe
             col_b = numeric_cols[j]
             try:
                 r = df[[col_a, col_b]].dropna().corr().iloc[0, 1]
-            except Exception:
+            except (ValueError, TypeError):
                 continue
             if pd.notna(r) and abs(r) > threshold:
                 near_dup_pairs.append((col_a, col_b, float(r)))
@@ -241,7 +241,7 @@ def _check_target_leakage(df: pd.DataFrame, target_column: str, threshold: float
     for col in feature_cols:
         try:
             r = df[[col]].join(target_encoded.rename("__target__")).dropna().corr().iloc[0, 1]
-        except Exception:
+        except (ValueError, TypeError):
             continue
         if pd.notna(r) and abs(r) > threshold:
             leaking.append((col, float(r)))

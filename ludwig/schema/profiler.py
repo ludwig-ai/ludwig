@@ -1,5 +1,7 @@
 from dataclasses import field
 
+import pydantic
+
 import ludwig.schema.utils as schema_utils
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
@@ -92,7 +94,7 @@ def ProfilerDataclassField(description: str, default: dict = {}):
 
     try:
         dump_default = ProfilerConfig.model_validate(default).to_dict()
-    except Exception:
+    except pydantic.ValidationError:
         dump_default = default if isinstance(default, dict) else {}
 
     return field(

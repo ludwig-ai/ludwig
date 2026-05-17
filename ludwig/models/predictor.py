@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import tempfile
 from abc import ABC, abstractmethod
 from collections import defaultdict, OrderedDict
 from pprint import pformat
@@ -293,6 +294,13 @@ class Predictor(BasePredictor):
             return metrics, from_numpy_dataset(predictions)
 
     def batch_collect_activations(self, layer_names, dataset, bucketing_field=None):
+        """Collect activations from the model for the given dataset.
+
+        Uses disk offloading to avoid OOM on large datasets: each batch's activations
+        are written to a temporary .npy file and the final result is assembled by
+        loading them one at a time. Peak RAM is one batch at a time rather than the
+        full dataset.
+        """
         if bucketing_field:
             raise ValueError("BucketedBatcher is not supported yet")
 
@@ -300,37 +308,69 @@ class Predictor(BasePredictor):
         prev_model_training_mode = self.dist_model.training  # store previous model training mode
         self.dist_model.eval()  # set model to eval mode
 
-        with torch.no_grad():
-            with dataset.initialize_batcher(
-                self._batch_size, should_shuffle=False, distributed=self._distributed
-            ) as batcher:
-                progress_bar_config = {
-                    "desc": "Collecting Tensors",
-                    "total": batcher.steps_per_epoch,
-                    "file": sys.stdout,
-                    "disable": is_progressbar_disabled(),
-                }
-                progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, self.is_coordinator())
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            # Maps layer name -> list of per-batch .npy file paths
+            batch_files: dict[str, list[str]] = {}
 
-                collected_tensors = []
-                while not batcher.last_batch():
-                    batch = batcher.next_batch()
-
-                    inputs = {
-                        i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(
-                            self.device
-                        )
-                        for i_feat in self.model.input_features.values()
+            with torch.no_grad():
+                with dataset.initialize_batcher(
+                    self._batch_size, should_shuffle=False, distributed=self._distributed
+                ) as batcher:
+                    progress_bar_config = {
+                        "desc": "Collecting Tensors",
+                        "total": batcher.steps_per_epoch,
+                        "file": sys.stdout,
+                        "disable": is_progressbar_disabled(),
                     }
-                    outputs = self._predict_on_inputs(inputs)
-                    collected_tensors = [(concat_name, tensor) for concat_name, tensor in outputs.items()]
-                    progress_bar.update(1)
+                    progress_bar = LudwigProgressBar(
+                        self.report_tqdm_to_ray, progress_bar_config, self.is_coordinator()
+                    )
 
-                progress_bar.close()
+                    batch_idx = 0
+                    while not batcher.last_batch():
+                        batch = batcher.next_batch()
 
-        self.dist_model.train(prev_model_training_mode)  # Restores previous model training mode.
+                        inputs = {
+                            i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(
+                                self.device
+                            )
+                            for i_feat in self.model.input_features.values()
+                        }
+                        outputs = self._predict_on_inputs(inputs)
+                        for name, tensor in outputs.items():
+                            if name not in batch_files:
+                                batch_files[name] = []
+                            if isinstance(tensor, torch.Tensor):
+                                path = os.path.join(tmp_dir, f"{make_safe_filename(name)}_{batch_idx}.npy")
+                                np.save(path, tensor.detach().cpu().numpy())
+                                batch_files[name].append(path)
+                            else:
+                                # Non-tensor (e.g., used_tokens list): accumulate normally.
+                                # These are small metadata values, not large activation tensors.
+                                if name not in batch_files:
+                                    batch_files[name] = []
+                                batch_files[name].append(tensor)
+                        batch_idx += 1
+                        progress_bar.update(1)
 
-        return collected_tensors
+                    progress_bar.close()
+
+            self.dist_model.train(prev_model_training_mode)
+
+            # Assemble results: load batch files one at a time to cap peak RAM usage.
+            collected_tensors = []
+            for name, items in batch_files.items():
+                if items and isinstance(items[0], str):
+                    # Disk-offloaded tensors: load and concatenate.
+                    arrays = [np.load(f) for f in items]
+                    combined = np.concatenate(arrays, axis=0)
+                    collected_tensors.append((name, torch.from_numpy(combined)))
+                else:
+                    # Non-tensor metadata: flatten list of batch items.
+                    flat = [x for batch in items for x in (batch if isinstance(batch, list) else [batch])]
+                    collected_tensors.append((name, flat))
+
+            return collected_tensors
 
     def _predict_on_inputs(self, inputs: dict) -> dict:
         return self.dist_model(inputs)

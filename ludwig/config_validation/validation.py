@@ -29,7 +29,6 @@ def get_schema(model_type: str = MODEL_ECD):
     cls = model_type_schema_registry[model_type]
     props = unload_jsonschema_from_config_class(cls)["properties"]
 
-    # TODO: Replace with more robust required logic later.
     required = ["input_features", "output_features"]
     if model_type == MODEL_LLM:
         required += [BASE_MODEL]

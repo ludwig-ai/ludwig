@@ -688,7 +688,7 @@ class LLMTrainerConfig(BaseTrainerConfig):
 
 @DeveloperAPI
 @register_llm_trainer_schema("none")
-class NoneTrainerConfig(LLMTrainerConfig):
+class InferenceOnlyTrainerConfig(LLMTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for zero-shot / few-shot LLM model training."""
 
     # Required for lookup during trainer initialization

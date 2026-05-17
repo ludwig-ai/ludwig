@@ -343,9 +343,9 @@ class CheckpointManager:
         save_path = os.path.join(self.directory, f"{BEST}.ckpt")
         try:
             return self.checkpoint.get_state_for_inference(save_path, device)
-        except Exception:
-            # This exception may be hit if the best checkpoint does not exist. This can happen if the model runs into
-            # NaN loss because of NaN or inf values in the weights before the first checkpoint is saved. In this case,
+        except (FileNotFoundError, OSError, RuntimeError):
+            # Best checkpoint may not exist when training is halted by NaN/Inf weights before the
+            # first checkpoint is saved.
             logger.error(f"Could not load best checkpoint state from {save_path}. Best checkpoint may not exist.")
             return None
 
@@ -387,8 +387,8 @@ class CheckpointManager:
             try:
                 sd = self.checkpoint.get_state_for_inference(path, device)
                 state_dicts.append(sd)
-            except Exception as e:
-                logger.warning(f"Could not load top-K checkpoint from {path}: {e}")
+            except Exception:
+                logger.warning(f"Could not load top-K checkpoint from {path}.", exc_info=True)
         return state_dicts
 
     def close(self):

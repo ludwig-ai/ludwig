@@ -11,9 +11,10 @@ import torchmetrics
 from ludwig.combiners.combiners import Combiner
 from ludwig.constants import COMBINED, LOSS, NAME
 from ludwig.encoders.base import Encoder
-from ludwig.features.base_feature import create_passthrough_input_feature, InputFeature, ModuleWrapper, OutputFeature
+from ludwig.features.base_feature import InputFeature, NonPropertyModuleWrapper, OutputFeature
 from ludwig.features.feature_registries import get_input_type_registry, get_output_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
+from ludwig.features.passthrough_feature import create_passthrough_input_feature
 from ludwig.modules.metric_modules import LudwigMetric
 from ludwig.modules.training_hooks import TrainingHook
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig, FeatureCollection
@@ -41,8 +42,8 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
     def __init__(self, random_seed: int | None = None):
         self._random_seed = random_seed
 
-        # TODO: with change to misc_utils.set_random_seed() this may be redundant
-        #       seems to be required for test_api.py::test_api_training_determinism
+        # Ensures model weight initialization is deterministic even though set_random_seed()
+        # is called later in the trainer. Required for test_api::test_api_training_determinism.
         if random_seed is not None:
             torch.random.manual_seed(random_seed)
 
@@ -52,8 +53,8 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         self.output_features = self.create_feature_dict()
 
         # ================ Combined loss metric ================
-        self._eval_loss_metric = ModuleWrapper(torchmetrics.MeanMetric())
-        self._eval_additional_losses_metrics = ModuleWrapper(torchmetrics.MeanMetric())
+        self._eval_loss_metric = NonPropertyModuleWrapper(torchmetrics.MeanMetric())
+        self._eval_additional_losses_metrics = NonPropertyModuleWrapper(torchmetrics.MeanMetric())
 
         # ================ Training Hook Handles ================
         self._forward_hook_handles: list[TrainingHook] = []
@@ -142,10 +143,14 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         return total_size
 
     @property
-    def input_shape(self):
-        """Returns the shape of the model's input."""
-        # TODO(justin): Remove dummy implementation. Make input_shape and output_shape functions.
-        return torch.Size([1, 1])
+    def input_shape(self) -> torch.Size:
+        """Returns the shape of a single model input (excluding batch dimension).
+
+        Subclasses should override this to return a meaningful shape.
+        The default is a (1,) scalar — sufficient for models that don't rely
+        on input_shape for decoder sizing.
+        """
+        return torch.Size([1])
 
     @abstractmethod
     def forward(

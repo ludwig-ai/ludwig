@@ -24,7 +24,14 @@ import torch
 from torch import nn
 
 from ludwig.constants import COLUMN, HIDDEN, LOGITS, NAME, NUMBER, PREDICTIONS, PROC_COLUMN
-from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
+from ludwig.features.base_feature import (
+    BasePostprocessingModule,
+    BasePreprocessingModule,
+    FeaturePreprocessingMixin,
+    InputFeature,
+    OutputFeature,
+    PredictModule,
+)
 from ludwig.schema.features.number_feature import NumberInputFeatureConfig, NumberOutputFeatureConfig
 from ludwig.types import (
     FeatureMetadataDict,
@@ -256,7 +263,7 @@ class _OutlierReplacer(torch.nn.Module):
         return v.to(dtype=torch.float32)
 
 
-class _NumberPreprocessing(torch.nn.Module):
+class _NumberPreprocessing(BasePreprocessingModule):
     def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
         self.computed_fill_value = float(metadata["preprocessing"]["computed_fill_value"])
@@ -281,7 +288,7 @@ class _NumberPreprocessing(torch.nn.Module):
         return self.numeric_transformer.transform_inference(v)
 
 
-class _NumberPostprocessing(torch.nn.Module):
+class _NumberPostprocessing(BasePostprocessingModule):
     def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
         self.numeric_transformer = get_transformer(metadata, metadata["preprocessing"])
@@ -309,7 +316,7 @@ class _NumberPredict(PredictModule):
         return {self.predictions_key: predictions, self.logits_key: logits}
 
 
-class NumberFeatureMixin(BaseFeatureMixin):
+class NumberFeatureMixin(FeaturePreprocessingMixin):
     @staticmethod
     def type():
         return NUMBER
@@ -455,7 +462,7 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
         return "float32"
 
     @staticmethod
-    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> BasePreprocessingModule:
         return _NumberPreprocessing(metadata)
 
 

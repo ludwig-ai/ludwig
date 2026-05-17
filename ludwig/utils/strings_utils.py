@@ -135,7 +135,7 @@ def is_datetime(s: str | int | float):
     try:
         parse_datetime(s)
         return True
-    except Exception:
+    except (ValueError, OverflowError):
         return False
 
 

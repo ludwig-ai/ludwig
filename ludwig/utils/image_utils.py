@@ -95,7 +95,7 @@ def is_bytes_image(bytes_obj) -> bool:
             bytes_obj = BytesIO(bytes_obj)
         Image.open(bytes_obj).verify()
         return True
-    except Exception:
+    except (OSError, SyntaxError, ValueError):
         return False
 
 
@@ -194,8 +194,8 @@ def read_image_as_png(bytes_obj: bytes, mode: ImageReadMode = ImageReadMode.UNCH
             image = decode_image(torch.frombuffer(buffer_view, dtype=torch.uint8), mode=mode)
             del buffer_view
             return image
-    except Exception as e:
-        warnings.warn(f"Failed to read image from PNG file. Original exception: {e}")
+    except Exception:
+        logger.warning("Failed to read image from PNG file.", exc_info=True)
         return None
 
 
@@ -206,8 +206,8 @@ def read_image_as_numpy(bytes_obj: bytes) -> torch.Tensor | None:
         with BytesIO(bytes_obj) as buffer:
             image = np.load(buffer)
             return torch.from_numpy(image)
-    except Exception as e:
-        warnings.warn(f"Failed to read image from numpy file. Original exception: {e}")
+    except Exception:
+        logger.warning("Failed to read image from numpy file.", exc_info=True)
         return None
 
 
@@ -225,8 +225,8 @@ def read_image_as_tif(bytes_obj: bytes) -> torch.Tensor | None:
             if len(image.shape) == 2:
                 image = torch.unsqueeze(image, dim=0)
             return image
-    except Exception as e:
-        warnings.warn(f"Failed to read image from tif file. Original exception: {e}")
+    except Exception:
+        logger.warning("Failed to read image from tif file.", exc_info=True)
         return None
 
 
