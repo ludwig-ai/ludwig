@@ -48,7 +48,7 @@ from ludwig.types import (
 from ludwig.utils import output_feature_utils
 from ludwig.utils.calibration import CalibrationModule
 from ludwig.utils.torch_utils import LudwigModule
-from ludwig.utils.types import DataFrame
+from ludwig.utils.types import DataFrame, PreprocessingInput
 
 logger = logging.getLogger(__name__)
 
