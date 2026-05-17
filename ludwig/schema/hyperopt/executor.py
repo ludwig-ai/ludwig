@@ -1,5 +1,7 @@
 from dataclasses import field
 
+import pydantic
+
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import RAY
 from ludwig.error import ConfigValidationError
@@ -96,7 +98,7 @@ def ExecutorDataclassField(description: str, default: dict = {}):
     load_default = lambda: ExecutorConfig.model_validate(default)
     try:
         dump_default = ExecutorConfig.model_validate(default).to_dict()
-    except Exception:
+    except pydantic.ValidationError:
         dump_default = default if isinstance(default, dict) else {}
 
     return field(

@@ -1,0 +1,3759 @@
+[
+  {
+    "hf_id": "nyu-mll/glue",
+    "hf_subsample": "mnli",
+    "name": "mnli",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Multi-Genre Natural Language Inference; premise + hypothesis -> entailment/neutral/contradiction"
+  },
+  {
+    "hf_id": "nyu-mll/glue",
+    "hf_subsample": "qqp",
+    "name": "qqp",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Quora Question Pairs; whether two questions are semantically equivalent"
+  },
+  {
+    "hf_id": "nyu-mll/glue",
+    "hf_subsample": "qnli",
+    "name": "qnli",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Question-answering NLI; whether context sentence contains answer to question"
+  },
+  {
+    "hf_id": "nyu-mll/glue",
+    "hf_subsample": "cola",
+    "name": "cola",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Corpus of Linguistic Acceptability; grammatically acceptable or not"
+  },
+  {
+    "hf_id": "nyu-mll/glue",
+    "hf_subsample": "rte",
+    "name": "rte",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Recognizing Textual Entailment; entailment vs not-entailment"
+  },
+  {
+    "hf_id": "nyu-mll/glue",
+    "hf_subsample": "mrpc",
+    "name": "mrpc",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Microsoft Research Paraphrase Corpus; paraphrase detection"
+  },
+  {
+    "hf_id": "nyu-mll/glue",
+    "hf_subsample": "stsb",
+    "name": "stsb",
+    "task": "regression",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "number"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Semantic Textual Similarity Benchmark; similarity score 0-5"
+  },
+  {
+    "hf_id": "nyu-mll/glue",
+    "hf_subsample": "wnli",
+    "name": "wnli",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Winograd NLI; pronoun reference coreference classification"
+  },
+  {
+    "hf_id": "aps/super_glue",
+    "hf_subsample": "boolq",
+    "name": "boolq",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Boolean Questions; reading comprehension yes/no questions from Google"
+  },
+  {
+    "hf_id": "aps/super_glue",
+    "hf_subsample": "cb",
+    "name": "commitment_bank",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "CommitmentBank; textual entailment with 3-way classification"
+  },
+  {
+    "hf_id": "aps/super_glue",
+    "hf_subsample": "copa",
+    "name": "copa",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Choice Of Plausible Alternatives; causal commonsense reasoning"
+  },
+  {
+    "hf_id": "aps/super_glue",
+    "hf_subsample": "multirc",
+    "name": "multirc",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Multi-Sentence Reading Comprehension; answer validation"
+  },
+  {
+    "hf_id": "aps/super_glue",
+    "hf_subsample": "rte",
+    "name": "superglue_rte",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "SuperGLUE version of Recognizing Textual Entailment"
+  },
+  {
+    "hf_id": "aps/super_glue",
+    "hf_subsample": "wic",
+    "name": "wic",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Word-in-Context; word sense disambiguation as binary classification"
+  },
+  {
+    "hf_id": "aps/super_glue",
+    "hf_subsample": "wsc.fixed",
+    "name": "winograd_schema",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Winograd Schema Challenge; pronoun coreference resolution"
+  },
+  {
+    "hf_id": "stanfordnlp/imdb",
+    "hf_subsample": null,
+    "name": "imdb_sentiment",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "IMDB movie review sentiment; positive/negative binary classification"
+  },
+  {
+    "hf_id": "dair-ai/emotion",
+    "hf_subsample": null,
+    "name": "emotion",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Twitter emotion classification; 6 classes: joy, sadness, anger, fear, surprise, love"
+  },
+  {
+    "hf_id": "cardiffnlp/tweet_eval",
+    "hf_subsample": "sentiment",
+    "name": "tweeteval_sentiment",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "TweetEval sentiment; positive/negative/neutral tweet classification"
+  },
+  {
+    "hf_id": "cardiffnlp/tweet_eval",
+    "hf_subsample": "hate",
+    "name": "tweeteval_hate",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "TweetEval hate speech detection"
+  },
+  {
+    "hf_id": "cardiffnlp/tweet_eval",
+    "hf_subsample": "offensive",
+    "name": "tweeteval_offensive",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "TweetEval offensive language detection"
+  },
+  {
+    "hf_id": "cardiffnlp/tweet_eval",
+    "hf_subsample": "irony",
+    "name": "tweeteval_irony",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "TweetEval irony detection"
+  },
+  {
+    "hf_id": "cardiffnlp/tweet_eval",
+    "hf_subsample": "emotion",
+    "name": "tweeteval_emotion",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "TweetEval emotion classification; 4 classes"
+  },
+  {
+    "hf_id": "takala/financial_phrasebank",
+    "hf_subsample": "sentences_allagree",
+    "name": "financial_phrasebank",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Financial news sentiment; positive/negative/neutral (all-annotator-agreement subset)"
+  },
+  {
+    "hf_id": "google-research-datasets/go_emotions",
+    "hf_subsample": "simplified",
+    "name": "go_emotions_multiclass",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "set"
+    ],
+    "needs_custom_loader": false,
+    "notes": "GoEmotions multi-label 27 emotion categories from Reddit comments"
+  },
+  {
+    "hf_id": "fancyzhx/ag_news",
+    "hf_subsample": null,
+    "name": "ag_news_hf",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "AG News 4-class topic classification (HF version)"
+  },
+  {
+    "hf_id": "fancyzhx/dbpedia_14",
+    "hf_subsample": null,
+    "name": "dbpedia_14",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "DBpedia 14 ontology text classification; 14 categories"
+  },
+  {
+    "hf_id": "Yelp/yelp_review_full",
+    "hf_subsample": null,
+    "name": "yelp_review_full",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Yelp review 5-star rating classification"
+  },
+  {
+    "hf_id": "fancyzhx/amazon_polarity",
+    "hf_subsample": null,
+    "name": "amazon_polarity",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Amazon product review polarity; positive/negative"
+  },
+  {
+    "hf_id": "cornell-movie-review-data/rotten_tomatoes",
+    "hf_subsample": null,
+    "name": "rotten_tomatoes",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Rotten Tomatoes movie review sentiment; positive/negative"
+  },
+  {
+    "hf_id": "stanfordnlp/snli",
+    "hf_subsample": null,
+    "name": "snli",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Stanford NLI; premise/hypothesis pairs -> entailment/neutral/contradiction"
+  },
+  {
+    "hf_id": "nyu-mll/multi_nli",
+    "hf_subsample": null,
+    "name": "multi_nli",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Multi-Genre NLI; 10 diverse genres, 3-way NLI"
+  },
+  {
+    "hf_id": "google-research-datasets/paws",
+    "hf_subsample": "labeled_final",
+    "name": "paws",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Paraphrase Adversaries from Word Scrambling; challenging paraphrase detection"
+  },
+  {
+    "hf_id": "facebook/anli",
+    "hf_subsample": null,
+    "name": "anli",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Adversarial NLI; iteratively adversarial NLI benchmark"
+  },
+  {
+    "hf_id": "CogComp/trec",
+    "hf_subsample": null,
+    "name": "trec",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "TREC question type classification; 6 coarse classes"
+  },
+  {
+    "hf_id": "stanfordnlp/sst2",
+    "hf_subsample": null,
+    "name": "sst2_hf",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Stanford Sentiment Treebank 2-class (HF canonical version)"
+  },
+  {
+    "hf_id": "google/boolq",
+    "hf_subsample": null,
+    "name": "boolq_standalone",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "BoolQ standalone; naturally occurring yes/no questions with passage"
+  },
+  {
+    "hf_id": "facebook/belebele",
+    "hf_subsample": "eng_Latn",
+    "name": "belebele",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Belebele multilingual reading comprehension; multiple-choice"
+  },
+  {
+    "hf_id": "PKU-Alignment/BeaverTails",
+    "hf_subsample": null,
+    "name": "beavertails",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Safety classification of model responses; harmful vs safe"
+  },
+  {
+    "hf_id": "Rowan/hellaswag",
+    "hf_subsample": null,
+    "name": "hellaswag",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": true,
+    "notes": "HellaSwag; commonsense NLI, pick correct continuation from 4 choices"
+  },
+  {
+    "hf_id": "allenai/winogrande",
+    "hf_subsample": "winogrande_xl",
+    "name": "winogrande",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "WinoGrande; large-scale Winograd schema challenge"
+  },
+  {
+    "hf_id": "ybisk/piqa",
+    "hf_subsample": null,
+    "name": "piqa",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Physical Intuition QA; goal + two solutions -> pick correct one"
+  },
+  {
+    "hf_id": "tau/commonsense_qa",
+    "hf_subsample": null,
+    "name": "commonsense_qa",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": true,
+    "notes": "CommonsenseQA; 5-choice commonsense reasoning questions"
+  },
+  {
+    "hf_id": "allenai/ai2_arc",
+    "hf_subsample": "ARC-Easy",
+    "name": "arc_easy",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": true,
+    "notes": "AI2 Reasoning Challenge Easy subset; multiple-choice science questions"
+  },
+  {
+    "hf_id": "allenai/ai2_arc",
+    "hf_subsample": "ARC-Challenge",
+    "name": "arc_challenge",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": true,
+    "notes": "AI2 Reasoning Challenge hard subset; grade-school science questions"
+  },
+  {
+    "hf_id": "allenai/openbookqa",
+    "hf_subsample": "main",
+    "name": "openbookqa",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": true,
+    "notes": "OpenBookQA; elementary science questions with open-book style"
+  },
+  {
+    "hf_id": "allenai/sciq",
+    "hf_subsample": null,
+    "name": "sciq",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": true,
+    "notes": "SciQ; crowdsourced science exam questions with 4 choices"
+  },
+  {
+    "hf_id": "rajpurkar/squad",
+    "hf_subsample": null,
+    "name": "squad",
+    "task": "extractive_qa",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Stanford QA Dataset v1.1; extractive reading comprehension"
+  },
+  {
+    "hf_id": "rajpurkar/squad_v2",
+    "hf_subsample": null,
+    "name": "squad_v2",
+    "task": "extractive_qa",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "SQuAD v2; includes unanswerable questions"
+  },
+  {
+    "hf_id": "mandarjoshi/trivia_qa",
+    "hf_subsample": "rc",
+    "name": "trivia_qa",
+    "task": "text_generation",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "TriviaQA; reading comprehension with trivia question-answer pairs"
+  },
+  {
+    "hf_id": "google-research-datasets/natural_questions",
+    "hf_subsample": null,
+    "name": "natural_questions",
+    "task": "extractive_qa",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Google Natural Questions; real user queries from Google Search"
+  },
+  {
+    "hf_id": "hotpotqa/hotpot_qa",
+    "hf_subsample": "distractor",
+    "name": "hotpot_qa",
+    "task": "extractive_qa",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "HotpotQA; multi-hop reasoning QA with supporting facts"
+  },
+  {
+    "hf_id": "qiaojin/PubMedQA",
+    "hf_subsample": "pqa_labeled",
+    "name": "pubmed_qa",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "PubMedQA; biomedical research QA; yes/no/maybe"
+  },
+  {
+    "hf_id": "openlifescienceai/medmcqa",
+    "hf_subsample": null,
+    "name": "medmcqa",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Medical entrance exam QA; 4-choice medical questions"
+  },
+  {
+    "hf_id": "truthfulqa/truthful_qa",
+    "hf_subsample": "multiple_choice",
+    "name": "truthful_qa",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": true,
+    "notes": "TruthfulQA multiple choice; tests for truthful model answers"
+  },
+  {
+    "hf_id": "cais/mmlu",
+    "hf_subsample": "all",
+    "name": "mmlu",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": true,
+    "notes": "MMLU; 57-subject multiple choice; question -> A/B/C/D"
+  },
+  {
+    "hf_id": "TIGER-Lab/MMLU-Pro",
+    "hf_subsample": null,
+    "name": "mmlu_pro",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": true,
+    "notes": "MMLU-Pro; harder 10-choice version of MMLU"
+  },
+  {
+    "hf_id": "eriktks/conll2003",
+    "hf_subsample": null,
+    "name": "conll2003",
+    "task": "ner",
+    "input_features": [
+      "sequence"
+    ],
+    "output_features": [
+      "sequence"
+    ],
+    "needs_custom_loader": false,
+    "notes": "CoNLL-2003 NER; English newspaper NER with PER/ORG/LOC/MISC"
+  },
+  {
+    "hf_id": "unimelb-nlp/wikiann",
+    "hf_subsample": "en",
+    "name": "wikiann_en",
+    "task": "ner",
+    "input_features": [
+      "sequence"
+    ],
+    "output_features": [
+      "sequence"
+    ],
+    "needs_custom_loader": false,
+    "notes": "WikiANN English NER; cross-lingual NER from Wikipedia"
+  },
+  {
+    "hf_id": "leondz/wnut_17",
+    "hf_subsample": null,
+    "name": "wnut17",
+    "task": "ner",
+    "input_features": [
+      "sequence"
+    ],
+    "output_features": [
+      "sequence"
+    ],
+    "needs_custom_loader": false,
+    "notes": "WNUT-17 emerging entities NER; Twitter/social media domain"
+  },
+  {
+    "hf_id": "ncbi/ncbi_disease",
+    "hf_subsample": null,
+    "name": "ncbi_disease",
+    "task": "ner",
+    "input_features": [
+      "sequence"
+    ],
+    "output_features": [
+      "sequence"
+    ],
+    "needs_custom_loader": false,
+    "notes": "NCBI Disease NER; biomedical disease entity recognition"
+  },
+  {
+    "hf_id": "Babelscape/wikineural",
+    "hf_subsample": "en",
+    "name": "wikineural",
+    "task": "ner",
+    "input_features": [
+      "sequence"
+    ],
+    "output_features": [
+      "sequence"
+    ],
+    "needs_custom_loader": false,
+    "notes": "WikiNEuRal multilingual NER; automatically annotated Wikipedia"
+  },
+  {
+    "hf_id": "Babelscape/multinerd",
+    "hf_subsample": null,
+    "name": "multinerd",
+    "task": "ner",
+    "input_features": [
+      "sequence"
+    ],
+    "output_features": [
+      "sequence"
+    ],
+    "needs_custom_loader": false,
+    "notes": "MultiNERD; 10 languages, 15 NE types including fine-grained"
+  },
+  {
+    "hf_id": "DFKI-SLT/few-nerd",
+    "hf_subsample": "supervised",
+    "name": "few_nerd",
+    "task": "ner",
+    "input_features": [
+      "sequence"
+    ],
+    "output_features": [
+      "sequence"
+    ],
+    "needs_custom_loader": false,
+    "notes": "FewNERD; 66 fine-grained entity types NER dataset"
+  },
+  {
+    "hf_id": "masakhane/masakhaner2",
+    "hf_subsample": "eng",
+    "name": "masakhaner2",
+    "task": "ner",
+    "input_features": [
+      "sequence"
+    ],
+    "output_features": [
+      "sequence"
+    ],
+    "needs_custom_loader": false,
+    "notes": "MasakhaNER 2.0; African languages NER"
+  },
+  {
+    "hf_id": "universal-dependencies/universal_dependencies",
+    "hf_subsample": "en_ewt",
+    "name": "universal_dependencies",
+    "task": "sequence_labeling",
+    "input_features": [
+      "sequence"
+    ],
+    "output_features": [
+      "sequence"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Universal Dependencies POS tagging; English Web Treebank"
+  },
+  {
+    "hf_id": "ai4privacy/pii-masking-300k",
+    "hf_subsample": null,
+    "name": "pii_masking",
+    "task": "ner",
+    "input_features": [
+      "sequence"
+    ],
+    "output_features": [
+      "sequence"
+    ],
+    "needs_custom_loader": false,
+    "notes": "PII Masking; 300k examples for personally identifiable information NER"
+  },
+  {
+    "hf_id": "abisee/cnn_dailymail",
+    "hf_subsample": "3.0.0",
+    "name": "cnn_dailymail",
+    "task": "summarization",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "CNN/DailyMail news summarization; article -> highlights"
+  },
+  {
+    "hf_id": "EdinburghNLP/xsum",
+    "hf_subsample": null,
+    "name": "xsum",
+    "task": "summarization",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "XSum; extreme summarization from BBC articles; single-sentence summaries"
+  },
+  {
+    "hf_id": "knkarthick/dialogsum",
+    "hf_subsample": null,
+    "name": "dialogsum",
+    "task": "summarization",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "DialogSum; dialogue summarization dataset"
+  },
+  {
+    "hf_id": "knkarthick/samsum",
+    "hf_subsample": null,
+    "name": "samsum",
+    "task": "summarization",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "SAMSum; messenger-style conversation summarization"
+  },
+  {
+    "hf_id": "FiscalNote/billsum",
+    "hf_subsample": null,
+    "name": "billsum",
+    "task": "summarization",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "BillSum; US congressional and California bill summarization"
+  },
+  {
+    "hf_id": "ccdv/arxiv-summarization",
+    "hf_subsample": null,
+    "name": "arxiv_summarization",
+    "task": "summarization",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "ArXiv paper abstract summarization; long scientific documents"
+  },
+  {
+    "hf_id": "ccdv/pubmed-summarization",
+    "hf_subsample": null,
+    "name": "pubmed_summarization",
+    "task": "summarization",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "PubMed biomedical article summarization"
+  },
+  {
+    "hf_id": "alexfabbri/multi_news",
+    "hf_subsample": null,
+    "name": "multi_news",
+    "task": "summarization",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Multi-News; multi-document news summarization"
+  },
+  {
+    "hf_id": "csebuetnlp/xlsum",
+    "hf_subsample": "english",
+    "name": "xlsum",
+    "task": "summarization",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "XL-Sum; BBC multilingual summarization, 44 languages"
+  },
+  {
+    "hf_id": "NortheasternUniversity/big_patent",
+    "hf_subsample": "a",
+    "name": "big_patent",
+    "task": "summarization",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "BigPatent; patent document summarization"
+  },
+  {
+    "hf_id": "ccdv/govreport-summarization",
+    "hf_subsample": null,
+    "name": "govreport_summarization",
+    "task": "summarization",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "GovReport; long US government report summarization"
+  },
+  {
+    "hf_id": "Helsinki-NLP/opus-100",
+    "hf_subsample": "en-de",
+    "name": "opus100_en_de",
+    "task": "translation",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "OPUS-100 English-German translation"
+  },
+  {
+    "hf_id": "Helsinki-NLP/opus-100",
+    "hf_subsample": "en-fr",
+    "name": "opus100_en_fr",
+    "task": "translation",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "OPUS-100 English-French translation"
+  },
+  {
+    "hf_id": "Helsinki-NLP/opus-100",
+    "hf_subsample": "en-es",
+    "name": "opus100_en_es",
+    "task": "translation",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "OPUS-100 English-Spanish translation"
+  },
+  {
+    "hf_id": "wmt/wmt14",
+    "hf_subsample": "de-en",
+    "name": "wmt14_de_en",
+    "task": "translation",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "WMT14 German-English translation benchmark"
+  },
+  {
+    "hf_id": "wmt/wmt16",
+    "hf_subsample": "de-en",
+    "name": "wmt16_de_en",
+    "task": "translation",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "WMT16 German-English translation"
+  },
+  {
+    "hf_id": "wmt/wmt19",
+    "hf_subsample": "de-en",
+    "name": "wmt19_de_en",
+    "task": "translation",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "WMT19 German-English translation"
+  },
+  {
+    "hf_id": "Helsinki-NLP/opus_books",
+    "hf_subsample": "en-fr",
+    "name": "opus_books_en_fr",
+    "task": "translation",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "OPUS Books English-French literary translation"
+  },
+  {
+    "hf_id": "facebook/flores",
+    "hf_subsample": "eng_Latn-deu_Latn",
+    "name": "flores_en_de",
+    "task": "translation",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "FLORES-200 English-German; low-resource translation benchmark"
+  },
+  {
+    "hf_id": "IWSLT/iwslt2017",
+    "hf_subsample": "iwslt2017-en-de",
+    "name": "iwslt2017_en_de",
+    "task": "translation",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "IWSLT 2017 English-German spoken language translation"
+  },
+  {
+    "hf_id": "Helsinki-NLP/europarl",
+    "hf_subsample": "en-de",
+    "name": "europarl_en_de",
+    "task": "translation",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Europarl parallel corpus English-German (European Parliament proceedings)"
+  },
+  {
+    "hf_id": "uoft-cs/cifar10",
+    "hf_subsample": null,
+    "name": "cifar10",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "CIFAR-10; 10-class 32x32 image classification"
+  },
+  {
+    "hf_id": "uoft-cs/cifar100",
+    "hf_subsample": null,
+    "name": "cifar100",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "CIFAR-100; 100-class 32x32 image classification"
+  },
+  {
+    "hf_id": "ylecun/mnist",
+    "hf_subsample": null,
+    "name": "mnist",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "MNIST handwritten digit recognition; 10 classes"
+  },
+  {
+    "hf_id": "zalando-datasets/fashion_mnist",
+    "hf_subsample": null,
+    "name": "fashion_mnist",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Fashion MNIST; 10-class clothing item classification"
+  },
+  {
+    "hf_id": "ethz/food101",
+    "hf_subsample": null,
+    "name": "food101",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Food-101; 101-class food image classification"
+  },
+  {
+    "hf_id": "tanganke/stanford_cars",
+    "hf_subsample": null,
+    "name": "stanford_cars",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Stanford Cars; 196-class fine-grained car make/model/year classification"
+  },
+  {
+    "hf_id": "timm/oxford-iiit-pet",
+    "hf_subsample": null,
+    "name": "oxford_pets",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Oxford-IIIT Pet; 37 pet breed classification"
+  },
+  {
+    "hf_id": "tanganke/eurosat",
+    "hf_subsample": null,
+    "name": "eurosat",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "EuroSAT; land use/cover classification from satellite imagery; 10 classes"
+  },
+  {
+    "hf_id": "tanganke/gtsrb",
+    "hf_subsample": null,
+    "name": "gtsrb",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "GTSRB; German Traffic Sign Recognition Benchmark; 43 classes"
+  },
+  {
+    "hf_id": "ufldl-stanford/svhn",
+    "hf_subsample": "cropped_digits",
+    "name": "svhn",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "SVHN; Street View House Numbers digit classification"
+  },
+  {
+    "hf_id": "zh-plus/tiny-imagenet",
+    "hf_subsample": null,
+    "name": "tiny_imagenet",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Tiny ImageNet; 200-class 64x64 subset of ImageNet"
+  },
+  {
+    "hf_id": "tanganke/sun397",
+    "hf_subsample": null,
+    "name": "sun397",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "SUN397; scene understanding; 397 scene categories"
+  },
+  {
+    "hf_id": "AI-Lab-Makerere/beans",
+    "hf_subsample": null,
+    "name": "beans",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Beans leaf disease classification; 3 classes: angular leaf spot, bean rust, healthy"
+  },
+  {
+    "hf_id": "huggan/wikiart",
+    "hf_subsample": null,
+    "name": "wikiart",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "WikiArt; artwork style classification across 27 art styles"
+  },
+  {
+    "hf_id": "ILSVRC/imagenet-1k",
+    "hf_subsample": null,
+    "name": "imagenet1k",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "ImageNet-1K; 1000-class image classification (requires HF agreement)"
+  },
+  {
+    "hf_id": "Voxel51/mvtec-ad",
+    "hf_subsample": null,
+    "name": "mvtec_ad",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "MVTec Anomaly Detection; industrial surface defect detection"
+  },
+  {
+    "hf_id": "openslr/librispeech_asr",
+    "hf_subsample": "clean",
+    "name": "librispeech",
+    "task": "automatic_speech_recognition",
+    "input_features": [
+      "audio"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "LibriSpeech; English speech recognition from audiobooks; clean 100h split"
+  },
+  {
+    "hf_id": "google/fleurs",
+    "hf_subsample": "en_us",
+    "name": "fleurs_en",
+    "task": "automatic_speech_recognition",
+    "input_features": [
+      "audio"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "FLEURS; Few-shot Learning Evaluation of Universal Representations of Speech"
+  },
+  {
+    "hf_id": "facebook/multilingual_librispeech",
+    "hf_subsample": "english",
+    "name": "multilingual_librispeech",
+    "task": "automatic_speech_recognition",
+    "input_features": [
+      "audio"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Multilingual LibriSpeech; 8-language ASR dataset"
+  },
+  {
+    "hf_id": "facebook/voxpopuli",
+    "hf_subsample": "en",
+    "name": "voxpopuli",
+    "task": "automatic_speech_recognition",
+    "input_features": [
+      "audio"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "VoxPopuli; European Parliament speech ASR; 23 languages"
+  },
+  {
+    "hf_id": "speechcolab/gigaspeech",
+    "hf_subsample": "xs",
+    "name": "gigaspeech",
+    "task": "automatic_speech_recognition",
+    "input_features": [
+      "audio"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "GigaSpeech; 10K-hour English ASR; xs=10h subset"
+  },
+  {
+    "hf_id": "agkphysics/AudioSet",
+    "hf_subsample": "unbalanced_train",
+    "name": "audioset",
+    "task": "audio_classification",
+    "input_features": [
+      "audio"
+    ],
+    "output_features": [
+      "set"
+    ],
+    "needs_custom_loader": false,
+    "notes": "AudioSet; 527-class multi-label audio event classification"
+  },
+  {
+    "hf_id": "Fhrozen/FSD50k",
+    "hf_subsample": null,
+    "name": "fsd50k",
+    "task": "audio_classification",
+    "input_features": [
+      "audio"
+    ],
+    "output_features": [
+      "set"
+    ],
+    "needs_custom_loader": false,
+    "notes": "FSD50K; Freesound Dataset 50k; 200-class audio event classification"
+  },
+  {
+    "hf_id": "MLCommons/peoples_speech",
+    "hf_subsample": "clean",
+    "name": "peoples_speech",
+    "task": "automatic_speech_recognition",
+    "input_features": [
+      "audio"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "People's Speech; 30K-hour diverse English ASR"
+  },
+  {
+    "hf_id": "ProgramComputer/voxceleb",
+    "hf_subsample": null,
+    "name": "voxceleb",
+    "task": "audio_classification",
+    "input_features": [
+      "audio"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "VoxCeleb; speaker identification from celebrity interviews"
+  },
+  {
+    "hf_id": "DBD-research-group/BirdSet",
+    "hf_subsample": "HSN",
+    "name": "birdset",
+    "task": "audio_classification",
+    "input_features": [
+      "audio"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "BirdSet; bird species classification from audio recordings"
+  },
+  {
+    "hf_id": "Loie/VGGSound",
+    "hf_subsample": null,
+    "name": "vggsound",
+    "task": "audio_classification",
+    "input_features": [
+      "audio"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "VGGSound; 309-class audio-visual sound classification from YouTube"
+  },
+  {
+    "hf_id": "MMMU/MMMU",
+    "hf_subsample": "Accounting",
+    "name": "mmmu",
+    "task": "visual_question_answering",
+    "input_features": [
+      "image",
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": true,
+    "notes": "MMMU; Massive Multi-discipline Multimodal Understanding; college-level VQA"
+  },
+  {
+    "hf_id": "derek-thomas/ScienceQA",
+    "hf_subsample": null,
+    "name": "scienceqa",
+    "task": "visual_question_answering",
+    "input_features": [
+      "image",
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": true,
+    "notes": "ScienceQA; multimodal science questions with images and context"
+  },
+  {
+    "hf_id": "flaviagiammarino/vqa-rad",
+    "hf_subsample": null,
+    "name": "vqa_rad",
+    "task": "visual_question_answering",
+    "input_features": [
+      "image",
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "VQA-RAD; radiology visual question answering"
+  },
+  {
+    "hf_id": "AI4Math/MathVista",
+    "hf_subsample": null,
+    "name": "mathvista",
+    "task": "visual_question_answering",
+    "input_features": [
+      "image",
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": true,
+    "notes": "MathVista; mathematical reasoning in visual context"
+  },
+  {
+    "hf_id": "keremberke/satellite-building-segmentation",
+    "hf_subsample": null,
+    "name": "satellite_building_segmentation",
+    "task": "image_segmentation",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "image"
+    ],
+    "needs_custom_loader": true,
+    "notes": "Satellite building semantic segmentation"
+  },
+  {
+    "hf_id": "inria-soda/tabular-benchmark",
+    "hf_subsample": "clf_cat",
+    "name": "tabular_benchmark_clf",
+    "task": "tabular_classification",
+    "input_features": [
+      "number",
+      "category"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Tabular benchmark categorical classification tasks"
+  },
+  {
+    "hf_id": "mstz/adult",
+    "hf_subsample": null,
+    "name": "adult_income_hf",
+    "task": "tabular_classification",
+    "input_features": [
+      "number",
+      "category"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Adult/Census Income dataset for income >50K classification"
+  },
+  {
+    "hf_id": "scikit-learn/diabetes",
+    "hf_subsample": null,
+    "name": "diabetes_regression",
+    "task": "regression",
+    "input_features": [
+      "number"
+    ],
+    "output_features": [
+      "number"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Diabetes progression regression (scikit-learn version)"
+  },
+  {
+    "hf_id": "mstz/heart_failure",
+    "hf_subsample": null,
+    "name": "heart_failure",
+    "task": "tabular_classification",
+    "input_features": [
+      "number",
+      "binary"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Heart failure clinical records; death event prediction"
+  },
+  {
+    "hf_id": "mstz/breast_cancer",
+    "hf_subsample": null,
+    "name": "breast_cancer",
+    "task": "tabular_classification",
+    "input_features": [
+      "number"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Breast Cancer Wisconsin; malignant vs benign tumor classification"
+  },
+  {
+    "hf_id": "inria-soda/tabular-benchmark",
+    "hf_subsample": "reg_num",
+    "name": "tabular_benchmark_reg",
+    "task": "regression",
+    "input_features": [
+      "number"
+    ],
+    "output_features": [
+      "number"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Tabular benchmark numerical regression tasks"
+  },
+  {
+    "hf_id": "scikit-learn/wine-quality",
+    "hf_subsample": null,
+    "name": "wine_quality",
+    "task": "regression",
+    "input_features": [
+      "number"
+    ],
+    "output_features": [
+      "number"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Wine quality prediction; physicochemical properties -> quality score"
+  },
+  {
+    "hf_id": "scikit-learn/boston",
+    "hf_subsample": null,
+    "name": "boston_housing",
+    "task": "regression",
+    "input_features": [
+      "number"
+    ],
+    "output_features": [
+      "number"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Boston Housing regression; predict median home value"
+  },
+  {
+    "hf_id": "poloclub/diffusiondb",
+    "hf_subsample": "2m_random_1k",
+    "name": "diffusiondb",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "image"
+    ],
+    "output_features": [
+      "number"
+    ],
+    "needs_custom_loader": false,
+    "notes": "DiffusionDB; Stable Diffusion prompts and generated images with metadata"
+  },
+  {
+    "hf_id": "mstz/bank_marketing",
+    "hf_subsample": null,
+    "name": "bank_marketing",
+    "task": "tabular_classification",
+    "input_features": [
+      "number",
+      "category"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Bank marketing campaign subscription prediction"
+  },
+  {
+    "hf_id": "mstz/covertype",
+    "hf_subsample": null,
+    "name": "covertype",
+    "task": "tabular_classification",
+    "input_features": [
+      "number"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Forest cover type prediction from cartographic features; 7 classes"
+  },
+  {
+    "hf_id": "mstz/magic_telescope",
+    "hf_subsample": null,
+    "name": "magic_telescope",
+    "task": "tabular_classification",
+    "input_features": [
+      "number"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "MAGIC telescope; gamma particle vs background classification"
+  },
+  {
+    "hf_id": "mstz/electricity",
+    "hf_subsample": null,
+    "name": "electricity_tabular",
+    "task": "tabular_classification",
+    "input_features": [
+      "number"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Electricity market price direction classification"
+  },
+  {
+    "hf_id": "mstz/jannis",
+    "hf_subsample": null,
+    "name": "jannis",
+    "task": "tabular_classification",
+    "input_features": [
+      "number"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Jannis tabular benchmark dataset; 4-class classification"
+  },
+  {
+    "hf_id": "mstz/higgs",
+    "hf_subsample": null,
+    "name": "higgs_tabular",
+    "task": "tabular_classification",
+    "input_features": [
+      "number"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Higgs boson detection; physics particle classification"
+  },
+  {
+    "hf_id": "mteb/amazon_reviews_multi",
+    "hf_subsample": "en",
+    "name": "amazon_reviews_multi",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Amazon Reviews Multilingual; 1-5 star rating prediction"
+  },
+  {
+    "hf_id": "mteb/tweet_sentiment_extraction",
+    "hf_subsample": null,
+    "name": "tweet_sentiment_extraction",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Tweet sentiment extraction; positive/negative/neutral"
+  },
+  {
+    "hf_id": "climatebert/climate_sentiment",
+    "hf_subsample": null,
+    "name": "climate_sentiment",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "ClimateBERT climate-related text sentiment analysis"
+  },
+  {
+    "hf_id": "sst/sst",
+    "hf_subsample": null,
+    "name": "sst_spans",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "SST original with fine-grained phrase-level sentiment"
+  },
+  {
+    "hf_id": "mteb/stsbenchmark-sts",
+    "hf_subsample": null,
+    "name": "sts_benchmark",
+    "task": "regression",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "number"
+    ],
+    "needs_custom_loader": false,
+    "notes": "STS Benchmark; sentence pair semantic similarity scoring"
+  },
+  {
+    "hf_id": "bigbio/bc5cdr",
+    "hf_subsample": "bc5cdr_bigbio_kb",
+    "name": "bc5cdr",
+    "task": "ner",
+    "input_features": [
+      "sequence"
+    ],
+    "output_features": [
+      "sequence"
+    ],
+    "needs_custom_loader": false,
+    "notes": "BC5CDR; chemical and disease NER from PubMed abstracts"
+  },
+  {
+    "hf_id": "coastalcph/lex_glue",
+    "hf_subsample": "ecthr_a",
+    "name": "lex_glue_ecthr",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "set"
+    ],
+    "needs_custom_loader": false,
+    "notes": "LexGLUE ECtHR; European Court of Human Rights multi-label article prediction"
+  },
+  {
+    "hf_id": "coastalcph/lex_glue",
+    "hf_subsample": "eurlex",
+    "name": "lex_glue_eurlex",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "set"
+    ],
+    "needs_custom_loader": false,
+    "notes": "LexGLUE EurLex; EU legislation multi-label classification"
+  },
+  {
+    "hf_id": "nguha/legalbench",
+    "hf_subsample": "contract_nli_confidentiality_of_agreement",
+    "name": "legalbench",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "LegalBench; legal reasoning tasks including NLI on contracts"
+  },
+  {
+    "hf_id": "EMBO/SourceData",
+    "hf_subsample": "NER",
+    "name": "sourcedata_ner",
+    "task": "ner",
+    "input_features": [
+      "sequence"
+    ],
+    "output_features": [
+      "sequence"
+    ],
+    "needs_custom_loader": false,
+    "notes": "SourceData NER; biomedical figure captions entity recognition"
+  },
+  {
+    "hf_id": "google-research-datasets/mbpp",
+    "hf_subsample": null,
+    "name": "mbpp",
+    "task": "text_generation",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "MBPP; Python programming problems and solutions"
+  },
+  {
+    "hf_id": "openai/openai_humaneval",
+    "hf_subsample": null,
+    "name": "humaneval",
+    "task": "text_generation",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "HumanEval; Python function synthesis from docstrings"
+  },
+  {
+    "hf_id": "google/code_x_glue_ct_code_to_text",
+    "hf_subsample": "python",
+    "name": "codexglue_code_to_text",
+    "task": "text_generation",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "CodeXGLUE code documentation generation; code -> docstring"
+  },
+  {
+    "hf_id": "code-search-net/code_search_net",
+    "hf_subsample": "python",
+    "name": "code_search_net",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "CodeSearchNet; code-natural language relevance matching"
+  },
+  {
+    "hf_id": "liar/liar",
+    "hf_subsample": null,
+    "name": "liar",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "LIAR; political statement veracity; 6-class fake news detection"
+  },
+  {
+    "hf_id": "GonzaloA/fake_news",
+    "hf_subsample": null,
+    "name": "fake_news_detection",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Fake news detection; real vs fake news articles"
+  },
+  {
+    "hf_id": "climate_fever/climate_fever",
+    "hf_subsample": null,
+    "name": "climate_fever",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "ClimateFEVER; climate claim fact-checking with evidence"
+  },
+  {
+    "hf_id": "HateSpeechMLResearch/hate_speech_18",
+    "hf_subsample": null,
+    "name": "hate_speech18",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Hate Speech 18; social media hate speech classification"
+  },
+  {
+    "hf_id": "ucberkeley-dlab/measuring-hate-speech",
+    "hf_subsample": null,
+    "name": "measuring_hate_speech",
+    "task": "regression",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "number"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Measuring Hate Speech; continuous hate speech score regression"
+  },
+  {
+    "hf_id": "google/civil_comments",
+    "hf_subsample": null,
+    "name": "civil_comments",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Civil Comments toxicity classification; multi-attribute toxicity labels"
+  },
+  {
+    "hf_id": "Babelscape/SREDFM",
+    "hf_subsample": "en",
+    "name": "sredfm",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "SREDFM; relation classification from sentences"
+  },
+  {
+    "hf_id": "docred/docred",
+    "hf_subsample": null,
+    "name": "docred",
+    "task": "relation_extraction",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": true,
+    "notes": "DocRED; document-level relation extraction from Wikipedia"
+  },
+  {
+    "hf_id": "conll2012_ontonotesv5/english_v4",
+    "hf_subsample": null,
+    "name": "ontonotes5",
+    "task": "ner",
+    "input_features": [
+      "sequence"
+    ],
+    "output_features": [
+      "sequence"
+    ],
+    "needs_custom_loader": false,
+    "notes": "OntoNotes 5.0; NER, POS, coreference, SRL annotations"
+  },
+  {
+    "hf_id": "papluca/language-identification",
+    "hf_subsample": null,
+    "name": "language_identification",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Language identification; 20 languages from Twitter data"
+  },
+  {
+    "hf_id": "cis-lmu/glotlid",
+    "hf_subsample": null,
+    "name": "glotlid",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "GlotLID; language identification for 1600+ languages"
+  },
+  {
+    "hf_id": "blog-authorship-corpus/blog-authorship-corpus",
+    "hf_subsample": null,
+    "name": "blog_authorship",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Blog Authorship Corpus; age/gender/topic classification from blogs"
+  },
+  {
+    "hf_id": "openai/gsm8k",
+    "hf_subsample": "main",
+    "name": "gsm8k",
+    "task": "text_generation",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "GSM8K; grade school math word problems with step-by-step solutions"
+  },
+  {
+    "hf_id": "EleutherAI/hendrycks_math",
+    "hf_subsample": "algebra",
+    "name": "hendrycks_math",
+    "task": "text_generation",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "MATH dataset; competition math problems across 7 subjects"
+  },
+  {
+    "hf_id": "daily_dialog/daily_dialog",
+    "hf_subsample": null,
+    "name": "daily_dialog",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "DailyDialog; dialog act and emotion classification in conversations"
+  },
+  {
+    "hf_id": "pfb30/multi_woz_v22",
+    "hf_subsample": null,
+    "name": "multiwoz",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "MultiWOZ 2.2; task-oriented dialogue state tracking"
+  },
+  {
+    "hf_id": "mteb/msmarco",
+    "hf_subsample": null,
+    "name": "msmarco_passage",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "MS MARCO passage retrieval; query-passage relevance scoring"
+  },
+  {
+    "hf_id": "sentence-transformers/natural-questions",
+    "hf_subsample": null,
+    "name": "natural_questions_hard_negatives",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Natural Questions hard negatives for retrieval/ranking"
+  },
+  {
+    "hf_id": "uclanlp/wino_bias",
+    "hf_subsample": "type1_anti",
+    "name": "winobias",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "WinoBias; gender coreference bias in occupation contexts"
+  },
+  {
+    "hf_id": "klue/klue",
+    "hf_subsample": "ynat",
+    "name": "klue_topic",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "KLUE YNAT; Korean news topic classification; 7 categories"
+  },
+  {
+    "hf_id": "klue/klue",
+    "hf_subsample": "sts",
+    "name": "klue_sts",
+    "task": "regression",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "number"
+    ],
+    "needs_custom_loader": false,
+    "notes": "KLUE STS; Korean sentence semantic similarity"
+  },
+  {
+    "hf_id": "ai4bharat/indic_glue",
+    "hf_subsample": "wnli-en",
+    "name": "indic_glue",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "IndicGLUE; Indian language NLP benchmark"
+  },
+  {
+    "hf_id": "google/xtreme",
+    "hf_subsample": "XNLI",
+    "name": "xnli",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "XNLI; Cross-lingual NLI in 15 languages"
+  },
+  {
+    "hf_id": "Muennighoff/multi_eurlex",
+    "hf_subsample": "en",
+    "name": "multi_eurlex",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "set"
+    ],
+    "needs_custom_loader": false,
+    "notes": "MultiEURLEX; EU legislation multi-label classification in 23 languages"
+  },
+  {
+    "hf_id": "nyu-mll/blimp",
+    "hf_subsample": "anaphor_agreement",
+    "name": "blimp",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "BLiMP; linguistic minimal pairs for grammaticality judgment"
+  },
+  {
+    "hf_id": "ceval/ceval-exam",
+    "hf_subsample": "computer_science",
+    "name": "ceval",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": true,
+    "notes": "C-EVAL; Chinese multiple choice exam benchmark"
+  },
+  {
+    "hf_id": "openai/MMMLU",
+    "hf_subsample": "EN_US",
+    "name": "mmmlu",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": true,
+    "notes": "Multilingual MMLU; MMLU translated into 14 languages"
+  },
+  {
+    "hf_id": "Idavidrein/gpqa",
+    "hf_subsample": "gpqa_main",
+    "name": "gpqa",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": true,
+    "notes": "GPQA; Graduate-level QA; PhD-level science questions"
+  },
+  {
+    "hf_id": "coastalcph/lex_glue",
+    "hf_subsample": "scotus",
+    "name": "scotus_classification",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "LexGLUE SCOTUS; US Supreme Court opinion issue area classification"
+  },
+  {
+    "hf_id": "allenai/scitail",
+    "hf_subsample": "dgem_format",
+    "name": "scitail",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "SciTail; science textual entailment from multiple-choice questions"
+  },
+  {
+    "hf_id": "allenai/qasper",
+    "hf_subsample": null,
+    "name": "qasper",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "QASPER; question answering on scientific research papers"
+  },
+  {
+    "hf_id": "HumynLabs/e-commerce-customersupport-english-audio",
+    "hf_subsample": null,
+    "name": "customer_support_audio",
+    "task": "audio_classification",
+    "input_features": [
+      "audio"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "E-commerce customer support audio classification; intent detection"
+  },
+  {
+    "hf_id": "Salesforce/GiftEvalPretrain",
+    "hf_subsample": null,
+    "name": "gift_eval_pretrain",
+    "task": "time_series_forecasting",
+    "input_features": [
+      "sequence"
+    ],
+    "output_features": [
+      "number"
+    ],
+    "needs_custom_loader": true,
+    "notes": "GIFT-Eval pretraining data for time-series forecasting"
+  },
+  {
+    "hf_id": "autogluon/chronos_datasets",
+    "hf_subsample": "electricity_hourly",
+    "name": "chronos_electricity",
+    "task": "time_series_forecasting",
+    "input_features": [
+      "sequence"
+    ],
+    "output_features": [
+      "number"
+    ],
+    "needs_custom_loader": true,
+    "notes": "Chronos electricity hourly time-series forecasting"
+  },
+  {
+    "hf_id": "DeepChem/tox21",
+    "hf_subsample": null,
+    "name": "tox21",
+    "task": "tabular_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "set"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Tox21; toxicity prediction from SMILES molecular strings; 12 targets"
+  },
+  {
+    "hf_id": "DeepChem/bbbp",
+    "hf_subsample": null,
+    "name": "bbbp",
+    "task": "tabular_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "BBBP; blood-brain barrier permeability from SMILES"
+  },
+  {
+    "hf_id": "DeepChem/esol",
+    "hf_subsample": null,
+    "name": "esol",
+    "task": "regression",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "number"
+    ],
+    "needs_custom_loader": false,
+    "notes": "ESOL; aqueous solubility regression from molecular SMILES"
+  },
+  {
+    "hf_id": "DeepChem/lipo",
+    "hf_subsample": null,
+    "name": "lipophilicity",
+    "task": "regression",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "number"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Lipophilicity; octanol/water distribution coefficient from SMILES"
+  },
+  {
+    "hf_id": "jigsaw-toxic-comment-classification-challenge/jigsaw_toxic_comments",
+    "hf_subsample": null,
+    "name": "jigsaw_toxic_multi",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "set"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Jigsaw Toxic Comment Classification; 6 toxicity attribute multi-label"
+  },
+  {
+    "hf_id": "sem_eval_2018_task_1/sem_eval_2018_task_1",
+    "hf_subsample": "subtask5.english",
+    "name": "semeval2018_emotion",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "set"
+    ],
+    "needs_custom_loader": false,
+    "notes": "SemEval-2018 Task 1 multi-label emotion classification from tweets"
+  },
+  {
+    "hf_id": "rceborg/reuters-21578",
+    "hf_subsample": null,
+    "name": "reuters21578",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "set"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Reuters-21578; newswire multi-label topic classification"
+  },
+  {
+    "hf_id": "rvl-cdip/rvl_cdip",
+    "hf_subsample": null,
+    "name": "rvl_cdip",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "RVL-CDIP; document image classification; 16 classes"
+  },
+  {
+    "hf_id": "nateraw/rendered-sst2",
+    "hf_subsample": null,
+    "name": "rendered_sst2",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Rendered SST2; sentiment classification from rendered text images"
+  },
+  {
+    "hf_id": "katanaml-org/invoices-donut-data-v1",
+    "hf_subsample": null,
+    "name": "invoice_data",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": true,
+    "notes": "Invoice document understanding; key-value extraction from scanned invoices"
+  },
+  {
+    "hf_id": "inria-soda/tabular-benchmark",
+    "hf_subsample": "clf_num",
+    "name": "tabular_benchmark_num_clf",
+    "task": "tabular_classification",
+    "input_features": [
+      "number"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Tabular benchmark numerical binary classification tasks"
+  },
+  {
+    "hf_id": "scikit-learn/california-housing",
+    "hf_subsample": null,
+    "name": "california_housing_sklearn",
+    "task": "regression",
+    "input_features": [
+      "number"
+    ],
+    "output_features": [
+      "number"
+    ],
+    "needs_custom_loader": false,
+    "notes": "California housing regression (scikit-learn version)"
+  },
+  {
+    "hf_id": "imodels/diabetes-readmission",
+    "hf_subsample": null,
+    "name": "diabetes_readmission",
+    "task": "tabular_classification",
+    "input_features": [
+      "number",
+      "category"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Diabetes hospital readmission prediction"
+  },
+  {
+    "hf_id": "imodels/compas-recidivism",
+    "hf_subsample": null,
+    "name": "compas_recidivism",
+    "task": "tabular_classification",
+    "input_features": [
+      "number",
+      "category"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "COMPAS recidivism risk prediction; criminal justice fairness benchmark"
+  },
+  {
+    "hf_id": "imodels/credit-card",
+    "hf_subsample": null,
+    "name": "credit_card_default",
+    "task": "tabular_classification",
+    "input_features": [
+      "number"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Credit card default prediction from payment history"
+  },
+  {
+    "hf_id": "lukaemon/bbh",
+    "hf_subsample": "boolean_expressions",
+    "name": "bbh",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": true,
+    "notes": "BIG-Bench Hard; challenging reasoning tasks for LLMs"
+  },
+  {
+    "hf_id": "lighteval/winogender_schemas",
+    "hf_subsample": null,
+    "name": "winogender",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "WinoGender; gender bias in coreference resolution"
+  },
+  {
+    "hf_id": "keirp/social_i_qa",
+    "hf_subsample": null,
+    "name": "social_iqa",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": true,
+    "notes": "Social IQa; social interaction commonsense reasoning; 3-choice"
+  },
+  {
+    "hf_id": "HuggingFaceH4/MATH-500",
+    "hf_subsample": null,
+    "name": "math500",
+    "task": "text_generation",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "MATH-500 test subset; competition math with step-by-step solutions"
+  },
+  {
+    "hf_id": "di-mi/conll2012_ontonotesv5",
+    "hf_subsample": "english_v12",
+    "name": "conll2012",
+    "task": "ner",
+    "input_features": [
+      "sequence"
+    ],
+    "output_features": [
+      "sequence"
+    ],
+    "needs_custom_loader": false,
+    "notes": "CoNLL-2012 OntoNotes NER; 18 entity types"
+  },
+  {
+    "hf_id": "HuggingFaceM4/Docmatix",
+    "hf_subsample": null,
+    "name": "docmatix",
+    "task": "visual_question_answering",
+    "input_features": [
+      "image",
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Docmatix; document visual QA; 1.3M image-QA pairs from PDF documents"
+  },
+  {
+    "hf_id": "McAuley-Lab/Amazon-Reviews-2023",
+    "hf_subsample": "raw_review_All_Beauty",
+    "name": "amazon_reviews_2023",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Amazon Reviews 2023; product review rating prediction; 5 stars"
+  },
+  {
+    "hf_id": "mteb/amazon_counterfactual_classification",
+    "hf_subsample": "en",
+    "name": "amazon_counterfactual",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Amazon counterfactual claim detection"
+  },
+  {
+    "hf_id": "mteb/banking77",
+    "hf_subsample": null,
+    "name": "banking77",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Banking77; 77-class banking customer intent classification"
+  },
+  {
+    "hf_id": "mteb/emotion",
+    "hf_subsample": null,
+    "name": "mteb_emotion",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "MTEB emotion task; 6-class emotion from tweets"
+  },
+  {
+    "hf_id": "SetFit/sst5",
+    "hf_subsample": null,
+    "name": "sst5_setfit",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "SST-5 fine-grained sentiment (SetFit version); 5 classes"
+  },
+  {
+    "hf_id": "SetFit/enron_spam",
+    "hf_subsample": null,
+    "name": "enron_spam",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Enron Spam; email spam/ham classification"
+  },
+  {
+    "hf_id": "SetFit/CR",
+    "hf_subsample": null,
+    "name": "customer_reviews",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Customer Reviews; product review sentiment binary classification"
+  },
+  {
+    "hf_id": "mteb/clinc150",
+    "hf_subsample": "small",
+    "name": "clinc150",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "CLINC150; 150-class out-of-scope intent detection benchmark"
+  },
+  {
+    "hf_id": "naver-clova-ix/cord-v2",
+    "hf_subsample": null,
+    "name": "cord_v2",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": true,
+    "notes": "CORD v2; receipt document understanding; entity extraction"
+  },
+  {
+    "hf_id": "inria-soda/tabular-benchmark",
+    "hf_subsample": "reg_cat",
+    "name": "tabular_benchmark_cat_reg",
+    "task": "regression",
+    "input_features": [
+      "number",
+      "category"
+    ],
+    "output_features": [
+      "number"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Tabular benchmark mixed (categorical+numerical) regression"
+  },
+  {
+    "hf_id": "openml/miceprotein",
+    "hf_subsample": null,
+    "name": "mice_protein",
+    "task": "tabular_classification",
+    "input_features": [
+      "number"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Mice Protein Expression; protein levels for 8 behavioral classes"
+  },
+  {
+    "hf_id": "openml/anneal",
+    "hf_subsample": null,
+    "name": "anneal",
+    "task": "tabular_classification",
+    "input_features": [
+      "number",
+      "category"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Steel Annealing; predict steel type from process parameters"
+  },
+  {
+    "hf_id": "openml/vehicle",
+    "hf_subsample": null,
+    "name": "vehicle_silhouettes",
+    "task": "tabular_classification",
+    "input_features": [
+      "number"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Vehicle Silhouettes; 4-class vehicle type from geometric features"
+  },
+  {
+    "hf_id": "keremberke/pokemon-classification",
+    "hf_subsample": null,
+    "name": "pokemon_classification",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Pokemon species image classification"
+  },
+  {
+    "hf_id": "dcdmllm/Flowers102",
+    "hf_subsample": null,
+    "name": "flowers102",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Oxford Flowers 102; 102-class flower image classification"
+  },
+  {
+    "hf_id": "Matthijs/snacks",
+    "hf_subsample": null,
+    "name": "snacks",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Snacks; 20-class snack food image classification"
+  },
+  {
+    "hf_id": "mrm8488/chest-xrays-indiana-university",
+    "hf_subsample": null,
+    "name": "chest_xray",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Chest X-rays Indiana University; normal vs abnormal classification"
+  },
+  {
+    "hf_id": "fastai/imagenette",
+    "hf_subsample": null,
+    "name": "imagenette",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "ImageNette; 10 easily classified classes from ImageNet"
+  },
+  {
+    "hf_id": "fcakyon/tomato-disease",
+    "hf_subsample": null,
+    "name": "tomato_disease",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Tomato plant disease image classification"
+  },
+  {
+    "hf_id": "andrewmvd/isic-2019",
+    "hf_subsample": null,
+    "name": "isic2019",
+    "task": "image_classification",
+    "input_features": [
+      "image"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "ISIC 2019; skin lesion dermoscopy image classification; 9 classes"
+  },
+  {
+    "hf_id": "speech_commands/speech_commands",
+    "hf_subsample": "v0.02",
+    "name": "speech_commands",
+    "task": "audio_classification",
+    "input_features": [
+      "audio"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Google Speech Commands; 35-class keyword spotting from audio"
+  },
+  {
+    "hf_id": "UrbanSound8K/UrbanSound8K",
+    "hf_subsample": null,
+    "name": "urbansound8k",
+    "task": "audio_classification",
+    "input_features": [
+      "audio"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "UrbanSound8K; 10-class urban sound event classification"
+  },
+  {
+    "hf_id": "narad/RAVDESS",
+    "hf_subsample": null,
+    "name": "ravdess",
+    "task": "audio_classification",
+    "input_features": [
+      "audio"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "RAVDESS; speech emotion recognition; 8 emotion classes"
+  },
+  {
+    "hf_id": "renumics/emodb",
+    "hf_subsample": null,
+    "name": "emodb",
+    "task": "audio_classification",
+    "input_features": [
+      "audio"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "EMo-DB; Berlin Database of Emotional Speech; 7 emotion classes"
+  },
+  {
+    "hf_id": "facebook/multilingual_librispeech",
+    "hf_subsample": "german",
+    "name": "mls_german",
+    "task": "automatic_speech_recognition",
+    "input_features": [
+      "audio"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Multilingual LibriSpeech German ASR"
+  },
+  {
+    "hf_id": "mozilla-foundation/common_voice_11_0",
+    "hf_subsample": "en",
+    "name": "common_voice_11",
+    "task": "automatic_speech_recognition",
+    "input_features": [
+      "audio"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Mozilla Common Voice 11.0 English; crowdsourced speech ASR"
+  },
+  {
+    "hf_id": "FBK-MT/Speech-MASSIVE",
+    "hf_subsample": "en-US",
+    "name": "speech_massive",
+    "task": "audio_classification",
+    "input_features": [
+      "audio"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Speech MASSIVE; spoken language understanding; intent classification"
+  },
+  {
+    "hf_id": "CanCLID/zoengjyutgaai",
+    "hf_subsample": null,
+    "name": "cantonese_asr",
+    "task": "automatic_speech_recognition",
+    "input_features": [
+      "audio"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Cantonese speech recognition dataset"
+  },
+  {
+    "hf_id": "daekeun-ml/naver-news-summarization-ko",
+    "hf_subsample": null,
+    "name": "naver_news_summary",
+    "task": "summarization",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Naver News Korean summarization dataset"
+  },
+  {
+    "hf_id": "ccdv/cnn_dailymail",
+    "hf_subsample": "3.0.0",
+    "name": "cnn_dailymail_ccdv",
+    "task": "summarization",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "CNN/DailyMail (ccdv version); article to highlights summarization"
+  },
+  {
+    "hf_id": "nyu-mll/glue",
+    "hf_subsample": "ax",
+    "name": "glue_diagnostic",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "GLUE Diagnostic; adversarial NLI examples testing linguistic phenomena"
+  },
+  {
+    "hf_id": "copenlu/fever_gold_evidence",
+    "hf_subsample": null,
+    "name": "fever_gold",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "FEVER with gold evidence; fact claim + evidence -> SUPPORTS/REFUTES/NEI"
+  },
+  {
+    "hf_id": "silicone/silicone",
+    "hf_subsample": "dyda_da",
+    "name": "dyda_dialog_acts",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "DyDa dialog act classification from DailyDialog"
+  },
+  {
+    "hf_id": "HuggingFaceM4/the_cauldron",
+    "hf_subsample": "ai2d",
+    "name": "ai2d_diagrams",
+    "task": "visual_question_answering",
+    "input_features": [
+      "image",
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "AI2D; science diagram visual QA from The Cauldron"
+  },
+  {
+    "hf_id": "HuggingFaceM4/the_cauldron",
+    "hf_subsample": "textvqa",
+    "name": "textvqa",
+    "task": "visual_question_answering",
+    "input_features": [
+      "image",
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "TextVQA; read text in images to answer questions"
+  },
+  {
+    "hf_id": "HuggingFaceM4/the_cauldron",
+    "hf_subsample": "vqav2",
+    "name": "vqav2",
+    "task": "visual_question_answering",
+    "input_features": [
+      "image",
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "VQA v2; open-ended visual question answering on natural images"
+  },
+  {
+    "hf_id": "HuggingFaceM4/the_cauldron",
+    "hf_subsample": "docvqa",
+    "name": "docvqa",
+    "task": "visual_question_answering",
+    "input_features": [
+      "image",
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "DocVQA; document image visual question answering"
+  },
+  {
+    "hf_id": "facebook/winoground",
+    "hf_subsample": null,
+    "name": "winoground",
+    "task": "visual_question_answering",
+    "input_features": [
+      "image",
+      "text"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Winoground; visual-linguistic compositionality; image-text matching"
+  },
+  {
+    "hf_id": "amirveyseh/acronym_identification",
+    "hf_subsample": null,
+    "name": "acronym_identification",
+    "task": "ner",
+    "input_features": [
+      "sequence"
+    ],
+    "output_features": [
+      "sequence"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Acronym Identification; scientific abbreviation detection and expansion"
+  },
+  {
+    "hf_id": "unimelb-nlp/wikiann",
+    "hf_subsample": "de",
+    "name": "wikiann_de",
+    "task": "ner",
+    "input_features": [
+      "sequence"
+    ],
+    "output_features": [
+      "sequence"
+    ],
+    "needs_custom_loader": false,
+    "notes": "WikiANN German NER; cross-lingual NER"
+  },
+  {
+    "hf_id": "unimelb-nlp/wikiann",
+    "hf_subsample": "zh",
+    "name": "wikiann_zh",
+    "task": "ner",
+    "input_features": [
+      "sequence"
+    ],
+    "output_features": [
+      "sequence"
+    ],
+    "needs_custom_loader": false,
+    "notes": "WikiANN Chinese NER; cross-lingual NER"
+  },
+  {
+    "hf_id": "datamol-io/polaris-admet-benchmark",
+    "hf_subsample": null,
+    "name": "admet_benchmark",
+    "task": "regression",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "number"
+    ],
+    "needs_custom_loader": false,
+    "notes": "ADMET molecular property regression benchmark from SMILES"
+  },
+  {
+    "hf_id": "mstz/obesity",
+    "hf_subsample": null,
+    "name": "obesity_prediction",
+    "task": "tabular_classification",
+    "input_features": [
+      "number",
+      "category"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Obesity level prediction from lifestyle and biometric features"
+  },
+  {
+    "hf_id": "mstz/dry_bean",
+    "hf_subsample": null,
+    "name": "dry_bean",
+    "task": "tabular_classification",
+    "input_features": [
+      "number"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Dry Bean Dataset; 7-class legume variety classification from shape features"
+  },
+  {
+    "hf_id": "mstz/rice",
+    "hf_subsample": null,
+    "name": "rice_classification",
+    "task": "tabular_classification",
+    "input_features": [
+      "number"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Rice image classification (morphological features); 2 varieties"
+  },
+  {
+    "hf_id": "mstz/water_quality",
+    "hf_subsample": null,
+    "name": "water_quality",
+    "task": "tabular_classification",
+    "input_features": [
+      "number"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Water Quality; potability prediction from chemical properties"
+  },
+  {
+    "hf_id": "mstz/room_occupancy",
+    "hf_subsample": null,
+    "name": "room_occupancy",
+    "task": "tabular_classification",
+    "input_features": [
+      "number"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Room Occupancy; sensor data -> occupancy binary classification"
+  },
+  {
+    "hf_id": "mstz/online_shoppers",
+    "hf_subsample": null,
+    "name": "online_shoppers",
+    "task": "tabular_classification",
+    "input_features": [
+      "number",
+      "category"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Online Shoppers Intention; predict purchase intent from clickstream"
+  },
+  {
+    "hf_id": "mstz/airline_passenger_satisfaction",
+    "hf_subsample": null,
+    "name": "airline_satisfaction",
+    "task": "tabular_classification",
+    "input_features": [
+      "number",
+      "category"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Airline passenger satisfaction binary classification"
+  },
+  {
+    "hf_id": "mstz/spaceship_titanic",
+    "hf_subsample": null,
+    "name": "spaceship_titanic",
+    "task": "tabular_classification",
+    "input_features": [
+      "number",
+      "category"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Spaceship Titanic; Kaggle competition tabular binary classification"
+  },
+  {
+    "hf_id": "mstz/stroke_prediction",
+    "hf_subsample": null,
+    "name": "stroke_prediction",
+    "task": "tabular_classification",
+    "input_features": [
+      "number",
+      "category"
+    ],
+    "output_features": [
+      "binary"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Stroke prediction from health and demographic features"
+  },
+  {
+    "hf_id": "mstz/student_performance",
+    "hf_subsample": null,
+    "name": "student_performance",
+    "task": "regression",
+    "input_features": [
+      "number",
+      "category"
+    ],
+    "output_features": [
+      "number"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Student performance regression; predict final grade from demographics"
+  },
+  {
+    "hf_id": "mstz/used_cars",
+    "hf_subsample": null,
+    "name": "used_cars_price",
+    "task": "regression",
+    "input_features": [
+      "number",
+      "category"
+    ],
+    "output_features": [
+      "number"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Used car price regression from vehicle features"
+  },
+  {
+    "hf_id": "facebook/belebele",
+    "hf_subsample": "fra_Latn",
+    "name": "belebele_fr",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "Belebele French; multilingual reading comprehension"
+  },
+  {
+    "hf_id": "ibm/duorc",
+    "hf_subsample": "SelfRC",
+    "name": "duorc",
+    "task": "extractive_qa",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "DuoRC; reading comprehension from Wikipedia and IMDb movie plots"
+  },
+  {
+    "hf_id": "nq_open/nq_open",
+    "hf_subsample": null,
+    "name": "nq_open",
+    "task": "text_generation",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "NQ-Open; open-domain version of Natural Questions"
+  },
+  {
+    "hf_id": "web_questions/web_questions",
+    "hf_subsample": null,
+    "name": "web_questions",
+    "task": "text_generation",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "WebQuestions; Freebase-based open-domain QA"
+  },
+  {
+    "hf_id": "cardiffnlp/tweet_eval",
+    "hf_subsample": "stance_abortion",
+    "name": "tweeteval_stance",
+    "task": "text_classification",
+    "input_features": [
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "TweetEval stance detection; against/in favor/neutral"
+  },
+  {
+    "hf_id": "ibm/claim_stance",
+    "hf_subsample": null,
+    "name": "claim_stance",
+    "task": "text_classification",
+    "input_features": [
+      "text",
+      "text"
+    ],
+    "output_features": [
+      "category"
+    ],
+    "needs_custom_loader": false,
+    "notes": "IBM Claim Stance Dataset; claim stance detection for debate topics"
+  },
+  {
+    "hf_id": "ibm-granite/ChartNet",
+    "hf_subsample": null,
+    "name": "chartnet",
+    "task": "visual_question_answering",
+    "input_features": [
+      "image",
+      "text"
+    ],
+    "output_features": [
+      "text"
+    ],
+    "needs_custom_loader": false,
+    "notes": "ChartNet; chart and figure visual QA"
+  }
+]

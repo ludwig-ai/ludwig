@@ -20,6 +20,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Generator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+from dataclasses import dataclass
 from typing import Any, TYPE_CHECKING
 
 import numpy as np
@@ -31,7 +32,7 @@ from tqdm import tqdm
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.utils.storage import StorageManager
 from ludwig.constants import MODEL_LLM
-from ludwig.data.cache.manager import CacheManager
+from ludwig.data.cache.manager import PreprocessedDataCache
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.data.dataset.base import DatasetManager
@@ -54,6 +55,29 @@ if TYPE_CHECKING:
 
 
 @DeveloperAPI
+@dataclass(frozen=True)
+class BackendCapabilities:
+    """Named feature flags that a :class:`Backend` can advertise.
+
+    Use this instead of a raw ``dict[str, Any]`` so that callers get IDE
+    completion and type-safe access::
+
+        if backend.capabilities.distributed:
+            ...
+
+    All flags default to ``False``; subclasses set them in the class body::
+
+        class RayBackend(Backend):
+            capabilities = BackendCapabilities(distributed=True, hyperopt=True)
+    """
+
+    distributed: bool = False
+    hyperopt: bool = False
+    async_execution: bool = False
+    cache_preprocessing: bool = True
+
+
+@DeveloperAPI
 class Backend(ABC):
     """Abstract base class for Ludwig execution backends.
 
@@ -68,15 +92,13 @@ class Backend(ABC):
         supports_batch_size_tuning() — returns True; set to False for
         backends that cannot tune batch sizes (e.g. remote inference only).
 
-    Use the ``capabilities`` class attribute to expose named feature flags so
-    callers can check support without catching NotImplementedError::
+    Set the ``capabilities`` class attribute to advertise named feature flags::
 
         class MyBackend(Backend):
-            capabilities = {"distributed": False, "hyperopt": False}
+            capabilities = BackendCapabilities(distributed=False)
     """
 
-    # Subclasses may override this dict to advertise capabilities.
-    capabilities: dict[str, Any] = {}
+    capabilities: BackendCapabilities = BackendCapabilities()
 
     def __init__(
         self,
@@ -87,14 +109,14 @@ class Backend(ABC):
         credentials = credentials or {}
         self._dataset_manager = dataset_manager
         self._storage_manager = StorageManager(**credentials)
-        self._cache_manager = CacheManager(self._dataset_manager, cache_dir)
+        self._cache_manager = PreprocessedDataCache(self._dataset_manager, cache_dir)
 
     @property
     def storage(self) -> StorageManager:
         return self._storage_manager
 
     @property
-    def cache(self) -> CacheManager:
+    def cache(self) -> PreprocessedDataCache:
         return self._cache_manager
 
     @property
@@ -178,7 +200,7 @@ class Backend(ABC):
         return True
 
 
-class LocalPreprocessingMixin:
+class LocalDataProcessingMixin:
     @property
     def df_engine(self):
         return PANDAS
@@ -207,7 +229,7 @@ class LocalPreprocessingMixin:
                 result = column.values
 
             if map_fn is not None and map_fn is not read_audio_from_path:
-                result = executor.map(map_fn, result)
+                result = executor.map(lambda x: map_fn(x) if x is not None else None, result)
 
         return pd.Series(result, index=column.index, name=column.name)
 
@@ -267,7 +289,7 @@ class RemoteTrainingMixin:
 
 
 @DeveloperAPI
-class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
+class LocalBackend(LocalDataProcessingMixin, LocalTrainingMixin, Backend):
     BACKEND_TYPE = "local"
 
     _shared_instance: LocalBackend

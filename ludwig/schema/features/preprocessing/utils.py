@@ -1,5 +1,7 @@
 from dataclasses import field
 
+import pydantic
+
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
@@ -62,7 +64,7 @@ def PreprocessingDataclassField(feature_type: str):
         load_default = lambda: preprocessor.model_validate({})
         try:
             dump_default = preprocessor.model_validate({}).to_dict()
-        except Exception:
+        except pydantic.ValidationError:
             dump_default = {}
 
         return field(

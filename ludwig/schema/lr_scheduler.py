@@ -1,6 +1,8 @@
 from abc import ABC
 from dataclasses import field
 
+import pydantic
+
 import ludwig.schema.utils as schema_utils
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import LOSS, MODEL_ECD, TRAINING
@@ -278,7 +280,7 @@ def LRSchedulerDataclassField(description: str, default: dict | None = None):
     load_default = lambda: LRSchedulerConfig.model_validate(default)
     try:
         dump_default = LRSchedulerConfig.model_validate(default).to_dict()
-    except Exception:
+    except pydantic.ValidationError:
         dump_default = default if isinstance(default, dict) else {}
 
     return field(

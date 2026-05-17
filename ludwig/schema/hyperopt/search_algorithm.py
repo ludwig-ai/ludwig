@@ -2,6 +2,8 @@ from dataclasses import field
 from importlib.util import find_spec
 from typing import Any
 
+import pydantic
+
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
@@ -103,7 +105,7 @@ def SearchAlgorithmDataclassField(description: str = "", default: dict = {"type"
     load_default = lambda: BaseSearchAlgorithmConfig.model_validate(default)
     try:
         dump_default = BaseSearchAlgorithmConfig.model_validate(default).to_dict()
-    except Exception:
+    except pydantic.ValidationError:
         dump_default = default if isinstance(default, dict) else {}
 
     return field(

@@ -147,9 +147,6 @@ class TrainingStats:
     test: dict[str, Any]
     evaluation_frequency: EvaluationFrequency = dataclasses.field(default_factory=EvaluationFrequency)
 
-    def keys(self) -> list[str]:
-        return [TRAINING, VALIDATION, TEST]
-
     def __contains__(self, key: object) -> bool:
         return (
             (key == TRAINING and self.training)
@@ -165,7 +162,7 @@ class TrainingStats:
     # rather than falling back to integer-index iteration (KeyError(0)).
     _KEYS = (TRAINING, VALIDATION, TEST)
 
-    def keys(self):  # noqa: F811
+    def keys(self) -> tuple[str, ...]:
         return self._KEYS
 
     def __iter__(self):
@@ -285,7 +282,7 @@ class LudwigModel:
             self.config_fp = config
         else:
             config_dict = copy.deepcopy(config)
-            self.config_fp = None  # type: ignore [assignment]
+            self.config_fp = None
 
         self._user_config = upgrade_config_dict_to_latest_version(config_dict)
 
@@ -337,7 +334,7 @@ class LudwigModel:
         self.model = LudwigModel.create_model(cfg, random_seed=random_seed)
 
     def _initialize_llm_for_zero_shot(self, random_seed: int = default_random_seed):
-        """Initialize the LLM for zero-shot (NoneTrainer) inference only."""
+        """Initialize the LLM for zero-shot (InferenceOnlyTrainer) inference only."""
         self._get_or_create_model(random_seed=random_seed)
 
         if self.model.model.device.type == "cpu" and torch.cuda.is_available():
@@ -545,10 +542,9 @@ class LudwigModel:
 
                 if not skip_save_model:
                     # save train set metadata
-                    os.makedirs(model_dir, exist_ok=True)  # type: ignore[arg-type]
-                    save_json(  # type: ignore[arg-type]
-                        os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME), training_set_metadata
-                    )
+                    assert model_dir is not None
+                    os.makedirs(model_dir, exist_ok=True)
+                    save_json(os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME), training_set_metadata)
 
                 logger.info("\nDataset Statistics")
                 logger.info(tabulate(dataset_statistics, headers="firstrow", tablefmt="fancy_grid"))
@@ -595,7 +591,7 @@ class LudwigModel:
                 self._tune_batch_size_and_grad_accum(trainer, training_set, random_seed=random_seed)
 
                 if (
-                    self.config_obj.model_type == "LLM"
+                    self.config_obj.model_type == MODEL_LLM
                     and trainer.config.type == "none"
                     and self.config_obj.adapter is not None
                     and self.config_obj.adapter.pretrained_adapter_weights is not None

@@ -1,0 +1,59 @@
+{
+  "config": {
+    "n_samples": 1000,
+    "batch_size": 32,
+    "output": "scripts/benchmark_results.json",
+    "modalities": [
+      "image",
+      "audio"
+    ]
+  },
+  "image": {
+    "eager": {
+      "preprocessing_s": 57.196,
+      "preprocessing_peak_heap_mb": 365.4,
+      "full_pipeline_s": 8.115,
+      "full_pipeline_peak_heap_mb": 18.7,
+      "training_s_est": 0.0,
+      "training_throughput_samples_per_s": null
+    },
+    "lazy": {
+      "preprocessing_s": 3.247,
+      "preprocessing_peak_heap_mb": 1.3,
+      "full_pipeline_s": 7.359,
+      "full_pipeline_peak_heap_mb": 14.5,
+      "training_s_est": 4.112,
+      "training_throughput_samples_per_s": 243.2
+    },
+    "_summary": {
+      "preprocessing_speedup_lazy_over_eager": 17.62,
+      "preprocessing_heap_reduction_eager_over_lazy": 281.08,
+      "full_pipeline_speedup_eager_over_lazy": 1.1,
+      "training_throughput_ratio_lazy_over_eager": null
+    }
+  },
+  "audio": {
+    "eager": {
+      "preprocessing_s": 3.857,
+      "preprocessing_peak_heap_mb": 1.8,
+      "full_pipeline_s": 115.629,
+      "full_pipeline_peak_heap_mb": 9.4,
+      "training_s_est": 111.772,
+      "training_throughput_samples_per_s": 8.9
+    },
+    "lazy": {
+      "preprocessing_s": 3.404,
+      "preprocessing_peak_heap_mb": 0.9,
+      "full_pipeline_s": 115.653,
+      "full_pipeline_peak_heap_mb": 9.3,
+      "training_s_est": 112.25,
+      "training_throughput_samples_per_s": 8.9
+    },
+    "_summary": {
+      "preprocessing_speedup_lazy_over_eager": 1.13,
+      "preprocessing_heap_reduction_eager_over_lazy": 2.0,
+      "full_pipeline_speedup_eager_over_lazy": 1.0,
+      "training_throughput_ratio_lazy_over_eager": 1.0
+    }
+  }
+}

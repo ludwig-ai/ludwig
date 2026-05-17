@@ -95,7 +95,7 @@ def is_bytes_image(bytes_obj) -> bool:
             bytes_obj = BytesIO(bytes_obj)
         Image.open(bytes_obj).verify()
         return True
-    except Exception:
+    except (OSError, SyntaxError, ValueError):
         return False
 
 

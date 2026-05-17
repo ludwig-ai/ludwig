@@ -122,6 +122,12 @@ class LLM(BaseModel):
 
         clear_data_cache()
 
+    @property
+    def input_shape(self) -> torch.Size:
+        """Returns (context_len, hidden_size) — the shape of a single LLM input sequence's hidden states."""
+        hidden_size = getattr(self.model_config, "hidden_size", getattr(self.model_config, "d_model", 1))
+        return torch.Size([self.context_len, hidden_size])
+
     def create_feature_dict(self) -> dict:
         """Returns a plain dict instead of LudwigFeatureDict to avoid exposing input/output features as nn.Module
         submodules of the LLM.
