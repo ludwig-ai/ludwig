@@ -105,10 +105,11 @@ def load_pretrained_hf_model_with_hub_fallback(
                     _load_pretrained_hf_model_from_dir(model_class, pretrained_model_path, **pretrained_kwargs),
                     False,
                 )
-            except Exception as e:
+            except Exception:
                 logger.warning(
-                    f"Failed to download pretrained model from {pretrained_models_dir} with error {e}. "
-                    "Falling back to HuggingFace model hub."
+                    f"Failed to download pretrained model from {pretrained_models_dir}. "
+                    "Falling back to HuggingFace model hub.",
+                    exc_info=True,
                 )
 
     # Fallback to HF hub.

@@ -591,9 +591,8 @@ class LudwigModel:
                             train_stats=train_stats,
                             model_dir=model_dir,
                         )
-                    except Exception as e:
-                        logger.warning(f"Failed to generate model card: {e}")
-                        logger.debug(traceback.format_exc())
+                    except Exception:
+                        logger.warning("Failed to generate model card.", exc_info=True)
 
                 # Save training report (always, alongside the model)
                 if self.backend.is_coordinator() and not skip_save_model:
@@ -608,9 +607,8 @@ class LudwigModel:
                             model_dir=model_dir,
                             random_seed=random_seed,
                         )
-                    except Exception as e:
-                        logger.warning(f"Failed to generate training report: {e}")
-                        logger.debug(traceback.format_exc())
+                    except Exception:
+                        logger.warning("Failed to generate training report.", exc_info=True)
 
                 # Synchronize model weights between workers
                 self.backend.sync_model(self.model)

@@ -387,8 +387,8 @@ class CheckpointManager:
             try:
                 sd = self.checkpoint.get_state_for_inference(path, device)
                 state_dicts.append(sd)
-            except Exception as e:
-                logger.warning(f"Could not load top-K checkpoint from {path}: {e}")
+            except Exception:
+                logger.warning(f"Could not load top-K checkpoint from {path}.", exc_info=True)
         return state_dicts
 
     def close(self):

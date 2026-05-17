@@ -71,7 +71,7 @@ def log_training_run(model, train_stats=None, config=None, tags=None):
                 mlflow.log_metric("model.size_mb", round(model_size_mb, 2))
                 mlflow.set_tag("model.param_efficiency", f"{trainable_params / max(total_params, 1) * 100:.1f}%")
             except Exception:
-                pass
+                logger.debug("Failed to log model parameter counts to MLflow.", exc_info=True)
 
             # Log base model name for LLMs (useful for cost estimation)
             if config and config.get("model_type") == "llm":
@@ -164,7 +164,7 @@ def _log_config_params(config):
         try:
             mlflow.log_params(batch)
         except Exception:
-            pass  # Skip params that fail (duplicates, etc.)
+            logger.debug("Failed to log config param batch to MLflow (duplicates or value limits).", exc_info=True)
 
 
 def _log_training_metrics(train_stats):
@@ -187,7 +187,9 @@ def _log_training_metrics(train_stats):
                     try:
                         mlflow.log_metric(f"{split_name}.{feat_name}.{metric_name}", best)
                     except Exception:
-                        pass
+                        logger.debug(
+                            f"Failed to log metric {split_name}.{feat_name}.{metric_name} to MLflow.", exc_info=True
+                        )
 
 
 def _create_logged_model(run, model, config):

@@ -70,8 +70,8 @@ def read_audio_from_path(path: str) -> TorchAudioTuple | None:
     """
     try:
         return torchaudio.load(path)
-    except Exception as e:
-        logger.warning(e)
+    except Exception:
+        logger.warning(f"Failed to load audio from path: {path}", exc_info=True)
         return None
 
 
@@ -81,8 +81,8 @@ def read_audio_from_bytes_obj(bytes_obj: bytes) -> TorchAudioTuple | None:
     try:
         f = BytesIO(bytes_obj)
         return torchaudio.load(f)
-    except Exception as e:
-        logger.warning(e)
+    except Exception:
+        logger.warning("Failed to load audio from bytes object.", exc_info=True)
         return None
 
 
