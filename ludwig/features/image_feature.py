@@ -54,7 +54,14 @@ from ludwig.constants import (
 from ludwig.data.lazy_utils import resolve_lazy_cache_dir
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.image.torchvision import TVModelVariant
-from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
+from ludwig.features.base_feature import (
+    BaseFeatureMixin,
+    BasePostprocessingModule,
+    BasePreprocessingModule,
+    InputFeature,
+    OutputFeature,
+    PredictModule,
+)
 from ludwig.schema.features.augmentation.base import BaseAugmentationConfig
 from ludwig.schema.features.augmentation.image import (
     AutoAugmentationConfig,
@@ -466,7 +473,7 @@ def is_torchvision_encoder(encoder_obj: Encoder) -> bool:
     return isinstance(encoder_obj, TVBaseEncoder)
 
 
-class _ImagePreprocessing(torch.nn.Module):
+class _ImagePreprocessing(BasePreprocessingModule):
     """Torchscript-enabled version of preprocessing done by ImageFeatureMixin.add_feature_data."""
 
     def __init__(
@@ -551,7 +558,7 @@ class _ImagePreprocessing(torch.nn.Module):
         return imgs_stacked
 
 
-class _ImagePostprocessing(torch.nn.Module):
+class _ImagePostprocessing(BasePostprocessingModule):
     def __init__(self):
         super().__init__()
         self.logits_key = LOGITS
@@ -1280,7 +1287,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         return ImageInputFeatureConfig
 
     @staticmethod
-    def create_preproc_module(metadata: dict[str, Any]) -> torch.nn.Module:
+    def create_preproc_module(metadata: dict[str, Any]) -> BasePreprocessingModule:
         model_type = metadata["preprocessing"].get("torchvision_model_type")
         model_variant = metadata["preprocessing"].get("torchvision_model_variant")
         if model_variant:

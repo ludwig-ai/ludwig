@@ -19,7 +19,13 @@ import numpy as np
 import torch
 
 from ludwig.constants import COLUMN, HIDDEN, LOGITS, NAME, PREDICTIONS, PROC_COLUMN, VECTOR
-from ludwig.features.base_feature import InputFeature, OutputFeature, PredictModule
+from ludwig.features.base_feature import (
+    BasePostprocessingModule,
+    BasePreprocessingModule,
+    InputFeature,
+    OutputFeature,
+    PredictModule,
+)
 from ludwig.schema.features.vector_feature import VectorInputFeatureConfig, VectorOutputFeatureConfig
 from ludwig.types import (
     FeatureMetadataDict,
@@ -34,7 +40,7 @@ from ludwig.utils.types import PreprocessingInput
 logger = logging.getLogger(__name__)
 
 
-class _VectorPreprocessing(torch.nn.Module):
+class _VectorPreprocessing(BasePreprocessingModule):
     def forward(self, v: PreprocessingInput) -> torch.Tensor:
         if torch.jit.isinstance(v, torch.Tensor):
             out = v
@@ -54,7 +60,7 @@ class _VectorPreprocessing(torch.nn.Module):
         return out
 
 
-class _VectorPostprocessing(torch.nn.Module):
+class _VectorPostprocessing(BasePostprocessingModule):
     def __init__(self):
         super().__init__()
         self.predictions_key = PREDICTIONS
@@ -177,7 +183,7 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
         feature_config.encoder.input_size = feature_metadata["vector_size"]
 
     @staticmethod
-    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> BasePreprocessingModule:
         return _VectorPreprocessing()
 
     @staticmethod

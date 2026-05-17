@@ -34,7 +34,14 @@ from ludwig.constants import (
     PROJECTION_INPUT,
 )
 from ludwig.error import InputDataError
-from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
+from ludwig.features.base_feature import (
+    BaseFeatureMixin,
+    BasePostprocessingModule,
+    BasePreprocessingModule,
+    InputFeature,
+    OutputFeature,
+    PredictModule,
+)
 from ludwig.features.vector_feature import VectorFeatureMixin
 from ludwig.schema.features.category_feature import (
     CategoryDistributionOutputFeatureConfig,
@@ -58,7 +65,7 @@ from ludwig.utils.types import PreprocessingInput
 logger = logging.getLogger(__name__)
 
 
-class _CategoryPreprocessing(torch.nn.Module):
+class _CategoryPreprocessing(BasePreprocessingModule):
     def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
         self.str2idx = metadata["str2idx"]
@@ -77,7 +84,7 @@ class _CategoryPreprocessing(torch.nn.Module):
         return torch.tensor(indices, dtype=torch.int32)
 
 
-class _CategoryPostprocessing(torch.nn.Module):
+class _CategoryPostprocessing(BasePostprocessingModule):
     def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
         self.idx2str = dict(enumerate(metadata["idx2str"]))
@@ -323,7 +330,7 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
         return CategoryInputFeatureConfig
 
     @staticmethod
-    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> BasePreprocessingModule:
         return _CategoryPreprocessing(metadata)
 
 

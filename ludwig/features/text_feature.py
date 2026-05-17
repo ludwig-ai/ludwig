@@ -40,7 +40,7 @@ from ludwig.constants import (
     RESPONSE,
     TEXT,
 )
-from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature
+from ludwig.features.base_feature import BaseFeatureMixin, BasePreprocessingModule, OutputFeature
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
 from ludwig.features.sequence_feature import (
     _SequencePostprocessing,
@@ -300,7 +300,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         return self.encoder_obj.output_shape
 
     @staticmethod
-    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> BasePreprocessingModule:
         return _SequencePreprocessing(metadata)
 
 
