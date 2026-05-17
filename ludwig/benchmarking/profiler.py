@@ -78,7 +78,7 @@ def monitor(queue: Queue, info: dict[str, Any], logging_interval: int, cuda_is_a
         info["cpu_memory_usage"] = [tracked_process.memory_full_info().uss]
         try:
             info["num_accessible_cpus"] = len(tracked_process.cpu_affinity())
-        except Exception:
+        except (AttributeError, NotImplementedError):
             pass
 
     while True:

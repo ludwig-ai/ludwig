@@ -4,6 +4,7 @@ from collections import deque, namedtuple
 from typing import Any
 
 import pandas as pd
+import pydantic
 
 from ludwig.config_sampling.parameter_sampling import handle_property_type, ParameterBaseTypes
 from ludwig.constants import SEQUENCE, TEXT, TIMESERIES
@@ -251,7 +252,7 @@ def combine_configs(
             try:
                 ModelConfig.from_dict(merged_config)
                 ret.append((merged_config, dataset))
-            except Exception:
+            except pydantic.ValidationError:
                 pass
     return ret
 
@@ -282,7 +283,7 @@ def combine_configs_for_comparator_combiner(
             try:
                 ModelConfig.from_dict(merged_config)
                 ret.append((merged_config, dataset))
-            except Exception:
+            except pydantic.ValidationError:
                 pass
     return ret
 
@@ -309,6 +310,6 @@ def combine_configs_for_sequence_combiner(
             try:
                 ModelConfig.from_dict(merged_config)
                 ret.append((merged_config, dataset))
-            except Exception:
+            except pydantic.ValidationError:
                 pass
     return ret
