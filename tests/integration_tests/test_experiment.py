@@ -460,11 +460,13 @@ def test_experiment_dataset_formats(data_format, csv_filename):
 
     dataset_to_use = create_data_set_to_use(data_format, raw_data)
 
-    model.train(dataset=dataset_to_use, random_seed=default_random_seed)
+    # pickle auto-dispatch by extension is disabled (CWE-502); must opt in explicitly.
+    explicit_format = data_format if data_format == "pickle" else None
+    model.train(dataset=dataset_to_use, data_format=explicit_format, random_seed=default_random_seed)
 
     # # run functions with the specified data format
-    model.evaluate(dataset=dataset_to_use)
-    model.predict(dataset=dataset_to_use)
+    model.evaluate(dataset=dataset_to_use, data_format=explicit_format)
+    model.predict(dataset=dataset_to_use, data_format=explicit_format)
 
 
 def test_experiment_audio_inputs(tmpdir):

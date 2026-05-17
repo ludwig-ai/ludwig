@@ -949,12 +949,12 @@ def figure_data_format_dataset(dataset):
         if fmt is not None:
             return fmt
 
-        # Legacy fallback for extensions not in registry
+        # Legacy fallback for extensions not in registry.
+        # .p / .pkl / .pickle are intentionally absent — pickle auto-dispatch is
+        # disabled (CWE-502). Pass data_format="pickle" explicitly to opt in.
         lower = dataset_str.lower()
         if lower.endswith((".xlsm", ".xlsb", ".odf", ".ods", ".odt")):
             return "excel"
-        elif lower.endswith(".p"):
-            return "pickle"
         elif lower.endswith(".sas"):
             return "sas"
         elif lower.endswith(".spss"):
