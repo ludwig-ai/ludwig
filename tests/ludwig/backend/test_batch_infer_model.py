@@ -1,7 +1,7 @@
 """Unit tests for the BatchInferModel inner class in ludwig.backend.ray.
 
 BatchInferModel is a dynamically-generated class returned by
-RemoteTrainingMixin.get_batch_infer_model(). These tests exercise:
+RayPredictor.get_batch_infer_model(). These tests exercise:
   - _prepare_batch: numpy conversion, stacking of non-scalar columns, reshape
 without requiring a live Ray cluster, GPU, or real model weights.
 """
@@ -46,12 +46,13 @@ def _get_batch_infer_class(features, training_set_metadata, num_gpus=0):
             mock_get_cls.return_value = lambda **kw: mock_predictor
 
             with patch("ludwig.backend.ray.get_torch_device", return_value="cpu"):
-                from ludwig.backend.ray import RemoteTrainingMixin
+                from ludwig.backend.ray import RayPredictor
 
-                mixin = RemoteTrainingMixin()
-                mixin.get_resources_per_worker = MagicMock(return_value=(1, num_gpus))
+                predictor = MagicMock(spec=RayPredictor)
+                predictor.get_resources_per_worker = MagicMock(return_value=(1, num_gpus))
 
-                BatchInferModel = mixin.get_batch_infer_model(
+                BatchInferModel = RayPredictor.get_batch_infer_model(
+                    predictor,
                     model=mock_model,
                     predictor_kwargs={},
                     output_columns=list(features.keys()),
