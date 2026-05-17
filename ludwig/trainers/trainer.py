@@ -834,6 +834,51 @@ class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin,
         # Callback that the checkpoint was reached, regardless of whether the model was evaluated.
         self.callback(lambda c: c.on_checkpoint(self, progress_tracker))
 
+    def _create_summary_writers(self, tensorboard_log_dir, validation_set, test_set):
+        """Create TensorBoard SummaryWriters for train/validation/test splits."""
+        train_summary_writer = None
+        validation_summary_writer = None
+        test_summary_writer = None
+        if self.is_coordinator() and not self.skip_save_log and tensorboard_log_dir:
+            train_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, TRAINING))
+            if validation_set is not None and validation_set.size > 0:
+                validation_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, VALIDATION))
+            if test_set is not None and test_set.size > 0:
+                test_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, TEST))
+        return train_summary_writer, validation_summary_writer, test_summary_writer
+
+    def _create_or_resume_progress_tracker(
+        self, training_progress_tracker_path, training_checkpoints_path, checkpoint, output_features
+    ):
+        """Load an existing progress tracker if resuming, otherwise create a fresh one."""
+        should_resume = self.resume and self.resume_files_exist(
+            training_progress_tracker_path, training_checkpoints_path
+        )
+        should_resume = self.distributed.broadcast_object(should_resume, name="should_resume")
+
+        if should_resume:
+            try:
+                progress_tracker = self.resume_training_progress_tracker(training_progress_tracker_path)
+                self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
+                if self.is_coordinator():
+                    logger.info("Resuming training from previous run.")
+                return progress_tracker
+            except (FileNotFoundError, OSError, RuntimeError):
+                logger.warning("Could not load training checkpoint; starting fresh.", exc_info=True)
+                if self.is_coordinator():
+                    logger.info("Failed to resume training from previous run. Creating fresh model training run.")
+
+        progress_tracker = get_new_progress_tracker(
+            batch_size=self.batch_size,
+            learning_rate=self.base_learning_rate,
+            best_eval_metric_value=get_initial_validation_value(self.validation_metric),
+            best_increase_batch_size_eval_metric=get_initial_validation_value(self.increase_batch_size_eval_metric),
+            output_features=output_features,
+        )
+        if self.is_coordinator():
+            logger.info("Creating fresh model training run.")
+        return progress_tracker
+
     def create_checkpoint_handle(self):
         return self.distributed.create_checkpoint_handle(
             dist_model=self.dist_model, model=self.model, optimizer=self.optimizer, scheduler=self.scheduler
@@ -901,56 +946,15 @@ class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin,
         )
 
         # ====== Setup Tensorboard writers =======
-        train_summary_writer = None
-        validation_summary_writer = None
-        test_summary_writer = None
-        if self.is_coordinator() and not self.skip_save_log and tensorboard_log_dir:
-            train_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, TRAINING))
-            if validation_set is not None and validation_set.size > 0:
-                validation_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, VALIDATION))
-            if test_set is not None and test_set.size > 0:
-                test_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, TEST))
+        train_summary_writer, validation_summary_writer, test_summary_writer = self._create_summary_writers(
+            tensorboard_log_dir, validation_set, test_set
+        )
 
         # ================ Resume logic ================
         self.callback(lambda c: c.on_resume_training(self.is_coordinator()))
-
-        should_resume = self.resume and self.resume_files_exist(
-            training_progress_tracker_path, training_checkpoints_path
+        progress_tracker = self._create_or_resume_progress_tracker(
+            training_progress_tracker_path, training_checkpoints_path, checkpoint, output_features
         )
-        # make sure all workers are on the same page about resuming.
-        should_resume = self.distributed.broadcast_object(should_resume, name="should_resume")
-
-        if should_resume:
-            try:
-                progress_tracker = self.resume_training_progress_tracker(training_progress_tracker_path)
-                self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
-                if self.is_coordinator():
-                    logger.info("Resuming training from previous run.")
-            except (FileNotFoundError, OSError, RuntimeError):
-                # Resume files may be missing or corrupt when training is interrupted before any
-                # real progress is made (e.g. crash during checkpoint write).
-                logger.warning("Could not load training checkpoint; starting fresh.", exc_info=True)
-                progress_tracker = get_new_progress_tracker(
-                    batch_size=self.batch_size,
-                    learning_rate=self.base_learning_rate,
-                    best_eval_metric_value=get_initial_validation_value(self.validation_metric),
-                    best_increase_batch_size_eval_metric=get_initial_validation_value(
-                        self.increase_batch_size_eval_metric
-                    ),
-                    output_features=output_features,
-                )
-                if self.is_coordinator():
-                    logger.info("Failed to resume training from previous run. Creating fresh model training run.")
-        else:
-            progress_tracker = get_new_progress_tracker(
-                batch_size=self.batch_size,
-                learning_rate=self.base_learning_rate,
-                best_eval_metric_value=get_initial_validation_value(self.validation_metric),
-                best_increase_batch_size_eval_metric=get_initial_validation_value(self.increase_batch_size_eval_metric),
-                output_features=output_features,
-            )
-            if self.is_coordinator():
-                logger.info("Creating fresh model training run.")
 
         # Distributed: broadcast initial variable states from rank 0 to all other processes.
         # This is necessary to ensure consistent initialization of all workers when
