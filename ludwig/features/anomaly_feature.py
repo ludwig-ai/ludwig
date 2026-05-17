@@ -56,7 +56,7 @@ from ludwig.constants import (
     PREDICTIONS,
     PROC_COLUMN,
 )
-from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature, PredictModule
+from ludwig.features.base_feature import FeaturePreprocessingMixin, OutputFeature, PredictModule
 from ludwig.schema.features.anomaly_feature import AnomalyOutputFeatureConfig
 from ludwig.types import (
     FeatureConfigDict,
@@ -95,7 +95,7 @@ class _AnomalyPredict(PredictModule):
         }
 
 
-class AnomalyFeatureMixin(BaseFeatureMixin):
+class AnomalyFeatureMixin(FeaturePreprocessingMixin):
     """Mixin providing preprocessing utilities for anomaly output features.
 
     Anomaly detection is typically unsupervised — the target column contains 0 (normal) or 1 (anomaly) labels for

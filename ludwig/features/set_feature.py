@@ -20,7 +20,7 @@ import numpy as np
 import torch
 
 from ludwig.constants import COLUMN, HIDDEN, LOGITS, NAME, PREDICTIONS, PROBABILITIES, PROC_COLUMN, SET
-from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
+from ludwig.features.base_feature import FeaturePreprocessingMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.schema.features.set_feature import SetInputFeatureConfig, SetOutputFeatureConfig
 from ludwig.types import (
@@ -141,7 +141,7 @@ class _SetPredict(PredictModule):
         return {self.predictions_key: predictions, self.probabilities_key: probabilities, self.logits_key: logits}
 
 
-class SetFeatureMixin(BaseFeatureMixin):
+class SetFeatureMixin(FeaturePreprocessingMixin):
     @staticmethod
     def type():
         return SET

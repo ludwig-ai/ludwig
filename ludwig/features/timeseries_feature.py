@@ -20,7 +20,7 @@ import numpy as np
 import torch
 
 from ludwig.constants import COLUMN, HIDDEN, LOGITS, NAME, PREDICTIONS, PROC_COLUMN, TIMESERIES
-from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature, PredictModule
+from ludwig.features.base_feature import FeaturePreprocessingMixin, OutputFeature, PredictModule
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.features.vector_feature import _VectorPostprocessing, _VectorPredict
 from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig, TimeseriesOutputFeatureConfig
@@ -163,7 +163,7 @@ class _TimeseriesPreprocessing(torch.nn.Module):
         raise ValueError(f"Unsupported input: {v}")
 
 
-class TimeseriesFeatureMixin(BaseFeatureMixin):
+class TimeseriesFeatureMixin(FeaturePreprocessingMixin):
     @staticmethod
     def type():
         return TIMESERIES

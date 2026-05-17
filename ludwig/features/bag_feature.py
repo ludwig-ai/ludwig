@@ -20,7 +20,7 @@ import numpy as np
 import torch
 
 from ludwig.constants import BAG, COLUMN, NAME, PROC_COLUMN
-from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
+from ludwig.features.base_feature import FeaturePreprocessingMixin, InputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.features.set_feature import _SetPreprocessing
 from ludwig.schema.features.bag_feature import BagInputFeatureConfig
@@ -30,7 +30,7 @@ from ludwig.utils.strings_utils import create_vocabulary
 logger = logging.getLogger(__name__)
 
 
-class BagFeatureMixin(BaseFeatureMixin):
+class BagFeatureMixin(FeaturePreprocessingMixin):
     @staticmethod
     def type():
         return BAG

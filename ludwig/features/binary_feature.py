@@ -20,7 +20,7 @@ import torch
 
 from ludwig.constants import BINARY, COLUMN, HIDDEN, LOGITS, NAME, PREDICTIONS, PROBABILITIES, PROBABILITY, PROC_COLUMN
 from ludwig.error import InputDataError
-from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
+from ludwig.features.base_feature import FeaturePreprocessingMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.binary_feature import BinaryInputFeatureConfig, BinaryOutputFeatureConfig
 from ludwig.types import (
     FeatureConfigDict,
@@ -113,7 +113,7 @@ class _BinaryPredict(PredictModule):
         }
 
 
-class BinaryFeatureMixin(BaseFeatureMixin):
+class BinaryFeatureMixin(FeaturePreprocessingMixin):
     @staticmethod
     def type():
         return BINARY

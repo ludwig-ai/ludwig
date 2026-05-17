@@ -18,7 +18,7 @@ import numpy as np
 import torch
 
 from ludwig.constants import COLUMN, H3, H3_VECTOR_LENGTH, MAX_H3_RESOLUTION, PROC_COLUMN
-from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
+from ludwig.features.base_feature import FeaturePreprocessingMixin, InputFeature
 from ludwig.schema.features.h3_feature import H3InputFeatureConfig
 from ludwig.types import FeatureMetadataDict, ModelConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.h3_util import h3_to_components
@@ -62,7 +62,7 @@ class _H3Preprocessing(torch.nn.Module):
         return torch.stack(outputs)
 
 
-class H3FeatureMixin(BaseFeatureMixin):
+class H3FeatureMixin(FeaturePreprocessingMixin):
     @staticmethod
     def type():
         return H3

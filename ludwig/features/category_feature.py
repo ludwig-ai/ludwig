@@ -34,7 +34,7 @@ from ludwig.constants import (
     PROJECTION_INPUT,
 )
 from ludwig.error import InputDataError
-from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
+from ludwig.features.base_feature import FeaturePreprocessingMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.vector_feature import VectorFeatureMixin
 from ludwig.schema.features.category_feature import (
     CategoryDistributionOutputFeatureConfig,
@@ -135,7 +135,7 @@ class _CategoryPredict(PredictModule):
         return {self.predictions_key: predictions, self.probabilities_key: probabilities, self.logits_key: logits}
 
 
-class CategoryFeatureMixin(BaseFeatureMixin):
+class CategoryFeatureMixin(FeaturePreprocessingMixin):
     @staticmethod
     def type():
         return CATEGORY

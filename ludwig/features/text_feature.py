@@ -40,7 +40,7 @@ from ludwig.constants import (
     RESPONSE,
     TEXT,
 )
-from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature
+from ludwig.features.base_feature import FeaturePreprocessingMixin, OutputFeature
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
 from ludwig.features.sequence_feature import (
     _SequencePostprocessing,
@@ -121,7 +121,7 @@ def _get_metadata_reconciled_max_sequence_length(
     return vocabulary.max_sequence_length, vocabulary.sequence_length_99ptile
 
 
-class TextFeatureMixin(BaseFeatureMixin):
+class TextFeatureMixin(FeaturePreprocessingMixin):
     @staticmethod
     def type():
         return TEXT
