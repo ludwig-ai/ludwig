@@ -21,9 +21,9 @@ import torch
 
 from ludwig.constants import COLUMN, HIDDEN, LOGITS, NAME, PREDICTIONS, PROBABILITIES, PROC_COLUMN, SET
 from ludwig.features.base_feature import (
-    BaseFeatureMixin,
     BasePostprocessingModule,
     BasePreprocessingModule,
+    FeaturePreprocessingMixin,
     InputFeature,
     OutputFeature,
     PredictModule,
@@ -148,7 +148,7 @@ class _SetPredict(PredictModule):
         return {self.predictions_key: predictions, self.probabilities_key: probabilities, self.logits_key: logits}
 
 
-class SetFeatureMixin(BaseFeatureMixin):
+class SetFeatureMixin(FeaturePreprocessingMixin):
     @staticmethod
     def type():
         return SET

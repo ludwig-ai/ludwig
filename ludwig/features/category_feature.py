@@ -35,9 +35,9 @@ from ludwig.constants import (
 )
 from ludwig.error import InputDataError
 from ludwig.features.base_feature import (
-    BaseFeatureMixin,
     BasePostprocessingModule,
     BasePreprocessingModule,
+    FeaturePreprocessingMixin,
     InputFeature,
     OutputFeature,
     PredictModule,
@@ -142,7 +142,7 @@ class _CategoryPredict(PredictModule):
         return {self.predictions_key: predictions, self.probabilities_key: probabilities, self.logits_key: logits}
 
 
-class CategoryFeatureMixin(BaseFeatureMixin):
+class CategoryFeatureMixin(FeaturePreprocessingMixin):
     @staticmethod
     def type():
         return CATEGORY

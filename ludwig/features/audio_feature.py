@@ -25,7 +25,7 @@ from packaging import version
 
 from ludwig.constants import AUDIO, AUDIO_FEATURE_KEYS, COLUMN, NAME, PROC_COLUMN, SRC, TYPE
 from ludwig.data.lazy_utils import resolve_lazy_cache_dir
-from ludwig.features.base_feature import BaseFeatureMixin, BasePreprocessingModule
+from ludwig.features.base_feature import BasePreprocessingModule, FeaturePreprocessingMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.schema.features.audio_feature import AudioInputFeatureConfig
 from ludwig.types import FeatureMetadataDict, ModelConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
@@ -200,7 +200,7 @@ class _AudioPreprocessing(BasePreprocessingModule):
         return torch.stack(processed_audio_matrix)
 
 
-class AudioFeatureMixin(BaseFeatureMixin):
+class AudioFeatureMixin(FeaturePreprocessingMixin):
     @staticmethod
     def type():
         return AUDIO

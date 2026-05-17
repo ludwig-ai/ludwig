@@ -11,7 +11,12 @@ import torchmetrics
 from ludwig.combiners.combiners import Combiner
 from ludwig.constants import COMBINED, LOSS, NAME
 from ludwig.encoders.base import Encoder
-from ludwig.features.base_feature import create_passthrough_input_feature, InputFeature, ModuleWrapper, OutputFeature
+from ludwig.features.base_feature import (
+    create_passthrough_input_feature,
+    InputFeature,
+    NonPropertyModuleWrapper,
+    OutputFeature,
+)
 from ludwig.features.feature_registries import get_input_type_registry, get_output_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.modules.metric_modules import LudwigMetric
@@ -52,8 +57,8 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         self.output_features = self.create_feature_dict()
 
         # ================ Combined loss metric ================
-        self._eval_loss_metric = ModuleWrapper(torchmetrics.MeanMetric())
-        self._eval_additional_losses_metrics = ModuleWrapper(torchmetrics.MeanMetric())
+        self._eval_loss_metric = NonPropertyModuleWrapper(torchmetrics.MeanMetric())
+        self._eval_additional_losses_metrics = NonPropertyModuleWrapper(torchmetrics.MeanMetric())
 
         # ================ Training Hook Handles ================
         self._forward_hook_handles: list[TrainingHook] = []

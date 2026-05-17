@@ -25,9 +25,9 @@ from torch import nn
 
 from ludwig.constants import COLUMN, HIDDEN, LOGITS, NAME, NUMBER, PREDICTIONS, PROC_COLUMN
 from ludwig.features.base_feature import (
-    BaseFeatureMixin,
     BasePostprocessingModule,
     BasePreprocessingModule,
+    FeaturePreprocessingMixin,
     InputFeature,
     OutputFeature,
     PredictModule,
@@ -316,7 +316,7 @@ class _NumberPredict(PredictModule):
         return {self.predictions_key: predictions, self.logits_key: logits}
 
 
-class NumberFeatureMixin(BaseFeatureMixin):
+class NumberFeatureMixin(FeaturePreprocessingMixin):
     @staticmethod
     def type():
         return NUMBER

@@ -32,9 +32,9 @@ from ludwig.constants import (
     SEQUENCE,
 )
 from ludwig.features.base_feature import (
-    BaseFeatureMixin,
     BasePostprocessingModule,
     BasePreprocessingModule,
+    FeaturePreprocessingMixin,
     InputFeature,
     OutputFeature,
     PredictModule,
@@ -195,7 +195,7 @@ class _SequencePredict(PredictModule):
         return {self.predictions_key: predictions, self.probabilities_key: probabilities, self.logits_key: logits}
 
 
-class SequenceFeatureMixin(BaseFeatureMixin):
+class SequenceFeatureMixin(FeaturePreprocessingMixin):
     @staticmethod
     def type():
         return SEQUENCE

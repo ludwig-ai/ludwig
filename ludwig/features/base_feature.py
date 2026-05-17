@@ -81,7 +81,7 @@ class BasePostprocessingModule(torch.nn.Module):
         raise NotImplementedError("Subclasses must implement forward()")
 
 
-class BaseFeatureMixin(ABC):
+class FeaturePreprocessingMixin(ABC):
     """Parent class for feature mixins.
 
     Feature mixins support preprocessing functionality shared across input and output features.
@@ -149,7 +149,7 @@ class BaseFeatureMixin(ABC):
 
 
 @dataclass
-class ModuleWrapper:
+class NonPropertyModuleWrapper:
     """Used to prevent the PredictModule from showing up as an attribute on the feature module.
 
     This is necessary to avoid inflight errors from some distributed strategies that may believe a param is still in the
@@ -356,7 +356,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             default_dropout=feature.decoder.fc_dropout,
         )
         self._calibration_module = self.create_calibration_module(feature)
-        self._prediction_module = ModuleWrapper(self.create_predict_module())
+        self._prediction_module = NonPropertyModuleWrapper(self.create_predict_module())
 
         # set up two sequence reducers, one for inputs and other for dependencies
         self.reduce_sequence_input = SequenceReducer(reduce_mode=self.reduce_input)
@@ -406,7 +406,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     def _setup_loss(self) -> None:
         self.train_loss_function = create_loss(self.loss)
-        self._eval_loss_metric = ModuleWrapper(get_metric_cls(self.type(), self.loss.type)(config=self.loss))
+        self._eval_loss_metric = NonPropertyModuleWrapper(get_metric_cls(self.type(), self.loss.type)(config=self.loss))
 
     def _setup_metrics(self) -> None:
         kwargs = {}

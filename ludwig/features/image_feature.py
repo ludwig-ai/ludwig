@@ -55,9 +55,9 @@ from ludwig.data.lazy_utils import resolve_lazy_cache_dir
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.image.torchvision import TVModelVariant
 from ludwig.features.base_feature import (
-    BaseFeatureMixin,
     BasePostprocessingModule,
     BasePreprocessingModule,
+    FeaturePreprocessingMixin,
     InputFeature,
     OutputFeature,
     PredictModule,
@@ -578,7 +578,7 @@ class _ImagePredict(PredictModule):
         return {self.predictions_key: predictions, self.logits_key: logits}
 
 
-class ImageFeatureMixin(BaseFeatureMixin):
+class ImageFeatureMixin(FeaturePreprocessingMixin):
     @staticmethod
     def type():
         return IMAGE
