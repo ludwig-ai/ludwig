@@ -37,6 +37,7 @@ class PassthroughPreprocModule(torch.nn.Module):
     """
 
     def __init__(self, preproc: torch.nn.Module, encoder: torch.nn.Module):
+        super().__init__()
         self.preproc = preproc
         self.encoder = encoder
 
