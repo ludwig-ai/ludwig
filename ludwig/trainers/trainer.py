@@ -1265,22 +1265,13 @@ class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin,
             should_step = should_sync_grads or is_checkpoint_step
             batch_idx += 1
 
-            # Move tensors to cuda here.
-            inputs = {
-                i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(self.device)
-                for i_feat in self.model.input_features.values()
-            }
-            targets = {
-                o_feat.feature_name: torch.from_numpy(np.array(batch[o_feat.proc_column], copy=True)).to(self.device)
-                for o_feat in self.model.output_features.values()
-            }
+            inputs, targets = self._batch_to_tensors(batch)
 
             loss, all_losses, used_tokens = self.train_step(inputs, targets, should_step=should_step, profiler=profiler)
 
-            # Update LR schduler here instead of train loop to avoid updating during batch size tuning, etc.
+            # Update LR scheduler here instead of train loop to avoid updating during batch size tuning, etc.
             self.scheduler.step()
 
-            # Update progress tracker with token information.
             progress_tracker.set_token_usage_for_this_step(used_tokens)
 
             if self.is_coordinator() and not self.skip_save_log:
@@ -1304,55 +1295,101 @@ class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin,
                     psutil.Process(os.getpid()).memory_info()[0] / 1e6,
                 )
 
-            # Executing `on_batch_end` calls before `run_evaluation` enables more accurate
-            # batch duration measurements when using timer callbacks.
+            # Executing `on_batch_end` before `run_evaluation` enables accurate batch duration measurements.
             self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path, sync_step=should_step))
 
-            # If this is the last batch in the epoch, increment before running evaluation so that metrics are reported
-            # with the correct epoch.
+            # Increment epoch before evaluation so metrics are reported with the correct epoch number.
             if batcher.last_batch():
                 progress_tracker.epoch += 1
 
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
-                # Before continuing to evaluation or skipping evaluation altogether, we should use this point to
-                # ensure that the model weights are not NaN or Inf.
-                has_nan_or_inf_tensors = self._has_nan_or_inf_weights(self.dist_model)
-                # If a nan/inf tensor is detected, we should break out of the training loop immediately and raise an #
-                # error. There is no point in running evaluation for this step as the model weights are already in
-                # a bad state. Theere is also no point in continuing to train the model since the loss will always be
-                # NaN or Inf from this point forward.
+                should_break, has_nan_or_inf_tensors = self._eval_and_checkpoint(
+                    loss=loss,
+                    all_losses=all_losses,
+                    training_set=training_set,
+                    validation_set=validation_set,
+                    test_set=test_set,
+                    progress_tracker=progress_tracker,
+                    train_summary_writer=train_summary_writer,
+                    validation_summary_writer=validation_summary_writer,
+                    test_summary_writer=test_summary_writer,
+                    model_hyperparameters_path=model_hyperparameters_path,
+                    output_features=output_features,
+                    metrics_names=metrics_names,
+                    save_path=save_path,
+                    early_stopping_steps=early_stopping_steps,
+                    checkpoint_manager=checkpoint_manager,
+                )
                 if has_nan_or_inf_tensors:
                     return True, has_nan_or_inf_tensors
 
-                if not self.skip_all_evaluation:
-                    # Publishes metrics to MLFLow if there are any MLFlow callbacks.
-                    should_break = self.run_evaluation(
-                        training_set,
-                        validation_set,
-                        test_set,
-                        progress_tracker,
-                        train_summary_writer,
-                        validation_summary_writer,
-                        test_summary_writer,
-                        model_hyperparameters_path,
-                        output_features,
-                        metrics_names,
-                        save_path,
-                        loss,
-                        all_losses,
-                        early_stopping_steps,
-                        checkpoint_manager,
-                    )
-                else:
-                    should_break = False
-
-                # Checkpoint the model after evaluation.
-                if not self.skip_save_progress:
-                    self.save_checkpoint(progress_tracker, save_path, checkpoint_manager)
-
-            # If this was the last batch, then increment the epoch counter and invoke the `on_epoch_end` callback.
             if batcher.last_batch():
                 self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
+
+        return should_break, has_nan_or_inf_tensors
+
+    def _batch_to_tensors(self, batch) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]:
+        """Convert a raw data batch to input and target tensors on the training device."""
+        inputs = {
+            i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(self.device)
+            for i_feat in self.model.input_features.values()
+        }
+        targets = {
+            o_feat.feature_name: torch.from_numpy(np.array(batch[o_feat.proc_column], copy=True)).to(self.device)
+            for o_feat in self.model.output_features.values()
+        }
+        return inputs, targets
+
+    def _eval_and_checkpoint(
+        self,
+        loss: torch.Tensor,
+        all_losses: dict[str, torch.Tensor],
+        training_set,
+        validation_set,
+        test_set,
+        progress_tracker: ProgressTracker,
+        train_summary_writer,
+        validation_summary_writer,
+        test_summary_writer,
+        model_hyperparameters_path: str,
+        output_features,
+        metrics_names,
+        save_path: str,
+        early_stopping_steps: int,
+        checkpoint_manager: CheckpointManager,
+    ) -> tuple[bool, bool]:
+        """Run evaluation and save a checkpoint at a checkpoint boundary step.
+
+        Returns:
+            (should_break, has_nan_or_inf_tensors) — both trigger training termination when True.
+        """
+        has_nan_or_inf_tensors = self._has_nan_or_inf_weights(self.dist_model)
+        if has_nan_or_inf_tensors:
+            return False, has_nan_or_inf_tensors
+
+        if not self.skip_all_evaluation:
+            should_break = self.run_evaluation(
+                training_set,
+                validation_set,
+                test_set,
+                progress_tracker,
+                train_summary_writer,
+                validation_summary_writer,
+                test_summary_writer,
+                model_hyperparameters_path,
+                output_features,
+                metrics_names,
+                save_path,
+                loss,
+                all_losses,
+                early_stopping_steps,
+                checkpoint_manager,
+            )
+        else:
+            should_break = False
+
+        if not self.skip_save_progress:
+            self.save_checkpoint(progress_tracker, save_path, checkpoint_manager)
 
         return should_break, has_nan_or_inf_tensors
 
