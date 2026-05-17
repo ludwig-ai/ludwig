@@ -175,7 +175,7 @@ class BaseFeature:
 class InputFeature(BaseFeature, LudwigModule, ABC):
     """Parent class for all input features."""
 
-    def create_sample_input(self, batch_size: int = 2):
+    def create_sample_input(self, batch_size: int = 2) -> torch.Tensor:
         # Used by get_model_inputs(), which is used for tracing-based torchscript generation.
         return torch.rand([batch_size, *self.input_shape]).to(self.input_dtype)
 
@@ -185,10 +185,10 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
 
     @staticmethod
     @abstractmethod
-    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs) -> None:
         pass
 
-    def update_config_after_module_init(self, feature_config):
+    def update_config_after_module_init(self, feature_config) -> None:
         """Updates the config after the torch.nn.Module objects have been initialized."""
 
     def initialize_encoder(self, encoder_config):
@@ -340,37 +340,34 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             for dependency in self.dependencies:
                 self.dependency_reducers[dependency] = SequenceReducer(reduce_mode=self.reduce_dependencies)
 
-    def create_sample_output(self, batch_size: int = 2):
+    def create_sample_output(self, batch_size: int = 2) -> torch.Tensor:
         output_shape = self.output_shape
         shape = [batch_size, *self.output_shape] if output_shape != torch.Size([1]) else [batch_size]
         return torch.rand(shape).to(self.get_output_dtype())
 
     @abstractmethod
-    def get_prediction_set(self):
-        """Returns the set of tensor keys returned by this feature's PredictModule.
-
-        TODO(Justin): Move this to the PredictModule.
-        """
+    def get_prediction_set(self) -> set[str]:
+        """Returns the set of tensor keys returned by this feature's PredictModule."""
         raise NotImplementedError("OutputFeature is missing implementation for get_prediction_set.")
 
     @classmethod
     @abstractmethod
-    def get_output_dtype(cls):
+    def get_output_dtype(cls) -> torch.dtype:
         """Returns the Tensor data type feature outputs."""
 
-    def initialize_decoder(self, decoder_config):
+    def initialize_decoder(self, decoder_config) -> torch.nn.Module:
         # Input to the decoder is the output feature's FC hidden layer.
         decoder_config.input_size = self.fc_stack.output_shape[-1]
         decoder_cls = get_decoder_cls(self.type(), decoder_config.type)
         decoder_params_dict = decoder_config.to_dict()
         return decoder_cls(decoder_config=decoder_config, **decoder_params_dict)
 
-    def train_loss(self, targets: Tensor, predictions: dict[str, Tensor], feature_name):
+    def train_loss(self, targets: Tensor, predictions: dict[str, Tensor], feature_name) -> tuple[Tensor, dict]:
         loss_class = type(self.train_loss_function)
         prediction_key = output_feature_utils.get_feature_concat_name(feature_name, loss_class.get_loss_inputs())
         return self.train_loss_function(predictions[prediction_key], targets)
 
-    def eval_loss(self, targets: Tensor, predictions: dict[str, Tensor]):
+    def eval_loss(self, targets: Tensor, predictions: dict[str, Tensor]) -> Tensor:
         loss_class = type(self.train_loss_function)
         prediction_key = loss_class.get_loss_inputs()
         if isinstance(self.eval_loss_metric, MeanMetric):
@@ -380,11 +377,11 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             return self.eval_loss_metric.get_current_value(predictions[prediction_key].detach(), targets)
         return self.eval_loss_metric(predictions[prediction_key].detach(), targets)
 
-    def _setup_loss(self):
+    def _setup_loss(self) -> None:
         self.train_loss_function = create_loss(self.loss)
         self._eval_loss_metric = ModuleWrapper(get_metric_cls(self.type(), self.loss.type)(config=self.loss))
 
-    def _setup_metrics(self):
+    def _setup_metrics(self) -> None:
         kwargs = {}
         for name, cls in get_metric_classes(self.type()).items():
             if cls.can_report(self) and isinstance(cls, LossMetric):
@@ -466,7 +463,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             metric_fn = metric_fn.to(predictions[prediction_key].device)
             metric_fn.update(predictions[prediction_key].detach(), targets)
 
-    def get_metrics(self):
+    def get_metrics(self) -> dict[str, float]:
         # NOTE: do NOT wrap metric_fn.compute() in an explicit sync_context() call here.
         #
         # torchmetrics wraps every compute() internally in sync_context().  Ludwig overrides
@@ -498,7 +495,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                     metric_vals[sub_metric_name] = metric.detach().cpu().numpy().item()
         return metric_vals
 
-    def reset_metrics(self):
+    def reset_metrics(self) -> None:
         for _, metric_fn in self._metric_functions.items():
             if metric_fn is not None:
                 metric_fn.reset()
@@ -558,7 +555,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         self,
         result: dict[str, Tensor],
         metadata: TrainingSetMetadataDict,
-    ):
+    ) -> dict[str, list]:
         raise NotImplementedError
 
     @classmethod
@@ -571,15 +568,15 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     @staticmethod
     @abstractmethod
-    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs) -> None:
         pass
 
     @staticmethod
     @abstractmethod
-    def calculate_overall_stats(predictions, targets, train_set_metadata):
+    def calculate_overall_stats(predictions, targets, train_set_metadata) -> dict:
         pass
 
-    def output_specific_fully_connected(self, inputs, mask=None):
+    def output_specific_fully_connected(self, inputs, mask=None) -> torch.Tensor:
         feature_hidden = inputs
         original_feature_hidden = inputs
 
@@ -659,33 +656,33 @@ class PassthroughInputFeature(InputFeature):
         super().__init__(config)
         self._wrapped = wrapped
 
-    def forward(self, inputs, mask=None):
+    def forward(self, inputs, mask=None) -> dict[str, torch.Tensor]:
         if not isinstance(inputs, torch.Tensor):
             raise TypeError(f"PassthroughInputFeature forward expects a torch.Tensor, got {type(inputs).__name__}.")
         return {ENCODER_OUTPUT: inputs}
 
     @property
-    def input_dtype(self):
+    def input_dtype(self) -> torch.dtype:
         return torch.float32
 
     @property
-    def input_shape(self):
+    def input_shape(self) -> torch.Size:
         return self._wrapped.encoder_obj.output_shape
 
     @property
     def output_shape(self) -> torch.Size:
         return self._wrapped.encoder_obj.output_shape
 
-    def update_config_with_metadata(self, feature_config, feature_metadata, *args, **kwargs):
+    def update_config_with_metadata(self, feature_config, feature_metadata, *args, **kwargs) -> None:
         return self._wrapped.update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs)
 
-    def get_schema_cls(self):
+    def get_schema_cls(self) -> type:
         return self._wrapped.get_schema_cls()
 
     def create_preproc_module(self, metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return PassthroughPreprocModule(self._wrapped.create_preproc_module(metadata), self._wrapped)
 
-    def type(self):
+    def type(self) -> str:
         return self._wrapped.type()
 
     def unskip(self) -> InputFeature:
