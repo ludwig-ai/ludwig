@@ -29,11 +29,6 @@ def get_or_create_experiment_id(experiment_name, artifact_uri: str | None = None
     return mlflow.create_experiment(name=experiment_name, artifact_location=artifact_uri)
 
 
-# Included for backwards compatibility, Deprecated.
-# TODO(daniel): delete this.
-_get_or_create_experiment_id = get_or_create_experiment_id
-
-
 @PublicAPI
 class MlflowCallback(Callback):
     def __init__(self, tracking_uri=None, log_artifacts: bool = True):

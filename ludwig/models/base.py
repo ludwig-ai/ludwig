@@ -41,8 +41,8 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
     def __init__(self, random_seed: int | None = None):
         self._random_seed = random_seed
 
-        # TODO: with change to misc_utils.set_random_seed() this may be redundant
-        #       seems to be required for test_api.py::test_api_training_determinism
+        # Ensures model weight initialization is deterministic even though set_random_seed()
+        # is called later in the trainer. Required for test_api::test_api_training_determinism.
         if random_seed is not None:
             torch.random.manual_seed(random_seed)
 

@@ -566,7 +566,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         #       keys: logits, projection_input
         #   sequence
         #       keys: logits
-        # TODO(Justin): Clean this up.
         if isinstance(logits, Tensor):
             logits = {"logits": logits}
 

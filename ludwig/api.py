@@ -1973,7 +1973,6 @@ class LudwigModel:
 
     def is_merge_and_unload_set(self) -> bool:
         """Return True if this model is an LLM configured to merge_and_unload QLoRA adapter weights."""
-        # TODO: In the future, it may be possible to move up the model type check into the BaseModel class.
         return self.config_obj.model_type == MODEL_LLM and self.model.is_merge_and_unload_set()
 
 
@@ -2165,8 +2164,7 @@ def _get_compute_description(backend: Backend) -> dict:
     compute_description = {"num_nodes": backend.num_nodes}
 
     if torch.cuda.is_available():
-        # Assumption: All nodes are of the same instance type.
-        # TODO: fix for Ray where workers may be of different skus
+        # Assumption: All nodes are of the same instance type (not yet verified across Ray workers).
         compute_description.update(
             {
                 "gpus_per_node": torch.cuda.device_count(),

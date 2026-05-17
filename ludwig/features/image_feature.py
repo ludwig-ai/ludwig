@@ -388,7 +388,6 @@ class ImageAugmentation(torch.nn.Module):
                 except KeyError:
                     raise ValueError(f"Invalid augmentation operation specification: {aug_config}")
         else:
-            # TODO: should this raise an exception if not in training mode?
             self.augmentation_steps = None
 
     def forward(self, imgs):
