@@ -119,10 +119,10 @@ Create `ludwig/features/widget_feature.py`. The required classes are:
 
 ```python
 import torch
-from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature
+from ludwig.features.base_feature import BasePreprocessingModule, FeaturePreprocessingMixin, InputFeature, OutputFeature
 
 
-class _WidgetPreprocessing(torch.nn.Module):
+class _WidgetPreprocessing(BasePreprocessingModule):
     """Runs inside the model graph during inference to preprocess raw input."""
 
     def __init__(self, metadata: dict, preprocessing_config, is_input_feature: bool = True):
@@ -136,10 +136,10 @@ class _WidgetPreprocessing(torch.nn.Module):
 
 ### FeatureMixin (shared preprocessing logic)
 
-`BaseFeatureMixin` (formerly `BaseFeatureMixin`) provides the Python-side preprocessing used during dataset preparation (not inside the model graph). You must implement `add_feature_data` and `get_preprocessing_module`:
+`FeaturePreprocessingMixin` provides the Python-side preprocessing used during dataset preparation (not inside the model graph). You must implement `add_feature_data` and `get_preprocessing_module`:
 
 ```python
-class WidgetFeatureMixin(BaseFeatureMixin):
+class WidgetFeatureMixin(FeaturePreprocessingMixin):
     @staticmethod
     def type():
         return WIDGET
