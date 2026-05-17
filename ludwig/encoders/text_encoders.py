@@ -181,7 +181,6 @@ class HFTextEncoderImpl(HFTextEncoder):
     ):
         super().__init__()
 
-        # TODO(travis): get_hf_config_param_names should be implemented as abstract in HFEncoderConfig
         vocab_size = kwargs["vocab_size"]
         hf_config_params = {k: v for k, v in kwargs.items() if k in schema_cls.get_hf_config_param_names()}
         if use_pretrained and not saved_weights_in_checkpoint:

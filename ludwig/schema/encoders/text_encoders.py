@@ -38,6 +38,16 @@ class HFEncoderConfig(SequenceEncoderConfig):
         if not self.can_cache_embeddings():
             preprocessing.cache_encoder_embeddings = False
 
+    @classmethod
+    def get_hf_config_param_names(cls) -> set[str]:
+        """Returns the set of HF PretrainedConfig parameter names for this encoder config.
+
+        Subclasses that add HF-native fields (e.g. DebertaV2Config via DebertaModelParams) must
+        override this to return the union of their fields. The default returns an empty set so that
+        generic encoders don't forward unexpected kwargs to the HF config constructor.
+        """
+        return set()
+
     def is_pretrained(self) -> bool:
         return self.use_pretrained
 
