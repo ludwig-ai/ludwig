@@ -143,7 +143,11 @@ class MultiNodeCheckpoint(Checkpoint):
         """
         try:
             safetensors_path = self._safetensors_path(save_path)
-            state = torch.load(save_path, map_location=device, weights_only=True)
+            # weights_only=False: this file is Ludwig's own checkpoint (meta_state),
+            # containing optimizer and scheduler state dicts that may include
+            # non-tensor Python objects (step counters, lambda closures, etc.).
+            # It is a trusted internal file, not user-supplied data.
+            state = torch.load(save_path, map_location=device, weights_only=False)
             try:
                 self.global_step = self._get_global_step(state, save_path)
 
