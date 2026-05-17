@@ -267,8 +267,8 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
 
         except ImportError:
             logger.warning("PEFT not installed. Cannot apply adapter to encoder. pip install peft")
-        except Exception as e:
-            logger.warning(f"Failed to apply adapter to encoder: {e}")
+        except Exception:
+            logger.warning("Failed to apply adapter to encoder.", exc_info=True)
 
         return encoder
 

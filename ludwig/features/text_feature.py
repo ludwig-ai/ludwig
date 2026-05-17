@@ -362,8 +362,8 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                 else:
                     metric_fn = metric_fn.to(predictions[prediction_key].device)
                     metric_fn.update(predictions[prediction_key].detach(), targets)
-            except Exception as e:
-                logger.info(f"Ran into error when calculating metric {metric_name}. Skipping. The error is: {e}")
+            except Exception:
+                logger.warning(f"Ran into error when calculating metric {metric_name}. Skipping.", exc_info=True)
 
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
