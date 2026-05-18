@@ -176,6 +176,9 @@ class OptunaExecutor:
         def objective(trial):
             sampled_params = _suggest_params(trial, self.parameters)
 
+            for cb in callbacks or []:
+                cb.on_hyperopt_trial_start(sampled_params)
+
             # Substitute sampled parameters into config
             trial_config = copy.deepcopy(config)
             substitute_parameters(trial_config, sampled_params)
@@ -259,6 +262,9 @@ class OptunaExecutor:
                     )
                 )
 
+                for cb in callbacks or []:
+                    cb.on_hyperopt_trial_end(sampled_params)
+
                 logger.info(
                     f"Trial {trial.number}: {self.output_feature}.{self.metric} = {metric_value:.6f} "
                     f"(params: {sampled_params})"
@@ -268,6 +274,8 @@ class OptunaExecutor:
 
             except Exception as e:
                 logger.error(f"Trial {trial.number} failed: {e}\n{traceback.format_exc()}")
+                for cb in callbacks or []:
+                    cb.on_hyperopt_trial_end(sampled_params)
                 raise optuna.TrialPruned(f"Trial failed: {e}")
 
         logger.info(

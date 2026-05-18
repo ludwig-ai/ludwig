@@ -248,6 +248,7 @@ class LudwigModel:
         skip_save_processed_input: bool = False,
         output_directory: str | None = "results",
         random_seed: int = default_random_seed,
+        callbacks: list[Callback] | None = None,
         **kwargs: Any,
     ) -> TrainingResults:
         """Train the model on the provided dataset.
@@ -283,6 +284,11 @@ class LudwigModel:
             skip_save_processed_input: Skip caching the preprocessed HDF5/JSON files.
             output_directory: Root directory for all saved outputs.
             random_seed: Seed for data splitting, weight initialization, and shuffling.
+            callbacks: Additional callbacks for this specific ``train()`` call. These are
+                merged with any callbacks already attached to the model via
+                ``LudwigModel(callbacks=[...])``. Useful for per-run instrumentation
+                (e.g., attaching a WandB logger to one run without rebuilding the model).
+                Callbacks added here do not persist after this call returns.
             **kwargs: Additional keyword arguments forwarded to preprocessing.
 
         Returns:
@@ -337,7 +343,8 @@ class LudwigModel:
 
         output_url = output_directory
         with upload_output_directory(output_directory) as (output_directory, upload_fn):
-            train_callbacks = self.callbacks
+            # Merge per-call callbacks with the model's own callbacks for the duration of this train() call.
+            train_callbacks = self.callbacks + (callbacks or [])
             if upload_fn is not None:
                 # Upload output files (checkpoints, etc.) to remote storage at the end of
                 # each epoch and evaluation, in case of failure in the middle of training.
@@ -437,7 +444,7 @@ class LudwigModel:
                 logger.info("\nDataset Statistics")
                 logger.info(tabulate(dataset_statistics, headers="firstrow", tablefmt="fancy_grid"))
 
-            for callback in self.callbacks:
+            for callback in train_callbacks:
                 callback.on_train_init(
                     base_config=self._user_config,
                     experiment_directory=output_directory,
@@ -492,7 +499,7 @@ class LudwigModel:
                     if not skip_save_model:
                         self.save_config(model_dir)
 
-                for callback in self.callbacks:
+                for callback in train_callbacks:
                     callback.on_train_start(
                         model=self.model,
                         config=self.config_obj.to_dict(),
@@ -565,7 +572,7 @@ class LudwigModel:
                         logger.info(f"\nFinished: {experiment_name}_{model_name}")
                         logger.info(f"Saved to: {output_directory}")
                 finally:
-                    for callback in self.callbacks:
+                    for callback in train_callbacks:
                         callback.on_train_end(output_directory)
 
                 self.training_set_metadata = training_set_metadata

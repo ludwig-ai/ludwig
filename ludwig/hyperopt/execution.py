@@ -18,17 +18,27 @@ from inspect import signature
 from pathlib import Path
 from typing import Any
 
-import ray
-from ray import tune
-from ray.tune import ExperimentAnalysis, PlacementGroupFactory, register_trainable, Stopper
-from ray.tune.schedulers.resource_changing_scheduler import DistributeResources, ResourceChangingScheduler
-from ray.tune.search import BasicVariantGenerator, ConcurrencyLimiter, SEARCH_ALG_IMPORT
-from ray.tune.utils import wait_for_gpu
-from ray.util.queue import Queue as RayQueue
+try:
+    import ray
+    from ray import tune
+    from ray.tune import ExperimentAnalysis, PlacementGroupFactory, register_trainable, Stopper
+    from ray.tune.schedulers.resource_changing_scheduler import DistributeResources, ResourceChangingScheduler
+    from ray.tune.search import BasicVariantGenerator, ConcurrencyLimiter, SEARCH_ALG_IMPORT
+    from ray.tune.utils import wait_for_gpu
+    from ray.util.queue import Queue as RayQueue
+
+    _RAY_AVAILABLE = True
+except ImportError:
+    _RAY_AVAILABLE = False
+    ray = None  # type: ignore[assignment]
 
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend, RAY
-from ludwig.backend.ray import initialize_ray
+
+try:
+    from ludwig.backend.ray import initialize_ray
+except ImportError:
+    initialize_ray = None  # type: ignore[assignment]
 from ludwig.callbacks import Callback
 from ludwig.constants import MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
@@ -1066,7 +1076,10 @@ class RayTuneExecutor:
         return HyperoptResults(ordered_trials=ordered_trials, experiment_analysis=analysis)
 
 
-class CallbackStopper(Stopper):
+_StopperBase = Stopper if _RAY_AVAILABLE else object  # type: ignore[misc]
+
+
+class CallbackStopper(_StopperBase):
     """Ray Tune Stopper that triggers the entire job to stop if one callback returns True."""
 
     def __init__(self, callbacks: list[Callback] | None):
