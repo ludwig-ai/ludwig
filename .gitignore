@@ -153,3 +153,6 @@ ludwig/benchmarking/configs/
 *.wav
 generated_audio/
 generated_images/
+
+# Claude Code worktrees (should never be committed)
+.claude/worktrees/
