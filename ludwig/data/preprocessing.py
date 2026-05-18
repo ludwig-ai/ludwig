@@ -633,6 +633,9 @@ def build_dataset(
         dataset_cols[col_key] = dataset_cols[col_key].astype(object)
 
     for feature_config in feature_configs:
+        if feature_config[NAME] not in feature_name_to_preprocessing_parameters:
+            # Some output feature types (e.g. anomaly) have no preprocessing config; skip them.
+            continue
         preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_config[NAME]]
         handle_missing_values(dataset_cols, feature_config, preprocessing_parameters, backend)
 
@@ -859,6 +862,10 @@ def build_preprocessing_parameters(
             feature_name_to_preprocessing_parameters[feature_name] = metadata[feature_name][PREPROCESSING]
             continue
 
+        # Some output feature types (e.g. anomaly) have no preprocessing config; skip them.
+        if PREPROCESSING not in feature_config:
+            continue
+
         preprocessing_parameters = feature_config[PREPROCESSING]
         missing_value_strategy = preprocessing_parameters["missing_value_strategy"]
         fill_value = precompute_fill_value(
@@ -905,6 +912,12 @@ def build_metadata(
         if feature_name in metadata:
             continue
 
+        # Some output feature types (e.g. anomaly) have no preprocessing config.
+        # Add a minimal empty metadata entry so downstream lookups don't KeyError.
+        if feature_name not in feature_name_to_preprocessing_parameters:
+            metadata[feature_name] = {}
+            continue
+
         preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_name]
 
         column = dataset_cols[feature_config[COLUMN]]
@@ -941,7 +954,11 @@ def build_data(
     for feature_config in feature_configs:
         # TODO(travis): instead of using raw dictionary, this should be loaded into a proper PreprocessingConfig
         #  object, so we don't need to hackily check for the presence of added keys.
-        preprocessing_parameters = training_set_metadata[feature_config[NAME]][PREPROCESSING]
+        # Some output feature types (e.g. anomaly) have empty metadata (no preprocessing config).
+        feature_meta = training_set_metadata.get(feature_config[NAME], {})
+        if PREPROCESSING not in feature_meta:
+            continue
+        preprocessing_parameters = feature_meta[PREPROCESSING]
 
         # Need to run this again here as cast_columns may have introduced new missing values
         handle_missing_values(input_cols, feature_config, preprocessing_parameters, backend)
