@@ -188,6 +188,7 @@ class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin,
         self.skip_save_log = skip_save_log
         self.random_seed = random_seed
         self.received_sigint = False
+        self._training_paused = False
         self.report_tqdm_to_ray = report_tqdm_to_ray
         self.callbacks = callbacks or []
         self.device = device
@@ -912,6 +913,12 @@ class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin,
             # as we want to restore it at the end of training
             self.original_sigint_handler = signal.getsignal(signal.SIGINT)
             signal.signal(signal.SIGINT, self.set_steps_to_1_or_quit)
+            # SIGUSR1 → pause training after current batch; SIGUSR2 → resume.
+            # On Windows, SIGUSR1/SIGUSR2 are not available — skip silently.
+            if hasattr(signal, "SIGUSR1"):
+                self._training_paused = False
+                signal.signal(signal.SIGUSR1, self._handle_pause)
+                signal.signal(signal.SIGUSR2, self._handle_resume)
 
         metrics_names = get_metric_names(output_features)
 
@@ -997,6 +1004,12 @@ class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin,
                 # ================ Training Loop ================
                 self.steps_per_epoch = batcher.steps_per_epoch
                 self.total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)
+                # Expose progress information on the progress tracker for callbacks and Studio.
+                import time as _time
+
+                progress_tracker.steps_per_epoch = self.steps_per_epoch
+                progress_tracker.total_steps = self.total_steps
+                progress_tracker.training_start_time = _time.monotonic()
                 # NOTE(geoffrey): this ensures that the total number of epochs coincides with the number of
                 # times `batcher.set_epoch` is called.
                 old_epochs = self.epochs
@@ -1220,9 +1233,12 @@ class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin,
         # load it back on the head node.
         return_value = self.model if not return_state_dict else state_dict
 
-        # restore original sigint signal handler
+        # restore original signal handlers
         if self.original_sigint_handler and threading.current_thread() == threading.main_thread():
             signal.signal(signal.SIGINT, self.original_sigint_handler)
+            if hasattr(signal, "SIGUSR1"):
+                signal.signal(signal.SIGUSR1, signal.SIG_DFL)
+                signal.signal(signal.SIGUSR2, signal.SIG_DFL)
 
         return (
             return_value,
@@ -1663,6 +1679,23 @@ class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin,
             if self.original_sigint_handler:
                 signal.signal(signal.SIGINT, self.original_sigint_handler)
             sys.exit(1)
+
+    def _handle_pause(self, signum, frame):
+        """SIGUSR1 handler: gracefully pause training after the current batch.
+
+        Ludwig Studio sends SIGUSR1 to pause a run. Training resumes on SIGUSR2.
+        """
+        import time
+
+        self._training_paused = True
+        logger.info("Received SIGUSR1 — training paused. Send SIGUSR2 to resume.")
+        while self._training_paused:
+            time.sleep(0.5)
+
+    def _handle_resume(self, signum, frame):
+        """SIGUSR2 handler: resume training paused by SIGUSR1."""
+        self._training_paused = False
+        logger.info("Received SIGUSR2 — training resumed.")
 
     @staticmethod
     def resume_files_exist(

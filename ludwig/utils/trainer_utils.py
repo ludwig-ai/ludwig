@@ -130,6 +130,9 @@ class ProgressTracker:
         incremental_checkpoint_token_usage: dict[str, int] | None = None,
         cumulative_checkpoint_token_usage: dict[str, int] | None = None,
         total_tokens_used: int = 0,
+        steps_per_epoch: int = 0,
+        total_steps: int = 0,
+        training_start_time: float = 0.0,
     ):
         """JSON-serializable holder object that stores information related to training progress.
 
@@ -249,6 +252,30 @@ class ProgressTracker:
         self.incremental_checkpoint_token_usage = incremental_checkpoint_token_usage
         self.cumulative_checkpoint_token_usage = cumulative_checkpoint_token_usage
         self.total_tokens_used = total_tokens_used
+
+        # Progress / ETA fields (not persisted to JSON — recomputed on resume).
+        self.steps_per_epoch = steps_per_epoch
+        self.total_steps = total_steps
+        self.training_start_time = training_start_time
+
+    @property
+    def eta_seconds(self) -> float | None:
+        """Estimated seconds until training completes. None until at least one step has run."""
+        if self.total_steps <= 0 or self.steps <= 0 or self.training_start_time <= 0:
+            return None
+        import time
+
+        elapsed = time.monotonic() - self.training_start_time
+        rate = self.steps / elapsed  # steps per second
+        remaining = self.total_steps - self.steps
+        return remaining / rate if rate > 0 else None
+
+    @property
+    def progress_pct(self) -> float:
+        """Training progress as a fraction in [0, 1]. 0 until total_steps is set."""
+        if self.total_steps <= 0:
+            return 0.0
+        return min(self.steps / self.total_steps, 1.0)
 
     def save(self, filepath):
         # sort_keys=False to ensure that token usage dictionaries (keyed by integers) are encodable.
