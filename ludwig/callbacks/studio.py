@@ -65,12 +65,29 @@ class StudioCallback(Callback):
             the Studio database).
         output_dir: Directory where ``metrics.jsonl`` is written. Must be
             writable. Created automatically if it does not exist.
+        group_id: Optional hyperopt group ID. When set, trial events are also
+            written to ``<group_output_dir>/trials.jsonl``.
+        group_output_dir: Root output directory for the hyperopt group. Required
+            when ``group_id`` is provided.
     """
 
-    def __init__(self, run_id: str, output_dir: str):
+    def __init__(
+        self,
+        run_id: str,
+        output_dir: str,
+        group_id: str | None = None,
+        group_output_dir: str | None = None,
+    ):
         self.run_id = run_id
         self.output_dir = Path(output_dir)
+        self.group_id = group_id
+        self.group_output_dir = Path(group_output_dir) if group_output_dir else None
         self._fh = None
+        self._trial_fh = None
+        # Hyperopt trial tracking
+        self._trial_idx: int = 0
+        self._trial_best_metric_value: float | None = None
+        self._trial_best_metric_name: str | None = None
 
     # ── Internal helpers ──────────────────────────────────────────────────────
 
@@ -85,6 +102,19 @@ class StudioCallback(Callback):
         event.setdefault("run_id", self.run_id)
         event.setdefault("timestamp", time.time())
         self._fh.write(json.dumps(event, default=str) + "\n")
+
+    def _open_trial(self) -> None:
+        if self._trial_fh is None and self.group_output_dir is not None:
+            self.group_output_dir.mkdir(parents=True, exist_ok=True)
+            self._trial_fh = open(self.group_output_dir / "trials.jsonl", "a", buffering=1)
+
+    def _emit_trial(self, event: dict[str, Any]) -> None:
+        self._open_trial()
+        if self._trial_fh is None:
+            return
+        event.setdefault("group_id", self.group_id)
+        event.setdefault("timestamp", time.time())
+        self._trial_fh.write(json.dumps(event, default=str) + "\n")
 
     def _progress(self, progress_tracker) -> dict[str, Any]:
         """Extract ETA / progress fields from a ProgressTracker (if available)."""
@@ -170,3 +200,44 @@ class StudioCallback(Callback):
                             **progress,
                         }
                     )
+
+        # Track best validation metric for hyperopt trial reporting
+        if self.group_id is not None:
+            best_val = getattr(progress_tracker, "best_eval_metric_value", None)
+            if best_val is not None:
+                self._trial_best_metric_value = float(best_val)
+            vfield = getattr(trainer, "validation_field", None)
+            vmetric = getattr(trainer, "validation_metric", None)
+            if vfield and vmetric:
+                self._trial_best_metric_name = f"{vfield}/{vmetric}"
+
+    # ── Hyperopt hooks ────────────────────────────────────────────────────────
+
+    def on_hyperopt_trial_start(self, parameters: dict[str, Any], **kwargs) -> None:
+        self._trial_best_metric_value = None
+        self._trial_best_metric_name = None
+        self._emit_trial(
+            {
+                "type": "trial_start",
+                "trial_idx": self._trial_idx,
+                "parameters": dict(parameters) if parameters else {},
+            }
+        )
+
+    def on_hyperopt_trial_end(self, parameters: dict[str, Any], **kwargs) -> None:
+        self._emit_trial(
+            {
+                "type": "trial_end",
+                "trial_idx": self._trial_idx,
+                "parameters": dict(parameters) if parameters else {},
+                "metric_score": self._trial_best_metric_value,
+                "metric_name": self._trial_best_metric_name,
+            }
+        )
+        self._trial_idx += 1
+
+    def on_hyperopt_end(self, experiment_name: str, **kwargs) -> None:
+        self._emit_trial({"type": "hyperopt_end", "trial_count": self._trial_idx})
+        if self._trial_fh:
+            self._trial_fh.close()
+            self._trial_fh = None
