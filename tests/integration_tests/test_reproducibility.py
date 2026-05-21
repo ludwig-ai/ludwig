@@ -11,6 +11,24 @@ import torch
 from ludwig.api import LudwigModel
 from ludwig.data.dataset_synthesizer import cli_synthesize_dataset
 
+
+@pytest.fixture(autouse=True, scope="module")
+def single_threaded_blas():
+    """Force single-threaded PyTorch / BLAS for the duration of this module.
+
+    CPU BLAS libraries (MKL, OpenBLAS) are non-deterministic under multi-threading:
+    floating-point additions can be reordered by the scheduler, producing different
+    results across runs even with the same random seed.  Reproducibility tests
+    compare two same-seed runs for exact equality, so they require deterministic
+    arithmetic.  Setting num_threads=1 is the only reliable way to achieve this
+    on CPU without restricting the rest of the test suite.
+    """
+    prev = torch.get_num_threads()
+    torch.set_num_threads(1)
+    yield
+    torch.set_num_threads(prev)
+
+
 INPUT_FEATURES = [
     {"name": "num_1", "type": "number"},
     {"name": "num_2", "type": "number"},

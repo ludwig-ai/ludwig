@@ -396,12 +396,17 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def eval_loss(self, targets: Tensor, predictions: dict[str, Tensor]) -> Tensor:
         loss_class = type(self.train_loss_function)
         prediction_key = loss_class.get_loss_inputs()
+        preds = predictions[prediction_key].detach()
         if isinstance(self.eval_loss_metric, MeanMetric):
-            # MeanMetric's forward() implicitly updates the running average.
-            # For MeanMetrics, we use get_current_value() to compute the loss without changing the state. All metrics
-            # are updated at the BaseModel level as part of update_metrics().
-            return self.eval_loss_metric.get_current_value(predictions[prediction_key].detach(), targets)
-        return self.eval_loss_metric(predictions[prediction_key].detach(), targets)
+            # MeanMetric stores the running average externally; get_current_value() computes the
+            # batch loss without touching that state (metrics are updated in update_metrics()).
+            return self.eval_loss_metric.get_current_value(preds, targets)
+        # For non-MeanMetric eval_loss_metrics (e.g. MSEMetric / MeanSquaredError), calling
+        # self.eval_loss_metric(preds, targets) would invoke forward() which updates the metric's
+        # running sum — double-counting each batch because update_metrics() already called update().
+        # Compute the batch loss directly via the stateless train_loss_function instead.
+        with torch.no_grad():
+            return self.train_loss_function(preds, targets)
 
     def _setup_loss(self) -> None:
         self.train_loss_function = create_loss(self.loss)
