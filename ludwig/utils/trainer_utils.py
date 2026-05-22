@@ -1,5 +1,6 @@
 import logging
 import re
+import time
 from collections import defaultdict
 from typing import TYPE_CHECKING
 
@@ -263,8 +264,6 @@ class ProgressTracker:
         """Estimated seconds until training completes. None until at least one step has run."""
         if self.total_steps <= 0 or self.steps <= 0 or self.training_start_time <= 0:
             return None
-        import time
-
         elapsed = time.monotonic() - self.training_start_time
         rate = self.steps / elapsed  # steps per second
         remaining = self.total_steps - self.steps
@@ -278,9 +277,9 @@ class ProgressTracker:
         return min(self.steps / self.total_steps, 1.0)
 
     def save(self, filepath):
+        _EPHEMERAL = {"steps_per_epoch", "total_steps", "training_start_time"}
         # sort_keys=False to ensure that token usage dictionaries (keyed by integers) are encodable.
-        # save_json(filepath, self.__dict__, sort_keys=False)
-        save_json(filepath, self.__dict__)
+        save_json(filepath, {k: v for k, v in self.__dict__.items() if k not in _EPHEMERAL})
 
     @staticmethod
     def load(progress_tracking_dict: dict):

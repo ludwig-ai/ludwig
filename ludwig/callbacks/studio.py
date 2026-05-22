@@ -55,6 +55,32 @@ from pathlib import Path
 from typing import Any
 
 from ludwig.callbacks import Callback
+from ludwig.utils.data_utils import NumpyEncoder
+
+
+class _NDJSONChannel:
+    """Append-only newline-delimited JSON file handle, opened lazily."""
+
+    def __init__(self, path: Path) -> None:
+        self._path = path
+        self._fh = None
+
+    def open(self) -> None:
+        if self._fh is None:
+            self._path.parent.mkdir(parents=True, exist_ok=True)
+            self._fh = open(self._path, "a", buffering=1)
+
+    def emit(self, event: dict[str, Any]) -> None:
+        self.open()
+        self._fh.write(json.dumps(event, cls=NumpyEncoder) + "\n")
+
+    def close(self) -> None:
+        if self._fh is not None:
+            self._fh.close()
+            self._fh = None
+
+    def __del__(self) -> None:
+        self.close()
 
 
 class StudioCallback(Callback):
@@ -79,11 +105,9 @@ class StudioCallback(Callback):
         group_output_dir: str | None = None,
     ):
         self.run_id = run_id
-        self.output_dir = Path(output_dir)
         self.group_id = group_id
-        self.group_output_dir = Path(group_output_dir) if group_output_dir else None
-        self._fh = None
-        self._trial_fh = None
+        self._ch = _NDJSONChannel(Path(output_dir) / "metrics.jsonl")
+        self._trial_ch = _NDJSONChannel(Path(group_output_dir) / "trials.jsonl") if group_output_dir else None
         # Hyperopt trial tracking
         self._trial_idx: int = 0
         self._trial_best_metric_value: float | None = None
@@ -91,30 +115,17 @@ class StudioCallback(Callback):
 
     # ── Internal helpers ──────────────────────────────────────────────────────
 
-    def _open(self) -> None:
-        if self._fh is None:
-            self.output_dir.mkdir(parents=True, exist_ok=True)
-            # line-buffered (buffering=1) so each emit is immediately visible
-            self._fh = open(self.output_dir / "metrics.jsonl", "a", buffering=1)
-
     def _emit(self, event: dict[str, Any]) -> None:
-        self._open()
         event.setdefault("run_id", self.run_id)
         event.setdefault("timestamp", time.time())
-        self._fh.write(json.dumps(event, default=str) + "\n")
-
-    def _open_trial(self) -> None:
-        if self._trial_fh is None and self.group_output_dir is not None:
-            self.group_output_dir.mkdir(parents=True, exist_ok=True)
-            self._trial_fh = open(self.group_output_dir / "trials.jsonl", "a", buffering=1)
+        self._ch.emit(event)
 
     def _emit_trial(self, event: dict[str, Any]) -> None:
-        self._open_trial()
-        if self._trial_fh is None:
+        if self._trial_ch is None:
             return
         event.setdefault("group_id", self.group_id)
         event.setdefault("timestamp", time.time())
-        self._trial_fh.write(json.dumps(event, default=str) + "\n")
+        self._trial_ch.emit(event)
 
     def _progress(self, progress_tracker) -> dict[str, Any]:
         """Extract ETA / progress fields from a ProgressTracker (if available)."""
@@ -165,9 +176,7 @@ class StudioCallback(Callback):
 
     def on_train_end(self, output_directory: str, **kwargs) -> None:
         self._emit({"type": "phase", "phase": "completed", "epoch": None, "total_epochs": None})
-        if self._fh:
-            self._fh.close()
-            self._fh = None
+        self._ch.close()
 
     # ── Metric hook ───────────────────────────────────────────────────────────
 
@@ -238,6 +247,5 @@ class StudioCallback(Callback):
 
     def on_hyperopt_end(self, experiment_name: str, **kwargs) -> None:
         self._emit_trial({"type": "hyperopt_end", "trial_count": self._trial_idx})
-        if self._trial_fh:
-            self._trial_fh.close()
-            self._trial_fh = None
+        if self._trial_ch:
+            self._trial_ch.close()

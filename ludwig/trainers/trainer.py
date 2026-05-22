@@ -1005,11 +1005,9 @@ class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin,
                 self.steps_per_epoch = batcher.steps_per_epoch
                 self.total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)
                 # Expose progress information on the progress tracker for callbacks and Studio.
-                import time as _time
-
                 progress_tracker.steps_per_epoch = self.steps_per_epoch
                 progress_tracker.total_steps = self.total_steps
-                progress_tracker.training_start_time = _time.monotonic()
+                progress_tracker.training_start_time = time.monotonic()
                 # NOTE(geoffrey): this ensures that the total number of epochs coincides with the number of
                 # times `batcher.set_epoch` is called.
                 old_epochs = self.epochs
@@ -1685,17 +1683,15 @@ class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin,
 
         Ludwig Studio sends SIGUSR1 to pause a run. Training resumes on SIGUSR2.
         """
-        import time
-
         self._training_paused = True
-        logger.info("Received SIGUSR1 — training paused. Send SIGUSR2 to resume.")
+        print("Ludwig: training paused (SIGUSR1). Send SIGUSR2 to resume.", flush=True)
         while self._training_paused:
             time.sleep(0.5)
 
     def _handle_resume(self, signum, frame):
         """SIGUSR2 handler: resume training paused by SIGUSR1."""
         self._training_paused = False
-        logger.info("Received SIGUSR2 — training resumed.")
+        print("Ludwig: training resumed (SIGUSR2).", flush=True)
 
     @staticmethod
     def resume_files_exist(
