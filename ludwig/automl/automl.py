@@ -307,7 +307,7 @@ def _model_select(
 ):
     """Performs model selection based on dataset or user specified model.
 
-    Note: Current implementation returns tabnet by default for tabular datasets.
+    Note: Current implementation returns ft_transformer by default for tabular datasets.
     """
     fields = dataset_info.fields
 

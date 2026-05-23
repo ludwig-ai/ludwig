@@ -59,6 +59,8 @@ combiner_defaults = {
     "concat": os.path.join(CONFIG_DIR, "combiner/concat_config.yaml"),
     "tabnet": os.path.join(CONFIG_DIR, "combiner/tabnet_config.yaml"),
     "transformer": os.path.join(CONFIG_DIR, "combiner/transformer_config.yaml"),
+    "ft_transformer": os.path.join(CONFIG_DIR, "combiner/ft_transformer_config.yaml"),
+    "tabtransformer": os.path.join(CONFIG_DIR, "combiner/tabtransformer_config.yaml"),
 }
 
 encoder_defaults = {"text": {"bert": os.path.join(CONFIG_DIR, "text/bert_config.yaml")}}

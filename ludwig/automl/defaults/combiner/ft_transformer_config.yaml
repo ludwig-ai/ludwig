@@ -1,0 +1,39 @@
+combiner:
+  type: ft_transformer
+  num_layers: 3
+  num_heads: 8
+  hidden_size: 64
+  transformer_output_size: 64
+  dropout: 0.1
+  fc_dropout: 0.1
+
+trainer:
+  batch_size: auto
+  learning_rate: auto
+  optimizer:
+    type: adam
+
+hyperopt:
+  parameters:
+    trainer.learning_rate:
+      space: loguniform
+      lower: 0.0001
+      upper: 0.001
+    trainer.batch_size:
+      space: choice
+      categories: [32, 64, 128, 256]
+    combiner.num_layers:
+      space: choice
+      categories: [2, 3, 4]
+    combiner.hidden_size:
+      # Must be divisible by num_heads (8). Valid values: 32, 64, 128, 256.
+      space: choice
+      categories: [32, 64, 128, 256]
+    combiner.dropout:
+      space: uniform
+      lower: 0.0
+      upper: 0.3
+    combiner.fc_dropout:
+      space: uniform
+      lower: 0.0
+      upper: 0.3
