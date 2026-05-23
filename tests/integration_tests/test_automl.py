@@ -153,7 +153,7 @@ def test_data_multimodal():
 @pytest.mark.parametrize(
     "test_data,expectations",
     [
-        ("test_data_tabular_large", {"combiner": {"type": "tabnet"}}),
+        ("test_data_tabular_large", {"combiner": {"type": "ft_transformer"}}),
         ("test_data_tabular_small", {"combiner": {"type": "concat"}}),
         ("test_data_image", {"combiner": {"type": "concat"}}),
         (
