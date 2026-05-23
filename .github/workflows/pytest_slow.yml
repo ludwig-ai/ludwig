@@ -41,15 +41,15 @@ jobs:
       - name: Setup Linux
         if: runner.os == 'linux'
         run: |
-          sudo apt-get update && sudo apt-get install -y cmake libsndfile1 libsox-dev
+          sudo apt-get update && sudo apt-get install -y cmake libsndfile1 libsox-dev ffmpeg
 
       - name: Install dependencies
         run: |
           python --version
           pip --version
           pip install uv
-          uv pip install --system torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1
-          pip install '.[test]'
+          uv pip install --system torch==2.12.0 torchvision==0.27.0 torchaudio==2.11.0 torchcodec --extra-index-url https://download.pytorch.org/whl/cpu
+          uv pip install --system '.[test]'
           pip list
         shell: bash
 
