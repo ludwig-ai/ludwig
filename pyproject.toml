@@ -57,7 +57,7 @@ dependencies = [
     "psutil",
     "protobuf>=4.0",
     "gpustat",
-    "rich~=12.4.4",
+    "rich>=12.4.4",
     "packaging",
     "retry",
     "sacremoses",
