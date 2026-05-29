@@ -37,4 +37,4 @@ RUN if [ -n "${LUDWIG_VERSION}" ]; then \
     else \
       pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cu124; \
     fi
-RUN pip install --no-cache-dir --force-reinstall torch==2.12.0 torchvision==0.27.0 torchaudio==2.11.0 --extra-index-url https://download.pytorch.org/whl/cu124
+RUN pip install --no-cache-dir --force-reinstall torch==2.12.0 torchvision==0.27.0 torchaudio==2.11.0 --index-url https://download.pytorch.org/whl/cu124
