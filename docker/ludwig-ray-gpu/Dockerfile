@@ -9,7 +9,7 @@
 #   model serving
 #
 
-FROM rayproject/ray:2.54.0-py312-cu124
+FROM rayproject/ray:2.54.0-py312-cu126
 
 RUN sudo apt-get update && \
     DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y \
@@ -33,8 +33,8 @@ WORKDIR /ludwig
 
 COPY . .
 RUN if [ -n "${LUDWIG_VERSION}" ]; then \
-      pip install --no-cache-dir "ludwig[full]==${LUDWIG_VERSION}" --extra-index-url https://download.pytorch.org/whl/cu124; \
+      pip install --no-cache-dir "ludwig[full]==${LUDWIG_VERSION}" --extra-index-url https://download.pytorch.org/whl/cu126; \
     else \
-      pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cu124; \
+      pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cu126; \
     fi
-RUN pip install --no-cache-dir --force-reinstall torch==2.12.0 torchvision==0.27.0 torchaudio==2.11.0 --index-url https://download.pytorch.org/whl/cu124
+RUN pip install --no-cache-dir --force-reinstall torch==2.12.0 torchvision==0.27.0 torchaudio==2.11.0 --index-url https://download.pytorch.org/whl/cu126
