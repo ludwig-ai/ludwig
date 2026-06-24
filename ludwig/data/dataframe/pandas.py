@@ -54,8 +54,11 @@ class PandasEngine(DataFrameEngine):
     def map_batches(self, df, map_fn, enable_tensor_extension_casting=True):
         return map_fn(df)
 
-    def map_partitions(self, series, map_fn, meta=None):
-        return map_fn(series)
+    def map_partitions(self, series, map_fn, meta=None, progress_tracker=None):
+        result = map_fn(series)
+        if progress_tracker is not None:
+            progress_tracker.increment()
+        return result
 
     def apply_objects(self, df, apply_fn, meta=None):
         return df.apply(apply_fn, axis=1)

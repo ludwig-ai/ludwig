@@ -338,6 +338,17 @@ class Callback(ABC):
             mode: One of ``"prediction"``, ``"training"``, or ``None``.
         """
 
+    def on_preprocess_progress(self, progress: float, **kwargs):
+        """Called periodically during ``build_data`` to report preprocessing progress.
+
+        Progress is tracked at the partition level: each engine partition (pandas
+        column, Dask partition, or Ray task) increments the counter after it
+        completes, so the value reflects actual work done rather than an estimate.
+
+        Args:
+            progress: Fraction of preprocessing completed, in the range ``[0.0, 1.0]``.
+        """
+
     def on_build_data_end(self, df, mode, **kwargs):
         """Called after ``build_data`` completes.
 

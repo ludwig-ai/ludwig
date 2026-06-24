@@ -45,7 +45,7 @@ class DataFrameEngine(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def map_partitions(self, series, map_fn, meta=None):
+    def map_partitions(self, series, map_fn, meta=None, progress_tracker=None):
         raise NotImplementedError()
 
     @abstractmethod

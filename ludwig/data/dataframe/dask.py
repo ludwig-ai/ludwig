@@ -148,8 +148,18 @@ class DaskEngine(DataFrameEngine):
         meta = meta if meta is not None else (series.name, "object")
         return series.map(map_fn, meta=meta)
 
-    def map_partitions(self, series, map_fn, meta=None):
+    def map_partitions(self, series, map_fn, meta=None, progress_tracker=None):
         meta = meta if meta is not None else (series.name, "object")
+        if progress_tracker is not None:
+            actor = progress_tracker.get_actor()
+            if actor is not None:
+
+                def map_fn_with_progress(partition):
+                    result = map_fn(partition)
+                    actor.increment.remote()
+                    return result
+
+                return series.map_partitions(map_fn_with_progress, meta=meta)
         return series.map_partitions(map_fn, meta=meta)
 
     def map_batches(self, series, map_fn, enable_tensor_extension_casting=True):

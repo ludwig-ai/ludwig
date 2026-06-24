@@ -660,7 +660,18 @@ def build_dataset(
         callback.on_build_data_start(dataset_df, mode)
 
     logger.debug("build data")
-    proc_cols = build_data(dataset_cols, feature_configs, metadata, backend, skip_save_processed_input)
+    from ludwig.data.preprocessing_progress import get_total_partitions, PreprocessingProgressTracker
+
+    use_ray = backend.df_engine.partitioned
+    total_partitions = get_total_partitions(dataset_cols, use_ray) * len(feature_configs)
+    progress_tracker = PreprocessingProgressTracker(total_partitions, callbacks or [], use_ray=use_ray)
+    progress_tracker.start()
+    try:
+        proc_cols = build_data(
+            dataset_cols, feature_configs, metadata, backend, skip_save_processed_input, progress_tracker
+        )
+    finally:
+        progress_tracker.stop()
 
     for callback in callbacks or []:
         callback.on_build_data_end(dataset_df, mode)
@@ -936,6 +947,7 @@ def build_data(
     training_set_metadata: dict,
     backend: Backend,
     skip_save_processed_input: bool,
+    progress_tracker=None,
 ) -> dict[str, DataFrame]:
     """Preprocesses the input dataframe columns, handles missing values, and potentially adds metadata to
     training_set_metadata.
@@ -950,33 +962,47 @@ def build_data(
     Returns:
         Dictionary of (feature name) -> (processed data).
     """
+    if progress_tracker is not None:
+        _orig_map_partitions = backend.df_engine.map_partitions
+        backend.df_engine.map_partitions = lambda series, map_fn, meta=None: _orig_map_partitions(
+            series, map_fn, meta=meta, progress_tracker=progress_tracker
+        )
+
     proc_cols = {}
-    for feature_config in feature_configs:
-        # TODO(travis): instead of using raw dictionary, this should be loaded into a proper PreprocessingConfig
-        #  object, so we don't need to hackily check for the presence of added keys.
-        # Some output feature types (e.g. anomaly) have empty metadata (no preprocessing config).
-        feature_meta = training_set_metadata.get(feature_config[NAME], {})
-        if PREPROCESSING not in feature_meta:
-            continue
-        preprocessing_parameters = feature_meta[PREPROCESSING]
+    try:
+        for feature_config in feature_configs:
+            # TODO(travis): instead of using raw dictionary, this should be loaded into a proper PreprocessingConfig
+            #  object, so we don't need to hackily check for the presence of added keys.
+            # Some output feature types (e.g. anomaly) have empty metadata (no preprocessing config).
+            feature_meta = training_set_metadata.get(feature_config[NAME], {})
+            if PREPROCESSING not in feature_meta:
+                continue
+            preprocessing_parameters = feature_meta[PREPROCESSING]
 
-        # Need to run this again here as cast_columns may have introduced new missing values
-        handle_missing_values(input_cols, feature_config, preprocessing_parameters, backend)
+            # Need to run this again here as cast_columns may have introduced new missing values
+            handle_missing_values(input_cols, feature_config, preprocessing_parameters, backend)
 
-        # For features that support it, we perform outlier removal here using metadata computed on the full dataset
-        handle_outliers(
-            input_cols, feature_config, preprocessing_parameters, training_set_metadata[feature_config[NAME]], backend
-        )
+            # For features that support it, we perform outlier removal here using metadata computed on the full dataset
+            handle_outliers(
+                input_cols,
+                feature_config,
+                preprocessing_parameters,
+                training_set_metadata[feature_config[NAME]],
+                backend,
+            )
 
-        get_from_registry(feature_config[TYPE], get_base_type_registry()).add_feature_data(
-            feature_config,
-            input_cols,
-            proc_cols,
-            training_set_metadata,
-            preprocessing_parameters,
-            backend,
-            skip_save_processed_input,
-        )
+            get_from_registry(feature_config[TYPE], get_base_type_registry()).add_feature_data(
+                feature_config,
+                input_cols,
+                proc_cols,
+                training_set_metadata,
+                preprocessing_parameters,
+                backend,
+                skip_save_processed_input,
+            )
+    finally:
+        if progress_tracker is not None:
+            backend.df_engine.map_partitions = _orig_map_partitions
 
     return proc_cols
 
