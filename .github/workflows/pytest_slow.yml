@@ -19,6 +19,7 @@ jobs:
       KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
       KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
       IS_NOT_FORK: ${{ !(github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && github.event.pull_request.head.repo.fork) }}
+      MLFLOW_ALLOW_FILE_STORE: "true"
 
     services:
       minio:

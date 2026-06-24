@@ -89,6 +89,7 @@ jobs:
       IS_NOT_FORK: ${{ !(github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && github.event.pull_request.head.repo.fork) }}
       MARKERS: ${{ matrix.test-markers }}
       UV_SYSTEM_PYTHON: "1"
+      MLFLOW_ALLOW_FILE_STORE: "true"
 
     name: Integration (${{ matrix.test-markers }})
     services:
@@ -168,6 +169,7 @@ jobs:
       IS_NOT_FORK: ${{ !(github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && github.event.pull_request.head.repo.fork) }}
       DIST_GROUP: ${{ matrix.distributed-group }}
       UV_SYSTEM_PYTHON: "1"
+      MLFLOW_ALLOW_FILE_STORE: "true"
 
     name: Distributed (${{ matrix.distributed-group }})
     services:
