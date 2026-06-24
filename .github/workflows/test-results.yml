@@ -60,7 +60,7 @@ jobs:
       - name: Distributed Tests report
         uses: dorny/test-reporter@v2
         with:
-          artifact: Distributed Test Results
+          artifact: /Distributed Test Results .*/
           name: Distributed Tests
           path: "*.xml"
           reporter: java-junit
