@@ -663,7 +663,8 @@ def build_dataset(
     from ludwig.data.preprocessing_progress import get_total_partitions, PreprocessingProgressTracker
 
     use_ray = backend.df_engine.partitioned
-    total_partitions = get_total_partitions(dataset_cols, use_ray) * len(feature_configs)
+    n_active_features = sum(1 for f in feature_configs if PREPROCESSING in metadata.get(f[NAME], {}))
+    total_partitions = get_total_partitions(dataset_cols, use_ray) * max(n_active_features, 1)
     progress_tracker = PreprocessingProgressTracker(total_partitions, callbacks or [], use_ray=use_ray)
     progress_tracker.start()
     try:
@@ -962,8 +963,8 @@ def build_data(
     Returns:
         Dictionary of (feature name) -> (processed data).
     """
+    _orig_map_partitions = backend.df_engine.map_partitions
     if progress_tracker is not None:
-        _orig_map_partitions = backend.df_engine.map_partitions
         backend.df_engine.map_partitions = lambda series, map_fn, meta=None: _orig_map_partitions(
             series, map_fn, meta=meta, progress_tracker=progress_tracker
         )
@@ -1001,8 +1002,7 @@ def build_data(
                 skip_save_processed_input,
             )
     finally:
-        if progress_tracker is not None:
-            backend.df_engine.map_partitions = _orig_map_partitions
+        backend.df_engine.map_partitions = _orig_map_partitions
 
     return proc_cols
 
