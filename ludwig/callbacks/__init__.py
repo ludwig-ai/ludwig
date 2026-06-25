@@ -42,7 +42,17 @@ class Callback(ABC):
                 if loss:
                     print(f"Epoch {epoch}: loss = {loss[-1]:.4f}")
 
+            def on_preprocess_progress(self, progress: float, **kwargs):
+                print(f"Preprocessing: {progress:.0%}")
+
         model = LudwigModel(config, callbacks=[MyCallback()])
+
+    The ``on_preprocess_progress`` hook fires periodically while Ludwig preprocesses
+    features (during both training and prediction).  ``progress`` is a ``float``
+    in ``[0.0, 1.0]`` tracking completed partitions -- one increment per pandas
+    column, Dask partition, or Ray worker task.  The final call is always
+    ``progress=1.0``.  Works with all backends (pandas, Ray/Dask) with no extra
+    configuration required.
     """
 
     def on_cmdline(self, cmd: str, *args: list[str]):

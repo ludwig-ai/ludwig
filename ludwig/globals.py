@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-LUDWIG_VERSION = "0.17.5"
+LUDWIG_VERSION = "0.17.6"
 
 MODEL_FILE_NAME = "model"
 MODEL_WEIGHTS_FILE_NAME = "model_weights"  # legacy pickle format
