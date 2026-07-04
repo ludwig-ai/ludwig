@@ -671,77 +671,83 @@ def build_dataset(
         proc_cols = build_data(
             dataset_cols, feature_configs, metadata, backend, skip_save_processed_input, progress_tracker
         )
+
+        for callback in callbacks or []:
+            callback.on_build_data_end(dataset_df, mode)
+
+        # Get any additional columns needed for splitting downstream, otherwise they will not be
+        # included in the preprocessed output.
+        split_params = global_preprocessing_parameters.get(SPLIT, {})
+        if "type" not in split_params and SPLIT in dataset_df:
+            warnings.warn(
+                'Detected "split" column in the data, but using default split type '
+                '"random". Did you mean to set split type to "fixed"?'
+            )
+
+        splitter = get_splitter(**split_params)
+        for column in splitter.required_columns:
+            if column not in dataset_df:
+                warnings.warn(
+                    f"column: '{column}' is required by the dataset splitter with params: {split_params}, but '{column}' "
+                    f"is not present in the `dataset_df` with columns: {dataset_df.columns}. This is acceptable during "
+                    "serving setting where dataset splitting is irrelevant. You may see this warning if, for example, the "
+                    "model was trained with a configuration that used a stratified split on the target column, but for "
+                    "live predictions, a value for the target column is not to be provided."
+                )
+                continue
+            proc_cols[column] = dataset_df[column]
+
+        # TODO pyarrow: this is needed for caching to work with pyarrow. if removed, the following error is raised:
+        # "pyarrow.lib.ArrowInvalid: Can only convert 1-dimensional array values". The data is reshaped when loaded
+        # by the batcher in the RayDataset class (see _prepare_batch).
+        if not skip_save_processed_input and backend.cache.data_format == "parquet":
+            for feature in features:
+                name = feature[NAME]
+                proc_column = feature[PROC_COLUMN]
+                reshape = metadata[name].get("reshape")
+                if reshape is not None:
+                    proc_cols[proc_column] = backend.df_engine.map_objects(
+                        proc_cols[proc_column], lambda x: x.reshape(-1)
+                    )
+
+        # Implements an outer join of proc_cols
+        dataset = backend.df_engine.df_like(dataset_df, proc_cols)
+
+        # At this point, there should be no missing values left in the dataframe, unless
+        # the DROP_ROW preprocessing option was selected, in which case we need to drop those
+        # rows.
+        len_dataset_before_drop_rows = len(dataset)
+        dataset = dataset.dropna()
+        len_dataset_after_drop_rows = len(dataset)
+
+        if len_dataset_before_drop_rows != len_dataset_after_drop_rows:
+            logger.warning(
+                f"Dropped a total of {len_dataset_before_drop_rows - len_dataset_after_drop_rows} rows out of "
+                f"{len_dataset_before_drop_rows} due to missing values"
+            )
+
+        # NaNs introduced by outer join change dtype of dataset cols (upcast to float64), so we need to cast them back.
+        col_name_to_dtype = {}
+        for col_name, col in proc_cols.items():
+            # if col is a list of list-like objects, we assume the internal dtype of each col[i] remains unchanged.
+            if isinstance(col, list) and isinstance(col[0], (list, np.ndarray, torch.Tensor)):
+                continue
+            dtype = col.dtype
+            # Skip non-numpy extension dtypes (e.g. TensorDtype from Ray, ArrowDtype from PyArrow)
+            # as they cannot be used with DataFrame.astype() reliably.
+            if not isinstance(dtype, np.dtype):
+                continue
+            col_name_to_dtype[col_name] = dtype
+        dataset = dataset.astype(col_name_to_dtype)
+
+        # Persist the completed dataset with no NaNs.
+        # For Dask/Ray: actual partition computation happens here (and during the
+        # len() call above).  Keeping the tracker alive through this call ensures
+        # all actor.increment.remote() calls baked into the lazy graph are visible
+        # before stop() drains the actor queue and fires the final 1.0.
+        dataset = backend.df_engine.persist(dataset)
     finally:
         progress_tracker.stop()
-
-    for callback in callbacks or []:
-        callback.on_build_data_end(dataset_df, mode)
-
-    # Get any additional columns needed for splitting downstream, otherwise they will not be
-    # included in the preprocessed output.
-    split_params = global_preprocessing_parameters.get(SPLIT, {})
-    if "type" not in split_params and SPLIT in dataset_df:
-        warnings.warn(
-            'Detected "split" column in the data, but using default split type '
-            '"random". Did you mean to set split type to "fixed"?'
-        )
-
-    splitter = get_splitter(**split_params)
-    for column in splitter.required_columns:
-        if column not in dataset_df:
-            warnings.warn(
-                f"column: '{column}' is required by the dataset splitter with params: {split_params}, but '{column}' "
-                f"is not present in the `dataset_df` with columns: {dataset_df.columns}. This is acceptable during "
-                "serving setting where dataset splitting is irrelevant. You may see this warning if, for example, the "
-                "model was trained with a configuration that used a stratified split on the target column, but for "
-                "live predictions, a value for the target column is not to be provided."
-            )
-            continue
-        proc_cols[column] = dataset_df[column]
-
-    # TODO pyarrow: this is needed for caching to work with pyarrow. if removed, the following error is raised:
-    # "pyarrow.lib.ArrowInvalid: Can only convert 1-dimensional array values". The data is reshaped when loaded
-    # by the batcher in the RayDataset class (see _prepare_batch).
-    if not skip_save_processed_input and backend.cache.data_format == "parquet":
-        for feature in features:
-            name = feature[NAME]
-            proc_column = feature[PROC_COLUMN]
-            reshape = metadata[name].get("reshape")
-            if reshape is not None:
-                proc_cols[proc_column] = backend.df_engine.map_objects(proc_cols[proc_column], lambda x: x.reshape(-1))
-
-    # Implements an outer join of proc_cols
-    dataset = backend.df_engine.df_like(dataset_df, proc_cols)
-
-    # At this point, there should be no missing values left in the dataframe, unless
-    # the DROP_ROW preprocessing option was selected, in which case we need to drop those
-    # rows.
-    len_dataset_before_drop_rows = len(dataset)
-    dataset = dataset.dropna()
-    len_dataset_after_drop_rows = len(dataset)
-
-    if len_dataset_before_drop_rows != len_dataset_after_drop_rows:
-        logger.warning(
-            f"Dropped a total of {len_dataset_before_drop_rows - len_dataset_after_drop_rows} rows out of "
-            f"{len_dataset_before_drop_rows} due to missing values"
-        )
-
-    # NaNs introduced by outer join change dtype of dataset cols (upcast to float64), so we need to cast them back.
-    col_name_to_dtype = {}
-    for col_name, col in proc_cols.items():
-        # if col is a list of list-like objects, we assume the internal dtype of each col[i] remains unchanged.
-        if isinstance(col, list) and isinstance(col[0], (list, np.ndarray, torch.Tensor)):
-            continue
-        dtype = col.dtype
-        # Skip non-numpy extension dtypes (e.g. TensorDtype from Ray, ArrowDtype from PyArrow)
-        # as they cannot be used with DataFrame.astype() reliably.
-        if not isinstance(dtype, np.dtype):
-            continue
-        col_name_to_dtype[col_name] = dtype
-    dataset = dataset.astype(col_name_to_dtype)
-
-    # Persist the completed dataset with no NaNs
-    dataset = backend.df_engine.persist(dataset)
 
     # Remove partitions that are empty after removing NaNs
     dataset = backend.df_engine.remove_empty_partitions(dataset)
