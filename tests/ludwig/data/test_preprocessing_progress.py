@@ -4,8 +4,11 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
+from ludwig.backend import LOCAL_BACKEND
 from ludwig.callbacks import Callback
+from ludwig.constants import COLUMN, MISSING_VALUE_STRATEGY, NAME, PREPROCESSING, PROC_COLUMN, TYPE
 from ludwig.data.dataframe.pandas import PandasEngine
+from ludwig.data.preprocessing import build_data
 from ludwig.data.preprocessing_progress import get_total_partitions, PreprocessingProgressTracker
 
 
@@ -229,3 +232,74 @@ def test_large_feature_count_pandas():
     # Strictly increasing
     for a, b in itertools.pairwise(intermediate):
         assert b > a
+
+
+# ---------------------------------------------------------------------------
+# Regression: feature-level increment (build_data loop)
+# ---------------------------------------------------------------------------
+
+
+def test_progress_fires_for_features_not_calling_map_partitions():
+    """Regression test for issue #4195.
+
+    Most feature types (category, binary, number without normalization) use
+    map_objects or direct series operations rather than map_partitions.  The
+    old implementation incremented the counter only inside the map_partitions
+    monkey-patch, so those features produced zero progress callbacks.
+
+    The fix moves the increment to build_data's feature loop: one tick after
+    each add_feature_data() call, regardless of which engine operation the
+    feature uses internally.
+
+    This test verifies the fix by patching add_feature_data to never call
+    map_partitions.  With the old code the counter stays at 0 and only stop()'s
+    forced 1.0 is emitted; with the new code every feature fires a callback.
+    """
+    n_features = 5
+    feature_names = [f"feat_{i}" for i in range(n_features)]
+
+    feature_configs = [
+        {NAME: name, TYPE: "number", COLUMN: name, PROC_COLUMN: f"{name}_proc"} for name in feature_names
+    ]
+    # Minimal preprocessing metadata — fill_with_const with no outlier strategy
+    # so that handle_missing_values/handle_outliers are no-ops.
+    training_set_metadata = {
+        name: {
+            PREPROCESSING: {
+                MISSING_VALUE_STRATEGY: "fill_with_const",
+                "computed_fill_value": 0.0,
+            }
+        }
+        for name in feature_names
+    }
+    input_cols = {name: pd.Series([1.0, 2.0, 3.0, 4.0, 5.0]) for name in feature_names}
+
+    collector = ProgressCollector()
+    tracker = PreprocessingProgressTracker(total=n_features, callbacks=[collector], use_ray=False)
+    tracker.start()
+
+    # Patch add_feature_data to do nothing — simulating features that never
+    # call map_partitions (binary, category, ...).
+    mock_feature_type = MagicMock()
+    mock_feature_type.add_feature_data.return_value = None
+
+    with patch("ludwig.data.preprocessing.get_from_registry", return_value=mock_feature_type):
+        build_data(input_cols, feature_configs, training_set_metadata, LOCAL_BACKEND, False, tracker)
+
+    tracker.stop()
+
+    intermediate = [v for v in collector.values if v < 1.0]
+
+    # OLD code: 0 intermediate callbacks (map_partitions never called → counter
+    # never incremented → only stop()'s forced 1.0 is present).
+    # NEW code: n_features - 1 intermediate callbacks (one per feature, the
+    # last one fires 1.0 directly and is not counted as intermediate).
+    assert len(intermediate) == n_features - 1, (
+        f"Expected {n_features - 1} intermediate callbacks (one per feature). "
+        f"Got {collector.values!r}. "
+        "This fails with the old map_partitions-only implementation."
+    )
+    assert collector.values[-1] == 1.0
+    # Strictly increasing
+    for a, b in itertools.pairwise(collector.values):
+        assert b >= a, f"Progress went backwards: {a} -> {b}"
