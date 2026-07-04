@@ -969,8 +969,15 @@ def build_data(
     Returns:
         Dictionary of (feature name) -> (processed data).
     """
+    # Dask/Ray only: bake a progress increment into every map_partitions call so
+    # that remote workers fire actor.increment.remote() when their partition
+    # actually executes (during persist(), not during lazy graph construction).
+    # We do NOT apply this to pandas/modin: most feature types use map_objects
+    # or fillna/bfill rather than map_partitions, so only a small fraction of
+    # features would be counted.  pandas increments happen at the feature level
+    # below (one per feature, synchronous).
     _orig_map_partitions = backend.df_engine.map_partitions
-    if progress_tracker is not None:
+    if progress_tracker is not None and backend.df_engine.partitioned:
         backend.df_engine.map_partitions = lambda series, map_fn, meta=None: _orig_map_partitions(
             series, map_fn, meta=meta, progress_tracker=progress_tracker
         )
@@ -1007,6 +1014,12 @@ def build_data(
                 backend,
                 skip_save_processed_input,
             )
+
+            # Pandas/modin: fire progress synchronously after each feature
+            # completes.  One increment per feature gives exactly n_active_features
+            # ticks with a perfectly accurate denominator.
+            if progress_tracker is not None and not backend.df_engine.partitioned:
+                progress_tracker.increment()
     finally:
         backend.df_engine.map_partitions = _orig_map_partitions
 
