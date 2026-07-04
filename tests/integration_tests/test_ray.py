@@ -250,6 +250,10 @@ def check_preprocessed_df_equal(df1, df2):
 
     def _row_sort_key(df, cols):
         def _to_hashable(v):
+            # Convert Arrow scalars to Python natives so that local (numpy-backed)
+            # and Ray 2.56+ (Arrow-backed) DataFrames hash identically.
+            if hasattr(v, "as_py"):
+                v = v.as_py()
             if isinstance(v, np.ndarray):
                 return v.tobytes()
             if isinstance(v, float) and np.isnan(v):
