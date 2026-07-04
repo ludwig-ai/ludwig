@@ -265,8 +265,11 @@ def check_preprocessed_df_equal(df1, df2):
         df1 = df1.iloc[key1.argsort(kind="stable").values].reset_index(drop=True)
         df2 = df2.iloc[key2.argsort(kind="stable").values].reset_index(drop=True)
     for column in df1.columns:
-        vals1 = df1[column].values
-        vals2 = df2[column].values
+        # Use to_numpy() rather than .values to ensure numpy arrays regardless of
+        # backing store. Ray 2.56+ returns Arrow-backed DataFrames from Ray Data
+        # batches, so .values may return ArrowExtensionArray instead of numpy.
+        vals1 = df1[column].to_numpy()
+        vals2 = df2[column].to_numpy()
 
         if any(feature_name in column for feature_name in [CATEGORY]):
             is_equal = np.all(vals1 == vals2)
