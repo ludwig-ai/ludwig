@@ -7,13 +7,16 @@ Regression coverage for two escapes in the tar extraction path:
      path components.
 """
 
+import contextlib
+import gzip
 import io
 import os
 import tarfile
 
 import pytest
 
-from ludwig.datasets.archives import is_within_directory, safe_extract_tar
+from ludwig.datasets import archives
+from ludwig.datasets.archives import extract_archive, is_within_directory, safe_extract_tar
 from ludwig.error import UnsafeArchiveError
 
 
@@ -153,3 +156,44 @@ class TestSafeExtractTar:
                 safe_extract_tar(tar, path=dest)
 
         assert not os.path.exists(os.path.join(outside, "pwned.txt"))
+
+
+class TestExtractGzip:
+    def test_writes_decompressed_file_beside_the_archive(self, tmpdir):
+        """The local case, where the staging directory is the archive directory itself."""
+        archive_directory = str(tmpdir)
+        archive_path = os.path.join(archive_directory, "data.csv.gz")
+        with gzip.open(archive_path, "wb") as gzfile:
+            gzfile.write(b"a,b\n1,2\n")
+
+        extracted = extract_archive(archive_path)
+
+        assert "data.csv" in extracted
+        assert open(os.path.join(archive_directory, "data.csv")).read() == "a,b\n1,2\n"
+
+    def test_writes_into_a_separate_staging_directory(self, tmpdir, monkeypatch):
+        """The remote case: the decompressed file must land in the staging directory that gets uploaded.
+
+        Joining tmpdir with the archive's full path silently discarded tmpdir, so the file was written next to the
+        source archive and never uploaded.
+        """
+        archive_directory = os.path.join(str(tmpdir), "archives")
+        staging_directory = os.path.join(str(tmpdir), "staging")
+        os.makedirs(archive_directory)
+        os.makedirs(staging_directory)
+
+        archive_path = os.path.join(archive_directory, "data.csv.gz")
+        with gzip.open(archive_path, "wb") as gzfile:
+            gzfile.write(b"a,b\n1,2\n")
+
+        @contextlib.contextmanager
+        def staging_output_directory(url):
+            yield staging_directory, None
+
+        monkeypatch.setattr(archives, "upload_output_directory", staging_output_directory)
+
+        extract_archive(archive_path)
+
+        staged_file = os.path.join(staging_directory, "data.csv")
+        assert os.path.exists(staged_file), "decompressed file was not written into the staging directory"
+        assert open(staged_file).read() == "a,b\n1,2\n"

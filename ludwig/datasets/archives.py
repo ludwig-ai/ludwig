@@ -204,9 +204,13 @@ def extract_archive(archive_path: str, archive_type: ArchiveType | None = None) 
             with ZipFile(archive_path) as zfile:
                 zfile.extractall(tmpdir)
         elif archive_type == ArchiveType.GZIP:
-            gzip_content_file = ".".join(archive_path.split(".")[:-1])  # Path minus the .gz extension
+            # Join on the file name, not the full path: os.path.join discards tmpdir when its second argument is
+            # absolute. That lands in the right place only because tmpdir is the archive directory itself for local
+            # paths; for a remote destination tmpdir is a staging directory whose contents are uploaded afterwards,
+            # and writing outside it would silently drop the extracted file.
+            gzip_content_name = ".".join(os.path.basename(archive_path).split(".")[:-1])  # Name minus the .gz suffix
             with gzip.open(archive_path) as gzfile:
-                with open(os.path.join(tmpdir, gzip_content_file), "wb") as output:
+                with open(os.path.join(tmpdir, gzip_content_name), "wb") as output:
                     shutil.copyfileobj(gzfile, output)
         elif archive_type in {ArchiveType.TAR, ArchiveType.TAR_ZIP, ArchiveType.TAR_BZ2, ArchiveType.TAR_GZ}:
             with tarfile.open(archive_path) as tar_file:
