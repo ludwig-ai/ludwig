@@ -70,3 +70,22 @@ class ConfigValidationError(LudwigError, ValueError):
 
     def __reduce__(self):
         return type(self), (self.message,)
+
+
+@PublicAPI
+class UnsafeArchiveError(LudwigError, ValueError):
+    """Exception raised when an archive would write outside its destination directory.
+
+    Appropriate for archive members whose name or link target escapes the directory being extracted into, whether by
+    a relative path, an absolute path, or a symlink or hard link pointing elsewhere.
+
+    Attributes:
+        message - An error message describing the situation.
+    """
+
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(message)
+
+    def __reduce__(self):
+        return type(self), (self.message,)
