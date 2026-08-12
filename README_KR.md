@@ -301,7 +301,7 @@ Ludwig는 여러분과 같은 분들의 기여에 의존하는 활발하게 관�
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=ludwig-ai/ludwig&type=Date)](https://star-history.com/#ludwig-ai/ludwig&Date)
+[![Star History Chart](https://star-history.dera.page/svg?repos=ludwig-ai/ludwig&type=Date)](https://star-history.dera.page/#ludwig-ai/ludwig&Date)
 
 # 👋 참여하기
 
