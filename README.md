@@ -350,4 +350,4 @@ ______________________________________________________________________
   <img src="https://contrib.rocks/image?repo=ludwig-ai/ludwig" />
 </a>
 
-[![Star History Chart](https://api.star-history.com/svg?repos=ludwig-ai/ludwig&type=Date)](https://star-history.com/#ludwig-ai/ludwig&Date)
+[![Star History Chart](https://star-history.dera.page/svg?repos=ludwig-ai/ludwig&type=Date)](https://star-history.dera.page/#ludwig-ai/ludwig&Date)
