@@ -178,8 +178,11 @@ class DataFormatReader(ABC):
     @abstractmethod
     def read(self, path: str, **kwargs) -> pd.DataFrame: ...
 
+
 class CSVReader(DataFormatReader):
-    def read(self, path, **kwargs): return pd.read_csv(path, **kwargs)
+    def read(self, path, **kwargs):
+        return pd.read_csv(path, **kwargs)
+
 
 # One 5-line reader per format instead of one 50-line class per format
 ```
@@ -200,11 +203,15 @@ Extract shared logic (missing value handling, dtype casting, reshaping) into `Ba
 # Before: class Trainer(CheckpointMixin, EarlyStoppingMixin, MetricsMixin, ProfilingMixin, BaseTrainer)
 # After:
 class Trainer(BaseTrainer):
-    def __init__(self, config, backend,
-                 checkpointer: CheckpointService,
-                 early_stopper: EarlyStoppingService,
-                 metrics_collector: MetricsCollectionService,
-                 profiler: ProfilingService | None = None): ...
+    def __init__(
+        self,
+        config,
+        backend,
+        checkpointer: CheckpointService,
+        early_stopper: EarlyStoppingService,
+        metrics_collector: MetricsCollectionService,
+        profiler: ProfilingService | None = None,
+    ): ...
 ```
 - `Trainer.__init__` shrinks from 24 params to 5
 - Each service is independently testable
