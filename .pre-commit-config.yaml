@@ -34,7 +34,7 @@ repos:
       - id: trailing-whitespace
       - id: mixed-line-ending
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.2
+    rev: v0.16.8
     hooks:
       - id: ruff
         name: Lint and fix (ruff)
@@ -56,6 +56,6 @@ repos:
           - mdformat_frontmatter==2.0.10
         exclude: "CHANGELOG.md|IMPROVEMENT_PLAN.md"
   - repo: https://github.com/yoheimuta/protolint
-    rev: v0.56.4
+    rev: v0.57.0
     hooks:
       - id: protolint
