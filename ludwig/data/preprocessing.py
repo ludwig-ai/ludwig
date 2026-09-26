@@ -121,8 +121,10 @@ from ludwig.utils.fs_utils import file_lock, path_exists
 from ludwig.utils.misc_utils import get_from_registry, merge_dict
 from ludwig.utils.types import DataFrame, Series
 
-# Opt-in to future pandas behavior: fillna/ffill/bfill will no longer silently downcast dtypes
-pd.set_option("future.no_silent_downcasting", True)
+# Opt-in to future pandas behavior: fillna/ffill/bfill will no longer silently downcast dtypes.
+# This is the default (and the option is deprecated) in pandas >= 3.
+if int(pd.__version__.split(".")[0]) < 3:
+    pd.set_option("future.no_silent_downcasting", True)
 
 REPARTITIONING_FEATURE_TYPES = {"image", "audio"}
 

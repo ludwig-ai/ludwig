@@ -19,7 +19,7 @@ def test_negative_sample():
 
     # Check data types
     assert df_with_samples["user_id"].dtype == "int64"
-    assert df_with_samples["item_id"].dtype == "object"
+    assert df_with_samples["item_id"].dtype == df["item_id"].dtype
 
     # Check that the negative samples are unique user-item pairs
     assert len(df_with_samples) == len(df_with_samples.drop_duplicates(["user_id", "item_id"]))
