@@ -66,7 +66,7 @@ def dummy_df():
     ],
 )
 def test_is_field_boolean(df_engine, dummy_df):
-    assert np.array_equal(dummy_df.dtypes, ["object", "object", "object", "object", "object"])
+    assert all(pd.api.types.is_string_dtype(dtype) for dtype in dummy_df.dtypes)
 
     if isinstance(df_engine, DaskEngine):
         dummy_df = df_engine.df_lib.from_pandas(dummy_df, npartitions=1)
@@ -85,7 +85,7 @@ def test_is_field_boolean(df_engine, dummy_df):
     ],
 )
 def test_dataset_info(df_engine, dummy_df):
-    assert np.array_equal(dummy_df.dtypes, ["object", "object", "object", "object", "object"])
+    assert all(pd.api.types.is_string_dtype(dtype) for dtype in dummy_df.dtypes)
 
     if isinstance(df_engine, DaskEngine):
         dummy_df = df_engine.df_lib.from_pandas(dummy_df, npartitions=1)

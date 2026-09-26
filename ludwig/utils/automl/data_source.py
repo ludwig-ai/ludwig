@@ -56,7 +56,12 @@ class DataframeSourceMixin:
         return self.df.columns
 
     def get_dtype(self, column: str) -> str:
-        return self.df[column].dtype.name
+        dtype = self.df[column].dtype
+        # pandas >= 3 infers a dedicated string dtype ("str") for string columns, where older versions used "object".
+        # Normalize to "object" so field metadata does not depend on the pandas version.
+        if pd.api.types.is_string_dtype(dtype):
+            return "object"
+        return dtype.name
 
     def get_distinct_values(self, column, max_values_to_return: int) -> tuple[int, list[str], float]:
         unique_values = self.df[column].dropna().unique()

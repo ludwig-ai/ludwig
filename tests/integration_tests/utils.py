@@ -780,6 +780,9 @@ def add_nans_to_df_in_place(df: pd.DataFrame, nan_percent: float):
     for col in df.columns:
         if col == SPLIT:  # do not add NaNs to the split column
             continue
+        if pd.api.types.is_bool_dtype(df[col]):
+            # pandas >= 3 refuses to upcast bool columns when assigning NaN, so do it explicitly.
+            df[col] = df[col].astype(object)
         col_idx = df.columns.get_loc(col)
         for row_idx in random.sample(range(num_rows), num_nans_per_col):
             df.iloc[row_idx, col_idx] = np.nan
