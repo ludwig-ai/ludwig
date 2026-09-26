@@ -65,6 +65,7 @@ from ludwig.trainers.registry import get_ray_trainers_registry, register_ray_tra
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.data_utils import use_credentials
 from ludwig.utils.fs_utils import get_fs_and_path
+from ludwig.utils.metric_utils import TrainerMetric
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
@@ -148,10 +149,12 @@ def _get_df_engine(processor):
 
 
 def _make_picklable(obj):
-    """Recursively convert defaultdicts (which contain unpicklable lambdas) to regular dicts."""
-    from collections import defaultdict
+    """Recursively convert results into types that can be saved and loaded with ``torch.load(weights_only=True)``.
 
-    if isinstance(obj, defaultdict) or isinstance(obj, dict):
+    defaultdicts (which contain unpicklable lambdas) become regular dicts and numpy scalars become Python scalars.
+    NamedTuples are preserved; the ones that may appear in results are listed in ``_SAFE_RESULT_GLOBALS``.
+    """
+    if isinstance(obj, dict):
         return {k: _make_picklable(v) for k, v in obj.items()}
     elif isinstance(obj, tuple) and hasattr(obj, "_fields"):
         # NamedTuple: reconstruct with the same field names
@@ -160,7 +163,23 @@ def _make_picklable(obj):
         return [_make_picklable(item) for item in obj]
     elif isinstance(obj, tuple):
         return tuple(_make_picklable(item) for item in obj)
+    elif isinstance(obj, np.generic):
+        return obj.item()
     return obj
+
+
+# Non-builtin types allowed when loading training results written by Ray Train workers.
+_SAFE_RESULT_GLOBALS = [TrainerMetric]
+
+
+def _load_results(path: str):
+    """Load results saved by a Ray Train worker without allowing arbitrary code execution.
+
+    The checkpoint directory may live on shared storage (NFS, S3, GCS), so its contents are untrusted: never unpickle
+    them with ``weights_only=False``.
+    """
+    with torch.serialization.safe_globals(_SAFE_RESULT_GLOBALS):
+        return torch.load(path, map_location="cpu", weights_only=True)
 
 
 def train_fn(
@@ -445,28 +464,19 @@ class RayTrainerV2(BaseTrainer):
         )
 
         with result.checkpoint.as_directory() as tmpdir:
-            safetensors_path = os.path.join(tmpdir, "model_weights.safetensors")
-            meta_path = os.path.join(tmpdir, "train_meta.json")
+            # SafeTensors weights + JSON metadata + restricted-unpickler metrics (see train_fn)
+            import json
 
-            if os.path.exists(safetensors_path):
-                # New format: SafeTensors weights + JSON metadata
-                from safetensors.torch import load_file as st_load
+            from safetensors.torch import load_file as st_load
 
-                state_dict = st_load(safetensors_path, device="cpu")
+            state_dict = st_load(os.path.join(tmpdir, "model_weights.safetensors"), device="cpu")
 
-                import json
+            with open(os.path.join(tmpdir, "train_meta.json")) as f:
+                meta = json.load(f)
+            self._validation_field = meta["validation_field"]
+            self._validation_metric = meta["validation_metric"]
 
-                with open(meta_path) as f:
-                    meta = json.load(f)
-                self._validation_field = meta["validation_field"]
-                self._validation_metric = meta["validation_metric"]
-
-                other_results = torch.load(os.path.join(tmpdir, "train_other.pt"), weights_only=False)
-            else:
-                # Legacy format: single torch.save file
-                train_results = torch.load(os.path.join(tmpdir, "train_results.pt"), weights_only=False)
-                results_tuple, self._validation_field, self._validation_metric = train_results
-                state_dict, *other_results = results_tuple
+            other_results = _load_results(os.path.join(tmpdir, "train_other.pt"))
 
         # Load state dict back into the model
         self.model.load_state_dict(state_dict)
@@ -637,8 +647,8 @@ def eval_fn(
         eval_results = predictor.batch_evaluation(eval_shard, **kwargs)
 
         # Save results to a checkpoint so the driver can retrieve them.
-        # Eval results are metrics dicts (no tensors), so we save as JSON where possible
-        # and fall back to torch.save for objects JSON can't handle.
+        # Eval results are metrics dicts (no tensors), so we save them as JSON: the checkpoint directory may live on
+        # shared storage, so the driver must never unpickle it.
         # Only rank-0 writes and reports the checkpoint.  If every worker calls
         # rt.report(checkpoint=...) with a file of the same name, Ray Train
         # merges the checkpoint directories and concatenates the files, producing
@@ -648,15 +658,10 @@ def eval_fn(
         eval_results = _make_picklable(eval_results)
         if world_rank == 0:
             with tempfile.TemporaryDirectory() as tmpdir:
-                try:
-                    import json
+                import json
 
-                    # Try JSON first (no pickle, secure)
-                    with open(os.path.join(tmpdir, "eval_results.json"), "w") as f:
-                        json.dump(eval_results, f, default=str)
-                except (TypeError, ValueError):
-                    # Fall back to torch.save for complex objects
-                    torch.save(eval_results, os.path.join(tmpdir, "eval_results.pt"))
+                with open(os.path.join(tmpdir, "eval_results.json"), "w") as f:
+                    json.dump(eval_results, f, default=str)
                 rt.report(metrics={}, checkpoint=Checkpoint.from_directory(tmpdir))
         else:
             rt.report(metrics={})
@@ -770,16 +775,11 @@ class RayPredictor(BasePredictor):
 
         # Load eval results from the checkpoint saved by eval_fn
         with result.checkpoint.as_directory() as tmpdir:
-            json_path = os.path.join(tmpdir, "eval_results.json")
-            pt_path = os.path.join(tmpdir, "eval_results.pt")
-            if os.path.exists(json_path):
-                import json
+            import json
 
-                with open(json_path) as f:
-                    eval_results = json.load(f)
-                eval_stats = eval_results[0] if isinstance(eval_results, (list, tuple)) else eval_results
-            else:
-                eval_stats, _ = torch.load(pt_path, weights_only=False)
+            with open(os.path.join(tmpdir, "eval_results.json")) as f:
+                eval_results = json.load(f)
+            eval_stats = eval_results[0] if isinstance(eval_results, (list, tuple)) else eval_results
 
         predictions = None
         if collect_predictions:
