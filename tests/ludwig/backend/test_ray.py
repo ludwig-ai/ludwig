@@ -1,7 +1,11 @@
 import copy
+import os
+from collections import defaultdict
 from unittest.mock import patch
 
+import numpy as np
 import pytest
+import torch
 
 # Skip these tests if Ray is not installed
 ray = pytest.importorskip("ray")
@@ -9,8 +13,9 @@ ray = pytest.importorskip("ray")
 from ray.train.torch import TorchConfig  # noqa
 
 from ludwig.backend import initialize_backend  # noqa
-from ludwig.backend.ray import get_trainer_kwargs  # noqa
+from ludwig.backend.ray import _load_results, _make_picklable, get_trainer_kwargs  # noqa
 from ludwig.constants import AUTO, EXECUTOR, MAX_CONCURRENT_TRIALS, RAY  # noqa
+from ludwig.utils.metric_utils import TrainerMetric  # noqa
 
 # Mark the entire module as distributed
 pytestmark = [pytest.mark.distributed, pytest.mark.distributed_d]
@@ -113,3 +118,35 @@ def test_set_max_concurrent_trials(hyperopt_config_old, hyperopt_config_expected
     if hyperopt_config_old[EXECUTOR].get(MAX_CONCURRENT_TRIALS) == AUTO:
         hyperopt_config_old[EXECUTOR][MAX_CONCURRENT_TRIALS] = backend.max_concurrent_trials(hyperopt_config_old)
     assert hyperopt_config_old == hyperopt_config_expected
+
+
+def test_load_results_roundtrip(tmp_path):
+    """Training metrics saved by train_fn load back with the restricted unpickler."""
+    metrics = defaultdict(lambda: defaultdict(list))
+    metrics["out"]["loss"].append(TrainerMetric(epoch=1, step=10, value=np.float32(0.5)))
+    metrics["out"]["accuracy"].append(TrainerMetric(epoch=1, step=10, value=torch.tensor(0.75)))
+    other_results = _make_picklable([metrics, {}, {}])
+
+    path = os.path.join(tmp_path, "train_other.pt")
+    torch.save(other_results, path)
+    loaded = _load_results(path)
+
+    loss = loaded[0]["out"]["loss"][0]
+    assert isinstance(loss, TrainerMetric)
+    assert loss == TrainerMetric(epoch=1, step=10, value=0.5)
+    assert loaded[0]["out"]["accuracy"][0].value.item() == 0.75
+
+
+class _Exploit:
+    def __reduce__(self):
+        return (os.system, ("echo pwned",))
+
+
+def test_load_results_rejects_arbitrary_code(tmp_path):
+    """A tampered results file on shared checkpoint storage must not execute code on the driver."""
+    path = os.path.join(tmp_path, "train_other.pt")
+    torch.save([{"metric": _Exploit()}], path)
+    with patch("os.system") as system:
+        with pytest.raises(Exception, match="Weights only load failed"):
+            _load_results(path)
+    system.assert_not_called()
