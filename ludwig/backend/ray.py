@@ -147,20 +147,130 @@ def _get_df_engine(processor):
     return engine_cls(**processor_kwargs)
 
 
-def _make_picklable(obj):
-    """Recursively convert defaultdicts (which contain unpicklable lambdas) to regular dicts."""
-    from collections import defaultdict
+# Checkpoint handoff between Ray workers and the driver.
+#
+# Checkpoint directories can live on shared storage (NFS, S3, GCS) that other principals may be able to write to,
+# so the driver treats their contents as untrusted. Nothing in them is ever unpickled: model weights travel as
+# SafeTensors and everything else as JSON (GHSA-p3h5-5763-3r3p).
+_TRAIN_WEIGHTS_FILE = "model_weights.safetensors"
+_TRAIN_META_FILE = "train_meta.json"
+_TRAIN_METRICS_FILE = "train_metrics.json"
+_EVAL_METRICS_FILE = "eval_metrics.json"
 
-    if isinstance(obj, defaultdict) or isinstance(obj, dict):
-        return {k: _make_picklable(v) for k, v in obj.items()}
-    elif isinstance(obj, tuple) and hasattr(obj, "_fields"):
-        # NamedTuple: reconstruct with the same field names
-        return type(obj)(**{f: _make_picklable(getattr(obj, f)) for f in obj._fields})
-    elif isinstance(obj, list):
-        return [_make_picklable(item) for item in obj]
-    elif isinstance(obj, tuple):
-        return tuple(_make_picklable(item) for item in obj)
+# JSON object key used to tag a serialized TrainerMetric so it can be rebuilt on load.
+_TRAINER_METRIC_JSON_KEY = "__trainer_metric__"
+
+
+def _to_json_compatible(obj: Any) -> Any:
+    """Recursively convert training/evaluation results into JSON-compatible Python objects.
+
+    Args:
+        obj: Nested dicts/lists/tuples of metrics. Leaves may be Python scalars, NumPy scalars or arrays, torch
+            tensors, or ``TrainerMetric`` namedtuples.
+
+    Returns:
+        An equivalent structure made only of dicts, lists, str, int, float, bool and None. ``TrainerMetric`` values
+        become ``{"__trainer_metric__": [epoch, step, value]}`` so ``_from_json_compatible`` can restore them.
+
+    Raises:
+        TypeError: if a leaf has a type that cannot be represented in JSON.
+
+    Example:
+        >>> _to_json_compatible({"loss": [TrainerMetric(epoch=1, step=10, value=np.float32(0.5))]})
+        {'loss': [{'__trainer_metric__': [1, 10, 0.5]}]}
+    """
+    from ludwig.utils.metric_utils import TrainerMetric
+
+    if isinstance(obj, TrainerMetric):
+        return {_TRAINER_METRIC_JSON_KEY: [_to_json_compatible(field) for field in obj]}
+    if isinstance(obj, dict):
+        return {str(key): _to_json_compatible(nested) for key, nested in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_to_json_compatible(nested) for nested in obj]
+    if isinstance(obj, (torch.Tensor, np.ndarray, np.generic)):
+        return obj.tolist()
+    if obj is None or isinstance(obj, (str, int, float, bool)):
+        return obj
+    raise TypeError(
+        f"Cannot serialize object of type {type(obj).__name__} in Ray checkpoint results; expected nested "
+        "dicts/lists of scalars, NumPy values, tensors or TrainerMetric."
+    )
+
+
+def _from_json_compatible(obj: dict[str, Any]) -> Any:
+    """``json.load`` object hook that restores ``TrainerMetric`` values tagged by ``_to_json_compatible``.
+
+    Example:
+        >>> json.loads('{"__trainer_metric__": [1, 10, 0.5]}', object_hook=_from_json_compatible)
+        TrainerMetric(epoch=1, step=10, value=0.5)
+    """
+    from ludwig.utils.metric_utils import TrainerMetric
+
+    if obj.keys() == {_TRAINER_METRIC_JSON_KEY}:
+        return TrainerMetric(*obj[_TRAINER_METRIC_JSON_KEY])
     return obj
+
+
+def _write_json_atomically(obj: Any, path: str) -> None:
+    """Serialize ``obj`` fully before touching ``path`` so a serialization error never leaves a truncated file."""
+    import json
+
+    serialized = json.dumps(_to_json_compatible(obj))
+    with open(path, "w") as f:
+        f.write(serialized)
+
+
+def _read_json(path: str) -> Any:
+    import json
+
+    with open(path) as f:
+        return json.load(f, object_hook=_from_json_compatible)
+
+
+def _write_train_checkpoint(checkpoint_dir: str, state_dict: dict, other_results: list, val_field, val_metric) -> None:
+    """Write a training result checkpoint for the driver using SafeTensors and JSON only.
+
+    Args:
+        checkpoint_dir: Directory that will be wrapped in a Ray ``Checkpoint``.
+        state_dict: Trained model state dict.
+        other_results: Remaining trainer outputs (train/validation/test metric dicts).
+        val_field: Trainer validation field.
+        val_metric: Trainer validation metric.
+
+    Example:
+        >>> _write_train_checkpoint(tmpdir, model.state_dict(), [train_metrics, val_metrics, test_metrics],
+        ...                         "combined", "loss")
+    """
+    from safetensors.torch import save_file as st_save
+
+    weights = {k: v.clone().contiguous() for k, v in state_dict.items()}
+    st_save(weights, os.path.join(checkpoint_dir, _TRAIN_WEIGHTS_FILE))
+    _write_json_atomically(
+        {"validation_field": val_field, "validation_metric": val_metric},
+        os.path.join(checkpoint_dir, _TRAIN_META_FILE),
+    )
+    _write_json_atomically(other_results, os.path.join(checkpoint_dir, _TRAIN_METRICS_FILE))
+
+
+def _read_train_checkpoint(checkpoint_dir: str) -> tuple[dict, list, Any, Any]:
+    """Read a checkpoint written by ``_write_train_checkpoint`` without unpickling anything.
+
+    Returns:
+        ``(state_dict, other_results, validation_field, validation_metric)``.
+
+    Raises:
+        FileNotFoundError: if any expected file is missing (e.g. a checkpoint written by an older, pickle-based
+            Ludwig version, which is deliberately not supported).
+
+    Example:
+        >>> state_dict, other_results, val_field, val_metric = _read_train_checkpoint(tmpdir)
+    """
+    from safetensors.torch import load_file as st_load
+
+    state_dict = st_load(os.path.join(checkpoint_dir, _TRAIN_WEIGHTS_FILE), device="cpu")
+    meta = _read_json(os.path.join(checkpoint_dir, _TRAIN_META_FILE))
+    other_results = _read_json(os.path.join(checkpoint_dir, _TRAIN_METRICS_FILE))
+    return state_dict, other_results, meta["validation_field"], meta["validation_metric"]
 
 
 def train_fn(
@@ -234,35 +344,9 @@ def train_fn(
 
     # Save results to a checkpoint so the driver can retrieve them.
     # In Ray Train 2.x, result.metrics is only populated when a checkpoint is provided.
-    #
-    # We split the save into:
-    # - SafeTensors for model weights (secure, no pickle)
-    # - JSON for metadata (validation_field, validation_metric, non-tensor results)
-    train_results = results, trainer.validation_field, trainer.validation_metric
-    train_results = _make_picklable(train_results)
+    state_dict, *other_results = results
     with tempfile.TemporaryDirectory() as tmpdir:
-        results_tuple, val_field, val_metric = train_results
-        state_dict, *other_results = results_tuple
-
-        # Save model weights via SafeTensors
-        from safetensors.torch import save_file as st_save
-
-        weights = {k: v.clone().contiguous() for k, v in state_dict.items()}
-        st_save(weights, os.path.join(tmpdir, "model_weights.safetensors"))
-
-        # Save metadata + non-tensor results via JSON-safe torch.save
-        import json
-
-        meta = {
-            "validation_field": val_field,
-            "validation_metric": val_metric,
-        }
-        with open(os.path.join(tmpdir, "train_meta.json"), "w") as f:
-            json.dump(meta, f)
-
-        # Save remaining results (metrics dicts) that may contain non-serializable objects
-        torch.save(other_results, os.path.join(tmpdir, "train_other.pt"))
-
+        _write_train_checkpoint(tmpdir, state_dict, other_results, trainer.validation_field, trainer.validation_metric)
         rt.report(metrics={}, checkpoint=Checkpoint.from_directory(tmpdir))
 
 
@@ -445,28 +529,7 @@ class RayTrainerV2(BaseTrainer):
         )
 
         with result.checkpoint.as_directory() as tmpdir:
-            safetensors_path = os.path.join(tmpdir, "model_weights.safetensors")
-            meta_path = os.path.join(tmpdir, "train_meta.json")
-
-            if os.path.exists(safetensors_path):
-                # New format: SafeTensors weights + JSON metadata
-                from safetensors.torch import load_file as st_load
-
-                state_dict = st_load(safetensors_path, device="cpu")
-
-                import json
-
-                with open(meta_path) as f:
-                    meta = json.load(f)
-                self._validation_field = meta["validation_field"]
-                self._validation_metric = meta["validation_metric"]
-
-                other_results = torch.load(os.path.join(tmpdir, "train_other.pt"), weights_only=False)
-            else:
-                # Legacy format: single torch.save file
-                train_results = torch.load(os.path.join(tmpdir, "train_results.pt"), weights_only=False)
-                results_tuple, self._validation_field, self._validation_metric = train_results
-                state_dict, *other_results = results_tuple
+            state_dict, other_results, self._validation_field, self._validation_metric = _read_train_checkpoint(tmpdir)
 
         # Load state dict back into the model
         self.model.load_state_dict(state_dict)
@@ -636,27 +699,18 @@ def eval_fn(
         predictor = predictor_cls(dist_model=model, model=model, report_tqdm_to_ray=True, **predictor_kwargs)
         eval_results = predictor.batch_evaluation(eval_shard, **kwargs)
 
-        # Save results to a checkpoint so the driver can retrieve them.
-        # Eval results are metrics dicts (no tensors), so we save as JSON where possible
-        # and fall back to torch.save for objects JSON can't handle.
+        # Save the metrics to a checkpoint so the driver can retrieve them. Only the metrics are sent back:
+        # the driver collects predictions separately via batch_predict.
         # Only rank-0 writes and reports the checkpoint.  If every worker calls
         # rt.report(checkpoint=...) with a file of the same name, Ray Train
         # merges the checkpoint directories and concatenates the files, producing
         # invalid JSON.  Non-zero workers still call rt.report() (without a
         # checkpoint) so that Ray Train does not block waiting for all workers.
         world_rank = rt.get_context().get_world_rank()
-        eval_results = _make_picklable(eval_results)
         if world_rank == 0:
+            eval_metrics = eval_results[0] if isinstance(eval_results, (list, tuple)) else eval_results
             with tempfile.TemporaryDirectory() as tmpdir:
-                try:
-                    import json
-
-                    # Try JSON first (no pickle, secure)
-                    with open(os.path.join(tmpdir, "eval_results.json"), "w") as f:
-                        json.dump(eval_results, f, default=str)
-                except (TypeError, ValueError):
-                    # Fall back to torch.save for complex objects
-                    torch.save(eval_results, os.path.join(tmpdir, "eval_results.pt"))
+                _write_json_atomically(eval_metrics, os.path.join(tmpdir, _EVAL_METRICS_FILE))
                 rt.report(metrics={}, checkpoint=Checkpoint.from_directory(tmpdir))
         else:
             rt.report(metrics={})
@@ -770,16 +824,7 @@ class RayPredictor(BasePredictor):
 
         # Load eval results from the checkpoint saved by eval_fn
         with result.checkpoint.as_directory() as tmpdir:
-            json_path = os.path.join(tmpdir, "eval_results.json")
-            pt_path = os.path.join(tmpdir, "eval_results.pt")
-            if os.path.exists(json_path):
-                import json
-
-                with open(json_path) as f:
-                    eval_results = json.load(f)
-                eval_stats = eval_results[0] if isinstance(eval_results, (list, tuple)) else eval_results
-            else:
-                eval_stats, _ = torch.load(pt_path, weights_only=False)
+            eval_stats = _read_json(os.path.join(tmpdir, _EVAL_METRICS_FILE))
 
         predictions = None
         if collect_predictions:
