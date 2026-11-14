@@ -286,7 +286,7 @@ ______________________________________________________________________
 | LLM instruction tuning (LoRA + QLoRA) | examples/llm                |
 | DPO / GRPO alignment                  | [examples/llm/alignment](https://ludwig.ai/latest/examples/llm/alignment)           |
 | Advanced PEFT (PiSSA, OFT, VBLoRA, …) | [examples/llms/peft_advanced](https://ludwig.ai/latest/examples/llms/peft_advanced) |
-| VLM fine-tuning (LLaVA, Qwen2-VL)     | [examples/vlm](https://github.com/ludwig-ai/ludwig/tree/main/examples/vlm)          |
+| VLM fine-tuning (LLaVA, Qwen2-VL)     | examples/vlm          |
 
 ### Tabular & Multimodal
 
