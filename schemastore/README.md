@@ -1,7 +1,7 @@
 # SchemaStore Submission Materials
 
 This directory contains materials for submitting Ludwig's JSON Schema to
-the [JSON Schema Store](https://www.schemastore.org/json/).
+the [JSON Schema Store](https://www.schemastore.org/).
 
 ## Catalog Entry
 
