@@ -679,11 +679,11 @@ def get_realigned_target_and_prediction_tensors_for_inference(
         predictions: The prediction tensor.
         of_name: The output feature's name.
         tokenizer: The HF tokenizer.
-        pad_direction: The direction to pad the tensors. Can be 'left' or 'right'.
-            Defaults to 'right'.
+        pad_value: The token id used to pad the shorter tensor. If `None` or `0`, falls back to the tokenizer's pad
+            token id, or its eos token id if it has no pad token.
 
     Returns:
-        Tuple of realigned (targets, decoded_targets, predictions, decoded_predictions).
+        Tuple of realigned (targets, predictions).
         - targets is a map of feature name -> tensor of token ids.
         - predictions is a map from output feature name -> map of tensors with the following items:
             - "predictions": tensor of token ids.

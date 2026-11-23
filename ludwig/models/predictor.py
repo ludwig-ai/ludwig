@@ -175,7 +175,6 @@ class Predictor(BasePredictor):
         """Predict a batch of data.
 
         Params:
-            model: BaseModel model
             batch: batch of data
 
         Returns:

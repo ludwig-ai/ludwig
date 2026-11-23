@@ -167,7 +167,7 @@ class SoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
     def __init__(self, config: SoftmaxCrossEntropyLossConfig):
         """
         Params:
-            class_weights: List or 1D tensor of length equal to number of classes.
+            config: Loss configuration, including optional class weights.
         """
         super().__init__()
         if config.class_weights:
@@ -197,7 +197,7 @@ class SequenceSoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
     def __init__(self, config: SequenceSoftmaxCrossEntropyLossConfig):
         """
         Params:
-            class_weights: List or 1D tensor of length equal to number of classes.
+            config: Loss configuration, including optional class weights.
         """
         super().__init__()
         if config.class_weights:
@@ -247,7 +247,7 @@ class SigmoidCrossEntropyLoss(nn.Module, LogitsInputsMixin):
     def __init__(self, config: SigmoidCrossEntropyLossConfig):
         """
         Params:
-            class_weights: List or 1D tensor of length equal to number of classes.
+            config: Loss configuration, including optional class weights.
         """
         super().__init__()
         if config.class_weights:

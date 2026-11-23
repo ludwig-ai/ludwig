@@ -1211,7 +1211,7 @@ def handle_features_with_prompt_config(
         config: Model configuration.
         dataset_df (DataFrame): Input dataset.
         features (List[FeatureConfigDict]): List of feature configurations.
-        df_engine (DataFrameEngine): Dataframe engine.
+        backend (Backend): Backend whose dataframe engine processes the columns.
         split_col (Optional[Series], optional): Split column. Defaults to None.
 
     Returns:
