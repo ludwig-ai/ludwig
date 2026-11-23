@@ -912,7 +912,6 @@ class LudwigModel:
             _input_strings (Union[str, List[str]]): Unused input parameter.
             input_ids (torch.Tensor): Tensor containing input IDs.
             attention_mask (torch.Tensor): Tensor containing attention masks.
-            streamer (Union[TextStreamer, None]): Text streamer instance for streaming output.
 
         Returns:
             torch.Tensor: Tensor of generated outputs.

@@ -71,7 +71,7 @@ def index_column(
         dataset_cols (Dict[str, Series]): A dictionary mapping column names to their corresponding Series. `col_name`
             must be a key in this dictionary. These columns are stored as part of the index to ensure that the index
             is usable even if the original DataFrame is not available.
-        df_engine (DataFrameEngine): The engine used to compute the columns into pandas objects.
+        backend (Backend): The backend whose dataframe engine computes the columns into pandas objects.
         split_col (Optional[Series]): A column that indicates whether a sample is part of the training set. A sample
             is in the training set if the value in this column is 0.
     Returns:

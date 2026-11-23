@@ -52,9 +52,9 @@ def negative_sample(
         user_id_col: column name for user ids
         item_id_col: column name for item ids
         label_col: column name for interaction labels (e.g. 1 for positive interaction)
-        n_neg: number of negative samples per positive sample
+        neg_pos_ratio: number of negative samples per positive sample
         neg_val: label value for the negative samples
-        percent_print: print progress every percent_print percent. 0 to disable
+        log_pct: log progress every log_pct percent. 0 to disable
     Returns:
         Input DataFrame with negative samples appended
 

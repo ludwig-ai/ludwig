@@ -262,10 +262,11 @@ def crop(
 
     Args:
         img (torch.Tensor): image with shape [..., height, width] to crop
-        size (Union[int, Tuple[int, int]]): size to crop to. If int, crops to square image of that size.
+        new_size (Union[int, Tuple[int, int]]): size to crop to. If int, crops to square image of that size.
 
     Returns:
-        torch.Tensor: cropped image of size [..., size[0], size[1]] or [..., size, size] if size is int.
+        torch.Tensor: cropped image of size [..., new_size[0], new_size[1]] or [..., new_size, new_size] if
+            new_size is int.
     """
     new_size = to_tuple(new_size)
     return F.center_crop(img, output_size=new_size)

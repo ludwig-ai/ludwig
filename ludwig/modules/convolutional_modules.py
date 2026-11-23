@@ -1159,7 +1159,6 @@ class ResNet(LudwigModule):
 
         Args:
           resnet_size: A single integer for the size of the ResNet model.
-          is_bottleneck: Use regular blocks or bottleneck blocks.
           out_channels: The number of filters to use for the first block layer
             of the model. This number is then doubled for each subsequent block
             layer.
