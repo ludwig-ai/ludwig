@@ -679,8 +679,8 @@ def get_realigned_target_and_prediction_tensors_for_inference(
         predictions: The prediction tensor.
         of_name: The output feature's name.
         tokenizer: The HF tokenizer.
-        pad_value: The token id used to pad the shorter tensor. Defaults to the tokenizer's pad token id, or its
-            eos token id if it has no pad token.
+        pad_value: The token id used to pad the shorter tensor. If `None` or `0`, falls back to the tokenizer's pad
+            token id, or its eos token id if it has no pad token.
 
     Returns:
         Tuple of realigned (targets, predictions).
