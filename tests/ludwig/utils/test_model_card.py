@@ -76,3 +76,18 @@ class TestSaveModelCard:
             with open(path) as f:
                 content = f.read()
             assert "# Model Card" in content
+
+    def test_save_non_ascii_feature_names(self):
+        # Feature names come from dataset columns, which are often non-Latin. The card must be written as UTF-8
+        # regardless of the platform's locale encoding (cp1252 on most Windows systems).
+        config = {
+            "model_type": "ecd",
+            "input_features": [{"name": "评论", "type": "text"}],
+            "output_features": [{"name": "جذبات", "type": "category"}],
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = save_model_card(output_directory=tmpdir, config=config, training_set_metadata={})
+            with open(path, encoding="utf-8") as f:
+                content = f.read()
+            assert "| 评论 | text |" in content
+            assert "| جذبات | category |" in content
