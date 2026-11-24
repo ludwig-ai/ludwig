@@ -182,7 +182,7 @@ def save_model_card(
     )
 
     card_path = os.path.join(output_directory, "model_card.md")
-    with open(card_path, "w") as f:
+    with open(card_path, "w", encoding="utf-8") as f:
         f.write(card)
 
     logger.info(f"Model card saved to {card_path}")
